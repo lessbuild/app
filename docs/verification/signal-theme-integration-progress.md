@@ -6661,6 +6661,106 @@ Deployment:
 Next task: inspect high-traffic resource/detail markup for hard-coded radius,
 shadow and platform-color utilities that override Signal semantic components.
 
+## Slice 99 — Signal semantic surface utilities — 2026-09-22
+
+Responsibility problem:
+
+- Several public and dashboard surfaces overrode Signal component tokens with
+  raw `shadow-sm`/`shadow-xs` utilities, and two modal fields still used the
+  retired `input secondary` primitive.
+- The pricing toggle used a raw rounded surface instead of Signal's grouped
+  control treatment.
+
+Boundary and implementation:
+
+- Removed raw shadow overrides from `ui-card`/`ui-panel` consumers so Signal
+  responsive shadow tokens remain authoritative.
+- Migrated the pricing interval group to `rounded-control`, `bg-surface-muted`
+  and Signal's `shadow-soft` active state.
+- Converted the saved-notification-filter field to `ui-input` and removed the
+  budget field's hard-coded radius.
+- Added source guards against `shadow-xs`, `shadow-sm` and `input secondary`.
+
+Preserved contracts and safety:
+
+- Pricing interval behavior, plan selection, notification filter submission,
+  budget validation, modal IDs, request keys and displayed copy are unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 55 tests passed, 2,744 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-CyXSfH29.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px public smoke check passed for landing and pricing with no
+  horizontal overflow; runtime health returned ready.
+- Implementation commit `ea35e50` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `ea35e50`; assets, config, route and Blade caches were rebuilt and both
+  services were restarted.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: replace remaining raw platform-color console blocks with the
+Signal semantic console primitive, then characterize the Livewire command
+dialog before changing its modal mechanism.
+
+## Slice 100 — Complete Signal skip-link structure — 2026-09-22
+
+Responsibility problem:
+
+- Pricing, legal and auth-centered pages bypassed the Signal base layout's
+  global skip-link contract because they render through separate Laravel
+  layouts. They therefore lacked the standard keyboard entry point and main
+  content target.
+
+Boundary and implementation:
+
+- Added the actual `ui-skip-link` primitive and `main-content` target to the
+  pricing and legal pages and to the centered auth layout.
+- Raised the source-level coverage guard to include all public/authenticated
+  layout families.
+
+Preserved contracts and safety:
+
+- Existing page routes, metadata, copy, form behavior and responsive layouts
+  remain unchanged; only keyboard navigation structure was completed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 55 tests passed, 2,744 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-CyXSfH29.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px public audit passed for `/`, `/pricing`, `/docs`, `/status`,
+  `/privacy`, `/terms` and `/login`: all had `ui-skip-link`, `#main-content`,
+  no legacy skip utility and no horizontal overflow.
+- Implementation commit `b4c2602` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `b4c2602`; assets, config, route and Blade caches were rebuilt and both
+  services are active. `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: replace remaining raw platform-color console blocks with the
+Signal semantic console primitive, then characterize the Livewire command
+dialog before changing its modal mechanism.
+
 ## Slice 96 — native Signal dialogs and filters — 2026-09-22
 
 Responsibility problem:
