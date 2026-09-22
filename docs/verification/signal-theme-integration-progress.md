@@ -1,5 +1,67 @@
 # Signal theme integration progress
 
+## Slice 117 — verify available Signal source and live shell — 2026-09-22
+
+Responsibility problem:
+
+- The request was to confirm that Deployer's rendered navigation, components and
+  dialogs use the actual Signal theme rather than a visual approximation.
+- The available Signal Starter snapshot is at
+  `/root/Documents/Codex/2026-09-21/plan-can-you-create-a-tailwindcss`; it has no
+  Git metadata, so an upstream commit/version cannot be independently claimed.
+
+Boundary and implementation:
+
+- No application change was needed. Deployer imports the Signal theme,
+  component and preset styles directly in `resources/css/app.css`; Laravel
+  Blade shell components retain product-specific workspace/navigation content
+  while using the Signal shell structure and primitives.
+- The shared modal renders native `<dialog class="ui-dialog">`. App-specific
+  `data-modal-sheet` styles provide sheet layout, bounded internal scrolling,
+  safe-area spacing and background scroll lock without creating a second visual
+  modal primitive.
+- Confirmed byte-identical source/snapshot pairs:
+  - `theme.css`: `980e9be5120e1498103fbd5cf71cad93541a4d15908f6b3a0a746757ccb8713d`
+  - `components.css`: `a5ebd67c16e9334b85ab4370279deb3ada0e485943aebbb636d511d66e56c384`
+  - theme initialization: `7737f5fd7bd97f2326741a0bbf48b3eb3a5bcb8f9b42e5c945481e95ced22fa1`
+  - preset stylesheet: `1296827bde321fb8801a6942891fa5b7dc1b6cce4e682a875cc8f100b494a11a`
+  - theme data: `abb484b2897b144830e45f7e51f34a420972ba0371b47676880d4664b74b6872`
+- The deployed stylesheet is the same bytes as the local build
+  (`aa225375200ee516f9b13f0985d382bfa8c244f6a8d672c6ed47c1b17f48fce7`);
+  its URL returns HTTP 200. `/api/health` returns `{"status":"ready"}`.
+
+Preserved contracts and safety:
+
+- Workspace-specific navigation groups, route destinations, authorization,
+  responsive quick actions and user/workspace identity remain application
+  content, not starter-demo content.
+- No product behavior, routes, persistence, authorization or external resources
+  changed. The user-authored untracked controller plan remains untracked.
+
+Evidence:
+
+- `/root/.local/share/buildpusher/php-8.5.10/bin/php vendor/bin/phpunit
+  tests/Feature/LocalUiAssetTest.php --testdox` — 66 tests passed,
+  2,896 assertions; `git diff --check` passed.
+- Authenticated Playwright smoke check on `https://deployer.buildpusher.com`:
+  desktop shell had a sticky 64px header and 256px Signal sidebar with 23 links
+  and one current-page marker. At 390px, the mobile drawer opened with modal
+  semantics; Escape closed it and restored focus. Application and server
+  creation opened as native Signal `ui-dialog` sheets; the app form had its own
+  scrollable body and locked background scrolling, and Escape restored focus.
+  The theme control switched to dark and updated `aria-pressed`. No browser
+  errors or horizontal overflow were observed.
+- The page reported `modern` preset, `graphite` palette, `comfortable` density
+  and `subtle` corners; the mobile modal panel computed to the expected 8px
+  Signal panel radius.
+- Runtime is on `main` at `21d48fb` and healthy. This is dev-site smoke evidence,
+  not a production acceptance claim.
+
+Next task: continue page-level Signal consistency work only where a concrete
+divergence from the available source primitives is found. To prove a newer
+upstream Signal release than the available snapshot, first provide or identify
+the authoritative source version/commit; no such metadata is present here.
+
 ## Slice 116 — Signal control radius on disclosure focus — 2026-09-22
 
 Responsibility problem:
