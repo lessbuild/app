@@ -1571,8 +1571,9 @@ for (const colorScheme of ['light', 'dark']) {
                     const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
                     const menu = page.locator('#primary-navigation');
                     if (width < 1024) {
-                        const footer = page.locator('nav.fixed.inset-x-0.bottom-0');
+                        const footer = page.locator('[data-mobile-quick-navigation]');
                         await expect(footer).toBeVisible();
+                        await expect(footer).toHaveClass(/ui-bottom-nav/);
                         const bounds = await footer.boundingBox();
                         expect(bounds.x).toBe(0);
                         expect(bounds.width).toBe(width);

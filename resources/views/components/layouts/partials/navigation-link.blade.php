@@ -16,15 +16,15 @@
         'min-h-10 px-3 py-2.5' => ! $mobile,
         'min-h-[46px] border px-3 py-2 text-xs font-semibold shadow-xs' => $mobile,
         'bg-surface-muted font-semibold text-ink' => $active && ! $mobile,
-        'border-line bg-primary-soft text-primary' => $active && $mobile,
+        'border-line bg-[var(--ui-primary-soft)] text-[var(--ui-primary)]' => $active && $mobile,
         'text-muted hover:bg-surface-muted hover:text-ink' => ! $active && ! $mobile,
         'border-line bg-surface text-ink hover:bg-surface-muted' => ! $active && $mobile,
     ])
 >
     <svg @class([
         'h-4 w-4 shrink-0 stroke-2',
-        'text-primary' => $active,
-        'text-muted group-hover:text-primary' => ! $active,
+        'text-[var(--ui-primary)]' => $active,
+        'text-muted group-hover:text-[var(--ui-primary)]' => ! $active,
     ]) aria-hidden="true">
         <use xlink:href="/assets/images/icons.svg#{{ $item['icon'] }}"></use>
     </svg>

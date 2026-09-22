@@ -307,14 +307,14 @@
                     wrapper.setAttribute('role', 'alert');
 
                     const title = document.createElement('p');
-                    title.className = 'font-semibold text-primary';
+                    title.className = 'font-semibold text-ink';
                     title.textContent = error.code === 'session'
                         ? 'Your session has expired.'
                         : 'This dialog could not be loaded.';
                     wrapper.append(title);
 
                     const message = document.createElement('p');
-                    message.className = 'text-sm text-secondary';
+                    message.className = 'text-sm text-muted';
                     message.textContent = error.code === 'session'
                         ? 'Sign in again, then reopen this action.'
                         : 'Check your connection and try again, or open the full page to continue.';
@@ -325,7 +325,7 @@
 
                     const retry = document.createElement('button');
                     retry.type = 'button';
-                    retry.className = 'button button--primary';
+                    retry.className = 'ui-btn ui-btn-primary';
                     retry.textContent = 'Retry';
                     retry.addEventListener('click', () => void loadModalContent(dialog, trigger));
                     actions.append(retry);
@@ -335,7 +335,7 @@
                         : fallbackUrl;
                     if (pageUrl) {
                         const fullPage = document.createElement('a');
-                        fullPage.className = 'button button--secondary';
+                        fullPage.className = 'ui-btn ui-btn-secondary';
                         fullPage.href = pageUrl;
                         fullPage.textContent = error.code === 'session' ? 'Sign in' : 'Open full page';
                         actions.append(fullPage);
@@ -371,7 +371,7 @@
                     dialog.modalRequest = controller;
                     dialog.dataset.modalContentLoading = 'true';
                     content.setAttribute('aria-busy', 'true');
-                    content.innerHTML = '<p class="p-5 text-sm text-secondary">Loading…</p>';
+                    content.innerHTML = '<p class="p-5 text-sm text-muted">Loading…</p>';
 
                     try {
                         const response = await fetch(url, {

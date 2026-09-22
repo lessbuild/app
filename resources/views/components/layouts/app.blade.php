@@ -40,7 +40,7 @@
 @endphp
 
 <x-layouts.core :title="$resolvedTitle" :description="$description">
-    <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[60] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-on-primary focus:shadow-xl">
+    <a href="#main-content" class="ui-skip-link">
         {{ __('Skip to main content') }}
     </a>
     <div
@@ -229,11 +229,11 @@
             </div>
         </main>
 
-        <nav data-mobile-quick-navigation class="fixed inset-x-0 bottom-0 z-30 grid grid-cols-4 overflow-hidden border-t border-line bg-surface pt-1 pb-[calc(.25rem+env(safe-area-inset-bottom))] pl-[max(.25rem,env(safe-area-inset-left))] pr-[max(.25rem,env(safe-area-inset-right))] lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
-            <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-surface-muted', 'text-primary' => request()->routeIs('dashboard'), 'text-muted' => ! request()->routeIs('dashboard')]) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
-            <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-surface-muted', 'text-primary' => $applicationCreateDialogOpen, 'text-muted' => ! $applicationCreateDialogOpen]) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
-            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold text-muted hover:bg-surface-muted" @click="openPalette($event.currentTarget)"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
-            <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['relative flex min-h-[44px] flex-col items-center gap-1 rounded-xl px-2 py-2 text-[10px] font-bold hover:bg-surface-muted', 'text-primary' => request()->routeIs('notifications.*'), 'text-muted' => ! request()->routeIs('notifications.*')]) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
+        <nav data-mobile-quick-navigation class="ui-bottom-nav lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
+            <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['ui-bottom-nav-link']) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
+            <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['ui-bottom-nav-link']) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
+            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="ui-bottom-nav-link" @click="openPalette($event.currentTarget)"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
+            <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['ui-bottom-nav-link', 'relative']) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="absolute right-3 top-1 h-2 w-2 rounded-full bg-red-500" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
         </nav>
 
         <div
@@ -285,7 +285,7 @@
                     <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-4 py-3 text-sm text-muted">{{ __('Searching workspace…') }}</div>
                     <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-4 py-3 text-sm text-muted">
                         <p>{{ __('Workspace search could not be loaded.') }}</p>
-                        <button type="button" class="font-semibold text-primary underline" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
+                        <button type="button" class="ui-link" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
                     </div>
                     <div x-show="workspaceSearchResults !== ''" x-html="workspaceSearchResults"></div>
                     <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-4 py-3 text-sm text-muted">
@@ -419,9 +419,9 @@
                 &copy; {{ now()->year }} {{ config('app.name') }}
             </p>
             <nav class="flex" aria-label="{{ __('Footer navigation') }}">
-                <a href="{{ route('dashboard') }}" class="mr-6 hover:text-primary">{{ __('Dashboard') }}</a>
-                <a href="{{ route('activity.index') }}" class="mr-6 hover:text-primary">{{ __('Activity') }}</a>
-                <a href="{{ route('account.index') }}" class="hover:text-primary">{{ __('Account') }}</a>
+                <a href="{{ route('dashboard') }}" class="mr-6 text-muted transition-colors hover:text-ink">{{ __('Dashboard') }}</a>
+                <a href="{{ route('activity.index') }}" class="mr-6 text-muted transition-colors hover:text-ink">{{ __('Activity') }}</a>
+                <a href="{{ route('account.index') }}" class="text-muted transition-colors hover:text-ink">{{ __('Account') }}</a>
             </nav>
         </div>
     </div>

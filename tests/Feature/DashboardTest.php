@@ -68,13 +68,13 @@ class DashboardTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Toggle navigation"'));
     }
 
-    public function test_navigation_has_a_charcoal_header_and_edge_to_edge_bottom_bar(): void
+    public function test_navigation_has_a_signal_header_and_edge_to_edge_bottom_bar(): void
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
             ->assertSee('sticky top-0 z-30 border-b border-line bg-surface text-ink shadow-soft', false)
-            ->assertSee('fixed inset-x-0 bottom-0 z-30 grid grid-cols-4', false)
-            ->assertSee('pb-[calc(.25rem+env(safe-area-inset-bottom))]', false)
+            ->assertSee('class="ui-bottom-nav lg:hidden"', false)
+            ->assertSee('class="ui-bottom-nav-link"', false)
             ->assertSee('pb-[calc(4.5rem+env(safe-area-inset-bottom))]', false)
             ->assertDontSee('fixed inset-x-3', false);
     }

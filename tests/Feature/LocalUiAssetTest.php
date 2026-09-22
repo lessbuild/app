@@ -449,6 +449,7 @@ class LocalUiAssetTest extends TestCase
 
         foreach ([
             resource_path('views/components/layouts/app.blade.php'),
+            resource_path('views/components/layouts/core.blade.php'),
             resource_path('views/components/layouts/sidebar.blade.php'),
             resource_path('views/components/layouts/mobile-navigation.blade.php'),
             resource_path('views/components/layouts/partials/navigation-link.blade.php'),
@@ -465,9 +466,18 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('text-ternary', $shell, $shellPath);
         }
 
+        $appShell = File::get(resource_path('views/components/layouts/app.blade.php'));
+        $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
+        $this->assertStringContainsString('ui-skip-link', $appShell);
+        $this->assertStringContainsString('ui-bottom-nav', $appShell);
+        $this->assertStringContainsString('ui-bottom-nav-link', $appShell);
+        $this->assertStringContainsString('ui-btn ui-btn-primary', $coreLayout);
+        $this->assertStringContainsString('ui-btn ui-btn-secondary', $coreLayout);
+        $this->assertStringNotContainsString('button--primary', $coreLayout);
+        $this->assertStringNotContainsString('button--secondary', $coreLayout);
+
         $javascript = File::get(resource_path('js/app.js'));
         $publicJavascript = File::get(resource_path('js/alpine.js'));
-        $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
         $this->assertStringNotContainsString("from 'alpinejs'", $javascript);
         $this->assertStringContainsString("import Alpine from 'alpinejs'", $publicJavascript);
         $this->assertStringContainsString('@if (! $livewire)', $coreLayout);
