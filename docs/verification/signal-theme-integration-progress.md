@@ -1967,3 +1967,58 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect server and website detail surfaces for the next cohesive
 Signal modernization boundary.
+
+## Slice 29 — server detail and runtime evidence
+
+Status: implemented and verified locally; code committed and pushed as
+'e21482b'.
+
+Responsibility problem addressed:
+
+- The Livewire server detail component already kept polling, fixed SSH
+  diagnostics, bounded log snapshots, provisioning retry state and command
+  dialogs in their existing operations. Its remaining presentation mixed
+  legacy cards and text roles across overview, metrics, diagnostics and log
+  operations, forcing mobile users through a long page.
+- The old literal “Setup Information” section remains absent. Existing
+  provisioning recipes and bounded logs remain available as read-only context;
+  they were not removed or moved into a new business boundary.
+
+Signal implementation:
+
+- Added local navigation for overview, metrics, diagnostics and logs.
+- Converted server overview, metrics, diagnostics, attached websites,
+  provisioning recipes and operations containers to quiet Signal panels with
+  stable data hooks.
+- Kept the terminal log output intentionally dark for readability while
+  applying the Signal border/link language around its controls.
+- Preserved the collapsed operations disclosure so the initial mobile page
+  stays compact; the browser contract explicitly opens it before inspecting
+  the log console.
+
+Preserved contracts:
+
+- Livewire polling only while snapshots are pending, allowlisted log types,
+  fixed remote commands, bounded/sanitized output, no raw non-selected log
+  leakage, diagnostic authorization, leases/stale-attempt guards and retry
+  behavior remain unchanged.
+- Existing server display-name and command-history dialogs, deployment and
+  provider links, recipe information, provisioning status text and the
+  no-“Setup Information” contract remain intact.
+
+Evidence:
+
+- Server log, diagnostic, type-provisioning, remote-retry and inventory
+  coverage — 41 tests passed, 330 assertions.
+- Focused server browser journeys — 2 Playwright tests passed: command
+  history remains contextual and the server detail evidence sections are
+  scannable on mobile after opening the operations disclosure.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'e21482b' is on 'origin/main'.
+
+Next task: deploy the server-detail modernization, then modernize the website
+detail and runtime-log surface as a separate cohesive slice.
