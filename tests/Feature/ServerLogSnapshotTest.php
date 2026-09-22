@@ -39,6 +39,11 @@ class ServerLogSnapshotTest extends TestCase
             ->assertSuccessful()
             ->assertSeeText('Package installed')
             ->assertSee('server-show', false)
+            ->assertSee('data-server-overview', false)
+            ->assertSee('data-server-section="metrics"', false)
+            ->assertSee('data-server-section="diagnostics"', false)
+            ->assertSee('data-server-section="operations"', false)
+            ->assertSee('class="ui-local-nav__link"', false)
             ->assertDontSee("<script>alert('xss')</script>", false)
             ->assertDontSee('wire:poll.5s', false);
     }

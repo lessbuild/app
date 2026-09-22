@@ -110,6 +110,13 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Server sections')">
+        <a href="#server-information" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#server-metrics" class="ui-local-nav__link">{{ __('Metrics') }}</a>
+        <a href="#server-diagnostics" class="ui-local-nav__link">{{ __('Diagnostics') }}</a>
+        <a href="#server-operations" class="ui-local-nav__link">{{ __('Logs') }}</a>
+    </x-ui.local-nav>
+
     <x-scenes.servers.edit-dialog :server="$server" :open="$displayNameDialogOpen" />
 
     <x-dialogs.modal
@@ -121,7 +128,7 @@
         wire:ignore
     >
         <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading command history…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading command history…') }}</p>
         </div>
     </x-dialogs.modal>
 
@@ -151,57 +158,57 @@
      ! Server information
      ! ------------------------------------------------------------
      !-->
-    <x-ui.card class="mt-6 p-5">
+    <section id="server-information" class="ui-panel mt-6 p-5" data-server-overview>
         <dl class="grid gap-5 text-sm sm:grid-cols-2 xl:grid-cols-4">
             @if (filled($server->display_name))
                 <div>
-                    <dt class="font-semibold text-primary">{{ __('Cloud hostname') }}</dt>
-                    <dd class="mt-1 break-all font-mono text-xs text-secondary">{{ $server->name }}</dd>
+                    <dt class="font-semibold text-ink">{{ __('Cloud hostname') }}</dt>
+                    <dd class="mt-1 break-all font-mono text-xs text-muted">{{ $server->name }}</dd>
                 </div>
             @endif
             <div>
-                <dt class="font-semibold text-primary">{{ __('Public IP') }}</dt>
-                <dd class="mt-1 font-mono text-xs text-secondary">{{ $server->public_ip ?? __('Pending') }}</dd>
+                <dt class="font-semibold text-ink">{{ __('Public IP') }}</dt>
+                <dd class="mt-1 font-mono text-xs text-muted">{{ $server->public_ip ?? __('Pending') }}</dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Private IP') }}</dt>
-                <dd class="mt-1 font-mono text-xs text-secondary">{{ $server->private_ip ?? __('Pending') }}</dd>
+                <dt class="font-semibold text-ink">{{ __('Private IP') }}</dt>
+                <dd class="mt-1 font-mono text-xs text-muted">{{ $server->private_ip ?? __('Pending') }}</dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Type') }}</dt>
-                <dd class="mt-1 text-secondary">{{ str($server->type->value)->replace('-', ' ')->title() }}</dd>
+                <dt class="font-semibold text-ink">{{ __('Type') }}</dt>
+                <dd class="mt-1 text-muted">{{ str($server->type->value)->replace('-', ' ')->title() }}</dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Region') }}</dt>
-                <dd class="mt-1 text-secondary">{{ $server->region }}</dd>
+                <dt class="font-semibold text-ink">{{ __('Region') }}</dt>
+                <dd class="mt-1 text-muted">{{ $server->region }}</dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Provider') }}</dt>
-                <dd class="mt-1"><a href="{{ route('providers.show', $server->provider) }}" class="text-ternary hover:underline">{{ $server->provider->name }}</a></dd>
+                <dt class="font-semibold text-ink">{{ __('Provider') }}</dt>
+                <dd class="mt-1"><a href="{{ route('providers.show', $server->provider) }}" class="ui-link">{{ $server->provider->name }}</a></dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Server ID') }}</dt>
-                <dd class="mt-1 font-mono text-xs text-secondary">{{ $server->identifier }}</dd>
+                <dt class="font-semibold text-ink">{{ __('Server ID') }}</dt>
+                <dd class="mt-1 font-mono text-xs text-muted">{{ $server->identifier }}</dd>
             </div>
         </dl>
-    </x-ui.card>
+    </section>
 
-    <details id="server-metrics" class="group ui-card mt-8 overflow-hidden" @if ($latestMetric === null) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+    <details id="server-metrics" class="group ui-panel mt-8 overflow-hidden" @if ($latestMetric === null) open @endif data-server-section="metrics">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Last 24 hours') }}</span>
+                <span class="ui-eyebrow block">{{ __('Last 24 hours') }}</span>
                 <span class="mt-1 block text-lg">{{ __('Server metrics') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">
+                <span class="mt-1 block text-sm font-normal text-muted">
                     {{ $latestMetric?->recorded_at ? __('Latest sample :time', ['time' => $latestMetric->recorded_at->diffForHumans()]) : __('No metric samples yet.') }}
                 </span>
             </span>
-            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <section class="border-t border-primary p-5" aria-labelledby="server-metrics-heading">
+        <section class="border-t border-line p-5" aria-labelledby="server-metrics-heading" data-server-metrics>
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
-                    <h2 id="server-metrics-heading" class="text-xl font-black text-primary">{{ __('Server metrics') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p>
+                    <h2 id="server-metrics-heading" class="text-xl font-black text-ink">{{ __('Server metrics') }}</h2>
+                    <p class="mt-1 text-sm text-muted">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p>
                 </div>
                 <x-ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-ui.button>
             </div>
@@ -211,7 +218,7 @@
                 @endforeach
             </dl>
             @if ($metricHistory->isNotEmpty())
-                <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-primary bg-secondary p-3" aria-label="{{ __('Memory utilization history') }}">
+                <div class="mt-4 grid h-24 grid-flow-col items-end gap-px overflow-hidden rounded-xl border border-line bg-surface-muted p-3" aria-label="{{ __('Memory utilization history') }}">
                     @foreach ($metricHistory as $metric)
                         <span class="min-w-px rounded-t bg-surface-ternary/70" style="height: {{ max(2, $metric->memory_percent) }}%" title="{{ $metric->recorded_at }} · {{ $metric->memory_percent }}%"></span>
                     @endforeach
@@ -229,12 +236,12 @@
             || ($diagnosticReport !== null && ! $diagnosticReport->passed());
         $diagnosticsOpen = $diagnosticSnapshot === null || $diagnosticsNeedAttention;
     @endphp
-    <details id="server-diagnostics" class="group ui-card mt-6 overflow-hidden" @if ($diagnosticsOpen) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+    <details id="server-diagnostics" class="group ui-panel mt-6 overflow-hidden" @if ($diagnosticsOpen) open @endif data-server-section="diagnostics">
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Troubleshooting') }}</span>
+                <span class="ui-eyebrow block">{{ __('Troubleshooting') }}</span>
                 <span class="mt-1 block text-lg">{{ __('Server diagnostics') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">
+                <span class="mt-1 block text-sm font-normal text-muted">
                     @if ($diagnosticSnapshot === null)
                         {{ __('Not collected yet.') }}
                     @elseif ($diagnosticSnapshot->isActive())
@@ -248,13 +255,13 @@
                     @endif
                 </span>
             </span>
-            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <section class="border-t border-primary p-5" aria-labelledby="server-diagnostics-heading">
+        <section class="border-t border-line p-5" aria-labelledby="server-diagnostics-heading" data-server-diagnostics>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <h2 id="server-diagnostics-heading" class="mt-1 text-xl font-black text-primary">{{ __('Server diagnostics') }}</h2>
-                <p class="mt-1 max-w-2xl text-sm text-secondary">{{ __('Run a bounded, read-only host check using the pinned SSH identity. The probe never reads application secrets or accepts a shell command.') }}</p>
+                <h2 id="server-diagnostics-heading" class="mt-1 text-xl font-black text-ink">{{ __('Server diagnostics') }}</h2>
+                <p class="mt-1 max-w-2xl text-sm text-muted">{{ __('Run a bounded, read-only host check using the pinned SSH identity. The probe never reads application secrets or accepts a shell command.') }}</p>
             </div>
             @can('diagnose', $server)
                 <x-ui.button
@@ -292,93 +299,94 @@
         @elseif ($diagnosticReport !== null)
             <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($diagnosticReport->checks as $check)
-                    <x-ui.card tone="muted" class="p-4">
+                    <article class="ui-panel bg-surface-muted p-4">
                         <div class="flex items-start justify-between gap-3">
-                            <p class="text-sm font-semibold text-primary">{{ $check->name }}</p>
+                            <p class="text-sm font-semibold text-ink">{{ $check->name }}</p>
                             @if ($check->passed)
                                 <x-ui.badge tone="success">{{ __('Passed') }}</x-ui.badge>
                             @else
                                 <x-ui.badge tone="danger">{{ __('Attention') }}</x-ui.badge>
                             @endif
                         </div>
-                        <p class="mt-2 text-sm text-secondary">{{ $check->detail }}</p>
-                    </x-ui.card>
+                        <p class="mt-2 text-sm text-muted">{{ $check->detail }}</p>
+                    </article>
                 @endforeach
             </div>
             @if ($diagnosticSnapshot->finished_at)
-                <p class="mt-4 text-xs text-secondary">{{ __('Collected :time · attempt :attempt', ['time' => $diagnosticSnapshot->finished_at->diffForHumans(), 'attempt' => $diagnosticSnapshot->attempt]) }}</p>
+                <p class="mt-4 text-xs text-muted">{{ __('Collected :time · attempt :attempt', ['time' => $diagnosticSnapshot->finished_at->diffForHumans(), 'attempt' => $diagnosticSnapshot->attempt]) }}</p>
             @endif
         @endif
         </section>
     </details>
 
     <!-- Quick Actions -->
-    <div class="mt-8 grid gap-6 lg:grid-cols-2">
-        <x-ui.card class="self-start p-5">
+    <div class="mt-8 grid gap-6 lg:grid-cols-2" data-server-supporting-surfaces>
+        <section class="ui-panel self-start p-5" data-server-websites>
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployments') }}</p>
-                    <h2 class="mt-1 text-lg font-bold text-primary">{{ __('Attached Websites') }}</h2>
+                    <p class="ui-eyebrow">{{ __('Deployments') }}</p>
+                    <h2 class="mt-1 text-lg font-bold text-ink">{{ __('Attached Websites') }}</h2>
                 </div>
             </div>
-            <ul role="list" class="mt-4 divide-y divide-primary">
+            <ul role="list" class="mt-4 divide-y divide-line">
                 @forelse ($websites as $website)
                     <li>
-                        <a href="{{ route('websites.show', $website) }}" class="flex items-center gap-4 py-3 hover:bg-secondary">
+                        <a href="{{ route('websites.show', $website) }}" class="flex items-center gap-4 py-3 transition hover:bg-surface-muted">
                             <x-avatar :name="$website->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
                             <span class="min-w-0 flex-1">
-                                <span class="block truncate text-sm font-medium text-ternary">{{ $website->name }}</span>
-                                <span class="block truncate text-sm text-secondary">{{ $website->url }}</span>
+                                <span class="ui-link block truncate text-sm">{{ $website->name }}</span>
+                                <span class="block truncate text-sm text-muted">{{ $website->url }}</span>
                             </span>
                             <x-ui.badge tone="success">{{ __('Deployed') }}</x-ui.badge>
                         </a>
                     </li>
                 @empty
                     <li class="pt-3">
-                        <x-ui.alert tone="info" role="status">{{ __('No websites attached to server') }}</x-ui.alert>
+                            <li class="ui-panel border-l-4 border-line bg-surface-muted p-3 text-sm text-muted" style="border-left-color: var(--ui-primary)" role="status">{{ __('No websites attached to server') }}</li>
                     </li>
                 @endforelse
             </ul>
-        </x-ui.card>
+        </section>
 
         @if ($recipes->isNotEmpty())
-            <x-ui.card class="self-start p-5">
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Setup') }}</p>
-                <h2 class="mt-1 text-lg font-bold text-primary">{{ __('Provisioning Recipes') }}</h2>
-                <ul class="mt-4 divide-y divide-primary">
+            <section class="ui-panel self-start p-5" data-server-recipes>
+                <p class="ui-eyebrow">{{ __('Provisioning') }}</p>
+                <h2 class="mt-1 text-lg font-bold text-ink">{{ __('Provisioning Recipes') }}</h2>
+                <ul class="mt-4 divide-y divide-line">
                     @foreach ($recipes as $recipe)
                         <li class="py-3">
-                            <p class="text-sm font-medium text-ternary">{{ $recipe['name'] }}</p>
+                            <p class="ui-link text-sm">{{ $recipe['name'] }}</p>
                             @if ($recipe['description'])
-                                <p class="mt-1 text-sm text-secondary">{{ $recipe['description'] }}</p>
+                                <p class="mt-1 text-sm text-muted">{{ $recipe['description'] }}</p>
                             @endif
                         </li>
                     @endforeach
                 </ul>
-            </x-ui.card>
+            </section>
         @endif
 
         <details
             id="server-operations"
-            class="group ui-card lg:col-span-2 overflow-hidden"
+            class="group ui-panel lg:col-span-2 overflow-hidden"
+            data-server-section="operations"
             @if ($server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE || $logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_FAILED) open @endif
         >
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
                 <span>
-                    <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
+                    <span class="ui-eyebrow block">{{ __('Operations') }}</span>
                     <span class="mt-1 block text-lg">{{ __('Logs and setup') }}</span>
-                    <span class="mt-1 block text-sm font-normal text-secondary">
+                    <span class="mt-1 block text-sm font-normal text-muted">
                         {{ __(':ready ready · :failed failed · :missing not collected', ['ready' => $logMetrics['ready'], 'failed' => $logMetrics['failed'], 'missing' => $logMetrics['missing']]) }}
                     </span>
                 </span>
-                <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
             </summary>
-            <div class="grid gap-6 border-t border-primary p-5 lg:grid-cols-2">
+            <div class="grid gap-6 border-t border-line p-5 lg:grid-cols-2" data-server-operations-content>
                 <section class="lg:col-span-2" aria-labelledby="server-log-overview-heading">
                     <div class="mb-3">
-                        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Observability') }}</p>
-                        <h2 id="server-log-overview-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Log snapshot overview') }}</h2>
-                        <p class="mt-1 text-sm text-secondary">{{ __('Current state across the five supported server log types.') }}</p>
+                        <p class="ui-eyebrow">{{ __('Observability') }}</p>
+                        <h2 id="server-log-overview-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Log snapshot overview') }}</h2>
+                        <p class="mt-1 text-sm text-muted">{{ __('Current state across the five supported server log types.') }}</p>
                     </div>
                     <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
                         <x-ui.stat :label="__('Ready snapshots')" :value="$logMetrics['ready']" />
@@ -395,18 +403,18 @@
          ! Server logs
          ! ------------------------------------------------------------
          !-->
-        <section class="ui-card self-start overflow-hidden bg-slate-950 p-5 text-sm text-slate-100" aria-labelledby="server-log-heading">
+        <section class="self-start overflow-hidden rounded-xl border border-slate-800 bg-slate-950 p-5 text-sm text-slate-100" aria-labelledby="server-log-heading" data-server-log-console>
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <p class="text-xs font-bold uppercase tracking-widest text-slate-400">{{ __('Server logs') }}</p>
                     <h2 id="server-log-heading" class="mt-1 text-lg font-bold text-white">{{ __('Log output') }}</h2>
                 </div>
                 <nav class="flex flex-wrap gap-3" aria-label="{{ __('Server log types') }}">
-                    <a href="?log=apt" @class(['text-xs font-medium', 'text-ternary' => $log === 'apt', 'text-slate-300' => $log !== 'apt'])>{{ __('Apt') }}</a>
-                    <a href="?log=caddy" @class(['text-xs font-medium', 'text-ternary' => $log === 'caddy', 'text-slate-300' => $log !== 'caddy'])>{{ __('Caddy') }}</a>
-                    <a href="?log=mysql" @class(['text-xs font-medium', 'text-ternary' => $log === 'mysql', 'text-slate-300' => $log !== 'mysql'])>{{ __('Mysql') }}</a>
-                    <a href="?log=php" @class(['text-xs font-medium', 'text-ternary' => $log === 'php', 'text-slate-300' => $log !== 'php'])>{{ __('PHP') }}</a>
-                    <a href="?log=provisioning" @class(['text-xs font-medium', 'text-ternary' => $log === 'provisioning', 'text-slate-300' => $log !== 'provisioning'])>{{ __('Provisioning') }}</a>
+                    <a href="?log=apt" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'apt', 'text-slate-300' => $log !== 'apt'])>{{ __('Apt') }}</a>
+                    <a href="?log=caddy" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'caddy', 'text-slate-300' => $log !== 'caddy'])>{{ __('Caddy') }}</a>
+                    <a href="?log=mysql" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'mysql', 'text-slate-300' => $log !== 'mysql'])>{{ __('Mysql') }}</a>
+                    <a href="?log=php" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'php', 'text-slate-300' => $log !== 'php'])>{{ __('PHP') }}</a>
+                    <a href="?log=provisioning" @class(['text-xs font-medium', 'text-cyan-300' => $log === 'provisioning', 'text-slate-300' => $log !== 'provisioning'])>{{ __('Provisioning') }}</a>
                 </nav>
             </div>
             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-slate-700 pt-4">
@@ -419,7 +427,7 @@
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     @if ($logSnapshot?->log !== null)
-                        <a href="{{ route('servers.logs.download', ['server' => $server, 'type' => $log]) }}" class="text-xs font-medium text-ternary hover:underline">{{ __('Download log') }}</a>
+                        <a href="{{ route('servers.logs.download', ['server' => $server, 'type' => $log]) }}" class="text-xs font-medium text-cyan-300 hover:underline">{{ __('Download log') }}</a>
                     @endif
                     <button
                         type="button"
@@ -449,13 +457,13 @@
                     @forelse ($logs as $line)
                         @if ($line === '') @continue @endif
                         <div class="w-full">
-                            <span class="text-ternary">{{ $server->name }}:~$</span>
+                            <span class="text-cyan-300">{{ $server->name }}:~$</span>
                             <span class="text-slate-100">{{ $line }}</span>
                         </div>
                     @empty
                         @unless (in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
                             <div class="flex">
-                                <span class="text-ternary">{{ $server->name }}:~$</span>
+                                <span class="text-cyan-300">{{ $server->name }}:~$</span>
                                 <span class="flex-1 pl-2 text-slate-400">
                                     @if ($log === 'provisioning' && $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
                                         {{ $server->provisioning_status === \App\Models\Server::STATUS_FAILED ? __('No provisioning output was received.') : __('Waiting for provisioning output…') }}

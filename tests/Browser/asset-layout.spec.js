@@ -1085,6 +1085,22 @@ test('server command history opens as a read-only contextual dialog', async ({ p
     await expect(trigger).toBeFocused();
 });
 
+test('server detail keeps runtime evidence scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/servers/1', { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('navigation', { name: 'Server sections', exact: true })).toBeVisible();
+    await expect(page.locator('[data-server-overview]')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#server-metrics')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#server-diagnostics')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#server-operations')).toHaveClass(/\bui-panel\b/);
+    await page.locator('#server-operations summary').click();
+    await expect(page.locator('[data-server-log-console]')).toBeVisible();
+    await expect(page.getByText('Setup Information', { exact: true })).toHaveCount(0);
+});
+
 test('server command output opens as a lazy retained-output inspector', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });
