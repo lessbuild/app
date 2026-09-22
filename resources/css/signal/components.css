@@ -38,6 +38,7 @@
 
   .ui-card { min-width: 0; border: 1px solid var(--ui-line); border-radius: var(--radius-card-value); background: var(--ui-surface); box-shadow: var(--shadow-soft-value); }
   .ui-panel { min-width: 0; border: 1px solid var(--ui-line); border-radius: var(--radius-panel-value); background: var(--ui-surface); box-shadow: var(--shadow-panel-value); }
+  .ui-panel--danger { border-color: color-mix(in srgb, var(--ui-danger) 46%, var(--ui-line)); background: var(--ui-surface); }
   .ui-input { width: 100%; min-width: 0; min-height: calc(1.35rem + (var(--density-control-y) * 2)); border: 1px solid var(--ui-line); border-radius: var(--radius-control-value); background: var(--ui-surface); color: var(--ui-ink); padding: var(--density-control-y) 0.86rem; font-size: 0.87rem; transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
   .ui-input::placeholder { color: var(--ui-subtle); }
   .ui-input:hover { border-color: color-mix(in srgb, var(--ui-primary) 35%, var(--ui-line)); }

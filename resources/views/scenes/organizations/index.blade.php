@@ -297,41 +297,41 @@
     @endif
 
     @if ($organization->owner->is(auth()->user()))
-        <details id="organization-delete" class="ui-responsive-details group ui-card mt-8 border-red-200 bg-red-50" open data-responsive-details data-responsive-details-mobile-open="{{ $deleteWorkspaceOpen ? 'true' : 'false' }}">
-            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 sm:p-6 lg:hidden">
+        <details id="organization-delete" class="ui-responsive-details group ui-panel ui-panel--danger mt-8" open data-responsive-details data-responsive-details-mobile-open="{{ $deleteWorkspaceOpen ? 'true' : 'false' }}">
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:p-6 lg:hidden">
                 <span>
-                    <span class="block text-xl font-black text-red-900">{{ __('Delete workspace') }}</span>
-                    <span class="mt-2 block text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its :app records.', ['app' => config('app.name')]) }}</span>
+                    <span class="block text-xl font-black text-ink">{{ __('Delete workspace') }}</span>
+                    <span class="mt-2 block text-sm leading-6 text-muted">{{ __('Permanently removes this workspace and its :app records.', ['app' => config('app.name')]) }}</span>
                 </span>
-                <span class="shrink-0 text-xl text-red-700 transition-transform group-open:rotate-45" aria-hidden="true">+</span>
+                <span class="shrink-0 text-xl transition-transform group-open:rotate-45" style="color: var(--ui-danger)" aria-hidden="true">+</span>
             </summary>
             <div class="ui-responsive-details__content p-5 sm:p-6 lg:block">
                 <div class="max-w-3xl">
                 <div class="flex items-start gap-3">
-                    <svg class="mt-0.5 h-6 w-6 shrink-0 text-red-700" aria-hidden="true">
+                    <svg class="mt-0.5 h-6 w-6 shrink-0" style="color: var(--ui-danger)" aria-hidden="true">
                         <use xlink:href="/assets/images/icons.svg#exclamation"></use>
                     </svg>
                     <div>
-                        <h2 id="delete-workspace-title" class="text-xl font-black text-red-900">{{ __('Delete workspace') }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-red-800">{{ __('Permanently removes this workspace and its :app records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.', ['app' => config('app.name')]) }}</p>
+                        <h2 id="delete-workspace-title" class="text-xl font-black text-ink">{{ __('Delete workspace') }}</h2>
+                        <p class="mt-2 text-sm leading-6 text-muted">{{ __('Permanently removes this workspace and its :app records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.', ['app' => config('app.name')]) }}</p>
                     </div>
                 </div>
                 <form method="POST" action="{{ route('organizations.destroy', $organization) }}" class="mt-6 grid gap-4 sm:grid-cols-2">
                     @csrf
                     @method('DELETE')
                     <div>
-                        <label for="workspace-confirmation" class="block text-sm font-bold text-red-900">{{ __('Type “:name”', ['name' => $organization->name]) }}</label>
+                        <label for="workspace-confirmation" class="ui-label">{{ __('Type “:name”', ['name' => $organization->name]) }}</label>
                         <input id="workspace-confirmation" name="confirmation" class="ui-input mt-2" required>
                     </div>
                     @if (auth()->user()->hasLocalPassword())
                         <div>
-                            <label for="workspace-current-password" class="block text-sm font-bold text-red-900">{{ __('Current password') }}</label>
+                            <label for="workspace-current-password" class="ui-label">{{ __('Current password') }}</label>
                             <input id="workspace-current-password" type="password" name="current_password" autocomplete="current-password" class="ui-input mt-2" required>
                         </div>
                     @endif
                     @if (auth()->user()->twoFactorEnabled())
                         <div>
-                            <label for="workspace-two-factor-code" class="block text-sm font-bold text-red-900">{{ __('Authenticator or recovery code') }}</label>
+                            <label for="workspace-two-factor-code" class="ui-label">{{ __('Authenticator or recovery code') }}</label>
                             <input id="workspace-two-factor-code" name="code" autocomplete="one-time-code" class="ui-input mt-2 font-mono" required>
                         </div>
                     @endif

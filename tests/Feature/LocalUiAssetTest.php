@@ -144,6 +144,19 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('bg-blue-50', $notifications);
     }
 
+    public function test_workspace_deletion_uses_a_border_led_signal_danger_panel(): void
+    {
+        $source = File::get(resource_path('views/scenes/organizations/index.blade.php'));
+
+        $this->assertStringContainsString('ui-panel--danger', $source);
+        $this->assertStringContainsString('focus-visible:ring-2 focus-visible:ring-focus', $source);
+        $this->assertStringContainsString('var(--ui-danger)', $source);
+
+        foreach (['bg-red-50', 'border-red-200', 'text-red-900', 'text-red-800', 'text-red-700', 'ring-red-500'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
