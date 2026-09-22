@@ -157,6 +157,18 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_account_security_danger_surfaces_use_signal_tokens(): void
+    {
+        $source = File::get(resource_path('views/scenes/users/index.blade.php'));
+
+        $this->assertSame(2, substr_count($source, 'ui-panel--danger'));
+        $this->assertStringContainsString('text-danger', $source);
+
+        foreach (['border-red-300', 'text-red-700', 'text-red-900', 'text-red-800', 'bg-red-100'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))

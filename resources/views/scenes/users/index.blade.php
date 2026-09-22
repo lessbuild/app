@@ -85,7 +85,7 @@
                     <p class="mt-2 font-semibold">{{ __('A new verification link has been sent.') }}</p>
                 @endif
                 @if (session('verification_error'))
-                    <p class="mt-2 font-semibold text-red-700">{{ session('verification_error') }}</p>
+                    <p class="mt-2 font-semibold text-danger">{{ session('verification_error') }}</p>
                 @endif
                 <form method="POST" action="{{ route('verification.send') }}" class="mt-3">
                     @csrf
@@ -204,7 +204,7 @@
                             <input name="code" autocomplete="one-time-code" class="ui-input font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required>
                             <x-ui.button type="submit" variant="primary">{{ __('Generate new codes') }}</x-ui.button>
                         </form>
-                        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="ui-card space-y-3 border-red-300 p-4">
+                        <form method="POST" action="{{ route('account.two-factor.disable') }}" class="ui-panel ui-panel--danger space-y-3 p-4">
                             @csrf @method('DELETE')
                             <h3 class="font-bold text-ink">{{ __('Disable two-factor authentication') }}</h3>
                             @if (auth()->user()->hasLocalPassword())
@@ -573,9 +573,9 @@
                     <div><h3 class="font-bold text-ink">{{ __('Export account data') }}</h3><p class="mt-1 text-sm text-muted">{{ __('Download profile, workspace, infrastructure metadata, and sign-in records as JSON. Secrets are excluded.') }}</p></div>
                     <x-ui.button href="{{ route('account.export') }}" variant="secondary" class="shrink-0">{{ __('Download export') }}</x-ui.button>
                 </div>
-                <form method="POST" action="{{ route('account.destroy') }}" class="ui-card space-y-4 border-red-300 bg-surface p-4">
+                <form method="POST" action="{{ route('account.destroy') }}" class="ui-panel ui-panel--danger space-y-4 p-4">
                     @csrf @method('DELETE')
-                    <div><h3 class="font-bold text-red-900">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-red-800">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
+                    <div><h3 class="font-bold text-ink">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-muted">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
                     <label class="block"><span class="ui-label">{{ __('Type your email address to confirm') }}</span><input name="confirmation" type="email" autocomplete="off" class="ui-input" required></label>
                     @if (auth()->user()->hasLocalPassword())
                         <label class="block"><span class="ui-label">{{ __('Current password') }}</span><input name="current_password" type="password" autocomplete="current-password" class="ui-input" required></label>
