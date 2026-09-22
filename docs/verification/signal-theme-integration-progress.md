@@ -2272,6 +2272,54 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next organization/account surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 40 — workspace administration — 2026-09-22
+
+Responsibility problem addressed:
+
+- Workspace administration already had local navigation and dedicated dialogs,
+  but the Members section was not addressable from that navigation and the
+  member/security/SSO content still mixed older filled controls with Signal
+  surfaces. Long security settings were consequently harder to scan on a
+  phone.
+
+Signal implementation:
+
+- Added a stable Members section anchor and included it in Workspace sections
+  navigation; kept Security, Notifications, Invitations, Workspaces and
+  Delete workspace targets intact.
+- Migrated member metadata, security-policy inputs, SSO inputs, checkboxes,
+  notification summary and workspace-switch surfaces to Signal ink/muted,
+  surface, border, label, input and checkbox styles.
+- Kept destructive deletion styling visually distinct and did not change its
+  confirmation or named error behavior.
+
+Preserved contracts:
+
+- Invitation, role, notification-preference, SSO, workspace-switch and delete
+  routes, dialog URLs, authorization and validation ordering are unchanged.
+- Owner protection, tenant scoping, seat synchronization, SSO callback
+  configuration, security-policy persistence and secret handling are
+  unchanged.
+- No membership pivot, queued job, remote identity-provider call or persisted
+  workspace value changed.
+
+Evidence:
+
+- Organization management, foundation, tenancy and enterprise SSO coverage —
+  34 tests passed, 211 assertions.
+- Focused organization browser journeys — 3 Playwright tests passed for
+  invitation, member-role and notification-preference dialogs.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'c525c91' is on 'origin/main'.
+
+Next task: deploy workspace administration to the isolated canonical
+development runtime, then inspect the next account/product surface for a
+separate cohesive Signal slice.
+
 ## Slice 36 — gallery recipe detail — 2026-09-22
 
 Responsibility problem addressed:
