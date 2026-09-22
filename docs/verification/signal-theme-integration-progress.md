@@ -6544,6 +6544,73 @@ Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
 
+## Slice 97 — Signal utility normalization and native dialog visibility — 2026-09-22
+
+Responsibility problem:
+
+- A final group of view-level utility overrides still bypassed the source
+  Signal vocabulary: 126 `font-black` usages and hard-coded `rounded-lg`
+  modifiers on shared `ui-input` controls.
+- The dashboard totals were rendered as generic cards rather than Signal's
+  native `ui-stat` composition, and closed native dialogs were still given a
+  flex display by the application extension layer, allowing hidden sheets to
+  intercept mobile taps.
+
+Boundary and implementation:
+
+- Replaced view-level `font-black` utilities with Signal's `font-extrabold`
+  weight and removed hard-coded input radii so responsive Signal corner tokens
+  remain authoritative.
+- Changed dashboard totals to `ui-stat`, `ui-stat__value` and
+  `ui-stat__description`, preserving the existing four metrics and compact
+  mobile layout contract.
+- Made `dialog[data-modal-sheet]` hidden by default and flex only while open;
+  kept the existing native dialog sheet geometry and scroll-lock behavior.
+- Added the app-shell brand hook used by the authenticated responsive browser
+  checks and made those checks explicitly select the shared desktop brand when
+  the mobile drawer duplicates it.
+
+Preserved contracts and safety:
+
+- Routes, labels, values, validation, form behavior, modal URLs, focus
+  restoration, mobile navigation, authorization and operational data are
+  unchanged.
+- Closed dialogs no longer participate in hit testing; open dialogs retain
+  native focus, backdrop, scroll locking and lazy-content behavior.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 55 tests passed, 1,857 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-BZzhRUT8.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `tests/Browser/asset-layout.spec.js --grep 'light at 390px'` — 1 passed in
+  the isolated fixture runtime, including dashboard density and native modal
+  interaction coverage.
+- Direct deployed mobile check at 390px measured dashboard totals at
+  139.94px, found no open dialogs and no visible closed dialogs.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `b838ae0` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `b838ae0`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: audit remaining hard-coded radius, color and shadow utilities in
+high-traffic inventory/detail surfaces, migrating only declarations that
+override a Signal semantic primitive.
+
 ## Slice 96 — native Signal dialogs and filters — 2026-09-22
 
 Responsibility problem:
