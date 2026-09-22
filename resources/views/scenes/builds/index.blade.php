@@ -181,7 +181,7 @@
                 <a data-build-card href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}" class="ui-card--interactive block p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
-                            <x-avatar :name="$build->repository->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <x-avatar :name="$build->repository->name" class="ui-avatar-md shrink-0" />
                             <div class="min-w-0">
                                 <p class="truncate font-semibold text-ink">{{ $build->repository->name }}</p>
                                 <p class="mt-0.5 truncate text-xs text-muted">{{ $build->repository->website->server->label }}</p>

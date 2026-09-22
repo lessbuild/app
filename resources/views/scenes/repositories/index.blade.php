@@ -142,7 +142,7 @@
                 <article data-repository-card class="p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
-                            <x-avatar :name="$repository->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <x-avatar :name="$repository->name" class="ui-avatar-md shrink-0" />
                             <div class="min-w-0">
                                 <a href="{{ route('repositories.show', $repository) }}" class="ui-link font-semibold">{{ $repository->name }}</a>
                                 <p class="truncate text-sm text-muted">{{ $repository->url }}</p>

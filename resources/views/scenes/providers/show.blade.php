@@ -296,7 +296,7 @@
                     @forelse($repositories as $repository)
                         <li>
                             <a href="{{ route('repositories.show', $repository) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
-                                <x-avatar :name="$repository->name" class="ui-avatar ui-avatar-md rounded-md text-xs" />
+                                <x-avatar :name="$repository->name" class="ui-avatar-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $repository->name }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">{{ $repository->url }}</span>
@@ -337,7 +337,7 @@
                     @forelse($servers as $server)
                         <li>
                             <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
-                                <x-avatar :name="$server->label" class="ui-avatar ui-avatar-md rounded-md text-xs" />
+                                <x-avatar :name="$server->label" class="ui-avatar-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $server->label }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">#{{ $server->identifier }}</span>

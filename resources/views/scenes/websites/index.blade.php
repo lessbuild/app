@@ -131,7 +131,7 @@
                 <article data-website-card class="p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
-                            <x-avatar :name="$website->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
+                            <x-avatar :name="$website->name" class="ui-avatar-md shrink-0" />
                             <div class="min-w-0">
                                 <a href="{{ route('websites.show', $website) }}" class="ui-link break-words">{{ $website->name }}</a>
                                 <p class="truncate text-sm text-muted">{{ $website->url }}</p>

@@ -55,7 +55,7 @@
                 name="is_published"
                 type="checkbox"
                 value="1"
-                class="mt-1 rounded-md"
+                class="ui-check mt-1"
                 @checked(old('is_published', $recipe?->is_published ?? false))
             >
             <div>

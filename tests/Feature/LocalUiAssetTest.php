@@ -238,6 +238,31 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_inventory_avatars_and_checkboxes_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/scenes/websites/index.blade.php'),
+            resource_path('views/scenes/builds/index.blade.php'),
+            resource_path('views/scenes/repositories/index.blade.php'),
+            resource_path('views/scenes/providers/index.blade.php'),
+            resource_path('views/scenes/servers/index.blade.php'),
+            resource_path('views/scenes/providers/show.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringContainsString('ui-avatar-md', $source, $viewPath);
+            $this->assertDoesNotMatchRegularExpression('/<x-avatar\b[^>]*rounded-md/', $source, $viewPath);
+        }
+
+        $reports = File::get(resource_path('views/scenes/gallery/reports.blade.php'));
+        $recipeForm = File::get(resource_path('views/components/scenes/recipes/_form.blade.php'));
+
+        $this->assertStringContainsString('class="ui-check"', $reports);
+        $this->assertStringNotContainsString('ui-check rounded-md', $reports);
+        $this->assertStringContainsString('class="ui-check mt-1"', $recipeForm);
+        $this->assertStringNotContainsString('rounded-md', $recipeForm);
+    }
+
     public function test_shared_mobile_form_feedback_exposes_focus_and_loading_hooks(): void
     {
         $errors = File::get(resource_path('views/components/forms/errors.blade.php'));
