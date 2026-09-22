@@ -722,3 +722,85 @@ development evidence, not production or external-provider acceptance.
 Next task: inventory the repository detail page’s deployment, timeline,
 webhook and configuration surfaces, then modernize the smallest cohesive slice
 without changing deployment idempotency or webhook behavior.
+
+## Slice 13 — repository deployment and webhook surfaces
+
+Status: implemented, verified locally, committed and pushed as `91fc29c`.
+
+Responsibility problem addressed:
+
+- Repository deployment overview, first-launch guidance, source layout and
+  deployment history still used the pre-Signal card, input, border and text
+  vocabulary.
+- Webhook setup, delivery filters and delivery inspection were visually
+  inconsistent with the repository timeline and exposed too much density on
+  narrow screens.
+- The repository delete trigger was the remaining raw danger button on the
+  page, making the action cluster inconsistent with shared controls.
+
+Signal implementation:
+
+- Converted deployment summary, first-deployment guidance, layout metadata,
+  timeline, insights and recent history to Signal panels, eyebrows, ink/muted
+  roles, line dividers and compact action buttons.
+- Standardized webhook payload/secret fields and delivery filters on shared
+  labels and inputs; kept the delivery history disclosure and its metrics
+  visible only when its existing attention rules require it.
+- Updated delivery cards and the modal inspector with safe link styling,
+  quiet colored-edge feedback and mobile-safe metadata layout.
+- Reused the shared danger button for repository deletion and the shared
+  primary button for webhook enable/rotation while preserving confirmation
+  prompts.
+- Hardened the browser fixture’s delivery selector for multiple retained
+  deliveries and added a mobile repository deployment/webhook journey.
+
+Preserved contracts:
+
+- Deployment forms, disabled states, preflight and guidance copy, Livewire
+  deployment timeline mount, insight links, history open-state rules and
+  organization-scoped build data.
+- Webhook enable/rotate/disable routes, provider-specific signing behavior,
+  secret non-disclosure, filters, CSV export, pagination, delivery modal URLs,
+  fragment loading, replay/idempotency behavior and safe payload handling.
+- Existing no-JavaScript modal URLs and exact response/redirect behavior.
+
+Evidence:
+
+- `RepositoryDeploymentInsightsTest`, `RepositoryDeploymentTest`,
+  `RepositoryWebhookTest`, `RepositoryWebhookDeliveryHistoryTest` and
+  `CreationDialogTest` — 55 tests passed, 465 assertions.
+- Repository edit/webhook dialogs, delivery inspector, mobile deployment and
+  webhook hierarchy, and impact-preview browser journeys — 4 passed in the
+  isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+The first focused run caught a Blade parse error introduced while converting
+the conditional webhook confirmation button; the conditional component was
+corrected and the complete focused suite was rerun successfully before the
+commit.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `91fc29c` and its configuration, route and view caches were rebuilt before
+restarting `buildpusher-dev-main.service` and its queue worker. The canonical
+development host is https://deployer.buildpusher.com; the legacy buildpusher.com
+host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inventory the build detail and deployment-history surfaces, then
+modernize their timeline, evidence, notes and recovery controls as the next
+cohesive repository/deployment slice.
