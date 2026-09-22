@@ -47,7 +47,7 @@
     </div>
 </header>
 
-<div id="{{ $mobileNavigationId }}" x-cloak x-show="navigationOpen" class="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-labelledby="{{ $mobileNavigationId }}-title" aria-hidden="true">
+<div id="{{ $mobileNavigationId }}" x-cloak x-show="navigationOpen" class="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-labelledby="{{ $mobileNavigationId }}-title" :aria-hidden="(! navigationOpen).toString()">
     <button type="button" class="absolute inset-0 bg-slate-950/50" aria-label="{{ __('Close navigation') }}" @click="navigationOpen = false"></button>
     <div class="relative ml-auto flex h-full w-[min(21rem,88vw)] flex-col overflow-y-auto border-l border-line bg-surface px-5 py-5 shadow-2xl">
         <div class="flex items-center justify-between">
