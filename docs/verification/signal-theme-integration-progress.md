@@ -2134,6 +2134,60 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 78 — deployment timeline status markers — 2026-09-22
+
+Responsibility problem:
+
+- The shared deployment timeline component still encoded completed, active,
+  failed and canceled states with fixed green, blue, red and amber utility
+  classes. Because this component is reused by deployment-history surfaces,
+  those markers bypassed the Signal theme tokens.
+
+Boundary and implementation:
+
+- Kept timeline entry selection, ordering, symbols, descriptions and timestamp
+  formatting in the existing presenter/component boundary.
+- Replaced the filled legacy palette with a neutral Signal marker surface and
+  semantic success, info, danger, warning and muted text tokens.
+- Added a source-level guard for the shared component’s status vocabulary.
+
+Preserved contracts and safety:
+
+- Deployment timeline content, modal behavior, status symbols, routes,
+  authorization, deployment state and persisted values are unchanged.
+- No controller, action, job, queue, provider or API behavior changed.
+
+Evidence:
+
+- Deployment timeline and local UI coverage — 45 tests passed, 1,161
+  assertions.
+- Responsive asset fixture — 1 test passed, 313 assertions.
+- Deployment-history modal browser journey — 1 passed in 19.0 seconds.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `4e96397` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `4e96397`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
+
 ## Slice 77 — account security danger surfaces — 2026-09-22
 
 Responsibility problem:
