@@ -2134,6 +2134,46 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 69 — public documentation and API reference — 2026-09-22
+
+Responsibility problem:
+
+- The public getting-started guide and control-plane API reference were almost
+  fully Signal-native but still exposed legacy text styling in the security
+  checklist and HTTP-method index.
+
+Boundary and implementation:
+
+- Replaced the remaining legacy checklist text token with the shared ink
+  primitive and rendered API methods through the existing `x-ui.badge`
+  component, matching the endpoint detail rows.
+- This is a presentation-only single-responsibility change: the documentation
+  views retain their public content and navigation while shared components own
+  visual semantics.
+
+Preserved contracts:
+
+- All documentation headings, section IDs, API anchors, endpoint paths, scope
+  labels, OpenAPI download link, public metadata and `config('app.name')`
+  branding remain unchanged.
+- No route, API response, authentication, authorization or integration
+  behavior changed.
+
+Evidence:
+
+- `LocalUiAssetTest` — 38 tests passed, 1,035 assertions.
+- Responsive asset fixture matrix at 390px in light and dark modes — 2 tests
+  passed in 2.5 minutes.
+- `npm run build` — passed; generated CSS includes app-B9YRaVew.css.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: implementation commit '7dd923e' is on 'origin/main'.
+
+Next task: deploy the public documentation modernization to the isolated
+canonical Deployer runtime and verify the served public pages.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
