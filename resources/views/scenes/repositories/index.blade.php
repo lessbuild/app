@@ -59,7 +59,7 @@
         <form method="GET" action="{{ route('repositories.index') }}">
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div>
-                    <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                    <label for="search" class="ui-label">{{ __('Search') }}</label>
                     <input
                         id="search"
                         name="search"
@@ -67,12 +67,12 @@
                         maxlength="100"
                         value="{{ $filters['search'] }}"
                         placeholder="{{ __('Name, URL, or description') }}"
-                        class="input secondary mt-1 w-full rounded-lg"
+                        class="ui-input mt-1 w-full rounded-lg"
                     >
                 </div>
                 <div>
-                    <label for="provider_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Provider') }}</label>
-                    <select id="provider_id" name="provider_id" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="provider_id" class="ui-label">{{ __('Provider') }}</label>
+                    <select id="provider_id" name="provider_id" class="ui-input mt-1 w-full rounded-lg">
                         <option value="">{{ __('All providers') }}</option>
                         @foreach ($providers as $provider)
                             <option value="{{ $provider->id }}" @selected((int) $filters['provider_id'] === $provider->id)>
@@ -82,8 +82,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="website_id" class="block text-xs font-semibold uppercase text-secondary">{{ __('Website') }}</label>
-                    <select id="website_id" name="website_id" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="website_id" class="ui-label">{{ __('Website') }}</label>
+                    <select id="website_id" name="website_id" class="ui-input mt-1 w-full rounded-lg">
                         <option value="">{{ __('All websites') }}</option>
                         @foreach ($websites as $website)
                             <option value="{{ $website->id }}" @selected((int) $filters['website_id'] === $website->id)>
@@ -93,8 +93,8 @@
                     </select>
                 </div>
                 <div>
-                    <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Latest deployment') }}</label>
-                    <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
+                    <label for="status" class="ui-label">{{ __('Latest deployment') }}</label>
+                    <select id="status" name="status" class="ui-input mt-1 w-full rounded-lg">
                         <option value="">{{ __('All deployment states') }}</option>
                         @foreach ($statuses as $status)
                             <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -137,54 +137,54 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$repositories->isEmpty())
-        <div class="ui-card ui-inventory-list mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Repository inventory') }}">
+        <div class="ui-card ui-inventory-list mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Repository inventory') }}">
             @foreach($repositories as $repository)
                 <article data-repository-card class="p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
                             <x-avatar :name="$repository->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
                             <div class="min-w-0">
-                                <a href="{{ route('repositories.show', $repository) }}" class="font-semibold text-primary hover:underline">{{ $repository->name }}</a>
-                                <p class="truncate text-sm text-secondary">{{ $repository->url }}</p>
+                                <a href="{{ route('repositories.show', $repository) }}" class="ui-link font-semibold">{{ $repository->name }}</a>
+                                <p class="truncate text-sm text-muted">{{ $repository->url }}</p>
                             </div>
                         </div>
                         <x-ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View repository') }}</x-ui.button>
                     </div>
 
                     @if ($repository->description)
-                        <p class="mt-3 text-sm text-secondary">{{ $repository->description }}</p>
+                        <p class="mt-3 text-sm text-muted">{{ $repository->description }}</p>
                     @endif
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Deployment target') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Deployment target') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 @if ($repository->website && ! $repository->website->trashed())
-                                    <a href="{{ route('websites.show', $repository->website) }}" class="font-medium text-ternary hover:underline">{{ $repository->website->name }}</a>
-                                    <span class="mt-1 block text-secondary">{{ $repository->website->server?->label ?? __('Server unavailable') }}</span>
+                                    <a href="{{ route('websites.show', $repository->website) }}" class="ui-link font-medium">{{ $repository->website->name }}</a>
+                                    <span class="mt-1 block text-muted">{{ $repository->website->server?->label ?? __('Server unavailable') }}</span>
                                 @elseif ($repository->website)
-                                    <span class="font-medium text-secondary">{{ __('Deleted website') }}</span>
-                                    <span class="mt-1 block text-secondary">{{ $repository->website->name }}</span>
+                                    <span class="font-medium text-muted">{{ __('Deleted website') }}</span>
+                                    <span class="mt-1 block text-muted">{{ $repository->website->name }}</span>
                                 @else
                                     {{ __('Website unavailable') }}
                                 @endif
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Provider') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $repository->provider?->name ?? __('Provider unavailable') }}</dd>
+                            <dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Provider') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $repository->provider?->name ?? __('Provider unavailable') }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Latest deployment') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Latest deployment') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 @if ($repository->latestBuild)
                                     <a href="{{ route('builds.show', $repository->latestBuild) }}" @class([
                                         'font-semibold uppercase hover:underline',
-                                        'text-green-600' => $repository->latestBuild->status === \App\Models\Build::STATUS_SUCCEEDED,
-                                        'text-red-600' => $repository->latestBuild->status === \App\Models\Build::STATUS_FAILED,
-                                        'text-secondary' => ! in_array($repository->latestBuild->status, [\App\Models\Build::STATUS_SUCCEEDED, \App\Models\Build::STATUS_FAILED], true),
+                                        'text-success' => $repository->latestBuild->status === \App\Models\Build::STATUS_SUCCEEDED,
+                                        'text-danger' => $repository->latestBuild->status === \App\Models\Build::STATUS_FAILED,
+                                        'text-muted' => ! in_array($repository->latestBuild->status, [\App\Models\Build::STATUS_SUCCEEDED, \App\Models\Build::STATUS_FAILED], true),
                                     ])>{{ str($repository->latestBuild->status)->replace('_', ' ') }}</a>
-                                    <span class="mt-1 block text-secondary">{{ $repository->latestBuild->created_at->diffForHumans() }}</span>
+                                    <span class="mt-1 block text-muted">{{ $repository->latestBuild->created_at->diffForHumans() }}</span>
                                 @else
                                     {{ __('Never deployed') }}
                                 @endif
@@ -229,7 +229,7 @@
         :open="$impactPreviewDialogOpen"
     >
         <div data-modal-content>
-            <div class="space-y-3 text-sm text-secondary">{{ __('Loading deployment impact preview…') }}</div>
+            <div class="space-y-3 text-sm text-muted">{{ __('Loading deployment impact preview…') }}</div>
         </div>
     </x-dialogs.modal>
 

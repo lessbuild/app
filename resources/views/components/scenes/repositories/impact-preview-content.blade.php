@@ -6,8 +6,8 @@
 
 <div data-repository-impact-preview-content class="space-y-6">
     <x-ui.card class="p-5" aria-labelledby="impact-preview-form-heading">
-        <h2 id="impact-preview-form-heading" class="font-bold text-primary">{{ __('Preview changed paths') }}</h2>
-        <p class="mt-2 text-sm text-secondary">
+        <h2 id="impact-preview-form-heading" class="font-bold text-ink">{{ __('Preview changed paths') }}</h2>
+        <p class="mt-2 text-sm text-muted">
             {{ __('This is a read-only preview. It does not create builds, dispatch jobs, contact providers or change repository settings. Paths are relative to the repository root; each enabled repository is one automatic deployment target.') }}
         </p>
 
@@ -21,20 +21,20 @@
             @endif
         >
             <div>
-                <label for="changed_paths" class="block text-sm font-medium text-primary">{{ __('Changed repository paths') }}</label>
+                <label for="changed_paths" class="ui-label">{{ __('Changed repository paths') }}</label>
                 <textarea
                     id="changed_paths"
                     name="changed_paths"
                     rows="8"
                     maxlength="{{ \App\Http\Requests\RepositoryImpactPreviewRequest::MAX_INPUT_BYTES }}"
-                    class="input secondary mt-2 min-h-[12rem] w-full rounded-lg font-mono"
+                    class="ui-input mt-2 min-h-[12rem] w-full rounded-lg font-mono"
                     placeholder="apps/storefront/resources/views/home.blade.php&#10;packages/shared/src/Client.php"
                     @disabled($pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN))
                 >{{ old('changed_paths', $changedPathsInput) }}</textarea>
-                <p class="mt-2 text-xs text-secondary">{{ __('Enter one safe relative path per line. At most :count paths are evaluated.', ['count' => \App\Support\RepositoryPath::MAX_CHANGED_PATHS]) }}</p>
+                <p class="mt-2 text-xs text-muted">{{ __('Enter one safe relative path per line. At most :count paths are evaluated.', ['count' => \App\Support\RepositoryPath::MAX_CHANGED_PATHS]) }}</p>
                 <x-forms.errors name="changed_paths" />
             </div>
-            <label class="flex items-start gap-2 text-sm text-secondary">
+            <label class="flex items-start gap-2 text-sm text-muted">
                 <input type="hidden" name="changed_paths_unavailable" value="0">
                 <input
                     type="checkbox"
@@ -53,8 +53,8 @@
         <section aria-labelledby="impact-preview-results-heading">
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
-                    <h2 id="impact-preview-results-heading" class="text-2xl font-bold text-primary">{{ __('Automatic deployment targets') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">
+                    <h2 id="impact-preview-results-heading" class="text-2xl font-bold text-ink">{{ __('Automatic deployment targets') }}</h2>
+                    <p class="mt-1 text-sm text-muted">
                         @if ($preview->changedPaths === null)
                             {{ __('Changed paths were unavailable, so every target remains conservative and deployable.') }}
                         @else
@@ -105,7 +105,7 @@
                     :title="__('No repositories with enabled push webhooks are available in this workspace.')"
                 />
             @else
-                <div class="ui-card mt-4 divide-y divide-primary overflow-hidden" aria-label="{{ __('Read-only automatic deployment impact results') }}">
+                <div class="ui-card mt-4 divide-y divide-line overflow-hidden" aria-label="{{ __('Read-only automatic deployment impact results') }}">
                     @foreach ($preview->targets as $target)
                         @php
                             $repository = $target->repository;
@@ -115,10 +115,10 @@
                                 \App\Data\RepositoryChangeImpact::UNAFFECTED => __('Unaffected — skip automatic deployment'),
                                 default => __('Unknown — deploy conservatively'),
                             };
-                            $impactClass = match ($impact->status) {
-                                \App\Data\RepositoryChangeImpact::AFFECTED => 'bg-green-100 text-green-700',
-                                \App\Data\RepositoryChangeImpact::UNAFFECTED => 'bg-blue-100 text-blue-700',
-                                default => 'bg-amber-100 text-amber-700',
+                            $impactTone = match ($impact->status) {
+                                \App\Data\RepositoryChangeImpact::AFFECTED => 'success',
+                                \App\Data\RepositoryChangeImpact::UNAFFECTED => 'accent',
+                                default => 'warning',
                             };
                             $pathSummary = [];
                             if ($repository->auto_deploy_include_paths) {
@@ -131,23 +131,23 @@
                         <article data-impact-target class="p-4 sm:p-5">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <a href="{{ route('repositories.show', $repository) }}" class="font-semibold text-primary hover:underline">{{ $repository->name }}</a>
-                                    <p class="mt-1 text-xs text-secondary">{{ $repository->website?->name ?? __('Website unavailable') }} · {{ $repository->branch }}</p>
+                                    <a href="{{ route('repositories.show', $repository) }}" class="ui-link font-semibold">{{ $repository->name }}</a>
+                                    <p class="mt-1 text-xs text-muted">{{ $repository->website?->name ?? __('Website unavailable') }} · {{ $repository->branch }}</p>
                                 </div>
-                                <span class="rounded-full px-2 py-1 text-xs font-semibold {{ $impactClass }}">{{ $impactLabel }}</span>
+                                <x-ui.badge :tone="$impactTone">{{ $impactLabel }}</x-ui.badge>
                             </div>
                             <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                                 <div>
-                                    <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Service root') }}</dt>
-                                    <dd class="mt-1 font-mono text-xs text-primary">{{ $repository->deploymentRoot() }}</dd>
+                                    <dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Service root') }}</dt>
+                                    <dd class="mt-1 font-mono text-xs text-ink">{{ $repository->deploymentRoot() }}</dd>
                                 </div>
                                 <div class="sm:col-span-2">
-                                    <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Configured paths') }}</dt>
-                                    <dd class="mt-1 text-secondary">{{ $pathSummary === [] ? __('Every path (no filters)') : implode(' · ', $pathSummary) }}</dd>
+                                    <dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Configured paths') }}</dt>
+                                    <dd class="mt-1 text-muted">{{ $pathSummary === [] ? __('Every path (no filters)') : implode(' · ', $pathSummary) }}</dd>
                                 </div>
                                 <div>
-                                    <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Reason') }}</dt>
-                                    <dd class="mt-1 text-secondary">{{ match ($impact->reason) {
+                                    <dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Reason') }}</dt>
+                                    <dd class="mt-1 text-muted">{{ match ($impact->reason) {
                                         'no_path_filters' => __('No path filters are configured.'),
                                         'configured_path_changed' => __('A configured path changed.'),
                                         'no_configured_path_changed' => __('No configured path changed.'),
@@ -156,18 +156,18 @@
                                     } }}</dd>
                                 </div>
                             </dl>
-                            <div class="mt-4 rounded-lg bg-secondary p-3">
-                                <h3 class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Matched paths') }}</h3>
+                            <div class="ui-card ui-card--muted mt-4 p-3">
+                                <h3 class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Matched paths') }}</h3>
                                 @if ($impact->matchedPaths === [])
-                                    <p class="mt-2 text-sm text-secondary">&mdash;</p>
+                                    <p class="mt-2 text-sm text-muted">&mdash;</p>
                                 @else
-                                    <ul class="mt-2 space-y-1 font-mono text-xs text-secondary">
+                                    <ul class="mt-2 space-y-1 font-mono text-xs text-muted">
                                         @foreach (array_slice($impact->matchedPaths, 0, 5) as $path)
                                             <li class="truncate" title="{{ $path }}">{{ $path }}</li>
                                         @endforeach
                                     </ul>
                                     @if (count($impact->matchedPaths) > 5)
-                                        <span class="mt-2 block text-xs text-secondary">{{ __(':count more matched paths', ['count' => count($impact->matchedPaths) - 5]) }}</span>
+                                        <span class="mt-2 block text-xs text-muted">{{ __(':count more matched paths', ['count' => count($impact->matchedPaths) - 5]) }}</span>
                                     @endif
                                 @endif
                             </div>
