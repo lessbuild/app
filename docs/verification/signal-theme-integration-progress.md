@@ -1044,3 +1044,53 @@ acceptance.
 Next task: modernize the server-scoped command history page and retained-output
 workflow while preserving its focused execution URLs, output modal loading,
 download behavior, pagination and authorization boundaries.
+
+## Slice 17 — server-scoped command history
+
+Status: implemented and verified locally; code committed and pushed as
+`832fb02`.
+
+Responsibility problem addressed:
+
+- Server command history still used legacy filter controls, metadata roles and
+  card surfaces even though it is the source page for the command-center
+  workflow and its contextual dialogs.
+- The same presentation gap existed in the server-history fragment and the
+  lazy retained-output inspector, making mobile operation and output review
+  less consistent.
+
+Signal implementation:
+
+- Standardized server-history filters with Signal panels, labels and inputs.
+- Converted command records to a panel/divider inventory with readable
+  command metadata, compact actions and consistent status hierarchy.
+- Preserved a distinct dark console treatment for retained output while
+  moving its command context and download affordance to Signal surfaces.
+- Updated the read-only server-history fragment with the same card and
+  metadata treatment.
+- Added mobile browser assertions for the six server insights, four filters,
+  history panel, contextual dialog and lazy output inspector.
+
+Preserved contracts:
+
+- Focused execution query parameters, status/output/date filters, pagination,
+  CSV/download URLs, cancel/rerun/delete actions and confirmation prompts.
+- Server ownership and nested execution scoping, output redaction from
+  history, lazy output loading, escaped output rendering, modal URL/history
+  behavior, focus restoration and no-JavaScript download links.
+
+Evidence:
+
+- `ServerCommandHistoryInsightsTest` and `ServerCommandLifecycleTest` — 23
+  tests passed, 311 assertions.
+- Server command-history and retained-output mobile browser journeys — 2
+  passed after hardening fixture selectors for multiple retained executions.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `832fb02` is on `origin/main`.
+
+Next task: deploy the server-command slice to the isolated Deployer runtime,
+then inspect the remaining operational inventories for the next cohesive
+Signal modernization boundary.
