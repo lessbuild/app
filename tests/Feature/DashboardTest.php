@@ -46,17 +46,17 @@ class DashboardTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('login'));
     }
 
-    public function test_dashboard_has_a_separate_full_screen_mobile_navigation(): void
+    public function test_dashboard_has_a_signal_mobile_navigation_drawer(): void
     {
         $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
         $response->assertSuccessful()
             ->assertSee('id="desktop-navigation"', false)
-            ->assertSee('id="primary-navigation"', false)
+            ->assertSee('id="app-mobile-nav"', false)
             ->assertSee('x-trap.inert.noscroll="menu"', false)
-            ->assertSee('h-[100dvh]', false)
-            ->assertSee('grid grid-cols-2 gap-2', false)
-            ->assertSee('Search workspace')
-            ->assertSee('Current workspace')
+            ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
+            ->assertSee('class="relative flex h-full w-72 flex-col overflow-y-auto bg-surface', false)
+            ->assertSee('Search or jump to…')
+            ->assertSee('A focused space for deployments, infrastructure, and recovery.')
             ->assertSee('Settings and support')
             ->assertSee('>Deployments<', false)
             ->assertSee('>Repositories<', false)
@@ -65,21 +65,21 @@ class DashboardTest extends TestCase
             ->assertSee('>Billing<', false)
             ->assertSee('>Costs<', false)
             ->assertSee('>Settings<', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Toggle navigation"'));
+        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Open navigation"'));
     }
 
     public function test_navigation_has_a_signal_header_and_edge_to_edge_bottom_bar(): void
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('class="app-topbar sticky top-0 z-30 text-ink', false)
+            ->assertSee('class="sticky top-0 z-30 flex h-[var(--header-height)] items-center justify-between', false)
             ->assertSee('class="ui-bottom-nav lg:hidden"', false)
             ->assertSee('class="ui-bottom-nav-link"', false)
-            ->assertSee('pb-[calc(4.5rem+env(safe-area-inset-bottom))]', false)
+            ->assertSee('pb-24 sm:px-8 sm:py-10 lg:pb-10', false)
             ->assertDontSee('fixed inset-x-3', false);
     }
 
-    public function test_mobile_shell_uses_the_quick_navigation_space_and_desktop_only_footer(): void
+    public function test_mobile_shell_uses_the_quick_navigation_space_without_a_legacy_footer(): void
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
@@ -87,8 +87,8 @@ class DashboardTest extends TestCase
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-quick-navigation', false)
-            ->assertSee('data-mobile-footer', false)
-            ->assertSee('class="app-footer hidden w-full items-center justify-between', false)
+            ->assertDontSee('data-mobile-footer', false)
+            ->assertDontSee('app-footer', false)
             ->assertSee('data-mobile-keyboard-open', false)
             ->assertSee('visualViewport', false);
     }

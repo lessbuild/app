@@ -1,6 +1,5 @@
 @props([
     'item',
-    'mobile' => false,
 ])
 
 @php
@@ -11,10 +10,7 @@
 
 <a href="{{ $href }}"
     @if ($active) aria-current="page" @endif
-    @class([
-        'app-sidebar-link group min-w-0 focus-visible:relative focus-visible:z-10' => ! $mobile,
-        'app-mobile-nav-link group min-w-0 focus-visible:relative focus-visible:z-10' => $mobile,
-    ])
+    class="app-sidebar-link group min-w-0 focus-visible:relative focus-visible:z-10"
 >
     <svg @class([
         'h-4 w-4 shrink-0 stroke-2',

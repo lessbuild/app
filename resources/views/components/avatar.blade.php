@@ -9,6 +9,6 @@
 @endphp
 
 <span
-    {{ $attributes->class('inline-flex shrink-0 items-center justify-center bg-slate-800 font-semibold uppercase text-white') }}
+    {{ $attributes->class('ui-avatar inline-flex shrink-0 items-center justify-center font-semibold uppercase') }}
     aria-hidden="true"
 >{{ $initials !== '' ? $initials : '?' }}</span>

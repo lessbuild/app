@@ -606,23 +606,22 @@ class LocalUiAssetTest extends TestCase
 
         $this->actingAs($user)->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('class="motion-safe:scroll-smooth"', false)
+            ->assertSee('class="min-h-full"', false)
             ->assertSee('data-mobile-shell', false)
-            ->assertSee('class="app-sidebar fixed', false)
-            ->assertSee('class="app-topbar sticky', false)
-            ->assertSee('class="app-mobile-navigation fixed', false)
+            ->assertSee('class="hidden w-[var(--sidebar-width)] shrink-0 border-r border-line bg-surface lg:flex lg:flex-col', false)
+            ->assertSee('class="sticky top-0 z-30 flex h-[var(--header-height)]', false)
+            ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
             ->assertSee('app-sidebar-link', false)
-            ->assertSee('app-mobile-nav-link', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-header', false)
             ->assertSee('data-mobile-navigation', false)
             ->assertSee('data-mobile-quick-navigation', false)
-            ->assertSee('data-mobile-footer', false)
-            ->assertSee('id="primary-navigation"', false)
-            ->assertSee('aria-controls="primary-navigation"', false)
+            ->assertDontSee('data-mobile-footer', false)
+            ->assertSee('id="app-mobile-nav"', false)
+            ->assertSee('aria-controls="app-mobile-nav"', false)
             ->assertSee('aria-label="Primary navigation"', false)
-            ->assertSee('aria-label="Toggle navigation"', false)
+            ->assertSee('aria-label="Open navigation"', false)
             ->assertSee('aria-label="Close navigation"', false)
             ->assertSee('x-ref="navigationToggle"', false)
             ->assertSee('x-ref="closeNavigation"', false)
@@ -641,26 +640,17 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('workspaceSearchSequence', false)
             ->assertSee('x-trap.inert.noscroll="palette"', false)
             ->assertSee('x-trap.inert.noscroll="menu"', false)
-            ->assertSee('h-[100dvh]', false)
             ->assertSee('overflow-y-auto', false)
-            ->assertSee('overscroll-contain', false)
             ->assertSee('z-50', false)
-            ->assertSee('pb-[max(1rem,env(safe-area-inset-bottom))]', false)
-            ->assertSee('data-mobile-account', false)
             ->assertSee('ada@example.test')
-            ->assertSee('class="mx-4 mt-4 border-t border-line pt-4 lg:hidden"', false)
             ->assertSee('action="'.route('logout').'" method="post"', false)
-            ->assertSee('ui-btn ui-btn-secondary w-full justify-center', false)
+            ->assertSee('ui-btn ui-btn-quiet w-full justify-start', false)
             ->assertSee('@click="if ($event.target.closest(\'a\')) menu = false"', false)
-            ->assertSee('aria-label="Account settings"', false)
-            ->assertSee('data-auth-brand', false)
             ->assertSee('data-mobile-quick-action="create"', false)
             ->assertSee('New app')
             ->assertSee('data-modal-trigger="application-create-dialog"', false)
             ->assertSee('href="'.route('dashboard', ['dialog' => 'create-application']).'"', false)
-            ->assertSee('aria-label="Footer navigation"', false)
             ->assertSee(route('activity.index'), false)
-            ->assertSee('&copy; '.now()->year.' '.config('app.name'), false)
             ->assertDontSee('href="#"', false)
             ->assertDontSee('Copyright 2020');
 
@@ -669,11 +659,11 @@ class LocalUiAssetTest extends TestCase
             resource_path('views/components/layouts/core.blade.php'),
             resource_path('views/components/layouts/sidebar.blade.php'),
             resource_path('views/components/layouts/mobile-navigation.blade.php'),
+            resource_path('views/components/layouts/navigation-content.blade.php'),
             resource_path('views/components/layouts/partials/navigation-link.blade.php'),
         ] as $shellPath) {
             $shell = File::get($shellPath);
 
-            $this->assertStringContainsString('ui-', $shell, $shellPath);
             $this->assertStringNotContainsString('button primary', $shell, $shellPath);
             $this->assertStringNotContainsString('button secondary', $shell, $shellPath);
             $this->assertStringNotContainsString('button tertiary', $shell, $shellPath);
@@ -688,11 +678,12 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-skip-link', $appShell);
         $this->assertStringContainsString('ui-bottom-nav', $appShell);
         $this->assertStringContainsString('ui-bottom-nav-link', $appShell);
-        $this->assertStringContainsString('app-topbar', $appShell);
-        $this->assertStringContainsString('app-footer', $appShell);
+        $this->assertStringContainsString('max-w-content', $appShell);
+        $this->assertStringNotContainsString('app-topbar', $appShell);
+        $this->assertStringNotContainsString('app-footer', $appShell);
         $signalComponents = File::get(resource_path('css/signal/components.css'));
         $this->assertStringContainsString('app-sidebar-link', $signalComponents);
-        $this->assertStringContainsString('app-mobile-nav-link', $signalComponents);
+        $this->assertStringNotContainsString('app-mobile-nav-link', $signalComponents);
         $this->assertStringContainsString('ui-btn ui-btn-primary', $coreLayout);
         $this->assertStringContainsString('ui-btn ui-btn-secondary', $coreLayout);
         $this->assertStringNotContainsString('button--primary', $coreLayout);
@@ -1217,7 +1208,7 @@ class LocalUiAssetTest extends TestCase
                 'costs.index' => 'billing.index',
                 'billing.index' => 'billing.index',
             ],
-            'primary-navigation' => [
+            'app-mobile-nav' => [
                 'dashboard' => 'dashboard',
                 'system-health.index' => 'system-health.index',
                 'activity.index' => 'activity.index',
