@@ -2230,6 +2230,60 @@ Evidence:
 Next task: re-audit remaining fixed utility classes and classify any intentional
 exceptions.
 
+## Slice 88 — remaining Signal token aliases — 2026-09-22
+
+Responsibility problem:
+
+- After fixed palette cleanup, a small set of shared and product views still
+  used legacy `text-primary`, `text-secondary` and `ring-primary` aliases for
+  focus, loading, eyebrow, repository and feedback presentation.
+
+Boundary and implementation:
+
+- Standardized focus states on `ring-focus`.
+- Replaced legacy text aliases with `ui-eyebrow`, `text-ink`, `text-muted` and
+  `ui-link` according to the role of each element.
+- Added a source-level guard covering the affected shared/product surfaces.
+- Kept the intentional `bg-primary-soft` setup progress surface unchanged.
+
+Preserved contracts and safety:
+
+- Disclosure behavior, keyboard focus, tabs, provider/repository flows, backup
+  dialogs, notification filters, feedback details and pagination are unchanged.
+- No controller, query, action, authorization, queue, API or persistence
+  behavior changed.
+
+Evidence:
+
+- Backup, database, notification, load-balancer, GitHub App, feedback, project
+  and local UI coverage — 138 tests passed, 1,887 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `dc5f5cb` is on `origin/main`.
+- Re-audit found no fixed red/green/blue/amber utility classes and no remaining
+  legacy text/focus aliases in the targeted app views.
+
+Next task: inspect broader UI structure and navigation for remaining usability
+improvements beyond token consistency.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `dc5f5cb`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect broader UI structure and navigation for remaining usability
+improvements beyond token consistency.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
