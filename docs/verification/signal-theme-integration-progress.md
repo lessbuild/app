@@ -2133,3 +2133,62 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 31 — repository detail and source settings
+
+Status: implemented and verified locally; code committed and pushed as
+'825826f'.
+
+Responsibility problem addressed:
+
+- Repository detail already delegated deployment, preflight, webhook,
+  delivery-history, revision and build behavior to existing actions, jobs,
+  policies and dialogs. Its remaining presentation had no compact section
+  navigation, and source-setting forms still used the older input/card
+  language.
+- The page also mixed filled alert blocks with the newer bordered evidence
+  surfaces, making deployment automation and recovery context harder to scan
+  on a phone.
+
+Signal implementation:
+
+- Added repository section navigation for overview, automation, deployment
+  timeline, insights and history.
+- Added stable overview, information and automation hooks and scroll anchors;
+  preserved the existing disclosure behavior for active work and filtered
+  webhook delivery history.
+- Replaced deployment-readiness, plan and one-time webhook feedback with
+  quiet border-led panels.
+- Updated repository create/edit fields, monorepo path filters, command
+  editors, descriptions, modal footers and delivery outcome feedback to the
+  shared Signal controls.
+
+Preserved contracts:
+
+- Deployment actions, preflight checks, approval and entitlement decisions,
+  repository scoping, revision links, webhook signatures, branch/path
+  filtering, replay/coalescing behavior, delivery pagination/export and
+  contextual dialog URLs are unchanged.
+- Command and path values remain explicit form fields; no credentials or
+  webhook payloads were added to the rendered page or dialog.
+- Existing no-JavaScript links, validation behavior, status text, disclosure
+  open rules and build/timeline semantics remain intact.
+
+Evidence:
+
+- Repository deployment insights, safety/path filters, webhook behavior and
+  delivery history, deployment operations, impact preview and dialog
+  coverage — 66 tests passed, 566 assertions.
+- Focused repository browser journeys — 3 Playwright tests passed: repository
+  edit modal, webhook delivery inspector and mobile deployment/webhook
+  scanning.
+- 'npm run build' — passed; generated asset bundle is ignored by Git as usual.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '825826f' is on 'origin/main'.
+
+Next task: deploy the repository-detail modernization to the isolated canonical
+development runtime, then inspect the next product surface for a separate
+cohesive Signal slice.
