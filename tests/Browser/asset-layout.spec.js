@@ -970,6 +970,27 @@ test('website detail keeps provisioning and health evidence in Signal panels', a
     await expect(page.getByRole('button', { name: 'Delete Website', exact: true })).toBeVisible();
 });
 
+test('website runtime logs and repositories stay scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/websites/1', { waitUntil: 'networkidle' });
+
+    const runtime = page.locator('#website-runtime-logs');
+    await expect(runtime).toHaveClass(/\bui-panel\b/);
+    await runtime.locator('summary').click();
+    await expect(runtime.getByRole('tablist', { name: 'Log type', exact: true })).toBeVisible();
+    await expect(runtime.getByRole('tab')).toHaveCount(2);
+    await expect(runtime.getByRole('tab').first()).toHaveAttribute('aria-selected', 'true');
+    await expect(runtime.locator('.ui-input')).toHaveCount(4);
+    await expect(runtime.locator('.ui-choice')).toHaveCount(2);
+
+    const repositories = page.locator('section[aria-labelledby="attached-repositories-heading"] .ui-panel');
+    await expect(repositories).toBeVisible();
+    await expect(repositories.getByRole('link', { name: 'Add repository', exact: true })).toBeVisible();
+    await expect(repositories.getByRole('link', { name: /App/ }).first()).toBeVisible();
+});
+
 test('website deployment history opens as a contextual timeline', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

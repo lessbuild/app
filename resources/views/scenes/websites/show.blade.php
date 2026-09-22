@@ -309,25 +309,32 @@
             \App\Models\WebsiteLogSnapshot::STATUS_FAILED,
         ], true));
     @endphp
-    <details id="website-runtime-logs" class="group ui-card mt-6 overflow-hidden" @if ($runtimeLogsNeedAttention) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+    <details id="website-runtime-logs" class="group ui-panel mt-6 overflow-hidden" @if ($runtimeLogsNeedAttention) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</span>
+                <span class="ui-eyebrow block">{{ __('Runtime') }}</span>
                 <span class="mt-1 block text-lg">{{ __('Live log snapshots') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">{{ __('Application and access output with bounded retention.') }}</span>
+                <span class="mt-1 block text-sm font-normal text-muted">{{ __('Application and access output with bounded retention.') }}</span>
             </span>
-            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <section class="border-t border-primary p-5" id="runtime-logs" x-data="{ logType: 'application' }">
+        <section class="border-t border-line p-5" id="runtime-logs" x-data="{ logType: 'application' }">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Runtime') }}</p>
-                <h2 class="mt-1 text-xl font-black text-primary">{{ __('Live log snapshots') }}</h2>
-                <p class="mt-1 text-sm text-secondary">{{ __('Fetch the latest encrypted application or per-site access output without exposing another website’s traffic.') }}</p>
+                <p class="ui-eyebrow">{{ __('Runtime') }}</p>
+                <h2 class="mt-2 text-xl font-extrabold text-ink">{{ __('Live log snapshots') }}</h2>
+                <p class="mt-1 text-sm text-muted">{{ __('Fetch the latest encrypted application or per-site access output without exposing another website’s traffic.') }}</p>
             </div>
             <div class="flex flex-wrap gap-2" role="tablist" aria-label="{{ __('Log type') }}">
                 @foreach (\App\Models\WebsiteLogSnapshot::TYPES as $type)
-                    <button type="button" class="button button--secondary" role="tab" @click="logType='{{ $type }}'">{{ ucfirst($type) }}</button>
+                    <x-ui.button
+                        type="button"
+                        variant="secondary"
+                        class="ui-btn-sm"
+                        role="tab"
+                        x-bind:aria-selected="logType === '{{ $type }}' ? 'true' : 'false'"
+                        @click="logType='{{ $type }}'"
+                    >{{ ucfirst($type) }}</x-ui.button>
                 @endforeach
             </div>
         </div>
@@ -337,15 +344,17 @@
             @endphp
             <div x-show="logType === '{{ $type }}'" class="mt-4" data-runtime-log-console data-refresh-url="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}" data-report-url="{{ route('websites.runtime-logs.show', [$website, $type]) }}">
                 <div class="mb-3 flex flex-wrap items-center justify-between gap-3">
-                    <p class="text-xs text-secondary" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p>
+                    <p class="text-xs text-muted" data-log-status>{{ $snapshot?->refreshed_at ? __('Updated :time', ['time' => $snapshot->refreshed_at->diffForHumans()]) : __('Not collected yet') }} · {{ ucfirst($snapshot?->status ?? 'idle') }}</p>
                     <form method="POST" action="{{ route('websites.runtime-logs.refresh', [$website, $type]) }}">
                         @csrf
-                        <x-ui.button type="submit" variant="primary">{{ __('Refresh :type log', ['type' => $type]) }}</x-ui.button>
+                        <x-ui.button type="submit" variant="primary" class="ui-btn-sm">{{ __('Refresh :type log', ['type' => $type]) }}</x-ui.button>
                     </form>
                 </div>
                 <div class="mb-3 grid gap-3 sm:grid-cols-[1fr_12rem_auto]">
-                    <input type="search" data-log-search class="input secondary min-h-[2.75rem] rounded-lg" placeholder="{{ __('Search log lines') }}">
-                    <select data-log-level class="input secondary min-h-[2.75rem] rounded-lg">
+                    <label class="sr-only" for="website-{{ $type }}-log-search">{{ __('Search log lines') }}</label>
+                    <input id="website-{{ $type }}-log-search" type="search" data-log-search class="ui-input" placeholder="{{ __('Search log lines') }}">
+                    <label class="sr-only" for="website-{{ $type }}-log-level">{{ __('Log level') }}</label>
+                    <select id="website-{{ $type }}-log-level" data-log-level class="ui-input">
                         <option value="">{{ __('All levels') }}</option>
                         <option value="emergency">Emergency</option>
                         <option value="error">Error</option>
@@ -353,19 +362,19 @@
                         <option value="info">Info</option>
                         <option value="debug">Debug</option>
                     </select>
-                    <label class="flex min-h-[2.75rem] items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
-                        <input type="checkbox" data-log-live>
+                    <label class="ui-choice min-h-11 items-center gap-2 px-3 text-sm text-ink">
+                        <input type="checkbox" data-log-live class="ui-check">
                         {{ __('Live') }}
                     </label>
                 </div>
                 @if($snapshot?->error)
-                    <x-ui.alert tone="danger" class="mb-3">{{ $snapshot->error }}</x-ui.alert>
+                    <x-ui.alert tone="danger" class="mb-3 border-l-4">{{ $snapshot->error }}</x-ui.alert>
                 @endif
                 <pre data-log-output class="max-h-[32rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-slate-950 p-5 font-mono text-xs leading-5 text-slate-100">{{ $snapshot?->log ?: __('No log output captured.') }}</pre>
             </div>
         @endforeach
         @if ($canUpdateWebsite)
-            <div class="mt-4 border-t border-primary pt-4">
+            <div class="mt-4 border-t border-line pt-4">
                 <x-ui.button
                     :href="$logRetentionDialogUrl"
                     data-modal-trigger="{{ $logRetentionDialogId }}"
@@ -392,7 +401,7 @@
         body-class="p-0"
     >
         <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading health check history…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading health check history…') }}</p>
         </div>
     </x-dialogs.modal>
 
@@ -404,7 +413,7 @@
         body-class="p-0"
     >
         <div data-modal-content>
-            <p class="p-5 text-sm text-secondary">{{ __('Loading deployment history…') }}</p>
+            <p class="p-5 text-sm text-muted">{{ __('Loading deployment history…') }}</p>
         </div>
     </x-dialogs.modal>
 
@@ -412,13 +421,13 @@
      ! ------------------------------------------------------------
      ! Quick Actions
      ! ------------------------------------------------------------
-     !-->
+    !-->
     <section class="mt-8" aria-labelledby="attached-repositories-heading">
-        <x-ui.card class="p-5">
+        <x-ui.card class="ui-panel p-5 sm:p-6">
             <div class="flex items-center justify-between gap-3">
-                <div>
-                    <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Deployments') }}</p>
-                    <h2 id="attached-repositories-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Attached Repositories') }}</h2>
+                <div class="min-w-0">
+                    <p class="ui-eyebrow">{{ __('Deployments') }}</p>
+                    <h2 id="attached-repositories-heading" class="mt-2 text-lg font-extrabold text-ink">{{ __('Attached Repositories') }}</h2>
                 </div>
                 <x-ui.button
                     :href="$repositoryCreateUrl"
@@ -427,16 +436,17 @@
                     aria-controls="repository-create-dialog"
                     aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
                     variant="ghost"
+                    class="ui-btn-sm shrink-0"
                 >{{ __('Add repository') }}</x-ui.button>
             </div>
-            <ul role="list" class="mt-4 divide-y divide-primary">
+            <ul role="list" class="mt-4 divide-y divide-line">
                 @forelse($repositories as $repository)
                     <li>
-                        <a href="{{ route('repositories.show', $repository) }}" class="flex items-center gap-4 py-3 hover:bg-secondary">
+                        <a href="{{ route('repositories.show', $repository) }}" class="ui-link flex min-w-0 items-center gap-4 py-3 hover:bg-surface-muted">
                             <x-avatar :name="$repository->name" class="h-8 w-8 shrink-0 rounded-full text-xs" />
                             <span class="min-w-0 flex-1">
-                                <span class="block truncate text-sm font-medium text-ternary">{{ $repository->name }}</span>
-                                <span class="block truncate text-sm text-secondary">{{ $repository->url }}</span>
+                                <span class="block truncate text-sm font-semibold text-ink">{{ $repository->name }}</span>
+                                <span class="block truncate text-sm text-muted">{{ $repository->url }}</span>
                             </span>
                             @if ($repository->latestBuild)
                                 <x-ui.badge>{{ str($repository->latestBuild->status)->replace('_', ' ') }}</x-ui.badge>
@@ -447,12 +457,12 @@
                     </li>
                 @empty
                     <li class="pt-3">
-                        <x-ui.alert tone="info" role="status">{{ __('No repositories attached to website') }}</x-ui.alert>
+                        <x-ui.alert tone="info" class="border-l-4" role="status">{{ __('No repositories attached to website') }}</x-ui.alert>
                     </li>
                 @endforelse
             </ul>
             @if ($repositories->hasPages())
-                <div class="mt-4 border-t border-primary pt-4">{{ $repositories->links() }}</div>
+                <div class="mt-4 border-t border-line pt-4">{{ $repositories->links() }}</div>
             @endif
         </x-ui.card>
     </section>
