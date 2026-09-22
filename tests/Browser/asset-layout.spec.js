@@ -25,6 +25,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
     const manifest = JSON.parse(fs.readFileSync(path.join(root, 'public/build/manifest.json'), 'utf8'));
     const stylesheet = `/build/${manifest['resources/css/app.css'].file}`;
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
+    const signalThemeInit = `/build/${manifest['resources/js/signal-theme-init.js'].file}`;
     const signalTheme = `/build/${manifest['resources/js/signal-theme.js'].file}`;
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
@@ -274,7 +275,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
             const script = /\/livewire(?:-[^/]+)?\/livewire/.test(html)
                 ? ''
                 : `<script type="module" src="${alpine}"></script>`;
-            html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}"><script type="module" src="${signalTheme}"></script>${script}</head>`);
+            html = html.replace('</head>', `<link rel="stylesheet" href="${stylesheet}"><script type="module" src="${signalThemeInit}"></script><script type="module" src="${signalTheme}"></script>${script}</head>`);
             return route.fulfill({ contentType: 'text/html', body: html });
         }
         const file = /^\/livewire(?:-[^/]+)?\/livewire/.test(pathname)

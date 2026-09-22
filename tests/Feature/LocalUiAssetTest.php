@@ -813,6 +813,12 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString("import Alpine from 'alpinejs'", $publicJavascript);
         $this->assertStringContainsString('@if (! $livewire)', $coreLayout);
         $this->assertStringContainsString("@vite('resources/js/alpine.js')", $coreLayout);
+        $this->assertStringContainsString("@vite('resources/js/signal-theme-init.js')", $coreLayout);
+        $this->assertStringContainsString("@vite('resources/js/signal-theme.js')", $coreLayout);
+
+        $signalThemeInit = File::get(resource_path('js/signal-theme-init.js'));
+        $this->assertStringContainsString("const defaults = { preset: 'modern'", $signalThemeInit);
+        $this->assertStringContainsString('root.dataset.preset = read(\'preset\')', $signalThemeInit);
     }
 
     public function test_server_safety_and_operation_surfaces_use_signal_primitives(): void
