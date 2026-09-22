@@ -5,9 +5,9 @@
 <div class="space-y-5 p-4 sm:p-5">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Release operations') }}</p>
-            <h3 class="mt-1 text-xl font-black text-primary">{{ __('Recent deployments') }}</h3>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review revision, status and timing without leaving this page.') }}</p>
+            <p class="ui-eyebrow text-[0.65rem]">{{ __('Release operations') }}</p>
+            <h3 class="mt-1 text-xl font-black text-ink">{{ __('Recent deployments') }}</h3>
+            <p class="mt-1 text-sm text-muted">{{ __('Review revision, status and timing without leaving this page.') }}</p>
         </div>
         <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>
     </div>
@@ -29,17 +29,17 @@
             :description="__('Deployment history will appear here after the first deployment request.')"
         />
     @else
-        <ol class="relative space-y-3 border-l border-primary pl-4" aria-label="{{ __('Deployment timeline') }}">
+        <ol class="relative space-y-3 border-l border-line pl-4" aria-label="{{ __('Deployment timeline') }}">
             @foreach ($builds as $build)
-                <li data-build-card class="relative rounded-xl border border-primary bg-primary p-4">
-                    <span class="absolute -left-[1.35rem] top-5 h-3 w-3 rounded-full border-2 border-primary bg-accent" aria-hidden="true"></span>
+                <li data-build-card class="ui-card relative p-4">
+                    <span class="absolute -left-[1.35rem] top-5 h-3 w-3 rounded-full border-2 border-surface" style="background-color: var(--ui-primary)" aria-hidden="true"></span>
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0">
-                            <p class="truncate font-semibold text-primary">{{ $build->repository->name }}</p>
+                            <p class="truncate font-semibold text-ink">{{ $build->repository->name }}</p>
                             @if ($build->commit_message)
-                                <p class="mt-1 line-clamp-2 text-xs text-secondary">{{ $build->commit_message }}</p>
+                                <p class="mt-1 line-clamp-2 text-xs text-muted">{{ $build->commit_message }}</p>
                             @endif
-                            <p class="mt-1 text-xs text-secondary">
+                            <p class="mt-1 text-xs text-muted">
                                 {{ ucfirst($build->trigger_source) }} · {{ $build->created_at?->diffForHumans() ?? __('Date unavailable') }}
                             </p>
                         </div>
@@ -53,16 +53,16 @@
                     </div>
                     <dl class="mt-3 grid gap-3 text-xs sm:grid-cols-3">
                         <div>
-                            <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Revision') }}</dt>
-                            <dd class="mt-1 break-all font-mono text-primary">{{ $build->revision ? $build->shortRevision() : __('Current branch') }}</dd>
+                            <dt class="ui-eyebrow text-[0.62rem]">{{ __('Revision') }}</dt>
+                            <dd class="mt-1 break-all font-mono text-ink">{{ $build->revision ? $build->shortRevision() : __('Current branch') }}</dd>
                         </div>
                         <div>
-                            <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Finished') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}</dd>
+                            <dt class="ui-eyebrow text-[0.62rem]">{{ __('Finished') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $build->finished_at?->diffForHumans() ?? __('Not finished') }}</dd>
                         </div>
                         <div>
-                            <dt class="font-bold uppercase tracking-wide text-secondary">{{ __('Duration') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
+                            <dt class="ui-eyebrow text-[0.62rem]">{{ __('Duration') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $build->durationLabel() ?? __('Not recorded') }}</dd>
                         </div>
                     </dl>
                     <div class="mt-3">

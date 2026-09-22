@@ -45,7 +45,7 @@
         </dl>
     </x-ui.insights>
 
-    <div class="ui-card divide-y divide-primary overflow-hidden" aria-label="{{ __('Deployment comparison') }}">
+    <div class="ui-card divide-y divide-line overflow-hidden" aria-label="{{ __('Deployment comparison') }}">
         @foreach ([
             ['label' => __('Status'), 'baseline' => str($baseline->status)->replace('_', ' ')->title(), 'current' => str($build->status)->replace('_', ' ')->title()],
             ['label' => __('Revision'), 'baseline' => $baseline->shortRevision(), 'current' => $build->shortRevision(), 'revision' => true],
@@ -59,14 +59,14 @@
             ['label' => __('Failure'), 'baseline' => $baseline->failure_message ?? __('None recorded'), 'current' => $build->failure_message ?? __('None recorded'), 'long' => true],
         ] as $comparison)
             <section data-build-comparison-field class="p-4 sm:p-5">
-                <h2 class="text-xs font-bold uppercase tracking-wide text-secondary">{{ $comparison['label'] }}</h2>
+                <h2 class="ui-eyebrow text-[0.65rem]">{{ $comparison['label'] }}</h2>
                 <dl class="mt-3 grid gap-4 sm:grid-cols-2">
                     @foreach ([['label' => __('Baseline Build #:id', ['id' => $baseline->id]), 'build' => $baseline, 'value' => $comparison['baseline']], ['label' => __('Current Build #:id', ['id' => $build->id]), 'build' => $build, 'value' => $comparison['current']]] as $side)
-                        <div @class(['min-w-0 rounded-lg bg-secondary p-3' => $comparison['long'] ?? false])>
-                            <dt class="text-xs font-semibold text-secondary">
-                                <a href="{{ route('builds.show', $side['build']) }}" class="text-primary hover:underline">{{ $side['label'] }}</a>
+                        <div @class(['min-w-0 rounded-lg bg-surface-muted p-3' => $comparison['long'] ?? false])>
+                            <dt class="text-xs font-semibold text-muted">
+                                <a href="{{ route('builds.show', $side['build']) }}" class="ui-link">{{ $side['label'] }}</a>
                             </dt>
-                            <dd @class(['mt-2 text-primary', 'whitespace-pre-wrap break-words' => $comparison['long'] ?? false, 'font-mono text-xs' => $comparison['revision'] ?? false])>
+                            <dd @class(['mt-2 text-ink', 'whitespace-pre-wrap break-words' => $comparison['long'] ?? false, 'font-mono text-xs' => $comparison['revision'] ?? false])>
                                 @if ($comparison['revision'] ?? false)
                                     @if ($revisionUrl = $side['build']->repository->revisionUrl($side['build']->revision))
                                         <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="hover:underline">{{ $side['value'] }}</a>
@@ -79,14 +79,14 @@
                                 @if (($comparison['duration'] ?? false) && $side['build']->is($build))
                                     @if ($durationDelta !== null)
                                         @if ($durationDelta > 0)
-                                            <span class="mt-2 block text-xs text-red-600">{{ __(':duration slower', ['duration' => \App\Models\Build::formatDuration($durationDelta)]) }}</span>
+                                            <span class="mt-2 block text-xs text-danger">{{ __(':duration slower', ['duration' => \App\Models\Build::formatDuration($durationDelta)]) }}</span>
                                         @elseif ($durationDelta < 0)
-                                            <span class="mt-2 block text-xs text-green-600">{{ __(':duration faster', ['duration' => \App\Models\Build::formatDuration(abs($durationDelta))]) }}</span>
+                                            <span class="mt-2 block text-xs text-success">{{ __(':duration faster', ['duration' => \App\Models\Build::formatDuration(abs($durationDelta))]) }}</span>
                                         @else
-                                            <span class="mt-2 block text-xs text-secondary">{{ __('No duration change') }}</span>
+                                            <span class="mt-2 block text-xs text-muted">{{ __('No duration change') }}</span>
                                         @endif
                                     @else
-                                        <span class="mt-2 block text-xs text-secondary">{{ __('Comparison unavailable') }}</span>
+                                        <span class="mt-2 block text-xs text-muted">{{ __('Comparison unavailable') }}</span>
                                     @endif
                                 @endif
                             </dd>

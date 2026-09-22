@@ -547,6 +547,32 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('data-palette-item', File::get(resource_path('views/search/_workspace-results.blade.php')));
     }
 
+    public function test_deployment_history_and_comparison_fragments_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/components/scenes/builds/deployment-history-content.blade.php'),
+            resource_path('views/components/scenes/builds/comparison-content.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('divide-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-red-600', $source, $viewPath);
+            $this->assertStringNotContainsString('text-green-600', $source, $viewPath);
+        }
+
+        $history = File::get(resource_path('views/components/scenes/builds/deployment-history-content.blade.php'));
+        $comparison = File::get(resource_path('views/components/scenes/builds/comparison-content.blade.php'));
+
+        $this->assertStringContainsString('aria-label="{{ __(\'Deployment timeline\') }}"', $history);
+        $this->assertStringContainsString('ui-card', $history);
+        $this->assertStringContainsString('divide-y divide-line', $comparison);
+        $this->assertStringContainsString('data-build-comparison-field', $comparison);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([
