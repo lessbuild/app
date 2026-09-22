@@ -182,6 +182,11 @@ class DeploymentLogTest extends TestCase
             $completedContent,
         );
         $completed
+            ->assertSee('Deployment sections')
+            ->assertSee('data-build-summary', false)
+            ->assertSee('data-build-section="evidence"', false)
+            ->assertSee('data-build-section="timeline"', false)
+            ->assertSee('data-build-section="logs"', false)
             ->assertSee('Deployment timeline')
             ->assertDontSee('Execution checkpoints')
             ->assertSeeText('Completed deployment output')

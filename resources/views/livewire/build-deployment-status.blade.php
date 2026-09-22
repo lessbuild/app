@@ -32,9 +32,16 @@
             default => 'neutral',
         };
     @endphp
+    <x-ui.local-nav class="mt-6" :label="__('Deployment sections')">
+        <a href="#build-summary" class="ui-local-nav__link">{{ __('Summary') }}</a>
+        <a href="#deployment-evidence" class="ui-local-nav__link">{{ __('Evidence') }}</a>
+        <a href="#deployment-timeline" class="ui-local-nav__link">{{ __('Timeline') }}</a>
+        <a href="#deployment-log" class="ui-local-nav__link">{{ __('Logs') }}</a>
+    </x-ui.local-nav>
     <x-ui.insights
         id="build-summary"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
+        data-build-summary
         :summary="str($build->status)->replace('_', ' ')->headline()"
         :mobile-open="true"
     >
@@ -77,9 +84,9 @@
     </x-ui.insights>
 
     @if ($build->status === \App\Models\Build::STATUS_FAILED && $build->failure_message)
-        <div class="ui-alert ui-alert--danger mt-6 border-l-4 p-4">
+        <aside class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-danger)" role="alert">
             <strong class="text-ink">{{ __('Deployment failed:') }}</strong> <span class="text-muted">{{ $build->failure_message }}</span>
-        </div>
+        </aside>
         @if ($failureGuidance)
             <section class="ui-panel mt-4 border-l-4 p-5" aria-labelledby="recovery-guidance-title">
                 <p class="ui-eyebrow">{{ __('Recovery guidance') }}</p>
@@ -94,7 +101,7 @@
         @endif
         @if ($rollbackCandidate)
             @can('rollback', $rollbackCandidate)
-                <section class="ui-alert ui-alert--warning mt-4 border-l-4 p-5">
+                <section class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
                     <h2 class="font-black text-ink">{{ __('Restore the last known-good release') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
                     <form method="POST" action="{{ route('builds.rollback', $rollbackCandidate) }}" class="mt-4">
@@ -108,10 +115,11 @@
 
     <details
         id="deployment-evidence"
-        class="ui-responsive-details group ui-panel mt-4 overflow-hidden"
+        class="ui-responsive-details group ui-panel mt-4 scroll-mt-24 overflow-hidden"
         open
         data-responsive-details
         data-responsive-details-mobile-open="false"
+        data-build-section="evidence"
         aria-labelledby="deployment-evidence-title"
     >
         <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden [&::-webkit-details-marker]:hidden">
@@ -184,10 +192,11 @@
     @endphp
     <details
         id="deployment-timeline"
-        class="ui-responsive-details group ui-panel mt-4 overflow-hidden"
+        class="ui-responsive-details group ui-panel mt-4 scroll-mt-24 overflow-hidden"
         open
         data-responsive-details
         data-responsive-details-mobile-expanded="{{ $deploymentTimelineNeedsAttention ? 'true' : 'false' }}"
+        data-build-section="timeline"
         aria-labelledby="deployment-timeline-title"
     >
         <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-primary [&::-webkit-details-marker]:hidden">
@@ -206,7 +215,7 @@
     </details>
 
     @if($build->promotedFrom)
-        <aside class="ui-alert ui-alert--info mt-4 border-l-4"><p class="font-bold text-ink">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-muted">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="ui-link font-bold">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-muted">{{ $build->promotion_note }}</p>@endif</aside>
+        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-primary)" role="status"><p class="font-bold text-ink">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-muted">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="ui-link font-bold">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-muted">{{ $build->promotion_note }}</p>@endif</aside>
     @endif
     @if($build->promotions->isNotEmpty())
         <aside class="ui-panel mt-4 p-4"><p class="font-bold text-ink">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="ui-card ui-card--interactive px-3 py-2 text-sm text-ink">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></aside>
@@ -273,12 +282,12 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_TIMING_OUT)
-        <div class="ui-alert ui-alert--warning mt-4 border-l-4 p-4">
+        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
             <p>{{ __('This deployment stopped reporting progress. :app is safely stopping its remote process before allowing another deployment.', ['app' => config('app.name')]) }}</p>
             @if ($build->failure_message)
                 <p class="mt-1 text-sm">{{ $build->failure_message }}</p>
             @endif
-        </div>
+        </aside>
     @endif
 
     @if ($build->redeployed_from_build_id)
@@ -324,11 +333,11 @@
     @endif
 
     @if ($build->automatic_rollback_build_id)
-        <div class="ui-alert ui-alert--warning mt-4 border-l-4">{{ __('Automatic recovery was queued as') }} <a class="ui-link font-bold" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</div>
+        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-warning)" role="status">{{ __('Automatic recovery was queued as') }} <a class="ui-link font-bold" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</aside>
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_AWAITING_APPROVAL)
-        <section class="ui-alert ui-alert--warning mt-4 border-l-4 p-5">
+        <section class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
             <h2 class="font-semibold text-ink">{{ __('Production approval required') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('This protected environment will not receive traffic until an owner or administrator approves the deployment.') }}</p>
             @can('approve', $build)
@@ -347,19 +356,19 @@
             @endcan
         </section>
     @elseif ($build->status === \App\Models\Build::STATUS_REJECTED)
-        <div class="ui-alert ui-alert--danger mt-4 border-l-4 p-4">
+        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-danger)" role="alert">
             <strong class="text-ink">{{ __('Deployment rejected.') }}</strong>
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
             @endif
-        </div>
+        </aside>
     @elseif ($build->approved_at)
-        <div class="ui-alert ui-alert--success mt-4 border-l-4 p-4">
+        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-success)" role="status">
             {{ __('Approved :time.', ['time' => $build->approved_at->diffForHumans()]) }}
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
             @endif
-        </div>
+        </aside>
     @endif
 
     @php
@@ -511,15 +520,16 @@
     @endif
 
     @if ($build->status === \App\Models\Build::STATUS_CANCELED)
-        <div class="ui-alert ui-alert--warning mt-6 border-l-4 p-4">
+        <aside class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-warning)" role="status">
             {{ __('This deployment was canceled before it completed.') }}
-        </div>
+        </aside>
     @endif
 
     @php($deploymentLogNeedsAttention = $build->statusEnum()?->isActive() === true)
     <details
         id="deployment-log"
-        class="group ui-panel mt-8 overflow-hidden"
+        class="group ui-panel mt-8 scroll-mt-24 overflow-hidden"
+        data-build-section="logs"
         @if ($deploymentLogNeedsAttention) open @endif
     >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">

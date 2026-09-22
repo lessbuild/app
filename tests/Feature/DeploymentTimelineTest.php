@@ -104,6 +104,8 @@ class DeploymentTimelineTest extends TestCase
 
         $response
             ->assertSuccessful()
+            ->assertSee('Deployment sections')
+            ->assertSee('data-build-section="evidence"', false)
             ->assertSee('Deployment evidence')
             ->assertSee('Deployment timeline')
             ->assertDontSee('Execution checkpoints')

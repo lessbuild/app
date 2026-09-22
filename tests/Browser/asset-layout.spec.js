@@ -1581,6 +1581,8 @@ for (const colorScheme of ['light', 'dark']) {
                     await expect(projectCard).toHaveCSS('min-height', '0px');
                 }
                 if (screen === 'build') {
+                    await expect(page.getByRole('navigation', { name: 'Deployment sections', exact: true })).toBeVisible();
+                    await expect(page.locator('#build-summary')).toBeVisible();
                     const evidence = page.locator('#deployment-evidence');
                     const content = evidence.locator('.ui-responsive-details__content');
                     await expect(evidence).toBeVisible();
