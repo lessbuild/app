@@ -1,5 +1,71 @@
 # Signal theme integration progress
 
+## Slice 115 — Signal avatar sizes across detail pages — 2026-09-22
+
+Responsibility problem:
+
+- Project cards and environment, website and server detail rows still defined
+  avatar dimensions or shapes with local utilities instead of the named
+  Signal avatar sizes.
+- Several of those pages share the avatar component, so one-off class overrides
+  made the same identity marker look different between inventory and detail.
+
+Boundary and implementation:
+
+- Moved project inventory/detail and website/server detail avatars onto
+  Signal's `ui-avatar-md` and `ui-avatar-sm` size primitives.
+- Reused the shared initials avatar for environment identities rather than
+  keeping a page-specific rounded square implementation.
+- Expanded the existing UI asset assertions to cover all affected pages and
+  reject raw avatar corner overrides.
+
+SOLID and Laravel benefit:
+
+- Blade's shared avatar component owns its shape and initials; pages select
+  only a named size, keeping rendering responsibility consistent.
+- No new abstraction or interface was introduced.
+
+Preserved contracts and safety:
+
+- Project/environment names, initials, relationships, navigation and detail
+  content are unchanged.
+- No controllers, authorization, persistence, queues, API, provider or
+  billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `php vendor/bin/phpunit tests/Feature/LocalUiAssetTest.php
+  tests/Feature/ProjectEnvironmentTest.php tests/Feature/ProjectCreationTest.php
+  --testdox` — 78 tests passed, 3,000 assertions.
+- `npm run build` — passed; generated bundle is
+  `assets/app-CbO4z2yl.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Authenticated 390px browser inspection against
+  `https://deployer.buildpusher.com` confirmed project detail avatars at
+  42.39px square and website/server detail avatars at 32px square, all with
+  Signal's `999px` circular radius. No horizontal overflow or browser errors
+  were found. Website/server avatar rows are inside collapsed detail sections,
+  so their computed CSS dimensions were checked even while not painted.
+- Implementation commit `537b923` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` is synced to
+  `537b923`; assets, config, route and Blade caches were rebuilt and both
+  application services were restarted.
+- `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}` and `build/assets/app-CbO4z2yl.css` returns HTTP 200.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: audit the remaining native disclosure focus corners against
+Signal's named control radius and migrate any real divergence while preserving
+the existing keyboard focus behavior.
+
 ## Slice 114 — Signal deployment timeline primitive — 2026-09-22
 
 Responsibility problem:
