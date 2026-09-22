@@ -1,5 +1,40 @@
 # Signal theme integration progress
 
+## Slice 123 — verify active Signal defaults in the rendered page — 2026-09-22
+
+Responsibility problem:
+
+- Exact source-file hashes prove the theme assets are current, but not that the
+  rendered page actually selects Signal's documented graphite palette, subtle
+  corners and comfortable density.
+
+Boundary and implementation:
+
+- Compared Deployer's `data-default-*` values with the current upstream
+  `src/data/site.json` defaults and confirmed the shared bootstrap script is
+  byte-for-byte identical to Signal's `src/scripts/theme-init.js`.
+- Added browser assertions for the rendered root theme attributes, resolved
+  panel-radius token and CTA panel radius. This verifies runtime theme wiring,
+  not just matching class names.
+- Kept user-specific saved appearance preferences intact; the assertions cover
+  the isolated first-visit defaults only.
+
+Preserved contracts and safety:
+
+- No runtime theme behavior, preferences, CSS, routes or persisted values were
+  changed.
+
+Evidence:
+
+- Isolated local public runtime browser checks: **3 passed** (51.7s), including
+  rendered palette/corners/density, panel radius, public navigation and footer.
+- `LocalUiAssetTest.php`: **68 passed**, **2,937 assertions**.
+- Focused Pint, JavaScript syntax and `git diff --check`: passed.
+
+Next task: complete the final source-to-app coverage audit for Signal's
+templates, components and patterns. Live deployment remains separate and needs
+explicit authorization.
+
 ## Slice 122 — translate and reuse Signal's public footer — 2026-09-22
 
 Responsibility problem:
@@ -33,6 +68,8 @@ Evidence:
 - Isolated local public runtime browser checks: **3 passed** (39s), covering
   the served Livewire/public assets, mobile drawer keyboard/focus behavior,
   landing FAQ/CTA interaction and footer links.
+- Commit `1f82d9b0f6fa5f660728000645472ac60d091cba` was pushed to
+  `origin/main` (`219e65e` → `1f82d9b`).
 - No production deployment or physical-device acceptance was performed.
 
 Next task: audit the remaining upstream Signal component vocabulary and active

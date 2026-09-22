@@ -103,6 +103,13 @@ test('public landing renders and operates the Signal FAQ and CTA blocks', async 
     await page.setViewportSize({ width: 1280, height: 900 });
     await page.goto(new URL('/', origin).href, { waitUntil: 'networkidle' });
 
+    const themeRoot = page.locator('html');
+    await expect(themeRoot).toHaveAttribute('data-palette', 'graphite');
+    await expect(themeRoot).toHaveAttribute('data-corners', 'subtle');
+    await expect(themeRoot).toHaveAttribute('data-density', 'comfortable');
+    const panelRadius = await themeRoot.evaluate((root) => Number.parseFloat(getComputedStyle(root).getPropertyValue('--radius-panel-value')));
+    expect(panelRadius).toBe(0.5);
+
     const faq = page.locator('#questions details').first();
     const summary = faq.locator('summary');
     await expect(faq).toHaveClass(/rounded-card/);
@@ -115,6 +122,7 @@ test('public landing renders and operates the Signal FAQ and CTA blocks', async 
     const callToAction = page.locator('#main-content .ui-emphasis').last();
     await expect(callToAction).toHaveClass(/rounded-panel/);
     await expect(callToAction).toHaveClass(/sm:p-10/);
+    await expect(callToAction).toHaveCSS('border-radius', '8px');
     await expect(callToAction.locator('a.ui-btn-primary.ui-btn-lg')).toBeVisible();
 
     const footer = page.getByRole('contentinfo').last();
