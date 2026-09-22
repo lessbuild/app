@@ -883,3 +883,60 @@ development evidence, not production or external-provider acceptance.
 
 Next task: modernize the deployment-history inventory at `/builds`, preserving
 its filters, metrics, CSV export, pagination, status semantics and query bounds.
+
+## Slice 15 — deployment-history inventory
+
+Status: implemented and verified locally; code committed and pushed as
+`82e7a42`.
+
+Responsibility problem addressed:
+
+- The `/builds` inventory still mixed legacy input, label, checkbox, metric and
+  result-list styling with the Signal surfaces used by the adjacent provider,
+  website and repository inventories.
+- Deployment history is a high-volume operational screen, so its filters,
+  metrics and result cards needed a consistent mobile-first hierarchy without
+  changing the underlying query or export responsibilities.
+
+Signal implementation:
+
+- Replaced legacy filter controls with shared Signal labels, inputs, choices
+  and checkboxes while preserving every field name, value, default, selection
+  and filter-sheet behavior.
+- Reused the shared `ui.stat` primitive for all six filter-aware deployment
+  metrics.
+- Changed the history container to the shared panel/divider treatment and
+  aligned deployment metadata with Signal ink, muted and eyebrow roles.
+- Added a full `/builds` browser fixture and mobile coverage for the filter
+  sheet, six insights and deployment cards.
+
+Preserved contracts:
+
+- Filter keys and combinations, latest/active semantics, organization
+  scoping, status and trigger labels, CSV export URLs, pagination links,
+  status badge tones, duration states, operator-note display and build-card
+  routes.
+- Existing empty-state behavior, deliberate 404/authorization handling,
+  fragment history rendering and query-count/query-bound behavior.
+
+Evidence:
+
+- `BuildHistoryInsightsTest`, `BuildHistoryFilterTest`,
+  `BuildHistoryExportTest` and `DeploymentHistoryNavigationTest` — 27 tests
+  passed, 240 assertions.
+- The focused mobile filter, website inventory regression and deployment
+  history browser journeys — 3 passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+The first browser run exposed only a fixture selector assumption: the shared
+filter test derived `builds-filters`, while the existing page contract uses
+`deployment-filters`. The test now maps that intentional ID explicitly; the
+application behavior was unchanged.
+
+Push status: `82e7a42` is on `origin/main`.
+
+Next task: deploy this verified slice to the isolated Deployer runtime, then
+continue with the next inventory or operational surface after recording the
+served-runtime evidence.
