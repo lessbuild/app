@@ -1173,3 +1173,29 @@ Push status: `2257aaf` is on `origin/main`.
 Next task: deploy the activity slice to the isolated Deployer runtime, then
 inspect the remaining operations pages for the next cohesive modernization
 boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `dafbf77` and its application, configuration, route and view caches were
+rebuilt before restarting `buildpusher-dev-main.service` and its queue worker.
+The canonical development host is https://deployer.buildpusher.com; the
+legacy buildpusher.com host is not the verification target for this
+application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/manifest.json` — HTTP 200 with the current Deployer asset manifest.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is
+isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the remaining operations pages and select the next cohesive
+Signal modernization boundary, preserving authorization, filters, exports,
+modal contracts and any secret-safe disclosure behavior.
