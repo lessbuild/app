@@ -1,5 +1,76 @@
 # Signal theme integration progress
 
+## Slice 113 — Signal inventory avatars and checkboxes — 2026-09-22
+
+Responsibility problem:
+
+- Several high-traffic inventory views rendered the shared avatar component with
+  raw rectangular sizing and `rounded-md` overrides, which defeated Signal's
+  circular avatar primitive.
+- Gallery report selection and recipe publishing used the shared checkbox hook
+  with unrelated radius/border overrides instead of the actual Signal checkbox
+  primitive.
+
+Boundary and implementation:
+
+- Updated website, build, repository, provider and server inventories, plus
+  provider detail lists, to use Signal's `ui-avatar-md` sizing without local
+  shape overrides.
+- Updated gallery report selection and recipe publishing checkboxes to use
+  Signal's exact `ui-check` primitive.
+- Added source-level assertions covering the inventory avatar and checkbox
+  render paths.
+
+SOLID and Laravel benefit:
+
+- The shared avatar and checkbox components remain the single rendering
+  responsibility for these controls; page views no longer override their
+  visual contract with local utility styling.
+- This is a presentation-only boundary cleanup: no new abstraction or
+  interface was introduced, and the existing Blade component contract remains
+  reusable across all pages.
+
+Preserved contracts and safety:
+
+- Inventory links, labels, initials, report selection models, bulk actions,
+  recipe publication state and validation behavior are unchanged.
+- No controllers, authorization, persistence, queues, API, provider or
+  billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `php vendor/bin/phpunit tests/Feature/LocalUiAssetTest.php --testdox` — 65
+  tests passed, 2,876 assertions.
+- Provider, website, repository, server and recipe inventory insight suites —
+  16 tests passed, 112 assertions.
+- `npm run build` — passed; generated bundle is
+  `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `BROWSER_LIVE_ORIGIN=https://deployer.buildpusher.com npx playwright test
+  tests/Browser/live-runtime.spec.js` — 1 test passed.
+- `BROWSER_BASE_URL=https://deployer.buildpusher.com npx playwright test
+  tests/Browser/accessibility.spec.js tests/Browser/navigation.spec.js` — 6
+  tests passed across mobile, tablet and desktop in 8.1 minutes.
+- Implementation commit `9da745e` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `9da745e`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns
+  `{"status":"ready"}` after the service restart completed.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue the page-level Signal audit only where a concrete source
+divergence remains; keep the verified navbar, sidebar, modal and shared
+component primitives unchanged.
+
 ## Slice 112 — Shared Signal shell parity verification — 2026-09-22
 
 Responsibility problem:
