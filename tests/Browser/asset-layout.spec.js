@@ -515,10 +515,10 @@ test('repository webhook delivery details open as a contextual inspector', async
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/repositories/1', { waitUntil: 'networkidle' });
 
-    let trigger = page.getByRole('link', { name: 'Inspect delivery', exact: true });
+    let trigger = page.getByRole('link', { name: 'Inspect delivery', exact: true }).first();
     const canonicalRepositoryPath = new URL(await trigger.getAttribute('href'), page.url()).pathname;
     await page.goto(`http://buildpusher.test${canonicalRepositoryPath}`, { waitUntil: 'networkidle' });
-    trigger = page.getByRole('link', { name: 'Inspect delivery', exact: true });
+    trigger = page.getByRole('link', { name: 'Inspect delivery', exact: true }).first();
     const triggerHref = await trigger.getAttribute('href');
     const dialog = page.getByRole('dialog', { name: 'Webhook delivery', exact: true });
     const initialPath = new URL(page.url()).pathname;
@@ -537,6 +537,22 @@ test('repository webhook delivery details open as a contextual inspector', async
     const directDialog = page.getByRole('dialog', { name: 'Webhook delivery', exact: true });
     await expect(directDialog).toBeVisible();
     await expect(directDialog.locator('[data-webhook-delivery-content]')).toBeVisible();
+});
+
+test('repository deployment and webhook surfaces stay scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/repositories/1', { waitUntil: 'networkidle' });
+
+    await expect(page.locator('#repository-latest-deployment')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#deployment-webhook')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#deployment-webhook .ui-input')).toHaveCount(4);
+    await expect(page.locator('#repository-setup')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#repository-deployment-insights')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#repository-deployment-history')).toHaveClass(/\bui-panel\b/);
+    await expect(page.getByRole('link', { name: 'Export CSV', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'View all deployments', exact: true }).last()).toBeVisible();
 });
 
 test('repository deployment impact preview opens and refreshes inside a contextual dialog', async ({ page }) => {

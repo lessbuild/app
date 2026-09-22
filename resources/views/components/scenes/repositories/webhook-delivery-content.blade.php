@@ -19,22 +19,22 @@
 <div data-webhook-delivery-content class="space-y-5 p-4 sm:p-5">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Webhook delivery') }}</p>
-            <h3 class="mt-1 break-all font-mono text-xl font-black text-primary">{{ $delivery->delivery_id }}</h3>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review the accepted delivery record without exposing the source-control payload or webhook secret.') }}</p>
+            <p class="ui-eyebrow">{{ __('Webhook delivery') }}</p>
+            <h3 class="mt-2 break-all font-mono text-xl font-extrabold text-ink">{{ $delivery->delivery_id }}</h3>
+            <p class="mt-1 text-sm text-muted">{{ __('Review the accepted delivery record without exposing the source-control payload or webhook secret.') }}</p>
         </div>
         <x-ui.badge :tone="$statusTone">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
     </div>
 
-    <x-ui.alert tone="info">{{ $outcome }}</x-ui.alert>
+    <x-ui.alert tone="info" class="border-l-4">{{ $outcome }}</x-ui.alert>
 
     <dl class="grid gap-4 text-sm sm:grid-cols-2">
         <div>
-            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Revision') }}</dt>
-            <dd class="mt-1 break-all font-mono text-primary">
+            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Revision') }}</dt>
+            <dd class="mt-1 break-all font-mono text-ink">
                 @if ($delivery->revision)
                     @if ($revisionUrl = $repository->revisionUrl($delivery->revision))
-                        <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="font-medium text-ternary underline">{{ str($delivery->revision)->take(12) }}</a>
+                        <a href="{{ $revisionUrl }}" target="_blank" rel="noopener noreferrer" class="ui-link font-medium">{{ str($delivery->revision)->take(12) }}</a>
                     @else
                         {{ str($delivery->revision)->take(12) }}
                     @endif
@@ -44,38 +44,38 @@
             </dd>
         </div>
         <div>
-            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Received') }}</dt>
-            <dd class="mt-1 text-primary">{{ $delivery->created_at?->toIso8601String() ?? __('Date unavailable') }}</dd>
+            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Received') }}</dt>
+            <dd class="mt-1 text-ink">{{ $delivery->created_at?->toIso8601String() ?? __('Date unavailable') }}</dd>
         </div>
         <div>
-            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Updated') }}</dt>
-            <dd class="mt-1 text-primary">{{ $delivery->updated_at?->toIso8601String() ?? __('Date unavailable') }}</dd>
+            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Updated') }}</dt>
+            <dd class="mt-1 text-ink">{{ $delivery->updated_at?->toIso8601String() ?? __('Date unavailable') }}</dd>
         </div>
         @if ($delivery->build)
             <div>
-                <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Deployment result') }}</dt>
-                <dd class="mt-1"><a href="{{ route('builds.show', $delivery->build) }}" class="font-medium text-ternary underline">{{ __('Build #:id · :status', ['id' => $delivery->build->id, 'status' => str($delivery->build->status)->replace('_', ' ')]) }}</a></dd>
+                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Deployment result') }}</dt>
+                <dd class="mt-1"><a href="{{ route('builds.show', $delivery->build) }}" class="ui-link font-medium">{{ __('Build #:id · :status', ['id' => $delivery->build->id, 'status' => str($delivery->build->status)->replace('_', ' ')]) }}</a></dd>
             </div>
         @endif
     </dl>
 
     @if ($delivery->commit_message)
-        <section class="rounded-xl border border-primary bg-secondary p-4" aria-labelledby="webhook-delivery-commit-heading">
-            <h4 id="webhook-delivery-commit-heading" class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Commit message') }}</h4>
-            <p class="mt-2 whitespace-pre-wrap break-words text-sm text-primary">{{ $delivery->commit_message }}</p>
+        <section class="rounded-xl border border-line bg-surface-muted p-4" aria-labelledby="webhook-delivery-commit-heading">
+            <h4 id="webhook-delivery-commit-heading" class="ui-eyebrow">{{ __('Commit message') }}</h4>
+            <p class="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{{ $delivery->commit_message }}</p>
         </section>
     @endif
 
     @if (is_array($delivery->changed_paths) && $delivery->changed_paths !== [])
         <section aria-labelledby="webhook-delivery-paths-heading">
-            <h4 id="webhook-delivery-paths-heading" class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Changed paths') }}</h4>
-            <ul class="mt-2 max-h-48 space-y-1 overflow-auto rounded-xl border border-primary bg-secondary p-3 font-mono text-xs text-primary">
+            <h4 id="webhook-delivery-paths-heading" class="ui-eyebrow">{{ __('Changed paths') }}</h4>
+            <ul class="mt-2 max-h-48 space-y-1 overflow-auto rounded-xl border border-line bg-surface-muted p-3 font-mono text-xs text-ink">
                 @foreach ($delivery->changed_paths as $path)
                     <li class="break-all">{{ $path }}</li>
                 @endforeach
             </ul>
         </section>
     @else
-        <p class="rounded-xl border border-primary p-4 text-sm text-secondary">{{ __('Changed paths were not retained for this delivery.') }}</p>
+        <p class="rounded-xl border border-line border-l-4 p-4 text-sm text-muted">{{ __('Changed paths were not retained for this delivery.') }}</p>
     @endif
 </div>

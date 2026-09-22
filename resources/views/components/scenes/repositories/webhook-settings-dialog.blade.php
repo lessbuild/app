@@ -10,32 +10,33 @@
     :open="$open"
 >
     <div class="space-y-4">
-        <p class="text-sm text-secondary">{{ __('Only pushes to :branch deploy. Duplicate deliveries are ignored.', ['branch' => $repository->branch]) }}</p>
+        <p class="text-sm text-muted">{{ __('Only pushes to :branch deploy. Duplicate deliveries are ignored.', ['branch' => $repository->branch]) }}</p>
         <form method="POST" action="{{ route('repositories.webhook.store', ['repository' => $repository, 'dialog' => 'repository-webhook-settings']) }}" class="space-y-4">
             @csrf
             @if ($repository->provider->provider === \App\Models\Provider::TYPE_GITLAB)
                 <label>
-                    <span class="mb-1 block text-xs font-bold uppercase text-secondary">{{ __('GitLab signing token') }}</span>
+                    <span class="ui-label">{{ __('GitLab signing token') }}</span>
                     <input
                         name="signing_token"
                         type="password"
                         required
                         autocomplete="off"
                         placeholder="whsec_…"
-                        class="input secondary w-full rounded-lg"
+                        class="ui-input mt-2 w-full"
                     >
                     <x-forms.errors name="signing_token" />
                 </label>
             @endif
-            <button
-                type="submit"
-                class="button button--primary"
-                @if ($repository->webhook_enabled)
+            @if ($repository->webhook_enabled)
+                <x-ui.button
+                    type="submit"
+                    variant="primary"
+                    class="ui-btn-sm"
                     onclick="return confirm({{ Illuminate\Support\Js::from(__('Rotate the webhook secret for :repository? The current secret will stop working immediately.', ['repository' => $repository->name])) }})"
-                @endif
-            >
-                {{ $repository->webhook_enabled ? __('Rotate webhook secret') : __('Enable webhook') }}
-            </button>
+                >{{ __('Rotate webhook secret') }}</x-ui.button>
+            @else
+                <x-ui.button type="submit" variant="primary" class="ui-btn-sm">{{ __('Enable webhook') }}</x-ui.button>
+            @endif
         </form>
 
         @if ($repository->webhook_enabled)
