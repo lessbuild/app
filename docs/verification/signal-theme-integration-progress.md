@@ -2134,6 +2134,74 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Provider compatibility correction — 2026-09-22
+
+Status: implemented and verified; code committed and pushed as '536e5a3'.
+
+The provider detail page had changed the established interval copy from
+lowercase `every :count hours` to sentence-case `Every :count hours`, while
+the existing detail contract and test expected the original wording. Restored
+the detail copy only; provider forms and inventory copy remain unchanged.
+
+Evidence:
+
+- ProviderMonitoringIntervalTest — 3 tests passed, 30 assertions.
+- No route, validation, monitoring, persistence or authorization behavior
+  changed.
+
+Push status: '536e5a3' is on 'origin/main'.
+
+## Slice 33 — provider section navigation
+
+Status: implemented and verified locally; code committed and pushed as
+'ad0f81b'.
+
+Responsibility problem addressed:
+
+- Provider inventory and detail pages already reuse dedicated queries, actions,
+  policies, connection-history services and safe provider adapters. Their
+  remaining issue was presentation hierarchy: filters, retained evidence and
+  attached resources required long mobile scrolling and had no page-local
+  navigation.
+
+Signal implementation:
+
+- Added provider section navigation to the inventory page for insights and
+  inventory.
+- Added provider detail navigation for connection overview, retained checks
+  and attached resources.
+- Added stable section IDs, scroll offsets and provider section hooks without
+  changing the existing filter-sheet, pagination, history-dialog or resource
+  dialog behavior.
+
+Preserved contracts:
+
+- Organization scoping, provider filtering, pagination, CSV export,
+  encrypted-token handling, connection testing, monitoring intervals and
+  failure thresholds are unchanged.
+- Connection-history ordering, bounded evidence, credential redaction,
+  modal URLs, no-JavaScript forms and attached-resource links remain intact.
+- No provider adapter, query, action, controller, job, route or persisted value
+  was modified.
+
+Evidence:
+
+- Provider capability, connection, history, monitoring, inventory, export,
+  submission-feedback and source-provider coverage — 69 tests passed, 697
+  assertions.
+- Focused provider browser journeys — 4 Playwright tests passed for inventory
+  anchors, detail scanning, history filtering and mobile filter locking.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'ad0f81b' is on 'origin/main'.
+
+Next task: deploy the provider compatibility and navigation commits to the
+isolated canonical development runtime, then inspect the next product surface
+for a separate cohesive Signal slice.
+
 ## Theme-state bugfix — 2026-09-22
 
 Status: implemented and verified locally; code committed and pushed as
