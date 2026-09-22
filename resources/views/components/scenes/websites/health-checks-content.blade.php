@@ -5,11 +5,11 @@
     $exportUrl = route('websites.health-checks.export', [$website, ...array_filter($filters, fn ($value) => $value !== null)]);
 @endphp
 
-<section class="ui-card p-4 sm:p-5" aria-labelledby="{{ $filterIdPrefix }}health-check-filters-heading">
+<section class="ui-panel p-4 sm:p-5" aria-labelledby="{{ $filterIdPrefix }}health-check-filters-heading">
     <div class="mb-4">
-        <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Retained evidence') }}</p>
-        <h2 id="{{ $filterIdPrefix }}health-check-filters-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Filter health checks') }}</h2>
-        <p class="mt-1 text-sm text-secondary">{{ __('Narrow the history by result, source and observation date.') }}</p>
+        <p class="ui-eyebrow">{{ __('Retained evidence') }}</p>
+        <h2 id="{{ $filterIdPrefix }}health-check-filters-heading" class="mt-2 text-lg font-extrabold text-ink">{{ __('Filter health checks') }}</h2>
+        <p class="mt-1 text-sm text-muted">{{ __('Narrow the history by result, source and observation date.') }}</p>
     </div>
     <form
         method="GET"
@@ -21,16 +21,16 @@
     >
         <div class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label for="{{ $filterIdPrefix }}result" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Result') }}</label>
-                <select id="{{ $filterIdPrefix }}result" name="result" class="input secondary mt-2 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}result" class="ui-label">{{ __('Result') }}</label>
+                <select id="{{ $filterIdPrefix }}result" name="result" class="ui-input">
                     <option value="">{{ __('All results') }}</option>
                     <option value="healthy" @selected($filters['result'] === 'healthy')>{{ __('Healthy') }}</option>
                     <option value="failed" @selected($filters['result'] === 'failed')>{{ __('Failed') }}</option>
                 </select>
             </div>
             <div>
-                <label for="{{ $filterIdPrefix }}source" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Source') }}</label>
-                <select id="{{ $filterIdPrefix }}source" name="source" class="input secondary mt-2 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}source" class="ui-label">{{ __('Source') }}</label>
+                <select id="{{ $filterIdPrefix }}source" name="source" class="ui-input">
                     <option value="">{{ __('All sources') }}</option>
                     @foreach ($sources as $source)
                         <option value="{{ $source }}" @selected($filters['source'] === $source)>{{ str($source)->title() }}</option>
@@ -38,12 +38,12 @@
                 </select>
             </div>
             <div>
-                <label for="{{ $filterIdPrefix }}date-from" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Checked from') }}</label>
-                <input id="{{ $filterIdPrefix }}date-from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}date-from" class="ui-label">{{ __('Checked from') }}</label>
+                <input id="{{ $filterIdPrefix }}date-from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
             </div>
             <div>
-                <label for="{{ $filterIdPrefix }}date-to" class="block text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Checked through') }}</label>
-                <input id="{{ $filterIdPrefix }}date-to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="{{ $filterIdPrefix }}date-to" class="ui-label">{{ __('Checked through') }}</label>
+                <input id="{{ $filterIdPrefix }}date-to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
             </div>
         </div>
         <div class="mt-5 flex flex-wrap gap-2">
@@ -81,10 +81,10 @@
 </x-ui.insights>
 
 <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-    <p class="text-sm text-secondary">
+    <p class="text-sm text-muted">
         {{ trans_choice(':count matching retained check|:count matching retained checks', $healthChecks->total(), ['count' => $healthChecks->total()]) }}
     </p>
-    <p class="text-xs text-secondary">{{ __('History is limited to the newest :limit retained checks per website.', ['limit' => \App\Models\WebsiteHealthCheck::MAX_PER_WEBSITE]) }}</p>
+    <p class="text-xs text-muted">{{ __('History is limited to the newest :limit retained checks per website.', ['limit' => \App\Models\WebsiteHealthCheck::MAX_PER_WEBSITE]) }}</p>
 </div>
 
 @if ($healthChecks->isEmpty())
@@ -95,7 +95,7 @@
     />
 @else
     <x-ui.card class="mt-4 overflow-hidden">
-        <div class="divide-y divide-primary" aria-label="{{ __('Website health check history') }}">
+        <div class="divide-y divide-line" aria-label="{{ __('Website health check history') }}">
             @foreach ($healthChecks as $check)
                 @include('scenes.websites._health-check-card', ['check' => $check])
             @endforeach

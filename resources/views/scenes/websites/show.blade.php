@@ -33,7 +33,7 @@
      !-->
     @if(session()->has("website:{$website->id}:mysql_password"))
         <div class="my-4">
-            <x-ui.alert tone="warning">
+            <x-ui.alert tone="warning" class="border-l-4">
                 {{ __('The root MYSQL password is:') }}
                 <b class="font-bold">{{ session()->get("website:{$website->id}:mysql_password") }}</b>
                 <br>
@@ -58,6 +58,7 @@
      ! ------------------------------------------------------------
      !-->
     <x-layouts.partials.heading
+        eyebrow="{{ __('Delivery target') }}"
         icon="external-link"
         :title="$website->name"
         :description="$website->description"
@@ -107,18 +108,18 @@
                 :description="__('Are you sure you want to delete this website?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" data-modal-trigger="delete-website" aria-controls="delete-website" aria-expanded="false">
+            <x-ui.button type="button" variant="danger" data-modal-trigger="delete-website" aria-controls="delete-website" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Website') }}
-            </button>
+            </x-ui.button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
     @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
-        <x-ui.alert tone="danger" class="my-4">
+        <x-ui.alert tone="danger" class="my-4 border-l-4">
             <p class="font-semibold">{{ __('Website provisioning failed') }}</p>
             <p class="text-sm">{{ $website->provisioning_error }}</p>
             @error('retry')
@@ -132,7 +133,7 @@
     @endif
 
     @if ($website->previous_server_id)
-        <x-ui.alert tone="warning" class="my-4">
+        <x-ui.alert tone="warning" class="my-4 border-l-4">
             <p class="font-semibold">{{ __('Previous server cleanup pending') }}</p>
             <p class="text-sm">
                 @if ($website->placement_cleanup_error)
@@ -162,21 +163,21 @@
     <x-ui.card class="mt-6 p-5">
         <dl class="grid gap-5 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div class="flex items-start gap-3">
-            <svg class="mt-0.5 h-4 w-4 shrink-0 text-secondary" aria-hidden="true">
+            <svg class="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true">
                 <use xlink:href="/assets/images/icons.svg#external-link"></use>
             </svg>
             <div>
-                <dt class="font-semibold text-primary">{{ __('URL') }}</dt>
-                <dd class="mt-1 break-all font-mono text-xs text-secondary">{{ $website->url }}</dd>
+                <dt class="ui-eyebrow text-[0.65rem]">{{ __('URL') }}</dt>
+                <dd class="mt-1 break-all font-mono text-xs text-ink">{{ $website->url }}</dd>
             </div>
         </div>
         <div>
-            <dt class="font-semibold text-primary">{{ __('Deployment health check') }}</dt>
-            <dd class="mt-1 font-mono text-xs text-secondary">{{ $website->health_check_enabled ? $website->health_check_path : __('Disabled') }}</dd>
+            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Deployment health check') }}</dt>
+            <dd class="mt-1 font-mono text-xs text-ink">{{ $website->health_check_enabled ? $website->health_check_path : __('Disabled') }}</dd>
         </div>
         @if ($website->health_check_enabled)
             <div>
-                <dt class="font-semibold text-primary">{{ __('Current health') }}</dt>
+                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Current health') }}</dt>
                 <dd class="mt-1 flex flex-wrap items-center gap-2">
                     @if ($website->health_status === \App\Models\Website::HEALTH_HEALTHY)
                         <x-ui.badge tone="success">{{ str($website->health_status)->title() }}</x-ui.badge>
@@ -186,35 +187,35 @@
                         <x-ui.badge>{{ str($website->health_status)->title() }}</x-ui.badge>
                     @endif
                 @if ($website->health_last_checked_at)
-                    <span class="text-xs text-secondary">{{ $website->health_last_checked_at->diffForHumans() }}</span>
+                    <span class="text-xs text-muted">{{ $website->health_last_checked_at->diffForHumans() }}</span>
                 @endif
                 </dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Automatic monitoring') }}</dt>
+                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Automatic monitoring') }}</dt>
                 <dd class="mt-1 flex flex-wrap items-center gap-2">
                     @if ($website->health_monitoring_enabled)
                         <x-ui.badge tone="success">{{ __('Enabled') }}</x-ui.badge>
                     @else
                         <x-ui.badge tone="warning">{{ __('Paused') }}</x-ui.badge>
                     @endif
-                    <span class="text-xs text-secondary">{{ trans_choice('every :count minute|every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}</span>
+                    <span class="text-xs text-muted">{{ trans_choice('every :count minute|every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}</span>
                 </dd>
             </div>
             <div>
-                <dt class="font-semibold text-primary">{{ __('Outage confirmation') }}</dt>
-                <dd class="mt-1 text-xs text-secondary">{{ trans_choice('After :count consecutive failure|After :count consecutive failures', $website->health_failure_threshold, ['count' => $website->health_failure_threshold]) }}</dd>
+                <dt class="ui-eyebrow text-[0.65rem]">{{ __('Outage confirmation') }}</dt>
+                <dd class="mt-1 text-xs text-ink">{{ trans_choice('After :count consecutive failure|After :count consecutive failures', $website->health_failure_threshold, ['count' => $website->health_failure_threshold]) }}</dd>
             </div>
         @endif
         <div>
-            <dt class="font-semibold text-primary">{{ __('Retained releases') }}</dt>
-            <dd class="mt-1 text-xs text-secondary">{{ $website->release_retention }}</dd>
+            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Retained releases') }}</dt>
+            <dd class="mt-1 text-xs text-ink">{{ $website->release_retention }}</dd>
         </div>
         </dl>
     </x-ui.card>
 
     @if ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY && $website->health_last_error)
-        <x-ui.alert tone="danger" class="mt-4">
+        <x-ui.alert tone="danger" class="mt-4 border-l-4">
             <strong>{{ __('Health check failed:') }}</strong> {{ $website->health_last_error }}
         </x-ui.alert>
     @endif
@@ -223,31 +224,32 @@
         $websiteOperationsNeedAttention = $website->provisioning_status !== \App\Models\Website::STATUS_ACTIVE
             || $website->previous_server_id !== null;
     @endphp
-    <details id="website-operations" class="group ui-card mt-6 overflow-hidden" @if ($websiteOperationsNeedAttention) open @endif>
-        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-primary [&::-webkit-details-marker]:hidden">
+    <details id="website-operations" class="group ui-panel mt-6 overflow-hidden" @if ($websiteOperationsNeedAttention) open @endif>
+        <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
-                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
-                <span class="mt-1 block text-lg">{{ __('Provisioning timeline') }}</span>
-                <span class="mt-1 block text-sm font-normal text-secondary">
+                <span class="ui-eyebrow block">{{ __('Operations') }}</span>
+                <span class="mt-1 block text-lg font-extrabold">{{ __('Provisioning timeline') }}</span>
+                <span class="mt-1 block text-sm font-normal text-muted">
                     {{ str($website->provisioning_status ?? 'unknown')->replace('_', ' ')->headline() }}
                     @if ($website->previous_server_id)
                         · {{ __('Previous placement cleanup pending') }}
                     @endif
                 </span>
             </span>
-            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+            <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
         </summary>
-        <div class="space-y-6 border-t border-primary p-5">
+        <div class="space-y-6 border-t border-line p-5">
             <livewire:website-setup :model="$website" />
             <livewire:website-provisioning-log :website="$website" />
         </div>
     </details>
 
-    <section class="mt-8" aria-labelledby="health-history-heading">
+    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="health-history-heading">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
-                <h2 id="health-history-heading" class="text-2xl font-bold text-primary">{{ __('Recent health checks') }}</h2>
-                <p class="mt-1 text-sm text-secondary">
+                <p class="ui-eyebrow">{{ __('Health evidence') }}</p>
+                <h2 id="health-history-heading" class="mt-2 text-xl font-extrabold tracking-tight text-ink">{{ __('Recent health checks') }}</h2>
+                <p class="mt-1 text-sm text-muted">
                     {{ __('Accepted manual and automatic results are retained for the latest 100 checks. This page shows the newest 20.') }}
                 </p>
             </div>
@@ -279,7 +281,7 @@
                 <x-ui.stat :label="__('Current failure streak')" :value="$healthMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $healthMetrics['failure_streak'], ['count' => $healthMetrics['failure_streak']])" />
             </dl>
         </x-ui.insights>
-        <p class="mt-3 text-xs text-secondary">
+        <p class="mt-3 text-xs text-muted">
             {{ __('These figures summarize retained observations and are not an SLA uptime calculation.') }}
         </p>
 
@@ -287,11 +289,11 @@
             <x-ui.empty-state class="mt-4" :title="__('No health checks have been recorded yet.')" />
         @else
             <details id="website-health-history" class="group ui-card mt-4 overflow-hidden">
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
                     <span>{{ __('Latest check results') }}</span>
-                    <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                    <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
                 </summary>
-                <div class="divide-y divide-primary border-t border-primary">
+                <div class="divide-y divide-line border-t border-line">
                     @foreach ($healthChecks as $check)
                         @include('scenes.websites._health-check-card', ['check' => $check])
                     @endforeach

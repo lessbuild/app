@@ -942,6 +942,7 @@ test('website health history opens and filters inside a contextual dialog', asyn
     await trigger.click();
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('form[data-modal-fragment-form]')).toBeVisible();
+    await expect(dialog.locator('.ui-input')).toHaveCount(4);
     await expect(dialog.locator('#health-dialog-result')).toBeVisible();
     expect(new URL(page.url()).pathname).toBe(initialPath);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('website-health-checks');
@@ -954,6 +955,19 @@ test('website health history opens and filters inside a contextual dialog', asyn
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
+});
+
+test('website detail keeps provisioning and health evidence in Signal panels', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/websites/1', { waitUntil: 'networkidle' });
+
+    await expect(page.getByRole('heading', { name: 'App', exact: true })).toBeVisible();
+    await expect(page.locator('#website-operations')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('section[aria-labelledby="health-history-heading"]')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#website-health-insights')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Delete Website', exact: true })).toBeVisible();
 });
 
 test('website deployment history opens as a contextual timeline', async ({ page }) => {
