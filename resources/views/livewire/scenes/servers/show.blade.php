@@ -452,7 +452,7 @@
                     @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_REFRESHING)
                         <p class="mb-2 text-emphasis-muted">{{ __('Refreshing this log snapshot…') }}</p>
                     @elseif ($logSnapshot?->status === \App\Models\ServerLogSnapshot::STATUS_FAILED)
-                        <p class="mb-2 text-red-300">{{ $logSnapshot->error ?: __('Unable to retrieve logs.') }}</p>
+                        <p class="mb-2 text-danger">{{ $logSnapshot->error ?: __('Unable to retrieve logs.') }}</p>
                     @endif
                     @forelse ($logs as $line)
                         @if ($line === '') @continue @endif

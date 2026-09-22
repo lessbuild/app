@@ -243,6 +243,21 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('focus-visible:ring-blue-500', $source);
     }
 
+    public function test_contextual_evidence_states_use_signal_tokens(): void
+    {
+        $reportHistory = File::get(resource_path('views/scenes/gallery/my-reports.blade.php'));
+        $serverLogs = File::get(resource_path('views/livewire/scenes/servers/show.blade.php'));
+
+        $this->assertStringContainsString('ui-card--unread', $reportHistory);
+        $this->assertStringContainsString('text-danger', $serverLogs);
+
+        foreach (['border-blue-400', 'ring-blue-200'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $reportHistory);
+        }
+
+        $this->assertStringNotContainsString('text-red-300', $serverLogs);
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
