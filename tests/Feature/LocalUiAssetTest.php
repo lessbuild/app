@@ -45,8 +45,11 @@ class LocalUiAssetTest extends TestCase
         $this->get(route('login'))
             ->assertSuccessful()
             ->assertSee('Deploy with confidence')
-            ->assertSee('ui-auth-panel', false)
-            ->assertSee('ui-auth-aside', false)
+            ->assertSee('ui-panel', false)
+            ->assertSee('data-auth-brand', false)
+            ->assertDontSee('ui-auth-shell', false)
+            ->assertDontSee('ui-auth-aside', false)
+            ->assertSee('data-theme-toggle', false)
             ->assertDontSee('fonts.googleapis.com', false)
             ->assertDontSee('cdnjs.cloudflare.com', false);
 
@@ -263,10 +266,10 @@ class LocalUiAssetTest extends TestCase
         $authLayout = File::get(resource_path('views/components/layouts/auth.blade.php'));
         $statsPanel = File::get(resource_path('views/components/panel/stats.blade.php'));
 
-        foreach ([$authLayout, $statsPanel] as $source) {
-            $this->assertStringContainsString('text-[var(--ui-primary)]', $source);
-            $this->assertStringNotContainsString('text-blue-400', $source);
-        }
+        $this->assertStringContainsString('text-primary', $authLayout);
+        $this->assertStringContainsString('text-[var(--ui-primary)]', $statsPanel);
+        $this->assertStringNotContainsString('text-blue-400', $authLayout);
+        $this->assertStringNotContainsString('text-blue-400', $statsPanel);
     }
 
     public function test_billing_and_gallery_status_copy_use_signal_tokens(): void
@@ -403,7 +406,7 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('aria-label="Homepage navigation"', false)
             ->assertSee('aria-label="Mobile homepage navigation"', false)
             ->assertSee('<noscript>', false)
-            ->assertSee('aria-label="Homepage navigation without JavaScript"', false)
+            ->assertSee('aria-label="Navigation without JavaScript"', false)
             ->assertSee('id="features"', false)
             ->assertSee('id="product"', false)
             ->assertSee('id="how-it-works"', false)

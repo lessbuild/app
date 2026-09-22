@@ -9,15 +9,10 @@
         {{ __('Skip to main content') }}
     </a>
 
+    <x-layouts.public-header navigation-label="Access request navigation" />
+
     <main id="main-content" tabindex="-1" class="min-h-screen bg-page px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
         <div class="mx-auto max-w-6xl">
-            <nav class="flex items-center justify-between gap-4" aria-label="{{ __('Access request navigation') }}">
-                <a href="{{ url('/') }}" class="ui-link inline-flex min-h-[2.5rem] items-center text-xl font-black uppercase tracking-tight">
-                    {{ config('app.name') }}
-                </a>
-                <x-ui.button :href="route('login')" variant="secondary">{{ __('Sign in') }}</x-ui.button>
-            </nav>
-
             <div class="mt-10 grid gap-8 lg:grid-cols-[0.85fr_1.15fr] lg:items-start lg:gap-12">
                 <section class="py-4 lg:py-8" aria-labelledby="access-request-heading">
                     <p class="ui-eyebrow">{{ __('Private access') }}</p>

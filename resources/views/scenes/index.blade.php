@@ -95,49 +95,7 @@
 
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-emphasis focus:px-4 focus:py-3 focus:font-semibold focus:text-emphasis-ink focus:shadow-xl">{{ __('Skip to main content') }}</a>
 
-    <header class="ui-public-header sticky top-0 z-40 border-b border-line bg-surface" x-data="{ navigationOpen: false }" @keydown.escape.window="navigationOpen = false">
-        <div class="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
-            <a href="/" class="text-lg font-black uppercase tracking-tight text-ink sm:text-xl">{{ config('app.name') }}</a>
-            <nav class="ml-auto hidden lg:block" aria-label="{{ __('Homepage navigation') }}">
-                <ul class="flex items-center gap-7 text-sm font-semibold text-muted">
-                    <li><a href="#features" class="transition hover:text-ink">{{ __('Capabilities') }}</a></li>
-                    <li><a href="#product" class="transition hover:text-ink">{{ __('Product') }}</a></li>
-                    <li><a href="#how-it-works" class="transition hover:text-ink">{{ __('How it works') }}</a></li>
-                    <li><a href="{{ route('pricing') }}" class="transition hover:text-ink">{{ __('Pricing') }}</a></li>
-                    <li><a href="{{ route('platform-status.show') }}" class="transition hover:text-ink">{{ __('Status') }}</a></li>
-                    <li><a href="#questions" class="transition hover:text-ink">{{ __('Questions') }}</a></li>
-                </ul>
-            </nav>
-            <div class="ml-auto flex items-center gap-2 lg:ml-5">
-                <x-ui.button :href="route('login')" variant="secondary">{{ __('Sign in') }}</x-ui.button>
-                @if ($registrationOpen)
-                    <x-ui.button :href="route('register')" variant="primary" class="hidden sm:inline-flex">{{ __('Get started') }}</x-ui.button>
-                @else
-                    <x-ui.button :href="route('access-request.create')" variant="primary" class="hidden sm:inline-flex">{{ __('Request access') }}</x-ui.button>
-                @endif
-                <button id="navbarToggler" type="button" class="ui-btn ui-btn-primary lg:hidden" aria-controls="navbarCollapse" :aria-expanded="navigationOpen.toString()" aria-label="{{ __('Toggle navigation') }}" @click="navigationOpen = ! navigationOpen">
-                    <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
-                </button>
-            </div>
-        </div>
-        <nav id="navbarCollapse" x-cloak x-show="navigationOpen" class="absolute inset-x-3 top-full rounded-xl border border-line bg-surface p-3 shadow-xl lg:hidden" aria-label="{{ __('Mobile homepage navigation') }}" @click="if ($event.target.closest('a')) navigationOpen = false">
-            <ul class="grid gap-1 text-sm font-semibold text-muted">
-                <li><a href="#features" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Capabilities') }}</a></li>
-                <li><a href="#product" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Product') }}</a></li>
-                <li><a href="#how-it-works" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('How it works') }}</a></li>
-                <li><a href="{{ route('pricing') }}" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Pricing') }}</a></li>
-                <li><a href="{{ route('platform-status.show') }}" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Status') }}</a></li>
-                <li><a href="#questions" class="block rounded-lg px-3 py-3 hover:bg-surface-muted hover:text-ink">{{ __('Questions') }}</a></li>
-            </ul>
-        </nav>
-        <noscript>
-            <nav class="border-t border-line px-4 py-3 lg:hidden" aria-label="{{ __('Homepage navigation without JavaScript') }}">
-                <ul class="grid grid-cols-2 gap-2 text-sm font-semibold text-muted">
-                    <li><a href="#features" class="block py-2">{{ __('Capabilities') }}</a></li><li><a href="#product" class="block py-2">{{ __('Product') }}</a></li><li><a href="#how-it-works" class="block py-2">{{ __('How it works') }}</a></li><li><a href="#questions" class="block py-2">{{ __('Questions') }}</a></li>
-                </ul>
-            </nav>
-        </noscript>
-    </header>
+    <x-layouts.public-header navigation-label="Homepage navigation" mobile-navigation-label="Mobile homepage navigation" />
 
     <main id="main-content" tabindex="-1">
         <section data-landing-hero class="ui-landing-hero overflow-hidden bg-page">

@@ -17,9 +17,9 @@ for (const viewport of viewports) {
             page.getByRole('button', { name: 'Login' }).click(),
         ]);
 
-        const navigation = page.locator(viewport.width < 1024 ? '#primary-navigation' : '#desktop-navigation');
+        const navigation = page.locator(viewport.width < 1024 ? '#app-mobile-nav' : '#desktop-navigation');
         if (viewport.width < 1024) {
-            await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+            await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
             await expect(navigation).toBeVisible();
         } else {
             await expect(navigation).toBeVisible();
@@ -33,8 +33,7 @@ for (const viewport of viewports) {
             for (const mergedLink of ['Template library', 'Billing and usage', 'Account and security', 'Domains and TLS', 'Automation and API']) {
                 await expect(navigation.getByRole('link', { name: mergedLink, exact: true })).toHaveCount(0);
             }
-            await expect(navigation.getByRole('navigation', { name: 'Workspace navigation', exact: true })).toBeVisible();
-            await expect(navigation.getByRole('navigation', { name: 'Settings and support', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('navigation', { name: 'Application navigation', exact: true })).toBeVisible();
         } else {
             await expect(navigation.getByRole('link', { name: 'Template library', exact: true })).toBeVisible();
             await expect(navigation.getByRole('link', { name: 'Billing and usage', exact: true })).toBeVisible();
@@ -44,16 +43,14 @@ for (const viewport of viewports) {
             }
         }
         if (viewport.width < 1024) {
-            await expect(navigation.getByRole('navigation', { name: 'Workspace navigation', exact: true })).toBeVisible();
-            await expect(navigation.getByRole('navigation', { name: 'Settings and support', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('navigation', { name: 'Application navigation', exact: true })).toBeVisible();
         } else {
-            await expect(navigation.getByRole('navigation', { name: 'Build and release', exact: true })).toBeVisible();
-            await expect(navigation.getByRole('navigation', { name: 'Workspace', exact: true })).toBeVisible();
+            await expect(navigation.getByRole('navigation', { name: 'Application navigation', exact: true })).toBeVisible();
         }
 
         await page.goto(new URL('/projects', baseURL).toString(), { waitUntil: 'domcontentloaded' });
         if (viewport.width < 1024) {
-            await page.getByRole('button', { name: 'Toggle navigation', exact: true }).click();
+            await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
         }
         await expect(navigation.getByRole('link', { name: 'Applications', exact: true })).toHaveAttribute('aria-current', 'page');
         expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 2)).toBe(true);

@@ -8,12 +8,12 @@
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-3 focus:font-semibold focus:text-ink focus:shadow-xl">
         {{ __('Skip to main content') }}
     </a>
+    <x-layouts.public-header navigation-label="API navigation" />
 
     <main id="main-content" tabindex="-1" class="min-h-screen bg-page px-4 py-10 text-ink sm:px-6 sm:py-14">
         <div class="mx-auto max-w-5xl">
             <header class="flex flex-col gap-5 border-b border-line pb-8 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <a href="{{ url('/') }}" class="ui-link inline-flex min-h-[2.5rem] items-center text-sm">← {{ config('app.name') }}</a>
                     <p class="ui-eyebrow mt-6">API v1</p>
                     <h1 class="mt-2 text-4xl font-black tracking-tight">{{ __('Control plane API') }}</h1>
                     <p class="mt-3 max-w-2xl leading-7 text-muted">{{ __('Automate projects, deployments, runtime state, scaling, and workflow configuration with scoped Bearer tokens.') }}</p>

@@ -8,12 +8,12 @@
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-emphasis focus:px-4 focus:py-3 focus:font-semibold focus:text-emphasis-ink focus:shadow-xl">
         {{ __('Skip to main content') }}
     </a>
+    <x-layouts.public-header navigation-label="Service status navigation" />
 
     <main id="main-content" tabindex="-1" class="min-h-screen bg-page px-4 py-10 sm:px-6 sm:py-16">
         <div class="mx-auto max-w-4xl">
             <header class="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                    <a href="{{ url('/') }}" class="ui-link inline-flex min-h-[2.5rem] items-center text-sm font-black uppercase tracking-[.18em]">{{ config('app.name') }}</a>
                     <h1 class="mt-3 text-3xl font-black tracking-tight text-ink sm:text-4xl">{{ __('Service status') }}</h1>
                     <p class="mt-2 text-muted">{{ __('Live availability for :app’s public services.', ['app' => config('app.name')]) }}</p>
                 </div>

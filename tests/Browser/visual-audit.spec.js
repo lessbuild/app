@@ -117,9 +117,9 @@ for (const device of devices) {
             page.getByRole('button', { name: 'Login' }).click(),
         ]);
 
-        const navigation = page.locator(device.width < 1024 ? '#primary-navigation' : '#desktop-navigation');
+        const navigation = page.locator(device.width < 1024 ? '#app-mobile-nav' : '#desktop-navigation');
         if (device.width < 1024) {
-            await page.getByRole('button', { name: 'Toggle navigation' }).click();
+            await page.getByRole('button', { name: 'Open navigation' }).click();
             await expect(navigation).toBeVisible();
             await expect(navigation.getByRole('link', { name: 'Applications', exact: true })).toBeVisible();
             await navigation.getByRole('link', { name: 'Account', exact: true }).scrollIntoViewIfNeeded();
@@ -129,7 +129,7 @@ for (const device of devices) {
             await expect(navigation).toBeHidden();
         } else {
             await expect(navigation).toBeVisible();
-            await expect(page.getByRole('button', { name: 'Toggle navigation' })).toBeHidden();
+            await expect(page.getByRole('button', { name: 'Open navigation' })).toBeHidden();
         }
 
         const queue = authenticatedSeeds.map((pathname) => new URL(pathname, baseURL).toString());

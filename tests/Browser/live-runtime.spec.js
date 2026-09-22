@@ -24,7 +24,7 @@ test('served Livewire runtime and mobile public navigation work', async ({ page 
     await expect.poll(() => page.evaluate(() => typeof window.Alpine)).toBe('object');
 
     await page.goto(new URL('/', origin).href, { waitUntil: 'networkidle' });
-    const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
+    const toggle = page.getByRole('button', { name: 'Open navigation', exact: true });
     const navigation = page.getByRole('navigation', { name: 'Mobile homepage navigation' });
     await toggle.click();
     await expect(navigation).toBeVisible();

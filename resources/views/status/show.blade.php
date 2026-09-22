@@ -8,11 +8,11 @@
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-emphasis focus:px-4 focus:py-3 focus:font-semibold focus:text-emphasis-ink focus:shadow-xl">
         {{ __('Skip to main content') }}
     </a>
+    <x-layouts.public-header navigation-label="Status navigation" />
 
     <main id="main-content" tabindex="-1" class="min-h-screen bg-page px-4 py-10 sm:px-6 sm:py-16">
         <div class="mx-auto max-w-3xl">
             <header class="text-center">
-                <a href="{{ url('/') }}" class="ui-link inline-flex min-h-[2.5rem] items-center text-xs font-black uppercase tracking-[.24em]">{{ config('app.name') }}</a>
                 <h1 class="mt-3 text-4xl font-black tracking-tight text-ink">{{ $page->name }}</h1>
                 @if ($page->description)
                     <p class="mx-auto mt-3 max-w-xl text-muted">{{ $page->description }}</p>

@@ -1,7 +1,7 @@
 <x-layouts.core :title="__('Pricing')" :description="__('Simple monthly or annual pricing for :app.', ['app' => config('app.name')])" :canonical="route('pricing')" :indexable="true" :livewire="false">
+    <x-layouts.public-header navigation-label="Pricing navigation" />
     <main class="min-h-screen bg-page px-4 py-10 sm:px-6 lg:px-8" x-data="{ interval: 'yearly' }">
         <div class="mx-auto max-w-7xl">
-            <nav class="flex items-center justify-between gap-4" aria-label="{{ __('Pricing navigation') }}"><a href="{{ url('/') }}" class="ui-link inline-flex min-h-[2.5rem] items-center text-xl font-black uppercase tracking-tight">{{ config('app.name') }}</a><x-ui.button :href="route('login')" variant="secondary">{{ __('Sign in') }}</x-ui.button></nav>
             <header class="mx-auto max-w-3xl py-12 text-center"><p class="ui-eyebrow">{{ __('Simple pricing') }}</p><h1 class="mt-4 text-4xl font-black tracking-tight text-ink sm:text-6xl">{{ __('From first push to serious scale.') }}</h1><p class="mt-5 text-lg text-muted">{{ __('Deploy to your own cloud with previews, rollbacks, monitoring and backups in one calm control plane.') }}</p>
                 <div class="mt-7 inline-flex rounded-xl border border-line bg-surface p-1 shadow-sm"><button type="button" @click="interval='monthly'" :class="interval==='monthly' ? 'ui-btn-primary' : 'ui-btn-quiet'" :aria-pressed="(interval === 'monthly').toString()" class="ui-btn ui-btn-sm">{{ __('Monthly') }}</button><button type="button" @click="interval='yearly'" :class="interval==='yearly' ? 'ui-btn-primary' : 'ui-btn-quiet'" :aria-pressed="(interval === 'yearly').toString()" class="ui-btn ui-btn-sm">{{ __('Yearly · save 2 months') }}</button></div>
             </header>

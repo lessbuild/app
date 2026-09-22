@@ -2,9 +2,10 @@
     <a href="#main-content" class="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-3 focus:font-semibold focus:text-ink focus:shadow-xl">
         {{ __('Skip to main content') }}
     </a>
+    <x-layouts.public-header navigation-label="Product guide navigation" />
     <main id="main-content" tabindex="-1" class="min-h-screen bg-page px-4 py-10 text-ink sm:px-6">
         <div class="mx-auto max-w-6xl">
-            <div class="flex flex-wrap items-center justify-between gap-3"><a href="{{ auth()->check() ? route('dashboard') : url('/') }}" class="ui-link inline-flex min-h-[2.5rem] items-center">← {{ config('app.name') }}</a><div class="flex flex-wrap gap-2"><x-ui.button href="#troubleshooting" variant="secondary">{{ __('Troubleshooting') }}</x-ui.button><x-ui.button :href="route('api-docs')" variant="secondary">{{ __('API reference') }}</x-ui.button></div></div>
+            <div class="mt-8 flex flex-wrap justify-end gap-2"><x-ui.button href="#troubleshooting" variant="secondary">{{ __('Troubleshooting') }}</x-ui.button><x-ui.button :href="route('api-docs')" variant="secondary">{{ __('API reference') }}</x-ui.button></div>
             <header class="mt-8 max-w-3xl"><p class="ui-eyebrow">{{ __('Getting started') }}</p><h1 class="mt-2 text-4xl font-black">{{ __('From empty workspace to verified release') }}</h1><p class="mt-3 text-base leading-7 text-muted">{{ __('Follow the shortest safe path first. Add automation, scaling, and team controls after one manual release and recovery drill succeed.') }}</p></header>
             <details id="guide-contents" class="ui-card group mt-8 overflow-hidden">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">

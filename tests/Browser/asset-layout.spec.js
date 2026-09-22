@@ -1568,8 +1568,8 @@ for (const colorScheme of ['light', 'dark']) {
                     await page.evaluate((theme) => document.documentElement.classList.add(theme), override);
                     await expect(page.locator('body')).toHaveCSS('background-color', override === 'dark' ? 'rgb(23, 25, 28)' : 'rgb(244, 247, 251)');
                     await page.evaluate((theme) => document.documentElement.classList.remove(theme), override);
-                    const toggle = page.getByRole('button', { name: 'Toggle navigation', exact: true });
-                    const menu = page.locator('#primary-navigation');
+                    const toggle = page.getByRole('button', { name: 'Open navigation', exact: true });
+                    const menu = page.locator('#app-mobile-nav');
                     if (width < 1024) {
                         const footer = page.locator('[data-mobile-quick-navigation]');
                         await expect(footer).toBeVisible();

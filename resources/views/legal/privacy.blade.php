@@ -1,6 +1,6 @@
 <x-layouts.core :title="__('Privacy Policy')" :description="__('How :app collects, uses, protects, and deletes account and infrastructure data.', ['app' => config('app.name')])" :canonical="route('privacy')" :indexable="true" :livewire="false">
+    <x-layouts.public-header navigation-label="Privacy navigation" />
     <main class="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
-        <a href="/" class="ui-link text-sm font-black uppercase tracking-[.18em]">{{ config('app.name') }}</a>
         <h1 class="mt-5 text-4xl font-black tracking-tight text-ink">{{ __('Privacy Policy') }}</h1>
         <p class="mt-2 text-sm text-muted">{{ __('Effective :date', ['date' => config('legal.effective_date')]) }}</p>
         <div class="mt-10 space-y-8 leading-7 text-muted">
