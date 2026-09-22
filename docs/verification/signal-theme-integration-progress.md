@@ -1,5 +1,89 @@
 # Signal theme integration progress
 
+## Slice 105 — Signal source controls in shared chrome — 2026-09-22
+
+Responsibility problem:
+
+- A few shared controls still diverged from the actual Signal template even
+  though the application shell and theme tokens were already sourced from it.
+- The shared empty state used a hard-coded Tailwind radius, and modal, filter,
+  command-palette and navigation close controls used a text glyph instead of
+  Signal's close icon primitive.
+
+Boundary and implementation:
+
+- Reused Signal's `rounded-card` token in the shared empty-state component so
+  corner preferences remain controlled by the theme.
+- Added the Signal close icon to the local icon sprite and used it in the
+  shared modal, filter, public navigation, authenticated navigation, command
+  palette and Livewire command dialog controls.
+- Updated the rendering contract test to protect the source primitives.
+
+Preserved contracts and safety:
+
+- Modal, drawer, filter, focus-restoration and Livewire actions are unchanged.
+- Existing routes, labels, keyboard behavior, non-JavaScript fallbacks and
+  product-specific navigation remain unchanged.
+- No remote assets, dependencies, credentials, data or infrastructure changed.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 59 tests passed, 2,794 assertions.
+- `npm run build` — passed; generated bundle is
+  `assets/app-CuUlBr_y.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Deployed 390px browser check confirmed the public drawer, authenticated
+  drawer and command palette each render the local Signal close icon; the
+  command palette screenshot shows the Signal dialog surface and backdrop.
+- Implementation commit `04af2b7` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `04af2b7`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The served stylesheet is `build/assets/app-CuUlBr_y.css`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: continue the visual audit on the remaining high-traffic detail and
+inventory surfaces, changing only concrete differences from Signal's source
+components and recording each cohesive slice.
+
+## Slice 104 — Keep dashboard status panels in flow — 2026-09-22
+
+Responsibility problem:
+
+- Dashboard status sections used Signal's flex-based feedback alert primitive
+  as their full-width layout container, which caused mobile status columns to
+  overlap.
+
+Boundary and implementation:
+
+- Kept `ui-alert` for compact feedback messages and changed dashboard status
+  sections to Signal `ui-panel` surfaces with semantic success, warning and
+  danger border variants.
+- Added the small component-level regression assertion that prevents an alert
+  from being reused as a dashboard layout container.
+
+Preserved contracts and safety:
+
+- Existing status copy, links, actions, ordering, queries and product behavior
+  are unchanged; only the display primitive changed.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 58 tests passed, 2,778 assertions.
+- `npm run build` — passed; generated bundle was `assets/app-B90Qs430.css`.
+- Pint and `git diff --check` passed.
+- A direct 390px deployed dashboard screenshot confirmed that status panels
+  remain in normal flow without overlap.
+- Implementation commit `274a0bb` is pushed to `origin/main`.
+
+
 ## Slice 1 — shared theme and application shell
 
 Status: implemented and pushed on `main` through commit `859e898`; the
