@@ -2164,6 +2164,58 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next remaining high-impact UI surface for a separate
 cohesive Signal modernization boundary.
 
+## Slice 60 — authenticated navigation shell — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as 'da4f7bd'.
+
+Responsibility problem addressed:
+
+- The shared authenticated shell still depended on compatibility palette names,
+  hand-built mobile bottom-bar geometry and legacy button classes in dynamic
+  modal feedback. This made navigation and loading/error states drift from the
+  Signal component system even when individual product pages were modernized.
+
+Signal implementation:
+
+- Replaced the shell skip link with `ui-skip-link` and the mobile quick bar
+  with the existing `ui-bottom-nav`/`ui-bottom-nav-link` primitives.
+- Migrated active navigation tokens, footer links and workspace-search retry
+  feedback to Signal semantic roles.
+- Migrated dynamically created modal retry, fallback and loading controls in
+  the core layout to `ui-btn`, `text-ink` and `text-muted`.
+- Updated the fixture browser selector to use the stable
+  `data-mobile-quick-navigation` hook instead of retired geometry utilities.
+
+Preserved contracts:
+
+- Navigation routes, active-link behavior, mobile menu focus restoration,
+  Escape handling, command-palette behavior, application creation dialog
+  history, footer destinations and modal loading/error behavior are unchanged.
+- No controller, request, policy, action, persistence, transaction, queue or
+  remote integration behavior changed.
+
+Evidence:
+
+- Shell, dashboard, application and dialog regression coverage — 60 tests
+  passed, 1,015 assertions.
+- 'npm run build' — passed with assets/app-CyTw6njh.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+- Fixture shell matrix — 5 of 8 viewport/theme cases passed. Three failures
+  remain in pre-existing domain modal-history and operator-note fixture flows;
+  they are outside this class-only shell change and are retained as known
+  browser verification limitations.
+- The default navigation/accessibility browser command could not start because
+  its local fixture host at 127.0.0.1:8014 was unavailable; canonical-host
+  verification follows after deployment.
+
+Push status: 'da4f7bd' is on 'origin/main'.
+
+Next task: deploy this authenticated-shell modernization to the isolated
+canonical Deployer runtime, then inspect the next remaining high-impact UI
+surface.
+
 ## Slice 59 — application workspace and creation surfaces — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as 'c9d896f'.
