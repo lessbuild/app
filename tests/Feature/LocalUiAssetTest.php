@@ -193,6 +193,22 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_shared_danger_indicators_use_signal_tokens(): void
+    {
+        $deleteDialog = File::get(resource_path('views/components/dialogs/delete.blade.php'));
+        $applicationLayout = File::get(resource_path('views/components/layouts/app.blade.php'));
+
+        $this->assertStringContainsString('var(--ui-danger)', $deleteDialog);
+        $this->assertStringContainsString('ui-status-dot', $applicationLayout);
+        $this->assertStringContainsString('--ui-status-dot: var(--ui-danger)', $applicationLayout);
+
+        foreach (['bg-red-100', 'text-red-600'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $deleteDialog);
+        }
+
+        $this->assertStringNotContainsString('bg-red-500', $applicationLayout);
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))

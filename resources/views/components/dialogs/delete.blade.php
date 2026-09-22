@@ -15,7 +15,7 @@
         @method('DELETE')
         @csrf
         <div class="flex items-start gap-4 px-5 py-5 sm:px-6">
-            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-red-100 text-red-600" aria-hidden="true">
+            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-line bg-surface-muted" style="color: var(--ui-danger)" aria-hidden="true">
                 <svg class="h-5 w-5">
                     <use xlink:href="/assets/images/icons.svg#information-circle"></use>
                 </svg>
