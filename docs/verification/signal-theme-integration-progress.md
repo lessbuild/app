@@ -3010,3 +3010,59 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 42 — account security surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'797cf58'.
+
+Responsibility problem addressed:
+
+- Account security was a single user journey spread across profile, password,
+  two-factor, sign-in history, browser sessions, connected accounts, audit
+  activity and account deletion, but its shared section primitive and forms
+  still mixed compatibility utility classes with Signal components. Filled
+  legacy surfaces made the long page harder to scan on mobile and reduced
+  contrast consistency in dark mode.
+
+Signal implementation:
+
+- Modernized the shared responsive form-section primitive with semantic Signal
+  text, border and focus tokens; this also keeps organization settings aligned
+  with the same disclosure behavior.
+- Updated account profile, password, two-factor, security activity, sign-in,
+  browser-session, connected-account and data controls to use Signal surfaces,
+  `ui-input`, `ui-label`, `ui-link`, `text-ink`, `text-muted`, `bg-surface`,
+  `bg-surface-muted`, `border-line` and `divide-line`.
+- Kept destructive account deletion border-led on a neutral surface and made
+  recovery/setup codes readable without relying on a white-only background.
+
+Preserved contracts:
+
+- Form actions, methods, field names, hidden identifiers, confirmation
+  prompts, named error bags, session flash keys, password/two-factor/social
+  validation, email verification, sign-in export/history and account deletion
+  behavior are unchanged.
+- Secret values remain excluded from activity, logs and exports; recovery
+  codes remain shown only in the existing one-time setup state.
+- No controller, request, policy, action, persistence, session, queue or
+  authorization behavior was modified.
+
+Evidence:
+
+- Account, security activity/overview, browser sessions, session revocation,
+  sign-in history, two-factor, email verification, social authentication,
+  account lifecycle, organization, shared-tenancy, UI asset and page-insight
+  coverage — 153 tests passed, 1,400 assertions.
+- Fixture-backed responsive account/organization layout coverage — 2 tests
+  passed for light/dark at 320px.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '797cf58' is on 'origin/main'.
+
+Next task: deploy the account-security modernization to the isolated canonical
+development runtime, then inspect the next product surface for a separate
+cohesive Signal modernization boundary.
