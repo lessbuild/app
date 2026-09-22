@@ -137,7 +137,7 @@
                     {{ $provider->connection_monitoring_enabled ? __('Automatic monitoring enabled') : __('Automatic monitoring paused') }}
                 </p>
                 <p class="mt-1 text-xs text-muted">
-                    {{ trans_choice('Every :count hour|Every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
+                    {{ trans_choice('every :count hour|every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
                 </p>
             </div>
             <div class="ui-card p-4">
