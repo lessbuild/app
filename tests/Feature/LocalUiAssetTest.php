@@ -328,6 +328,50 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('border-primary', $homepage);
     }
 
+    public function test_public_legal_pages_use_signal_typography_and_links(): void
+    {
+        foreach ([
+            'legal/terms.blade.php' => [
+                'Terms of Service',
+                'Acceptable use',
+                'route(\'privacy\')',
+            ],
+            'legal/privacy.blade.php' => [
+                'Privacy Policy',
+                'Information we process',
+                'route(\'terms\')',
+            ],
+        ] as $view => $content) {
+            $source = File::get(resource_path('views/'.$view));
+
+            $this->assertStringContainsString('ui-link', $source, $view);
+            $this->assertStringContainsString('text-ink', $source, $view);
+            $this->assertStringContainsString('text-muted', $source, $view);
+            $this->assertStringContainsString('border-line', $source, $view);
+            $this->assertStringNotContainsString('text-primary', $source, $view);
+            $this->assertStringNotContainsString('text-secondary', $source, $view);
+            $this->assertStringNotContainsString('text-ternary', $source, $view);
+            $this->assertStringNotContainsString('border-primary', $source, $view);
+
+            foreach ($content as $fragment) {
+                $this->assertStringContainsString($fragment, $source, $view);
+            }
+        }
+
+        $this->get(route('privacy'))
+            ->assertSuccessful()
+            ->assertSee('Privacy Policy')
+            ->assertSee('ui-link', false)
+            ->assertSee('text-ink', false)
+            ->assertSee('text-muted', false);
+        $this->get(route('terms'))
+            ->assertSuccessful()
+            ->assertSee('Terms of Service')
+            ->assertSee('ui-link', false)
+            ->assertSee('text-ink', false)
+            ->assertSee('text-muted', false);
+    }
+
     public function test_private_pages_are_not_indexable_and_do_not_emit_public_share_metadata(): void
     {
         $html = $this->actingAs(User::factory()->create())
