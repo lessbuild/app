@@ -5212,3 +5212,76 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 72 — authenticated Signal navigation shell — 2026-09-22
+
+Responsibility problem:
+
+- The authenticated shell had Signal tokens available, but its shared sidebar,
+  mobile navigation, top bar and footer still depended on older utility-only
+  presentation classes. This made every authenticated page inherit the old
+  navigation appearance even after the rest of the application had moved to
+  Signal controls.
+
+Boundary and implementation:
+
+- Kept route generation, active-route matching, Alpine menu/palette hooks,
+  scoped navigation groups, responsive breakpoints and accessibility labels in
+  the existing layout components.
+- Applied the shared Signal navigation primitives to desktop and mobile links,
+  the sidebar brand/search area, the mobile drawer, the top bar, the backdrop
+  and the footer.
+- Added theme-token based shell styling for active states, subtle corners,
+  branded marks, focus/hover feedback, light/dark surfaces and mobile-safe
+  navigation spacing.
+
+Preserved contracts and safety:
+
+- Navigation destinations, merged groups, badges, `aria-current` behavior,
+  keyboard focus restoration, Escape handling, search palette behavior,
+  mobile quick actions, logout behavior and footer routes are unchanged.
+- No controllers, authorization, persistence, job, API or provider behavior
+  changed.
+
+Evidence:
+
+- Dashboard and local UI shell coverage — 69 tests passed, 1,430 assertions.
+- `npm run build` — passed; generated CSS includes the Signal shell rules.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Push status: implementation commit '3e5c18b' is on 'origin/main'.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary after confirming the deployed shell.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to '3e5c18b'. The Signal navigation shell asset bundle was rebuilt,
+application, configuration, route and view caches were rebuilt, and the
+runtime health endpoint remained ready. The canonical development host is
+https://deployer.buildpusher.com; the legacy buildpusher.com host is not the
+verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/manifest.json` — HTTP 200 with assets/app-D9Es0ydp.css and
+  assets/signal-theme-DODJINv7.js.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+- Served navigation and accessibility suite — 6 tests passed across mobile,
+  tablet and desktop in 35.6 seconds.
+- DOM/computed-style check confirmed the served desktop sidebar uses
+  `app-sidebar`, the top bar uses `app-topbar`, the active link uses
+  `app-sidebar-link`, and the active Signal surface resolves to the theme ink
+  color. The mobile drawer uses `app-mobile-navigation`.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
