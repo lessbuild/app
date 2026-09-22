@@ -599,7 +599,10 @@ test('build comparison opens as a read-only contextual dialog', async ({ page })
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/builds/2', { waitUntil: 'networkidle' });
 
-    const trigger = page.getByRole('link', { name: 'Compare with previous', exact: true });
+    let trigger = page.getByRole('link', { name: 'Compare with previous', exact: true });
+    const canonicalBuildPath = new URL(await trigger.getAttribute('href'), page.url()).pathname;
+    await page.goto(`http://buildpusher.test${canonicalBuildPath}`, { waitUntil: 'networkidle' });
+    trigger = page.getByRole('link', { name: 'Compare with previous', exact: true });
     const dialog = page.getByRole('dialog', { name: 'Compare deployments', exact: true });
     const initialPath = new URL(page.url()).pathname;
     await trigger.click();
@@ -615,7 +618,7 @@ test('build comparison opens as a read-only contextual dialog', async ({ page })
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
 
-    await page.goto('http://buildpusher.test/builds/2?dialog=' + dialogQuery, { waitUntil: 'networkidle' });
+    await page.goto(`${initialPath}?dialog=${dialogQuery}`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Compare deployments', exact: true })).toBeVisible();
 });
 
@@ -627,19 +630,19 @@ test('build health history opens as a contextual read-only dialog', async ({ pag
 
     const trigger = page.getByRole('link', { name: 'View health history', exact: true });
     const dialog = page.getByRole('dialog', { name: 'Health check history', exact: true });
-    const initialPath = new URL(page.url()).pathname;
+    const expectedPath = new URL(await trigger.getAttribute('data-modal-history-url'), page.url()).pathname;
     await trigger.click();
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('form[data-modal-fragment-form]')).toBeVisible();
     await expect(dialog.locator('#health-dialog-result')).toBeVisible();
-    expect(new URL(page.url()).pathname).toBe(initialPath);
+    expect(new URL(page.url()).pathname).toBe(expectedPath);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('build-website-health-checks-dialog');
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
     await expect(trigger).toBeFocused();
 
-    await page.goto('http://buildpusher.test/builds/2?dialog=build-website-health-checks-dialog', { waitUntil: 'networkidle' });
+    await page.goto(`${expectedPath}?dialog=build-website-health-checks-dialog`, { waitUntil: 'networkidle' });
     await expect(page.getByRole('dialog', { name: 'Health check history', exact: true })).toBeVisible();
 });
 
@@ -1523,6 +1526,9 @@ for (const colorScheme of ['light', 'dark']) {
                     const evidence = page.locator('#deployment-evidence');
                     const content = evidence.locator('.ui-responsive-details__content');
                     await expect(evidence).toBeVisible();
+                    await expect(evidence).toHaveClass(/\bui-panel\b/);
+                    await expect(page.locator('#deployment-timeline')).toHaveClass(/\bui-panel\b/);
+                    await expect(page.locator('#deployment-log')).toHaveClass(/\bui-panel\b/);
                     await expect(page.locator('#deployment-timeline-title')).toBeVisible();
                     if (width >= 1024) {
                         await expect(content).toBeVisible();
