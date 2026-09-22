@@ -59,6 +59,10 @@ class WebsiteProvisioningLogTest extends TestCase
             ->assertSuccessful()
             ->assertSee('wire:poll.5s', false)
             ->assertSee('Provisioning timeline')
+            ->assertSee('Website sections')
+            ->assertSee('data-website-overview', false)
+            ->assertSee('data-website-health', false)
+            ->assertSee('data-website-repositories', false)
             ->assertDontSee('Setup Information')
             ->assertSeeText('Creating database')
             ->assertDontSee("<script>alert('xss')</script>", false);

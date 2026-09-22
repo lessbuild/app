@@ -483,6 +483,10 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
         const dialog = page.getByRole('dialog', { name: workflow.title, exact: true });
         await expect(dialog).toBeVisible();
         await expect(dialog.locator('form[method="POST"]').first()).toBeVisible();
+        if (workflow.path === 'websites/1') {
+            await expect(dialog.locator('.ui-input').first()).toBeVisible();
+            await expect(dialog.locator('.ui-panel').first()).toBeVisible();
+        }
         expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
         expect(new URL(page.url()).pathname).toBe(initialPath);
         await expect(dialog.locator('[data-modal-close]')).toBeFocused();
@@ -1013,8 +1017,10 @@ test('website detail keeps provisioning and health evidence in Signal panels', a
     await page.goto('http://buildpusher.test/websites/1', { waitUntil: 'networkidle' });
 
     await expect(page.getByRole('heading', { name: 'App', exact: true })).toBeVisible();
+    await expect(page.getByRole('navigation', { name: 'Website sections', exact: true })).toBeVisible();
+    await expect(page.locator('#website-information')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#website-operations')).toHaveClass(/\bui-panel\b/);
-    await expect(page.locator('section[aria-labelledby="health-history-heading"]')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#website-health')).toHaveClass(/\bui-panel\b/);
     await expect(page.locator('#website-health-insights')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Delete Website', exact: true })).toBeVisible();
 });

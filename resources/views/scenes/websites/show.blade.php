@@ -32,14 +32,12 @@
      ! ------------------------------------------------------------
      !-->
     @if(session()->has("website:{$website->id}:mysql_password"))
-        <div class="my-4">
-            <x-ui.alert tone="warning" class="border-l-4">
+        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-accent)" role="alert">
                 {{ __('The root MYSQL password is:') }}
                 <b class="font-bold">{{ session()->get("website:{$website->id}:mysql_password") }}</b>
                 <br>
                 {{ __('This will only be shown once, so please save these passwords somewhere safe.') }}
-            </x-ui.alert>
-        </div>
+        </aside>
     @endif
 
     <!--
@@ -118,10 +116,18 @@
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Website sections')">
+        <a href="#website-information" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#website-operations" class="ui-local-nav__link">{{ __('Operations') }}</a>
+        <a href="#website-health" class="ui-local-nav__link">{{ __('Health') }}</a>
+        <a href="#website-runtime-logs" class="ui-local-nav__link">{{ __('Logs') }}</a>
+        <a href="#website-repositories" class="ui-local-nav__link">{{ __('Repositories') }}</a>
+    </x-ui.local-nav>
+
     @if ($website->provisioning_status === \App\Models\Website::STATUS_FAILED)
-        <x-ui.alert tone="danger" class="my-4 border-l-4">
+        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             <p class="font-semibold">{{ __('Website provisioning failed') }}</p>
-            <p class="text-sm">{{ $website->provisioning_error }}</p>
+            <p class="mt-1 text-sm text-muted">{{ $website->provisioning_error }}</p>
             @error('retry')
                 <p class="mt-2 text-sm font-semibold">{{ $message }}</p>
             @enderror
@@ -129,13 +135,13 @@
                 @csrf
                 <x-ui.button type="submit" variant="primary">{{ __('Retry provisioning') }}</x-ui.button>
             </form>
-        </x-ui.alert>
+        </aside>
     @endif
 
     @if ($website->previous_server_id)
-        <x-ui.alert tone="warning" class="my-4 border-l-4">
+        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-ink" style="border-left-color: var(--ui-warning)" role="status">
             <p class="font-semibold">{{ __('Previous server cleanup pending') }}</p>
-            <p class="text-sm">
+            <p class="mt-1 text-sm text-muted">
                 @if ($website->placement_cleanup_error)
                     {{ $website->placement_cleanup_error }}
                 @elseif ($website->provisioning_status === \App\Models\Website::STATUS_ACTIVE)
@@ -152,7 +158,7 @@
                     <x-ui.button type="submit" variant="primary">{{ __('Retry cleanup') }}</x-ui.button>
                 </form>
             @endif
-        </x-ui.alert>
+        </aside>
     @endif
 
     <!--
@@ -160,7 +166,8 @@
      ! Website information
      ! ------------------------------------------------------------
      !-->
-    <x-ui.card class="mt-6 p-5">
+    <section id="website-information" class="ui-panel mt-6 scroll-mt-24 p-5" data-website-overview aria-labelledby="website-information-heading">
+        <h2 id="website-information-heading" class="sr-only">{{ __('Website information') }}</h2>
         <dl class="grid gap-5 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div class="flex items-start gap-3">
             <svg class="mt-0.5 h-4 w-4 shrink-0 text-muted" aria-hidden="true">
@@ -212,12 +219,12 @@
             <dd class="mt-1 text-xs text-ink">{{ $website->release_retention }}</dd>
         </div>
         </dl>
-    </x-ui.card>
+    </section>
 
     @if ($website->health_status === \App\Models\Website::HEALTH_UNHEALTHY && $website->health_last_error)
-        <x-ui.alert tone="danger" class="mt-4 border-l-4">
+        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             <strong>{{ __('Health check failed:') }}</strong> {{ $website->health_last_error }}
-        </x-ui.alert>
+        </aside>
     @endif
 
     @php
@@ -244,7 +251,7 @@
         </div>
     </details>
 
-    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="health-history-heading">
+    <section id="website-health" class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6" data-website-health aria-labelledby="health-history-heading">
         <div class="flex flex-wrap items-end justify-between gap-3">
             <div>
                 <p class="ui-eyebrow">{{ __('Health evidence') }}</p>
@@ -288,7 +295,7 @@
         @if ($healthChecks->isEmpty())
             <x-ui.empty-state class="mt-4" :title="__('No health checks have been recorded yet.')" />
         @else
-            <details id="website-health-history" class="group ui-card mt-4 overflow-hidden">
+            <details id="website-health-history" class="group ui-panel mt-4 overflow-hidden">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
                     <span>{{ __('Latest check results') }}</span>
                     <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
@@ -422,7 +429,7 @@
      ! Quick Actions
      ! ------------------------------------------------------------
     !-->
-    <section class="mt-8" aria-labelledby="attached-repositories-heading">
+    <section id="website-repositories" class="mt-8 scroll-mt-24" data-website-repositories aria-labelledby="attached-repositories-heading">
         <x-ui.card class="ui-panel p-5 sm:p-6">
             <div class="flex items-center justify-between gap-3">
                 <div class="min-w-0">
@@ -457,7 +464,7 @@
                     </li>
                 @empty
                     <li class="pt-3">
-                        <x-ui.alert tone="info" class="border-l-4" role="status">{{ __('No repositories attached to website') }}</x-ui.alert>
+                        <div class="ui-panel border-l-4 border-line bg-surface-muted p-4 text-sm text-muted" style="border-left-color: var(--ui-primary)" role="status">{{ __('No repositories attached to website') }}</div>
                     </li>
                 @endforelse
             </ul>
