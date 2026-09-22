@@ -2,13 +2,8 @@
     @foreach ($entries as $entry)
         <li class="relative pl-9">
             <span @class([
-                'absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full text-xs font-black',
-                'bg-green-100 text-green-700' => $entry->status === 'completed',
-                'bg-blue-100 text-blue-700' => $entry->status === 'active',
-                'bg-red-100 text-red-700' => $entry->status === 'failed',
-                'bg-amber-100 text-amber-800' => $entry->status === 'canceled',
-                'border border-line bg-surface-muted text-muted' => $entry->status === 'pending',
-            ]) aria-hidden="true">{{ match ($entry->status) { 'completed' => '✓', 'failed' => '!', 'canceled' => '–', 'active' => '•', default => '○' } }}</span>
+                'absolute left-0 top-0 flex h-6 w-6 items-center justify-center rounded-full border border-line bg-surface-muted text-xs font-black',
+            ]) style="color: {{ match ($entry->status) { 'completed' => 'var(--ui-success)', 'active' => 'var(--ui-info)', 'failed' => 'var(--ui-danger)', 'canceled' => 'var(--ui-warning)', default => 'var(--ui-muted)' } }}" aria-hidden="true">{{ match ($entry->status) { 'completed' => '✓', 'failed' => '!', 'canceled' => '–', 'active' => '•', default => '○' } }}</span>
             <div class="ui-card ui-card--muted border-line p-3">
                 <div class="flex flex-wrap items-center justify-between gap-2">
                     <h3 class="font-semibold text-ink">{{ __($entry->title) }}</h3>

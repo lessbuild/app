@@ -169,6 +169,19 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_deployment_timeline_status_markers_use_signal_tokens(): void
+    {
+        $source = File::get(resource_path('views/components/deployment-timeline.blade.php'));
+
+        foreach (['var(--ui-success)', 'var(--ui-info)', 'var(--ui-danger)', 'var(--ui-warning)', 'var(--ui-muted)'] as $token) {
+            $this->assertStringContainsString($token, $source);
+        }
+
+        foreach (['bg-green-100', 'text-green-700', 'bg-blue-100', 'text-blue-700', 'bg-red-100', 'text-red-700', 'bg-amber-100', 'text-amber-800'] as $legacyClass) {
+            $this->assertStringNotContainsString($legacyClass, $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))
