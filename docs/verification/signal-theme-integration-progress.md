@@ -6489,3 +6489,57 @@ Deployment:
 Next task: inspect the remaining shared local-navigation and inventory
 surfaces for another source-faithful Signal boundary, without removing
 behavior-backed selectors speculatively.
+
+## Slice 92 — Signal local navigation controls — 2026-09-22
+
+Responsibility problem:
+
+- Resource pages used a bespoke transparent-pill section navigation. It did not
+  use Signal's grouped control treatment, so long section lists felt detached
+  from the rest of the application and were harder to scan on mobile.
+
+Boundary and implementation:
+
+- Kept the shared `x-ui.local-nav` component and all existing anchor hooks,
+  while aligning its scroll container and links with Signal's control group:
+  semantic line/surface tokens, control radius, compact typography, grouped
+  padding and soft focus/hover elevation.
+- Preserved horizontal overflow so long resource sections remain reachable on
+  narrow screens.
+
+Preserved contracts and safety:
+
+- All section URLs, labels, modal triggers, anchor IDs, accessibility labels
+  and responsive overflow behavior remain unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,264 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-C2DJ04nX.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Served CSS contains the Signal radius and surface tokens used by the local
+  navigation group.
+- `tests/Browser/navigation.spec.js` and
+  `tests/Browser/accessibility.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `960514c` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `960514c`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: inspect the remaining inventory/list compatibility rules and migrate
+only the concrete surfaces that still differ from Signal's card and table
+primitives.
