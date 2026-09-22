@@ -71,12 +71,29 @@
         overflow: hidden;
     }
 
+    .ui-dialog[data-modal-sheet] [data-modal-panel] > form {
+        display: flex;
+        min-height: 0;
+        flex: 1 1 auto;
+        flex-direction: column;
+        overflow: hidden;
+    }
+
     .ui-dialog[data-modal-sheet] [data-modal-body],
     .ui-dialog[data-filter-dialog] [data-filter-dialog-body] {
         min-height: 0;
         overflow-y: auto;
         overscroll-behavior: contain;
         -webkit-overflow-scrolling: touch;
+    }
+
+    .ui-dialog[data-modal-sheet] [data-modal-panel] > form > [data-modal-body] {
+        flex: 1 1 auto;
+    }
+
+    .ui-dialog[data-modal-sheet] [data-modal-footer] {
+        flex: 0 0 auto;
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
     }
 
     .ui-dialog[data-modal-sheet] [data-modal-body] > form > .border-t {

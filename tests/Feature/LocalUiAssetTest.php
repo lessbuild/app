@@ -699,6 +699,24 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_livewire_server_command_uses_signal_dialog_composition(): void
+    {
+        $command = File::get(resource_path('views/livewire/scenes/servers/command.blade.php'));
+        $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
+
+        foreach (['<dialog', 'class="ui-dialog ui-command-dialog"', 'data-modal-panel', 'data-modal-header', 'data-modal-body', 'data-modal-footer', 'data-livewire-dialog'] as $token) {
+            $this->assertStringContainsString($token, $command, $token);
+        }
+
+        foreach (['fixed inset-0 bg-emphasis/70', 'fixed inset-0 z-10 overflow-y-auto', 'shadow-xl'] as $legacyToken) {
+            $this->assertStringNotContainsString($legacyToken, $command, $legacyToken);
+        }
+
+        $this->assertStringContainsString('dialog[data-livewire-dialog]', $coreLayout);
+        $this->assertStringContainsString('dialog.showModal()', $coreLayout);
+        $this->assertStringContainsString("dialog.addEventListener('cancel'", $coreLayout);
+    }
+
     public function test_authenticated_layout_has_live_accessible_shell_navigation(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);

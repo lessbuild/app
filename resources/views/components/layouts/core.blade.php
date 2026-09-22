@@ -308,6 +308,67 @@
 
         @if ($livewire)
             @livewireScripts
+
+            <script>
+                (() => {
+                    const selector = 'dialog[data-livewire-dialog]';
+
+                    const closeFromDialog = (dialog) => {
+                        dialog.querySelector('[data-livewire-dialog-close]')?.click();
+                    };
+
+                    const bindLivewireDialog = (dialog) => {
+                        if (dialog.dataset.livewireDialogBound === 'true') {
+                            return;
+                        }
+
+                        dialog.dataset.livewireDialogBound = 'true';
+                        dialog.addEventListener('cancel', (event) => {
+                            event.preventDefault();
+                            closeFromDialog(dialog);
+                        });
+                        dialog.addEventListener('click', (event) => {
+                            if (event.target === dialog) {
+                                closeFromDialog(dialog);
+                            }
+                        });
+                    };
+
+                    const syncLivewireDialogs = () => {
+                        document.querySelectorAll(selector).forEach((dialog) => {
+                            bindLivewireDialog(dialog);
+
+                            if (! dialog.hasAttribute('open')
+                                || dialog.matches(':modal')
+                                || typeof dialog.showModal !== 'function') {
+                                return;
+                            }
+
+                            dialog.removeAttribute('open');
+
+                            try {
+                                dialog.showModal();
+                            } catch (_) {
+                                dialog.setAttribute('open', '');
+                            }
+                        });
+
+                        document.dispatchEvent(new CustomEvent('modal:state-changed'));
+                    };
+
+                    const observer = new MutationObserver(syncLivewireDialogs);
+                    observer.observe(document.body, {
+                        attributes: true,
+                        attributeFilter: ['open'],
+                        childList: true,
+                        subtree: true,
+                    });
+
+                    document.addEventListener('livewire:navigated', syncLivewireDialogs);
+                    document.addEventListener('livewire:initialized', syncLivewireDialogs);
+                    syncLivewireDialogs();
+                })();
+            </script>
         @endif
 
         <script>
