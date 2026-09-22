@@ -330,3 +330,69 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the remaining provider create/edit and connection-management
 surfaces for the next cohesive Signal modernization slice, preserving the
 existing modal and no-JavaScript workflows.
+
+## Slice 7 — provider create/edit form controls
+
+Status: implemented, verified locally, committed and pushed as `d0a6f17`.
+
+Responsibility problem addressed:
+
+- Provider create and edit forms mixed Signal provider choices with legacy
+  inputs, labels, select controls, footer surfaces and a saturated validation
+  summary, making the modal feel like two visual systems and increasing visual
+  noise on mobile.
+
+Signal implementation:
+
+- Standardized token, name, description, monitoring and select controls on
+  `ui-input`, `ui-label`, `ui-help` and Signal text roles.
+- Kept provider selection as accessible native text radio controls, with the
+  existing seven provider options and server-rendered no-JavaScript behavior.
+- Kept monitoring secondary and collapsible on mobile while giving it the
+  shared Signal card treatment.
+- Changed GitHub guidance and validation feedback to quiet surfaces with a
+  colored border edge instead of full-background alert cards.
+- Added browser assertions for the themed controls and the contained
+  monitoring card.
+
+Preserved contracts:
+
+- All form IDs, names, defaults, entitlement-disabled states, validation keys,
+  old-input behavior, secret exclusion, routes, modal URLs and flash feedback.
+- Native form submission, modal body scrolling and the existing monitoring
+  disclosure behavior.
+
+Evidence:
+
+- `ProviderSubmissionFeedbackTest` — 7 tests passed, 37 assertions.
+- `CreationDialogTest` — 20 tests passed, 134 assertions.
+- `AutomaticMonitoringControlTest` — 4 tests passed, 42 assertions.
+- Provider browser form/scroll/no-JavaScript coverage — 4 tests passed.
+- The focused themed provider-form browser check — 1 passed.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `d0a6f17`, rebuilt and restarted through
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is https://deployer.buildpusher.com; the legacy buildpusher.com host is
+not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/manifest.webmanifest` — `Deployer` name and short name.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect provider connection controls and resource attachment
+surfaces, then modernize the next cohesive provider-management workflow.
