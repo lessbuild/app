@@ -1,5 +1,61 @@
 # Signal theme integration progress
 
+## Slice 110 — Signal card radius in evidence content — 2026-09-22
+
+Responsibility problem:
+
+- Several high-traffic evidence surfaces still used raw `rounded-lg`
+  utilities, leaving comparison values, command history, feedback details and
+  deployment-risk guidance on a legacy corner scale instead of Signal's
+  semantic card primitive.
+
+Boundary and implementation:
+
+- Replaced those raw radius utilities with Signal's exact `rounded-card`
+  primitive in build comparison content, recipe comparison, command history,
+  feedback reproduction details and deployment failure/risk evidence.
+- Kept the existing muted surfaces, borders, content hierarchy, responsive
+  layout and component APIs unchanged.
+- Added a source-level regression check so these evidence views cannot silently
+  reintroduce the legacy radius utility.
+
+Preserved contracts and safety:
+
+- Comparison values, command output, feedback details, failure guidance and
+  risk checks retain their existing copy, escaping, links, statuses and data
+  behavior.
+- No controllers, authorization, persistence, queues, API, provider or
+  billing behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- Focused UI, comparison, timeline, gallery, feedback and command-history
+  tests — 94 tests passed, 3,158 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-D4LlAziF.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `BROWSER_LIVE_ORIGIN=https://deployer.buildpusher.com npx playwright test
+  tests/Browser/live-runtime.spec.js` — 1 test passed, including served
+  Livewire runtime and mobile public navigation.
+- Implementation commit `d605023` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `d605023`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The exact stylesheet `build/assets/app-D4LlAziF.css` returns HTTP 200.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external-provider acceptance.
+
+Next task: audit remaining raw radius and control utilities against the actual
+Signal source, beginning with choice controls, workspace search rows, billing
+interval controls, load-balancer detail cards and user code surfaces.
+
 ## Slice 106 — Signal notification and error surfaces — 2026-09-22
 
 Responsibility problem:
