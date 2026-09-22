@@ -196,6 +196,76 @@ Evidence:
 - Canonical `/api/health` — HTTP 200, `{"status":"ready"}`.
 - Isolated web and queue services — active.
 
-Next task: modernize the provider detail page with the same actual Signal
-primitives, preserving connection checks, modal history, authorization and
-secret-safe rendering.
+## Slice 5 — provider detail surfaces
+
+Status: implemented, verified locally, committed, pushed and deployed as
+1668b4b.
+
+Responsibility problem addressed:
+
+- Provider detail mixed the modern Signal shell with legacy status rows, dense
+  resource lists and connection evidence that was difficult to scan on mobile.
+- The detail page repeated connection policy values in one wrapping line and
+  did not give attached repositories/servers the same interactive surfaces as
+  the provider inventory.
+
+Signal implementation:
+
+- Added a quiet Signal connection-overview panel with explicit health,
+  monitoring, failure-confirmation and credential-safety cards.
+- Added a collapsible Signal overview insight group for provider type,
+  attached-resource counts and retained checks.
+- Presented retained checks as a responsive Signal timeline while preserving
+  the existing 20-item limit, failure-streak expansion and secret-safe
+  evidence.
+- Updated resource lists and the connection-history fragment to use Signal
+  panels, labels, inputs, muted text roles and interactive cards.
+
+Preserved contracts:
+
+- Provider authorization, organization scoping, pagination and query
+  collaborators.
+- Connection-test forms, flash feedback, exact status/failure copy, modal
+  history URLs, filter keys, export URLs and CSRF behavior.
+- Credential encryption and exclusion of secrets/response bodies from page
+  history.
+
+Evidence:
+
+- Provider-focused PHP coverage — 39 tests passed, 418 assertions.
+- Targeted provider/mobile browser coverage — 7 tests passed in the isolated
+  fixture runtime.
+- php artisan view:cache — passed.
+- php vendor/bin/pint --test — passed.
+- npm run build — passed.
+- git diff --check — passed.
+
+The browser and served-host evidence is for the isolated local/development
+runtime only. It is not live deployment or cloud acceptance.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to 1668b4b, rebuilt and restarted through buildpusher-dev-main.service and its
+queue worker. The canonical development host is
+https://deployer.buildpusher.com; the legacy buildpusher.com host is not the
+verification target for this application.
+
+Served-runtime evidence:
+
+- /login — HTTP 200 with title Sign in to your account · Deployer.
+- CSS — build/assets/app-XhdAzCPn.css, HTTP 200, containing Signal markers
+  including --ui-page, .ui-panel and .ui-eyebrow.
+- Theme script — build/assets/signal-theme-FzFaTKCz.js.
+- /manifest.webmanifest — Deployer name and short name.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: modernize the standalone provider connection-history page shell,
+reuse the shared Signal fragment without changing filter/pagination/export
+semantics, then continue through the remaining provider-management surfaces.
