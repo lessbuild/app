@@ -6544,6 +6544,61 @@ Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
 
+## Slice 94 — Canonical Signal empty states — 2026-09-22
+
+Responsibility problem:
+
+- Shared empty states still rendered a bespoke dashed container with custom
+  icon sizing and spacing. Signal's actual starter uses a quiet `ui-card`, a
+  compact primary-soft icon tile, a tight heading and a readable description.
+
+Boundary and implementation:
+
+- Migrated `x-ui.empty-state`, used across backup, database, repository,
+  server, observability, automation, feedback and account surfaces, to the
+  Signal empty-card composition.
+- Preserved the existing title, description, icon and action slot API, while
+  allowing caller-provided grid/margin classes to merge normally.
+- Removed the obsolete empty-state CSS and the list wrapper's overriding
+  `bg-page` class so the canonical card surface remains visible.
+
+Preserved contracts and safety:
+
+- Empty-state copy, action destinations, icon identifiers, data hooks,
+  responsive placement and slot behavior remain unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,274 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-CzTX0wbb.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Served CSS contains the Signal card, radius and primary-soft tokens used by
+  the empty-state component.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `f605855` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `f605855`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: inspect the remaining inventory/list compatibility rules and migrate
+only the concrete surfaces that still differ from Signal's card and table
+primitives.
+
 ## Slice 93 — Remove duplicate legacy UI primitives — 2026-09-22
 
 Responsibility problem:
