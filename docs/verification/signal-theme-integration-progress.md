@@ -2134,6 +2134,58 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 65 — gallery inventory, comparison and feedback surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'7b007c6'.
+
+Responsibility problem addressed:
+
+- Gallery comparison, script inspection, publishing, reporting and
+  contributor feedback used retired palette utilities and hard-coded script
+  surfaces inside the Signal shell.
+- The visual inconsistency made safety-critical review, moderation state and
+  mobile dialog forms harder to scan, even though the underlying workflows
+  were already separated into reusable views and dialogs.
+
+Signal implementation:
+
+- Migrated gallery comparison metadata, report history/inbox, report status,
+  publishing and report forms to semantic Signal text, line, surface, label,
+  input, checkbox and alert primitives.
+- Reused the shared `ui-console` surface for published and comparison script
+  previews so code remains readable in both themes and dialog/full-page
+  contexts.
+- Added source-level guards covering the gallery inventory, comparison,
+  script, report and dialog views.
+
+Preserved contracts:
+
+- Published-script visibility, private report content, anonymous contributor
+  moderation, encrypted resolution notes, report notifications, filters,
+  pagination, exports, ratings, favorites and gallery install/update flows.
+- Dialog triggers, query parameters, lazy content URLs, validation reopening,
+  no-JavaScript form submissions and all existing route/status behavior.
+- No controller, request, policy, action, persistence, queue, authorization
+  or report privacy behavior changed.
+
+Evidence:
+
+- Gallery, report, moderation, notification, rating, favorite and local UI
+  coverage — 122 tests passed, 1,818 assertions.
+- Targeted gallery publishing, script inspection, mobile lazy-dialog,
+  reporting and contributor-resolution coverage — 4 Playwright tests passed
+  in 37.4 seconds in the isolated fixture runtime.
+- `npm run build` — passed; generated CSS is `assets/app-9a2fvVeS.css`.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `7b007c6` is on `origin/main`.
+
+Next task: deploy the gallery-surface modernization to the isolated canonical
+Deployer runtime, then inspect the next remaining cohesive Signal boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
