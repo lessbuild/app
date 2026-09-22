@@ -96,6 +96,35 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('<script>', $html);
     }
 
+    public function test_signal_site_footer_uses_the_shared_layout_and_product_navigation(): void
+    {
+        $html = Blade::render(
+            <<<'BLADE'
+            <x-signal.site-footer
+                description="One clear control plane."
+                :explore-links="$links"
+                closing-eyebrow="Keep shipping clearly"
+                closing-copy="Review the product guide."
+                action-href="/login"
+                action-label="Open the workspace"
+            />
+            BLADE,
+            ['links' => [
+                ['label' => 'Product', 'href' => '#product'],
+                ['label' => 'Docs', 'href' => '/docs?from=footer&tab=guide'],
+            ]],
+        );
+
+        $this->assertStringContainsString('border-t border-line bg-surface', $html);
+        $this->assertStringContainsString('grid max-w-content gap-10 px-5 py-12 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr] md:py-16', $html);
+        $this->assertStringContainsString('aria-label="Footer navigation"', $html);
+        $this->assertStringContainsString('href="#product"', $html);
+        $this->assertStringContainsString('href="/docs?from=footer&amp;tab=guide"', $html);
+        $this->assertStringContainsString('href="/login"', $html);
+        $this->assertStringContainsString('Open the workspace', $html);
+        $this->assertStringContainsString((string) now()->year, $html);
+    }
+
     public function test_shared_resource_headers_and_local_navigation_have_accessible_structure(): void
     {
         $html = Blade::render(

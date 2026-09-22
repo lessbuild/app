@@ -116,4 +116,11 @@ test('public landing renders and operates the Signal FAQ and CTA blocks', async 
     await expect(callToAction).toHaveClass(/rounded-panel/);
     await expect(callToAction).toHaveClass(/sm:p-10/);
     await expect(callToAction.locator('a.ui-btn-primary.ui-btn-lg')).toBeVisible();
+
+    const footer = page.getByRole('contentinfo').last();
+    const footerNavigation = footer.getByRole('navigation', { name: 'Footer navigation' });
+    await expect(footer).toContainText('Keep shipping clearly');
+    await expect(footerNavigation.getByRole('link', { name: 'Capabilities' })).toHaveAttribute('href', '#features');
+    await expect(footerNavigation.getByRole('link', { name: 'Privacy' })).toBeVisible();
+    await expect(footer.getByRole('link', { name: 'Open the workspace' })).toHaveAttribute('href', /\/login$/);
 });

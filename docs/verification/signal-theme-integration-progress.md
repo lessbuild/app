@@ -1,5 +1,45 @@
 # Signal theme integration progress
 
+## Slice 122 — translate and reuse Signal's public footer — 2026-09-22
+
+Responsibility problem:
+
+- The landing page still maintained its own inline footer even though the
+  current Signal starter provides a reusable `components/site-footer.njk`.
+  Keeping that shell fragment inline made future theme updates harder to adopt
+  consistently.
+
+Boundary and implementation:
+
+- Added `x-signal.site-footer`, a Blade translation of the upstream footer's
+  three-column layout, shared spacing, brand mark, Explore navigation and
+  lower copyright/accessibility row.
+- Replaced the landing page's duplicated footer with the shared component.
+  Product-specific links, route destinations, localized text, login action and
+  dynamic copyright year are explicit inputs; links remain Blade-escaped.
+- No CSS or JavaScript changes were needed: the component uses the existing
+  Signal tokens and layout classes.
+
+Preserved contracts and safety:
+
+- Footer destinations, wording, accessibility label, app name and year remain
+  unchanged. No route, authorization, persistence, dependency or external
+  runtime changed.
+
+Evidence:
+
+- Strict `LocalUiAssetTest.php`: **68 passed**, **2,937 assertions**.
+- Focused Pint, JavaScript syntax and `git diff --check`: passed.
+- Isolated local public runtime browser checks: **3 passed** (39s), covering
+  the served Livewire/public assets, mobile drawer keyboard/focus behavior,
+  landing FAQ/CTA interaction and footer links.
+- No production deployment or physical-device acceptance was performed.
+
+Next task: audit the remaining upstream Signal component vocabulary and active
+theme defaults against Deployer's real layouts and feature surfaces, correcting
+only concrete mismatches. Keep live deployment separate pending explicit
+authorization.
+
 ## Slice 121 — pin the current Signal source and use its reusable landing blocks — 2026-09-22
 
 Responsibility problem:

@@ -252,5 +252,20 @@
         </section>
     </main>
 
-    <footer class="border-t border-line bg-surface"><div class="mx-auto grid max-w-content gap-10 px-5 py-12 sm:px-8 md:grid-cols-[1.4fr_1fr_1fr] md:py-16"><div><a href="{{ url('/') }}" class="flex items-center gap-3 text-base font-extrabold tracking-tight text-ink"><span class="grid h-9 w-9 place-items-center rounded-xl bg-ink text-surface shadow-soft"><img src="{{ asset('favicon.svg') }}" alt="" class="h-5 w-5 rounded-md"></span>{{ config('app.name') }}</a><p class="mt-4 max-w-xs text-sm leading-6 text-muted">{{ __('Your infrastructure. One focused control plane.') }}</p></div><div><p class="text-xs font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Explore') }}</p><nav class="mt-4 flex flex-col items-start gap-3" aria-label="{{ __('Footer navigation') }}"><a href="#features" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Capabilities') }}</a><a href="#product" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Product') }}</a><a href="#how-it-works" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('How it works') }}</a><a href="{{ route('platform-status.show') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Status') }}</a><a href="{{ route('docs') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Docs') }}</a><a href="{{ route('privacy') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Privacy') }}</a><a href="{{ route('terms') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Terms') }}</a></nav></div><div><p class="text-xs font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Keep shipping clearly') }}</p><p class="mt-4 text-sm leading-6 text-muted">{{ __('Review the product guide, then connect the provider and repository that power your next release.') }}</p><a href="{{ route('login') }}" class="ui-link mt-4 inline-flex items-center gap-2 text-sm">{{ __('Open the workspace') }} <span aria-hidden="true">→</span></a></div></div><div class="border-t border-line"><div class="mx-auto flex max-w-content flex-col gap-2 px-5 py-5 text-xs text-subtle sm:flex-row sm:items-center sm:justify-between sm:px-8"><span>© {{ now()->year }} {{ config('app.name') }}.</span><span class="flex items-center gap-2">{{ __('Focused by design') }} <span aria-hidden="true">·</span> {{ __('Accessible by default') }}</span></div></div></footer>
+    <x-signal.site-footer
+        :description="__('Your infrastructure. One focused control plane.')"
+        :explore-links="[
+            ['label' => __('Capabilities'), 'href' => '#features'],
+            ['label' => __('Product'), 'href' => '#product'],
+            ['label' => __('How it works'), 'href' => '#how-it-works'],
+            ['label' => __('Status'), 'href' => route('platform-status.show')],
+            ['label' => __('Docs'), 'href' => route('docs')],
+            ['label' => __('Privacy'), 'href' => route('privacy')],
+            ['label' => __('Terms'), 'href' => route('terms')],
+        ]"
+        :closing-eyebrow="__('Keep shipping clearly')"
+        :closing-copy="__('Review the product guide, then connect the provider and repository that power your next release.')"
+        :action-href="route('login')"
+        :action-label="__('Open the workspace')"
+    />
 </x-layouts.core>
