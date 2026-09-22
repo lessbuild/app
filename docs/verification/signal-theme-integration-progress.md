@@ -2134,6 +2134,47 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 71 — billing and pricing controls — 2026-09-22
+
+Responsibility problem:
+
+- Public pricing and authenticated billing used compatibility background/border
+  tokens and bespoke interval controls even though the surrounding plan cards,
+  badges and forms already used Signal components.
+
+Boundary and implementation:
+
+- Reused `x-ui.button` for authenticated billing interval navigation and the
+  shared Signal button states for the public Alpine interval toggle.
+- Replaced plan emphasis borders and feature/check styling with semantic
+  Signal styles while keeping the plan cards and plan-selection logic intact.
+- This keeps billing decisions in the existing controller/forms and makes the
+  shared controls responsible only for presentation.
+
+Preserved contracts and safety:
+
+- Monthly/yearly URLs, `aria-current`/`aria-pressed` behavior, plan prices,
+  feature limits, trial/request-access links, current-plan state, owner-only
+  billing permissions and Stripe readiness behavior are unchanged.
+- No subscription, entitlement, checkout, persistence or payment integration
+  behavior changed.
+
+Evidence:
+
+- Billing, access-request and local UI coverage — 64 tests passed, 1,239
+  assertions.
+- Light/dark responsive asset fixture matrix at 390px — 2 tests passed in 2.6
+  minutes.
+- `npm run build` — passed; generated CSS includes app-Cfqh2Ji_.css.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: implementation commit 'ea36281' is on 'origin/main'.
+
+Next task: deploy the billing/pricing modernization to the isolated canonical
+Deployer runtime and verify public pricing plus authenticated billing access.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
