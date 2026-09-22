@@ -1428,3 +1428,53 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect servers and domains inventory surfaces for the next
 cohesive Signal modernization boundary.
+
+## Slice 22 — domain management
+
+Status: implemented and verified locally; code committed and pushed as
+'44cd3f9'.
+
+Responsibility problem addressed:
+
+- Domain actions were rendered below the overview metrics, forcing a user to
+  scan past the page summary before adding or issuing a domain.
+- Website/domain inventory rows and both domain dialogs still used legacy
+  cards, dividers, labels and inputs.
+
+Signal implementation:
+
+- Moved Add domain and Issue temporary domain into the page header so the
+  primary actions are immediately available on desktop and mobile.
+- Added compact local navigation for overview and inventory.
+- Converted website groups and domain rows to quiet panels, border dividers,
+  ink/muted text roles and responsive hover states.
+- Updated add-domain and temporary-domain dialog controls to shared Signal
+  labels, inputs and border treatment without changing their field contracts.
+- Added a mobile browser assertion that checks action placement above the
+  overview and the inventory primitive.
+
+Preserved contracts:
+
+- Workspace deploy authorization, scoped website selection, hostname/type/
+  redirect validation, Cloudflare provider selection and temporary-domain
+  configuration safeguards.
+- DNS sync/delete behavior, primary-domain protection, queued proxy updates,
+  exact validation/error responses, dialog URLs and existing status/flash
+  behavior.
+
+Evidence:
+
+- 'DomainManagementTest' and 'LocalUiAssetTest' — 31 tests passed, 525
+  assertions.
+- Domain action placement and existing dialog journeys — 1 focused browser
+  test passed in the isolated fixture runtime.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: '44cd3f9' is on 'origin/main'.
+
+Next task: deploy the domain modernization and rebuilt assets to the isolated
+Deployer runtime, then inspect the server inventory as the next operations
+surface.
