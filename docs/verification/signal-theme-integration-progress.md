@@ -2134,6 +2134,50 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 57 — public landing-page surfaces — 2026-09-22
+
+Status: implemented, verified locally, committed and pushed as '492a846'.
+
+Responsibility problem addressed:
+
+- The public landing page had a modern structure, but its active tabs,
+  preview indicators, promise markers, workflow steps, skip link and labels
+  still used compatibility utilities. Those names resolve to page/ink roles
+  through the bridge, so accent and emphasis states were inconsistent with
+  the rest of Signal.
+
+Signal implementation:
+
+- Replaced compatibility palette utilities with Signal emphasis/surface
+  roles, `ui-eyebrow`, and the existing Signal badge primitive.
+- Kept active feature/product tabs, illustrative workspace status, workflow
+  markers and FAQ interactions compact and keyboard-friendly at mobile width.
+- Added source guards to the public UI test for the migrated palette boundary.
+
+Preserved contracts:
+
+- Public page copy, SEO metadata, routes, registration/access-request
+  branching, anchors, no-JavaScript navigation, Alpine tab state and keyboard
+  behavior are unchanged.
+- The landing page remains illustrative only; it does not expose live
+  workspace data or introduce a remote dependency.
+
+Evidence:
+
+- Landing, dashboard, access-request, billing and shared UI coverage — 82
+  tests passed, 1,097 assertions.
+- 'npm run build' — passed with assets/app-DjF2dPH-.css.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- Fixture-backed light and dark 390px layout matrices — 2 tests passed in
+  3.7 minutes across the configured screen set.
+- 'git diff --check' — passed.
+
+Push status: '492a846' is on 'origin/main'.
+
+Next task: deploy this public-surface modernization to the isolated canonical
+Deployer runtime, then inspect the next remaining high-impact UI surface.
+
 ## Slice 56 — deployment history and comparison fragments — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as 'e4a5002'.
