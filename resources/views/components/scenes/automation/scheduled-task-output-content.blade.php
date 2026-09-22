@@ -32,7 +32,7 @@
             <x-ui.button :href="route('automation.task-runs.output', $run)" variant="secondary">{{ __('Open raw output') }}</x-ui.button>
         </div>
         @if ($run->output !== null && $run->output !== '')
-            <pre class="mt-3 max-h-[28rem] overflow-auto whitespace-pre-wrap break-words rounded-xl bg-gray-950 p-4 font-mono text-xs leading-5 text-gray-100" data-task-run-output-text>{{ $run->output }}</pre>
+            <pre class="ui-console ui-console-output mt-3 max-h-[28rem] overflow-auto whitespace-pre-wrap break-words p-4" data-task-run-output-text>{{ $run->output }}</pre>
         @else
             <p class="ui-panel mt-3 bg-surface-muted p-4 text-sm text-muted">{{ __('No output was recorded.') }}</p>
         @endif

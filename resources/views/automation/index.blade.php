@@ -35,7 +35,7 @@
     @if (session('plainTextToken'))
         <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
             <p class="font-bold text-ink">{{ __('Copy this token now') }}</p>
-            <code class="mt-2 block break-all rounded-md bg-gray-950 p-3 text-sm text-gray-100">{{ session('plainTextToken') }}</code>
+            <code class="ui-console ui-console-output mt-2 block break-all p-3 text-sm">{{ session('plainTextToken') }}</code>
         </div>
     @endif
 
@@ -120,7 +120,7 @@
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
         <details id="automation-tokens" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}" data-automation-tokens>
-            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden">
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                 <span>
                     <span class="flex flex-wrap items-center gap-2">
                         <span class="font-black text-ink">{{ __('Personal access tokens') }}</span>
@@ -186,7 +186,7 @@
         @endif
 
         <details id="automation-quick-start" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" data-automation-quick-start>
-            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary lg:hidden">
+            <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                 <span>
                     <span class="block font-black text-ink">{{ __('CLI-friendly API') }}</span>
                     <span class="mt-1 block text-sm font-normal text-muted">{{ __('A copy-ready starting point for curl and CI.') }}</span>
@@ -198,7 +198,7 @@
                 <p class="ui-eyebrow">{{ __('Quick start') }}</p>
                 <h2 class="mt-2 text-xl font-black text-ink">{{ __('CLI-friendly API') }}</h2>
                 <p class="mt-2 text-sm text-muted">{{ __('Everything returns JSON and works with curl, CI, or your preferred scripting language.') }}</p>
-                <pre class="mt-5 overflow-x-auto rounded-xl bg-gray-950 p-4 text-xs leading-6 text-gray-100"><code>export BUILDPUSHER_TOKEN="bp_…"
+                <pre class="ui-console mt-5 overflow-x-auto p-4 text-xs leading-6"><code class="ui-console-output">export BUILDPUSHER_TOKEN="bp_…"
 curl -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   {{ url('/api/v1/projects') }}
 
@@ -350,7 +350,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                                     data-modal-history-url="{{ route('automation.index', ['dialog' => $taskRunDialogKey]) }}"
                                                                     aria-controls="automation-task-run-dialog"
                                                                     aria-expanded="{{ $scheduledTaskRunDialogOpen && $scheduledTaskRun->id === $run->id ? 'true' : 'false' }}"
-                                                                    class="rounded-md border border-line bg-surface-muted px-2 py-1 text-[10px] text-muted transition hover:border-primary"
+                                                                    class="ui-chip text-[10px] transition-colors hover:border-[var(--ui-primary)] hover:bg-[var(--ui-primary-soft)] hover:text-ink"
                                                                     data-automation-task-run
                                                                 >{{ $run->status }} · {{ $run->created_at->diffForHumans() }}</a>
                                                             @endforeach

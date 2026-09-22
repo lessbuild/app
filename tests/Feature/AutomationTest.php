@@ -16,6 +16,7 @@ use App\Services\WorkflowConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Sanctum\Sanctum;
 use Mockery;
@@ -624,7 +625,7 @@ class AutomationTest extends TestCase
             'is_enabled' => true,
         ]);
 
-        $this->actingAs($user)
+        $response = $this->actingAs($user)
             ->get(route('automation.index'))
             ->assertOk()
             ->assertSee('data-automation-overview', false)
@@ -637,7 +638,14 @@ class AutomationTest extends TestCase
             ->assertSee('data-automation-tasks', false)
             ->assertSee('class="ui-input', false)
             ->assertSee('class="ui-panel', false)
+            ->assertSee('ui-console', false)
             ->assertSee('Automate routine release work');
+
+        $this->assertStringNotContainsString('bg-gray-950', $response->getContent());
+        $this->assertStringNotContainsString('text-gray-100', $response->getContent());
+        $automationSource = File::get(resource_path('views/automation/index.blade.php'));
+        $this->assertStringContainsString('ui-chip', $automationSource);
+        $this->assertStringNotContainsString('focus-visible:ring-2 focus-visible:ring-primary', $automationSource);
     }
 
     public function test_token_composer_is_a_dialog_and_reopens_for_validation_errors(): void
