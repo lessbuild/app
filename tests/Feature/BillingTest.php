@@ -37,6 +37,9 @@ class BillingTest extends TestCase
 
         $this->actingAs($user)->get(route('billing.index'))
             ->assertOk()
+            ->assertSee('Billing sections')
+            ->assertSee('billing-current-plan', false)
+            ->assertSee('billing-options', false)
             ->assertSee('Current plan')
             ->assertSee('Free')
             ->assertSee('Payments are almost ready');
