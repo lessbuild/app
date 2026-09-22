@@ -66,7 +66,7 @@
 
     <x-ui.insights
         id="observability-overview"
-        class="mt-6 scroll-mt-24 border-ternary"
+        class="mt-6 scroll-mt-24 border-[var(--ui-primary)]"
         :summary="trans_choice(':count active incident|:count active incidents', $activeOperationalIncidentCount, ['count' => $activeOperationalIncidentCount])"
         aria-labelledby="observability-overview-title"
     >

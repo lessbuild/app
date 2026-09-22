@@ -32,7 +32,7 @@
      ! ------------------------------------------------------------
      !-->
     @if(session()->has("website:{$website->id}:mysql_password"))
-        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-accent)" role="alert">
+        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="alert">
                 {{ __('The root MYSQL password is:') }}
                 <b class="font-bold">{{ session()->get("website:{$website->id}:mysql_password") }}</b>
                 <br>

@@ -1,4 +1,102 @@
 @layer components {
+    .ui-card--unread {
+        border-color: color-mix(in srgb, var(--ui-primary) 45%, var(--ui-line));
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-primary) 20%, transparent), var(--shadow-soft-value);
+    }
+
+    .ui-panel--danger {
+        border-color: color-mix(in srgb, var(--ui-danger) 46%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    .ui-alert-info {
+        border-color: color-mix(in srgb, var(--ui-info) 28%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    /* Signal keeps operational feedback quiet; status is carried by the edge. */
+    .ui-alert.ui-alert--success {
+        border-color: color-mix(in srgb, var(--ui-success) 72%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    .ui-alert.ui-alert--info {
+        border-color: color-mix(in srgb, var(--ui-info) 72%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    .ui-alert.ui-alert--warning {
+        border-color: color-mix(in srgb, var(--ui-warning) 72%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    .ui-alert.ui-alert--danger {
+        border-color: color-mix(in srgb, var(--ui-danger) 72%, var(--ui-line));
+        background: var(--ui-surface);
+    }
+
+    .ui-card--muted {
+        background-color: var(--ui-surface-muted);
+    }
+
+    .ui-card--interactive {
+        transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .ui-card--interactive:hover,
+    .ui-card--interactive:focus-within {
+        border-color: var(--ui-line);
+        box-shadow: var(--shadow-soft-value);
+        transform: translateY(-1px);
+    }
+
+    .ui-modal__panel,
+    .ui-filter-dialog__panel {
+        border-radius: var(--radius-panel-value);
+    }
+
+    .ui-dashboard-trend {
+        grid-template-columns: repeat(14, minmax(0, 1fr));
+        height: 7rem;
+        gap: 0.35rem;
+    }
+
+    .ui-status-dot {
+        display: inline-block;
+        width: 0.5rem;
+        height: 0.5rem;
+        flex: 0 0 auto;
+        border-radius: 999px;
+        background: var(--ui-status-dot, var(--ui-primary));
+    }
+
+    .ui-status-dot-lg {
+        width: 0.625rem;
+        height: 0.625rem;
+    }
+
+    .ui-console {
+        min-width: 0;
+        overflow: hidden;
+        border: 1px solid var(--ui-line);
+        border-radius: var(--radius-panel-value);
+        background: var(--ui-emphasis);
+        color: var(--ui-emphasis-ink);
+    }
+
+    .ui-console-output {
+        max-width: 100%;
+        overflow: auto;
+        color: var(--ui-emphasis-ink);
+        font-family: var(--font-code);
+        font-size: 0.72rem;
+        line-height: 1.7;
+    }
+
+    .app-sidebar-link {
+        text-decoration: none;
+    }
+
     .ui-local-nav {
         margin-top: 1.25rem;
     }
@@ -291,6 +389,20 @@
 
         [data-dashboard-stats] .ui-stat__description {
             display: none;
+        }
+
+        [data-dashboard-stats] {
+            gap: 0.5rem;
+        }
+
+        [data-dashboard-stats] .ui-stat {
+            padding: 0.65rem;
+        }
+
+        [data-dashboard-stats] .ui-stat__value {
+            margin-top: 0.2rem;
+            font-size: 1.25rem;
+            line-height: 1.1;
         }
 
         .ui-network-status {

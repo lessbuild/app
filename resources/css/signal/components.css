@@ -37,9 +37,7 @@
   .ui-icon-btn:hover { background: var(--ui-surface-muted); color: var(--ui-ink); }
 
   .ui-card { min-width: 0; border: 1px solid var(--ui-line); border-radius: var(--radius-card-value); background: var(--ui-surface); box-shadow: var(--shadow-soft-value); }
-  .ui-card--unread { border-color: color-mix(in srgb, var(--ui-primary) 45%, var(--ui-line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ui-primary) 20%, transparent), var(--shadow-soft-value); }
   .ui-panel { min-width: 0; border: 1px solid var(--ui-line); border-radius: var(--radius-panel-value); background: var(--ui-surface); box-shadow: var(--shadow-panel-value); }
-  .ui-panel--danger { border-color: color-mix(in srgb, var(--ui-danger) 46%, var(--ui-line)); background: var(--ui-surface); }
   .ui-input { width: 100%; min-width: 0; min-height: calc(1.35rem + (var(--density-control-y) * 2)); border: 1px solid var(--ui-line); border-radius: var(--radius-control-value); background: var(--ui-surface); color: var(--ui-ink); padding: var(--density-control-y) 0.86rem; font-size: 0.87rem; transition: border-color 160ms ease, box-shadow 160ms ease, background-color 160ms ease; }
   .ui-input::placeholder { color: var(--ui-subtle); }
   .ui-input:hover { border-color: color-mix(in srgb, var(--ui-primary) 35%, var(--ui-line)); }
@@ -58,8 +56,6 @@
   .ui-badge-warning { background: var(--ui-warning-soft); color: var(--ui-warning); }
   .ui-badge-danger { background: var(--ui-danger-soft); color: var(--ui-danger); }
   .ui-badge-info { background: var(--ui-info-soft); color: var(--ui-info); }
-  .ui-status-dot { display: inline-block; width: 0.5rem; height: 0.5rem; flex: 0 0 auto; border-radius: 999px; background: var(--ui-status-dot, var(--ui-primary)); }
-  .ui-status-dot-lg { width: 0.625rem; height: 0.625rem; }
   .ui-eyebrow { color: var(--ui-primary); font-size: 0.73rem; font-weight: 800; letter-spacing: 0.13em; text-transform: uppercase; }
   .ui-link { color: var(--ui-primary); font-weight: 750; text-decoration: none; }
   .ui-link:hover { color: var(--ui-primary-hover); text-decoration: underline; text-underline-offset: 0.2em; }
@@ -83,8 +79,6 @@
   .theme-option.is-active { border-color: var(--ui-primary); background: var(--ui-primary-soft); color: var(--ui-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 12%, transparent); }
   .theme-swatch { width: 0.75rem; height: 0.75rem; border-radius: 999px; background: var(--swatch, var(--ui-primary)); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.35); }
   .library-code { width: 100%; max-width: 100%; min-width: 0; max-height: 16rem; overflow: auto; border-radius: var(--radius-card-value); background: var(--ui-page); padding: 1rem; color: var(--ui-muted); font-family: var(--font-code); font-size: 0.72rem; line-height: 1.7; }
-  .ui-console { min-width: 0; overflow: hidden; border: 1px solid var(--ui-line); border-radius: var(--radius-panel-value); background: var(--ui-emphasis); color: var(--ui-emphasis-ink); }
-  .ui-console-output { max-width: 100%; overflow: auto; color: var(--ui-emphasis-ink); font-family: var(--font-code); font-size: 0.72rem; line-height: 1.7; }
   [data-copy-host] { min-width: 0; }
   .ui-skeleton { position: relative; overflow: hidden; background: var(--ui-surface-muted); }
   .ui-skeleton::after { position: absolute; inset: 0; transform: translateX(-100%); background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ui-surface) 70%, transparent), transparent); content: ""; animation: skeleton-shimmer 1.8s infinite; }
@@ -197,7 +191,7 @@
 
   .surface-grid { background-image: linear-gradient(to right, color-mix(in srgb, var(--ui-line) 50%, transparent) 1px, transparent 1px), linear-gradient(to bottom, color-mix(in srgb, var(--ui-line) 50%, transparent) 1px, transparent 1px); background-size: 3.2rem 3.2rem; }
   .dot-grid { background-image: radial-gradient(color-mix(in srgb, var(--ui-primary) 32%, transparent) 1px, transparent 1px); background-size: 1rem 1rem; }
-  .app-sidebar-link { display: flex; align-items: center; gap: 0.7rem; border-radius: 0.78rem; padding: 0.68rem 0.75rem; color: var(--ui-muted); font-size: 0.82rem; font-weight: 650; text-decoration: none; transition: background-color 160ms ease, color 160ms ease; }
+  .app-sidebar-link { display: flex; align-items: center; gap: 0.7rem; border-radius: 0.78rem; padding: 0.68rem 0.75rem; color: var(--ui-muted); font-size: 0.82rem; font-weight: 650; transition: background-color 160ms ease, color 160ms ease; }
   .app-sidebar-link:hover { background: var(--ui-surface-muted); color: var(--ui-ink); }
   .app-sidebar-link[aria-current="page"] { background: var(--ui-ink); color: var(--ui-surface); box-shadow: 0 4px 12px rgb(16 24 40 / 0.12); }
   .dark .app-sidebar-link[aria-current="page"] { background: var(--ui-surface-raised); color: var(--ui-ink); }

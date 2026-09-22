@@ -311,7 +311,7 @@
         </div>
 
         @if ($oneTimeWebhookSecret)
-            <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-accent)" role="alert">
+            <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="alert">
                 <p class="font-semibold">{{ __('Copy this webhook secret now. It will not be shown again.') }}</p>
                 <input
                     type="text"

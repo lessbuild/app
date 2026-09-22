@@ -270,7 +270,7 @@ class LocalUiAssetTest extends TestCase
         $authLayout = File::get(resource_path('views/components/layouts/auth.blade.php'));
         $statsPanel = File::get(resource_path('views/components/panel/stats.blade.php'));
 
-        $this->assertStringContainsString('text-primary', $authLayout);
+        $this->assertStringContainsString('text-[var(--ui-primary)]', $authLayout);
         $this->assertStringContainsString('text-[var(--ui-primary)]', $statsPanel);
         $this->assertStringNotContainsString('text-blue-400', $authLayout);
         $this->assertStringNotContainsString('text-blue-400', $statsPanel);
@@ -492,7 +492,7 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('@if ($livewire)', $coreLayout);
         $this->assertStringContainsString('[x-cloak]', $styles);
         $this->assertStringContainsString('#main-content .border:is(', $styles);
-        $this->assertStringContainsString('background-color: var(--bg-primary)', $styles);
+        $this->assertStringContainsString('background-color: var(--ui-surface)', $styles);
         $this->assertStringContainsString('ui-eyebrow', $homepage);
         $this->assertStringContainsString('bg-emphasis', $homepage);
         $this->assertStringNotContainsString('text-primary', $homepage);
@@ -610,19 +610,30 @@ class LocalUiAssetTest extends TestCase
     public function test_signal_is_the_canonical_theme_entrypoint(): void
     {
         $stylesheet = File::get(resource_path('css/app.css'));
-        $buttonStyles = File::get(resource_path('css/components/button.css'));
-        $inputStyles = File::get(resource_path('css/components/input.css'));
+        $signalComponents = File::get(resource_path('css/signal/components.css'));
+        $applicationComponents = File::get(resource_path('css/components/ui.css'));
         $observability = File::get(resource_path('views/observability/index.blade.php'));
         $server = File::get(resource_path('views/livewire/scenes/servers/show.blade.php'));
 
         $this->assertStringNotContainsString('@import "./theme.css"', $stylesheet);
-        $this->assertStringNotContainsString('@apply bg-primary', $buttonStyles);
-        $this->assertStringNotContainsString('@apply bg-secondary', $buttonStyles);
-        $this->assertStringNotContainsString('@apply bg-primary', $inputStyles);
+        $this->assertStringNotContainsString('@import "./components/button.css"', $stylesheet);
+        $this->assertStringNotContainsString('@import "./components/input.css"', $stylesheet);
+        $this->assertStringNotContainsString('@import "./signal/compat.css"', $stylesheet);
+        $this->assertFalse(File::exists(resource_path('css/theme.css')));
+        $this->assertFalse(File::exists(resource_path('css/components/button.css')));
+        $this->assertFalse(File::exists(resource_path('css/components/input.css')));
+        $this->assertFalse(File::exists(resource_path('css/signal/compat.css')));
         $this->assertStringNotContainsString('bg-surface-ternary', $observability);
         $this->assertStringNotContainsString('bg-surface-ternary', $server);
         $this->assertStringContainsString('@import "./signal/theme.css"', $stylesheet);
-        $this->assertStringContainsString('var(--ui-primary)', $buttonStyles);
+        $this->assertStringContainsString('@import "./signal/components.css"', $stylesheet);
+        $this->assertStringContainsString('@import "./components/ui.css"', $stylesheet);
+        $this->assertStringContainsString('.ui-btn-primary', $signalComponents);
+        $this->assertStringContainsString('.ui-dialog', $signalComponents);
+        $this->assertStringContainsString('.ui-table', $signalComponents);
+        $this->assertStringNotContainsString('@apply', $signalComponents);
+        $this->assertStringContainsString('.ui-card--interactive', $applicationComponents);
+        $this->assertStringContainsString('.ui-dashboard-trend', $applicationComponents);
         $this->assertStringContainsString('bg-primary/', $observability);
         $this->assertStringContainsString('bg-primary/', $server);
     }

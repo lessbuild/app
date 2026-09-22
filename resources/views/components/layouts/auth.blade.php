@@ -19,7 +19,7 @@
                     <div class="ui-badge ui-badge-primary"><svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#shield"></use></svg>{{ __('A clearer place to start') }}</div>
                     <h1 class="mt-6 max-w-lg text-5xl font-extrabold leading-[1.06] tracking-[-0.045em] text-ink">{{ __('Deploy with confidence') }}</h1>
                     <p class="mt-6 max-w-md text-base leading-7 text-muted">{{ __('Provision infrastructure, release applications, and review operational history from one focused control panel.') }}</p>
-                    <div class="mt-8 flex items-center gap-3 text-sm text-muted"><span class="grid h-9 w-9 place-items-center rounded-xl bg-primary-soft text-primary"><svg class="h-[17px] w-[17px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#check"></use></svg></span>{{ __('Thoughtful defaults, ready to customize.') }}</div>
+                    <div class="mt-8 flex items-center gap-3 text-sm text-muted"><span class="grid h-9 w-9 place-items-center rounded-xl bg-primary-soft text-[var(--ui-primary)]"><svg class="h-[17px] w-[17px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#check"></use></svg></span>{{ __('Thoughtful defaults, ready to customize.') }}</div>
                 </section>
 
                 <section class="ui-panel mx-auto w-full max-w-md p-6 sm:p-8">
@@ -29,7 +29,7 @@
                             <h1 class="mt-2 text-2xl font-extrabold tracking-tight text-ink">{{ $title }}</h1>
                             <div class="mt-2 leading-6 text-muted">{{ $description }}</div>
                         </div>
-                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary"><svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#lock"></use></svg></span>
+                        <span class="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-[var(--ui-primary)]"><svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#lock"></use></svg></span>
                     </div>
 
                     @if ($errors->any())

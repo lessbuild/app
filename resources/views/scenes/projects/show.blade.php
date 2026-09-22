@@ -201,7 +201,7 @@
                             'build_id' => $successfulBuild->id,
                         ]);
                     @endphp
-                    <aside class="ui-panel rounded-none border-x-0 border-t-0 border-l-4 border-line bg-surface-muted px-5 py-4" style="border-left-color: var(--ui-accent)" data-project-promotion>
+                    <aside class="ui-panel rounded-none border-x-0 border-t-0 border-l-4 border-line bg-surface-muted px-5 py-4" style="border-left-color: var(--ui-primary)" data-project-promotion>
                         <div class="flex flex-wrap items-center gap-3"><div class="min-w-0 flex-1"><p class="font-bold text-ink">{{ __('Promote tested release') }}</p><p class="mt-1 text-xs text-muted">{{ __('Rebuild exact revision :revision with the target environment configuration. Target approval and maintenance policies still apply.', ['revision'=>$successfulBuild->shortRevision()]) }}</p></div><x-ui.button href="{{ $promotionDialogUrl }}" data-modal-trigger="{{ $promotionDialogId }}" aria-controls="{{ $promotionDialogId }}" aria-expanded="{{ $promotionDialogOpen ? 'true' : 'false' }}" variant="primary">{{ __('Promote') }}</x-ui.button></div>
                     </aside>
                     <x-scenes.projects.promotion-dialog

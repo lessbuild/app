@@ -9,7 +9,7 @@
     <div class="ui-page-header__layout flex min-w-0 flex-1 flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div class="ui-page-header__identity flex min-w-0 max-w-3xl items-start gap-4">
             @if ($icon)
-                <span class="ui-page-header__icon mt-2 hidden h-10 w-10 shrink-0 place-items-center rounded-card bg-primary-soft text-primary sm:grid" aria-hidden="true">
+                <span class="ui-page-header__icon mt-2 hidden h-10 w-10 shrink-0 place-items-center rounded-card bg-primary-soft text-[var(--ui-primary)] sm:grid" aria-hidden="true">
                     <svg class="h-5 w-5 stroke-2">
                         <use xlink:href="/assets/images/icons.svg#{{ $icon }}"></use>
                     </svg>
