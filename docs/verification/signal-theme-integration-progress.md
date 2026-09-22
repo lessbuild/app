@@ -3697,3 +3697,51 @@ development evidence, not production or external-provider acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 51 — server safety and operation surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'b1bc354'.
+
+Responsibility problem addressed:
+
+- Existing-server inspection/approval and server command/log surfaces still
+  used compatibility palette utilities and hard-coded slate terminal colors.
+  These infrastructure workflows were harder to scan in light/dark themes and
+  diverged from the Signal controls used elsewhere in the application.
+
+Signal implementation:
+
+- Migrated server import and import-review labels, inputs, checkboxes,
+  fingerprints, approval copy and action surfaces to semantic Signal roles.
+- Added the reusable `ui-console` and `ui-console-output` primitives for
+  server logs and retained command output, with theme-aware emphasis colors.
+- Migrated Livewire command dialog controls and server log navigation to Signal
+  buttons, cards, badges, links and text roles.
+
+Preserved contracts:
+
+- Import field names, validation, SSH key handling, read-only discovery,
+  fingerprint confirmation, backup confirmation and explicit approval remain
+  unchanged.
+- Livewire polling, command submission, cancellation, rerun, retained output,
+  log selection, refresh gating, download routes and setup-state messaging are
+  unchanged.
+- No controller, action, policy, persistence, remote-call, queue or
+  authorization behavior changed.
+
+Evidence:
+
+- Server safety/operations, command, provisioning, snapshot, dashboard and
+  shell coverage — 102 tests passed, 1,286 assertions.
+- Server detail fixture plus the full light/dark responsive fixture matrix — 3
+  tests passed.
+- 'npm run build' — passed; generated CSS includes the console primitives.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'b1bc354' is on 'origin/main'.
+
+Next task: deploy the server safety/operation modernization to the isolated
+canonical Deployer runtime, then inspect the next cohesive product surface.
