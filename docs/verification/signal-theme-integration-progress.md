@@ -1,5 +1,66 @@
 # Signal theme integration progress
 
+## Slice 118 — use Signal's public drawer behavior — 2026-09-22
+
+Responsibility problem:
+
+- The public mobile navigation used Alpine `x-show` and `x-trap`, but public
+  pages do not load Livewire's Alpine Focus plugin. A served browser check
+  showed that the drawer therefore did not lock page scrolling or implement
+  the advertised focus behavior. The authenticated drawer did have its own
+  working trap; the defect was specific to the public header.
+- The available Signal source already provides a standalone drawer contract
+  using `data-mobile-drawer` and `data-mobile-toggle`, independent of Livewire.
+
+Boundary and implementation:
+
+- Replaced public-header-only Alpine state with Signal's data-attribute drawer
+  contract and a small presentation behavior module,
+  `resources/js/signal-drawer.js`, imported by the already served public Alpine
+  entrypoint.
+- The module handles focus entry and bidirectional Tab containment, Escape,
+  close/backdrop controls, `aria-expanded`, page scroll locking and link
+  navigation. It closes at the Signal `md` breakpoint and moves focus to the
+  visible desktop navigation. The authenticated drawer remains unchanged.
+- Preserved dynamic component IDs, all public links, the existing visual shell
+  and the no-JavaScript navigation fallback.
+- The first pushed attempt (`7be1ae9`) used the unavailable Alpine Focus
+  directive on public pages. Live evidence exposed that mismatch; it was
+  superseded by implementation commit `13b25a8`, which uses a standalone
+  Signal-compatible controller. No dependency was added.
+
+Preserved contracts and safety:
+
+- Public route destinations, registration gating, labels, breakpoints,
+  visibility of the existing mobile navigation, and all server-rendered page
+  content are unchanged.
+- No API, authorization, persistence, provider, queue, billing or production
+  behavior changed. The user-authored untracked controller plan remains
+  untouched.
+
+Evidence:
+
+- `/root/.local/share/buildpusher/php-8.5.10/bin/php vendor/bin/phpunit
+  tests/Feature/LocalUiAssetTest.php --testdox` — 66 tests passed,
+  2,902 assertions.
+- `php vendor/bin/pint --test`, JavaScript `node --check`, Vite build and
+  `git diff --check` passed. The served script is
+  `build/assets/alpine-DkQa-ZYv.js` (HTTP 200).
+- `BROWSER_LIVE_ORIGIN=https://deployer.buildpusher.com npx playwright test
+  tests/Browser/live-runtime.spec.js --reporter=line` — 2 tests passed. The
+  new live case verifies focus containment in both Tab directions, scroll
+  lock/release, Escape and focus restoration, close-button/backdrop dismissal,
+  and a 390px-to-768px transition with focus moved into desktop navigation.
+- The isolated runtime is healthy at `13b25a8`; its pre-existing
+  `deploy/Caddyfile` modification remains untouched. No production or external
+  provider acceptance is implied.
+- The verification-record commit is tracked separately from implementation;
+  the implementation commit `13b25a8` is pushed to `origin/main`.
+
+Next task: continue comparing shared Signal dialog/command behavior against
+the supplied source and test any concrete mismatch before changing page-level
+presentation.
+
 ## Slice 117 — verify available Signal source and live shell — 2026-09-22
 
 Responsibility problem:

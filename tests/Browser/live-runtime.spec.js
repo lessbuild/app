@@ -43,11 +43,19 @@ test('public mobile navigation traps focus and restores it when closed', async (
 
     const toggle = page.locator('#navbarToggler');
     const drawer = page.locator('#navbarCollapse');
+    const firstFocusable = drawer.locator('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])').first();
+    const lastFocusable = drawer.locator('a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])').last();
 
     await toggle.click();
     await expect(drawer).toBeVisible();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     expect(await drawer.evaluate(element => element.contains(document.activeElement))).toBe(true);
     await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(true);
+
+    await page.keyboard.press('Shift+Tab');
+    await expect(lastFocusable).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(firstFocusable).toBeFocused();
 
     for (let index = 0; index < 16; index++) {
         await page.keyboard.press('Tab');
@@ -57,11 +65,23 @@ test('public mobile navigation traps focus and restores it when closed', async (
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
     await expect(toggle).toBeFocused();
+    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(false);
 
     await toggle.click();
     await expect(drawer).toBeVisible();
     await page.setViewportSize({ width: 768, height: 844 });
     await expect(drawer).toBeHidden();
-    await expect(page.getByRole('navigation', { name: 'Primary navigation' }).getByRole('link').first()).toBeFocused();
+    await expect(page.locator('[data-desktop-navigation] a[href]').first()).toBeFocused();
+
+    await page.setViewportSize({ width: 390, height: 844 });
+    await toggle.click();
+    await drawer.locator('[data-mobile-toggle]').last().click();
+    await expect(drawer).toBeHidden();
+    await expect(toggle).toBeFocused();
+
+    await toggle.click();
+    await drawer.locator('[data-mobile-toggle]').first().click({ position: { x: 5, y: 400 } });
+    await expect(drawer).toBeHidden();
+    await expect(toggle).toBeFocused();
 });
