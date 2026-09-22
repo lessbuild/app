@@ -703,6 +703,34 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('input secondary', $providerForm);
     }
 
+    public function test_recipe_inventory_detail_and_dialogs_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/scenes/recipes/index.blade.php'),
+            resource_path('views/scenes/recipes/show.blade.php'),
+            resource_path('views/scenes/recipes/edit.blade.php'),
+            resource_path('views/components/scenes/recipes/_form.blade.php'),
+            resource_path('views/components/scenes/recipes/create-dialog.blade.php'),
+            resource_path('views/components/scenes/recipes/edit-dialog.blade.php'),
+            resource_path('views/components/scenes/recipes/edit-dialog-content.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
+        }
+
+        $form = File::get(resource_path('views/components/scenes/recipes/_form.blade.php'));
+        $this->assertStringContainsString('ui-label', $form);
+        $this->assertStringContainsString('ui-input', $form);
+        $this->assertStringContainsString('ui-card bg-surface-muted', $form);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([

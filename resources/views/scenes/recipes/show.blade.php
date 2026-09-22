@@ -25,7 +25,7 @@
                 aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}"
                 variant="primary"
             >
-                <svg class="mr-2 h-4 w-4 stroke-2 text-secondary">
+                <svg class="mr-2 h-4 w-4 stroke-2 text-muted">
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
                 {{ __('Edit Recipe') }}

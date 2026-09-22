@@ -36,7 +36,7 @@
         </div>
     @elseif ($recipe->source_recipe_id)
         <div class="ui-alert ui-alert--info my-4 p-4">
-            <p class="font-semibold text-primary">{{ __('Gallery source unavailable') }}</p>
+            <p class="font-semibold text-ink">{{ __('Gallery source unavailable') }}</p>
             <p class="mt-1">{{ __('The contributor removed or unpublished the source. Your encrypted private snapshot is unchanged and remains editable.') }}</p>
         </div>
     @endif
