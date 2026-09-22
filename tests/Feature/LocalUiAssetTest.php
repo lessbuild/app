@@ -258,6 +258,17 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('text-red-300', $serverLogs);
     }
 
+    public function test_shared_auth_and_stat_accents_use_signal_primary(): void
+    {
+        $authLayout = File::get(resource_path('views/components/layouts/auth.blade.php'));
+        $statsPanel = File::get(resource_path('views/components/panel/stats.blade.php'));
+
+        foreach ([$authLayout, $statsPanel] as $source) {
+            $this->assertStringContainsString('text-[var(--ui-primary)]', $source);
+            $this->assertStringNotContainsString('text-blue-400', $source);
+        }
+    }
+
     public function test_documentation_covers_onboarding_operations_and_troubleshooting(): void
     {
         $this->get(route('docs'))

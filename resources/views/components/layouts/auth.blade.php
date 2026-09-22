@@ -36,7 +36,7 @@
                 style="background-image: radial-gradient(circle, rgb(148 163 184) 1px, transparent 1px); background-size: 24px 24px;"
             ></div>
             <div class="relative max-w-md px-8 text-center text-slate-100">
-                <svg class="mx-auto h-16 w-16 stroke-2 text-blue-400">
+                <svg class="mx-auto h-16 w-16 stroke-2 text-[var(--ui-primary)]">
                     <use xlink:href="/assets/images/icons.svg#cloud-upload"></use>
                 </svg>
                 <p class="mt-6 text-2xl font-semibold">{{ __('Deploy with confidence') }}</p>
