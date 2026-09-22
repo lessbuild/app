@@ -43,12 +43,11 @@ test('public mobile navigation traps focus and restores it when closed', async (
 
     const toggle = page.locator('#navbarToggler');
     const drawer = page.locator('#navbarCollapse');
-    const close = drawer.locator('[x-ref="mobileNavigationClose"]');
 
     await toggle.click();
     await expect(drawer).toBeVisible();
-    await expect(close).toBeFocused();
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).toBe('hidden');
+    expect(await drawer.evaluate(element => element.contains(document.activeElement))).toBe(true);
+    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(true);
 
     for (let index = 0; index < 16; index++) {
         await page.keyboard.press('Tab');
@@ -58,7 +57,7 @@ test('public mobile navigation traps focus and restores it when closed', async (
     await page.keyboard.press('Escape');
     await expect(drawer).toBeHidden();
     await expect(toggle).toBeFocused();
-    await expect.poll(() => page.evaluate(() => getComputedStyle(document.documentElement).overflow)).not.toBe('hidden');
+    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(false);
 
     await toggle.click();
     await expect(drawer).toBeVisible();

@@ -590,11 +590,10 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('href="#main-content"', false)
             ->assertSee('id="main-content" tabindex="-1"', false)
             ->assertSee('aria-controls="navbarCollapse"', false)
-            ->assertSee(':aria-expanded="navigationOpen.toString()"', false)
-            ->assertSee('x-trap.inert.noscroll="navigationOpen"', false)
-            ->assertSee('x-ref="mobileNavigationToggle"', false)
-            ->assertSee('x-ref="mobileNavigationClose"', false)
-            ->assertSee('@resize.window="if (window.innerWidth >= 768 && navigationOpen)', false)
+            ->assertSee('aria-expanded="false"', false)
+            ->assertSee('data-mobile-drawer', false)
+            ->assertSee('data-mobile-toggle', false)
+            ->assertSee('aria-hidden="true"', false)
             ->assertSee('aria-label="Homepage navigation"', false)
             ->assertSee('aria-label="Mobile homepage navigation"', false)
             ->assertSee('<noscript>', false)
@@ -676,7 +675,13 @@ class LocalUiAssetTest extends TestCase
         $homepage = File::get(resource_path('views/scenes/index.blade.php'));
         $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
         $styles = File::get(resource_path('css/app.css'));
+        $alpineEntry = File::get(resource_path('js/alpine.js'));
+        $drawerScript = File::get(resource_path('js/signal-drawer.js'));
         $this->assertStringContainsString(':livewire="false"', $homepage);
+        $this->assertStringContainsString("import { initSignalPublicDrawers } from './signal-drawer'", $alpineEntry);
+        $this->assertStringContainsString('initSignalPublicDrawers()', $alpineEntry);
+        $this->assertStringContainsString("event.key === 'Escape'", $drawerScript);
+        $this->assertStringContainsString("event.key !== 'Tab'", $drawerScript);
         $this->assertStringContainsString('@if ($livewire)', $coreLayout);
         $this->assertStringContainsString('[x-cloak]', $styles);
         $this->assertStringContainsString('#main-content .border:is(', $styles);
