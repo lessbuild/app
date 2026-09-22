@@ -937,6 +937,31 @@ application behavior was unchanged.
 
 Push status: `82e7a42` is on `origin/main`.
 
-Next task: deploy this verified slice to the isolated Deployer runtime, then
-continue with the next inventory or operational surface after recording the
-served-runtime evidence.
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `34048cd` and its application, configuration, route and view caches were
+rebuilt before restarting `buildpusher-dev-main.service` and its queue worker.
+The canonical development host is https://deployer.buildpusher.com; the
+legacy buildpusher.com host is not the verification target for this
+application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/manifest.json` — HTTP 200 with the current Deployer asset manifest.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+- Unauthenticated `/builds` correctly resolves to the existing sign-in
+  boundary; no history data is exposed without a session.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is
+isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the remaining inventory pages and select the next cohesive
+operational surface to modernize, starting with commands or the next
+deployment-adjacent page while preserving its existing modal and authorization
+contracts.
