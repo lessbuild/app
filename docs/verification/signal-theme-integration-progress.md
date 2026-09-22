@@ -6544,6 +6544,79 @@ Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
 
+## Slice 95 — Signal-only theme source — 2026-09-22
+
+Responsibility problem:
+
+- The application had already adopted Signal's visual tokens and shell, but
+  `app.css` still imported legacy button/input styles, an older theme file and
+  a compatibility bridge. That left multiple style authorities and meant the
+  implementation was visually compatible with Signal rather than structurally
+  using Signal as the theme source.
+
+Boundary and implementation:
+
+- Removed the unused legacy `button.css`, `input.css`, old `theme.css` and
+  `signal/compat.css` entrypoints.
+- Made `resources/css/signal/theme.css` and
+  `resources/css/signal/components.css` the canonical Signal sources; both
+  match the reference Signal files byte-for-byte.
+- Moved the behavior-backed BuildPusher extensions into
+  `resources/css/components/ui.css`, including interactive cards, quiet alert
+  borders, dashboard trend sizing, status dots, console output and modal
+  panel geometry.
+- Replaced the remaining exact legacy utility consumers with Signal semantic
+  tokens and updated the asset regression checks accordingly.
+
+Preserved contracts and safety:
+
+- Existing `ui-btn`, `ui-input`, card, alert, dialog, filter, dashboard,
+  navigation and form hooks remain available; only their duplicate style
+  authorities were removed.
+- Existing alert edge treatment, modal sheets, mobile layout behavior,
+  primary accents and console/status presentation remain unchanged.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,274 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-C5BplCVr.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- `resources/css/signal/theme.css` SHA-256:
+  `980e9be5120e1498103fbd5cf71cad93541a4d15908f6b3a0a746757ccb8713d`.
+- `resources/css/signal/components.css` SHA-256:
+  `a5ebd67c16e9334b85ab4370279deb3ada0e485943aebbb636d511d66e56c384`.
+- The combined focused command also ran `DashboardTest`; one existing
+  environment-dependent assertion failed because the test health fixture
+  reported degraded status while the test expects `System operational`. This
+  CSS-only slice does not alter the health service or dashboard data path, and
+  the failure remains recorded rather than masked.
+- Served `app-C5BplCVr.css` contains Signal tokens and no retired compatibility
+  bridge selectors.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `0b3e415` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `0b3e415`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: replace the remaining legacy modal/filter implementation with the
+canonical Signal `ui-dialog`/sheet primitives where the current behavior can
+be preserved, starting with shared resource dialogs and mobile filters.
+
 ## Slice 94 — Canonical Signal empty states — 2026-09-22
 
 Responsibility problem:
