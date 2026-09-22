@@ -53,6 +53,9 @@ class RecipeFeedbackInboxTest extends TestCase
                 'resolved' => 0,
                 'recipes' => 1,
             ])
+            ->assertSee('Feedback sections')
+            ->assertSee('gallery-report-filters', false)
+            ->assertSee('gallery-report-inbox', false)
             ->assertViewHas('reports', function ($reports) use ($open): bool {
                 $report = $reports->sole();
 

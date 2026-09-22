@@ -12,6 +12,12 @@
         :description="__('Review anonymous reports across recipes you have published. Reporter identities are never shown.')"
     />
 
+    <x-ui.local-nav class="mt-6" :label="__('Feedback sections')">
+        <a href="#gallery-report-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#gallery-report-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
+        <a href="#gallery-report-inbox" class="ui-local-nav__link">{{ __('Inbox') }}</a>
+    </x-ui.local-nav>
+
     @if (session('status'))
         <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
     @endif
@@ -32,27 +38,27 @@
 
     <x-ui.filter-panel
         id="gallery-report-filters"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :open="$reportFilterCount > 0"
         :summary="$reportFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $reportFilterCount, ['count' => $reportFilterCount]) : null"
     >
         <form method="GET" action="{{ route('gallery.reports.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="search" class="ui-label">{{ __('Recipe') }}</label>
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="ui-input">
             </div>
             <div>
-                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Review status') }}</label>
-                <select id="status" name="status" class="input secondary mt-2 w-full rounded-lg">
+                <label for="status" class="ui-label">{{ __('Review status') }}</label>
+                <select id="status" name="status" class="ui-input">
                     <option value="unresolved" @selected($filters['status'] === 'unresolved')>{{ __('Needs review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved') }}</option>
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All reports') }}</option>
                 </select>
             </div>
             <div>
-                <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg">
+                <label for="reason" class="ui-label">{{ __('Issue type') }}</label>
+                <select id="reason" name="reason" class="ui-input">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach ($reasons as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
@@ -60,16 +66,16 @@
                 </select>
             </div>
             <div>
-                <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('Reported from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="date_from" class="ui-label">{{ __('Reported from') }}</label>
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
             </div>
             <div>
-                <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('Reported to') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="date_to" class="ui-label">{{ __('Reported to') }}</label>
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
             </div>
             <div>
-                <label for="age" class="block text-xs font-semibold uppercase text-secondary">{{ __('Minimum age') }}</label>
-                <select id="age" name="age" class="input secondary mt-2 w-full rounded-lg">
+                <label for="age" class="ui-label">{{ __('Minimum age') }}</label>
+                <select id="age" name="age" class="ui-input">
                     <option value="" @selected($filters['age'] === null)>{{ __('Any age') }}</option>
                     <option value="24h" @selected($filters['age'] === '24h')>{{ __('At least 24 hours') }}</option>
                     <option value="7d" @selected($filters['age'] === '7d')>{{ __('At least 7 days') }}</option>
@@ -77,8 +83,8 @@
                 </select>
             </div>
             <div>
-                <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-2 w-full rounded-lg">
+                <label for="sort" class="ui-label">{{ __('Sort') }}</label>
+                <select id="sort" name="sort" class="ui-input">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>
@@ -98,7 +104,7 @@
 
     <x-ui.insights
         id="gallery-report-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :open="false"
         :summary="trans_choice(':count report needs review|:count reports need review', $metrics['unresolved'], ['count' => $metrics['unresolved']])"
     >
@@ -118,7 +124,7 @@
             />
         </div>
     @else
-        <div x-data="{
+        <div id="gallery-report-inbox" class="scroll-mt-24" x-data="{
             openSelected: [],
             resolvedSelected: [],
             openIds: {{ Illuminate\Support\Js::from($reports->whereNull('resolved_at')->pluck('id')->values()) }},
@@ -133,8 +139,8 @@
                     <span x-show="openSelected.length !== openIds.length">{{ __('Select All Open') }}</span>
                     <span x-show="openSelected.length === openIds.length" style="display: none">{{ __('Clear Open Selection') }}</span>
                 </x-ui.button>
-                <span class="text-xs font-semibold text-secondary"><span x-text="openSelected.length">0</span> {{ __('selected') }}</span>
-                <span class="text-xs text-secondary">{{ __('Select up to 20 reports on this page.') }}</span>
+                <span class="text-xs font-semibold text-muted"><span x-text="openSelected.length">0</span> {{ __('selected') }}</span>
+                <span class="text-xs text-muted">{{ __('Select up to 20 reports on this page.') }}</span>
                 <x-forms.errors name="reports" bag="bulkResolve" />
             </form>
         @endif
@@ -147,8 +153,8 @@
                     <span x-show="resolvedSelected.length !== resolvedIds.length">{{ __('Select All Resolved') }}</span>
                     <span x-show="resolvedSelected.length === resolvedIds.length" style="display: none">{{ __('Clear Resolved Selection') }}</span>
                 </x-ui.button>
-                <span class="text-xs font-semibold text-secondary"><span x-text="resolvedSelected.length">0</span> {{ __('selected') }}</span>
-                <span class="text-xs text-secondary">{{ __('Select up to 20 resolved reports on this page.') }}</span>
+                <span class="text-xs font-semibold text-muted"><span x-text="resolvedSelected.length">0</span> {{ __('selected') }}</span>
+                <span class="text-xs text-muted">{{ __('Select up to 20 resolved reports on this page.') }}</span>
                 <x-forms.errors name="reports" bag="bulkReopen" />
             </form>
         @endif
@@ -195,27 +201,27 @@
                                 $reportRecipeEditKey = 'edit-recipe-'.$report->recipe->id;
                                 $reportRecipeEditUrl = (string) \Illuminate\Support\Uri::of($galleryReportsPageUrl)->withQuery(['dialog' => $reportRecipeEditKey]);
                             @endphp
-                            <h2 class="mt-3 text-lg font-bold text-primary">
+                            <h2 class="mt-3 text-lg font-bold text-ink">
                                 @if ($report->recipe->is_published)
-                                    <a href="{{ route('gallery.show', $report->recipe) }}" class="text-ternary">{{ $report->recipe->name }}</a>
+                                    <a href="{{ route('gallery.show', $report->recipe) }}" class="ui-link">{{ $report->recipe->name }}</a>
                                 @else
-                                    <a href="{{ $reportRecipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen && $editingRecipe->id === $report->recipe->id ? 'true' : 'false' }}" class="text-ternary">{{ $report->recipe->name }}</a>
+                                    <a href="{{ $reportRecipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen && $editingRecipe->id === $report->recipe->id ? 'true' : 'false' }}" class="ui-link">{{ $report->recipe->name }}</a>
                                 @endif
                             </h2>
-                            <p class="mt-1 text-xs text-secondary">
+                            <p class="mt-1 text-xs text-muted">
                                 {{ str($report->recipe->category)->headline() }}
                                 &middot;
                                 {{ $report->recipe->is_published ? __('Published') : __('No longer published') }}
                             </p>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block">{{ __('Reported :date', ['date' => $report->created_at->diffForHumans()]) }}</span>
                             @if ($report->resolved_at)
                                 <span class="mt-1 block">{{ __('Resolved :date', ['date' => $report->resolved_at->diffForHumans()]) }}</span>
                             @endif
                         </div>
                     </div>
-                    <p class="mt-4 whitespace-pre-line text-sm text-secondary">{{ $report->details ?: __('No additional details were provided.') }}</p>
+                    <p class="mt-4 whitespace-pre-line text-sm text-muted">{{ $report->details ?: __('No additional details were provided.') }}</p>
                     @if ($report->resolved_at && $report->resolution_note)
                         <div class="ui-alert ui-alert--success mt-3 p-3">
                             <p class="text-xs font-semibold uppercase">{{ __('Resolution note') }}</p>

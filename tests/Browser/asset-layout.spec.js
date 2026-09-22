@@ -2278,6 +2278,11 @@ test('report status opens as a private contextual dialog', async ({ page }) => {
     await serveFixtures(page);
     await page.goto('http://buildpusher.test/gallery/my-reports', { waitUntil: 'networkidle' });
 
+    await expect(page.getByRole('navigation', { name: 'Report history sections', exact: true })).toBeVisible();
+    await expect(page.locator('#gallery-report-history-insights')).toBeVisible();
+    await expect(page.locator('#gallery-report-history-filters')).toHaveCount(1);
+    await expect(page.locator('#gallery-report-history')).toBeVisible();
+
     const trigger = page.locator('[data-modal-trigger="gallery-report-status-dialog"]').first();
     const dialog = page.getByRole('dialog', { name: 'Report status', exact: true });
     const initialPath = new URL(page.url()).pathname;

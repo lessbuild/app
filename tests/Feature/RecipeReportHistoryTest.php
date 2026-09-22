@@ -66,6 +66,8 @@ class RecipeReportHistoryTest extends TestCase
                     && ! array_key_exists('description', $report->recipe->getAttributes()));
             })
             ->assertSee('My Community Reports')
+            ->assertSee('Report history sections')
+            ->assertSee('gallery-report-history', false)
             ->assertSee('Published report history')
             ->assertSee('Unpublished report history')
             ->assertSee('No longer published')
@@ -151,6 +153,8 @@ class RecipeReportHistoryTest extends TestCase
         $this->actingAs($reporter)->get(route('gallery.report.status', $report))
             ->assertSuccessful()
             ->assertSee('My Report Status')
+            ->assertSee('Report status sections')
+            ->assertSee('report-status-details', false)
             ->assertSee('Withdraw Report');
     }
 

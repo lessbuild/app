@@ -17,6 +17,12 @@
         @endif
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav class="mt-6" :label="__('Report history sections')">
+        <a href="#gallery-report-history-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#gallery-report-history-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
+        <a href="#gallery-report-history" class="ui-local-nav__link">{{ __('Reports') }}</a>
+    </x-ui.local-nav>
+
     @php
         $reportHistoryFilterCount = collect($filters)->filter(fn ($value, $key) => filled($value)
             && ($key === 'status' || $key === 'availability' || $key === 'updates'
@@ -36,43 +42,43 @@
 
     <x-ui.filter-panel
         id="gallery-report-history-filters"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :open="$reportHistoryFilterCount > 0"
         :summary="$reportHistoryFilterCount > 0 ? trans_choice(':count active filter|:count active filters', $reportHistoryFilterCount, ['count' => $reportHistoryFilterCount]) : null"
     >
         <form method="GET" action="{{ route('gallery.reports.mine') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="input secondary mt-2 w-full rounded-lg">
+                <label for="search" class="ui-label">{{ __('Recipe') }}</label>
+                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="ui-input">
             </div>
             <div>
-                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Report status') }}</label>
-                <select id="status" name="status" class="input secondary mt-2 w-full rounded-lg">
+                <label for="status" class="ui-label">{{ __('Report status') }}</label>
+                <select id="status" name="status" class="ui-input">
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All statuses') }}</option>
                     <option value="open" @selected($filters['status'] === 'open')>{{ __('Needs contributor review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved by contributor') }}</option>
                 </select>
             </div>
             <div>
-                <label for="availability" class="block text-xs font-semibold uppercase text-secondary">{{ __('Recipe availability') }}</label>
-                <select id="availability" name="availability" class="input secondary mt-2 w-full rounded-lg">
+                <label for="availability" class="ui-label">{{ __('Recipe availability') }}</label>
+                <select id="availability" name="availability" class="ui-input">
                     <option value="all" @selected($filters['availability'] === 'all')>{{ __('Published and unpublished') }}</option>
                     <option value="published" @selected($filters['availability'] === 'published')>{{ __('Published') }}</option>
                     <option value="unpublished" @selected($filters['availability'] === 'unpublished')>{{ __('No longer published') }}</option>
                 </select>
             </div>
             <div>
-                <label for="updates" class="block text-xs font-semibold uppercase text-secondary">{{ __('Contributor updates') }}</label>
-                <select id="updates" name="updates" class="input secondary mt-2 w-full rounded-lg">
+                <label for="updates" class="ui-label">{{ __('Contributor updates') }}</label>
+                <select id="updates" name="updates" class="ui-input">
                     <option value="all" @selected($filters['updates'] === 'all')>{{ __('Reviewed and unread') }}</option>
                     <option value="unread" @selected($filters['updates'] === 'unread')>{{ __('Unread updates') }}</option>
                     <option value="reviewed" @selected($filters['updates'] === 'reviewed')>{{ __('No unread update') }}</option>
                 </select>
             </div>
             <div>
-                <label for="reason" class="block text-xs font-semibold uppercase text-secondary">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="input secondary mt-2 w-full rounded-lg">
+                <label for="reason" class="ui-label">{{ __('Issue type') }}</label>
+                <select id="reason" name="reason" class="ui-input">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach (\App\Models\RecipeReport::REASONS as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
@@ -80,8 +86,8 @@
                 </select>
             </div>
             <div>
-                <label for="sort" class="block text-xs font-semibold uppercase text-secondary">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="input secondary mt-2 w-full rounded-lg">
+                <label for="sort" class="ui-label">{{ __('Sort') }}</label>
+                <select id="sort" name="sort" class="ui-input">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>
@@ -100,7 +106,7 @@
 
     <x-ui.insights
         id="gallery-report-history-insights"
-        class="mt-6"
+        class="mt-6 scroll-mt-24"
         :open="false"
         :summary="trans_choice(':count report|:count reports', $metrics['matching'], ['count' => $metrics['matching']])"
     >
@@ -125,7 +131,7 @@
             />
         </div>
     @else
-        <div class="mt-6 space-y-4">
+        <div id="gallery-report-history" class="mt-6 scroll-mt-24 space-y-4">
             @foreach ($reports as $report)
                 @php
                     $unreadUpdate = $unreadUpdates->get($report->id);
@@ -156,7 +162,7 @@
                                     <x-ui.badge tone="accent">{{ __('New update') }}</x-ui.badge>
                                 @endif
                             </div>
-                            <h2 class="mt-3 text-lg font-bold text-primary">
+                            <h2 class="mt-3 text-lg font-bold text-ink">
                                 <a
                                     href="{{ $reportStatusUrl }}"
                                     data-modal-trigger="gallery-report-status-dialog"
@@ -167,9 +173,9 @@
                                     class="underline-offset-2 hover:underline"
                                 >{{ $report->recipe->name }}</a>
                             </h2>
-                            <p class="mt-1 text-sm text-secondary">{{ str($report->recipe->category)->headline() }}</p>
+                            <p class="mt-1 text-sm text-muted">{{ str($report->recipe->category)->headline() }}</p>
                         </div>
-                        <div class="text-right text-xs text-secondary">
+                        <div class="text-right text-xs text-muted">
                             <span class="block">{{ __('Reported :date', ['date' => $report->created_at->diffForHumans()]) }}</span>
                             <span class="mt-1 block">{{ __('Updated :date', ['date' => $report->updated_at->diffForHumans()]) }}</span>
                         </div>
@@ -207,7 +213,7 @@
             :open="$reportStatusDialogOpen"
         >
             <div data-modal-content>
-                <div class="space-y-3 text-sm text-secondary">{{ __('Loading report status…') }}</div>
+                <div class="space-y-3 text-sm text-muted">{{ __('Loading report status…') }}</div>
             </div>
         </x-dialogs.modal>
     @endif

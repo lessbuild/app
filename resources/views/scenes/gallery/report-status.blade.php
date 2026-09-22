@@ -6,6 +6,12 @@
         :description="__('Review the current state of your private community report and any response from the contributor.')"
     />
 
+    <x-ui.local-nav class="mt-6" :label="__('Report status sections')">
+        <a href="#report-status-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#gallery-report-status-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
+        <a href="#report-status-details" class="ui-local-nav__link">{{ __('Details') }}</a>
+    </x-ui.local-nav>
+
     @if ($unreadUpdate)
         <x-ui.alert class="mt-6 flex flex-wrap items-center justify-between gap-3 p-4" tone="info" role="status">
             <div>
@@ -19,18 +25,18 @@
         </x-ui.alert>
     @endif
 
-    <x-ui.card class="mt-6 p-5 sm:p-6" aria-labelledby="report-status-heading">
+    <section id="report-status-overview" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="report-status-heading">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
-                <p class="text-xs font-semibold uppercase text-secondary">{{ __('Recipe') }}</p>
-                <h2 id="report-status-heading" class="mt-1 text-xl font-bold text-primary">{{ $report->recipe->name }}</h2>
-                <p class="mt-1 text-sm text-secondary">{{ str($report->recipe->category)->headline() }}</p>
+                <p class="ui-eyebrow text-[0.65rem]">{{ __('Recipe') }}</p>
+                <h2 id="report-status-heading" class="mt-1 text-xl font-bold text-ink">{{ $report->recipe->name }}</h2>
+                <p class="mt-1 text-sm text-muted">{{ str($report->recipe->category)->headline() }}</p>
             </div>
             <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}</x-ui.badge>
         </div>
 
         @if ($report->recipe->is_published && $report->recipe->published_at)
-            <a href="{{ route('gallery.show', $report->recipe) }}#gallery-report-heading" class="mt-4 inline-block font-medium text-ternary underline">
+            <a href="{{ route('gallery.show', $report->recipe) }}#gallery-report-heading" class="ui-link mt-4 inline-block">
                 {{ __('View or update this report in the gallery') }}
             </a>
         @else
@@ -41,7 +47,7 @@
 
         <x-ui.insights
             id="gallery-report-status-insights"
-            class="mt-5"
+            class="mt-5 scroll-mt-24"
             :summary="$report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor')"
             :mobile-open="true"
         >
@@ -64,9 +70,9 @@
             </dl>
         </x-ui.insights>
 
-        <div class="mt-5">
-            <h3 class="text-xs font-semibold uppercase text-secondary">{{ __('Your report details') }}</h3>
-            <p class="mt-2 whitespace-pre-line text-sm text-primary">{{ $report->details ?: __('No additional details were provided.') }}</p>
+        <div id="report-status-details" class="mt-5 scroll-mt-24">
+            <h3 class="ui-eyebrow text-[0.65rem]">{{ __('Your report details') }}</h3>
+            <p class="mt-2 whitespace-pre-line text-sm text-ink">{{ $report->details ?: __('No additional details were provided.') }}</p>
         </div>
 
         @if ($report->resolved_at && $report->resolution_note)
@@ -81,5 +87,5 @@
             @method('DELETE')
             <x-ui.button type="submit" variant="danger">{{ __('Withdraw Report') }}</x-ui.button>
         </form>
-    </x-ui.card>
+    </section>
 </x-layouts.app>
