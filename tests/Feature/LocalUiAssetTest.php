@@ -79,6 +79,9 @@ class LocalUiAssetTest extends TestCase
 
         $this->assertStringContainsString('data-ui-page-header', $html);
         $this->assertStringContainsString('ui-page-header__eyebrow', $html);
+        $this->assertStringContainsString('ui-eyebrow', $html);
+        $this->assertStringContainsString('text-3xl font-extrabold tracking-tight text-ink', $html);
+        $this->assertStringNotContainsString('ui-panel', $html);
         $this->assertStringContainsString('Infrastructure', $html);
         $this->assertStringContainsString('data-ui-page-header-actions', $html);
         $this->assertStringContainsString('aria-label="Server sections"', $html);
