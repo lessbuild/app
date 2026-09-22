@@ -819,6 +819,18 @@ test('dashboard system health opens as a private diagnostic inspector', async ({
     await expect(page.getByRole('dialog', { name: 'System health', exact: true })).toBeVisible();
 });
 
+test('system health keeps its diagnostic snapshot scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/system-health', { waitUntil: 'networkidle' });
+
+    await expect(page.locator('#system-health-summary')).toBeVisible();
+    await expect(page.locator('#system-health-insights .ui-stat')).toHaveCount(4);
+    await expect(page.locator('section[aria-labelledby="system-health-checks"] li .ui-panel')).toHaveCount(2);
+    await expect(page.locator('#system-health-help')).toHaveClass(/\bui-panel\b/);
+});
+
 test('dashboard active commands open as a bounded status inspector', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

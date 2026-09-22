@@ -1,20 +1,20 @@
 <x-ui.alert
     :tone="$passed ? 'success' : 'danger'"
-    class="mt-8"
+    class="mt-8 border-l-4"
     role="status"
     aria-labelledby="system-health-summary"
 >
     <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
-            <p class="text-xs font-semibold uppercase text-secondary">{{ __('Current status') }}</p>
-            <h2 id="system-health-summary" class="mt-1 text-2xl font-bold text-primary">
+            <p class="ui-eyebrow">{{ __('Current status') }}</p>
+            <h2 id="system-health-summary" class="mt-1 text-2xl font-bold text-ink">
                 {{ $passed ? __('Operational') : __('Needs attention') }}
             </h2>
-            <p class="mt-1 text-sm text-secondary">
+            <p class="mt-1 text-sm text-muted">
                 {{ trans_choice(':passed of :total check passed|:passed of :total checks passed', count($checks), ['passed' => $passedCount, 'total' => count($checks)]) }}
             </p>
         </div>
-        <p class="text-sm text-secondary">
+        <p class="text-sm text-muted">
             {{ __('Checked :time', ['time' => $checkedAt->toDayDateTimeString()]) }}
         </p>
     </div>
@@ -51,8 +51,8 @@
 
 <section class="mt-6" aria-labelledby="system-health-checks">
     <div class="mb-4">
-        <h2 id="system-health-checks" class="text-xl font-bold text-primary">{{ __('Diagnostic checks') }}</h2>
-        <p class="mt-1 text-sm text-secondary">
+        <h2 id="system-health-checks" class="text-xl font-bold text-ink">{{ __('Diagnostic checks') }}</h2>
+        <p class="mt-1 text-sm text-muted">
             {{ __('Values are deliberately summarized so credentials, queue payloads, and exception details never appear here.') }}
         </p>
     </div>
@@ -60,25 +60,25 @@
     <ul class="grid gap-4 lg:grid-cols-2" role="list">
         @foreach ($checks as $check)
             <li>
-                <x-ui.card class="h-full p-5">
+                <div class="ui-panel h-full p-5">
                     <div class="flex items-start gap-3">
                         <x-ui.badge :tone="$check['passed'] ? 'success' : 'danger'">
                             {{ $check['passed'] ? __('Pass') : __('Fail') }}
                         </x-ui.badge>
                         <div class="min-w-0">
-                            <h3 class="font-bold text-primary">{{ $check['name'] }}</h3>
-                            <p class="mt-1 text-sm text-secondary">{{ $check['detail'] }}</p>
+                            <h3 class="font-bold text-ink">{{ $check['name'] }}</h3>
+                            <p class="mt-1 text-sm text-muted">{{ $check['detail'] }}</p>
                         </div>
                     </div>
-                </x-ui.card>
+                </div>
             </li>
         @endforeach
     </ul>
 </section>
 
-<x-ui.card id="system-health-help" tone="muted" class="mt-6 scroll-mt-24 p-5" aria-labelledby="system-health-help-title">
-    <h2 id="system-health-help-title" class="font-bold text-primary">{{ __('When a check fails') }}</h2>
-    <p class="mt-1 text-sm text-secondary">
+<section id="system-health-help" class="ui-panel mt-6 scroll-mt-24 border-l-4 p-5" aria-labelledby="system-health-help-title">
+    <h2 id="system-health-help-title" class="font-bold text-ink">{{ __('When a check fails') }}</h2>
+    <p class="mt-1 text-sm text-muted">
         {{ __('Use the failing check and its safe summary to guide investigation. Operators with shell access can run php artisan lessbuild:diagnose for the same current snapshot.') }}
     </p>
-</x-ui.card>
+</section>
