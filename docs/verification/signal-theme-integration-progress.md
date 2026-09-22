@@ -2134,6 +2134,60 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 81 — deployment preflight status tokens — 2026-09-22
+
+Responsibility problem:
+
+- The deployment preflight risk checklist still encoded passed, warning and
+  failed checks with fixed green, amber and red utility classes, while the
+  surrounding deployment timeline had already moved to Signal semantics.
+
+Boundary and implementation:
+
+- Kept risk snapshot creation, check ordering, Livewire state and deployment
+  launch behavior in their existing business boundaries.
+- Replaced only the Blade status mapping with `text-success`, `text-warning`
+  and `text-danger` tokens, retaining the existing check symbols and fallback
+  failure behavior.
+- Added a source-level guard for the shared preflight view.
+
+Preserved contracts and safety:
+
+- Risk scores, check names and details, entitlement denial, first-deployment
+  guidance, callbacks, timeline data and deployment side effects are
+  unchanged.
+- No action, job, queue, provider, persistence, API or authorization behavior
+  changed.
+
+Evidence:
+
+- Product-improvement, repository deployment, deployment timeline and local UI
+  coverage — 68 tests passed, 1,303 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `5b8f54d` is on `origin/main`.
+
+Next task: inspect project readiness and provider form focus states for a
+separate cohesive Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `5b8f54d`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect project readiness and provider form focus states for a
+separate cohesive Signal modernization boundary.
+
 ## Slice 80 — shared shell danger indicators — 2026-09-22
 
 Responsibility problem:
