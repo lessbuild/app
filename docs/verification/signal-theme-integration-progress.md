@@ -2134,6 +2134,56 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 64 — recipe inventory, detail and authoring surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'ae0be19'.
+
+Responsibility problem addressed:
+
+- Recipe inventory, assignment detail and create/edit dialogs still mixed
+  retired palette utilities into the Signal shell, leaving the reusable
+  authoring workflow visually inconsistent with the surrounding application.
+- The inconsistency was presentation-only, but it was visible in the primary
+  recipe workflow and especially in dialog footers and loading states.
+
+Signal implementation:
+
+- Replaced legacy text, surface and border utilities in the recipe inventory,
+  detail and full-page edit views with Signal ink, muted, line and surface
+  roles.
+- Updated create/edit dialog footers to use the quiet Signal surface and line
+  treatment, and aligned lazy recipe-form feedback with the shared muted text
+  role.
+- Added source-level guards covering all recipe views and preserving the
+  existing `ui-label`, `ui-input` and `ui-card` form primitives.
+
+Preserved contracts:
+
+- Recipe CRUD, ownership isolation, encrypted script handling, validation,
+  filters, pagination, exports, duplication and server assignment behavior.
+- Gallery publishing/copy behavior, usage metrics, private detail rendering,
+  dialog query parameters, modal loading/cancel hooks and no-JavaScript form
+  submissions.
+- No controller, request, policy, action, persistence, queue, authorization
+  or route behavior changed.
+
+Evidence:
+
+- Recipe management, filtering, insights, usage, export, duplication and
+  gallery coverage plus local UI guards — 73 tests passed, 1,164 assertions.
+- Targeted recipe creation/edit/mobile dialog coverage — 3 Playwright tests
+  passed in 47.6 seconds in the isolated fixture runtime.
+- `npm run build` — passed; generated CSS is `assets/app-ByPUAeyQ.css`.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+Push status: `ae0be19` is on `origin/main`.
+
+Next task: deploy the recipe-surface modernization to the isolated canonical
+Deployer runtime, then inspect the next remaining cohesive Signal boundary.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
