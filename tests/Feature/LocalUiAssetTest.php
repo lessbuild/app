@@ -594,6 +594,33 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('ring-gray-300', $pagination);
     }
 
+    public function test_application_inventory_and_dialogs_use_signal_primitives(): void
+    {
+        foreach ([
+            resource_path('views/scenes/projects/index.blade.php'),
+            resource_path('views/components/scenes/projects/_create-form.blade.php'),
+            resource_path('views/components/scenes/projects/create-dialog.blade.php'),
+            resource_path('views/components/scenes/projects/preview-settings-dialog.blade.php'),
+            resource_path('views/components/scenes/projects/promotion-dialog.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
+        }
+
+        $createForm = File::get(resource_path('views/components/scenes/projects/_create-form.blade.php'));
+        $this->assertStringContainsString('ui-choice', $createForm);
+        $this->assertStringContainsString('ui-input', $createForm);
+        $this->assertStringContainsString('ui-check', $createForm);
+        $this->assertStringContainsString('ui-badge ui-badge-soft', $createForm);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([

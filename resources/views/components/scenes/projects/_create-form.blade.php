@@ -1,35 +1,35 @@
-<div class="space-y-6 bg-primary px-5 py-5 sm:px-8">
+<div class="space-y-6 bg-surface px-5 py-5 sm:px-8">
     <div>
         <label class="block" for="project-name">
-            <span class="mb-1 block text-sm font-semibold text-primary">{{ __('Name') }}</span>
-            <input id="project-name" required name="name" value="{{ old('name') }}" class="input secondary rounded-lg" autocomplete="organization" aria-describedby="project-name-help">
+            <span class="ui-label">{{ __('Name') }}</span>
+            <input id="project-name" required name="name" value="{{ old('name') }}" class="ui-input" autocomplete="organization" aria-describedby="project-name-help">
         </label>
-        <p id="project-name-help" class="mt-1 text-xs text-secondary">{{ __('Use a recognizable name for the application and its environments.') }}</p>
+        <p id="project-name-help" class="mt-1 text-xs text-muted">{{ __('Use a recognizable name for the application and its environments.') }}</p>
         <x-forms.errors name="name" />
     </div>
 
     <div>
         <label class="block" for="project-description">
-            <span class="mb-1 block text-sm font-semibold text-primary">{{ __('Description') }}</span>
-            <textarea id="project-description" name="description" rows="4" class="input secondary rounded-lg">{{ old('description') }}</textarea>
+            <span class="ui-label">{{ __('Description') }}</span>
+            <textarea id="project-description" name="description" rows="4" class="ui-input min-h-28">{{ old('description') }}</textarea>
         </label>
         <x-forms.errors name="description" />
     </div>
 
     <fieldset>
-        <legend class="text-sm font-bold text-primary">{{ __('Application template') }}</legend>
-        <p class="mt-1 text-xs leading-5 text-secondary">{{ __('Choose the starting runtime. You can customize environment settings after creation.') }}</p>
+        <legend class="text-sm font-bold text-ink">{{ __('Application template') }}</legend>
+        <p class="mt-1 text-xs leading-5 text-muted">{{ __('Choose the starting runtime. You can customize environment settings after creation.') }}</p>
         <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             @foreach($templates as $value => $template)
-                <label class="group flex cursor-pointer items-start gap-3 rounded-xl border border-primary bg-secondary p-4 transition hover:border-ternary has-[:checked]:border-ternary has-[:checked]:ring-2 has-[:checked]:ring-ternary/30">
-                    <input type="radio" name="preset" value="{{ $value }}" class="mt-1" @checked(old('preset', 'laravel') === $value)>
+                <label class="ui-choice group">
+                    <input type="radio" name="preset" value="{{ $value }}" class="ui-check mt-1" @checked(old('preset', 'laravel') === $value)>
                     <span class="min-w-0">
-                        <strong class="block text-primary">{{ $template->name }}</strong>
-                        <span class="mt-1 block text-xs leading-5 text-secondary">{{ $template->description }}</span>
-                        <span class="mt-2 inline-flex rounded-full bg-primary px-2 py-0.5 text-[10px] font-bold uppercase text-secondary">{{ $template->runtimeType }}</span>
+                        <strong class="block text-ink">{{ $template->name }}</strong>
+                        <span class="mt-1 block text-xs leading-5 text-muted">{{ $template->description }}</span>
+                        <span class="ui-badge ui-badge-soft mt-2">{{ $template->runtimeType }}</span>
                         @if($template->serviceTemplate)
-                            <span class="mt-2 block text-xs font-bold text-primary">{{ __('Curated template :version', ['version' => $template->serviceTemplate->version]) }}</span>
-                            <span class="mt-1 block text-xs text-secondary">{{ trans_choice(':count managed resource|:count managed resources', count($template->serviceTemplate->resources), ['count' => count($template->serviceTemplate->resources)]) }} · {{ __(':count readiness checks', ['count' => count($template->serviceTemplate->readinessChecks)]) }}</span>
+                            <span class="mt-2 block text-xs font-bold text-ink">{{ __('Curated template :version', ['version' => $template->serviceTemplate->version]) }}</span>
+                            <span class="mt-1 block text-xs text-muted">{{ trans_choice(':count managed resource|:count managed resources', count($template->serviceTemplate->resources), ['count' => count($template->serviceTemplate->resources)]) }} · {{ __(':count readiness checks', ['count' => count($template->serviceTemplate->readinessChecks)]) }}</span>
                         @endif
                     </span>
                 </label>
