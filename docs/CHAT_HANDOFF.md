@@ -1,10 +1,43 @@
 # BuildPusher chat handoff
 
-# Latest isolated dev deployment and hostname cutover — 2026-09-21
+# Latest isolated dev runtime and Signal shell verification — 2026-09-22
+
+The isolated Deployer dev runtime at
+`/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` is on `main` at
+`8d8ab03`, matching `origin/main`. Its deployed application assets were built
+from `c331dfd`; the later `6a92c75` and `8d8ab03` commits only update
+verification records and browser-fixture coverage. The runtime has its own
+`APP_ENV=local`, SQLite database, storage, cache, sessions and application key.
+Its existing local `deploy/Caddyfile` modification was preserved.
+
+Both `buildpusher-dev-main.service` and
+`buildpusher-dev-main-worker.service` are active. The canonical dev host
+`https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+The site serves `app-CbO4z2yl.css` and the standalone Signal drawer entry
+`signal-drawer-C2U5iYr-.js`; the served CSS matches the runtime build byte for
+byte (SHA-256
+`aa225375200ee516f9b13f0985d382bfa8c244f6a8d672c6ed47c1b17f48fce7`).
+
+The current Signal shell audit confirms the supplied theme's shared styling,
+public drawer, app sidebar/mobile navigation, component variants and native
+`ui-dialog` primitive are in use. The drawer behavior is loaded independently
+of Alpine/Livewire. Local fixture checks cover its served asset, scroll lock,
+Escape and focus restoration; creation-dialog/page-lock checks passed. On the
+dev host, authenticated mobile and desktop sidebar checks and the mobile
+keyboard/command-dialog check passed. No product form, provider probe or
+infrastructure operation was submitted.
+
+The supplied Signal source snapshot has no Git metadata, so its parity is
+verified but its being the latest upstream release cannot be independently
+claimed. Production, physical-device and external-provider acceptance remain
+separate. Details are in
+`docs/verification/signal-theme-integration-progress.md`.
+
+# Hostname cutover and initial isolated dev verification — 2026-09-21
 
 The isolated dev deployment is prepared for the canonical hostname
 `deployer.buildpusher.com` and is serving source commit
-`00f1ea5`, matching `origin/main`. The runtime is
+`00f1ea5` at the time of the cutover. The runtime is
 `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` with
 `APP_ENV=local`, its own SQLite database and the active
 `buildpusher-dev-main.service`; Caddy serves the new hostname through that
