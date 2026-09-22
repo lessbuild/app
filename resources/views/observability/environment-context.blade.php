@@ -128,7 +128,7 @@
         </div>
 
         <details id="environment-context-filters" class="ui-panel mt-5 bg-surface-muted p-4" @if ($contextFiltersAreActive || $errors->any()) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Adjust evidence filters') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($contextFiltersAreActive)
@@ -177,7 +177,7 @@
         </details>
 
         <details id="save-investigation-view" class="ui-panel mt-5 bg-surface-muted p-4">
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Saved investigation views') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($savedInvestigations->isNotEmpty())

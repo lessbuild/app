@@ -173,6 +173,21 @@ class LocalUiAssetTest extends TestCase
         }
     }
 
+    public function test_native_disclosure_focus_targets_use_signal_control_radius(): void
+    {
+        foreach ([
+            resource_path('views/notifications/index.blade.php'),
+            resource_path('views/observability/index.blade.php'),
+            resource_path('views/observability/environment-context.blade.php'),
+            resource_path('views/observability/_operational-incidents.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('rounded-md', $source, $viewPath);
+            $this->assertGreaterThan(0, preg_match_all('/<summary[^>]*class="[^"]*rounded-control[^"]*focus-visible:ring-2/', $source), $viewPath);
+        }
+    }
+
     public function test_deployment_detail_surfaces_use_signal_card_radius_tokens(): void
     {
         foreach ([

@@ -153,7 +153,7 @@
 
         @if ($canManage)
             <details id="metric-alert-rules" class="ui-panel mt-6 bg-surface-muted p-4" @if ($errors->any()) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <span>{{ __('Metric alert rules') }}</span>
                     <span class="flex items-center gap-2">
                         @if ($metricRules->isNotEmpty())
@@ -236,7 +236,7 @@
     @if ($environmentProjects->isNotEmpty())
         <section class="ui-panel mt-6 p-5 sm:p-6" aria-labelledby="environment-evidence-heading">
             <details id="environment-evidence" class="rounded-card" aria-labelledby="environment-evidence-heading">
-                <summary class="flex cursor-pointer list-none items-start gap-3 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+                <summary class="flex cursor-pointer list-none items-start gap-3 rounded-control focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <div>
                         <p class="ui-eyebrow">{{ __('Investigation') }}</p>
                         <h2 id="environment-evidence-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Environment evidence') }}</h2>
@@ -268,7 +268,7 @@
             <h2 class="mt-1 text-xl font-extrabold text-ink">{{ __('Alert destinations') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('Send signed failure and recovery events to Slack or your HTTPS webhook.') }}</p>
             <details id="alert-destinations" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any()) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <span>{{ __('Manage destinations') }}</span>
                     <span class="flex items-center gap-2">
                         @if ($destinations->isNotEmpty())
@@ -319,7 +319,7 @@
             <h2 class="mt-1 text-xl font-extrabold text-ink">{{ __('Public status pages') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('Publish live component health and rolling 30-day uptime without exposing infrastructure details.') }}</p>
             <details id="status-pages" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any()) open @endif>
-                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                     <span>{{ __('Manage status pages') }}</span>
                     <span class="flex items-center gap-2">
                         @if ($statusPages->isNotEmpty())
@@ -369,7 +369,7 @@
         <p class="mt-1 text-sm text-muted">{{ __('Publish updates to a status page and notify its confirmed subscribers.') }}</p>
 
         <details id="status-incident-history" class="ui-panel mt-5 bg-surface-muted p-4" @if ($errors->any() || $incidents->contains(fn ($incident) => ! in_array($incident->status, ['resolved', 'completed'], true))) open @endif>
-            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-md font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
+            <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Show status updates') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($incidents->isNotEmpty())
