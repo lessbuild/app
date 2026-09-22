@@ -2134,6 +2134,61 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 41 — authentication surfaces — 2026-09-22
+
+Status: implemented and verified locally; code committed and pushed as
+'e3cc3f1'.
+
+Responsibility problem addressed:
+
+- The shared authentication layout, social-provider selector and sign-in,
+  registration, password recovery, password confirmation, two-factor and
+  email-verification forms still mixed compatibility utility classes with the
+  Signal component system. That made the first-run and account-recovery paths
+  look different from the rest of the application, especially on mobile.
+
+Signal implementation:
+
+- Migrated authentication labels, fields, checkboxes, links, separators and
+  text roles to the shared Signal primitives and semantic theme tokens.
+- Added a stable `data-auth-brand` hook to the shared auth brand so browser
+  coverage can identify the return-to-home control without depending on color
+  utility names.
+- Kept the provider selector and the shared auth layout as reusable boundaries;
+  no duplicated provider or form styling was introduced.
+
+Preserved contracts:
+
+- Form methods, route names, CSRF tokens, hidden invitation/reset tokens,
+  input names, old-input behavior, autofill metadata, password confirmation,
+  two-factor challenge handling, social-provider filtering and redirects are
+  unchanged.
+- Registration closure, invitation binding, reset privacy, verification
+  resend behavior, rate limits, named error handling and secret handling are
+  unchanged.
+- No controller, request, policy, action, persistence, session, queue or
+  authorization behavior was modified.
+
+Evidence:
+
+- Authentication, registration, reset privacy, password confirmation,
+  two-factor, email verification, redirect, access-request and social-auth
+  coverage — 101 tests passed, 1,013 assertions.
+- Fixture-backed responsive asset matrix — 4 tests passed for light/dark at
+  320px and 390px. The separate live-server accessibility/navigation cases
+  could not run because this checkout had no listener on 127.0.0.1:8014; they
+  did not reach application assertions.
+- 'npm run build' — passed.
+- 'php artisan view:cache' — passed.
+- 'php vendor/bin/pint --test' — passed.
+- 'git diff --check' — passed.
+
+Push status: 'e3cc3f1' is on 'origin/main'.
+
+Next task: record this slice, deploy the current main branch to the isolated
+canonical Deployer runtime, then inspect the next product surface for a
+separate cohesive Signal modernization boundary.
+
 ## Slice 38 — billing overview — 2026-09-22
 
 Responsibility problem addressed:
