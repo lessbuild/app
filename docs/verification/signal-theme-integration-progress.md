@@ -2198,6 +2198,57 @@ Evidence:
 
 Next task: modernize the remaining vendor pagination template.
 
+## Slice 87 — shared pagination controls — 2026-09-22
+
+Responsibility problem:
+
+- The full vendor Tailwind paginator still rendered gray/white/blue utility
+  controls, even though the compact paginator had already adopted Signal
+  buttons. Pages using the full paginator therefore looked inconsistent.
+
+Boundary and implementation:
+
+- Rebuilt only the shared pagination presentation using `ui-btn`, `text-muted`,
+  `text-ink` and Signal focus primitives.
+- Preserved paginator result counts, previous/next URLs, page-number URLs,
+  current-page semantics, mobile/desktop visibility and translation keys.
+- Extended the UI contract test to cover both pagination templates.
+
+Preserved contracts and safety:
+
+- Query-string preservation, pagination ordering, disabled states, ARIA labels,
+  current-page markup and all consuming resource queries are unchanged.
+- No controller, query, authorization, API or persistence behavior changed.
+
+Evidence:
+
+- Notification, recipe, infrastructure, provider, build-history,
+  command-center and local UI coverage — 101 tests passed, 1,670 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `ced6926` is on `origin/main`.
+
+Next task: re-audit remaining fixed utility classes and classify any intentional
+exceptions.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `ced6926`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: re-audit remaining fixed utility classes and classify any intentional
+exceptions.
+
 ## Canonical dev deployment — 2026-09-22
 
 The isolated runtime at
