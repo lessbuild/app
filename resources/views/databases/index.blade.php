@@ -16,8 +16,8 @@
 
     @if (session('databasePassword'))
         <div class="ui-alert ui-alert--warning mt-6" role="status">
-            <p class="font-bold text-primary">{{ __('Copy this password now') }}</p>
-            <code class="mt-2 block break-all rounded-lg bg-primary p-3 text-sm text-primary">{{ session('databasePassword') }}</code>
+            <p class="font-bold text-ink">{{ __('Copy this password now') }}</p>
+            <code class="library-code mt-2">{{ session('databasePassword') }}</code>
         </div>
     @endif
 
@@ -75,8 +75,8 @@
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <x-ui.badge tone="accent">{{ strtoupper($resource->type) }}</x-ui.badge>
-                        <h2 class="mt-2 break-words text-lg font-black text-primary">{{ $resource->name }}</h2>
-                        <p class="text-sm text-secondary">{{ $resource->environment->project->name }} · {{ $resource->environment->name }}</p>
+                        <h2 class="mt-2 break-words text-lg font-black text-ink">{{ $resource->name }}</h2>
+                        <p class="text-sm text-muted">{{ $resource->environment->project->name }} · {{ $resource->environment->name }}</p>
                     </div>
                     <div class="flex shrink-0 flex-wrap justify-end gap-2">
                         <form method="POST" action="{{ route('databases.inspect', $resource) }}">
@@ -99,21 +99,21 @@
 
                 <dl class="mt-5 grid grid-cols-2 gap-3">
                         <div class="ui-card ui-card--muted p-3">
-                        <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Size') }}</dt>
-                        <dd class="mt-1 font-bold text-primary">{{ $latest?->size_bytes ? number_format($latest->size_bytes / 1048576, 1).' MB' : '—' }}</dd>
+                        <dt class="text-xs font-semibold uppercase text-muted">{{ __('Size') }}</dt>
+                        <dd class="mt-1 font-bold text-ink">{{ $latest?->size_bytes ? number_format($latest->size_bytes / 1048576, 1).' MB' : '—' }}</dd>
                     </div>
                     <div class="ui-card ui-card--muted p-3">
-                        <dt class="text-xs font-semibold uppercase text-secondary">{{ __('Connections') }}</dt>
-                        <dd class="mt-1 font-bold text-primary">{{ $latest?->active_connections ?? '—' }}</dd>
+                        <dt class="text-xs font-semibold uppercase text-muted">{{ __('Connections') }}</dt>
+                        <dd class="mt-1 font-bold text-ink">{{ $latest?->active_connections ?? '—' }}</dd>
                     </div>
                 </dl>
 
                 @if ($latest?->schema_tables)
-                    <details class="mt-4 rounded-lg border border-primary px-3 py-2">
-                        <summary class="cursor-pointer text-sm font-bold text-secondary">
+                    <details class="ui-card ui-card--muted mt-4 px-3 py-2">
+                        <summary class="cursor-pointer text-sm font-bold text-muted">
                             {{ count($latest->schema_tables) }} {{ __('tables') }}
                         </summary>
-                        <p class="mt-2 break-words font-mono text-xs text-secondary">{{ implode(' · ', $latest->schema_tables) }}</p>
+                        <p class="mt-2 break-words font-mono text-xs text-muted">{{ implode(' · ', $latest->schema_tables) }}</p>
                     </details>
                 @endif
 
@@ -127,25 +127,25 @@
                             || $errors->has('target_resource_id')
                             || $errors->has('confirmation');
                     @endphp
-                    <details id="database-management-{{ $resource->id }}" class="group mt-5 overflow-hidden rounded-xl border border-primary" @if ($databaseManagementOpen) open @endif>
-                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold text-primary [&::-webkit-details-marker]:hidden">
+                    <details id="database-management-{{ $resource->id }}" class="ui-card group mt-5 overflow-hidden" @if ($databaseManagementOpen) open @endif>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold text-ink [&::-webkit-details-marker]:hidden">
                             <span>
-                                <span class="block text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Operations') }}</span>
+                                <span class="block text-xs font-bold uppercase tracking-widest text-primary">{{ __('Operations') }}</span>
                                 <span class="mt-1 block">{{ __('Credentials and cloning') }}</span>
-                                <span class="mt-1 block text-sm font-normal text-secondary">
+                                <span class="mt-1 block text-sm font-normal text-muted">
                                     {{ trans_choice(':count active credential|:count active credentials', $resource->databaseUsers->count(), ['count' => $resource->databaseUsers->count()]) }}
                                     · {{ __('Non-production replacement only') }}
                                 </span>
                             </span>
-                            <span class="text-xl font-normal text-secondary transition group-open:rotate-45" aria-hidden="true">+</span>
+                            <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
                         </summary>
-                        <div class="space-y-5 border-t border-primary p-4">
+                        <div class="space-y-5 border-t border-line p-4">
                     <div class="mt-4 space-y-2" aria-label="{{ __('Database credentials') }}">
                         @foreach ($resource->databaseUsers as $databaseUser)
-                            <div class="flex items-center justify-between gap-3 rounded-lg bg-secondary p-3">
+                            <div class="ui-card ui-card--muted flex items-center justify-between gap-3 p-3">
                                 <div class="min-w-0">
-                                    <p class="truncate text-sm font-bold text-primary">{{ $databaseUser->username }}</p>
-                                    <p class="text-xs text-secondary">
+                                    <p class="truncate text-sm font-bold text-ink">{{ $databaseUser->username }}</p>
+                                    <p class="text-xs text-muted">
                                         {{ ucfirst($databaseUser->privilege) }} · {{ $databaseUser->expires_at ? __('expires').' '.$databaseUser->expires_at->diffForHumans() : __('permanent') }}
                                     </p>
                                 </div>
@@ -158,15 +158,15 @@
                         @endforeach
                     </div>
 
-                    <form method="POST" action="{{ route('databases.clone', $resource) }}" class="space-y-3 border-t border-primary pt-5">
+                    <form method="POST" action="{{ route('databases.clone', $resource) }}" class="space-y-3 border-t border-line pt-5">
                         @csrf
                         <div>
-                            <h3 class="font-bold text-primary">{{ __('Clone this database') }}</h3>
-                            <p class="mt-1 text-xs text-secondary">{{ __('Only non-production targets are offered. Type the target name to confirm.') }}</p>
+                            <h3 class="font-bold text-ink">{{ __('Clone this database') }}</h3>
+                            <p class="mt-1 text-xs text-muted">{{ __('Only non-production targets are offered. Type the target name to confirm.') }}</p>
                         </div>
                         <label class="block">
-                            <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Target environment') }}</span>
-                            <select name="target_resource_id" class="input secondary w-full rounded-lg" required>
+                            <span class="ui-label">{{ __('Target environment') }}</span>
+                            <select name="target_resource_id" class="ui-input w-full rounded-lg" required>
                                 <option value="">{{ __('Clone into…') }}</option>
                                 @foreach ($resources->where('type', $resource->type)->where('id', '!=', $resource->id)->filter(fn ($target) => $target->environment->type !== 'production') as $target)
                                     <option value="{{ $target->id }}">{{ $target->environment->project->name }} / {{ $target->environment->name }} / {{ $target->name }}</option>
@@ -174,8 +174,8 @@
                             </select>
                         </label>
                         <label class="block">
-                            <span class="mb-1 block text-xs font-semibold uppercase text-secondary">{{ __('Confirmation') }}</span>
-                            <input name="confirmation" class="input secondary w-full rounded-lg" placeholder="{{ __('Type the target resource name to confirm') }}" required>
+                            <span class="ui-label">{{ __('Confirmation') }}</span>
+                            <input name="confirmation" class="ui-input w-full rounded-lg" placeholder="{{ __('Type the target resource name to confirm') }}" required>
                         </label>
                         <x-ui.button type="submit" variant="danger">{{ __('Queue destructive clone') }}</x-ui.button>
                     </form>
@@ -202,15 +202,15 @@
         <section class="ui-card mt-6 p-5">
             <div class="flex items-center justify-between gap-3">
                 <div>
-                    <h2 class="font-black text-primary">{{ __('Clone history') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">{{ __('Review recent database copy operations and their outcomes.') }}</p>
+                    <h2 class="font-black text-ink">{{ __('Clone history') }}</h2>
+                    <p class="mt-1 text-sm text-muted">{{ __('Review recent database copy operations and their outcomes.') }}</p>
                 </div>
                 <x-ui.badge>{{ $clones->count() }}</x-ui.badge>
             </div>
             <div class="mt-4 space-y-2">
                 @foreach ($clones as $clone)
-                    <div class="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-secondary p-3 text-sm">
-                        <span class="text-primary">{{ $clone->source->name }} → {{ $clone->target->name }}</span>
+                    <div class="ui-card ui-card--muted flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+                        <span class="text-ink">{{ $clone->source->name }} → {{ $clone->target->name }}</span>
                         <x-ui.badge tone="{{ in_array($clone->status, ['completed', 'succeeded'], true) ? 'success' : 'neutral' }}">{{ ucfirst($clone->status) }}</x-ui.badge>
                     </div>
                 @endforeach

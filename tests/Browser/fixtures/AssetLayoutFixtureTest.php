@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\Build;
+use App\Models\EnvironmentResource;
 use App\Models\OperationalIncident;
 use App\Models\Recipe;
 use App\Models\RepositoryWebhookDelivery;
@@ -265,6 +266,31 @@ class AssetLayoutFixtureTest extends TestCase
         $environment = $project->environments()->create([
             'name' => 'Production', 'slug' => 'production', 'type' => 'production', 'branch' => 'main',
         ]);
+        $databaseResource = $environment->resources()->create([
+            'name' => 'primary_database',
+            'type' => 'postgresql',
+            'is_managed' => true,
+            'status' => EnvironmentResource::STATUS_READY,
+            'configuration' => ['variables' => []],
+        ]);
+        $databaseResource->snapshots()->create([
+            'size_bytes' => 104857600,
+            'active_connections' => 4,
+            'slow_queries' => 0,
+            'schema_tables' => ['users', 'deployments'],
+            'collected_at' => now()->subMinute(),
+        ]);
+        $databaseEntitlementEnforcement = config('billing.enforce_entitlements');
+        config(['billing.enforce_entitlements' => false]);
+        File::put($directory.'/databases.html', $this->renderPage(route('databases.index'))->assertOk()
+            ->assertSee('Database operations')
+            ->assertSee('data-modal-trigger="database-credential-'.$databaseResource->id.'"', false)
+            ->getContent());
+        File::put($directory.'/databases-credential-dialog.html', $this->renderPage(route('databases.index', [
+            'dialog' => 'issue-credential',
+            'resource_id' => $databaseResource->id,
+        ]))->assertOk()->assertSee('data-modal-initial-open="true"', false)->getContent());
+        config(['billing.enforce_entitlements' => $databaseEntitlementEnforcement]);
         $scheduledTask = $environment->scheduledTasks()->create([
             'created_by' => $owner->id,
             'name' => 'Warm cache',

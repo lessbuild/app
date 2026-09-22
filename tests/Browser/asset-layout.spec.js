@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'docs', 'api-docs', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'activity', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
+const screens = ['landing', 'login', 'pricing', 'docs', 'api-docs', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'databases', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'activity', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
 const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1', 'observability/environments/1/context'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -227,7 +227,9 @@ async function serveFixtures(page, { delays = {} } = {}) {
                                     ? 'observability-status-incident-dialog'
                                 : screen === 'observability' && dialog?.startsWith('edit-status-incident-')
                                     ? 'observability-status-incident-edit-dialog'
-                                : screen === 'notifications' && dialog === 'save-filter'
+                            : screen === 'databases' && dialog === 'issue-credential'
+                                ? 'databases-credential-dialog'
+                            : screen === 'notifications' && dialog === 'save-filter'
                                     ? 'notifications-dialog'
                                     : screen === 'projects' && dialog === 'create-application'
                                         ? 'projects-dialog'
