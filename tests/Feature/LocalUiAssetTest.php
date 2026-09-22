@@ -608,6 +608,27 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('Setup Information', $setup);
     }
 
+    public function test_billing_and_pricing_surfaces_use_shared_signal_plan_controls(): void
+    {
+        foreach ([
+            resource_path('views/scenes/billing/index.blade.php'),
+            resource_path('views/scenes/pricing.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            foreach (['text-primary', 'text-secondary', 'text-ternary', 'bg-primary', 'bg-secondary', 'border-primary', 'ring-primary', 'button--', 'input secondary'] as $legacyClass) {
+                $this->assertStringNotContainsString($legacyClass, $source, $viewPath);
+            }
+        }
+
+        $billing = File::get(resource_path('views/scenes/billing/index.blade.php'));
+        $pricing = File::get(resource_path('views/scenes/pricing.blade.php'));
+
+        $this->assertStringContainsString('x-ui.button', $billing);
+        $this->assertStringContainsString('ui-btn-primary', $pricing);
+        $this->assertStringContainsString('data-pricing-plan', $pricing);
+    }
+
     public function test_high_availability_inventory_and_dialogs_use_signal_primitives(): void
     {
         foreach ([

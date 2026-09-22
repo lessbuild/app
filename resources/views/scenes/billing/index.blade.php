@@ -112,8 +112,8 @@
 
     <div class="mt-8 flex justify-center">
         <div class="inline-flex rounded-xl border border-line bg-surface-muted p-1" role="group" aria-label="{{ __('Billing interval') }}">
-            <a href="{{ route('billing.index', ['interval' => 'monthly']) }}" @class(['rounded-lg px-5 py-2.5 text-sm font-bold transition', 'bg-primary text-white' => $selectedInterval === 'monthly', 'text-muted hover:bg-surface' => $selectedInterval !== 'monthly']) @if ($selectedInterval === 'monthly') aria-current="page" @endif>{{ __('Monthly') }}</a>
-            <a href="{{ route('billing.index', ['interval' => 'yearly']) }}" @class(['rounded-lg px-5 py-2.5 text-sm font-bold transition', 'bg-primary text-white' => $selectedInterval === 'yearly', 'text-muted hover:bg-surface' => $selectedInterval !== 'yearly']) @if ($selectedInterval === 'yearly') aria-current="page" @endif>{{ __('Yearly · 2 months free') }}</a>
+            <x-ui.button :href="route('billing.index', ['interval' => 'monthly'])" :variant="$selectedInterval === 'monthly' ? 'primary' : 'secondary'" :aria-current="$selectedInterval === 'monthly' ? 'page' : null" class="ui-btn-sm">{{ __('Monthly') }}</x-ui.button>
+            <x-ui.button :href="route('billing.index', ['interval' => 'yearly'])" :variant="$selectedInterval === 'yearly' ? 'primary' : 'secondary'" :aria-current="$selectedInterval === 'yearly' ? 'page' : null" class="ui-btn-sm">{{ __('Yearly · 2 months free') }}</x-ui.button>
         </div>
     </div>
 
@@ -123,7 +123,7 @@
                 $shownPrice = $selectedInterval === 'yearly' ? $plan['yearly_price'] : $plan['price'];
                 $priceId = $plan[$selectedInterval.'_price_id'] ?? null;
             @endphp
-            <x-ui.card @class(['relative flex flex-col p-6', 'border-2 border-primary' => $key === 'pro'])>
+            <x-ui.card @class(['relative flex flex-col p-6', 'border-2' => $key === 'pro']) @style(['border-color: var(--ui-primary)' => $key === 'pro'])>
                 @if ($key === 'pro')
                     <x-ui.badge tone="accent" class="absolute -top-3 left-5">{{ __('Most popular') }}</x-ui.badge>
                 @endif
@@ -131,13 +131,13 @@
                 <p class="mt-2 min-h-12 text-sm text-muted">{{ $plan['description'] }}</p>
                 <p class="mt-5 text-ink"><span class="text-4xl font-black">${{ $shownPrice }}</span><span class="text-muted">{{ $shownPrice ? ($selectedInterval === 'yearly' ? __('/year') : __('/month')) : __(' forever') }}</span></p>
                 @if ($selectedInterval === 'yearly' && $shownPrice)
-                    <p class="mt-1 text-xs font-semibold text-primary">{{ __('Equivalent to $:price/month', ['price' => number_format($shownPrice / 12, 2)]) }}</p>
+                    <p class="mt-1 text-xs font-semibold text-ink">{{ __('Equivalent to $:price/month', ['price' => number_format($shownPrice / 12, 2)]) }}</p>
                 @endif
                 <ul class="my-6 flex-1 space-y-2 text-sm text-muted">
                     @foreach ($plan['features'] as $feature)
-                        <li class="flex gap-2"><span class="font-bold text-primary" aria-hidden="true">✓</span><span>{{ $feature }}</span></li>
+                        <li class="flex gap-2"><span class="font-bold text-ink" aria-hidden="true">✓</span><span>{{ $feature }}</span></li>
                     @endforeach
-                    <li class="flex gap-2"><span class="font-bold text-primary" aria-hidden="true">✓</span><span>{{ number_format($plan['limits']['api_requests_per_minute']) }} {{ __('API requests per minute') }}</span></li>
+                    <li class="flex gap-2"><span class="font-bold text-ink" aria-hidden="true">✓</span><span>{{ number_format($plan['limits']['api_requests_per_minute']) }} {{ __('API requests per minute') }}</span></li>
                 </ul>
 
                 @if ($key === $currentPlan)
