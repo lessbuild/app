@@ -101,7 +101,7 @@
                 :description="__('Are you sure you want to delete this server?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="button button--danger" data-modal-trigger="delete-server" aria-controls="delete-server" aria-expanded="false">
+            <button type="button" class="ui-btn ui-btn-danger" data-modal-trigger="delete-server" aria-controls="delete-server" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
@@ -410,11 +410,11 @@
                     <h2 id="server-log-heading" class="mt-1 text-lg font-bold text-emphasis-ink">{{ __('Log output') }}</h2>
                 </div>
                 <nav class="flex flex-wrap gap-3" aria-label="{{ __('Server log types') }}">
-                    <a href="?log=apt" @class(['text-xs font-medium', 'text-primary' => $log === 'apt', 'text-emphasis-muted' => $log !== 'apt'])>{{ __('Apt') }}</a>
-                    <a href="?log=caddy" @class(['text-xs font-medium', 'text-primary' => $log === 'caddy', 'text-emphasis-muted' => $log !== 'caddy'])>{{ __('Caddy') }}</a>
-                    <a href="?log=mysql" @class(['text-xs font-medium', 'text-primary' => $log === 'mysql', 'text-emphasis-muted' => $log !== 'mysql'])>{{ __('Mysql') }}</a>
-                    <a href="?log=php" @class(['text-xs font-medium', 'text-primary' => $log === 'php', 'text-emphasis-muted' => $log !== 'php'])>{{ __('PHP') }}</a>
-                    <a href="?log=provisioning" @class(['text-xs font-medium', 'text-primary' => $log === 'provisioning', 'text-emphasis-muted' => $log !== 'provisioning'])>{{ __('Provisioning') }}</a>
+                    <a href="?log=apt" @class(['ui-link text-xs' => $log === 'apt', 'text-xs font-medium text-emphasis-muted hover:text-emphasis-ink' => $log !== 'apt'])>{{ __('Apt') }}</a>
+                    <a href="?log=caddy" @class(['ui-link text-xs' => $log === 'caddy', 'text-xs font-medium text-emphasis-muted hover:text-emphasis-ink' => $log !== 'caddy'])>{{ __('Caddy') }}</a>
+                    <a href="?log=mysql" @class(['ui-link text-xs' => $log === 'mysql', 'text-xs font-medium text-emphasis-muted hover:text-emphasis-ink' => $log !== 'mysql'])>{{ __('Mysql') }}</a>
+                    <a href="?log=php" @class(['ui-link text-xs' => $log === 'php', 'text-xs font-medium text-emphasis-muted hover:text-emphasis-ink' => $log !== 'php'])>{{ __('PHP') }}</a>
+                    <a href="?log=provisioning" @class(['ui-link text-xs' => $log === 'provisioning', 'text-xs font-medium text-emphasis-muted hover:text-emphasis-ink' => $log !== 'provisioning'])>{{ __('Provisioning') }}</a>
                 </nav>
             </div>
             <div class="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
@@ -457,13 +457,13 @@
                     @forelse ($logs as $line)
                         @if ($line === '') @continue @endif
                         <div class="w-full">
-                            <span class="text-primary">{{ $server->name }}:~$</span>
+                            <span class="text-[var(--ui-primary)]">{{ $server->name }}:~$</span>
                             <span class="text-emphasis-ink">{{ $line }}</span>
                         </div>
                     @empty
                         @unless (in_array($logSnapshot?->status, [\App\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
                             <div class="flex">
-                                <span class="text-primary">{{ $server->name }}:~$</span>
+                                <span class="text-[var(--ui-primary)]">{{ $server->name }}:~$</span>
                                 <span class="flex-1 pl-2 text-emphasis-muted">
                                     @if ($log === 'provisioning' && $server->provisioning_status !== \App\Models\Server::STATUS_ACTIVE)
                                         {{ $server->provisioning_status === \App\Models\Server::STATUS_FAILED ? __('No provisioning output was received.') : __('Waiting for provisioning output…') }}

@@ -17,9 +17,9 @@
         @method('PATCH')
         <input type="hidden" name="_server_display_name_form" value="1">
         <label class="block" for="server-display-name">
-            <span class="block text-sm font-semibold text-primary">{{ __('Display name') }}</span>
+            <span class="ui-label">{{ __('Display name') }}</span>
             <input
-                class="input secondary mt-2 w-full rounded-lg"
+                class="ui-input mt-2"
                 id="server-display-name"
                 name="display_name"
                 type="text"
@@ -30,8 +30,8 @@
             >
             <x-forms.errors name="display_name" />
         </label>
-        <div class="rounded-xl border border-primary bg-secondary p-4 text-sm text-secondary">
-            <span class="font-semibold text-primary">{{ __('Cloud hostname:') }}</span>
+        <div class="ui-panel bg-surface-muted p-4 text-sm text-muted">
+            <span class="font-semibold text-ink">{{ __('Cloud hostname:') }}</span>
             <code class="ml-1 break-all">{{ $server->name }}</code>
             <p class="mt-2">{{ __('Leave the display name empty to use this hostname throughout the control panel.') }}</p>
         </div>

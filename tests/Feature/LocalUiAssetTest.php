@@ -535,18 +535,29 @@ class LocalUiAssetTest extends TestCase
             resource_path('views/scenes/servers/import-review.blade.php'),
             resource_path('views/livewire/scenes/servers/command.blade.php'),
             resource_path('views/livewire/scenes/servers/show.blade.php'),
+            resource_path('views/components/scenes/servers/edit-dialog.blade.php'),
         ] as $viewPath) {
             $source = File::get($viewPath);
 
+            $this->assertStringNotContainsString('text-primary', $source, $viewPath);
             $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
             $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
             $this->assertStringNotContainsString('border-primary', $source, $viewPath);
             $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
             $this->assertStringNotContainsString('bg-slate-', $source, $viewPath);
             $this->assertStringNotContainsString('text-slate-', $source, $viewPath);
+            $this->assertStringNotContainsString('button--danger', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
         }
 
-        $this->assertStringContainsString('ui-console', File::get(resource_path('views/livewire/scenes/servers/show.blade.php')));
+        $serverShow = File::get(resource_path('views/livewire/scenes/servers/show.blade.php'));
+        $serverEditDialog = File::get(resource_path('views/components/scenes/servers/edit-dialog.blade.php'));
+        $this->assertStringContainsString('ui-console', $serverShow);
+        $this->assertStringContainsString('ui-btn ui-btn-danger', $serverShow);
+        $this->assertStringContainsString('ui-link text-xs', $serverShow);
+        $this->assertStringContainsString('ui-label', $serverEditDialog);
+        $this->assertStringContainsString('ui-input', $serverEditDialog);
+        $this->assertStringContainsString('ui-panel', $serverEditDialog);
         $this->assertStringContainsString('ui-input', File::get(resource_path('views/livewire/scenes/servers/command.blade.php')));
         $this->assertStringContainsString('ui-check', File::get(resource_path('views/scenes/servers/import-review.blade.php')));
     }
