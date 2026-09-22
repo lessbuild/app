@@ -36,6 +36,8 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('Illustrative workspace preview')
             ->assertSee('data-landing-hero', false)
             ->assertSee('ui-panel relative overflow-hidden p-3', false)
+            ->assertSee('ui-emphasis relative overflow-hidden rounded-panel p-6 sm:p-10', false)
+            ->assertSee('group rounded-card border border-line bg-surface p-4', false)
             ->assertDontSee('ui-landing-hero', false)
             ->assertSee('bg-surface-muted', false)
             ->assertSee('text-emphasis-ink', false)
@@ -62,6 +64,36 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('data-offline-message=', false)
             ->assertSee('data-online-message=', false)
             ->assertDontSee('ui-avatars.com', false);
+    }
+
+    public function test_signal_public_blocks_are_pinned_to_the_requested_theme_source(): void
+    {
+        foreach ([
+            'css/signal/theme.css' => '980e9be5120e1498103fbd5cf71cad93541a4d15908f6b3a0a746757ccb8713d',
+            'css/signal/components.css' => 'a5ebd67c16e9334b85ab4370279deb3ada0e485943aebbb636d511d66e56c384',
+            'css/signal/themes.json' => 'abb484b2897b144830e45e7f51f34a420972ba0371b47676880d4664b74b6872',
+        ] as $relativePath => $expectedHash) {
+            $this->assertSame(
+                $expectedHash,
+                hash_file('sha256', resource_path($relativePath)),
+                $relativePath.' must match the source commit recorded in the Signal integration ledger.',
+            );
+        }
+
+        $html = Blade::render(
+            <<<'BLADE'
+            <x-signal.blocks.cta eyebrow="Release" title="Ship safely" copy="Trace every step." href="/deployments" label="View releases" />
+            <x-signal.blocks.faq-list :items="$items" />
+            BLADE,
+            ['items' => [['q' => 'Who uses this?', 'a' => 'Teams who ship software.']]],
+        );
+
+        $this->assertStringContainsString('ui-emphasis relative overflow-hidden rounded-panel p-6 sm:p-10', $html);
+        $this->assertStringContainsString('ui-btn ui-btn-primary ui-btn-lg shrink-0', $html);
+        $this->assertStringContainsString('href="/deployments"', $html);
+        $this->assertStringContainsString('group rounded-card border border-line bg-surface p-4', $html);
+        $this->assertStringContainsString('Who uses this?', $html);
+        $this->assertStringNotContainsString('<script>', $html);
     }
 
     public function test_shared_resource_headers_and_local_navigation_have_accessible_structure(): void

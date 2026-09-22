@@ -1,5 +1,65 @@
 # Signal theme integration progress
 
+## Slice 121 — pin the current Signal source and use its reusable landing blocks — 2026-09-22
+
+Responsibility problem:
+
+- The previous audit verified Deployer against an unversioned Signal source
+  snapshot, so it could not establish which upstream design-system revision
+  was being used. The public landing page also repeated FAQ and CTA markup
+  instead of consuming the reusable Signal blocks.
+
+Boundary and implementation:
+
+- Audited `https://github.com/lessbuild/template.git` directly. Its fetched
+  `main` currently resolves to
+  `438f8647361a11a32e974d00d491e67fba8efbcf` (`Initialize reusable template
+  starter`, 2026-09-22 23:11:35 UTC). This records the upstream state checked
+  for this slice; future upstream changes still require a fresh comparison.
+- Confirmed `resources/css/signal/theme.css`,
+  `resources/css/signal/components.css`, and
+  `resources/css/signal/themes.json` are byte-for-byte identical to that
+  revision's source files.
+- Rechecked the Signal public header, app-sidebar, button, form, card and dialog
+  vocabularies against Deployer's Blade shell and shared UI components. The
+  shared public/mobile navigation, authenticated sidebar, button/input/card
+  primitives, and native `ui-dialog` modal system are already integrated.
+  Deployer retains its product-specific links, authorization, URL-backed
+  dialogs and responsive behavior while translating the source's Nunjucks
+  component contracts into Laravel Blade; no rewrite of working shell or modal
+  behavior was warranted.
+- Added reusable Blade translations of Signal's `blocks/faq.njk` and
+  `blocks/cta.njk`, and replaced the duplicated landing-page markup with those
+  components. Their Signal class patterns and content hierarchy are preserved;
+  the app's existing translated text and registration/access-request behavior
+  remain intact.
+- Added source-hash/render assertions and a browser interaction check for
+  accessible FAQ keyboard operation and the CTA link.
+
+Preserved contracts and safety:
+
+- Public routes, copy, destinations, registration/access handling, layout
+  navigation, modal behavior, persistence, dependencies and infrastructure are
+  unchanged. No production deployment or paid operation was performed.
+- Static Signal demo pages were not copied into Deployer; only reusable design
+  system assets and blocks with a real product use were applied.
+
+Evidence:
+
+- Upstream `main` fetch and revision verification: passed; current fetched SHA
+  is `438f8647361a11a32e974d00d491e67fba8efbcf`.
+- Theme CSS, component CSS and theme-data SHA-256 comparisons: all exact.
+- Strict `LocalUiAssetTest.php`: **67 passed**, **2,924 assertions**.
+- Focused Pint, Vite production build and `git diff --check`: passed.
+- Local browser landing-page FAQ/CTA interaction: **1 passed** (35.8s).
+- Existing shell/navigation, creation-dialog, dashboard page-local modal,
+  dialog scroll-lock and mobile native filter-sheet browser checks:
+  **5 passed** (4.1m).
+
+Next task: review the complete diff, then commit and push this verified slice
+to `main`. Continue the source-driven UI audit afterward; this slice does not
+claim every screen has been visually accepted on physical devices.
+
 ## Slice 120 — verify shared Signal dialogs and fixture assets — 2026-09-22
 
 Responsibility problem:

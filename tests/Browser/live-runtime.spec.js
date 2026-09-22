@@ -95,3 +95,25 @@ test('public mobile navigation traps focus and restores it when closed', async (
     await expect(drawer).toBeHidden();
     await expect(toggle).toBeFocused();
 });
+
+test('public landing renders and operates the Signal FAQ and CTA blocks', async ({ page }) => {
+    await page.route('**/*', route => route.request().method() === 'GET'
+        ? route.continue()
+        : route.abort());
+    await page.setViewportSize({ width: 1280, height: 900 });
+    await page.goto(new URL('/', origin).href, { waitUntil: 'networkidle' });
+
+    const faq = page.locator('#questions details').first();
+    const summary = faq.locator('summary');
+    await expect(faq).toHaveClass(/rounded-card/);
+    await expect(summary).toBeVisible();
+    await summary.press('Enter');
+    await expect(faq).toHaveAttribute('open', '');
+    await summary.press('Space');
+    await expect(faq).not.toHaveAttribute('open', '');
+
+    const callToAction = page.locator('#main-content .ui-emphasis').last();
+    await expect(callToAction).toHaveClass(/rounded-panel/);
+    await expect(callToAction).toHaveClass(/sm:p-10/);
+    await expect(callToAction.locator('a.ui-btn-primary.ui-btn-lg')).toBeVisible();
+});
