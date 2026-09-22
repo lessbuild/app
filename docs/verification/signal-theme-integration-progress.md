@@ -2134,6 +2134,60 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Slice 77 — account security danger surfaces — 2026-09-22
+
+Responsibility problem:
+
+- Account verification feedback, two-factor disable and account deletion still
+  used fixed red utility classes, creating a separate visual language from the
+  Signal account and workspace surfaces.
+
+Boundary and implementation:
+
+- Kept verification delivery, two-factor lifecycle and account deletion in
+  their existing request, controller, action and security boundaries.
+- Replaced the remaining fixed red text and borders with the existing semantic
+  `text-danger` token and shared `ui-panel--danger` primitive.
+- Added a source-level guard covering both destructive account panels and the
+  retired palette utilities.
+
+Preserved contracts and safety:
+
+- Account deletion confirmation, password and two-factor requirements,
+  workspace ownership checks, active-operation safeguards, named error bags,
+  flash messages, redirects and recovery-code semantics are unchanged.
+- No authentication, authorization, persistence, queue, route or API behavior
+  changed.
+
+Evidence:
+
+- Account lifecycle, management, security activity/overview, two-factor and
+  local UI coverage — 95 tests passed, 1,491 assertions.
+- `php vendor/bin/pint --test` and `git diff --check` — passed.
+- Push status: implementation commit `6a82a45` is on `origin/main`.
+
+Next task: inspect the shared deployment timeline status markers for a separate
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `6a82a45`. Blade and route caches were rebuilt; both application and queue
+services are active, and `https://deployer.buildpusher.com/api/health` returns
+`{"status":"ready"}` after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the shared deployment timeline status markers for a separate
+Signal modernization boundary.
+
 ## Slice 76 — workspace deletion danger surface — 2026-09-22
 
 Responsibility problem:
