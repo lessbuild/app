@@ -27,7 +27,7 @@
     ])>
         @foreach ($providers as $provider => $label)
             <x-ui.button :href="route('social.login', $provider)" variant="secondary" class="w-full">
-                <svg class="h-5 w-5 stroke-2 text-secondary" aria-hidden="true">
+                <svg class="h-5 w-5 stroke-2 text-muted" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#{{ $provider }}"></use>
                 </svg>
                 <span>{{ $label }}</span>

@@ -219,7 +219,7 @@
                         <h3 class="font-bold text-ink">{{ __('Connect your authenticator app') }}</h3>
                         <p class="mt-1 text-sm text-muted">{{ __('Add this setup key manually, then enter the generated six-digit code.') }}</p>
                         <code class="mt-3 block break-all rounded-lg border border-line bg-surface-muted p-3 font-mono text-ink">{{ auth()->user()->two_factor_secret }}</code>
-                        <details class="mt-3 text-sm text-muted"><summary class="cursor-pointer font-semibold text-primary">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded-lg border border-line bg-surface-muted p-3 text-xs text-ink">{{ $twoFactorProvisioningUri }}</code></details>
+                        <details class="mt-3 text-sm text-muted"><summary class="ui-link cursor-pointer">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded-lg border border-line bg-surface-muted p-3 text-xs text-ink">{{ $twoFactorProvisioningUri }}</code></details>
                     </div>
                     <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
                         <form method="POST" action="{{ route('account.two-factor.confirm') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">

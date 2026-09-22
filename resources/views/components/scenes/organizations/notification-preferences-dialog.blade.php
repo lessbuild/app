@@ -22,11 +22,11 @@
         @method('PATCH')
 
         <fieldset>
-            <legend class="text-sm font-bold text-primary">{{ __('Inbox categories') }}</legend>
+            <legend class="text-sm font-bold text-ink">{{ __('Inbox categories') }}</legend>
             <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 @foreach (['website' => __('Websites'), 'server' => __('Servers'), 'deployment' => __('Deployments'), 'provider' => __('Providers'), 'security' => __('Security'), 'recipe' => __('Recipes')] as $value => $label)
-                    <label class="flex items-center gap-3 text-sm text-secondary">
-                        <input type="checkbox" name="categories[]" value="{{ $value }}" @checked(in_array($value, $selectedCategories, true))>
+                    <label class="flex items-center gap-3 text-sm text-ink">
+                        <input type="checkbox" name="categories[]" value="{{ $value }}" class="ui-check" @checked(in_array($value, $selectedCategories, true))>
                         <span>{{ $label }}</span>
                     </label>
                 @endforeach
@@ -36,13 +36,13 @@
         </fieldset>
 
         <input type="hidden" name="recoveries" value="0">
-        <label class="flex items-start gap-3 text-sm text-secondary">
-            <input type="checkbox" name="recoveries" value="1" @checked((bool) $recoveriesEnabled)>
-            <span><strong class="block text-primary">{{ __('Recovery notifications') }}</strong>{{ __('Notify when a failed resource becomes healthy again.') }}</span>
+        <label class="flex items-start gap-3 text-sm text-ink">
+            <input type="checkbox" name="recoveries" value="1" class="ui-check" @checked((bool) $recoveriesEnabled)>
+            <span><strong class="block text-ink">{{ __('Recovery notifications') }}</strong>{{ __('Notify when a failed resource becomes healthy again.') }}</span>
         </label>
         <x-forms.errors name="recoveries" />
 
-        <p class="text-xs leading-5 text-secondary">
+        <p class="text-xs leading-5 text-muted">
             {{ __('Alert destinations are configured separately in Observability.') }}
         </p>
 

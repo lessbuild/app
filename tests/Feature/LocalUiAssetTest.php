@@ -794,6 +794,34 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('[data-dashboard-hero] > nav > .ui-btn', $uiStyles);
     }
 
+    public function test_account_and_workspace_preference_surfaces_use_signal_form_primitives(): void
+    {
+        foreach ([
+            resource_path('views/components/scenes/organizations/invite-dialog.blade.php'),
+            resource_path('views/components/scenes/organizations/member-role-dialog.blade.php'),
+            resource_path('views/components/scenes/organizations/notification-preferences-dialog.blade.php'),
+            resource_path('views/components/scenes/dashboard/preferences-dialog.blade.php'),
+            resource_path('views/components/auth/social-providers.blade.php'),
+            resource_path('views/scenes/users/index.blade.php'),
+        ] as $viewPath) {
+            $source = File::get($viewPath);
+
+            $this->assertStringNotContainsString('text-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('text-ternary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('bg-secondary', $source, $viewPath);
+            $this->assertStringNotContainsString('border-primary', $source, $viewPath);
+            $this->assertStringNotContainsString('input secondary', $source, $viewPath);
+        }
+
+        $invite = File::get(resource_path('views/components/scenes/organizations/invite-dialog.blade.php'));
+        $preferences = File::get(resource_path('views/components/scenes/organizations/notification-preferences-dialog.blade.php'));
+        $this->assertStringContainsString('ui-label', $invite);
+        $this->assertStringContainsString('ui-input', $invite);
+        $this->assertStringContainsString('class="ui-check"', $preferences);
+    }
+
     public function test_public_status_and_access_request_pages_use_signal_primitives(): void
     {
         foreach ([
