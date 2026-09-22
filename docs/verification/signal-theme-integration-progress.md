@@ -6543,3 +6543,60 @@ Deployment:
 Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
+
+## Slice 93 — Remove duplicate legacy UI primitives — 2026-09-22
+
+Responsibility problem:
+
+- `resources/css/components/ui.css` still declared shadowed versions of
+  Signal's `.ui-card`, `.ui-stat`, `.ui-badge` and `.ui-alert` primitives.
+  Although later imports usually won, the duplicate definitions preserved a
+  second visual system and made future changes order-dependent.
+
+Boundary and implementation:
+
+- Removed only the duplicate base and variant declarations that are now owned
+  by `resources/css/signal/components.css` and `resources/css/signal/compat.css`.
+- Kept behavior-backed BuildPusher layout hooks such as insight spacing,
+  statistic sub-elements, empty states, network status and mobile sizing.
+- Converted the remaining shared compatibility rules to Signal tokens for
+  ink, muted/subtle text, line, primary, surface, radius and panel shadow.
+
+Preserved contracts and safety:
+
+- Existing badge and alert component output, status meanings, empty-state
+  behavior, responsive insight grids and card interaction semantics remain
+  unchanged because their Signal definitions are now the single owner.
+- No controller, authorization, persistence, queue, API, provider or billing
+  behavior changed.
+- The user-authored untracked controller modernization plan remains untracked
+  and was not included in this commit.
+
+Evidence:
+
+- `tests/Feature/LocalUiAssetTest.php` — 54 tests passed, 1,264 assertions.
+- `npm run build` — passed; generated bundle is `assets/app-bDdaIzyO.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Served CSS contains canonical Signal `.ui-card`/`.ui-alert` definitions,
+  `--radius-card-value` and `--shadow-panel-value`; no duplicate base
+  declarations remain in `ui.css`.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop after deployment.
+- Implementation commit `78272a1` is pushed to `origin/main`.
+
+Deployment:
+
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `78272a1`; assets, config, route and Blade caches were rebuilt and both
+  the application and main-development queue worker are active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
+  protected. This is isolated development evidence, not production or
+  external provider acceptance.
+
+Next task: inspect the remaining inventory/list compatibility rules and migrate
+only the concrete surfaces that still differ from Signal's card and table
+primitives.
