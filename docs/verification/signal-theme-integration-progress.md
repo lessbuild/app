@@ -461,3 +461,61 @@ development evidence, not production or external-provider acceptance.
 Next task: audit the remaining provider inventory/detail links and modal
 loading paths for stale legacy labels or background-refresh behavior, then
 modernize the next verified workflow.
+
+## Slice 9 — provider legacy-surface cleanup
+
+Status: implemented, verified locally, committed and pushed as `a8f324c`.
+
+Responsibility problem addressed:
+
+- A final provider audit found legacy semantic utility names in the provider
+  inventory, provider choices and lazy edit-dialog loading state. They were
+  visually bridged by compatibility CSS but made future maintenance and visual
+  review harder.
+
+Signal implementation:
+
+- Replaced provider-choice text roles with `text-ink`, inventory dividers with
+  `divide-line`, and lazy edit feedback with `text-muted`.
+- Added a scoped browser assertion that the provider dialog no longer renders
+  legacy `.input.secondary` controls while allowing other pre-rendered global
+  dialogs to retain their independent migration state.
+
+Preserved contracts:
+
+- Provider labels, option values, field IDs, dialog loading behavior, filter
+  URLs, inventory ordering, authorization and no-JavaScript fallback.
+
+Evidence:
+
+- `ProviderInventoryFilterTest` — 5 tests passed, 40 assertions.
+- `ProviderInventoryInsightsTest` — 3 tests passed, 19 assertions.
+- `CreationDialogTest` — 20 tests passed, 134 assertions.
+- Provider form browser check — 1 passed in the isolated fixture runtime.
+- `php artisan view:cache` — passed.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `a8f324c` and its caches were rebuilt before restarting
+`buildpusher-dev-main.service` and its queue worker. The canonical development
+host is https://deployer.buildpusher.com; the legacy buildpusher.com host is
+not the verification target for this application.
+
+Served-runtime evidence:
+
+- `/login` — HTTP 200 with title `Sign in to your account · Deployer`.
+- `/build/assets/app-CiFQClWv.css` — HTTP 200.
+- `/api/health` — HTTP 200, `{"status":"ready"}`.
+- Web and queue services — active.
+
+The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+the application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inventory the next high-value UI family after providers—websites,
+repositories and their deployment/timeline surfaces—before choosing the next
+cohesive modernization slice.
