@@ -2134,6 +2134,38 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
 
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to '67b7bde'. The public landing-surface bundle was rebuilt,
+application/configuration/route/view caches were rebuilt, and
+buildpusher-dev-main.service plus its queue worker were restarted. The
+canonical development host is https://deployer.buildpusher.com; the legacy
+buildpusher.com host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- / — HTTP 200 with title Deploy with clarity · Deployer and the migrated
+  landing copy/emphasis classes.
+- /login — HTTP 200 with title Sign in to your account · Deployer.
+- /build/manifest.json — HTTP 200 with assets/app-DjF2dPH-.css and
+  assets/signal-theme-DODJINv7.js.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+- Served Livewire/mobile navigation check — 1 test passed in 38.1 seconds.
+- Isolated runtime mobile public/authenticated route crawl — 1 test passed in
+  1.4 minutes with no horizontal-overflow or page/runtime failures. The first
+  traced attempt only failed during Playwright trace-artifact teardown and was
+  rerun successfully with tracing disabled.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the next remaining high-impact UI surface for a separate
+cohesive Signal modernization boundary.
+
 ## Slice 57 — public landing-page surfaces — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as '492a846'.
