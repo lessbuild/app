@@ -2194,6 +2194,37 @@ development evidence, not production or external-provider acceptance.
 Next task: inspect the next remaining high-impact UI surface for a separate
 cohesive Signal modernization boundary.
 
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to 'adbeaea', deploying the public legal-page modernization. The asset bundle
+was rebuilt, configuration/routes/views were cached, and
+buildpusher-dev-main.service plus its queue worker were restarted. The
+canonical development host is https://deployer.buildpusher.com; the legacy
+buildpusher.com host is not the verification target for this application.
+
+Served-runtime evidence:
+
+- /terms — HTTP 200 with title Terms of Service · Deployer and Signal legal
+  typography/link classes.
+- /privacy — HTTP 200 with title Privacy Policy · Deployer and Signal legal
+  typography/link classes.
+- /build/manifest.json — HTTP 200 with assets/app-CyTw6njh.css and
+  assets/signal-theme-DODJINv7.js.
+- /api/health — HTTP 200, {"status":"ready"}.
+- Web and queue services — active.
+- Served Livewire/mobile navigation check — 1 test passed in 20.2 seconds.
+- Isolated runtime mobile product-page audit — 1 test passed in 1.3 minutes
+  with no horizontal-overflow or page/runtime failures.
+
+The runtime retained its pre-existing uncommitted deploy/Caddyfile change; the
+application fast-forward did not overwrite it. This deployment is isolated
+development evidence, not production or external-provider acceptance.
+
+Next task: inspect the next remaining high-impact UI surface for a separate
+cohesive Signal modernization boundary.
+
 ## Slice 61 — public legal pages — 2026-09-22
 
 Status: implemented, verified locally, committed and pushed as '0bfe0d2'.
