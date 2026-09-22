@@ -6403,17 +6403,28 @@ Evidence:
 - `npm run build` — passed; generated bundle is `assets/app-x5pgDi3t.css`.
 - `php vendor/bin/pint --test` — passed.
 - `git diff --check` — passed.
+- `tests/Browser/accessibility.spec.js` and
+  `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 6 tests passed across mobile, tablet
+  and desktop.
+- Rendered desktop and mobile landing screenshots were inspected after the
+  asset rebuild; both show the canonical Signal grid, panel, card, emphasis
+  and footer composition.
 - Implementation commit `5057270` is pushed to `origin/main`.
 
 Deployment:
 
-- The landing update is ready to fast-forward into
-  `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` and verify on
-  the isolated development host.
+- `/root/Documents/Codex/2026-09-15/buildpusher-main-runtime` was fast-forwarded
+  to `1a37f77`; assets, config, route and Blade caches were rebuilt and both
+  the application and correctly named main-development queue worker are
+  active.
+- `https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`.
+- The served landing HTML references `assets/app-x5pgDi3t.css` and contains
+  the Signal `surface-grid` and `ui-emphasis` markers.
 - The runtime's pre-existing uncommitted `deploy/Caddyfile` change remains
   protected. This is isolated development evidence, not production or
   external provider acceptance.
 
-Next task: deploy this pushed landing slice to the isolated runtime, verify
-the served asset and public browser journeys, then inspect the next remaining
-app-specific compatibility surface.
+Next task: inspect the next remaining app-specific compatibility surface for
+another source-faithful Signal boundary, without removing behavior-backed
+selectors speculatively.
