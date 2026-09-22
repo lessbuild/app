@@ -1,6 +1,7 @@
 <x-layouts.core :title="__('Terms of Service')" :description="__('Terms governing use of :app infrastructure and deployment services.', ['app' => config('app.name')])" :canonical="route('terms')" :indexable="true" :livewire="false">
+    <a href="#main-content" class="ui-skip-link">{{ __('Skip to main content') }}</a>
     <x-layouts.public-header navigation-label="Terms navigation" />
-    <main class="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
+    <main id="main-content" tabindex="-1" class="mx-auto max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
         <h1 class="mt-5 text-4xl font-extrabold tracking-tight text-ink">{{ __('Terms of Service') }}</h1>
         <p class="mt-2 text-sm text-muted">{{ __('Effective :date', ['date' => config('legal.effective_date')]) }}</p>
         <div class="mt-10 space-y-8 leading-7 text-muted">

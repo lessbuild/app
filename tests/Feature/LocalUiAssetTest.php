@@ -649,7 +649,7 @@ class LocalUiAssetTest extends TestCase
             }
         }
 
-        $this->assertGreaterThanOrEqual(7, $skipLinkViews);
+        $this->assertGreaterThanOrEqual(11, $skipLinkViews);
     }
 
     public function test_signal_is_the_canonical_theme_entrypoint(): void

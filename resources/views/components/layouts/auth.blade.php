@@ -1,4 +1,7 @@
 <x-layouts.core :title="$title">
+    <a href="#main-content" class="ui-skip-link">
+        {{ __('Skip to main content') }}
+    </a>
     <div class="min-h-screen overflow-x-hidden bg-page">
         <header class="mx-auto flex w-full max-w-content items-center justify-between px-5 py-5 sm:px-8">
             <a href="{{ url('/') }}" data-auth-brand class="flex items-center gap-3 text-base font-extrabold tracking-tight text-ink" aria-label="{{ config('app.name') }} home">
