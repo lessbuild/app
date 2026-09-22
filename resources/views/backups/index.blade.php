@@ -45,6 +45,13 @@
         @endif
     </x-layouts.partials.heading>
 
+    <x-ui.local-nav :label="__('Backup sections')">
+        <a href="#backup-readiness" class="ui-local-nav__link">{{ __('Overview') }}</a>
+        <a href="#backup-destinations" class="ui-local-nav__link">{{ __('Destinations') }}</a>
+        <a href="#backup-schedules" class="ui-local-nav__link">{{ __('Schedules') }}</a>
+        <a href="#backup-history" class="ui-local-nav__link">{{ __('History') }}</a>
+    </x-ui.local-nav>
+
     @php
         $hasDestination = $destinations->isNotEmpty();
         $hasCompletedBackup = $recoverySummary->latestBackupCompletedAt !== null;
@@ -85,12 +92,12 @@
         };
     @endphp
 
-    <section id="backup-readiness" class="ui-card mt-6 scroll-mt-24 border-ternary p-5" aria-labelledby="backup-readiness-title" data-backup-readiness>
+    <section id="backup-readiness" class="ui-panel mt-6 scroll-mt-24 border-l-4 p-5" aria-labelledby="backup-readiness-title" data-backup-readiness>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
-                <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Protection status') }}</p>
-                <h2 id="backup-readiness-title" class="mt-1 text-xl font-black text-primary">{{ $readiness['title'] }}</h2>
-                <p class="mt-1 max-w-3xl text-sm leading-6 text-secondary">{{ $readiness['description'] }}</p>
+                <p class="ui-eyebrow">{{ __('Protection status') }}</p>
+                <h2 id="backup-readiness-title" class="mt-1 text-xl font-black text-ink">{{ $readiness['title'] }}</h2>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ $readiness['description'] }}</p>
             </div>
             <x-ui.badge :tone="$readiness['tone']">{{ $readiness['label'] }}</x-ui.badge>
         </div>
@@ -121,11 +128,11 @@
     </x-ui.insights>
 
     <div class="mt-6 grid gap-5 xl:grid-cols-2">
-        <section id="backup-destinations" class="ui-card scroll-mt-24 p-6">
+        <section id="backup-destinations" class="ui-panel scroll-mt-24 p-6">
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-black text-primary">{{ __('Destinations') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p>
+                    <h2 class="text-xl font-black text-ink">{{ __('Destinations') }}</h2>
+                    <p class="mt-1 text-sm text-muted">{{ __('S3, R2, Spaces, and MinIO credentials stay encrypted at rest.') }}</p>
                 </div>
                 <div class="flex items-center gap-2">
                     <x-ui.badge>{{ $destinations->count() }}</x-ui.badge>
@@ -143,13 +150,13 @@
                 </div>
             </div>
 
-            <div class="mt-5 space-y-3">
+            <div class="ui-panel ui-inventory-list mt-5 divide-y divide-line overflow-hidden">
                 @forelse ($destinations as $destination)
-                    <article class="rounded-xl border border-primary bg-secondary p-4">
+                    <article class="p-4 transition-colors hover:bg-surface-muted sm:p-5" data-backup-destination>
                         <div class="flex items-start gap-3">
                             <div class="min-w-0 flex-1">
-                                <p class="font-bold text-primary">{{ $destination->name }}</p>
-                                <p class="break-all text-xs text-secondary">
+                                <p class="font-bold text-ink">{{ $destination->name }}</p>
+                                <p class="break-all text-xs text-muted">
                                     {{ $destination->bucket }}/{{ $destination->path_prefix }} · {{ $destination->last_verified_at?->diffForHumans() ?? __('not verified yet') }}
                                 </p>
                                 @if ($destination->last_error)
@@ -182,10 +189,10 @@
                                 >
                                     {{ __('Edit connection') }}
                                 </x-ui.button>
-                                <details class="min-w-52 flex-1 rounded-lg border border-primary bg-primary px-3 py-2">
-                                    <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Verify connection') }}</summary>
+                                <details class="ui-panel min-w-52 flex-1 p-3">
+                                    <summary class="cursor-pointer text-sm font-bold text-ink">{{ __('Verify connection') }}</summary>
                                     <div class="mt-3 space-y-3">
-                                        <p class="text-xs leading-5 text-secondary">{{ __(':app writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.', ['app' => config('app.name')]) }}</p>
+                                        <p class="text-xs leading-5 text-muted">{{ __(':app writes, reads, and deletes a temporary object over HTTPS. No active website or server is required.', ['app' => config('app.name')]) }}</p>
                                         <form method="POST" action="{{ route('backups.destinations.test', $destination) }}">
                                             @csrf
                                             <x-ui.button type="submit" variant="secondary">{{ __('Verify') }}</x-ui.button>
@@ -221,24 +228,24 @@
             @endif
         </section>
 
-        <section id="backup-schedules" class="ui-card scroll-mt-24 p-6">
+        <section id="backup-schedules" class="ui-panel scroll-mt-24 p-6">
             @php
                 $scheduleCount = $websites->sum(fn ($website) => $website->backupSchedules->count());
             @endphp
             <div class="flex items-start justify-between gap-4">
                 <div>
-                    <h2 class="text-xl font-black text-primary">{{ __('Schedules') }}</h2>
-                    <p class="mt-1 text-sm text-secondary">{{ __('Automate retention without managing cron jobs.') }}</p>
+                    <h2 class="text-xl font-black text-ink">{{ __('Schedules') }}</h2>
+                    <p class="mt-1 text-sm text-muted">{{ __('Automate retention without managing cron jobs.') }}</p>
                 </div>
                 <x-ui.badge>{{ $scheduleCount }}</x-ui.badge>
             </div>
 
-            <div class="mt-5 space-y-3">
+            <div class="ui-panel ui-inventory-list mt-5 divide-y divide-line overflow-hidden">
                 @forelse ($websites->flatMap->backupSchedules as $schedule)
-                    <div class="flex items-center gap-3 rounded-xl border border-primary bg-secondary p-4">
+                    <article class="flex items-center gap-3 p-4 transition-colors hover:bg-surface-muted" data-backup-schedule>
                         <div class="min-w-0 flex-1">
-                            <p class="truncate font-bold text-primary">{{ $schedule->website->name }}</p>
-                            <p class="text-xs text-secondary">{{ ucfirst($schedule->frequency) }} at {{ substr($schedule->run_at, 0, 5) }} UTC · keep {{ $schedule->retention_count }} · {{ $schedule->destination->name }}</p>
+                            <p class="truncate font-bold text-ink">{{ $schedule->website->name }}</p>
+                            <p class="text-xs text-muted">{{ ucfirst($schedule->frequency) }} at {{ substr($schedule->run_at, 0, 5) }} UTC · keep {{ $schedule->retention_count }} · {{ $schedule->destination->name }}</p>
                         </div>
                         @if ($canManage)
                             <form method="POST" action="{{ route('backups.schedules.destroy', $schedule) }}" class="shrink-0">
@@ -247,7 +254,7 @@
                                 <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
                             </form>
                         @endif
-                    </div>
+                    </article>
                 @empty
                     <x-ui.empty-state
                         :title="__('No recurring schedules')"
@@ -267,23 +274,23 @@
         </section>
     </div>
 
-    <section id="backup-history" class="ui-card mt-6 scroll-mt-24 overflow-hidden">
+    <section id="backup-history" class="ui-panel mt-6 scroll-mt-24 overflow-hidden">
         <div class="flex flex-wrap items-start justify-between gap-4 p-6">
             <div>
-                <h2 class="text-xl font-black text-primary">{{ __('Backup history and restore') }}</h2>
-                <p class="mt-1 max-w-4xl text-sm leading-6 text-secondary">{{ __('In-place restores create a safety snapshot, verify health, and roll back automatically on failure. Isolated verification uses temporary targets and never overwrites live data.') }}</p>
+                <h2 class="text-xl font-black text-ink">{{ __('Backup history and restore') }}</h2>
+                <p class="mt-1 max-w-4xl text-sm leading-6 text-muted">{{ __('In-place restores create a safety snapshot, verify health, and roll back automatically on failure. Isolated verification uses temporary targets and never overwrites live data.') }}</p>
             </div>
             @if ($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
-                <details class="rounded-xl border border-primary bg-secondary px-4 py-2">
-                    <summary class="cursor-pointer text-sm font-bold text-primary">{{ __('Run backup') }}</summary>
+                <details class="ui-panel px-4 py-2">
+                    <summary class="cursor-pointer text-sm font-bold text-ink">{{ __('Run backup') }}</summary>
                     <div class="mt-3 w-72 max-w-[calc(100vw-3rem)] space-y-2">
                         @foreach ($websites as $website)
-                            <form method="POST" action="{{ route('backups.run', $website) }}" class="rounded-lg border border-primary bg-primary p-3">
+                            <form method="POST" action="{{ route('backups.run', $website) }}" class="ui-panel p-3">
                                 @csrf
-                                <p class="mb-2 truncate text-sm font-bold text-primary">{{ $website->name }}</p>
+                                <p class="mb-2 truncate text-sm font-bold text-ink">{{ $website->name }}</p>
                                 <div class="flex gap-2">
                                     <label class="sr-only" for="backup-destination-{{ $website->id }}">{{ __('Backup destination') }}</label>
-                                    <select id="backup-destination-{{ $website->id }}" name="backup_destination_id" class="input secondary min-w-0 flex-1 rounded-md">
+                                    <select id="backup-destination-{{ $website->id }}" name="backup_destination_id" class="ui-input min-w-0 flex-1">
                                         @foreach ($destinations as $destination)
                                             <option value="{{ $destination->id }}">{{ $destination->name }}</option>
                                         @endforeach

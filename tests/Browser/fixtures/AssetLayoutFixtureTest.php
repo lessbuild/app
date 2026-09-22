@@ -8,6 +8,7 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\User;
 use App\Models\Website;
+use App\Models\WebsiteBackup;
 use App\Notifications\FailureNotification;
 use App\Notifications\NotificationInbox;
 use App\Services\ApplicationConfigurationReconciler;
@@ -407,6 +408,12 @@ class AssetLayoutFixtureTest extends TestCase
             'secret_key' => 'fixture-secret',
             'repository_password' => 'fixture-repository-password',
             'path_prefix' => 'fixture',
+        ]);
+        $website->backups()->create([
+            'backup_destination_id' => $destination->id,
+            'status' => WebsiteBackup::STATUS_SUCCEEDED,
+            'snapshot_id' => 'fixture-backup-snapshot',
+            'completed_at' => now()->subMinute(),
         ]);
         $repository = $dashboardRepository;
         $repository->update([

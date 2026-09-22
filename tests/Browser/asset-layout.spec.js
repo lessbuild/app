@@ -2083,6 +2083,22 @@ test('backup schedule workflow uses an accessible URL-backed dialog', async ({ p
     await expect(page.getByRole('dialog', { name: 'Edit backup destination', exact: true })).toBeVisible();
 });
 
+test('backup overview keeps recovery actions scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/backups', { waitUntil: 'networkidle' });
+
+    await expect(page.locator('[data-backup-readiness]')).toBeVisible();
+    await expect(page.locator('#backup-recovery-evidence .ui-stat')).toHaveCount(5);
+    await expect(page.locator('#backup-destinations')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('[data-backup-destination]')).toHaveCount(1);
+    await expect(page.locator('#backup-schedules')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#backup-history')).toHaveClass(/\bui-panel\b/);
+    await expect(page.locator('#backup-history-list details')).toHaveCount(1);
+    await expect(page.locator('#backup-history-list .ui-input')).toHaveCount(2);
+});
+
 test('credential workflows use compact accessible dialogs', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
