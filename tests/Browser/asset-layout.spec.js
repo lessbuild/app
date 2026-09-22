@@ -1746,7 +1746,7 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
 
-    for (const screen of ['repositories', 'providers']) {
+    for (const screen of ['repositories', 'providers', 'websites']) {
         await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
 
         const filter = page.locator(`#${screen}-filters`);
@@ -1772,6 +1772,23 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
         await expect(page.locator('html')).not.toHaveAttribute('data-modal-open', '');
         await expect(trigger).toBeFocused();
     }
+});
+
+test('website inventory keeps Signal filters and mobile resource cards scannable', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/websites', { waitUntil: 'networkidle' });
+
+    const filters = page.locator('#websites-filters');
+    await expect(filters.locator('.ui-input')).toHaveCount(3);
+    await expect(filters.locator('label.ui-choice')).toHaveCount(2);
+
+    const inventory = page.locator('[aria-label="Website inventory"]');
+    await expect(inventory).toBeVisible();
+    await expect(inventory).toHaveClass(/\bui-panel\b/);
+    await expect(inventory.locator('[data-website-card]')).toHaveCount(1);
+    await expect(inventory.getByRole('link', { name: 'App', exact: true })).toBeVisible();
 });
 
 test('mobile connection feedback stays above quick actions and restores cleanly', async ({ page }) => {

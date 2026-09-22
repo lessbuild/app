@@ -47,7 +47,7 @@
         <form method="GET" action="{{ route('websites.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <label for="search" class="ui-label">{{ __('Search') }}</label>
                 <input
                     id="search"
                     name="search"
@@ -55,12 +55,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name, domain, or description') }}"
-                    class="input secondary mt-1 w-full rounded-lg"
+                    class="ui-input"
                 >
             </div>
             <div>
-                <label for="status" class="block text-xs font-semibold uppercase text-secondary">{{ __('Status') }}</label>
-                <select id="status" name="status" class="input secondary mt-1 w-full rounded-lg">
+                <label for="status" class="ui-label">{{ __('Status') }}</label>
+                <select id="status" name="status" class="ui-input">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
@@ -70,8 +70,8 @@
                 </select>
             </div>
             <div>
-                <label for="health" class="block text-xs font-semibold uppercase text-secondary">{{ __('Health') }}</label>
-                <select id="health" name="health" class="input secondary mt-1 w-full rounded-lg">
+                <label for="health" class="ui-label">{{ __('Health') }}</label>
+                <select id="health" name="health" class="ui-input">
                     <option value="">{{ __('All health states') }}</option>
                     @foreach ($healthStatuses as $health)
                         <option value="{{ $health }}" @selected($filters['health'] === $health)>
@@ -81,14 +81,14 @@
                 </select>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
-                    <input type="checkbox" name="attention" value="1" @checked($filters['attention'])>
+                <label class="ui-choice min-h-11 w-full items-center">
+                    <input type="checkbox" name="attention" value="1" @checked($filters['attention']) class="ui-check">
                     {{ __('Needs attention only') }}
                 </label>
             </div>
             <div class="flex items-end">
-                <label class="flex min-h-[42px] w-full items-center gap-2 rounded-lg border border-primary px-3 text-sm text-primary">
-                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning'])>
+                <label class="ui-choice min-h-11 w-full items-center">
+                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning']) class="ui-check">
                     {{ __('Provisioning only') }}
                 </label>
             </div>
@@ -126,15 +126,15 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$websites->isEmpty())
-        <div class="ui-card ui-inventory-list mt-6 divide-y divide-primary overflow-hidden" aria-label="{{ __('Website inventory') }}">
+        <div class="ui-panel ui-inventory-list mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Website inventory') }}">
             @foreach($websites as $website)
                 <article data-website-card class="p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
                             <x-avatar :name="$website->name" class="h-10 w-10 shrink-0 rounded-md text-sm" />
                             <div class="min-w-0">
-                                <a href="{{ route('websites.show', $website) }}" class="font-semibold text-primary hover:underline">{{ $website->name }}</a>
-                                <p class="truncate text-sm text-secondary">{{ $website->url }}</p>
+                                <a href="{{ route('websites.show', $website) }}" class="ui-link break-words">{{ $website->name }}</a>
+                                <p class="truncate text-sm text-muted">{{ $website->url }}</p>
                             </div>
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
@@ -151,12 +151,12 @@
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Server') }}</dt>
-                            <dd class="mt-1 text-primary"><a href="{{ route('servers.show', $website->server) }}" class="text-ternary hover:underline">{{ $website->server->label }}</a></dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Server') }}</dt>
+                            <dd class="mt-1"><a href="{{ route('servers.show', $website->server) }}" class="ui-link">{{ $website->server->label }}</a></dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Health') }}</dt>
-                            <dd class="mt-1 text-primary">
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Health') }}</dt>
+                            <dd class="mt-1 text-ink">
                                 @if (! $website->health_check_enabled)
                                     <x-ui.badge>{{ __('Disabled') }}</x-ui.badge>
                                 @elseif ($website->health_status === \App\Models\Website::HEALTH_HEALTHY)
@@ -168,20 +168,20 @@
                                 @endif
                                 @if ($website->health_check_enabled)
                                     @unless ($website->health_monitoring_enabled)
-                                        <span class="mt-1 block font-medium text-amber-700">{{ __('Automatic monitoring paused') }}</span>
+                                        <span class="mt-1 block font-medium text-warning">{{ __('Automatic monitoring paused') }}</span>
                                     @else
-                                        <span class="mt-1 block text-secondary">{{ trans_choice('Every :count minute|Every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}</span>
+                                        <span class="mt-1 block text-muted">{{ trans_choice('Every :count minute|Every :count minutes', $website->health_check_interval_minutes, ['count' => $website->health_check_interval_minutes]) }}</span>
                                     @endunless
                                 @endif
                             </dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Status') }}</dt>
-                            <dd class="mt-1 text-primary">{{ str($website->provisioning_status)->replace('_', ' ')->title() }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Status') }}</dt>
+                            <dd class="mt-1 text-ink">{{ str($website->provisioning_status)->replace('_', ' ')->title() }}</dd>
                         </div>
                         <div>
-                            <dt class="text-xs font-bold uppercase tracking-wide text-secondary">{{ __('Added') }}</dt>
-                            <dd class="mt-1 text-primary">{{ $website->created_at->diffForHumans() }}</dd>
+                            <dt class="ui-eyebrow text-[0.65rem]">{{ __('Added') }}</dt>
+                            <dd class="mt-1 text-ink">{{ $website->created_at->diffForHumans() }}</dd>
                         </div>
                     </dl>
                 </article>
@@ -207,7 +207,7 @@
                             aria-expanded="{{ $websiteCreateOpen ? 'true' : 'false' }}"
                             variant="secondary"
                         >
-                            <svg class="w-4 h-4 text-secondary stroke-2 mr-2">
+                            <svg class="mr-2 h-4 w-4 stroke-2 text-muted">
                                 <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                             </svg>
                             {{ __('Add Website') }}
