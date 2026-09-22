@@ -5350,3 +5350,70 @@ acceptance.
 
 Next task: inspect the next product surface for a separate cohesive Signal
 modernization boundary.
+
+## Slice 74 — observability signal states — 2026-09-22
+
+Responsibility problem:
+
+- Observability workflows already had dedicated queries, policies, dialogs and
+  evidence boundaries, but the overview, environment context and resolved
+  incident disclosure still used legacy focus/hover tokens and hard-coded
+  Tailwind status colors. This made operational state look different from the
+  rest of the Signal theme, especially when switching palettes or appearance.
+
+Boundary and implementation:
+
+- Kept observability controllers, query collaborators, authorization, dialogs,
+  filters and evidence payloads unchanged.
+- Added the shared `ui-status-dot` Signal primitive for small semantic state
+  indicators, with success, warning and danger colors supplied by theme tokens.
+- Migrated observability disclosure focus states and environment-card hover
+  feedback to the shared Signal focus and primary tokens.
+
+Preserved contracts and safety:
+
+- Incident, deployment and health statuses retain their existing meaning and
+  rendered labels; only their visual indicator source changed.
+- Tenant scoping, bounded reads, secret/body redaction, status-page workflows,
+  modal URLs, form reopening and all queue/notification behavior are unchanged.
+- No controller, policy, query, persistence, API or provider behavior changed.
+
+Evidence:
+
+- Observability, environment-context, operational-incident and notification
+  coverage — 41 tests passed, 401 assertions.
+- Responsive asset fixture — 1 test passed, 313 assertions.
+- Focused observability browser journeys — 4 passed in 1 minute.
+- `npm run build` — passed; generated CSS is `assets/app-BlRRbOeT.css`.
+- `php vendor/bin/pint --test` — passed.
+- `git diff --check` — passed.
+- Push status: implementation commit `164c38c` is on `origin/main`.
+
+Next task: inspect the next remaining product surface for a separate cohesive
+Signal modernization boundary.
+
+## Canonical dev deployment — 2026-09-22
+
+The isolated runtime at
+/root/Documents/Codex/2026-09-15/buildpusher-main-runtime was fast-forwarded
+to `164c38c`. The Signal CSS bundle, view cache and route cache were rebuilt;
+the served bundle is `assets/app-BlRRbOeT.css`. Both application and queue
+services are active, and the canonical development host
+`https://deployer.buildpusher.com/api/health` returns `{"status":"ready"}`
+after the normal process-startup readiness poll.
+
+Served-runtime evidence:
+
+- `tests/Browser/navigation.spec.js` against
+  `https://deployer.buildpusher.com` — 3 tests passed across mobile, tablet and
+  desktop in 37.7 seconds.
+- The served manifest references `assets/app-BlRRbOeT.css`, and the downloaded
+  CSS contains `ui-status-dot`.
+- The runtime retained its pre-existing uncommitted `deploy/Caddyfile` change;
+  the application fast-forward did not overwrite it.
+
+This is isolated development evidence, not production or external-provider
+acceptance.
+
+Next task: inspect the next product surface for a separate cohesive Signal
+modernization boundary.
