@@ -144,6 +144,10 @@ class AssetLayoutFixtureTest extends TestCase
         File::put($directory.'/workspace-activity-content.html', $this->renderPage(route('activity.index', [
             'fragment' => 'workspace-activity',
         ]))->assertOk()->assertSee('data-activity-history-content', false)->getContent());
+        File::put($directory.'/activity.html', $this->renderPage(route('activity.index'))->assertOk()
+            ->assertSee('id="activity-filters"', false)
+            ->assertSee('id="activity-insights"', false)
+            ->assertSee('data-activity-feed', false)->getContent());
         File::put($directory.'/dashboard-active-deployments.html', $this->renderPage(route('builds.index', [
             'active' => 1,
             'fragment' => 'deployment-history',

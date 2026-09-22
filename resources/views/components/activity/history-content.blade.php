@@ -6,11 +6,11 @@
 <section data-activity-history-content aria-labelledby="workspace-activity-content-heading">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Workspace activity') }}</p>
-            <h2 id="workspace-activity-content-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Recent activity') }}</h2>
-            <p class="mt-1 text-sm text-secondary">{{ __('Review deployment, infrastructure, command, recipe and account events without leaving the dashboard.') }}</p>
+            <p class="ui-eyebrow">{{ __('Workspace activity') }}</p>
+            <h2 id="workspace-activity-content-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Recent activity') }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ __('Review deployment, infrastructure, command, recipe and account events without leaving the dashboard.') }}</p>
         </div>
-        <span class="text-xs text-secondary">{{ trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']]) }}</span>
+        <span class="text-xs text-muted">{{ trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']]) }}</span>
     </div>
 
     <x-ui.insights

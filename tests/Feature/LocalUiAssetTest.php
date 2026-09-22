@@ -590,9 +590,9 @@ class LocalUiAssetTest extends TestCase
             $source = File::get($view);
 
             $this->assertMatchesRegularExpression(
-                '/<button\s+type="button"[^>]+data-modal-trigger="delete-[^"]+"[^>]*>/s',
+                '/<(?:button|x-ui\.button)\b(?=[^>]*\btype="button")(?=[^>]*\bdata-modal-trigger="delete-[^"]+")[^>]*>/s',
                 $source,
-                basename($view).' must use the shared modal trigger without submitting an enclosing form.',
+                basename($view).' must use the shared modal trigger component without submitting an enclosing form.',
             );
         }
     }

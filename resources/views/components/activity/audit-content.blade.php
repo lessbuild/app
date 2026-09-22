@@ -6,11 +6,11 @@
 <section data-activity-audit-content aria-labelledby="account-audit-content-heading">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
-            <p class="text-xs font-bold uppercase tracking-widest text-ternary">{{ __('Account security') }}</p>
-            <h2 id="account-audit-content-heading" class="mt-1 text-lg font-bold text-primary">{{ __('Recent account audit') }}</h2>
-            <p class="mt-1 text-sm text-secondary">{{ __('Owner-scoped security changes without credentials, session details, or provider identities.') }}</p>
+            <p class="ui-eyebrow">{{ __('Account security') }}</p>
+            <h2 id="account-audit-content-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Recent account audit') }}</h2>
+            <p class="mt-1 text-sm text-muted">{{ __('Owner-scoped security changes without credentials, session details, or provider identities.') }}</p>
         </div>
-        <span class="text-xs text-secondary">{{ trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']]) }}</span>
+        <span class="text-xs text-muted">{{ trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']]) }}</span>
     </div>
 
     <x-ui.insights

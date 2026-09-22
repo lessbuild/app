@@ -19,7 +19,7 @@
         <form method="GET" action="{{ route('activity.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
-                <label for="search" class="block text-xs font-semibold uppercase text-secondary">{{ __('Search') }}</label>
+                <label for="search" class="ui-label">{{ __('Search') }}</label>
                 <input
                     id="search"
                     name="search"
@@ -27,12 +27,12 @@
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Activity message') }}"
-                    class="input secondary mt-1 w-full rounded-lg"
+                    class="ui-input"
                 >
             </div>
             <div>
-                <label for="category" class="block text-xs font-semibold uppercase text-secondary">{{ __('Category') }}</label>
-                <select id="category" name="category" class="input secondary mt-1 w-full rounded-lg">
+                <label for="category" class="ui-label">{{ __('Category') }}</label>
+                <select id="category" name="category" class="ui-input">
                     <option value="">{{ __('All categories') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>
@@ -42,12 +42,12 @@
                 </select>
             </div>
             <div>
-                <label for="date_from" class="block text-xs font-semibold uppercase text-secondary">{{ __('From') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="input secondary mt-1 w-full rounded-lg">
+                <label for="date_from" class="ui-label">{{ __('From') }}</label>
+                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
             </div>
             <div>
-                <label for="date_to" class="block text-xs font-semibold uppercase text-secondary">{{ __('To') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="input secondary mt-1 w-full rounded-lg">
+                <label for="date_to" class="ui-label">{{ __('To') }}</label>
+                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">

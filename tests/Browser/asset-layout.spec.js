@@ -6,7 +6,7 @@ const path = require('node:path');
 
 const root = path.resolve(__dirname, '../..');
 const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-asset-layout-'));
-const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
+const screens = ['landing', 'login', 'pricing', 'dashboard', 'projects', 'websites', 'servers', 'providers', 'repositories', 'recipes', 'project-detail', 'builds', 'build', 'backups', 'domains', 'observability', 'notifications', 'organization', 'automation', 'gallery', 'gallery-review', 'account', 'activity', 'commands', 'configuration-create', 'configuration-review', 'configuration-receipt', 'system-health'];
 const modalAuditScreens = [...screens, 'providers/1', 'repositories/1', 'servers/1', 'websites/1', 'projects/1', 'gallery/1', 'observability/environments/1/context'];
 const widths = [320, 390, 768, 1440];
 const contentTypes = { '.html': 'text/html', '.js': 'text/javascript', '.css': 'text/css', '.svg': 'image/svg+xml', '.json': 'application/json' };
@@ -760,7 +760,7 @@ test('dashboard activity opens as a compact workspace inspector', async ({ page 
     await trigger.click();
     await expect(dialog).toBeVisible();
     await expect(dialog.locator('[data-activity-history-content]')).toBeVisible();
-    await expect(dialog).toContainText('No activity yet');
+    await expect(dialog).toContainText('Recent activity');
     expect(new URL(page.url()).pathname).toBe(initialPath);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('dashboard-activity');
 
@@ -1806,13 +1806,15 @@ test('mobile filters use native bottom-sheet dialogs without changing filter URL
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
 
-    for (const screen of ['repositories', 'providers', 'websites', 'builds', 'commands']) {
+    for (const screen of ['repositories', 'providers', 'websites', 'builds', 'commands', 'activity']) {
         await page.goto(`http://buildpusher.test/${screen}`, { waitUntil: 'networkidle' });
 
         const filterId = screen === 'builds'
             ? 'deployment-filters'
             : screen === 'commands'
                 ? 'command-filters'
+                : screen === 'activity'
+                    ? 'activity-filters'
                 : `${screen}-filters`;
         const filter = page.locator(`#${filterId}`);
         const trigger = page.locator(`[data-filter-dialog-trigger][aria-controls="${filterId}"]`);
@@ -1896,6 +1898,26 @@ test('command center keeps Signal filters, insights and execution cards scannabl
     await expect(inventory).toBeVisible();
     await expect(inventory).toHaveClass(/\bui-panel\b/);
     await expect(inventory.locator('[data-command-execution]').first()).toBeVisible();
+});
+
+test('activity keeps Signal filters, insights and event history scannable on mobile', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+    await page.goto('http://buildpusher.test/activity', { waitUntil: 'networkidle' });
+
+    const filters = page.locator('#activity-filters');
+    await expect(filters.locator('.ui-input')).toHaveCount(4);
+    await expect(filters.locator('.input.secondary')).toHaveCount(0);
+
+    const insights = page.locator('#activity-insights');
+    await expect(insights).toBeVisible();
+    await expect(insights.locator('.ui-stat')).toHaveCount(7);
+
+    const feed = page.locator('[data-activity-feed]');
+    await expect(feed).toBeVisible();
+    await expect(feed).toHaveClass(/\bui-panel\b/);
+    await expect(feed.locator('[data-activity-event]').first()).toBeVisible();
 });
 
 test('mobile connection feedback stays above quick actions and restores cleanly', async ({ page }) => {
