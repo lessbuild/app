@@ -17,6 +17,7 @@ use App\Modules\Analytics\Queries\Reporting\OverviewReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
@@ -94,6 +95,69 @@ class ReportingWorkflowTest extends TestCase
         $this->assertSame('/historic', $summary['pages'][0]['label']);
     }
 
+    public function test_overview_filters_apply_to_metrics_and_breakdowns_without_crossing_sites(): void
+    {
+        [, $site] = $this->site();
+        $otherSite = $site->workspace->sites()->create([
+            'name' => 'Unrelated site',
+            'domains' => ['unrelated.example'],
+            'timezone' => 'UTC',
+            'verified_at' => now(),
+        ]);
+
+        foreach ([
+            ['/pricing', 'newsletter', 'launch', 'Desktop', 'visitor-one', 'session-one'],
+            ['/pricing', 'newsletter', 'launch', 'Mobile', 'visitor-two', 'session-two'],
+            ['/home', 'google', 'launch', 'Desktop', 'visitor-three', 'session-three'],
+            ['/pricing', 'newsletter', 'evergreen', 'Desktop', 'visitor-four', 'session-four'],
+        ] as $index => [$path, $source, $campaign, $device, $visitor, $session]) {
+            AnalyticsEvent::create([
+                'site_id' => $site->id,
+                'event_id' => (string) Str::uuid(),
+                'type' => 'pageview',
+                'occurred_at' => now()->subMinutes($index + 1),
+                'received_at' => now(),
+                'path' => $path,
+                'utm_source' => $source,
+                'utm_campaign' => $campaign,
+                'device_category' => $device,
+                'visitor_hash' => $visitor,
+                'session_id' => $session,
+            ]);
+        }
+
+        AnalyticsEvent::create([
+            'site_id' => $otherSite->id,
+            'event_id' => (string) Str::uuid(),
+            'type' => 'pageview',
+            'occurred_at' => now(),
+            'received_at' => now(),
+            'path' => '/pricing',
+            'utm_source' => 'newsletter',
+            'utm_campaign' => 'launch',
+            'device_category' => 'Desktop',
+            'visitor_hash' => 'other-visitor',
+            'session_id' => 'other-session',
+        ]);
+
+        app(RebuildSiteVisits::class)->handle($site);
+
+        $summary = app(OverviewReport::class)->for($site, 7, [
+            'path' => '/pricing',
+            'source' => 'newsletter',
+            'campaign' => 'launch',
+            'device' => 'Desktop',
+        ]);
+
+        $this->assertSame('1', $summary['metrics'][0]['value']);
+        $this->assertSame('1', $summary['metrics'][2]['value']);
+        $this->assertSame('/pricing', $summary['pages'][0]['label']);
+        $this->assertSame('newsletter', $summary['sources'][0]['label']);
+        $this->assertSame('launch', $summary['campaigns'][0]['label']);
+        $this->assertSame('/pricing', $summary['entryPages'][0]['label']);
+        $this->assertSame('/pricing', $summary['exitPages'][0]['label']);
+    }
+
     public function test_goal_conversions_keep_the_matching_goal_version_and_visit(): void
     {
         [$user, $site] = $this->site();
@@ -137,7 +201,7 @@ class ReportingWorkflowTest extends TestCase
 
     public function test_admin_can_generate_and_download_a_scoped_csv_export(): void
     {
-        Storage::fake('local');
+        Storage::fake('analytics-local');
         [$user, $site] = $this->site();
         $csrf = 'test-token';
         AnalyticsEvent::create([
@@ -158,7 +222,35 @@ class ReportingWorkflowTest extends TestCase
         $export->refresh();
 
         $this->assertSame('completed', $export->status);
+        Storage::disk('analytics-local')->assertExists($export->file_path);
+        $this->assertStringContainsString('metrics,Pageviews,1', Storage::disk('analytics-local')->get($export->file_path));
         $this->actingAs($user)->get(route('analytics.reports.exports.download', $token))->assertOk()->assertHeader('content-disposition');
+    }
+
+    public function test_export_is_failed_when_the_private_storage_disk_rejects_the_csv(): void
+    {
+        [$user, $site] = $this->site();
+        $export = ReportExport::create([
+            'workspace_id' => $site->workspace_id,
+            'site_id' => $site->id,
+            'requested_by' => $user->id,
+            'token_hash' => hash('sha256', 'storage-failure-token'),
+            'filters' => ['days' => 30],
+            'expires_at' => now()->addHour(),
+        ]);
+        $disk = \Mockery::mock();
+        $disk->shouldReceive('put')->once()->andReturnFalse();
+        Storage::shouldReceive('disk')->once()->with('analytics-local')->andReturn($disk);
+
+        try {
+            app(GenerateReportExport::class, ['exportId' => $export->id])->handle(app(OverviewReport::class));
+            $this->fail('A failed private-file write must not complete the report export.');
+        } catch (RuntimeException $exception) {
+            $this->assertSame('The report export file could not be saved.', $exception->getMessage());
+        }
+
+        $this->assertSame('failed', $export->fresh()->status);
+        $this->assertNull($export->fresh()->file_path);
     }
 
     /** @return array{0: User, 1: Site} */

@@ -11,6 +11,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
+use RuntimeException;
 
 class GenerateReportExport implements ShouldQueue
 {
@@ -39,27 +40,39 @@ class GenerateReportExport implements ShouldQueue
             $summary = $report->for($export->site, (int) ($filters['days'] ?? 30), $filters);
             $path = 'exports/'.$export->id.'-'.now()->format('YmdHis').'.csv';
             $handle = fopen('php://temp', 'w+');
-            fputcsv($handle, ['section', 'label', 'value']);
-            foreach ($summary['metrics'] as $metric) {
-                fputcsv($handle, ['metrics', $metric['label'], $metric['value']]);
+
+            if ($handle === false) {
+                throw new RuntimeException('The report export could not be prepared.');
             }
-            foreach ([
-                'pages' => $summary['pages'],
-                'entry_pages' => $summary['entryPages'],
-                'exit_pages' => $summary['exitPages'],
-                'sources' => $summary['sources'],
-                'devices' => $summary['devices'],
-                'browsers' => $summary['browsers'],
-                'operating_systems' => $summary['operatingSystems'],
-                'campaigns' => $summary['campaigns'],
-            ] as $section => $items) {
-                foreach ($items as $item) {
-                    fputcsv($handle, [$section, $item['label'], $item['value']]);
+
+            try {
+                fputcsv($handle, ['section', 'label', 'value']);
+                foreach ($summary['metrics'] as $metric) {
+                    fputcsv($handle, ['metrics', $metric['label'], $metric['value']]);
                 }
+                foreach ([
+                    'pages' => $summary['pages'],
+                    'entry_pages' => $summary['entryPages'],
+                    'exit_pages' => $summary['exitPages'],
+                    'sources' => $summary['sources'],
+                    'devices' => $summary['devices'],
+                    'browsers' => $summary['browsers'],
+                    'operating_systems' => $summary['operatingSystems'],
+                    'campaigns' => $summary['campaigns'],
+                ] as $section => $items) {
+                    foreach ($items as $item) {
+                        fputcsv($handle, [$section, $item['label'], $item['value']]);
+                    }
+                }
+                rewind($handle);
+                $contents = stream_get_contents($handle);
+            } finally {
+                fclose($handle);
             }
-            rewind($handle);
-            Storage::disk('analytics-local')->put($path, stream_get_contents($handle));
-            fclose($handle);
+
+            if ($contents === false || ! Storage::disk('analytics-local')->put($path, $contents)) {
+                throw new RuntimeException('The report export file could not be saved.');
+            }
 
             $export->update(['status' => 'completed', 'file_path' => $path, 'completed_at' => now()]);
         } catch (\Throwable $exception) {

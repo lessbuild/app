@@ -73,4 +73,56 @@ class DashboardTest extends TestCase
             ->assertSee('Resolved')
             ->assertSee('Deployer releases connected to this Analytics site.');
     }
+
+    public function test_breakdown_links_keep_the_selected_site_range_and_filters(): void
+    {
+        $user = User::factory()->create();
+        $workspace = Workspace::create(['name' => 'Multi-site workspace']);
+        $workspace->users()->attach($user, ['role' => WorkspaceRole::Owner->value]);
+        $workspace->sites()->create([
+            'name' => 'A first site',
+            'domains' => ['first.example'],
+            'timezone' => 'UTC',
+            'verified_at' => now(),
+        ]);
+        $selectedSite = $workspace->sites()->create([
+            'name' => 'Selected site',
+            'domains' => ['selected.example'],
+            'timezone' => 'UTC',
+            'verified_at' => now(),
+        ]);
+
+        AnalyticsEvent::create([
+            'site_id' => $selectedSite->id,
+            'event_id' => (string) Str::uuid(),
+            'type' => 'pageview',
+            'occurred_at' => now(),
+            'received_at' => now(),
+            'path' => '/pricing',
+            'utm_source' => 'newsletter',
+            'utm_campaign' => 'launch',
+            'device_category' => 'Desktop',
+            'visitor_hash' => 'selected-visitor',
+            'session_id' => 'selected-session',
+        ]);
+
+        $response = $this->actingAs($user)->get(route('analytics.dashboard', [
+            'site' => $selectedSite->id,
+            'days' => 7,
+            'source' => 'newsletter',
+            'campaign' => 'launch',
+            'device' => 'Desktop',
+        ]));
+
+        $response->assertOk();
+        $expected = route('analytics.dashboard', [
+            'site' => $selectedSite->id,
+            'days' => 7,
+            'path' => '/pricing',
+            'source' => 'newsletter',
+            'campaign' => 'launch',
+            'device' => 'Desktop',
+        ]);
+        $response->assertSee('href="'.e($expected).'"', false);
+    }
 }
