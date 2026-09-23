@@ -1,4 +1,4 @@
-@props(['navigation' => []])
+@props(['navigation' => [], 'searchUrl' => null])
 
 @php
     $items = collect($navigation['groups'] ?? [])
@@ -19,7 +19,7 @@
         ->filter();
 @endphp
 
-<dialog id="signal-command-palette" data-signal-command-palette class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" aria-labelledby="signal-command-title" aria-modal="true">
+<dialog id="signal-command-palette" data-signal-command-palette @if($searchUrl) data-signal-command-search-url="{{ $searchUrl }}" @endif class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" aria-labelledby="signal-command-title" aria-modal="true">
     <div class="p-5 sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>
@@ -33,8 +33,15 @@
                 </button>
             </form>
         </div>
-        <label for="signal-command-query" class="sr-only">Search navigation</label>
-        <input id="signal-command-query" data-signal-command-input type="search" class="ui-input mt-6 text-base" autocomplete="off" placeholder="Search pages and actions…">
+        <label for="signal-command-query" class="sr-only">Search navigation and workspace resources</label>
+        <x-signal.ui.input
+            id="signal-command-query"
+            data-signal-command-input
+            type="search"
+            class="mt-6 text-base"
+            autocomplete="off"
+            placeholder="Search pages, projects, servers, deployments, incidents, and sites…"
+        />
         <nav data-signal-command-results class="mt-4 grid max-h-[min(28rem,55vh)] gap-1 overflow-y-auto" aria-label="Quick actions">
             <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">Products</p>
             @foreach ($productItems as $item)
@@ -55,8 +62,10 @@
                     <span>{{ $item['label'] }}</span>
                 </a>
             @endforeach
+            <div data-signal-command-dynamic-results class="grid gap-4" aria-label="Workspace resource results"></div>
         </nav>
         <p data-signal-command-empty hidden class="px-3 py-6 text-center text-sm text-muted">No matching pages or actions.</p>
+        <p data-signal-command-status class="sr-only" role="status" aria-live="polite"></p>
         <div class="mt-4 flex items-center justify-between border-t border-line pt-3 text-[10px] font-bold uppercase tracking-wide text-subtle"><span>Signal quick navigation</span><kbd class="ui-kbd">Esc</kbd></div>
     </div>
 </dialog>

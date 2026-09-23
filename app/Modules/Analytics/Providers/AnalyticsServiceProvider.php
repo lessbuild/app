@@ -12,6 +12,7 @@ use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
+use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
@@ -21,6 +22,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsTrafficContextProvider;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceSearchProvider;
 use App\Modules\Analytics\Services\WorkspaceViewData;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -69,6 +71,7 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         app(ProjectResourceDestinationRegistry::class)->register('analytics', app(AnalyticsResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('analytics', app(AnalyticsProjectSummary::class));
         app(ProjectTrafficContextRegistry::class)->register('analytics', app(AnalyticsTrafficContextProvider::class));
+        app(WorkspaceSearchProviderRegistry::class)->register('analytics', app(AnalyticsWorkspaceSearchProvider::class));
         app(ProjectResourceLinkRegistry::class)->register('analytics', app(AnalyticsResourceLinkProvider::class));
         app(ProjectSetupRegistry::class)->register('analytics', app(AnalyticsProjectSetup::class));
         app(ProductPrincipalRegistry::class)->register(

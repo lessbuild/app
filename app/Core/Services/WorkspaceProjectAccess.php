@@ -28,6 +28,7 @@ final class WorkspaceProjectAccess
             ->where('workspace_id', $workspace->getKey())
             ->where('user_id', $user->getKey())
             ->where('status', 'active')
+            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->first();
     }
 

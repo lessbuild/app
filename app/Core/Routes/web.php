@@ -4,6 +4,7 @@ use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
+use App\Core\Http\Controllers\WorkspaceSearchController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:platform')->group(function (): void {
@@ -14,6 +15,10 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::get('/workspaces/{workspace}/overview', WorkspaceDashboardController::class)
         ->name('core.workspace.dashboard');
+
+    Route::get('/workspaces/{workspace}/search', WorkspaceSearchController::class)
+        ->middleware('throttle:60,1')
+        ->name('core.workspace.search');
 
     Route::prefix('workspaces/{workspace}')
         ->scopeBindings()

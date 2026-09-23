@@ -11,6 +11,7 @@ use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
+use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
 use App\Modules\Deployer\Http\Livewire\RepositoryDeploymentTimeline;
@@ -26,6 +27,7 @@ use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
 use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\SshServerTroubleshootingTransport;
 use App\Modules\Deployer\View\Navigation\WorkspaceNavigation;
@@ -55,6 +57,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(ProjectResourceLinkRegistry::class)->register('deployer', app(DeployerResourceLinkProvider::class));
         app(ProjectSetupRegistry::class)->register('deployer', app(DeployerProjectSetup::class));
+        app(WorkspaceSearchProviderRegistry::class)->register('deployer', app(DeployerWorkspaceSearchProvider::class));
         app(ProductPrincipalRegistry::class)->register(
             'deployer',
             new MappedProductPrincipalAdapter('deployer', User::class, app(LegacyIdentityResolver::class)),

@@ -45,5 +45,8 @@
         {{ $slot }}
     </main>
 
-    <x-signal.layouts.command-palette :navigation="$navigation" />
+    <x-signal.layouts.command-palette
+        :navigation="$navigation"
+        :search-url="route('core.workspace.search', $currentWorkspace)"
+    />
 </x-signal.layouts.core>

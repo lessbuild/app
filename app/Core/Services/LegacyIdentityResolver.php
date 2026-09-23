@@ -44,4 +44,23 @@ final class LegacyIdentityResolver
             ->map(static fn ($sourceId): string => (string) $sourceId)
             ->all();
     }
+
+    /** @return list<string> */
+    public function sourceIdsForCanonical(
+        string $product,
+        string $sourceEntity,
+        string|int $canonicalId,
+        ?string $canonicalEntity = null,
+    ): array {
+        return LegacyIdentityMap::query()
+            ->where('source_product', $product)
+            ->where('source_entity', $sourceEntity)
+            ->where('canonical_entity', $canonicalEntity ?? $sourceEntity)
+            ->where('canonical_id', (string) $canonicalId)
+            ->where('status', 'reconciled')
+            ->orderBy('source_id')
+            ->pluck('source_id')
+            ->map(static fn ($sourceId): string => (string) $sourceId)
+            ->all();
+    }
 }

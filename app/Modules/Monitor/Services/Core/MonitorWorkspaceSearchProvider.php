@@ -1,0 +1,77 @@
+<?php
+
+namespace App\Modules\Monitor\Services\Core;
+
+use App\Core\Contracts\WorkspaceSearchProvider;
+use App\Core\Data\Search\WorkspaceSearchResult;
+use App\Core\Exceptions\Search\WorkspaceSearchProviderUnavailable;
+use App\Core\Models\PlatformUser;
+use App\Core\Models\Workspace;
+use App\Core\Services\LegacyIdentityResolver;
+use App\Core\Services\Search\WorkspaceSearchPattern;
+use App\Modules\Monitor\Models\Incident;
+use App\Modules\Monitor\Models\Workspace as MonitorWorkspace;
+use Illuminate\Support\Facades\Route;
+
+final class MonitorWorkspaceSearchProvider implements WorkspaceSearchProvider
+{
+    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+
+    public function search(PlatformUser $user, Workspace $workspace, string $query): array
+    {
+        if (! Route::has('monitor.incidents.show')) {
+            throw new WorkspaceSearchProviderUnavailable('Monitor incident search is unavailable.');
+        }
+
+        $sourceUserIds = $this->identities->sourceIdsFor($user, 'monitor');
+        $sourceWorkspaceIds = $this->identities->sourceIdsForCanonical(
+            'monitor',
+            'workspace',
+            $workspace->getKey(),
+            'workspace',
+        );
+
+        if ($sourceUserIds === [] || $sourceWorkspaceIds === []) {
+            return [];
+        }
+
+        $workspaceIds = MonitorWorkspace::query()
+            ->whereKey($sourceWorkspaceIds)
+            ->whereHas('members', fn ($members) => $members->whereIn('users.id', $sourceUserIds))
+            ->pluck('id');
+
+        if ($workspaceIds->isEmpty()) {
+            return [];
+        }
+
+        $pattern = WorkspaceSearchPattern::contains($query);
+        $incidents = Incident::query()
+            ->where(function ($incidents) use ($workspaceIds): void {
+                $incidents
+                    ->whereHas('alertRule.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds))
+                    ->orWhereHas('monitor.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds));
+            })
+            ->where(function ($incidents) use ($pattern, $query): void {
+                $incidents->whereRaw("status LIKE ? ESCAPE '!'", [$pattern]);
+
+                if (ctype_digit($query)) {
+                    $incidents->orWhereKey($query);
+                }
+
+                $incidents
+                    ->orWhereHas('alertRule', fn ($rules) => $rules->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]))
+                    ->orWhereHas('monitor', fn ($monitors) => $monitors->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]));
+            })
+            ->with(['alertRule:id,name', 'monitor:id,name'])
+            ->latest('opened_at')
+            ->limit(5)
+            ->get(['id', 'alert_rule_id', 'monitor_id', 'status', 'opened_at']);
+
+        return $incidents->map(fn (Incident $incident): WorkspaceSearchResult => new WorkspaceSearchResult(
+            type: __('Incident'),
+            title: __('Incident #:id', ['id' => $incident->getKey()]),
+            subtitle: $incident->statusLabel(),
+            url: route('monitor.incidents.show', $incident->getKey()),
+        ))->all();
+    }
+}
