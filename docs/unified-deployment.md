@@ -41,7 +41,7 @@ the timer and one worker instance for each queue:
 ```sh
 sudo systemctl daemon-reload
 sudo systemctl enable --now buildpusher-schedule.timer
-sudo systemctl enable --now buildpusher-worker@default.service
+sudo systemctl enable --now buildpusher-worker@database.service
 sudo systemctl enable --now buildpusher-worker@telemetry.service
 sudo systemctl enable --now buildpusher-worker@checks.service
 sudo systemctl enable --now buildpusher-worker@alerts.service
