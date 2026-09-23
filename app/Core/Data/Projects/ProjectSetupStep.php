@@ -12,5 +12,6 @@ final readonly class ProjectSetupStep
         public ProjectSetupStepState $state,
         public ?string $url = null,
         public ?string $actionLabel = null,
+        public ?string $environmentName = null,
     ) {}
 }

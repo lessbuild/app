@@ -68,6 +68,7 @@ final class ProjectProductLinksTest extends TestCase
             'workspace_memberships',
             'workspaces',
             'project_resources',
+            'project_environments',
             'legacy_identity_maps',
         ] as $table) {
             Schema::connection('core')->dropIfExists($table);
@@ -352,21 +353,52 @@ final class ProjectProductLinksTest extends TestCase
         $this->addIdentity('monitor', '17');
         $this->addProjectResource('monitor', 'application', '31');
         $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
-        DB::connection('monitor')->table('environments')->insert([
-            'id' => 41,
-            'application_id' => 31,
-            'name' => 'Production',
-            'slug' => 'production',
-            'status' => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        foreach ([
+            [41, 'Production', 'production', '01J8AA00000000000000000030', '01J8AA00000000000000000012'],
+            [42, 'Staging', 'staging', '01J8AA00000000000000000031', '01J8AA00000000000000000013'],
+        ] as [$sourceEnvironmentId, $name, $type, $canonicalEnvironmentId, $resourceId]) {
+            DB::connection('monitor')->table('environments')->insert([
+                'id' => $sourceEnvironmentId,
+                'application_id' => 31,
+                'name' => $name,
+                'slug' => $type,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('project_environments')->insert([
+                'id' => $canonicalEnvironmentId,
+                'project_id' => self::PROJECT_ID,
+                'name' => $name,
+                'slug' => $type,
+                'environment_type' => $type,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('project_resources')->insert([
+                'id' => $resourceId,
+                'project_id' => self::PROJECT_ID,
+                'environment_id' => $canonicalEnvironmentId,
+                'product' => 'monitor',
+                'resource_type' => 'environment',
+                'resource_id' => (string) $sourceEnvironmentId,
+                'name' => $name,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         $setup = new MonitorProjectSetup(app(MonitorProjectLink::class));
         $steps = $setup->steps($this->platformUser(), $this->project());
 
         $this->assertSame(ProjectSetupStepState::Complete, $steps[0]->state);
-        $this->assertSame(ProjectSetupStepState::NeedsAction, $steps[1]->state);
+        $this->assertCount(3, $steps);
+        $production = collect($steps)->firstWhere('environmentName', 'Production');
+        $staging = collect($steps)->firstWhere('environmentName', 'Staging');
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $production->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $staging->state);
 
         DB::connection('monitor')->table('telemetry_events')->insert([
             'id' => 61,
@@ -377,7 +409,10 @@ final class ProjectProductLinksTest extends TestCase
         ]);
         $steps = $setup->steps($this->platformUser(), $this->project());
 
-        $this->assertSame(ProjectSetupStepState::Complete, $steps[1]->state);
+        $production = collect($steps)->firstWhere('environmentName', 'Production');
+        $staging = collect($steps)->firstWhere('environmentName', 'Staging');
+        $this->assertSame(ProjectSetupStepState::Complete, $production->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $staging->state);
     }
 
     public function test_monitor_resource_candidates_require_mapped_workspace_membership_and_exclude_linked_apps(): void
@@ -527,6 +562,17 @@ final class ProjectProductLinksTest extends TestCase
             $table->string('canonical_entity', 100)->nullable();
             $table->char('canonical_id', 26)->nullable();
             $table->string('status', 24)->default('pending');
+            $table->timestamps();
+        });
+
+        Schema::connection('core')->create('project_environments', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('project_id', 26);
+            $table->string('name');
+            $table->string('slug');
+            $table->string('environment_type');
+            $table->string('status');
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
 
