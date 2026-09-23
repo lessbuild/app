@@ -175,7 +175,7 @@ The authenticated workspace landing now renders a Signal Topbar SaaS overview wi
 
 Illustrative desktop and mobile renders use fictional sample data: [desktop](previews/unified-workspace-overview.png) and [mobile](previews/unified-workspace-overview-mobile.png).
 
-The planned project overview still needs latest deployment, Monitor health/incident, and Analytics traffic summaries with freshness timestamps. Add bounded product-owned summary contracts/projections and product-specific unavailable states; raw telemetry/event tables are not dashboard join targets. The shared dashboard also still needs actionable recent activity, billing management routes, account/security, saved priorities, and full setup guidance. Keep the existing Deployer, Monitor, and Analytics dashboards intact and preserve their full feature behavior as those summaries are composed.
+The project overview now adds bounded, module-owned snapshots for the latest Deployer build, Monitor check/incident state, and seven-day Analytics traffic, including freshness timestamps and a per-product unavailable state. Providers resolve only resources the user can access in the product database; the Core page never joins across product databases or reads raw Analytics events. The workspace dashboard still needs actionable recent activity, billing management routes, account/security, saved priorities, and full setup guidance. Keep the existing Deployer, Monitor, and Analytics dashboards intact and preserve their full feature behavior as these summaries are composed.
 
 Use the selected Signal Topbar SaaS shell consistently across all authenticated application screens:
 

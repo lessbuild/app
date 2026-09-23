@@ -7,10 +7,12 @@ use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
+use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
+use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
 use App\Modules\Analytics\Services\WorkspaceViewData;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -36,6 +38,7 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('analytics', app(AnalyticsProjectLink::class));
+        app(ProjectProductSummaryRegistry::class)->register('analytics', app(AnalyticsProjectSummary::class));
         app(ProductPrincipalRegistry::class)->register(
             'analytics',
             new MappedProductPrincipalAdapter('analytics', User::class, app(LegacyIdentityResolver::class)),

@@ -11,6 +11,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Services\Billing\ResolveProductPlan;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
+use App\Core\Services\ProjectProductSummaryRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(ProjectProductLinkRegistry::class);
+        $this->app->singleton(ProjectProductSummaryRegistry::class);
         $this->app->singleton(ProductPrincipalRegistry::class);
         $this->app->bind(ProductPlanResolver::class, ResolveProductPlan::class);
 

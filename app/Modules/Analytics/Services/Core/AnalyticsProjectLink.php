@@ -8,9 +8,9 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\Site;
-use App\Modules\Analytics\Models\User;
 use Illuminate\Database\ConnectionException;
 use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
 final class AnalyticsProjectLink implements ProjectProductLink
@@ -24,40 +24,44 @@ final class AnalyticsProjectLink implements ProjectProductLink
         }
 
         try {
-            $resources = ProjectResource::query()
-                ->where('project_id', $project->getKey())
-                ->where('product', 'analytics')
-                ->where('resource_type', 'site')
-                ->where('status', 'active')
-                ->orderBy('id')
-                ->get(['resource_id']);
+            $site = $this->accessibleSites($user, $project)->first();
 
-            foreach ($resources as $resource) {
-                $site = Site::query()->find($resource->resource_id);
-
-                if ($site === null) {
-                    continue;
-                }
-
-                $workspace = $site->workspace;
-
-                if ($workspace === null) {
-                    continue;
-                }
-
-                foreach ($this->identities->sourceIdsFor($user, 'analytics') as $legacyUserId) {
-                    $legacyUser = User::query()->find($legacyUserId);
-
-                    if ($legacyUser !== null
-                        && $workspace->users()->whereKey($legacyUser->getKey())->exists()) {
-                        return route('analytics.dashboard', ['site' => $site->getKey()]);
-                    }
-                }
+            if ($site !== null) {
+                return route('analytics.dashboard', ['site' => $site->getKey()]);
             }
         } catch (ConnectionException|QueryException) {
             return null;
         }
 
         return null;
+    }
+
+    /** @return Collection<int, Site> */
+    public function accessibleSites(PlatformUser $user, Project $project): Collection
+    {
+        $resourceIds = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('product', 'analytics')
+            ->where('resource_type', 'site')
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->limit(100)
+            ->pluck('resource_id');
+
+        if ($resourceIds->isEmpty()) {
+            return collect();
+        }
+
+        $legacyUserIds = $this->identities->sourceIdsFor($user, 'analytics');
+        if ($legacyUserIds === []) {
+            return collect();
+        }
+
+        return Site::query()
+            ->whereKey($resourceIds)
+            ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $legacyUserIds))
+            ->with('workspace')
+            ->get()
+            ->values();
     }
 }

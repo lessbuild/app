@@ -7,6 +7,7 @@ use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
+use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
 use App\Modules\Deployer\Http\Livewire\RepositoryDeploymentTimeline;
@@ -18,6 +19,7 @@ use App\Modules\Deployer\Http\Livewire\WebsiteSetup;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
+use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\SshServerTroubleshootingTransport;
 use App\Modules\Deployer\View\Navigation\WorkspaceNavigation;
@@ -43,6 +45,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
 
         Cashier::useCustomerModel(User::class);
         app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
+        app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(ProductPrincipalRegistry::class)->register(
             'deployer',
             new MappedProductPrincipalAdapter('deployer', User::class, app(LegacyIdentityResolver::class)),

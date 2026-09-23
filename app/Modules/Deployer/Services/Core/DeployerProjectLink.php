@@ -24,36 +24,41 @@ final class DeployerProjectLink implements ProjectProductLink
         }
 
         try {
-            $resource = ProjectResource::query()
-                ->where('project_id', $project->getKey())
-                ->where('product', 'deployer')
-                ->where('resource_type', 'project')
-                ->where('status', 'active')
-                ->first();
-
-            if ($resource === null) {
-                return null;
-            }
-
-            $legacyProject = Project::query()->with('organization')->find($resource->resource_id);
-
-            if ($legacyProject === null || $legacyProject->organization === null) {
-                return null;
-            }
-
-            foreach ($this->identities->sourceIdsFor($user, 'deployer') as $legacyUserId) {
-                $legacyUser = User::query()->find($legacyUserId);
-
-                if ($legacyUser === null
-                    || (int) $legacyUser->current_organization_id !== (int) $legacyProject->organization_id
-                    || ! $legacyProject->organization->permits($legacyUser, 'view')) {
-                    continue;
-                }
-
-                return route('projects.show', $legacyProject->getKey());
-            }
+            $legacyProject = $this->projectFor($user, $project);
         } catch (ConnectionException|QueryException) {
             return null;
+        }
+
+        return $legacyProject !== null ? route('projects.show', $legacyProject->getKey()) : null;
+    }
+
+    public function projectFor(PlatformUser $user, CoreProject $project): ?Project
+    {
+        $resource = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('product', 'deployer')
+            ->where('resource_type', 'project')
+            ->where('status', 'active')
+            ->first();
+
+        if ($resource === null) {
+            return null;
+        }
+
+        $legacyProject = Project::query()->with('organization')->find($resource->resource_id);
+
+        if ($legacyProject === null || $legacyProject->organization === null) {
+            return null;
+        }
+
+        foreach ($this->identities->sourceIdsFor($user, 'deployer') as $legacyUserId) {
+            $legacyUser = User::query()->find($legacyUserId);
+
+            if ($legacyUser !== null
+                && (int) $legacyUser->current_organization_id === (int) $legacyProject->organization_id
+                && $legacyProject->organization->permits($legacyUser, 'view')) {
+                return $legacyProject;
+            }
         }
 
         return null;

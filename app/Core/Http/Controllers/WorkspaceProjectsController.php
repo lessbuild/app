@@ -12,6 +12,7 @@ use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductLinks;
+use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\Projects\CreateCanonicalProject;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Contracts\View\View;
@@ -120,6 +121,7 @@ final class WorkspaceProjectsController
         ProjectProductLinks $productLinks,
         WorkspaceProjectAccess $access,
         ProjectConnectionEntitlementPolicy $connectionEntitlements,
+        ProjectProductSummaries $productSummaries,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -177,6 +179,7 @@ final class WorkspaceProjectsController
             'contextProjects' => $this->contextProjects($workspace, $user),
             'productGrants' => $productGrants,
             'productLinks' => $authorizedProductLinks,
+            'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts),
             'subscriptions' => $canManageBilling
                 ? CurrentProductSubscription::query()
                     ->where('workspace_id', $workspace->getKey())

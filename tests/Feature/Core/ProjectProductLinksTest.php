@@ -3,6 +3,7 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectProductLink;
+use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Services\ProjectProductLinkRegistry;
@@ -13,6 +14,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Monitor\Models\Application as MonitorApplication;
 use App\Modules\Monitor\Models\User as MonitorUser;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
+use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\CurrentWorkspace as MonitorCurrentWorkspace;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -43,7 +45,7 @@ final class ProjectProductLinksTest extends TestCase
             Schema::connection('analytics')->dropIfExists($table);
         }
 
-        foreach (['applications', 'user_workspace', 'workspaces', 'users'] as $table) {
+        foreach (['incidents', 'alert_rules', 'monitors', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
 
@@ -135,6 +137,55 @@ final class ProjectProductLinksTest extends TestCase
 
         $this->assertSame(200, $workspace->getKey());
         $this->assertSame(100, $request->session()->get('workspace_id'));
+    }
+
+    public function test_monitor_summary_marks_stale_checks_for_attention(): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        DB::connection('monitor')->table('environments')->insert([
+            'id' => 41,
+            'application_id' => 31,
+            'name' => 'Production',
+            'slug' => 'production',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('monitor')->table('monitors')->insert([
+            [
+                'id' => 51,
+                'environment_id' => 41,
+                'name' => 'Homepage',
+                'type' => 'http',
+                'health' => 'up',
+                'enabled' => true,
+                'checked_at' => now(),
+                'interval_minutes' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 52,
+                'environment_id' => 41,
+                'name' => 'API monitor',
+                'type' => 'http',
+                'health' => 'up',
+                'enabled' => true,
+                'checked_at' => null,
+                'interval_minutes' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+
+        $summary = (new MonitorProjectSummary(app(MonitorProjectLink::class)))
+            ->summarize($this->platformUser(), $this->project());
+
+        $this->assertNotNull($summary);
+        $this->assertSame(ProjectProductSnapshotState::Attention, $summary->state);
+        $this->assertSame('0 open incidents · 1 checks up · 0 checks down · 1 unknown · 0 paused', $summary->detail);
     }
 
     public function test_core_project_membership_and_product_grant_gate_module_destinations(): void
@@ -325,6 +376,44 @@ final class ProjectProductLinksTest extends TestCase
             $table->string('framework_version')->nullable();
             $table->string('accent')->nullable();
             $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('environments', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('application_id');
+            $table->string('name');
+            $table->string('slug');
+            $table->string('status')->default('active');
+            $table->unsignedBigInteger('event_count')->default(0);
+            $table->timestamp('last_seen_at')->nullable();
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('monitors', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('environment_id');
+            $table->string('name');
+            $table->string('type')->default('http');
+            $table->string('health')->default('unknown');
+            $table->boolean('enabled')->default(true);
+            $table->timestamp('checked_at')->nullable();
+            $table->timestamp('next_check_at')->nullable();
+            $table->unsignedInteger('interval_minutes')->default(5);
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('alert_rules', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('environment_id');
+            $table->timestamp('deleted_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('incidents', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('alert_rule_id')->nullable();
+            $table->unsignedBigInteger('monitor_id')->nullable();
+            $table->string('status');
+            $table->timestamp('opened_at')->nullable();
             $table->timestamps();
         });
     }
