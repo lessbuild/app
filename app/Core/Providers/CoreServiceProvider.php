@@ -64,10 +64,37 @@ final class CoreServiceProvider extends ModuleServiceProvider
             ];
         });
 
+        RateLimiter::for('platform.sso.issue', static function (Request $request): array {
+            $userId = (string) ($request->user('platform')?->getAuthIdentifier() ?? 'guest');
+
+            return [
+                Limit::perMinute(12)->by('platform-sso:'.$userId.'|'.$request->ip()),
+                Limit::perMinute(60)->by('platform-sso-ip:'.$request->ip()),
+            ];
+        });
+
+        RateLimiter::for('platform.sso.exchange', static fn (Request $request): Limit => Limit::perMinute(30)->by('platform-sso-exchange:'.$request->ip())
+        );
+
         ResetPassword::createUrlUsing(static fn (PlatformUser $user, string $token): string => route('platform.password.reset', [
             'token' => $token,
             'email' => $user->getEmailForPasswordReset(),
         ]));
+
+        if (! $this->app->routesAreCached()) {
+            $ssoRoutes = app_path('Core/Routes/sso.php');
+            if (is_file($ssoRoutes)) {
+                $hosts = $this->platformHosts();
+
+                if ($hosts === []) {
+                    Route::middleware('web')->group($ssoRoutes);
+                } else {
+                    foreach ($hosts as $host) {
+                        Route::domain($host)->middleware('web')->group($ssoRoutes);
+                    }
+                }
+            }
+        }
 
         $authenticationRoutes = app_path('Core/Routes/auth.php');
 
@@ -100,5 +127,36 @@ final class CoreServiceProvider extends ModuleServiceProvider
     protected function routeHost(string $file): ?string
     {
         return config('platform.dashboard_host');
+    }
+
+    /** @return list<string> */
+    private function platformHosts(): array
+    {
+        $configured = [
+            config('app.url'),
+            config('platform.auth_url'),
+            config('platform.auth_host'),
+            config('platform.dashboard_url'),
+            config('platform.dashboard_host'),
+        ];
+
+        foreach (config('platform.products', []) as $product) {
+            $configured[] = $product['url'] ?? null;
+            $configured[] = $product['host'] ?? null;
+        }
+
+        $hosts = [];
+        foreach ($configured as $value) {
+            if (! is_string($value) || trim($value) === '') {
+                continue;
+            }
+
+            $parts = parse_url(str_contains($value, '://') ? $value : 'https://'.$value);
+            if (is_array($parts) && isset($parts['host'])) {
+                $hosts[] = strtolower((string) $parts['host']);
+            }
+        }
+
+        return array_values(array_unique($hosts));
     }
 }

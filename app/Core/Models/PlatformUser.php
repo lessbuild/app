@@ -82,6 +82,12 @@ class PlatformUser extends Authenticatable implements MustVerifyEmailContract, P
         return $this->hasMany(UserIdentity::class, 'user_id');
     }
 
+    /** @return HasMany<PlatformAuthSession, $this> */
+    public function platformAuthSessions(): HasMany
+    {
+        return $this->hasMany(PlatformAuthSession::class, 'user_id');
+    }
+
     public function twoFactorEnabled(): bool
     {
         return filled($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;

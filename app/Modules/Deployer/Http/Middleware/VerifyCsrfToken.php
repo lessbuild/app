@@ -23,5 +23,6 @@ class VerifyCsrfToken extends Middleware
         'builds/*/deployment/callback/revision',
         'builds/*/deployment/callback/failed',
         'builds/*/deployment/callback/log',
+        '__platform/sso/exchange',
     ];
 }

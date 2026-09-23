@@ -46,6 +46,31 @@
     $environmentOptions = $environmentOptions ?? data_get($currentProject, 'environments', []);
     $products = config('platform.products', []);
     $currentHost = request()->getHost();
+    $platformSsoUser = \Illuminate\Support\Facades\Auth::guard('platform')->user();
+    $platformSsoIssueUrl = url('/__platform/sso/issue');
+    $platformSsoHref = static function ($href) use ($platformSsoUser, $platformSsoIssueUrl): ?string {
+        if (! is_string($href) || ! $platformSsoUser instanceof \App\Core\Models\PlatformUser) {
+            return $href;
+        }
+
+        $target = parse_url($href);
+        if (! is_array($target) || ! isset($target['host'])) {
+            return $href;
+        }
+
+        $scheme = strtolower((string) ($target['scheme'] ?? request()->getScheme()));
+        $origin = $scheme.'://'.strtolower((string) $target['host']);
+        $targetPort = isset($target['port']) ? (int) $target['port'] : null;
+        if ($targetPort !== null && !(($scheme === 'https' && $targetPort === 443) || ($scheme === 'http' && $targetPort === 80))) {
+            $origin .= ':'.$targetPort;
+        }
+
+        if ($origin === strtolower(request()->getSchemeAndHttpHost())) {
+            return $href;
+        }
+
+        return $platformSsoIssueUrl.'?'.http_build_query(['return_to' => $href], '', '&', PHP_QUERY_RFC3986);
+    };
     $activeProduct = $productKey ?? collect($products)->keys()->first(fn (string $key): bool =>
         request()->routeIs($key.'.*')
         || (filled($products[$key]['host'] ?? null) && strcasecmp((string) $products[$key]['host'], $currentHost) === 0)
@@ -90,6 +115,7 @@
                                     : (\Illuminate\Support\Facades\Route::has($productRoute)
                                         ? route($productRoute)
                                         : ($productConfig['url'] ?? null));
+                                $productHref = $platformSsoHref($productHref);
                             @endphp
                             @if ($productHref)
                                 <a class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink" href="{{ $productHref }}" @if($activeProduct === $productKeyOption) aria-current="page" @endif>{{ $productConfig['label'] ?? ucfirst($productKeyOption) }}</a>
@@ -173,6 +199,7 @@
                             : (\Illuminate\Support\Facades\Route::has($productRoute)
                                 ? route($productRoute)
                                 : (($products[$key]['enabled'] ?? false) ? ($products[$key]['url'] ?? null) : null));
+                        $productHref = $platformSsoHref($productHref);
                         $productActive = $activeProduct === $key;
                     @endphp
                     @if ($productHref)

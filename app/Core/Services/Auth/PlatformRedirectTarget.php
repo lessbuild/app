@@ -16,7 +16,7 @@ final class PlatformRedirectTarget
         $target = trim($target);
         $parts = parse_url($target);
 
-        if (! is_array($parts) || isset($parts['user'], $parts['pass'], $parts['fragment'])) {
+        if (! is_array($parts) || isset($parts['user']) || isset($parts['pass'])) {
             return null;
         }
 

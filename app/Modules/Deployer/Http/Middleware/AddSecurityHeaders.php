@@ -19,13 +19,24 @@ class AddSecurityHeaders
 
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-        $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
+        $response->headers->set(
+            'Referrer-Policy',
+            $request->is('__platform/sso/exchange') || is_string($request->attributes->get('platform.sso.form_origin'))
+                ? 'no-referrer'
+                : 'strict-origin-when-cross-origin',
+        );
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+        $platformSsoOrigin = $request->attributes->get('platform.sso.form_origin');
+        $formAction = is_string($platformSsoOrigin)
+            && preg_match('/\Ahttps?:\/\/[a-z0-9.-]+(?::[0-9]+)?\z/i', $platformSsoOrigin)
+            ? "form-action 'self' {$platformSsoOrigin}"
+            : "form-action 'self'";
+
         $response->headers->set('Content-Security-Policy', implode('; ', [
             "default-src 'self'",
             "base-uri 'self'",
             "frame-ancestors 'self'",
-            "form-action 'self'",
+            $formAction,
             "img-src 'self' data:",
             "font-src 'self' data:",
             "style-src 'self' 'unsafe-inline'",

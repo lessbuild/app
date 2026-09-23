@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http;
 
+use App\Core\Http\Middleware\EnsurePlatformAuthenticationSession;
 use App\Modules\Deployer\Http\Middleware\AddSecurityHeaders;
 use App\Modules\Deployer\Http\Middleware\Authenticate;
 use App\Modules\Deployer\Http\Middleware\EncryptCookies;
@@ -60,6 +61,7 @@ class Kernel extends HttpKernel
             EncryptCookies::class,
             AddQueuedCookiesToResponse::class,
             StartSession::class,
+            EnsurePlatformAuthenticationSession::class,
             AuthenticateSession::class,
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,

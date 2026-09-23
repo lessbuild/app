@@ -3,6 +3,7 @@
 namespace App\Core\Http\Controllers\Auth;
 
 use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\PlatformAuthenticationSessions;
 use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Http\RedirectResponse;
@@ -38,7 +39,7 @@ final class PlatformPasswordResetController
         ]);
     }
 
-    public function update(Request $request): RedirectResponse
+    public function update(Request $request, PlatformAuthenticationSessions $sessions): RedirectResponse
     {
         $data = $request->validate([
             'token' => ['required', 'string'],
@@ -52,7 +53,8 @@ final class PlatformPasswordResetController
                 'password' => $data['password'],
                 'token' => $data['token'],
             ],
-            function (PlatformUser $user, string $password): void {
+            function (PlatformUser $user, string $password) use ($sessions): void {
+                $sessions->revokeAll($user);
                 $user->forceFill([
                     'password' => Hash::make($password),
                     'password_set_at' => now(),

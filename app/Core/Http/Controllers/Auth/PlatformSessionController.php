@@ -3,30 +3,39 @@
 namespace App\Core\Http\Controllers\Auth;
 
 use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\PlatformAuthenticationSessions;
 use App\Core\Services\Auth\PlatformRedirectTarget;
+use App\Core\Services\Auth\PlatformSsoHandoff;
 use App\Core\Services\Auth\VerifyPlatformTwoFactorCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 final class PlatformSessionController
 {
-    public function create(Request $request, PlatformRedirectTarget $redirects): View|RedirectResponse
+    public function create(Request $request, PlatformRedirectTarget $redirects, PlatformSsoHandoff $handoff): View|Response
     {
         $requestedTarget = $request->query('return_to');
         $target = $redirects->resolve(is_string($requestedTarget) ? $requestedTarget : null, $request);
 
-        if (Auth::guard('platform')->check()) {
-            return redirect($target ?? route('core.home'));
+        $user = Auth::guard('platform')->user();
+
+        if ($user instanceof PlatformUser) {
+            return $handoff->respond($request, $user, $target ?? route('core.home'));
         }
 
         return view('core::auth.login', ['returnTo' => $target]);
     }
 
-    public function store(Request $request, PlatformRedirectTarget $redirects): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        PlatformRedirectTarget $redirects,
+        PlatformAuthenticationSessions $sessions,
+        PlatformSsoHandoff $handoff,
+    ): Response {
         $data = $request->validate([
             'email' => ['required', 'string', 'email', 'max:254'],
             'password' => ['required', 'string', 'max:1024'],
@@ -41,6 +50,12 @@ final class PlatformSessionController
         if (! $user instanceof PlatformUser
             || ! $provider->validateCredentials($user, ['password' => $data['password']])) {
             throw ValidationException::withMessages(['email' => __('These credentials do not match our records.')]);
+        }
+
+        $previousUser = $guard->user();
+        if ($previousUser instanceof PlatformUser) {
+            $sessions->revoke($previousUser, $request);
+            $guard->logout();
         }
 
         $returnTo = $redirects->resolve($data['return_to'] ?? null, $request);
@@ -58,8 +73,9 @@ final class PlatformSessionController
 
         $guard->login($user, (bool) ($data['remember'] ?? false));
         $request->session()->regenerate();
+        $sessions->begin($user, $request, (bool) ($data['remember'] ?? false));
 
-        return redirect($returnTo ?? route('core.home'));
+        return $handoff->respond($request, $user, $returnTo ?? route('core.home'));
     }
 
     public function createTwoFactorChallenge(Request $request): View|RedirectResponse
@@ -78,7 +94,9 @@ final class PlatformSessionController
     public function storeTwoFactorChallenge(
         Request $request,
         VerifyPlatformTwoFactorCode $verifyCode,
-    ): RedirectResponse {
+        PlatformAuthenticationSessions $sessions,
+        PlatformSsoHandoff $handoff,
+    ): Response {
         $data = $request->validate([
             'code' => ['required', 'string', 'max:64'],
         ]);
@@ -112,12 +130,18 @@ final class PlatformSessionController
 
         Auth::guard('platform')->login($user, $remember);
         $request->session()->regenerate();
+        $sessions->begin($user, $request, $remember);
 
-        return redirect(is_string($returnTo) ? $returnTo : route('core.home'));
+        return $handoff->respond($request, $user, is_string($returnTo) ? $returnTo : route('core.home'));
     }
 
-    public function destroy(Request $request): RedirectResponse
+    public function destroy(Request $request, PlatformAuthenticationSessions $sessions): RedirectResponse
     {
+        $user = Auth::guard('platform')->user();
+        if ($user instanceof PlatformUser) {
+            $sessions->revoke($user, $request);
+        }
+
         Auth::guard('platform')->logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();

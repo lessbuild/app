@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -41,6 +42,26 @@ final class PlatformAuthenticationTest extends TestCase
             $table->string('token');
             $table->timestamp('created_at')->nullable();
         });
+        Schema::connection('core')->create('platform_auth_sessions', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('user_id', 26)->index();
+            $table->string('remember_token_hash', 64)->nullable()->index();
+            $table->boolean('remembered')->default(false);
+            $table->timestamp('revoked_at')->nullable()->index();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('platform_sso_tickets', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->string('token_hash', 64)->unique();
+            $table->char('auth_session_id', 26)->index();
+            $table->char('user_id', 26)->index();
+            $table->string('issuer_origin', 255);
+            $table->string('audience_origin', 255);
+            $table->text('return_url');
+            $table->timestamp('expires_at')->index();
+            $table->timestamp('consumed_at')->nullable()->index();
+            $table->timestamp('created_at')->nullable();
+        });
 
         Auth::forgetGuards();
     }
@@ -48,6 +69,8 @@ final class PlatformAuthenticationTest extends TestCase
     protected function tearDown(): void
     {
         Auth::forgetGuards();
+        Schema::connection('core')->dropIfExists('platform_sso_tickets');
+        Schema::connection('core')->dropIfExists('platform_auth_sessions');
         Schema::connection('core')->dropIfExists('password_reset_tokens');
         Schema::connection('core')->dropIfExists('users');
 
@@ -134,6 +157,16 @@ final class PlatformAuthenticationTest extends TestCase
     public function test_core_password_reset_updates_only_the_core_account(): void
     {
         $user = $this->createPlatformUser('reset@example.test', 'old password');
+        $authSessionId = (string) Str::ulid();
+        DB::connection('core')->table('platform_auth_sessions')->insert([
+            'id' => $authSessionId,
+            'user_id' => $user->getKey(),
+            'remember_token_hash' => null,
+            'remembered' => false,
+            'revoked_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
         $token = Password::broker('platform_users')->createToken($user);
 
         $response = $this->post(route('platform.password.update'), [
@@ -146,6 +179,7 @@ final class PlatformAuthenticationTest extends TestCase
         $response->assertRedirect(route('platform.login'));
         $this->assertTrue(Hash::check('a new secure password', $user->fresh()->password));
         $this->assertFalse(Hash::check('old password', $user->fresh()->password));
+        $this->assertNotNull(DB::connection('core')->table('platform_auth_sessions')->where('id', $authSessionId)->value('revoked_at'));
     }
 
     public function test_platform_redirects_allow_only_configured_origins_or_local_paths(): void
@@ -154,11 +188,22 @@ final class PlatformAuthenticationTest extends TestCase
 
         $this->createPlatformUser('redirect@example.test', 'correct horse battery staple');
 
-        $this->post(route('platform.login.store'), [
+        $handoff = $this->post(route('platform.login.store'), [
             'email' => 'redirect@example.test',
             'password' => 'correct horse battery staple',
             'return_to' => 'https://deployer.example.test/projects/01J8AA00000000000000000000',
-        ])->assertRedirect('https://deployer.example.test/projects/01J8AA00000000000000000000');
+        ]);
+        $handoff->assertOk()
+            ->assertSee('action="https://deployer.example.test/__platform/sso/exchange"', false)
+            ->assertSeeText('Connecting your session');
+        $this->assertStringContainsString(
+            "form-action 'self' https://deployer.example.test",
+            (string) $handoff->headers->get('Content-Security-Policy'),
+        );
+        $this->assertDatabaseHas('platform_sso_tickets', [
+            'audience_origin' => 'https://deployer.example.test',
+            'return_url' => 'https://deployer.example.test/projects/01J8AA00000000000000000000',
+        ], 'core');
 
         $this->post(route('platform.logout'))->assertRedirect(route('platform.login'));
 
@@ -167,6 +212,88 @@ final class PlatformAuthenticationTest extends TestCase
             'password' => 'correct horse battery staple',
             'return_to' => 'https://attacker.example.test/collect',
         ])->assertRedirect(route('core.home'));
+    }
+
+    public function test_one_time_sso_handoff_is_audience_and_origin_bound_and_rejects_replay(): void
+    {
+        config([
+            'platform.products.monitor.url' => 'https://monitor.example.test',
+            'platform.products.analytics.url' => 'https://analytics.example.test',
+            'lessbuild.trusted_hosts' => ['monitor.example.test', 'analytics.example.test'],
+        ]);
+        foreach (['monitor.example.test', 'analytics.example.test'] as $host) {
+            Route::domain($host)->middleware('web')->group(app_path('Core/Routes/sso.php'));
+        }
+        $user = $this->createPlatformUser('sso@example.test', 'correct horse battery staple');
+        $returnTo = 'https://monitor.example.test/incidents?window=7d#open';
+
+        $handoff = $this->post(route('platform.login.store'), [
+            'email' => 'sso@example.test',
+            'password' => 'correct horse battery staple',
+            'return_to' => $returnTo,
+        ]);
+        $handoff->assertOk()
+            ->assertSee('action="https://monitor.example.test/__platform/sso/exchange"', false)
+            ->assertDontSee($returnTo, false);
+
+        preg_match('/name="code" value="([a-f0-9]{64})"/', $handoff->getContent(), $matches);
+        $this->assertArrayHasKey(1, $matches);
+        $plainTextTicket = $matches[1];
+        $ticket = DB::connection('core')->table('platform_sso_tickets')->first();
+        $this->assertNotNull($ticket);
+        $this->assertNotSame($plainTextTicket, $ticket->token_hash);
+        $this->assertSame(session('platform.auth.session_id'), $ticket->auth_session_id);
+
+        $this->withHeader('Origin', 'http://localhost')
+            ->post('https://analytics.example.test/__platform/sso/exchange', ['code' => $plainTextTicket])
+            ->assertForbidden();
+        $this->assertNull(DB::connection('core')->table('platform_sso_tickets')->value('consumed_at'));
+
+        $this->withHeader('Origin', 'https://attacker.example.test')
+            ->post('https://monitor.example.test/__platform/sso/exchange', ['code' => $plainTextTicket])
+            ->assertForbidden();
+        $this->assertNull(DB::connection('core')->table('platform_sso_tickets')->value('consumed_at'));
+
+        $exchange = $this->withHeader('Origin', 'http://localhost')
+            ->post('https://monitor.example.test/__platform/sso/exchange', ['code' => $plainTextTicket]);
+        $exchange->assertRedirect($returnTo)
+            ->assertHeader('Referrer-Policy', 'no-referrer');
+        $this->assertStringContainsString('no-store', (string) $exchange->headers->get('Cache-Control'));
+        $this->assertAuthenticatedAs($user, 'platform');
+        $this->assertNotNull(DB::connection('core')->table('platform_sso_tickets')->value('consumed_at'));
+
+        $this->withHeader('Origin', 'http://localhost')
+            ->post('https://monitor.example.test/__platform/sso/exchange', ['code' => $plainTextTicket])
+            ->assertForbidden();
+    }
+
+    public function test_logging_out_revokes_the_shared_host_session(): void
+    {
+        $user = $this->createPlatformUser('logout@example.test', 'correct horse battery staple');
+
+        $this->post(route('platform.login.store'), [
+            'email' => 'logout@example.test',
+            'password' => 'correct horse battery staple',
+        ])->assertRedirect(route('core.home'));
+
+        $authSessionId = session('platform.auth.session_id');
+        $this->assertIsString($authSessionId);
+
+        $this->post(route('platform.logout'))->assertRedirect(route('platform.login'));
+        $this->assertNotNull(DB::connection('core')->table('platform_auth_sessions')->where('id', $authSessionId)->value('revoked_at'));
+
+        Auth::forgetGuards();
+        $sessionKey = Auth::guard('platform')->getName();
+        Auth::forgetGuards();
+        $this->withSession([
+            $sessionKey => $user->getAuthIdentifier(),
+            'platform.auth.session_id' => $authSessionId,
+        ])->get('/__platform/sso/issue?return_to=https%3A%2F%2Fmonitor.example.test%2F')
+            ->assertRedirect(route('platform.login', [
+                'return_to' => 'http://localhost/__platform/sso/issue?return_to=https%3A%2F%2Fmonitor.example.test%2F',
+            ]));
+
+        $this->assertGuest('platform');
     }
 
     /** @param array<string, mixed> $overrides */
