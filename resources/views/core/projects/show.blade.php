@@ -423,9 +423,10 @@
                                                 · {{ __('Waiting for the next deployment event') }}
                                             @endif
                                         </p>
-                                        @if ($connection->last_error_code)
-                                            <p class="text-xs font-semibold text-danger">{{ __('Last error: :code', ['code' => $connection->last_error_code]) }}</p>
-                                        @endif
+                                        <x-signal.ui.project-connection-diagnostic
+                                            :diagnostic="$connectionDiagnostics[(string) $connection->getKey()]"
+                                            class="mt-3"
+                                        />
                                         @if ($connection->events->isNotEmpty())
                                             <ul class="mt-2 space-y-1 border-l-2 border-line pl-3">
                                                 @foreach ($connection->events as $event)
@@ -443,7 +444,6 @@
                                                     <li class="text-xs text-muted">
                                                         {{ str($delivery->status)->headline() }}
                                                         · {{ trans_choice(':count attempt|:count attempts', $delivery->attempts, ['count' => $delivery->attempts]) }}
-                                                        @if ($delivery->last_error_code) · {{ __('Error: :code', ['code' => $delivery->last_error_code]) }} @endif
                                                         @if ($delivery->delivered_at) · {{ __('Delivered :date', ['date' => $delivery->delivered_at->diffForHumans()]) }} @endif
                                                     </li>
                                                 @endforeach

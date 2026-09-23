@@ -11,6 +11,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Services\Connections\ProjectConnectionDiagnostics;
 use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductLinks;
@@ -224,6 +225,7 @@ final class WorkspaceProjectsController
         ProjectSetup $projectSetup,
         ProjectResourceLinks $resourceLinks,
         ProjectResourceDestinations $resourceDestinations,
+        ProjectConnectionDiagnostics $connectionDiagnostics,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -296,6 +298,7 @@ final class WorkspaceProjectsController
             'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts),
             'projectSetupSteps' => $projectSetupSteps,
             'resourceDestinations' => $resourceDestinations->forResources($user, $project->resources),
+            'connectionDiagnostics' => $connectionDiagnostics->forConnections($project->connections),
             'resourceCandidates' => $canManageConnections
                 ? $resourceLinks->candidates($user, $availableProducts)
                 : collect(),
