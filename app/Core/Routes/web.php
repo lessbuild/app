@@ -23,7 +23,11 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::get('/projects', 'index')->name('index');
             Route::get('/projects/create', 'create')->name('create');
             Route::post('/projects', 'store')->name('store');
+            Route::get('/projects/{project}/edit', 'edit')->name('edit');
+            Route::put('/projects/{project}', 'update')->name('update');
             Route::get('/projects/{project}', 'show')->name('show');
+            Route::post('/projects/{project}/archive', 'archive')->name('archive');
+            Route::post('/projects/{project}/restore', 'restore')->name('restore');
             Route::post('/projects/{project}/resources', 'storeResource')->name('resources.store');
             Route::post('/projects/{project}/connections', [ProjectConnectionsController::class, 'store'])
                 ->name('connections.store');

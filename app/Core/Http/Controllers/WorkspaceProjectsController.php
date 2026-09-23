@@ -4,6 +4,7 @@ namespace App\Core\Http\Controllers;
 
 use App\Core\Http\Requests\StoreProjectResourceRequest;
 use App\Core\Http\Requests\StoreWorkspaceProjectRequest;
+use App\Core\Http\Requests\UpdateWorkspaceProjectRequest;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
@@ -16,6 +17,8 @@ use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\ProjectResourceLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
+use App\Core\Services\Projects\SetCanonicalProjectArchiveState;
+use App\Core\Services\Projects\UpdateCanonicalProject;
 use App\Core\Services\ProjectSetup;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Contracts\View\View;
@@ -44,11 +47,14 @@ final class WorkspaceProjectsController
             ->keyBy('product');
         $visibleProducts = $productGrants->keys()->all();
         $canManageBilling = $access->canManageBilling($user, $workspace);
+        $canManageProjects = $access->canManageWorkspace($user, $workspace);
+        $projectStatus = $request->query('status') === 'archived' ? 'archived' : 'active';
 
         $projects = Project::query()
             ->where('workspace_id', $workspace->getKey())
-            ->where('status', 'active')
-            ->whereNull('archived_at')
+            ->where('status', $projectStatus)
+            ->when($projectStatus === 'archived', fn ($query) => $query->whereNotNull('archived_at'))
+            ->when($projectStatus === 'active', fn ($query) => $query->whereNull('archived_at'))
             ->whereHas('memberships', fn ($query) => $query
                 ->where('user_id', $user->getKey())
                 ->where('status', 'active')
@@ -59,13 +65,15 @@ final class WorkspaceProjectsController
                     : $query->whereIn('product', $visibleProducts),
             ])
             ->orderByDesc('updated_at')
-            ->paginate(20);
+            ->paginate(20)
+            ->appends($request->query());
 
         return view('core.projects.index', [
             'user' => $user,
             'workspace' => $workspace,
             'workspaces' => $this->workspacesFor($user),
             'projects' => $projects,
+            'projectStatus' => $projectStatus,
             'productGrants' => $productGrants,
             'subscriptions' => $canManageBilling
                 ? CurrentProductSubscription::query()
@@ -74,7 +82,8 @@ final class WorkspaceProjectsController
                     ->get()
                     ->keyBy('product')
                 : collect(),
-            'canCreateProjects' => $access->canManageWorkspace($user, $workspace),
+            'canCreateProjects' => $canManageProjects,
+            'canManageProjects' => $canManageProjects,
             'canManageBilling' => $canManageBilling,
             'contextProjects' => $this->contextProjects($workspace, $user),
         ]);
@@ -95,6 +104,92 @@ final class WorkspaceProjectsController
             'workspaces' => $this->workspacesFor($user),
             'contextProjects' => $this->contextProjects($workspace, $user),
         ]);
+    }
+
+    public function edit(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        ResolvePlatformUser $platformUsers,
+        WorkspaceProjectAccess $access,
+    ): View {
+        $user = $this->platformUser($request, $platformUsers);
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+        abort_unless($project->status === 'active' && $project->archived_at === null, 404);
+        abort_unless($access->canManageWorkspace($user, $workspace), 403);
+
+        return view('core.projects.edit', [
+            'user' => $user,
+            'workspace' => $workspace,
+            'workspaces' => $this->workspacesFor($user),
+            'project' => $project,
+            'contextProjects' => $this->contextProjects($workspace, $user),
+        ]);
+    }
+
+    public function update(
+        UpdateWorkspaceProjectRequest $request,
+        Workspace $workspace,
+        Project $project,
+        ResolvePlatformUser $platformUsers,
+        UpdateCanonicalProject $updateProject,
+    ): RedirectResponse {
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+
+        $user = $this->platformUser($request, $platformUsers);
+        $updateProject->handle(
+            user: $user,
+            workspace: $workspace,
+            project: $project,
+            name: $request->validated('name'),
+            description: $request->validated('description'),
+        );
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project])
+            ->with('success', __('Project details updated.'));
+    }
+
+    public function archive(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        ResolvePlatformUser $platformUsers,
+        SetCanonicalProjectArchiveState $archiveProject,
+    ): RedirectResponse {
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+
+        $archiveProject->handle(
+            $this->platformUser($request, $platformUsers),
+            $workspace,
+            $project,
+            archived: true,
+        );
+
+        return redirect()
+            ->route('core.projects.index', ['workspace' => $workspace, 'status' => 'archived'])
+            ->with('success', __('Project archived. Its resources, subscriptions, and connection history were preserved.'));
+    }
+
+    public function restore(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        ResolvePlatformUser $platformUsers,
+        SetCanonicalProjectArchiveState $archiveProject,
+    ): RedirectResponse {
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+
+        $archiveProject->handle(
+            $this->platformUser($request, $platformUsers),
+            $workspace,
+            $project,
+            archived: false,
+        );
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project])
+            ->with('success', __('Project restored. Its existing app links and history are available again.'));
     }
 
     public function store(
@@ -135,7 +230,8 @@ final class WorkspaceProjectsController
         $membership = $access->activeMembership($user, $workspace);
         abort_if($membership === null, 404);
         $canManageBilling = $access->canManageBilling($user, $workspace);
-        $canManageConnections = $access->canManageWorkspace($user, $workspace);
+        $canManageProjects = $access->canManageWorkspace($user, $workspace);
+        $canManageConnections = $canManageProjects;
 
         $productGrants = WorkspaceProductAccess::query()
             ->where('membership_id', $membership->getKey())
@@ -200,6 +296,7 @@ final class WorkspaceProjectsController
                     ->keyBy('product')
                 : collect(),
             'canManageBilling' => $canManageBilling,
+            'canManageProjects' => $canManageProjects,
             'canManageConnections' => $canManageConnections,
             'connectionCapabilities' => $connectionEntitlements->availableFor($project),
             'connectionResources' => $project->resources->sortBy([

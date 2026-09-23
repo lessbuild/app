@@ -62,4 +62,10 @@ class Project extends CoreModel
     {
         return $this->hasMany(ProjectConnection::class);
     }
+
+    /** @return HasMany<ProjectLifecycleEvent, $this> */
+    public function lifecycleEvents(): HasMany
+    {
+        return $this->hasMany(ProjectLifecycleEvent::class)->orderBy('occurred_at');
+    }
 }

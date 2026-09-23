@@ -67,6 +67,7 @@ final class WorkspaceDashboardTest extends TestCase
             'current_product_subscriptions',
             'product_subscriptions',
             'project_connections',
+            'project_lifecycle_events',
             'project_resources',
             'project_products',
             'project_memberships',
@@ -244,6 +245,222 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertRedirect(route('core.workspace.dashboard', $this->workspaceId));
     }
 
+    public function test_project_can_be_edited_archived_and_restored_without_removing_product_history(): void
+    {
+        $projectId = (string) Str::ulid();
+        $deployerResourceId = (string) Str::ulid();
+        $monitorResourceId = (string) Str::ulid();
+        $subscriptionId = (string) Str::ulid();
+
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Legacy storefront',
+            'slug' => 'legacy-storefront',
+            'status' => 'active',
+            'description' => 'Original description',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $this->userId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        foreach ([['deployer', $deployerResourceId], ['monitor', $monitorResourceId]] as [$product, $resourceId]) {
+            DB::connection('core')->table('project_resources')->insert([
+                'id' => $resourceId,
+                'project_id' => $projectId,
+                'product' => $product,
+                'resource_type' => 'application',
+                'resource_id' => 'source-'.$product,
+                'name' => str($product)->headline().' production',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+        DB::connection('core')->table('project_products')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'product' => 'deployer',
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('workspace_product_access')->insert([
+            'id' => (string) Str::ulid(),
+            'membership_id' => $this->membershipId,
+            'product' => 'deployer',
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'source_resource_id' => $deployerResourceId,
+            'target_resource_id' => $monitorResourceId,
+            'capabilities' => json_encode(['deployment_context']),
+            'status' => 'disconnected',
+            'disconnected_at' => now()->subHour(),
+            'created_at' => now()->subDay(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('product_subscriptions')->insert([
+            'id' => $subscriptionId,
+            'workspace_id' => $this->workspaceId,
+            'product' => 'deployer',
+            'provider' => 'stripe',
+            'provider_subscription_id' => 'sub_preserved_123',
+            'plan_key' => 'scale',
+            'status' => 'active',
+            'quantity' => 1,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($user, 'platform')
+            ->get(route('core.projects.edit', [$this->workspaceId, $projectId]))
+            ->assertOk()
+            ->assertSeeText('Edit project')
+            ->assertSeeText('Archive this project');
+
+        $this->put(route('core.projects.update', [$this->workspaceId, $projectId]), [
+            'name' => 'Storefront',
+            'description' => 'Shared project for production storefront services.',
+        ])->assertRedirect(route('core.projects.show', [$this->workspaceId, $projectId]));
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $projectId,
+            'name' => 'Storefront',
+            'description' => 'Shared project for production storefront services.',
+            'status' => 'active',
+        ], 'core');
+        $updatedEvent = DB::connection('core')->table('project_lifecycle_events')
+            ->where('project_id', $projectId)
+            ->where('event_type', 'updated')
+            ->first();
+        $this->assertSame($this->userId, $updatedEvent->actor_user_id);
+        $this->assertSame(['changed_fields' => ['name', 'description']], json_decode($updatedEvent->details, true));
+
+        $this->post(route('core.projects.archive', [$this->workspaceId, $projectId]))
+            ->assertRedirect(route('core.projects.index', ['workspace' => $this->workspaceId, 'status' => 'archived']));
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $projectId,
+            'status' => 'archived',
+        ], 'core');
+        $this->assertNotNull(DB::connection('core')->table('projects')->where('id', $projectId)->value('archived_at'));
+        $this->assertSame(2, DB::connection('core')->table('project_resources')->where('project_id', $projectId)->count());
+        $this->assertSame(1, DB::connection('core')->table('project_products')->where('project_id', $projectId)->count());
+        $this->assertSame(1, DB::connection('core')->table('project_connections')->where('project_id', $projectId)->count());
+        $this->assertSame(1, DB::connection('core')->table('product_subscriptions')->where('id', $subscriptionId)->count());
+        $this->assertSame(2, DB::connection('core')->table('project_lifecycle_events')->where('project_id', $projectId)->count());
+        $this->assertSame(2, DB::connection('core')->table('project_lifecycle_events')->where('project_id', $projectId)->where('actor_user_id', $this->userId)->count());
+        $this->get(route('core.projects.show', [$this->workspaceId, $projectId]))->assertNotFound();
+
+        $this->get(route('core.projects.index', ['workspace' => $this->workspaceId, 'status' => 'archived']))
+            ->assertOk()
+            ->assertSeeText('Storefront')
+            ->assertSeeText('Restore project')
+            ->assertSeeText('Linked');
+
+        $this->post(route('core.projects.restore', [$this->workspaceId, $projectId]))
+            ->assertRedirect(route('core.projects.show', [$this->workspaceId, $projectId]));
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $projectId,
+            'status' => 'active',
+            'archived_at' => null,
+        ], 'core');
+        $this->assertSame(1, DB::connection('core')->table('project_connections')->where('project_id', $projectId)->count());
+        $this->assertSame(3, DB::connection('core')->table('project_lifecycle_events')->where('project_id', $projectId)->count());
+        $this->assertSame(1, DB::connection('core')->table('project_lifecycle_events')
+            ->where('project_id', $projectId)
+            ->where('event_type', 'restored')
+            ->where('actor_user_id', $this->userId)
+            ->count());
+
+        $this->get(route('core.projects.index', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('Storefront')
+            ->assertSeeText('Connected');
+    }
+
+    public function test_workspace_members_cannot_edit_or_archive_a_project(): void
+    {
+        $memberId = (string) Str::ulid();
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('users')->insert([
+            'id' => $memberId,
+            'name' => 'Jamie Member',
+            'email' => 'jamie@example.test',
+            'email_normalized' => 'jamie@example.test',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('workspace_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $memberId,
+            'role' => 'member',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Shared project',
+            'slug' => 'shared-project',
+            'status' => 'active',
+            'description' => null,
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $memberId,
+            'role' => 'member',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $member = PlatformUser::query()->findOrFail($memberId);
+        $this->actingAs($member, 'platform')
+            ->get(route('core.projects.edit', [$this->workspaceId, $projectId]))
+            ->assertForbidden();
+
+        $this->put(route('core.projects.update', [$this->workspaceId, $projectId]), [
+            'name' => 'Unauthorized edit',
+            'description' => null,
+        ])->assertForbidden();
+
+        $this->post(route('core.projects.archive', [$this->workspaceId, $projectId]))
+            ->assertForbidden();
+
+        $this->assertDatabaseHas('projects', [
+            'id' => $projectId,
+            'status' => 'active',
+            'archived_at' => null,
+        ], 'core');
+    }
+
     private function createTables(): void
     {
         Schema::connection('core')->create('users', function (Blueprint $table): void {
@@ -291,6 +508,15 @@ final class WorkspaceDashboardTest extends TestCase
             $table->text('description')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamp('archived_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('project_lifecycle_events', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('project_id', 26);
+            $table->char('actor_user_id', 26)->nullable();
+            $table->string('event_type', 40);
+            $table->json('details')->nullable();
+            $table->timestamp('occurred_at');
             $table->timestamps();
         });
         Schema::connection('core')->create('project_memberships', function (Blueprint $table): void {

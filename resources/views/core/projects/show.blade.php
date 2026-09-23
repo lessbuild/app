@@ -45,6 +45,12 @@
         :description="$project->description ?? __('One shared project for your connected applications.')"
     >
         <x-slot:actions>
+            @if ($canManageProjects)
+                <x-signal.ui.button :href="route('core.projects.edit', [$workspace, $project])">
+                    <svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#pencil"></use></svg>
+                    {{ __('Edit project') }}
+                </x-signal.ui.button>
+            @endif
             <x-signal.ui.button :href="route('core.projects.index', $workspace)">
                 <svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg>
                 {{ __('All projects') }}
