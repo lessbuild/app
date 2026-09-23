@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Exceptions;
 
+use App\Core\Services\Auth\ProductAuthentication;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Log;
@@ -105,7 +106,13 @@ class Handler extends ExceptionHandler
         if (! $this->shouldReturnJson($request, $exception)
             && in_array('platform', $exception->guards(), true)
             && Route::has('platform.login')) {
-            return redirect()->guest(route('platform.login'));
+            $authentication = app(ProductAuthentication::class);
+            $product = $authentication->productForRequest($request);
+            $login = $product !== null && $authentication->usesCoreAuthority($product)
+                ? $authentication->platformLoginUrl($request, $product)
+                : route('platform.login');
+
+            return redirect()->guest($login);
         }
 
         return parent::unauthenticated($request, $exception);

@@ -4,6 +4,7 @@ namespace App\Core\Providers;
 
 use App\Core\Auth\PlatformUserProvider;
 use App\Core\Contracts\ProductPlanResolver;
+use App\Core\Http\Middleware\RedirectProductGuestToPlatform;
 use App\Core\Http\Middleware\ResolveProductPrincipal;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
@@ -35,6 +36,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
         parent::boot();
 
         $this->app['router']->aliasMiddleware('platform.principal', ResolveProductPrincipal::class);
+        $this->app['router']->aliasMiddleware('platform.product-guest', RedirectProductGuestToPlatform::class);
 
         Auth::provider('core-platform', static fn ($app, array $config): PlatformUserProvider => new PlatformUserProvider(
             $app['hash'],

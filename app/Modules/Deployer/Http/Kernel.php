@@ -5,9 +5,7 @@ namespace App\Modules\Deployer\Http;
 use App\Modules\Deployer\Http\Middleware\AddSecurityHeaders;
 use App\Modules\Deployer\Http\Middleware\Authenticate;
 use App\Modules\Deployer\Http\Middleware\EncryptCookies;
-use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
 use App\Modules\Deployer\Http\Middleware\EnsureControlPlaneAccess;
-use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
 use App\Modules\Deployer\Http\Middleware\PreventRequestsDuringMaintenance;
 use App\Modules\Deployer\Http\Middleware\RedirectIfAuthenticated;
 use App\Modules\Deployer\Http\Middleware\RequireLocalPasswordConfirmation;
@@ -66,8 +64,6 @@ class Kernel extends HttpKernel
             ShareErrorsFromSession::class,
             VerifyCsrfToken::class,
             SubstituteBindings::class,
-            EnsureCurrentOrganization::class,
-            EnforceOrganizationSecurity::class,
         ],
 
         'api' => [

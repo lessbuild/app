@@ -27,13 +27,15 @@ return [
         'deployer' => [
             'label' => 'Deployer',
             'enabled' => true,
+            'auth_authority' => env('DEPLOYER_AUTH_AUTHORITY', 'legacy'),
             'host' => env('DEPLOYER_HOST'),
             'url' => env('DEPLOYER_URL', filled(env('DEPLOYER_HOST')) ? 'https://'.env('DEPLOYER_HOST') : null),
             'database' => 'deployer',
         ],
         'monitor' => [
             'label' => 'Monitor',
-            'enabled' => false,
+            'enabled' => (bool) env('MONITOR_ENABLED', false),
+            'auth_authority' => env('MONITOR_AUTH_AUTHORITY', 'legacy'),
             'host' => env('MONITOR_HOST'),
             'url' => env('MONITOR_URL', filled(env('MONITOR_HOST')) ? 'https://'.env('MONITOR_HOST') : null),
             'database' => 'monitor',
@@ -41,6 +43,7 @@ return [
         'analytics' => [
             'label' => 'Analytics',
             'enabled' => (bool) env('ANALYTICS_ENABLED', false),
+            'auth_authority' => env('ANALYTICS_AUTH_AUTHORITY', 'legacy'),
             'host' => env('ANALYTICS_HOST'),
             'url' => env('ANALYTICS_URL', filled(env('ANALYTICS_HOST')) ? 'https://'.env('ANALYTICS_HOST') : null),
             'database' => 'analytics',

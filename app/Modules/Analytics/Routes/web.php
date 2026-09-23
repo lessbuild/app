@@ -1,5 +1,8 @@
 <?php
 
+use App\Core\Http\Controllers\Auth\PlatformSessionController;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Modules\Analytics\Http\Controllers\Auth\SessionController;
 use App\Modules\Analytics\Http\Controllers\GoalController;
 use App\Modules\Analytics\Http\Controllers\InvitationController;
 use App\Modules\Analytics\Http\Controllers\ProfileController;
@@ -12,11 +15,19 @@ use App\Modules\Analytics\Http\Controllers\WorkspaceController;
 use App\Modules\Analytics\Livewire\Dashboard\Overview;
 use Illuminate\Support\Facades\Route;
 
+$analyticsAuthentication = app(ProductAuthentication::class);
+$authenticatedMiddleware = $analyticsAuthentication->authenticatedMiddleware('analytics');
+$logoutAction = $analyticsAuthentication->usesCoreAuthority('analytics')
+    ? [PlatformSessionController::class, 'destroy']
+    : [SessionController::class, 'destroy'];
+
 Route::view('/', 'analytics::marketing.home')->name('home');
 Route::get('/ready', ReadinessController::class)->name('ready');
-Route::view('/verify-email', 'analytics::auth.verify-email')->middleware('auth')->name('verification.notice');
+Route::view('/verify-email', 'analytics::auth.verify-email')->middleware($authenticatedMiddleware)->name('verification.notice');
 
-Route::middleware(['auth', 'verified:analytics.verification.notice'])->group(function (): void {
+Route::middleware($authenticatedMiddleware)->post('/logout', $logoutAction)->name('logout');
+
+Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification.notice'])->group(function (): void {
     Route::get('/dashboard', Overview::class)->name('dashboard');
     Route::get('/account', [ProfileController::class, 'edit'])->name('account.profile');
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');

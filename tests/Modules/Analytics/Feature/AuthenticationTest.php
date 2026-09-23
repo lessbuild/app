@@ -21,4 +21,15 @@ class AuthenticationTest extends TestCase
             ->assertOk()
             ->assertSee('Verify your email address');
     }
+
+    public function test_unverified_accounts_can_sign_out_from_the_verification_screen(): void
+    {
+        $user = User::factory()->unverified()->create();
+        $this->actingAs($user);
+
+        $this->post(route('analytics.logout'))
+            ->assertRedirect(route('analytics.home'));
+
+        $this->assertGuest();
+    }
 }

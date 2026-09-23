@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Http\Controllers\Auth\PlatformSessionController;
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Deployer\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Modules\Deployer\Http\Controllers\Auth\ConfirmablePasswordController;
 use App\Modules\Deployer\Http\Controllers\Auth\EmailVerificationNotificationController;
@@ -10,9 +12,23 @@ use App\Modules\Deployer\Http\Controllers\Auth\RegisteredUserController;
 use App\Modules\Deployer\Http\Controllers\Auth\SocialAuthController;
 use App\Modules\Deployer\Http\Controllers\Auth\TwoFactorChallengeController;
 use App\Modules\Deployer\Http\Controllers\Auth\VerifyEmailController;
+use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
+use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('guest')->group(function (): void {
+$deployerAuthentication = app(ProductAuthentication::class);
+$guestMiddleware = $deployerAuthentication->guestMiddleware('deployer');
+$authenticatedMiddleware = [
+    ...$deployerAuthentication->authenticatedMiddleware('deployer'),
+    EnsureCurrentOrganization::class,
+    EnforceOrganizationSecurity::class,
+];
+$logoutAction = $deployerAuthentication->usesCoreAuthority('deployer')
+    ? [PlatformSessionController::class, 'destroy']
+    : [AuthenticatedSessionController::class, 'destroy'];
+$socialCallbackMiddleware = $deployerAuthentication->usesCoreAuthority('deployer') ? $guestMiddleware : [];
+
+Route::middleware($guestMiddleware)->group(function (): void {
     Route::get('auth/social/redirect/{provider}', [SocialAuthController::class, 'redirect'])
         ->whereIn('provider', SocialAuthController::providers())
         ->name('social.login');
@@ -39,11 +55,11 @@ Route::middleware('guest')->group(function (): void {
         ->name('password.update');
 });
 
-Route::get('auth/social/callback/{provider}', [SocialAuthController::class, 'callback'])
+Route::middleware($socialCallbackMiddleware)->get('auth/social/callback/{provider}', [SocialAuthController::class, 'callback'])
     ->whereIn('provider', SocialAuthController::providers())
     ->name('social.callback');
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware($authenticatedMiddleware)->group(function () use ($logoutAction): void {
     Route::get('/verify-email', [EmailVerificationPromptController::class, '__invoke'])->name('verification.notice');
     Route::get('/verify-email/{id}/{hash}', [VerifyEmailController::class, '__invoke'])
         ->middleware(['signed', 'throttle:6,1'])
@@ -57,5 +73,5 @@ Route::middleware('auth')->group(function (): void {
         ->middleware('throttle:sensitive-account')
         ->name('password.confirm.store');
 
-    Route::post('/logout', [AuthenticatedSessionController::class, 'destroy'])->name('logout');
+    Route::post('/logout', $logoutAction)->name('logout');
 });

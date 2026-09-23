@@ -1,5 +1,7 @@
 <?php
 
+use App\Core\Http\Controllers\Auth\PlatformSessionController;
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Monitor\Http\Controllers\AlertDeliveryController;
 use App\Modules\Monitor\Http\Controllers\AlertDestinationController;
 use App\Modules\Monitor\Http\Controllers\AlertEscalationController;
@@ -42,7 +44,14 @@ use App\Modules\Monitor\Http\Controllers\WorkspaceInvitationController;
 use App\Modules\Monitor\Http\Controllers\WorkspaceMemberController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('guest')->group(function (): void {
+$monitorAuthentication = app(ProductAuthentication::class);
+$guestMiddleware = $monitorAuthentication->guestMiddleware('monitor');
+$authenticatedMiddleware = $monitorAuthentication->authenticatedMiddleware('monitor');
+$logoutAction = $monitorAuthentication->usesCoreAuthority('monitor')
+    ? [PlatformSessionController::class, 'destroy']
+    : [SessionController::class, 'destroy'];
+
+Route::middleware($guestMiddleware)->group(function (): void {
     Route::get('/login', [SessionController::class, 'create'])->name('login');
     Route::post('/login', [SessionController::class, 'store'])->middleware('throttle:monitor.login')->name('login.store');
     Route::get('/register', [RegistrationController::class, 'create'])->name('register');
@@ -55,8 +64,8 @@ Route::middleware('guest')->group(function (): void {
 
 Route::get('/status/{statusPage:slug}', [PublicStatusPageController::class, 'show'])->name('status-pages.public');
 
-Route::middleware(['auth', 'auth.session'])->group(function (): void {
-    Route::post('/logout', [SessionController::class, 'destroy'])->name('logout');
+Route::middleware([...$authenticatedMiddleware, 'auth.session'])->group(function () use ($logoutAction): void {
+    Route::post('/logout', $logoutAction)->name('logout');
     Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'update'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');
     Route::post('/email/verification-notification', [EmailVerificationController::class, 'store'])->middleware('throttle:monitor.account-email')->name('verification.send');

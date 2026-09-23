@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Deployer\Actions\Server\CollectServerLogAction;
 use App\Modules\Deployer\Http\Controllers\AccessRequestController;
 use App\Modules\Deployer\Http\Controllers\AccountDataController;
@@ -61,6 +62,8 @@ use App\Modules\Deployer\Http\Controllers\TwoFactorAuthenticationController;
 use App\Modules\Deployer\Http\Controllers\UsersController;
 use App\Modules\Deployer\Http\Controllers\WebsitesController;
 use App\Modules\Deployer\Http\Livewire\ServerShow;
+use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
+use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
 use App\Modules\Deployer\Http\Middleware\VerifyCsrfToken;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\WebsiteLogSnapshot;
@@ -104,7 +107,13 @@ Route::get('status/subscriptions/{subscription}/unsubscribe/{token}', [StatusSub
 
 Route::get('/', [PublicPageController::class, 'home']);
 
-Route::middleware('auth')->group(function () {
+$deployerAuthentication = app(ProductAuthentication::class);
+
+Route::middleware([
+    ...$deployerAuthentication->authenticatedMiddleware('deployer'),
+    EnsureCurrentOrganization::class,
+    EnforceOrganizationSecurity::class,
+])->group(function () {
     Route::get('organization', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::get('github-app/connect', [GitHubAppController::class, 'connect'])->name('github-app.connect');
     Route::get('github-app/callback', [GitHubAppController::class, 'callback'])->name('github-app.callback');

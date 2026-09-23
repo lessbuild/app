@@ -9,7 +9,7 @@
         workspace-switch-route="analytics.workspaces.select"
         workspace-manage-route="analytics.workspaces.index"
         :account-user="$accountUser"
-        logout-route="logout"
+        logout-route="analytics.logout"
         :show-notifications="false"
         :current-context="$currentAnalyticsSite"
         :context-options="$signalTopbar['contexts']"
