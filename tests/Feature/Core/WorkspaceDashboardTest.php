@@ -3,11 +3,15 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectProductSummaryProvider;
+use App\Core\Contracts\ProjectSetupProvider;
 use App\Core\Data\Projects\ProjectProductSnapshot;
 use App\Core\Data\Projects\ProjectProductSnapshotState;
+use App\Core\Data\Projects\ProjectSetupStep;
+use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Services\ProjectProductSummaryRegistry;
+use App\Core\Services\ProjectSetupRegistry;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -100,12 +104,34 @@ final class WorkspaceDashboardTest extends TestCase
                 public function summarize(PlatformUser $user, Project $project): ?ProjectProductSnapshot
                 {
                     $this->calls->products[] = $this->product.':'.$project->name;
+                    $needsAttention = $this->product === 'monitor' && $project->name === 'Checkout';
 
                     return new ProjectProductSnapshot(
                         title: str($this->product)->headline().' activity',
-                        detail: 'Fresh summary for '.$project->name,
-                        state: ProjectProductSnapshotState::Current,
+                        detail: $needsAttention ? '2 open incidents · 1 check down' : 'Fresh summary for '.$project->name,
+                        state: $needsAttention ? ProjectProductSnapshotState::Attention : ProjectProductSnapshotState::Current,
                     );
+                }
+            });
+        }
+
+        $setupRegistry = app(ProjectSetupRegistry::class);
+        foreach (['deployer', 'monitor', 'analytics'] as $product) {
+            $setupRegistry->register($product, new class($product) implements ProjectSetupProvider
+            {
+                public function __construct(private readonly string $product) {}
+
+                public function steps(PlatformUser $user, Project $project): array
+                {
+                    $needsAction = $this->product === 'deployer' && $project->name === 'Checkout';
+
+                    return [new ProjectSetupStep(
+                        id: $this->product.'.dashboard-test',
+                        product: $this->product,
+                        title: 'Finish '.$this->product.' setup',
+                        detail: 'Connect and verify '.$this->product.' for '.$project->name.'.',
+                        state: $needsAction ? ProjectSetupStepState::NeedsAction : ProjectSetupStepState::Complete,
+                    )];
                 }
             });
         }
@@ -232,6 +258,18 @@ final class WorkspaceDashboardTest extends TestCase
             'created_at' => now()->subDay(),
             'updated_at' => now(),
         ]);
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $visibleProjectId,
+            'source_resource_id' => $deployerResourceId,
+            'target_resource_id' => $monitorResourceId,
+            'capabilities' => json_encode(['deployment_context']),
+            'status' => 'failed',
+            'last_error_code' => 'product_access_changed',
+            'last_error_at' => now()->subMinutes(5),
+            'created_at' => now()->subDay(),
+            'updated_at' => now()->subMinutes(5),
+        ]);
 
         $response = $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
             ->get(route('core.workspace.dashboard', $this->workspaceId));
@@ -253,6 +291,12 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertSeeText('Analytics activity')
             ->assertSeeText('Fresh summary for Checkout')
             ->assertDontSeeText('Fresh summary for Private project')
+            ->assertSeeText('Workspace priorities')
+            ->assertSeeText('Repair an app connection')
+            ->assertSeeText('Access changed')
+            ->assertDontSeeText('product_access_changed')
+            ->assertSeeText('2 open incidents')
+            ->assertSeeText('Finish deployer setup')
             ->assertSeeText('Production → Production checks')
             ->assertDontSeeText('Private project')
             ->assertSeeText('Each app keeps its own plan and usage limits.');
@@ -263,6 +307,19 @@ final class WorkspaceDashboardTest extends TestCase
             'analytics:Docs portal',
         ], $summaryCalls->products);
 
+        DB::connection('core')->table('project_resources')
+            ->where('id', $monitorResourceId)
+            ->update(['status' => 'stale']);
+
+        $this->get(route('core.workspace.dashboard', $this->workspaceId))
+            ->assertOk()
+            ->assertDontSeeText('Production checks')
+            ->assertDontSeeText('Access changed');
+
+        DB::connection('core')->table('project_resources')
+            ->where('id', $monitorResourceId)
+            ->update(['status' => 'active']);
+
         DB::connection('core')->table('workspace_product_access')
             ->where('membership_id', $this->membershipId)
             ->where('product', 'monitor')
@@ -272,6 +329,8 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertOk()
             ->assertDontSeeText('Production checks')
             ->assertDontSeeText('Monitor activity')
+            ->assertDontSeeText('2 open incidents')
+            ->assertDontSeeText('Access changed')
             ->assertSeeText('0 workflows');
     }
 
@@ -596,6 +655,8 @@ final class WorkspaceDashboardTest extends TestCase
             $table->json('capabilities')->nullable();
             $table->string('status', 24);
             $table->timestamp('last_succeeded_at')->nullable();
+            $table->string('last_error_code', 120)->nullable();
+            $table->timestamp('last_error_at')->nullable();
             $table->timestamp('disconnected_at')->nullable();
             $table->timestamp('automation_paused_at')->nullable();
             $table->json('metadata')->nullable();

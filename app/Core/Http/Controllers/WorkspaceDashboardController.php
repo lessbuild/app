@@ -12,6 +12,8 @@ use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductSummaries;
+use App\Core\Services\Projects\WorkspaceDashboardPriorities;
+use App\Core\Services\ProjectSetup;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -26,6 +28,8 @@ final class WorkspaceDashboardController
         ResolvePlatformUser $platformUsers,
         WorkspaceProjectAccess $access,
         ProjectProductSummaries $productSummaries,
+        ProjectSetup $projectSetup,
+        WorkspaceDashboardPriorities $dashboardPriorities,
     ): View {
         $principal = $request->user();
         abort_unless($principal !== null, 401);
@@ -63,8 +67,14 @@ final class WorkspaceDashboardController
                     return;
                 }
 
-                $query->whereHas('sourceResource', fn (Builder $resource) => $resource->whereIn('product', $visibleProducts))
-                    ->whereHas('targetResource', fn (Builder $resource) => $resource->whereIn('product', $visibleProducts));
+                $query->whereHas('sourceResource', fn (Builder $resource) => $resource
+                    ->whereIn('product', $visibleProducts)
+                    ->where('status', 'active')
+                    ->whereColumn('project_id', 'project_connections.project_id'))
+                    ->whereHas('targetResource', fn (Builder $resource) => $resource
+                        ->whereIn('product', $visibleProducts)
+                        ->where('status', 'active')
+                        ->whereColumn('project_id', 'project_connections.project_id'));
             }])
             ->orderByDesc('updated_at')
             ->limit(6)
@@ -77,6 +87,16 @@ final class WorkspaceDashboardController
 
             return [
                 (string) $project->getKey() => $productSummaries->forProject($user, $project, $activeProducts),
+            ];
+        });
+        $projectSetupSteps = $projects->mapWithKeys(function (Project $project) use ($projectSetup, $user): array {
+            $activeProducts = $project->products
+                ->where('status', 'active')
+                ->pluck('product')
+                ->all();
+
+            return [
+                (string) $project->getKey() => $projectSetup->forProject($user, $project, $activeProducts),
             ];
         });
 
@@ -93,7 +113,15 @@ final class WorkspaceDashboardController
         $connections = ProjectConnection::query()
             ->where('status', '!=', 'disconnected')
             ->whereNull('disconnected_at')
-            ->whereHas('project', $projectScope);
+            ->whereHas('project', $projectScope)
+            ->whereHas('sourceResource', fn (Builder $resource) => $resource
+                ->whereIn('product', $visibleProducts)
+                ->where('status', 'active')
+                ->whereColumn('project_id', 'project_connections.project_id'))
+            ->whereHas('targetResource', fn (Builder $resource) => $resource
+                ->whereIn('product', $visibleProducts)
+                ->where('status', 'active')
+                ->whereColumn('project_id', 'project_connections.project_id'));
 
         if ($visibleProducts === []) {
             $connections->whereRaw('1 = 0');
@@ -108,6 +136,24 @@ final class WorkspaceDashboardController
             ->orderByDesc('updated_at')
             ->limit(5)
             ->get();
+        $failedConnections = (clone $connections)
+            ->where(fn (Builder $query) => $query->where('status', 'failed')->orWhereNotNull('last_error_code'))
+            ->with(['project', 'sourceResource', 'targetResource'])
+            ->orderByDesc('last_error_at')
+            ->orderByDesc('updated_at')
+            ->limit(10)
+            ->get();
+        $priorities = $projects
+            ->flatMap(fn (Project $project) => $dashboardPriorities->forProject(
+                $workspace,
+                $project,
+                $projectSummaries->get((string) $project->getKey(), collect()),
+                $projectSetupSteps->get((string) $project->getKey(), collect()),
+                $failedConnections->where('project_id', $project->getKey()),
+            ))
+            ->sortBy('rank')
+            ->take(8)
+            ->values();
 
         $canManageBilling = $access->canManageBilling($user, $workspace);
         $subscriptions = $canManageBilling
@@ -124,6 +170,7 @@ final class WorkspaceDashboardController
             'workspaces' => $this->workspacesFor($user),
             'projects' => $projects,
             'projectSummaries' => $projectSummaries,
+            'priorities' => $priorities,
             'projectCount' => $projectCount,
             'productGrants' => $productGrants,
             'activeProductCounts' => $activeProductCounts,

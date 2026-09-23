@@ -40,6 +40,28 @@
         <x-signal.ui.stat :label="__('Team members')" :value="$memberCount" :description="__('People with workspace membership')" />
     </dl>
 
+    <section aria-labelledby="workspace-priorities-title" class="mb-9">
+        <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <p class="ui-eyebrow">{{ __('Workspace priorities') }}</p>
+                <h2 id="workspace-priorities-title" class="mt-1 text-lg font-extrabold text-ink">{{ __('Needs attention') }}</h2>
+            </div>
+            <p class="text-xs text-muted">{{ __('Recent failures and unfinished setup from projects you can access.') }}</p>
+        </div>
+
+        @if ($priorities->isEmpty())
+            <x-signal.ui.card class="p-4 text-sm leading-6 text-muted">
+                {{ __('No attention items were reported for recent projects from the app data currently available.') }}
+            </x-signal.ui.card>
+        @else
+            <div class="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                @foreach ($priorities as $priority)
+                    <x-signal.ui.workspace-priority :priority="$priority" />
+                @endforeach
+            </div>
+        @endif
+    </section>
+
     <section aria-labelledby="workspace-products-title" class="mb-9">
         <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>

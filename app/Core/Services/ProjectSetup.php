@@ -7,8 +7,8 @@ use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use Illuminate\Database\LostConnectionException;
-use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
+use PDOException;
 
 final class ProjectSetup
 {
@@ -32,7 +32,7 @@ final class ProjectSetup
                 foreach ($provider->steps($user, $project) as $step) {
                     $steps->put($step->id, $step);
                 }
-            } catch (LostConnectionException|QueryException) {
+            } catch (LostConnectionException|PDOException) {
                 $steps->put($product.'.unavailable', new ProjectSetupStep(
                     id: $product.'.unavailable',
                     product: $product,
