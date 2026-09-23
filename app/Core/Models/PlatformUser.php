@@ -8,6 +8,9 @@ use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
  * Canonical account record stored in Core.
@@ -18,11 +21,13 @@ use Illuminate\Notifications\Notifiable;
  * @property string $id
  * @property string|null $email_normalized
  */
-class PlatformUser extends Authenticatable implements MustVerifyEmailContract
+class PlatformUser extends Authenticatable implements MustVerifyEmailContract, PasskeyUser
 {
     use HasUlids;
     use MustVerifyEmail;
     use Notifiable;
+    use PasskeyAuthenticatable;
+    use TwoFactorAuthenticatable;
 
     protected $connection = 'core';
 
@@ -59,8 +64,6 @@ class PlatformUser extends Authenticatable implements MustVerifyEmailContract
         return [
             'email_verified_at' => 'datetime',
             'password_set_at' => 'datetime',
-            'two_factor_secret' => 'encrypted',
-            'two_factor_recovery_codes' => 'array',
             'two_factor_confirmed_at' => 'datetime',
             'preferences' => 'array',
         ];
@@ -76,11 +79,5 @@ class PlatformUser extends Authenticatable implements MustVerifyEmailContract
     public function identities(): HasMany
     {
         return $this->hasMany(UserIdentity::class, 'user_id');
-    }
-
-    /** @return HasMany<Passkey, $this> */
-    public function passkeys(): HasMany
-    {
-        return $this->hasMany(Passkey::class, 'user_id');
     }
 }

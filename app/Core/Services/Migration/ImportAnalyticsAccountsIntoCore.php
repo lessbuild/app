@@ -1,39 +1,41 @@
 <?php
 
-namespace App\Modules\Deployer\Services\Migration;
+namespace App\Core\Services\Migration;
 
 use App\Core\Models\LegacyIdentityMap;
-use App\Core\Models\UserIdentity;
-use App\Core\Services\Migration\ReencryptLegacyValue;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use JsonException;
+use RuntimeException;
 
-final class ImportAccountsIntoCore
+final class ImportAnalyticsAccountsIntoCore
 {
-    private const SOCIAL_PROVIDERS = [
-        'github' => 'github_id',
-        'gitlab' => 'gitlab_id',
-        'bitbucket' => 'bitbucket_id',
-    ];
+    private const BATCH_KEY = 'analytics-account-import-v1';
 
     public function __construct(private readonly ReencryptLegacyValue $legacySecrets) {}
 
     /**
-     * Inspect Deployer accounts without changing either database.
+     * Inspect Analytics accounts and passkeys without changing either database.
      *
-     * @return array{accounts_seen:int,ready:int,already_mapped:int,needs_review:int,imported:int,review_records_created:int}
+     * @return array{accounts_seen:int,ready:int,already_mapped:int,needs_review:int,imported:int,review_records_created:int,passkeys_seen:int,passkeys_imported:int}
      */
     public function run(bool $apply = false): array
     {
-        $columns = Schema::connection('deployer')->getColumnListing('users');
-        $sourceAccounts = DB::connection('deployer')->table('users')->orderBy('id')->get();
+        if (! Schema::connection('analytics')->hasTable('users')) {
+            throw new RuntimeException('The Analytics users table is unavailable on the analytics connection.');
+        }
+
+        $columns = Schema::connection('analytics')->getColumnListing('users');
+        $sourceAccounts = DB::connection('analytics')->table('users')->orderBy('id')->get();
+        $sourceIds = $sourceAccounts->map(fn (object $account): string => (string) $account->id);
         $sourceEmailCounts = $sourceAccounts
             ->map(fn (object $account): ?string => $this->normalizeEmail($account->email ?? null))
             ->filter()
             ->countBy();
         $identityMaps = LegacyIdentityMap::query()
-            ->where('source_product', 'deployer')
+            ->where('source_product', 'analytics')
             ->where('source_entity', 'user')
             ->get()
             ->keyBy(fn (LegacyIdentityMap $map): string => (string) $map->source_id);
@@ -41,14 +43,27 @@ final class ImportAccountsIntoCore
             ->whereNotNull('email_normalized')
             ->pluck('email_normalized')
             ->mapWithKeys(fn ($email): array => [(string) $email => true]);
-        $linkedProviderIds = UserIdentity::query()
-            ->whereIn('provider', array_keys(self::SOCIAL_PROVIDERS))
-            ->get(['provider', 'provider_user_id'])
-            ->mapWithKeys(fn (UserIdentity $identity): array => [
-                $identity->provider.'|'.$identity->provider_user_id => true,
-            ]);
+
+        $sourcePasskeys = collect();
+        $coreCredentialIds = collect();
+
+        if (Schema::connection('analytics')->hasTable('passkeys')) {
+            if (! Schema::connection('core')->hasTable('passkeys')) {
+                throw new RuntimeException('Run the Core platform migration before importing Analytics passkeys.');
+            }
+
+            $sourcePasskeys = DB::connection('analytics')->table('passkeys')
+                ->whereIn('user_id', $sourceIds)
+                ->orderBy('id')
+                ->get()
+                ->groupBy(fn (object $passkey): string => (string) $passkey->user_id);
+            $coreCredentialIds = DB::connection('core')->table('passkeys')
+                ->pluck('credential_id')
+                ->mapWithKeys(fn ($credentialId): array => [(string) $credentialId => true]);
+        }
 
         $plan = [];
+
         foreach ($sourceAccounts as $account) {
             $sourceId = (string) $account->id;
             $mapping = $identityMaps->get($sourceId);
@@ -57,6 +72,9 @@ final class ImportAccountsIntoCore
                 $plan[] = [
                     'source_id' => $sourceId,
                     'account' => $account,
+                    'passkeys' => [],
+                    'core_two_factor_secret' => null,
+                    'core_two_factor_recovery_codes' => null,
                     'status' => 'already_mapped',
                     'reasons' => [],
                 ];
@@ -68,6 +86,9 @@ final class ImportAccountsIntoCore
                 $plan[] = [
                     'source_id' => $sourceId,
                     'account' => $account,
+                    'passkeys' => [],
+                    'core_two_factor_secret' => null,
+                    'core_two_factor_recovery_codes' => null,
                     'status' => 'needs_review',
                     'reasons' => ['existing_mapping_requires_review'],
                 ];
@@ -77,18 +98,29 @@ final class ImportAccountsIntoCore
 
             $reasons = [];
             $normalizedEmail = $this->normalizeEmail($account->email ?? null);
+
+            if ($normalizedEmail === null) {
+                $reasons[] = 'missing_email';
+            } elseif (($sourceEmailCounts[$normalizedEmail] ?? 0) > 1) {
+                $reasons[] = 'duplicate_source_email';
+            }
+
+            if ($normalizedEmail !== null && isset($coreEmails[$normalizedEmail])) {
+                $reasons[] = 'email_matches_existing_core_account';
+            }
+
             $legacyTwoFactorSecret = in_array('two_factor_secret', $columns, true)
                 ? ($account->two_factor_secret ?? null)
                 : null;
             $coreTwoFactorSecret = $this->legacySecrets->forCore(
-                'deployer',
+                'analytics',
                 $legacyTwoFactorSecret === null ? null : (string) $legacyTwoFactorSecret,
             );
             $legacyRecoveryCodes = in_array('two_factor_recovery_codes', $columns, true)
                 ? ($account->two_factor_recovery_codes ?? null)
                 : null;
             $coreRecoveryCodes = $this->legacySecrets->forCore(
-                'deployer',
+                'analytics',
                 $legacyRecoveryCodes === null ? null : (string) $legacyRecoveryCodes,
             );
 
@@ -100,26 +132,45 @@ final class ImportAccountsIntoCore
                 $reasons[] = 'two_factor_recovery_codes_require_source_app_key';
             }
 
-            if ($normalizedEmail !== null && ($sourceEmailCounts[$normalizedEmail] ?? 0) > 1) {
-                $reasons[] = 'duplicate_source_email';
-            }
+            $passkeyPayloads = [];
+            foreach ($sourcePasskeys->get($sourceId, collect()) as $passkey) {
+                $credentialId = trim((string) ($passkey->credential_id ?? ''));
 
-            if ($normalizedEmail !== null && isset($coreEmails[$normalizedEmail])) {
-                $reasons[] = 'email_matches_existing_core_account';
-            }
+                if ($credentialId === '' || isset($coreCredentialIds[$credentialId])) {
+                    $reasons[] = $credentialId === '' ? 'passkey_missing_credential_id' : 'passkey_credential_already_linked';
 
-            foreach (self::SOCIAL_PROVIDERS as $provider => $column) {
-                $providerUserId = $account->{$column} ?? null;
-
-                if (is_string($providerUserId) && trim($providerUserId) !== ''
-                    && isset($linkedProviderIds[$provider.'|'.$providerUserId])) {
-                    $reasons[] = 'social_identity_already_linked';
+                    continue;
                 }
+
+                try {
+                    $credential = json_decode((string) $passkey->credential, true, 512, JSON_THROW_ON_ERROR);
+                } catch (JsonException) {
+                    $reasons[] = 'passkey_credential_invalid';
+
+                    continue;
+                }
+
+                if (! is_array($credential)) {
+                    $reasons[] = 'passkey_credential_invalid';
+
+                    continue;
+                }
+
+                $passkeyPayloads[] = [
+                    'source_id' => (string) $passkey->id,
+                    'name' => (string) $passkey->name,
+                    'credential_id' => $credentialId,
+                    'credential' => json_encode($credential, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES),
+                    'last_used_at' => $passkey->last_used_at ?? null,
+                    'created_at' => $passkey->created_at ?? now(),
+                    'updated_at' => $passkey->updated_at ?? now(),
+                ];
             }
 
             $plan[] = [
                 'source_id' => $sourceId,
                 'account' => $account,
+                'passkeys' => $passkeyPayloads,
                 'core_two_factor_secret' => $coreTwoFactorSecret,
                 'core_two_factor_recovery_codes' => $coreRecoveryCodes,
                 'status' => $reasons === [] ? 'ready' : 'needs_review',
@@ -134,6 +185,8 @@ final class ImportAccountsIntoCore
             'needs_review' => count(array_filter($plan, fn (array $item): bool => $item['status'] === 'needs_review')),
             'imported' => 0,
             'review_records_created' => 0,
+            'passkeys_seen' => $sourcePasskeys->sum(fn (Collection $passkeys): int => $passkeys->count()),
+            'passkeys_imported' => 0,
         ];
 
         if (! $apply) {
@@ -144,11 +197,12 @@ final class ImportAccountsIntoCore
             if ($item['status'] === 'ready'
                 && $this->importAccount(
                     $item['account'],
-                    $columns,
                     $item['core_two_factor_secret'],
                     $item['core_two_factor_recovery_codes'],
+                    $item['passkeys'],
                 )) {
                 $report['imported']++;
+                $report['passkeys_imported'] += count($item['passkeys']);
             } elseif ($item['status'] === 'needs_review'
                 && $this->recordReview($item['source_id'], $item['reasons'])) {
                 $report['review_records_created']++;
@@ -158,17 +212,18 @@ final class ImportAccountsIntoCore
         return $report;
     }
 
+    /** @param list<array<string, mixed>> $passkeys */
     private function importAccount(
         object $source,
-        array $columns,
         ?string $coreTwoFactorSecret,
         ?string $coreRecoveryCodes,
+        array $passkeys,
     ): bool {
         $sourceId = (string) $source->id;
 
-        return DB::connection('core')->transaction(function () use ($source, $sourceId, $columns, $coreTwoFactorSecret, $coreRecoveryCodes): bool {
+        return DB::connection('core')->transaction(function () use ($source, $sourceId, $coreTwoFactorSecret, $coreRecoveryCodes, $passkeys): bool {
             $existingMap = LegacyIdentityMap::query()
-                ->where('source_product', 'deployer')
+                ->where('source_product', 'analytics')
                 ->where('source_entity', 'user')
                 ->where('source_id', $sourceId)
                 ->lockForUpdate()
@@ -180,18 +235,16 @@ final class ImportAccountsIntoCore
 
             $normalizedEmail = $this->normalizeEmail($source->email ?? null);
 
-            if ($normalizedEmail !== null && DB::connection('core')->table('users')
+            if ($normalizedEmail === null || DB::connection('core')->table('users')
                 ->where('email_normalized', $normalizedEmail)->exists()) {
-                return $this->recordReviewInsideTransaction($sourceId, ['email_matches_existing_core_account']);
+                return $this->recordReviewInsideTransaction($sourceId, [
+                    $normalizedEmail === null ? 'missing_email' : 'email_matches_existing_core_account',
+                ]);
             }
 
-            $socialIdentities = $this->socialIdentities($source, $columns);
-            foreach ($socialIdentities as $identity) {
-                if (UserIdentity::query()
-                    ->where('provider', $identity['provider'])
-                    ->where('provider_user_id', $identity['provider_user_id'])
-                    ->exists()) {
-                    return $this->recordReviewInsideTransaction($sourceId, ['social_identity_already_linked']);
+            foreach ($passkeys as $passkey) {
+                if (DB::connection('core')->table('passkeys')->where('credential_id', $passkey['credential_id'])->exists()) {
+                    return $this->recordReviewInsideTransaction($sourceId, ['passkey_credential_already_linked']);
                 }
             }
 
@@ -204,12 +257,12 @@ final class ImportAccountsIntoCore
                 'email_normalized' => $normalizedEmail,
                 'email_verified_at' => $source->email_verified_at ?? null,
                 'password' => $source->password ?? null,
-                'password_set_at' => $source->password_set_at ?? null,
-                'auth_type' => $source->auth_type ?? null,
+                'password_set_at' => null,
+                'auth_type' => null,
                 'two_factor_secret' => $coreTwoFactorSecret,
                 'two_factor_recovery_codes' => $coreRecoveryCodes,
                 'two_factor_confirmed_at' => $source->two_factor_confirmed_at ?? null,
-                'preferences' => $source->preferences ?? null,
+                'preferences' => null,
                 'status' => 'active',
                 'created_at' => $source->created_at ?? $now,
                 'updated_at' => $source->updated_at ?? $now,
@@ -217,15 +270,30 @@ final class ImportAccountsIntoCore
 
             DB::connection('core')->table('users')->insert($attributes);
 
-            foreach ($socialIdentities as $identity) {
-                UserIdentity::query()->create([
+            foreach ($passkeys as $passkey) {
+                $passkeyId = (string) Str::ulid();
+                DB::connection('core')->table('passkeys')->insert([
+                    'id' => $passkeyId,
                     'user_id' => $canonicalId,
-                    'provider' => $identity['provider'],
-                    'provider_user_id' => $identity['provider_user_id'],
-                    'provider_email' => $source->email ?? null,
-                    'verified_at' => $source->email_verified_at ?? null,
-                    'status' => 'active',
-                    'metadata' => ['migrated_from' => 'deployer'],
+                    'name' => $passkey['name'],
+                    'credential_id' => $passkey['credential_id'],
+                    'credential' => $passkey['credential'],
+                    'last_used_at' => $passkey['last_used_at'],
+                    'created_at' => $passkey['created_at'],
+                    'updated_at' => $passkey['updated_at'],
+                ]);
+
+                LegacyIdentityMap::query()->create([
+                    'source_product' => 'analytics',
+                    'source_entity' => 'passkey',
+                    'source_id' => (string) $passkey['source_id'],
+                    'canonical_entity' => 'passkey',
+                    'canonical_id' => $passkeyId,
+                    'status' => 'reconciled',
+                    'batch_key' => self::BATCH_KEY,
+                    'metadata' => ['source_user_id' => $sourceId],
+                    'imported_at' => $now,
+                    'reconciled_at' => $now,
                 ]);
             }
 
@@ -233,7 +301,7 @@ final class ImportAccountsIntoCore
                 'canonical_entity' => 'user',
                 'canonical_id' => $canonicalId,
                 'status' => 'reconciled',
-                'batch_key' => 'deployer-account-import-v1',
+                'batch_key' => self::BATCH_KEY,
                 'reconciliation_notes' => 'Imported as a distinct Core account after eligibility recheck; no email-based account merging was performed.',
                 'metadata' => $this->reconciledMetadata($existingMap),
                 'imported_at' => $now,
@@ -244,7 +312,7 @@ final class ImportAccountsIntoCore
                 $existingMap->fill($mapAttributes)->save();
             } else {
                 LegacyIdentityMap::query()->create([
-                    'source_product' => 'deployer',
+                    'source_product' => 'analytics',
                     'source_entity' => 'user',
                     'source_id' => $sourceId,
                     ...$mapAttributes,
@@ -269,7 +337,7 @@ final class ImportAccountsIntoCore
             unset($metadata['reason_codes']);
         }
 
-        $metadata['imported_by'] = 'platform:import-deployer-identities';
+        $metadata['imported_by'] = 'platform:import-analytics-identities';
 
         return $metadata;
     }
@@ -286,7 +354,7 @@ final class ImportAccountsIntoCore
     private function recordReviewInsideTransaction(string $sourceId, array $reasons): bool
     {
         $existingMap = LegacyIdentityMap::query()
-            ->where('source_product', 'deployer')
+            ->where('source_product', 'analytics')
             ->where('source_entity', 'user')
             ->where('source_id', $sourceId)
             ->lockForUpdate()
@@ -305,42 +373,20 @@ final class ImportAccountsIntoCore
             return false;
         }
 
-        $now = now();
-
         LegacyIdentityMap::query()->create([
-            'source_product' => 'deployer',
+            'source_product' => 'analytics',
             'source_entity' => 'user',
             'source_id' => $sourceId,
             'canonical_entity' => 'user',
             'canonical_id' => null,
             'status' => 'needs_review',
-            'batch_key' => 'deployer-account-import-v1',
+            'batch_key' => self::BATCH_KEY,
             'reconciliation_notes' => implode('; ', $reasons),
             'metadata' => ['reason_codes' => $reasons],
-            'imported_at' => $now,
+            'imported_at' => now(),
         ]);
 
         return true;
-    }
-
-    /** @return list<array{provider:string,provider_user_id:string}> */
-    private function socialIdentities(object $source, array $columns): array
-    {
-        $identities = [];
-
-        foreach (self::SOCIAL_PROVIDERS as $provider => $column) {
-            if (! in_array($column, $columns, true)) {
-                continue;
-            }
-
-            $providerUserId = trim((string) ($source->{$column} ?? ''));
-
-            if ($providerUserId !== '') {
-                $identities[] = ['provider' => $provider, 'provider_user_id' => $providerUserId];
-            }
-        }
-
-        return $identities;
     }
 
     private function normalizeEmail(?string $email): ?string

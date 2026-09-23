@@ -2,10 +2,19 @@
 
 namespace App\Core\Providers;
 
+use App\Core\Models\Passkey;
+use App\Core\Models\PlatformUser;
 use Illuminate\Support\Facades\Route;
+use Laravel\Passkeys\Passkeys;
 
 final class CoreServiceProvider extends ModuleServiceProvider
 {
+    public function register(): void
+    {
+        Passkeys::useUserModel(PlatformUser::class);
+        Passkeys::usePasskeyModel(Passkey::class);
+    }
+
     public function boot(): void
     {
         parent::boot();

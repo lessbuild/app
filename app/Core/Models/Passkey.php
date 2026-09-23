@@ -2,11 +2,19 @@
 
 namespace App\Core\Models;
 
-use App\Core\Database\CoreModel;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Passkey extends CoreModel
+class Passkey extends \Laravel\Passkeys\Passkey
 {
+    use HasUlids;
+
+    protected $connection = 'core';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'user_id',
         'name',

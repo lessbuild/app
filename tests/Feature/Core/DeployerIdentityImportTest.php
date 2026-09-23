@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Core;
 
-use App\Modules\Deployer\Services\Migration\ImportAccountsIntoCore;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Modules\Deployer\Models\User as DeployerUser;
+use App\Modules\Deployer\Services\Migration\ImportAccountsIntoCore;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Encryption\Encrypter;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -53,6 +55,7 @@ final class DeployerIdentityImportTest extends TestCase
             '$2y$legacy-hash',
             githubId: 'github-user-10',
             twoFactorSecret: 'legacy-encrypted-secret',
+            recoveryCodes: '["recovery-one","recovery-two"]',
         );
 
         $service = app(ImportAccountsIntoCore::class);
@@ -63,8 +66,15 @@ final class DeployerIdentityImportTest extends TestCase
         $this->assertDatabaseHas('users', [
             'email_normalized' => 'owner@example.test',
             'password' => '$2y$legacy-hash',
-            'two_factor_secret' => 'legacy-encrypted-secret',
         ], 'core');
+        $storedTwoFactorSecret = DB::connection('core')->table('users')
+            ->where('email_normalized', 'owner@example.test')
+            ->value('two_factor_secret');
+        $this->assertSame('legacy-encrypted-secret', Crypt::decrypt($storedTwoFactorSecret));
+        $storedRecoveryCodes = DB::connection('core')->table('users')
+            ->where('email_normalized', 'owner@example.test')
+            ->value('two_factor_recovery_codes');
+        $this->assertSame('["recovery-one","recovery-two"]', Crypt::decrypt($storedRecoveryCodes));
         $this->assertDatabaseHas('user_identities', [
             'provider' => 'github',
             'provider_user_id' => 'github-user-10',
@@ -112,6 +122,82 @@ final class DeployerIdentityImportTest extends TestCase
             'status' => 'needs_review',
             'canonical_id' => null,
         ], 'core');
+    }
+
+    public function test_encrypted_deployer_two_factor_secret_is_reencrypted_with_the_core_key(): void
+    {
+        $legacyKey = str_repeat('d', 32);
+        $legacyCipher = new Encrypter($legacyKey, 'AES-256-CBC');
+        config([
+            'migration.source_app_keys.deployer' => 'base64:'.base64_encode($legacyKey),
+            'migration.source_ciphers.deployer' => 'AES-256-CBC',
+        ]);
+        $this->addDeployerUser(
+            30,
+            'Protected owner',
+            'protected@example.test',
+            '$2y$legacy-hash',
+            twoFactorSecret: $legacyCipher->encryptString('legacy-two-factor-secret'),
+        );
+
+        $report = app(ImportAccountsIntoCore::class)->run(apply: true);
+        $stored = DB::connection('core')->table('users')
+            ->where('email_normalized', 'protected@example.test')
+            ->value('two_factor_secret');
+
+        $this->assertSame(1, $report['imported']);
+        $this->assertSame('legacy-two-factor-secret', Crypt::decrypt($stored));
+        $this->assertDatabaseHas('legacy_identity_maps', [
+            'source_product' => 'deployer',
+            'source_entity' => 'user',
+            'source_id' => '30',
+            'status' => 'reconciled',
+        ], 'core');
+    }
+
+    public function test_encrypted_two_factor_secret_without_its_source_key_is_held_for_review(): void
+    {
+        config(['migration.source_app_keys.deployer' => null]);
+        $legacyKey = str_repeat('e', 32);
+        $legacyCipher = new Encrypter($legacyKey, 'AES-256-CBC');
+        $this->addDeployerUser(
+            31,
+            'Protected owner',
+            'protected@example.test',
+            '$2y$legacy-hash',
+            twoFactorSecret: $legacyCipher->encryptString('legacy-two-factor-secret'),
+        );
+
+        $report = app(ImportAccountsIntoCore::class)->run(apply: true);
+
+        $this->assertSame(1, $report['needs_review']);
+        $this->assertSame(0, $report['imported']);
+        $this->assertDatabaseHas('legacy_identity_maps', [
+            'source_product' => 'deployer',
+            'source_entity' => 'user',
+            'source_id' => '31',
+            'status' => 'needs_review',
+            'reconciliation_notes' => 'two_factor_secret_requires_source_app_key',
+        ], 'core');
+        $this->assertDatabaseCount('users', 0, 'core');
+
+        config(['migration.source_app_keys.deployer' => 'base64:'.base64_encode($legacyKey)]);
+        $retryReport = app(ImportAccountsIntoCore::class)->run(apply: true);
+
+        $this->assertSame(1, $retryReport['imported']);
+        $this->assertSame(0, $retryReport['needs_review']);
+        $this->assertDatabaseHas('legacy_identity_maps', [
+            'source_product' => 'deployer',
+            'source_entity' => 'user',
+            'source_id' => '31',
+            'status' => 'reconciled',
+        ], 'core');
+        $mapping = DB::connection('core')->table('legacy_identity_maps')
+            ->where('source_product', 'deployer')->where('source_id', '31')->first();
+        $this->assertContains(
+            'two_factor_secret_requires_source_app_key',
+            json_decode($mapping->metadata, true, 512, JSON_THROW_ON_ERROR)['review_history'][0]['reason_codes'],
+        );
     }
 
     private function createCoreTables(): void
@@ -192,6 +278,7 @@ final class DeployerIdentityImportTest extends TestCase
         string $password,
         ?string $githubId = null,
         ?string $twoFactorSecret = null,
+        ?string $recoveryCodes = null,
     ): void {
         DB::connection('deployer')->table('users')->insert([
             'id' => $id,
@@ -201,6 +288,7 @@ final class DeployerIdentityImportTest extends TestCase
             'github_id' => $githubId,
             'email_verified_at' => now(),
             'two_factor_secret' => $twoFactorSecret,
+            'two_factor_recovery_codes' => $recoveryCodes,
             'created_at' => now(),
             'updated_at' => now(),
         ]);

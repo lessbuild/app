@@ -1,9 +1,9 @@
 <?php
 
+use App\Modules\Analytics\Models\User;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
-use Laravel\Passkeys\Passkeys;
 
 return new class extends Migration
 {
@@ -14,7 +14,10 @@ return new class extends Migration
     {
         Schema::connection('analytics')->create('passkeys', function (Blueprint $table) {
             $table->id();
-            $table->foreignIdFor(Passkeys::userModel(), 'user_id')->constrained()->cascadeOnDelete();
+            // This migration belongs to Analytics' legacy database. Keep its
+            // foreign key pointed at that module's user projection even though
+            // Passkeys is configured for the Core identity model at runtime.
+            $table->foreignIdFor(User::class, 'user_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->string('credential_id')->unique();
             $table->json('credential');
