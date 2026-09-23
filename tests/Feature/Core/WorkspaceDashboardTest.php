@@ -769,6 +769,128 @@ final class WorkspaceDashboardTest extends TestCase
         $this->assertSame(0, substr_count($invalidResponse->getContent(), 'aria-label="Project pin options"'));
     }
 
+    public function test_saved_views_can_filter_by_an_accessible_mapped_environment_and_fail_closed_after_access_changes(): void
+    {
+        $mappedProjectId = $this->createVisibleProject('Production storefront');
+        $unmappedProjectId = $this->createVisibleProject('Staging storefront');
+        $environmentId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_product_access')->insert([
+            'id' => (string) Str::ulid(),
+            'membership_id' => $this->membershipId,
+            'product' => 'monitor',
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_products')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $mappedProjectId,
+            'product' => 'monitor',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_environments')->insert([
+            'id' => $environmentId,
+            'project_id' => $mappedProjectId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Production',
+            'slug' => 'production',
+            'environment_type' => 'production',
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_resources')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $mappedProjectId,
+            'environment_id' => $environmentId,
+            'product' => 'monitor',
+            'resource_type' => 'environment',
+            'resource_id' => 'monitor-environment-41',
+            'name' => 'Production environment',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->post(route('core.workspace.views.store', $this->workspaceId), [
+                'name' => 'Production only',
+                'visibility' => 'personal',
+                'product' => 'all',
+                'pinned_only' => '0',
+                'environment' => $environmentId,
+            ])
+            ->assertRedirect();
+
+        $view = DB::connection('core')->table('workspace_dashboard_views')->where('name', 'Production only')->first();
+        $this->assertNotNull($view);
+        $this->assertSame($environmentId, json_decode($view->filters, true, flags: JSON_THROW_ON_ERROR)['environment']);
+
+        $filteredResponse = $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]));
+        $filteredResponse
+            ->assertOk()
+            ->assertSeeText('Production storefront')
+            ->assertSeeText('Production only');
+        $filteredProjects = Str::between(
+            $filteredResponse->getContent(),
+            '<section aria-labelledby="recent-projects-title">',
+            '<section aria-labelledby="workspace-connections-title">',
+        );
+        $this->assertStringContainsString('Production storefront', $filteredProjects);
+        $this->assertStringNotContainsString('Staging storefront', $filteredProjects);
+
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'monitor')
+            ->update(['revoked_at' => now()]);
+
+        $unavailableResponse = $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]));
+        $unavailableResponse
+            ->assertOk()
+            ->assertSeeText('This saved view has an unavailable or invalid filter')
+            ->assertSeeText('No projects match this view');
+        $unavailableProjects = Str::between(
+            $unavailableResponse->getContent(),
+            '<section aria-labelledby="recent-projects-title">',
+            '<section aria-labelledby="workspace-connections-title">',
+        );
+        $this->assertStringNotContainsString('Production storefront', $unavailableProjects);
+        $this->assertStringNotContainsString('Staging storefront', $unavailableProjects);
+    }
+
+    public function test_saved_view_rejects_an_environment_outside_the_members_accessible_mappings(): void
+    {
+        $projectId = $this->createVisibleProject('Visible project');
+        $environmentId = (string) Str::ulid();
+        DB::connection('core')->table('project_environments')->insert([
+            'id' => $environmentId,
+            'project_id' => $projectId,
+            'name' => 'Unmapped environment',
+            'slug' => 'unmapped-environment',
+            'environment_type' => 'staging',
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->post(route('core.workspace.views.store', $this->workspaceId), [
+                'name' => 'Unmapped environment',
+                'visibility' => 'personal',
+                'product' => 'all',
+                'pinned_only' => '0',
+                'environment' => $environmentId,
+            ])
+            ->assertSessionHasErrors('environment');
+
+        $this->assertDatabaseMissing('workspace_dashboard_views', ['name' => 'Unmapped environment'], 'core');
+    }
+
     public function test_shared_pinned_only_views_use_workspace_pins_not_personal_pins(): void
     {
         $workspacePinnedId = (string) Str::ulid();

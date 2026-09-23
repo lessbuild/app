@@ -64,7 +64,7 @@
                 <x-slot:trigger>{{ __('Save a view') }}</x-slot:trigger>
                 <x-signal.ui.card class="p-4 sm:p-5">
                     <h3 class="mb-4 text-base font-extrabold text-ink">{{ __('Create a saved view') }}</h3>
-                    <x-signal.ui.workspace-view-form :workspace="$workspace" :can-share="$canManageWorkspace" :return-view="$selectedView?->getKey() ?? 'all'" />
+                    <x-signal.ui.workspace-view-form :workspace="$workspace" :environments="$environmentOptions" :can-share="$canManageWorkspace" :return-view="$selectedView?->getKey() ?? 'all'" />
                 </x-signal.ui.card>
             </x-signal.ui.menu>
 
@@ -84,6 +84,15 @@
                                         <p class="text-sm font-extrabold text-ink">{{ $savedView->name }}</p>
                                         <p class="text-xs text-muted">
                                             {{ __(':product · :pins', ['product' => str($savedView->filters['product'] ?? 'all')->headline(), 'pins' => ($savedView->filters['pinned_only'] ?? false) ? __('pinned projects only') : __('all visible projects')]) }}
+                                            @php
+                                                $savedEnvironmentId = $savedView->filters['environment'] ?? 'all';
+                                                $savedEnvironment = is_string($savedEnvironmentId) && $savedEnvironmentId !== 'all'
+                                                    ? $environmentOptions->first(fn ($environment) => (string) $environment->getKey() === $savedEnvironmentId)
+                                                    : null;
+                                            @endphp
+                                            @if ($savedEnvironmentId !== 'all')
+                                                · {{ $savedEnvironment ? $savedEnvironment->project?->name.' / '.$savedEnvironment->name : __('environment unavailable') }}
+                                            @endif
                                             @if (is_string($savedView->filters['project_name'] ?? null) && filled($savedView->filters['project_name']))
                                                 · {{ __('name contains “:name”', ['name' => $savedView->filters['project_name']]) }}
                                             @endif
@@ -94,7 +103,7 @@
                                             <x-signal.ui.menu align="right" trigger-class="ui-btn ui-btn-ghost ui-btn-sm items-center" panel-class="w-[min(34rem,calc(100vw-2rem))] p-0" data-signal-menu>
                                                 <x-slot:trigger>{{ __('Edit') }}</x-slot:trigger>
                                                 <x-signal.ui.card class="p-4 sm:p-5">
-                                                    <x-signal.ui.workspace-view-form :workspace="$workspace" :view="$savedView" :can-share="$canManageWorkspace" :return-view="$selectedView?->getKey() ?? 'all'" />
+                                                <x-signal.ui.workspace-view-form :workspace="$workspace" :view="$savedView" :environments="$environmentOptions" :can-share="$canManageWorkspace" :return-view="$selectedView?->getKey() ?? 'all'" />
                                                 </x-signal.ui.card>
                                             </x-signal.ui.menu>
                                             <form method="POST" action="{{ route('core.workspace.views.destroy', [$workspace, $savedView]) }}">

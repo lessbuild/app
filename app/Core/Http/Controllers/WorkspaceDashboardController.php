@@ -15,6 +15,7 @@ use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Models\WorkspaceProjectPin;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductSummaries;
+use App\Core\Services\Projects\WorkspaceDashboardEnvironmentFilters;
 use App\Core\Services\Projects\WorkspaceDashboardPriorities;
 use App\Core\Services\ProjectSetup;
 use App\Core\Services\Search\WorkspaceSearchPattern;
@@ -22,6 +23,7 @@ use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 final class WorkspaceDashboardController
@@ -34,6 +36,7 @@ final class WorkspaceDashboardController
         ProjectProductSummaries $productSummaries,
         ProjectSetup $projectSetup,
         WorkspaceDashboardPriorities $dashboardPriorities,
+        WorkspaceDashboardEnvironmentFilters $environmentFilters,
     ): View {
         $principal = $request->user();
         abort_unless($principal !== null, 401);
@@ -88,11 +91,24 @@ final class WorkspaceDashboardController
         $viewFilters = $selectedView?->filters ?? [];
         $viewProduct = $viewFilters['product'] ?? 'all';
         $validViewProduct = is_string($viewProduct) && in_array($viewProduct, ['all', 'deployer', 'monitor', 'analytics'], true);
+        $viewEnvironment = $viewFilters['environment'] ?? 'all';
+        $validViewEnvironment = is_string($viewEnvironment)
+            && ($viewEnvironment === 'all' || Str::isUlid($viewEnvironment));
+        $viewEnvironmentAvailable = $viewEnvironment === 'all'
+            || ($validViewEnvironment && $environmentFilters->isAvailableFor($workspace, $user, $membership, $viewEnvironment));
+        $environmentOptions = $environmentFilters->availableFor(
+            $workspace,
+            $user,
+            $membership,
+            is_string($viewEnvironment) && $viewEnvironment !== 'all' ? $viewEnvironment : null,
+        );
         $viewProjectName = $viewFilters['project_name'] ?? '';
         $validViewProjectName = is_string($viewProjectName) && mb_strlen($viewProjectName) <= 80;
         $viewProjectName = $validViewProjectName ? trim($viewProjectName) : '';
         $selectedViewUnavailable = $selectedView !== null
             && (! $validViewProduct
+                || ! $validViewEnvironment
+                || ! $viewEnvironmentAvailable
                 || ! $validViewProjectName
                 || ($viewProduct !== 'all' && ! in_array($viewProduct, $visibleProducts, true)));
         $pinnedOnly = (bool) ($viewFilters['pinned_only'] ?? false);
@@ -108,15 +124,24 @@ final class WorkspaceDashboardController
             ->when($selectedView?->visibility !== 'workspace', fn (Builder $query) => $query->where('owner_user_id', $user->getKey()));
 
         $projectCount = $this->visibleProjects(Project::query(), $workspace, $user)->count();
-        $projectList = function () use ($workspace, $user, $visibleProducts, $viewProduct, $validViewProduct, $viewProjectName, $selectedViewUnavailable, $pinnedOnly, $viewScopePins): Builder {
+        $projectList = function () use ($workspace, $user, $visibleProducts, $viewProduct, $validViewProduct, $viewEnvironment, $validViewEnvironment, $viewProjectName, $selectedViewUnavailable, $pinnedOnly, $viewScopePins): Builder {
             $query = $this->visibleProjects(Project::query(), $workspace, $user);
 
-            if ($selectedViewUnavailable || ! $validViewProduct) {
+            if ($selectedViewUnavailable || ! $validViewProduct || ! $validViewEnvironment) {
                 $query->whereRaw('1 = 0');
             } elseif ($viewProduct !== 'all') {
                 $query->whereHas('products', fn (Builder $product) => $product
                     ->where('product', $viewProduct)
                     ->where('status', 'active'));
+            }
+
+            if ($validViewEnvironment && $viewEnvironment !== 'all') {
+                $query->whereHas('environments', fn (Builder $environment) => $environment
+                    ->whereKey($viewEnvironment)
+                    ->where('status', 'active')
+                    ->whereHas('resources', fn (Builder $resource) => $resource
+                        ->whereIn('product', $visibleProducts)
+                        ->where('status', 'active')));
             }
 
             if ($viewProjectName !== '') {
@@ -291,6 +316,7 @@ final class WorkspaceDashboardController
                 ->currentlyActive()
                 ->count(),
             'subscriptions' => $subscriptions,
+            'environmentOptions' => $environmentOptions,
             'canManageBilling' => $canManageBilling,
             'canCreateProjects' => $access->canManageWorkspace($user, $workspace),
             'canManageWorkspace' => $access->canManageWorkspace($user, $workspace),

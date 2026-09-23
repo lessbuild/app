@@ -10,6 +10,7 @@ use App\Core\Models\WorkspaceDashboardView;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProjectPin;
 use App\Core\Services\Identity\ResolvePlatformUser;
+use App\Core\Services\Projects\WorkspaceDashboardEnvironmentFilters;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ final class WorkspaceDashboardPreferencesController
         Workspace $workspace,
         ResolvePlatformUser $platformUsers,
         WorkspaceProjectAccess $access,
+        WorkspaceDashboardEnvironmentFilters $environmentFilters,
     ): RedirectResponse {
         $user = $this->platformUser($request, $platformUsers);
         $membership = $access->activeMembership($user, $workspace);
@@ -29,6 +31,7 @@ final class WorkspaceDashboardPreferencesController
 
         $data = $request->validated();
         $this->authorizeVisibility($data['visibility'], $user, $workspace, $membership, $access);
+        $this->assertAccessibleEnvironment($data, $workspace, $user, $membership, $environmentFilters);
 
         $scopeKey = $this->scopeKey($data['visibility'], $user);
         $this->assertUniqueName($workspace, $scopeKey, $data['name']);
@@ -53,6 +56,7 @@ final class WorkspaceDashboardPreferencesController
         WorkspaceDashboardView $view,
         ResolvePlatformUser $platformUsers,
         WorkspaceProjectAccess $access,
+        WorkspaceDashboardEnvironmentFilters $environmentFilters,
     ): RedirectResponse {
         abort_unless($view->workspace_id === $workspace->getKey(), 404);
 
@@ -63,6 +67,7 @@ final class WorkspaceDashboardPreferencesController
 
         $data = $request->validated();
         $this->authorizeVisibility($data['visibility'], $user, $workspace, $membership, $access);
+        $this->assertAccessibleEnvironment($data, $workspace, $user, $membership, $environmentFilters);
 
         $scopeKey = $this->scopeKey($data['visibility'], $user);
         $this->assertUniqueName($workspace, $scopeKey, $data['name'], $view);
@@ -191,13 +196,37 @@ final class WorkspaceDashboardPreferencesController
         abort_unless($access->canManageWorkspace($user, $workspace), 403);
     }
 
-    /** @return array{product:string,pinned_only:bool,project_name:string} */
+    /** @param array<string, mixed> $data */
+    private function assertAccessibleEnvironment(
+        array $data,
+        Workspace $workspace,
+        PlatformUser $user,
+        WorkspaceMembership $membership,
+        WorkspaceDashboardEnvironmentFilters $environmentFilters,
+    ): void {
+        $environmentId = $data['environment'] ?? 'all';
+
+        if ($environmentId === 'all') {
+            return;
+        }
+
+        if (! $environmentFilters->isAvailableFor($workspace, $user, $membership, $environmentId)) {
+            throw ValidationException::withMessages([
+                'environment' => __('Choose an active environment connected to a project and product you can access.'),
+            ]);
+        }
+    }
+
+    /** @param array<string, mixed> $data
+     * @return array{product:string,pinned_only:bool,project_name:string,environment:string}
+     */
     private function filters(array $data): array
     {
         return [
             'product' => $data['product'],
             'pinned_only' => filter_var($data['pinned_only'], FILTER_VALIDATE_BOOLEAN),
             'project_name' => trim((string) ($data['project_name'] ?? '')),
+            'environment' => is_string($data['environment'] ?? null) ? $data['environment'] : 'all',
         ];
     }
 
