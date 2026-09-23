@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace App\Modules\Deployer\Database\Seeders;
 
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Event;
@@ -22,7 +22,7 @@ class DemoOperationsSeeder extends Seeder
     public function run(): void
     {
         Model::withoutEvents(function (): void {
-            DB::transaction(function (): void {
+            DB::connection('deployer')->transaction(function (): void {
                 $user = User::query()->where('email', DemoSeeder::EMAIL)->firstOrFail();
                 $server = $user->servers()->where('name', DemoSeeder::PREFIX.'Production application')->firstOrFail();
                 $failedServer = $user->servers()->where('name', DemoSeeder::PREFIX.'Failed worker')->firstOrFail();

@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace App\Modules\Deployer\Database\Seeders;
 
 use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
 use App\Modules\Deployer\Models\Provider;
@@ -24,7 +24,7 @@ class DemoInfrastructureSeeder extends Seeder
     public function run(): void
     {
         Model::withoutEvents(function (): void {
-            DB::transaction(function (): void {
+            DB::connection('deployer')->transaction(function (): void {
                 $user = User::query()->where('email', DemoSeeder::EMAIL)->firstOrFail();
                 $providers = $this->providers($user);
                 $this->providerConnectionChecks($providers);
@@ -41,7 +41,7 @@ class DemoInfrastructureSeeder extends Seeder
                 $this->healthChecks($websites);
                 $this->repositories($user, $providers, $websites);
                 foreach (['providers', 'servers', 'websites', 'repositories', 'recipes'] as $table) {
-                    DB::table($table)
+                    DB::connection('deployer')->table($table)
                         ->where('user_id', $user->id)
                         ->whereNull('organization_id')
                         ->update(['organization_id' => $user->current_organization_id]);
@@ -550,7 +550,7 @@ class DemoInfrastructureSeeder extends Seeder
                 'deleted_at' => null,
             ],
         );
-        DB::table('region_size')->updateOrInsert(
+        DB::connection('deployer')->table('region_size')->updateOrInsert(
             ['region_id' => $region->id, 'size_id' => $size->id],
             ['created_at' => now(), 'updated_at' => now()],
         );

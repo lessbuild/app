@@ -29,11 +29,6 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return UserFactory::new();
     }
 
-    public function getConnectionName(): ?string
-    {
-        return app()->environment('testing') ? null : parent::getConnectionName();
-    }
-
     /** Ensure each newly created account has a personal workspace. */
     protected static function booted(): void
     {

@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace App\Modules\Deployer\Database\Seeders;
 
 use App\Modules\Deployer\Models\SignInEvent;
 use App\Modules\Deployer\Models\User;
@@ -28,7 +28,7 @@ class DemoAccountSeeder extends Seeder
             ],
         );
 
-        DB::table('sessions')->updateOrInsert(
+        DB::connection('deployer')->table('sessions')->updateOrInsert(
             ['id' => self::SESSION_ID],
             [
                 'user_id' => $user->id,

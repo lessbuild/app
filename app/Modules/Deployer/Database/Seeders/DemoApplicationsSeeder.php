@@ -1,6 +1,6 @@
 <?php
 
-namespace Database\Seeders;
+namespace App\Modules\Deployer\Database\Seeders;
 
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\StatusPage;
@@ -13,7 +13,7 @@ class DemoApplicationsSeeder extends Seeder
 {
     public function run(): void
     {
-        DB::transaction(function (): void {
+        DB::connection('deployer')->transaction(function (): void {
             $user = User::query()->where('email', DemoSeeder::EMAIL)->firstOrFail();
             $organization = $user->currentOrganization;
             $websites = Website::query()

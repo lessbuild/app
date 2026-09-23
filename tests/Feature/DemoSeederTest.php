@@ -2,6 +2,9 @@
 
 namespace Tests\Feature;
 
+use App\Modules\Deployer\Database\Seeders\DemoAccountSeeder;
+use App\Modules\Deployer\Database\Seeders\DemoGallerySeeder;
+use App\Modules\Deployer\Database\Seeders\DemoSeeder;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\ProviderConnectionCheck;
@@ -17,13 +20,11 @@ use App\Modules\Deployer\Models\StatusPage;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Models\WebsiteHealthCheck;
-use Database\Seeders\DemoAccountSeeder;
-use Database\Seeders\DemoGallerySeeder;
-use Database\Seeders\DemoSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class DemoSeederTest extends TestCase
@@ -293,6 +294,32 @@ class DemoSeederTest extends TestCase
         $restoredImport->load('source');
         $this->assertTrue($restoredImport->hasGalleryUpdate());
         $this->assertSame(1, $user->providers()->where('name', 'Personal provider')->count());
+    }
+
+    public function test_deployer_demo_seeders_use_the_named_connection_when_core_is_default(): void
+    {
+        $previousConnection = DB::getDefaultConnection();
+
+        try {
+            DB::setDefaultConnection('core');
+
+            $this->assertSame(0, Artisan::call('db:seed', [
+                '--class' => DemoSeeder::class,
+                '--force' => true,
+            ]), Artisan::output());
+        } finally {
+            DB::setDefaultConnection($previousConnection);
+        }
+
+        $user = User::query()->where('email', DemoSeeder::EMAIL)->sole();
+
+        $this->assertDatabaseHas('sessions', [
+            'id' => DemoAccountSeeder::SESSION_ID,
+            'user_id' => $user->id,
+        ]);
+        $this->assertFalse(Schema::connection('core')->hasTable('sessions'));
+        $this->assertFalse(Schema::connection('core')->hasTable('region_size'));
+        $this->assertSame($previousConnection, DB::getDefaultConnection());
     }
 
     public function test_demo_secrets_are_encrypted_and_account_can_sign_in(): void
