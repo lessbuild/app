@@ -23,7 +23,7 @@ class InstallGalleryRecipeAction
      */
     public function handle(User $user, Recipe $source): Recipe
     {
-        $copy = DB::transaction(function () use ($source, $user): Recipe {
+        $copy = DB::connection('deployer')->transaction(function () use ($source, $user): Recipe {
             $lockedSource = Recipe::query()
                 ->published()
                 ->lockForUpdate()

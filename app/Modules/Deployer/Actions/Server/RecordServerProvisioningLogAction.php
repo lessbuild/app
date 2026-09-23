@@ -28,7 +28,7 @@ class RecordServerProvisioningLogAction
      */
     public function handle(Server $server, mixed $attempt, mixed $log): void
     {
-        DB::transaction(function () use ($server, $attempt, $log): void {
+        DB::connection('deployer')->transaction(function () use ($server, $attempt, $log): void {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             if (! $this->guard->matchesAttempt($locked, $attempt)) {
                 return;

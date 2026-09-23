@@ -43,7 +43,7 @@ class WorkflowConfiguration
             $this->invalid('Workflow must contain version: 1 and an environments map.');
         }
 
-        DB::transaction(function () use ($project, $document, $yaml, $userId): void {
+        DB::connection('deployer')->transaction(function () use ($project, $document, $yaml, $userId): void {
             foreach ($document['environments'] as $slug => $settings) {
                 if (! is_string($slug) || ! is_array($settings)) {
                     $this->invalid('Each environment must be a named map.');

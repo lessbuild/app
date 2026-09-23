@@ -70,7 +70,7 @@ class WebsiteHealthMonitor
         ?int $durationMs,
         bool $automatic,
     ): bool {
-        return DB::transaction(function () use ($website, $successful, $error, $httpStatus, $durationMs, $automatic): bool {
+        return DB::connection('deployer')->transaction(function () use ($website, $successful, $error, $httpStatus, $durationMs, $automatic): bool {
             $locked = Website::query()->lockForUpdate()->find($website->id);
             if (! $locked
                 || ! $locked->health_check_enabled

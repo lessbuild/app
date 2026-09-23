@@ -94,7 +94,7 @@ class RunServerDiagnosticJob implements ShouldQueue
 
     private function claim(): ?ServerDiagnosticSnapshot
     {
-        return DB::transaction(function (): ?ServerDiagnosticSnapshot {
+        return DB::connection('deployer')->transaction(function (): ?ServerDiagnosticSnapshot {
             $snapshot = ServerDiagnosticSnapshot::query()
                 ->whereKey($this->snapshotId)
                 ->where('status', ServerDiagnosticSnapshot::STATUS_QUEUED)
@@ -127,7 +127,7 @@ class RunServerDiagnosticJob implements ShouldQueue
 
     private function markReady(OperationalDiagnosticReport $report): void
     {
-        DB::transaction(function () use ($report): void {
+        DB::connection('deployer')->transaction(function () use ($report): void {
             $snapshot = $this->lockedCurrentSnapshot(ServerDiagnosticSnapshot::STATUS_RUNNING);
             $snapshot?->update([
                 'status' => ServerDiagnosticSnapshot::STATUS_READY,
@@ -142,7 +142,7 @@ class RunServerDiagnosticJob implements ShouldQueue
 
     private function markFailed(ServerDiagnosticFailureStage $stage, string $message): void
     {
-        DB::transaction(function () use ($message, $stage): void {
+        DB::connection('deployer')->transaction(function () use ($message, $stage): void {
             $snapshot = $this->lockedCurrentSnapshot([
                 ServerDiagnosticSnapshot::STATUS_QUEUED,
                 ServerDiagnosticSnapshot::STATUS_RUNNING,
@@ -167,7 +167,7 @@ class RunServerDiagnosticJob implements ShouldQueue
 
     private function requeueForRetry(): void
     {
-        DB::transaction(function (): void {
+        DB::connection('deployer')->transaction(function (): void {
             $snapshot = $this->lockedCurrentSnapshot(ServerDiagnosticSnapshot::STATUS_RUNNING);
             $snapshot?->update([
                 'status' => ServerDiagnosticSnapshot::STATUS_QUEUED,

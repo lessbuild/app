@@ -26,7 +26,7 @@ class UpdateRepositoryAction
         $repository->loadMissing('provider');
         $attributes = $this->webhooks->forUpdate($repository, $provider, $attributes);
 
-        return DB::transaction(function () use ($repository, $attributes): bool {
+        return DB::connection('deployer')->transaction(function () use ($repository, $attributes): bool {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {

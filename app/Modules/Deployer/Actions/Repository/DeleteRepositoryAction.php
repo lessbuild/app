@@ -16,7 +16,7 @@ class DeleteRepositoryAction
      */
     public function handle(Repository $repository): bool
     {
-        return DB::transaction(function () use ($repository): bool {
+        return DB::connection('deployer')->transaction(function () use ($repository): bool {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {

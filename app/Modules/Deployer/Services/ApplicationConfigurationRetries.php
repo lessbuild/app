@@ -33,7 +33,7 @@ class ApplicationConfigurationRetries
     {
         $projectId = $original->application->review->project_id;
 
-        $retry = DB::transaction(function () use ($original, $user, $projectId) {
+        $retry = DB::connection('deployer')->transaction(function () use ($original, $user, $projectId) {
             $project = ApplicationConfigurationLocks::project($projectId);
             $original = ConfigurationOperation::query()->findOrFail($original->id);
             $review = $original->application->review;

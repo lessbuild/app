@@ -81,7 +81,7 @@ class WatchStaleDeploymentsCommand extends Command
      */
     private function claim(int $buildId, Carbon $cutoff, int $minutes): ?Build
     {
-        return DB::transaction(function () use ($buildId, $cutoff, $minutes): ?Build {
+        return DB::connection('deployer')->transaction(function () use ($buildId, $cutoff, $minutes): ?Build {
             $build = Build::query()->lockForUpdate()->find($buildId);
             if ($build?->statusEnum()?->isActive() !== true) {
                 return null;
@@ -119,7 +119,7 @@ class WatchStaleDeploymentsCommand extends Command
      */
     private function finish(Build $build, ?string $log, int $minutes, PreviewDeploymentLifecycle $previews): void
     {
-        $finished = DB::transaction(function () use ($build, $log, $minutes): bool {
+        $finished = DB::connection('deployer')->transaction(function () use ($build, $log, $minutes): bool {
             $locked = Build::query()
                 ->whereKey($build->id)
                 ->where('status', Build::STATUS_TIMING_OUT)

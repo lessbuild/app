@@ -34,7 +34,7 @@ class UpdateRecipeReportResolutionNoteAction
      */
     public function handle(Recipe $recipe, RecipeReport $report, User $contributor, ?string $resolutionNote): bool
     {
-        return DB::transaction(function () use ($contributor, $recipe, $report, $resolutionNote): bool {
+        return DB::connection('deployer')->transaction(function () use ($contributor, $recipe, $report, $resolutionNote): bool {
             $lockedRecipe = $this->locks->recipe($recipe->id);
             $lockedReport = RecipeReport::query()
                 ->whereKey($report->id)

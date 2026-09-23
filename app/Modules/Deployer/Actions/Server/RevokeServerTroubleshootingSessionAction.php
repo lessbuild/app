@@ -10,7 +10,7 @@ class RevokeServerTroubleshootingSessionAction
     /** Revoke an active grant after an internal authorization or credential change. */
     public function handle(ServerTroubleshootingSession $session): bool
     {
-        return DB::transaction(function () use ($session): bool {
+        return DB::connection('deployer')->transaction(function () use ($session): bool {
             $locked = ServerTroubleshootingSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()

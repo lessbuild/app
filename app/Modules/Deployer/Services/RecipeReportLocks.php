@@ -14,8 +14,10 @@ class RecipeReportLocks
      */
     public function recipe(int $id): Recipe
     {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            Recipe::query()->whereKey($id)->update(['id' => DB::raw('id')]);
+        $connection = DB::connection('deployer');
+
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->table('recipes')->where('id', $id)->update(['id' => $connection->raw('id')]);
         }
 
         return Recipe::query()->whereKey($id)->lockForUpdate()->firstOrFail();

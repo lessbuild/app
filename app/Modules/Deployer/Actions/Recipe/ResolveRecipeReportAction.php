@@ -31,7 +31,7 @@ class ResolveRecipeReportAction
      */
     public function handle(Recipe $recipe, RecipeReport $report, User $contributor, ?string $resolutionNote): void
     {
-        DB::transaction(function () use ($contributor, $recipe, $report, $resolutionNote): void {
+        DB::connection('deployer')->transaction(function () use ($contributor, $recipe, $report, $resolutionNote): void {
             $lockedRecipe = $this->locks->recipe($recipe->id);
             $lockedReport = RecipeReport::query()
                 ->whereKey($report->id)

@@ -69,7 +69,7 @@ class CleanupPreviewStackJob implements ShouldBeUnique, ShouldQueue
             throw $exception;
         }
 
-        DB::table('preview_stack_cleanups')
+        DB::connection('deployer')->table('preview_stack_cleanups')
             ->where('id', $record->id)
             ->where('status', PreviewStackCleanup::STATUS_RUNNING)
             ->where('claim_token', $this->claimToken)
@@ -95,7 +95,7 @@ class CleanupPreviewStackJob implements ShouldBeUnique, ShouldQueue
 
     private function claim(): ?PreviewStackCleanup
     {
-        return DB::transaction(function (): ?PreviewStackCleanup {
+        return DB::connection('deployer')->transaction(function (): ?PreviewStackCleanup {
             $record = PreviewStackCleanup::query()->lockForUpdate()->find($this->cleanupId);
             if (! $record || $record->status === PreviewStackCleanup::STATUS_SUCCEEDED) {
                 return null;
@@ -124,7 +124,7 @@ class CleanupPreviewStackJob implements ShouldBeUnique, ShouldQueue
             return;
         }
 
-        DB::table('preview_stack_cleanups')
+        DB::connection('deployer')->table('preview_stack_cleanups')
             ->where('id', $this->cleanupId)
             ->where('status', PreviewStackCleanup::STATUS_RUNNING)
             ->where('claim_token', $this->claimToken)

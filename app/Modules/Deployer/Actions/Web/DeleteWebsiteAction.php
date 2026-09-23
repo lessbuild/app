@@ -15,7 +15,7 @@ class DeleteWebsiteAction
      */
     public function handle(Website $website): bool
     {
-        return DB::transaction(function () use ($website): bool {
+        return DB::connection('deployer')->transaction(function () use ($website): bool {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if ($locked->hasActiveDeployment()) {
                 return false;

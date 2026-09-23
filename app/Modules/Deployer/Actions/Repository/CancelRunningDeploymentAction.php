@@ -28,7 +28,7 @@ class CancelRunningDeploymentAction
         $processPath = $build->remote_process_path;
         $partialLog = (new CancelDeploymentAction($build, $this->runner))->handle();
 
-        $canceled = DB::transaction(function () use ($build, $processId, $processPath, $partialLog): bool {
+        $canceled = DB::connection('deployer')->transaction(function () use ($build, $processId, $processPath, $partialLog): bool {
             $locked = Build::query()
                 ->whereKey($build->id)
                 ->where('status', Build::STATUS_RUNNING)

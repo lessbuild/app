@@ -30,7 +30,7 @@ class QueueServerCommandAction
         string $command,
         ?int $rerunFromExecutionId = null,
     ): ServerCommandExecution {
-        return DB::transaction(function () use ($command, $rerunFromExecutionId, $server, $user): ServerCommandExecution {
+        return DB::connection('deployer')->transaction(function () use ($command, $rerunFromExecutionId, $server, $user): ServerCommandExecution {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             if ((int) $locked->user_id !== (int) $user->id) {
                 throw new AuthorizationException;

@@ -26,7 +26,7 @@ class RecordServerProvisioningStatusAction
      */
     public function handle(Server $server, mixed $attempt, mixed $status): bool
     {
-        return DB::transaction(function () use ($server, $attempt, $status): bool {
+        return DB::connection('deployer')->transaction(function () use ($server, $attempt, $status): bool {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             if (! $this->guard->acceptsLifecycle($locked, $attempt)) {
                 return false;

@@ -27,7 +27,7 @@ class ApproveBuildAction
      */
     public function handle(Build $build, User $approver, ?string $note = null): ?Build
     {
-        return DB::transaction(function () use ($build, $approver, $note): ?Build {
+        return DB::connection('deployer')->transaction(function () use ($build, $approver, $note): ?Build {
             $locked = Build::query()
                 ->whereKey($build->id)
                 ->where('status', Build::STATUS_AWAITING_APPROVAL)

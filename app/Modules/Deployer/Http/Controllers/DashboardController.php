@@ -130,7 +130,7 @@ class DashboardController extends Controller
         $reportedGalleryRecipes = $user->workspaceRecipes()
             ->published()
             ->whereHas('reports', fn ($query) => $query->whereNull('resolved_at'));
-        $communityReports = DB::table('recipe_reports')
+        $communityReports = DB::connection('deployer')->table('recipe_reports')
             ->whereIn('recipe_id', (clone $reportedGalleryRecipes)->select('recipes.id'))
             ->whereNull('resolved_at');
         $onboarding = [

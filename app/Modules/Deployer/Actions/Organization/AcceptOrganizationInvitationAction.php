@@ -26,7 +26,7 @@ class AcceptOrganizationInvitationAction
     public function handle(User $actor, OrganizationInvitation $invitation, string $token): void
     {
         $this->assertUsable($actor, $invitation, $token);
-        DB::transaction(function () use ($actor, $invitation, $token): void {
+        DB::connection('deployer')->transaction(function () use ($actor, $invitation, $token): void {
             $organization = Organization::query()->lockForUpdate()->findOrFail($invitation->organization_id);
             $lockedInvitation = OrganizationInvitation::query()->lockForUpdate()->findOrFail($invitation->id);
             $this->assertUsable($actor, $lockedInvitation, $token);

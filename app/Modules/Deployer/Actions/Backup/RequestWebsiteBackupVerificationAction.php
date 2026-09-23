@@ -19,7 +19,7 @@ class RequestWebsiteBackupVerificationAction
      */
     public function handle(WebsiteBackup $backup, User $actor): BackupRestoreVerification
     {
-        $verification = DB::transaction(function () use ($backup, $actor): BackupRestoreVerification {
+        $verification = DB::connection('deployer')->transaction(function () use ($backup, $actor): BackupRestoreVerification {
             $lockedBackup = WebsiteBackup::query()
                 ->with('website')
                 ->lockForUpdate()

@@ -20,7 +20,7 @@ class ApplicationConfigurationExecution
     public function claim(Build $build): ?bool
     {
         $origin = $build->environment_payload['configuration_operation_id'] ?? null;
-        $operation = Schema::hasTable('configuration_operations')
+        $operation = Schema::connection('deployer')->hasTable('configuration_operations')
             ? ConfigurationOperation::query()->where('build_id', $build->id)->first()
             : null;
         if (! $operation || ($origin !== null && (! is_int($origin) || $origin !== (int) $operation->id))) {
@@ -38,7 +38,7 @@ class ApplicationConfigurationExecution
         }
         $projectId = $operation->application->review->project_id;
 
-        return DB::transaction(function () use ($operation, $build, $projectId): bool {
+        return DB::connection('deployer')->transaction(function () use ($operation, $build, $projectId): bool {
             ApplicationConfigurationLocks::project($projectId);
             $prepared = $this->builds->prepare($operation);
             if (! $prepared || $prepared->id !== $build->id) {

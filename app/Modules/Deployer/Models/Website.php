@@ -3,7 +3,6 @@
 namespace App\Modules\Deployer\Models;
 
 use App\Modules\Deployer\Database\DeployerModel;
-
 use App\Modules\Deployer\Models\Concerns\BelongsToOrganization;
 use App\Modules\Deployer\Models\Scopes\WebsiteScopes;
 use App\Modules\Deployer\Support\RepositoryPath;
@@ -116,7 +115,7 @@ class Website extends DeployerModel
         });
 
         static::created(function (Website $website): void {
-            if (Schema::hasTable('website_domains') && ! WebsiteDomain::query()->where('hostname', $website->url)->exists()) {
+            if (Schema::connection('deployer')->hasTable('website_domains') && ! WebsiteDomain::query()->where('hostname', $website->url)->exists()) {
                 $website->domains()->firstOrCreate(['hostname' => $website->url], [
                     'created_by' => $website->user_id,
                     'type' => 'primary',
@@ -126,7 +125,7 @@ class Website extends DeployerModel
         });
 
         static::updated(function (Website $website): void {
-            if ($website->wasChanged('url') && Schema::hasTable('website_domains')) {
+            if ($website->wasChanged('url') && Schema::connection('deployer')->hasTable('website_domains')) {
                 $website->domains()->where('type', 'primary')->update([
                     'hostname' => $website->url,
                     'dns_status' => 'pending',

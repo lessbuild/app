@@ -68,7 +68,7 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
                 }
             });
 
-        DB::transaction(function () use ($website): void {
+        DB::connection('deployer')->transaction(function () use ($website): void {
             Repository::withTrashed()
                 ->where('website_id', $website->id)
                 ->each(function (Repository $repository): void {

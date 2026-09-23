@@ -87,10 +87,10 @@ class PreviewDeploymentLifecycle
             return 'invalid_preview';
         }
 
-        $preview = DB::transaction(function () use ($source, $webhook, $baseEnvironment): ?PreviewDeployment {
+        $preview = DB::connection('deployer')->transaction(function () use ($source, $webhook, $baseEnvironment): ?PreviewDeployment {
             // The version increment is an internal write-side lock for SQLite and other
             // drivers that do not implement SELECT ... FOR UPDATE; it is not domain state.
-            DB::table('organizations')
+            DB::connection('deployer')->table('organizations')
                 ->where('id', $baseEnvironment->project->organization_id)
                 ->increment('preview_quota_lock_version');
             $organization = Organization::query()->lockForUpdate()->findOrFail($baseEnvironment->project->organization_id);
@@ -408,7 +408,7 @@ class PreviewDeploymentLifecycle
         if (! $preview->repository?->isDeploymentReady() || $preview->repository->website->hasActiveDeployment()) {
             return;
         }
-        $build = DB::transaction(function () use ($preview): ?Build {
+        $build = DB::connection('deployer')->transaction(function () use ($preview): ?Build {
             $current = PreviewDeployment::query()->lockForUpdate()->find($preview->id);
             if (! $current || $current->status === PreviewDeployment::STATUS_CLOSED) {
                 return null;

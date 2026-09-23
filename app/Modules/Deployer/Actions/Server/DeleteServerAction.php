@@ -14,6 +14,6 @@ class DeleteServerAction
      */
     public function handle(Server $server): void
     {
-        DB::transaction(fn (): mixed => $server->delete());
+        DB::connection('deployer')->transaction(fn (): mixed => $server->delete());
     }
 }

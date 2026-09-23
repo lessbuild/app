@@ -28,7 +28,7 @@ class RedeployBuildAction
      */
     public function handle(Build $source, ?User $requester = null): BuildRedeploymentResult
     {
-        $result = DB::transaction(function () use ($source, $requester): BuildRedeploymentResult {
+        $result = DB::connection('deployer')->transaction(function () use ($source, $requester): BuildRedeploymentResult {
             $websiteId = Repository::query()->whereKey($source->repository_id)->value('website_id');
             $website = Website::query()->lockForUpdate()->findOrFail($websiteId);
             $repository = Repository::query()->lockForUpdate()->findOrFail($source->repository_id);

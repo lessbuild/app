@@ -29,7 +29,7 @@ class CreateStatusPageAction
             $slug = $base.'-'.Str::lower(Str::random(5));
         }
 
-        return DB::transaction(function () use ($organization, $actor, $attributes, $slug): StatusPage {
+        return DB::connection('deployer')->transaction(function () use ($organization, $actor, $attributes, $slug): StatusPage {
             $page = $organization->statusPages()->create([
                 'created_by' => $actor->id,
                 'name' => $attributes['name'],

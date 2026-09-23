@@ -16,7 +16,7 @@ class SaveEnvironmentVariableAction
      */
     public function handle(Environment $environment, User $user, array $data, bool $isSecret): EnvironmentVariable
     {
-        return DB::transaction(function () use ($environment, $user, $data, $isSecret): EnvironmentVariable {
+        return DB::connection('deployer')->transaction(function () use ($environment, $user, $data, $isSecret): EnvironmentVariable {
             $variable = $environment->variables()->where('key', $data['key'])->lockForUpdate()->first();
             $version = ($variable?->current_version ?? 0) + 1;
             $attributes = [

@@ -33,7 +33,7 @@ class PromoteBuildAction
      */
     public function handle(Build $source, Environment $target, User $requester, ?string $note = null): BuildPromotionResult
     {
-        $result = DB::transaction(function () use ($source, $target, $requester, $note): BuildPromotionResult {
+        $result = DB::connection('deployer')->transaction(function () use ($source, $target, $requester, $note): BuildPromotionResult {
             $lockedSource = Build::query()->with(['repository.provider', 'environment.project'])->lockForUpdate()->findOrFail($source->id);
             $lockedTarget = Environment::query()->with('project')->lockForUpdate()->findOrFail($target->id);
 

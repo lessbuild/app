@@ -34,8 +34,8 @@ class PreviewDeploymentConcurrencyTest extends TestCase
         touch($this->database);
 
         config([
-            'database.default' => 'preview_concurrency',
-            'database.connections.preview_concurrency' => [
+            'database.default' => 'deployer',
+            'database.connections.deployer' => [
                 'driver' => 'sqlite',
                 'database' => $this->database,
                 'foreign_key_constraints' => true,
@@ -48,14 +48,14 @@ class PreviewDeploymentConcurrencyTest extends TestCase
             'billing.plans.free.limits.websites' => null,
             'billing.plans.free.limits.preview_deployments' => 1,
         ]);
-        DB::purge('preview_concurrency');
+        DB::purge('deployer');
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
         Queue::fake();
     }
 
     protected function tearDown(): void
     {
-        DB::disconnect('preview_concurrency');
+        DB::disconnect('deployer');
 
         if (isset($this->directory)) {
             foreach (glob($this->directory.'/*') ?: [] as $file) {
@@ -133,7 +133,7 @@ class PreviewDeploymentConcurrencyTest extends TestCase
     /** @return array<int, array<string, mixed>> */
     private function overlap(int $sourceId): array
     {
-        DB::disconnect('preview_concurrency');
+        DB::disconnect('deployer');
         $children = [];
 
         foreach ([17, 18] as $index => $number) {
@@ -143,7 +143,7 @@ class PreviewDeploymentConcurrencyTest extends TestCase
             }
             if ($pid === 0) {
                 try {
-                    DB::purge('preview_concurrency');
+                    DB::purge('deployer');
                     if ($index === 0) {
                         DB::listen(function ($query): void {
                             if (str_starts_with(strtolower(ltrim($query->sql)), 'update "organizations"')) {
@@ -182,7 +182,7 @@ class PreviewDeploymentConcurrencyTest extends TestCase
                 }
 
                 file_put_contents($this->directory.'/result-'.$index, json_encode($result, JSON_THROW_ON_ERROR));
-                DB::disconnect('preview_concurrency');
+                DB::disconnect('deployer');
                 exit(0);
             }
             $children[] = $pid;
@@ -192,7 +192,7 @@ class PreviewDeploymentConcurrencyTest extends TestCase
             pcntl_waitpid($pid, $status);
             $this->assertSame(0, pcntl_wexitstatus($status));
         }
-        DB::purge('preview_concurrency');
+        DB::purge('deployer');
 
         return array_map(
             fn (int $index): array => json_decode(

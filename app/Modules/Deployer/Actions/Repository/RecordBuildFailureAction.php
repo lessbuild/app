@@ -28,7 +28,7 @@ class RecordBuildFailureAction
     {
         $finished = false;
 
-        DB::transaction(function () use ($build, $message, $exitCode, &$finished): void {
+        DB::connection('deployer')->transaction(function () use ($build, $message, $exitCode, &$finished): void {
             $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
             if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
                 return;

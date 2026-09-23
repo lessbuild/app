@@ -30,7 +30,7 @@ class ReopenRecipeReportAction
      */
     public function handle(Recipe $recipe, RecipeReport $report, User $contributor): void
     {
-        DB::transaction(function () use ($contributor, $recipe, $report): void {
+        DB::connection('deployer')->transaction(function () use ($contributor, $recipe, $report): void {
             $lockedRecipe = $this->locks->recipe($recipe->id);
             $lockedReport = RecipeReport::query()
                 ->whereKey($report->id)

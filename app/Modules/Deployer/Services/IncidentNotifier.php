@@ -251,7 +251,7 @@ class IncidentNotifier
      */
     private function persistFailure(Organization $organization, string $category, int $resourceId, string $title, string $message): OperationalIncident
     {
-        return DB::transaction(function () use ($organization, $category, $resourceId, $title, $message): OperationalIncident {
+        return DB::connection('deployer')->transaction(function () use ($organization, $category, $resourceId, $title, $message): OperationalIncident {
             $activeKey = $organization->id.':'.$category.':'.$resourceId;
             $incident = OperationalIncident::query()->where('active_key', $activeKey)
                 ->lockForUpdate()
@@ -300,7 +300,7 @@ class IncidentNotifier
             return false;
         }
 
-        return DB::transaction(function () use ($organization, $category, $resourceId, $message): bool {
+        return DB::connection('deployer')->transaction(function () use ($organization, $category, $resourceId, $message): bool {
             $incident = OperationalIncident::query()->where('organization_id', $organization->id)
                 ->where('category', $category)->where('resource_id', $resourceId)
                 ->whereIn('status', [OperationalIncident::STATUS_OPEN, OperationalIncident::STATUS_ACKNOWLEDGED])

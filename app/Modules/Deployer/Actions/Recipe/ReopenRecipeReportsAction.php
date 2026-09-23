@@ -27,7 +27,7 @@ class ReopenRecipeReportsAction
      */
     public function handle(User $contributor, array $reportIds): int
     {
-        return DB::transaction(function () use ($contributor, $reportIds): int {
+        return DB::connection('deployer')->transaction(function () use ($contributor, $reportIds): int {
             $reports = RecipeReport::query()
                 ->whereIn('id', $reportIds)
                 ->whereHas('recipe', fn ($query) => $query->where('user_id', $contributor->id))

@@ -72,7 +72,7 @@ class AddWebsiteJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        DB::transaction(function () use ($exception): void {
+        DB::connection('deployer')->transaction(function () use ($exception): void {
             $query = Website::query()
                 ->whereKey($this->website->id)
                 ->whereIn('provisioning_status', [Website::STATUS_QUEUED, Website::STATUS_PROVISIONING]);

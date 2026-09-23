@@ -31,7 +31,7 @@ class SubmitRecipeReportAction
      */
     public function handle(Recipe $recipe, User $reporter, array $data): void
     {
-        DB::transaction(function () use ($data, $recipe, $reporter): void {
+        DB::connection('deployer')->transaction(function () use ($data, $recipe, $reporter): void {
             $lockedRecipe = $this->locks->recipe($recipe->id);
             if (! $lockedRecipe->is_published || $lockedRecipe->published_at === null) {
                 throw (new ModelNotFoundException)->setModel(Recipe::class, [$lockedRecipe->id]);

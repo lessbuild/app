@@ -28,7 +28,7 @@ class WithdrawRecipeReportAction
      */
     public function handle(Recipe $recipe, User $reporter): void
     {
-        DB::transaction(function () use ($recipe, $reporter): void {
+        DB::connection('deployer')->transaction(function () use ($recipe, $reporter): void {
             $lockedRecipe = $this->locks->recipe($recipe->id);
             $lockedReport = $reporter->recipeReports()
                 ->where('recipe_id', $lockedRecipe->id)

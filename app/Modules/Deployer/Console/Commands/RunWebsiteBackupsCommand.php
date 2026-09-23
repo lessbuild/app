@@ -33,7 +33,7 @@ class RunWebsiteBackupsCommand extends Command
                 if (! $this->due($schedule)) {
                     return;
                 }
-                $backup = DB::transaction(function () use ($schedule): ?WebsiteBackup {
+                $backup = DB::connection('deployer')->transaction(function () use ($schedule): ?WebsiteBackup {
                     $locked = WebsiteBackupSchedule::query()->lockForUpdate()->find($schedule->id);
                     if (! $locked || ! $this->due($locked)) {
                         return null;

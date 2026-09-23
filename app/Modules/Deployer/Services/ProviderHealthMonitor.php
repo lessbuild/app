@@ -44,7 +44,7 @@ class ProviderHealthMonitor
         $result = $this->tester->test($provider);
         $durationMs = max(0, min((int) round((hrtime(true) - $startedAt) / 1_000_000), 4_294_967_295));
 
-        $recorded = DB::transaction(function () use (
+        $recorded = DB::connection('deployer')->transaction(function () use (
             $provider,
             $providerType,
             $encryptedToken,

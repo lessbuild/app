@@ -39,10 +39,10 @@ class HandleRepositoryWebhookAction
      */
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): RepositoryWebhookResult
     {
-        $result = DB::transaction(function () use ($repository, $webhook): RepositoryWebhookResult {
+        $result = DB::connection('deployer')->transaction(function () use ($repository, $webhook): RepositoryWebhookResult {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
-            $inserted = DB::table('repository_webhook_deliveries')->insertOrIgnore([
+            $inserted = DB::connection('deployer')->table('repository_webhook_deliveries')->insertOrIgnore([
                 'repository_id' => $locked->id,
                 'delivery_id' => $webhook->deliveryId,
                 'revision' => $webhook->revision,

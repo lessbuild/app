@@ -73,7 +73,7 @@ class RunServerCommandJob implements ShouldQueue
         $output = str($output)->substr(-$maximum)->toString();
         $successful = $process->isSuccessful();
 
-        DB::transaction(function () use ($execution, $successful, $output, $process): void {
+        DB::connection('deployer')->transaction(function () use ($execution, $successful, $output, $process): void {
             $locked = ServerCommandExecution::query()
                 ->whereKey($execution->id)
                 ->where('status', ServerCommandExecution::STATUS_RUNNING)
@@ -103,7 +103,7 @@ class RunServerCommandJob implements ShouldQueue
             ->substr(-$maximum)
             ->toString();
 
-        DB::transaction(function () use ($message): void {
+        DB::connection('deployer')->transaction(function () use ($message): void {
             $locked = ServerCommandExecution::query()
                 ->whereKey($this->executionId)
                 ->whereIn('status', [ServerCommandExecution::STATUS_QUEUED, ServerCommandExecution::STATUS_RUNNING])

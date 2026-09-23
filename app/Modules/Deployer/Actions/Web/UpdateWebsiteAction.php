@@ -27,7 +27,7 @@ class UpdateWebsiteAction
             $this->entitlements->enforce($website->organization, 'monitoring');
         }
 
-        DB::transaction(function () use ($attributes, $website): void {
+        DB::connection('deployer')->transaction(function () use ($attributes, $website): void {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if ($locked->hasActiveDeployment()) {
                 throw ValidationException::withMessages([

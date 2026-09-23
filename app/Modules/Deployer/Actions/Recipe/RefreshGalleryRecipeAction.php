@@ -21,7 +21,7 @@ class RefreshGalleryRecipeAction
      */
     public function handle(Recipe $copy): bool
     {
-        $refreshed = DB::transaction(function () use ($copy): bool {
+        $refreshed = DB::connection('deployer')->transaction(function () use ($copy): bool {
             $lockedCopy = Recipe::query()->lockForUpdate()->findOrFail($copy->id);
             if ($lockedCopy->is_published) {
                 return false;

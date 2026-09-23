@@ -96,7 +96,7 @@ class TwoFactorAuthentication
         }
 
         if ($consumeRecoveryCode) {
-            return DB::transaction(function () use ($user, $hash): bool {
+            return DB::connection('deployer')->transaction(function () use ($user, $hash): bool {
                 $locked = User::query()->lockForUpdate()->findOrFail($user->id);
                 $codes = $locked->two_factor_recovery_codes ?? [];
                 if (! in_array($hash, $codes, true)) {

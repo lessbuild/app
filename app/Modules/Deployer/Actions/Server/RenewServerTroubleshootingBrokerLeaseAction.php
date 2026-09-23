@@ -21,7 +21,7 @@ class RenewServerTroubleshootingBrokerLeaseAction
      */
     public function handle(ServerTroubleshootingBrokerLease $lease): bool
     {
-        return DB::transaction(function () use ($lease): bool {
+        return DB::connection('deployer')->transaction(function () use ($lease): bool {
             $session = $this->lockedLease($lease);
             if (! $session || $session->statusEnum()?->acceptsActivity() !== true) {
                 return false;

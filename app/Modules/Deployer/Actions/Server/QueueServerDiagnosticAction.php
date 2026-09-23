@@ -22,7 +22,7 @@ class QueueServerDiagnosticAction
      */
     public function handle(Server $server): ServerDiagnosticSnapshot
     {
-        return DB::transaction(function () use ($server): ServerDiagnosticSnapshot {
+        return DB::connection('deployer')->transaction(function () use ($server): ServerDiagnosticSnapshot {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             $current = $locked->diagnosticSnapshot()->lockForUpdate()->first();
 

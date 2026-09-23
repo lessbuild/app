@@ -26,7 +26,7 @@ class DeployRepositoryAction
      */
     public function handle(Repository $repository, User $requester): ?Build
     {
-        $build = DB::transaction(function () use ($repository, $requester): ?Build {
+        $build = DB::connection('deployer')->transaction(function () use ($repository, $requester): ?Build {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $lockedRepository = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             if ((int) $lockedRepository->website_id !== (int) $website->id) {

@@ -21,7 +21,7 @@ class ApplicationConfigurationMigrationTest extends TestCase
 {
     // Deliberately no RefreshDatabase: migration rollback must run outside an
     // enclosing test transaction against a disposable, explicitly named database.
-    private const CONNECTION = 'configuration_migration_test';
+    private const CONNECTION = 'deployer';
 
     private const MIGRATIONS = [
         '2026_09_06_010000_create_configuration_reviews.php',
@@ -37,11 +37,16 @@ class ApplicationConfigurationMigrationTest extends TestCase
         $this->assertTrue($this->app->environment('testing'));
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         $originalConnection = DB::getDefaultConnection();
+        $originalDeployerConnection = config('database.connections.deployer');
         $database = tempnam(sys_get_temp_dir(), 'buildpusher-configuration-migration-');
         $this->assertIsString($database);
-        config(['database.connections.'.self::CONNECTION => array_replace(config('database.connections.sqlite'), [
-            'database' => $database, 'url' => null, 'foreign_key_constraints' => true,
-        ])]);
+        config([
+            'database.default' => self::CONNECTION,
+            'database.connections.'.self::CONNECTION => array_replace(config('database.connections.sqlite'), [
+                'database' => $database, 'url' => null, 'foreign_key_constraints' => true,
+            ]),
+        ]);
+        DB::purge(self::CONNECTION);
         DB::setDefaultConnection(self::CONNECTION);
         Queue::fake();
         Http::fake();
@@ -88,6 +93,10 @@ class ApplicationConfigurationMigrationTest extends TestCase
         } finally {
             DB::disconnect(self::CONNECTION);
             DB::purge(self::CONNECTION);
+            config([
+                'database.default' => $originalConnection,
+                'database.connections.deployer' => $originalDeployerConnection,
+            ]);
             DB::setDefaultConnection($originalConnection);
             foreach ([$database, $database.'-wal', $database.'-shm'] as $file) {
                 if (is_file($file)) {

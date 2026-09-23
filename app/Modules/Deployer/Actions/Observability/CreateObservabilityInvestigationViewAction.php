@@ -43,7 +43,7 @@ class CreateObservabilityInvestigationViewAction
             throw new AuthorizationException;
         }
 
-        return DB::transaction(function () use ($organization, $environment, $actor, $data): ObservabilityInvestigationView {
+        return DB::connection('deployer')->transaction(function () use ($organization, $environment, $actor, $data): ObservabilityInvestigationView {
             $lockedOrganization = Organization::query()->lockForUpdate()->findOrFail($organization->id);
             $now = now();
 

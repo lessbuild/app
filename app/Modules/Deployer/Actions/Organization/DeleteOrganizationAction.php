@@ -40,7 +40,7 @@ class DeleteOrganizationAction
             throw new OrganizationDeletionOperationException('Wait for active deployments and commands to finish before deleting this workspace.', 409);
         }
 
-        DB::transaction(function () use ($organization, $actor): void {
+        DB::connection('deployer')->transaction(function () use ($organization, $actor): void {
             $organization->delete();
             $actor->forceFill(['current_organization_id' => null])->save();
         });

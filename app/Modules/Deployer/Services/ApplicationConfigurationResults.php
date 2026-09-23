@@ -19,7 +19,7 @@ class ApplicationConfigurationResults
     {
         $projectId = $application->review->project_id;
 
-        return DB::transaction(function () use ($application, $projectId): ConfigurationApplication {
+        return DB::connection('deployer')->transaction(function () use ($application, $projectId): ConfigurationApplication {
             ApplicationConfigurationLocks::project($projectId);
             $application = ConfigurationApplication::query()->lockForUpdate()->findOrFail($application->id);
             $operations = $application->relatedOperations()

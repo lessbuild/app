@@ -62,7 +62,7 @@ class RunDeploymentObservationAction
      */
     private function claim(int $observationId): ?DeploymentObservationClaim
     {
-        return DB::transaction(function () use ($observationId): ?DeploymentObservationClaim {
+        return DB::connection('deployer')->transaction(function () use ($observationId): ?DeploymentObservationClaim {
             $observation = DeploymentObservation::query()->lockForUpdate()->find($observationId);
             if (! $observation || ! in_array($observation->status, DeploymentObservation::ACTIVE_STATUSES, true)) {
                 return null;
@@ -130,7 +130,7 @@ class RunDeploymentObservationAction
      */
     private function recordResult(DeploymentObservationClaim $claim, WebsiteHealthProbeResult $result): void
     {
-        DB::transaction(function () use ($claim, $result): void {
+        DB::connection('deployer')->transaction(function () use ($claim, $result): void {
             $observation = DeploymentObservation::query()->lockForUpdate()->find($claim->observationId);
             if (! $observation || ! $this->ownsClaim($observation, $claim)) {
                 return;
@@ -201,7 +201,7 @@ class RunDeploymentObservationAction
         Throwable $exception,
         bool $terminal,
     ): void {
-        DB::transaction(function () use ($claim, $exception, $terminal): void {
+        DB::connection('deployer')->transaction(function () use ($claim, $exception, $terminal): void {
             $observation = DeploymentObservation::query()->lockForUpdate()->find($claim->observationId);
             if (! $observation || ! $this->ownsClaim($observation, $claim)) {
                 return;

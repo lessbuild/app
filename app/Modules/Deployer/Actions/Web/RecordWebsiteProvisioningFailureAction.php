@@ -27,7 +27,7 @@ class RecordWebsiteProvisioningFailureAction
      */
     public function handle(Website $website, mixed $attempt, mixed $exitCode, mixed $message): void
     {
-        DB::transaction(function () use ($website, $attempt, $exitCode, $message): void {
+        DB::connection('deployer')->transaction(function () use ($website, $attempt, $exitCode, $message): void {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if (! $this->guard->acceptsLifecycle($locked, $attempt)) {
                 return;

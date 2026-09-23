@@ -38,18 +38,18 @@ class ApplicationConfigurationConcurrencyTest extends TestCase
         mkdir($this->directory, 0700);
         $this->database = $this->directory.'/database.sqlite';
         touch($this->database);
-        config(['database.default' => 'configuration_concurrency', 'database.connections.configuration_concurrency' => [
+        config(['database.default' => 'deployer', 'database.connections.deployer' => [
             'driver' => 'sqlite', 'database' => $this->database, 'foreign_key_constraints' => true, 'busy_timeout' => 5000,
             'journal_mode' => 'WAL', 'synchronous' => 'NORMAL',
         ]]);
-        DB::purge('configuration_concurrency');
+        DB::purge('deployer');
         $this->artisan('migrate', ['--force' => true])->assertSuccessful();
         Queue::fake();
     }
 
     protected function tearDown(): void
     {
-        DB::disconnect('configuration_concurrency');
+        DB::disconnect('deployer');
         if (isset($this->directory)) {
             foreach (glob($this->directory.'/*') as $file) {
                 unlink($file);
@@ -136,7 +136,7 @@ class ApplicationConfigurationConcurrencyTest extends TestCase
         $environment = $project->environments()->firstOrFail();
         $review = app(ApplicationConfigurationReviews::class)->create($project, $user, "version: 2\nremove:\n  environments: [staging]\n", []);
         $results = $this->overlap(
-            fn () => DB::transaction(fn () => Environment::findOrFail($environment->id)->processes()->create(['name' => 'manual', 'type' => 'worker', 'command' => 'work', 'replicas' => 1])->id),
+            fn () => DB::connection('deployer')->transaction(fn () => Environment::findOrFail($environment->id)->processes()->create(['name' => 'manual', 'type' => 'worker', 'command' => 'work', 'replicas' => 1])->id),
             fn () => app(ApplicationConfigurationReconciler::class)->apply(ConfigurationReview::findOrFail($review->id), User::findOrFail($user->id))->id,
             'insert into "environment_processes"',
         );
@@ -150,7 +150,7 @@ class ApplicationConfigurationConcurrencyTest extends TestCase
     /** Hold the first real transaction open until another process has begun its action. */
     private function overlap(callable $first, callable $second, string $pauseAfterSql): array
     {
-        DB::disconnect('configuration_concurrency');
+        DB::disconnect('deployer');
         $children = [];
         foreach ([$first, $second] as $index => $action) {
             $pid = pcntl_fork();
@@ -159,7 +159,7 @@ class ApplicationConfigurationConcurrencyTest extends TestCase
             }
             if ($pid === 0) {
                 try {
-                    DB::purge('configuration_concurrency');
+                    DB::purge('deployer');
                     if ($index === 0) {
                         $paused = false;
                         DB::listen(function ($query) use ($pauseAfterSql, &$paused): void {
@@ -181,7 +181,7 @@ class ApplicationConfigurationConcurrencyTest extends TestCase
                     $result = ['status' => 'error', 'class' => get_class($exception), 'message' => $exception->getMessage()];
                 }
                 file_put_contents($this->directory.'/result-'.$index, json_encode($result, JSON_THROW_ON_ERROR));
-                DB::disconnect('configuration_concurrency');
+                DB::disconnect('deployer');
                 exit(0);
             }
             $children[] = $pid;
@@ -190,7 +190,7 @@ class ApplicationConfigurationConcurrencyTest extends TestCase
             pcntl_waitpid($pid, $status);
             $this->assertSame(0, pcntl_wexitstatus($status));
         }
-        DB::purge('configuration_concurrency');
+        DB::purge('deployer');
 
         return array_map(fn ($index) => json_decode(file_get_contents($this->directory.'/result-'.$index), true, flags: JSON_THROW_ON_ERROR), [0, 1]);
     }

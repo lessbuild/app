@@ -42,7 +42,7 @@ class RollbackReleaseJob implements ShouldQueue
         $this->build->refresh();
         $output = $releases->handle($this->build);
 
-        DB::transaction(function () use ($output): void {
+        DB::connection('deployer')->transaction(function () use ($output): void {
             $locked = Build::query()->lockForUpdate()->findOrFail($this->build->id);
             if ($locked->status !== Build::STATUS_DEPLOYING) {
                 return;

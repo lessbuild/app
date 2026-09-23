@@ -31,7 +31,7 @@ class QueuePreviewStackCleanupAction
     public function handle(PreviewDeployment $preview): ?PreviewStackCleanup
     {
         $dispatch = false;
-        $cleanup = DB::transaction(function () use ($preview, &$dispatch): ?PreviewStackCleanup {
+        $cleanup = DB::connection('deployer')->transaction(function () use ($preview, &$dispatch): ?PreviewStackCleanup {
             $locked = PreviewDeployment::query()->lockForUpdate()->find($preview->id);
             if (! $locked || $locked->status !== PreviewDeployment::STATUS_CLOSED || ! $locked->environment_id) {
                 return null;

@@ -11,7 +11,7 @@ class ReleaseServerTroubleshootingBrokerLeaseAction
     /** Release only the exact process owner; optionally make a safe terminal failure. */
     public function handle(ServerTroubleshootingBrokerLease $lease, bool $failed = false): bool
     {
-        return DB::transaction(function () use ($failed, $lease): bool {
+        return DB::connection('deployer')->transaction(function () use ($failed, $lease): bool {
             $session = ServerTroubleshootingSession::query()
                 ->whereKey($lease->session->id)
                 ->where('broker_lease_hash', hash('sha256', $lease->token))

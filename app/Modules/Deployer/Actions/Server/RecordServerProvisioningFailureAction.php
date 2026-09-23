@@ -26,7 +26,7 @@ class RecordServerProvisioningFailureAction
      */
     public function handle(Server $server, mixed $attempt, mixed $exitCode, mixed $message): void
     {
-        DB::transaction(function () use ($server, $attempt, $exitCode, $message): void {
+        DB::connection('deployer')->transaction(function () use ($server, $attempt, $exitCode, $message): void {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             if (! $this->guard->acceptsLifecycle($locked, $attempt)) {
                 return;

@@ -29,7 +29,7 @@ class ApplicationConfigurationTransaction
      */
     public function run(ConfigurationReview $review, User $user, Closure $writer): ConfigurationApplication
     {
-        return DB::transaction(function () use ($review, $user, $writer) {
+        return DB::connection('deployer')->transaction(function () use ($review, $user, $writer) {
             $project = ApplicationConfigurationLocks::project($review->project_id);
             $review = ConfigurationReview::query()->lockForUpdate()->findOrFail($review->id);
             $user = User::query()->findOrFail($user->id);

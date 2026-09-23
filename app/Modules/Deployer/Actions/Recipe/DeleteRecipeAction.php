@@ -21,7 +21,7 @@ class DeleteRecipeAction
      */
     public function handle(Recipe $recipe): void
     {
-        DB::transaction(function () use ($recipe): void {
+        DB::connection('deployer')->transaction(function () use ($recipe): void {
             $lockedRecipe = $this->lockedRecipe($recipe->id);
             $this->notifications->forgetRecipe($lockedRecipe);
             $lockedRecipe->delete();
@@ -39,8 +39,10 @@ class DeleteRecipeAction
      */
     private function lockedRecipe(int $recipeId): Recipe
     {
-        if (DB::connection()->getDriverName() === 'sqlite') {
-            Recipe::query()->whereKey($recipeId)->update(['id' => DB::raw('id')]);
+        $connection = DB::connection('deployer');
+
+        if ($connection->getDriverName() === 'sqlite') {
+            $connection->table('recipes')->where('id', $recipeId)->update(['id' => $connection->raw('id')]);
         }
 
         return Recipe::query()->whereKey($recipeId)->lockForUpdate()->firstOrFail();

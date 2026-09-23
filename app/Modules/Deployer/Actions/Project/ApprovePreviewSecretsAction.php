@@ -26,7 +26,7 @@ class ApprovePreviewSecretsAction
      */
     public function handle(PreviewDeployment $preview, User $approver, string $revision, array $secretKeys): ?PreviewSecretApproval
     {
-        return DB::transaction(function () use ($preview, $approver, $revision, $secretKeys): ?PreviewSecretApproval {
+        return DB::connection('deployer')->transaction(function () use ($preview, $approver, $revision, $secretKeys): ?PreviewSecretApproval {
             $locked = PreviewDeployment::query()->whereKey($preview->id)->lockForUpdate()->first();
             if (! $locked || $locked->status === PreviewDeployment::STATUS_CLOSED || $locked->closed_at !== null
                 || ! hash_equals((string) $locked->revision, $revision)) {

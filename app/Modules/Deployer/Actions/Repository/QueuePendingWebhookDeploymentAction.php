@@ -34,7 +34,7 @@ class QueuePendingWebhookDeploymentAction
      */
     public function handle(Repository $repository): ?Build
     {
-        $build = DB::transaction(function () use ($repository): ?Build {
+        $build = DB::connection('deployer')->transaction(function () use ($repository): ?Build {
             $website = Website::query()->lockForUpdate()->find($repository->website_id);
             if (! $website || $website->hasActiveDeployment()) {
                 return null;
@@ -112,7 +112,7 @@ class QueuePendingWebhookDeploymentAction
         });
 
         if ($build) {
-            DB::afterCommit(fn () => $this->deployments->dispatch($build));
+            DB::connection('deployer')->afterCommit(fn () => $this->deployments->dispatch($build));
         }
 
         return $build;

@@ -31,7 +31,7 @@ class ReadServerTroubleshootingOutputFramesAction
         $after = max(0, $after);
         $limit = max(1, min(100, $limit));
 
-        return DB::transaction(function () use ($after, $limit, $session, $token, $user): array {
+        return DB::connection('deployer')->transaction(function () use ($after, $limit, $session, $token, $user): array {
             $locked = ServerTroubleshootingSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()

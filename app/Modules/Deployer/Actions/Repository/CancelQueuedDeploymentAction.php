@@ -21,7 +21,7 @@ class CancelQueuedDeploymentAction
     {
         $websiteId = $build->repository()->value('website_id');
 
-        $canceled = DB::transaction(function () use ($build, $websiteId): bool {
+        $canceled = DB::connection('deployer')->transaction(function () use ($build, $websiteId): bool {
             $website = Website::query()->lockForUpdate()->find($websiteId);
             if (! $website) {
                 return false;

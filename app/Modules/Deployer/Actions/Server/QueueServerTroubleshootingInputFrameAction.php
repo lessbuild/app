@@ -29,7 +29,7 @@ class QueueServerTroubleshootingInputFrameAction
     ): ServerTroubleshootingFrameData {
         $bytes = strlen($payload);
 
-        return DB::transaction(function () use ($bytes, $payload, $session, $token, $user): ServerTroubleshootingFrameData {
+        return DB::connection('deployer')->transaction(function () use ($bytes, $payload, $session, $token, $user): ServerTroubleshootingFrameData {
             $locked = ServerTroubleshootingSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()

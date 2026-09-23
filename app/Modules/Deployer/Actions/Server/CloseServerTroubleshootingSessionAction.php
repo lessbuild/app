@@ -15,7 +15,7 @@ class CloseServerTroubleshootingSessionAction
     /** Close a still-active grant without contacting a remote host. */
     public function handle(ServerTroubleshootingSession $session, User $user, string $token): bool
     {
-        return DB::transaction(function () use ($session, $token, $user): bool {
+        return DB::connection('deployer')->transaction(function () use ($session, $token, $user): bool {
             $locked = ServerTroubleshootingSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()

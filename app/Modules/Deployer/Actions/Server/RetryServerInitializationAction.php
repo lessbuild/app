@@ -20,7 +20,7 @@ class RetryServerInitializationAction
      */
     public function handle(Server $server): bool
     {
-        return DB::transaction(function () use ($server): bool {
+        return DB::connection('deployer')->transaction(function () use ($server): bool {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
 
             if ($locked->provisioning_status !== Server::STATUS_FAILED

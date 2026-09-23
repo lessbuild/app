@@ -32,7 +32,7 @@ class ApplicationConfigurationCancellation
     public function cancel(ConfigurationOperation $operation, User $user): ConfigurationOperation
     {
         $projectId = $operation->application->review->project_id;
-        $operation = DB::transaction(function () use ($operation, $user, $projectId) {
+        $operation = DB::connection('deployer')->transaction(function () use ($operation, $user, $projectId) {
             $project = ApplicationConfigurationLocks::project($projectId);
             $operation = ConfigurationOperation::query()->lockForUpdate()->findOrFail($operation->id);
             $review = $operation->application->review;

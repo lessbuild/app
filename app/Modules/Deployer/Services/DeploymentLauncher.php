@@ -35,7 +35,7 @@ class DeploymentLauncher
             return null;
         }
 
-        $build = DB::transaction(function () use ($repository, $requester, $source): ?Build {
+        $build = DB::connection('deployer')->transaction(function () use ($repository, $requester, $source): ?Build {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
             if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {

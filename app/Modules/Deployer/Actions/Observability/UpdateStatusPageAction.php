@@ -19,7 +19,7 @@ class UpdateStatusPageAction
     {
         $this->entitlements->enforce($page->organization, 'status_pages');
 
-        return DB::transaction(function () use ($page, $attributes): StatusPage {
+        return DB::connection('deployer')->transaction(function () use ($page, $attributes): StatusPage {
             $page->update([
                 'name' => $attributes['name'],
                 'description' => $attributes['description'] ?? null,

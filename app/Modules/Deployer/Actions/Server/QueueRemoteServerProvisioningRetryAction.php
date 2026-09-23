@@ -34,7 +34,7 @@ class QueueRemoteServerProvisioningRetryAction
     public function handle(Server $server): bool
     {
         $rootPassword = null;
-        $queued = DB::transaction(function () use ($server, &$rootPassword): bool {
+        $queued = DB::connection('deployer')->transaction(function () use ($server, &$rootPassword): bool {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
 
             if ($locked->provisioning_status !== Server::STATUS_FAILED

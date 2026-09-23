@@ -21,7 +21,7 @@ class AcknowledgeServerTroubleshootingOutputFramesAction
     {
         $through = max(0, $through);
 
-        return DB::transaction(function () use ($session, $through, $token, $user): int {
+        return DB::connection('deployer')->transaction(function () use ($session, $through, $token, $user): int {
             $locked = ServerTroubleshootingSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()

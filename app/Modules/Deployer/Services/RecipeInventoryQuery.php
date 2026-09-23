@@ -45,7 +45,7 @@ class RecipeInventoryQuery
             ->latest('updated_at')
             ->latest('id')
             ->first();
-        $assignments = DB::table('recipe_server')->whereIn(
+        $assignments = DB::connection('deployer')->table('recipe_server')->whereIn(
             'recipe_id',
             $this->for($user, $filters)->select('recipes.id'),
         );

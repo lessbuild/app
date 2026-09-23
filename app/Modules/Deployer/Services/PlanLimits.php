@@ -128,7 +128,7 @@ class PlanLimits
      */
     public function withinLimit(User $user, string $resource, Closure $callback): mixed
     {
-        return DB::transaction(function () use ($user, $resource, $callback): mixed {
+        return DB::connection('deployer')->transaction(function () use ($user, $resource, $callback): mixed {
             $organization = Organization::query()->lockForUpdate()->findOrFail($user->current_organization_id);
             abort_unless($organization->permits($user, 'deploy'), 403);
             $this->enforceForOrganization($organization, $resource);

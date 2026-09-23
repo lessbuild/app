@@ -26,7 +26,7 @@ class RequestWebsiteBackupRestoreAction
             throw new BackupRestoreException('Wait for the active deployment to finish before restoring.');
         }
 
-        $restore = DB::transaction(fn (): BackupRestore => $backup->restores()->create([
+        $restore = DB::connection('deployer')->transaction(fn (): BackupRestore => $backup->restores()->create([
             'requested_by' => $actor->id,
             'status' => BackupRestore::STATUS_QUEUED,
         ]));

@@ -13,7 +13,7 @@ class ResolveOperationalIncidentAction
      */
     public function handle(OperationalIncident $incident, User $actor, string $resolution): void
     {
-        DB::transaction(function () use ($incident, $actor, $resolution): void {
+        DB::connection('deployer')->transaction(function () use ($incident, $actor, $resolution): void {
             $incident->update(['status' => OperationalIncident::STATUS_RESOLVED, 'active_key' => null, 'resolution' => $resolution, 'resolved_at' => now()]);
             $incident->events()->create(['actor_id' => $actor->id, 'type' => 'resolved', 'message' => $resolution, 'occurred_at' => now()]);
         });

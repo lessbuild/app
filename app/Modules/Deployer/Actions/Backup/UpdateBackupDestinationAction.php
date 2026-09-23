@@ -24,7 +24,7 @@ class UpdateBackupDestinationAction
     {
         $attributes = $this->destinations->normalize($attributes);
 
-        return DB::transaction(function () use ($destination, $attributes): BackupDestination {
+        return DB::connection('deployer')->transaction(function () use ($destination, $attributes): BackupDestination {
             $locked = BackupDestination::query()->lockForUpdate()->findOrFail($destination->id);
             if ($locked->backups()->whereIn('status', [WebsiteBackup::STATUS_QUEUED, WebsiteBackup::STATUS_RUNNING])->exists()) {
                 throw new BackupDestinationUpdateException('Wait for active backups to finish before editing this destination.');

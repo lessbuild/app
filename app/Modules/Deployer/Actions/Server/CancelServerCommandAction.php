@@ -20,7 +20,7 @@ class CancelServerCommandAction
      */
     public function handle(ServerCommandExecution $execution, User $user): bool
     {
-        return DB::transaction(function () use ($execution, $user): bool {
+        return DB::connection('deployer')->transaction(function () use ($execution, $user): bool {
             $locked = ServerCommandExecution::query()
                 ->lockForUpdate()
                 ->findOrFail($execution->id);

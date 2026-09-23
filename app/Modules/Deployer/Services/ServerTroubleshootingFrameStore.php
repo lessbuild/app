@@ -38,7 +38,7 @@ class ServerTroubleshootingFrameStore
      */
     public function claimNextInput(ServerTroubleshootingBrokerLease $lease): ?ServerTroubleshootingFrameData
     {
-        return DB::transaction(function () use ($lease): ?ServerTroubleshootingFrameData {
+        return DB::connection('deployer')->transaction(function () use ($lease): ?ServerTroubleshootingFrameData {
             $session = $this->lockedLease($lease);
             if ($session === null || ! $this->acceptsBrokerActivity($session)) {
                 return null;
@@ -74,7 +74,7 @@ class ServerTroubleshootingFrameStore
         $maximumFrameBytes = $this->maximumOutputFrameBytes();
         $chunks = str_split($payload, $maximumFrameBytes);
 
-        return DB::transaction(function () use ($chunks, $lease): int {
+        return DB::connection('deployer')->transaction(function () use ($chunks, $lease): int {
             $session = $this->lockedLease($lease);
             if ($session === null || ! $this->acceptsBrokerActivity($session)) {
                 return 0;

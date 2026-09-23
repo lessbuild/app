@@ -22,7 +22,7 @@ class RecordBuildLogAction
      */
     public function handle(Build $build, mixed $log): void
     {
-        DB::transaction(function () use ($build, $log): void {
+        DB::connection('deployer')->transaction(function () use ($build, $log): void {
             $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
             if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
                 return;

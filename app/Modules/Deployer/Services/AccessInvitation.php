@@ -56,7 +56,7 @@ class AccessInvitation
      */
     public function consume(string $token, callable $callback): mixed
     {
-        return DB::transaction(function () use ($token, $callback): mixed {
+        return DB::connection('deployer')->transaction(function () use ($token, $callback): mixed {
             $request = AccessRequest::query()->where('invitation_token_hash', hash('sha256', $token))->lockForUpdate()->first();
             if (! $request?->invitationIsValid()) {
                 return null;

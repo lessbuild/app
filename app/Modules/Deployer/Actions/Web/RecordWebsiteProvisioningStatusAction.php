@@ -32,7 +32,7 @@ class RecordWebsiteProvisioningStatusAction
      */
     public function handle(Website $website, mixed $attempt, mixed $status): bool
     {
-        return DB::transaction(function () use ($website, $attempt, $status): bool {
+        return DB::connection('deployer')->transaction(function () use ($website, $attempt, $status): bool {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if (! $this->guard->acceptsLifecycle($locked, $attempt)) {
                 return false;

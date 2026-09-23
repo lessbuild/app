@@ -27,7 +27,7 @@ class RecordWebsiteProvisioningLogAction
      */
     public function handle(Website $website, mixed $attempt, mixed $log): void
     {
-        DB::transaction(function () use ($website, $attempt, $log): void {
+        DB::connection('deployer')->transaction(function () use ($website, $attempt, $log): void {
             $locked = Website::query()->lockForUpdate()->findOrFail($website->id);
             if (! $this->guard->matchesAttempt($locked, $attempt)) {
                 return;

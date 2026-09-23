@@ -17,7 +17,7 @@ class PersonalOrganization
      */
     public function ensure(User $user): Organization
     {
-        return DB::transaction(function () use ($user): Organization {
+        return DB::connection('deployer')->transaction(function () use ($user): Organization {
             $locked = User::query()->lockForUpdate()->findOrFail($user->id);
             if ($locked->current_organization_id) {
                 $organization = Organization::query()->findOrFail($locked->current_organization_id);

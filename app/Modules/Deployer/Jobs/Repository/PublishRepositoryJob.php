@@ -131,7 +131,7 @@ class PublishRepositoryJob implements ShouldQueue
      */
     public function failed(\Throwable $exception): void
     {
-        DB::transaction(function () use ($exception): void {
+        DB::connection('deployer')->transaction(function () use ($exception): void {
             $locked = Build::query()
                 ->whereKey($this->build->id)
                 ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])

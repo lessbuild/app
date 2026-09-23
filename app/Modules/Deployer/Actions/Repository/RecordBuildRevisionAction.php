@@ -18,7 +18,7 @@ class RecordBuildRevisionAction
      */
     public function handle(Build $build, string $revision, ?string $commitMessage): string
     {
-        return DB::transaction(function () use ($build, $revision, $commitMessage): string {
+        return DB::connection('deployer')->transaction(function () use ($build, $revision, $commitMessage): string {
             $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
             if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
                 return BuildRevisionResult::STALE;

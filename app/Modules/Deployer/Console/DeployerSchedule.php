@@ -17,9 +17,9 @@ final class DeployerSchedule
         $schedule->command('buildpusher:backups:run')->everyMinute()->withoutOverlapping()->runInBackground();
         $schedule->command('buildpusher:deployments:scheduled')->everyMinute()->withoutOverlapping()->runInBackground();
         $schedule->command('buildpusher:configuration:process')->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('configuration_operations')
-                && Schema::hasTable('configuration_operation_receipts')
-                && Schema::hasColumn('configuration_operations', 'retry_of_operation_id'))
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('configuration_operations')
+                && Schema::connection('deployer')->hasTable('configuration_operation_receipts')
+                && Schema::connection('deployer')->hasColumn('configuration_operations', 'retry_of_operation_id'))
             ->withoutOverlapping()->runInBackground();
         $schedule->command('buildpusher:scaling:scheduled')->everyMinute()->withoutOverlapping()->runInBackground();
         $schedule->command('buildpusher:tasks:scheduled')->everyMinute()->withoutOverlapping()->runInBackground();
@@ -32,22 +32,22 @@ final class DeployerSchedule
             ->runInBackground();
         $schedule->command('buildpusher:deployments:observe')
             ->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('deployment_observations'))
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('deployment_observations'))
             ->withoutOverlapping()
             ->runInBackground();
         $schedule->command('buildpusher:observability:investigations:prune')
             ->daily()
-            ->when(fn (): bool => Schema::hasTable('observability_investigation_views'))
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('observability_investigation_views'))
             ->withoutOverlapping()
             ->runInBackground();
         $schedule->command('buildpusher:troubleshooting:sessions:expire')
             ->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('server_troubleshooting_sessions'))
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('server_troubleshooting_sessions'))
             ->withoutOverlapping()
             ->runInBackground();
         $schedule->command('buildpusher:troubleshooting:frames:prune')
             ->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('server_troubleshooting_frames'))
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('server_troubleshooting_frames'))
             ->withoutOverlapping()
             ->runInBackground();
         $schedule->command('lessbuild:webhooks:prune')->daily()->withoutOverlapping()->runInBackground();

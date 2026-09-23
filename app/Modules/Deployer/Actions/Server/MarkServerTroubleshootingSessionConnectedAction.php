@@ -11,7 +11,7 @@ class MarkServerTroubleshootingSessionConnectedAction
     /** Mark the exact connecting broker attempt as connected, or reject it as stale. */
     public function handle(ServerTroubleshootingBrokerLease $lease): bool
     {
-        return DB::transaction(function () use ($lease): bool {
+        return DB::connection('deployer')->transaction(function () use ($lease): bool {
             $session = $this->lockedLease($lease);
             if (! $session || $session->status !== ServerTroubleshootingSession::STATUS_CONNECTING) {
                 return false;

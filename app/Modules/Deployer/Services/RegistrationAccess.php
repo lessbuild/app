@@ -24,7 +24,7 @@ class RegistrationAccess
             return false;
         }
 
-        return ! Schema::hasTable('users') || ! User::query()->exists();
+        return ! Schema::connection('deployer')->hasTable('users') || ! User::query()->exists();
     }
 
     /**

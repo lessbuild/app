@@ -25,7 +25,7 @@ class CreateDeploymentObservationAction
     public function handle(Build $build): ?DeploymentObservation
     {
         $created = false;
-        $observation = DB::transaction(function () use ($build, &$created): ?DeploymentObservation {
+        $observation = DB::connection('deployer')->transaction(function () use ($build, &$created): ?DeploymentObservation {
             $lockedBuild = Build::query()->lockForUpdate()->find($build->id);
             if (! $lockedBuild || $lockedBuild->status !== Build::STATUS_SUCCEEDED) {
                 return null;

@@ -26,7 +26,7 @@ class ReplaceEnvironmentVariablesAction
     {
         $variables = $this->parse($contents);
 
-        DB::transaction(function () use ($environment, $variables, $actor): void {
+        DB::connection('deployer')->transaction(function () use ($environment, $variables, $actor): void {
             $environment->variables()->whereNotIn('key', array_keys($variables))->delete();
             foreach ($variables as $key => $value) {
                 $variable = $environment->variables()->where('key', $key)->lockForUpdate()->first();

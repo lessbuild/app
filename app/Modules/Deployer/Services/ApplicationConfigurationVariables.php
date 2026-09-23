@@ -14,7 +14,7 @@ class ApplicationConfigurationVariables
     /** Internal reconciler primitive; adoption and review freshness are checked by the caller. */
     public function synchronize(Environment $environment, string $key, int $sourceId, int $sourceVersion, string $scope, User $user): EnvironmentVariable
     {
-        return DB::transaction(function () use ($environment, $key, $sourceId, $sourceVersion, $scope, $user) {
+        return DB::connection('deployer')->transaction(function () use ($environment, $key, $sourceId, $sourceVersion, $scope, $user) {
             $environment = Environment::query()->findOrFail($environment->id);
             $organization = $environment->project->organization;
             $user = User::query()->findOrFail($user->id);

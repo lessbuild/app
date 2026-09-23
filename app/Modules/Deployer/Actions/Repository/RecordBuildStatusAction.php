@@ -37,7 +37,7 @@ class RecordBuildStatusAction
         $activationStage = $this->plan->activationStage();
         $finished = false;
 
-        DB::transaction(function () use ($build, $status, $finalStage, $activationStage, &$finished): void {
+        DB::connection('deployer')->transaction(function () use ($build, $status, $finalStage, $activationStage, &$finished): void {
             $locked = Build::query()->lockForUpdate()->findOrFail($build->id);
             if (! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
                 return;

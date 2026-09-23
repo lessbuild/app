@@ -18,7 +18,7 @@ class ApplicationConfigurationBuilds
     {
         $projectId = $operation->application->review->project_id;
 
-        return DB::transaction(function () use ($operation, $projectId) {
+        return DB::connection('deployer')->transaction(function () use ($operation, $projectId) {
             $project = ApplicationConfigurationLocks::project($projectId);
             $operation = ConfigurationOperation::query()->findOrFail($operation->id);
             $review = $operation->application->review;

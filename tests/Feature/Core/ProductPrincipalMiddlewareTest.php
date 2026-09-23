@@ -22,7 +22,7 @@ final class ProductPrincipalMiddlewareTest extends TestCase
 {
     /** @var array<string, array{connection:string,model:class-string}> */
     private array $products = [
-        'deployer' => ['connection' => 'sqlite', 'model' => DeployerUser::class],
+        'deployer' => ['connection' => 'deployer', 'model' => DeployerUser::class],
         'monitor' => ['connection' => 'monitor', 'model' => MonitorUser::class],
         'analytics' => ['connection' => 'analytics', 'model' => AnalyticsUser::class],
     ];
@@ -129,7 +129,7 @@ final class ProductPrincipalMiddlewareTest extends TestCase
 
     public function test_a_missing_or_ambiguous_product_mapping_does_not_resolve_a_local_user(): void
     {
-        DB::connection('sqlite')->table('users')->insert([
+        DB::connection('deployer')->table('users')->insert([
             'id' => 42,
             'name' => 'Deployer account',
             'email' => 'deployer@example.test',

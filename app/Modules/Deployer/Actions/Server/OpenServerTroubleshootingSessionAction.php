@@ -27,7 +27,7 @@ class OpenServerTroubleshootingSessionAction
      */
     public function handle(Server $server, User $user): ServerTroubleshootingSessionGrant
     {
-        return DB::transaction(function () use ($server, $user): ServerTroubleshootingSessionGrant {
+        return DB::connection('deployer')->transaction(function () use ($server, $user): ServerTroubleshootingSessionGrant {
             $locked = Server::query()->lockForUpdate()->findOrFail($server->id);
             if (! $this->servers->connect($user, $locked)) {
                 throw new AuthorizationException;

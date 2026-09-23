@@ -30,7 +30,7 @@ class CreateProjectAction
         $template = $this->templates->for(is_string($preset) ? $preset : '');
         $slug = $this->uniqueSlug($organization->id, $attributes['name']);
 
-        return DB::transaction(function () use ($organization, $actor, $attributes, $template, $slug): Project {
+        return DB::connection('deployer')->transaction(function () use ($organization, $actor, $attributes, $template, $slug): Project {
             $project = $organization->projects()->create([
                 ...$attributes,
                 'template_version' => $template->version(),

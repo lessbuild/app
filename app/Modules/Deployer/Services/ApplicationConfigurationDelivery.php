@@ -33,7 +33,7 @@ class ApplicationConfigurationDelivery
             return;
         }
         $projectId = $operation->application->review->project_id;
-        $claimed = DB::transaction(function () use ($operation, $build, $projectId): int|false {
+        $claimed = DB::connection('deployer')->transaction(function () use ($operation, $build, $projectId): int|false {
             ApplicationConfigurationLocks::project($projectId);
             $operation = ConfigurationOperation::query()->lockForUpdate()->findOrFail($operation->id);
             if (in_array($operation->status, ['delivered', 'succeeded', 'failed', 'canceled'], true)

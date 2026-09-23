@@ -23,7 +23,7 @@ class ClaimServerTroubleshootingBrokerLeaseAction
             return null;
         }
 
-        return DB::transaction(function () use ($processId, $session): ?ServerTroubleshootingBrokerLease {
+        return DB::connection('deployer')->transaction(function () use ($processId, $session): ?ServerTroubleshootingBrokerLease {
             $locked = ServerTroubleshootingSession::query()
                 ->whereKey($session->id)
                 ->lockForUpdate()
