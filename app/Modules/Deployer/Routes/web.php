@@ -64,6 +64,7 @@ use App\Modules\Deployer\Http\Controllers\WebsitesController;
 use App\Modules\Deployer\Http\Livewire\ServerShow;
 use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
 use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
+use App\Modules\Deployer\Http\Middleware\ResolveDeployerOrganizationContext;
 use App\Modules\Deployer\Http\Middleware\VerifyCsrfToken;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\WebsiteLogSnapshot;
@@ -112,6 +113,7 @@ $deployerAuthentication = app(ProductAuthentication::class);
 Route::middleware([
     ...$deployerAuthentication->authenticatedMiddleware('deployer'),
     EnsureCurrentOrganization::class,
+    ResolveDeployerOrganizationContext::class,
     EnforceOrganizationSecurity::class,
 ])->group(function () {
     Route::get('organization', [OrganizationController::class, 'index'])->name('organizations.index');

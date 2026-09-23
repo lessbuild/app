@@ -2,11 +2,15 @@
 
 namespace Tests\Feature;
 
+use App\Core\Models\PlatformUser;
+use App\Core\Models\Workspace as CoreWorkspace;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -193,6 +197,67 @@ class GlobalSearchTest extends TestCase
                 ->assertSee(route('core.projects.show', [$workspaceId, $projectId]));
         } finally {
             $this->dropCoreSearchSchema();
+        }
+    }
+
+    public function test_core_search_links_deployer_resources_with_their_source_organization_context(): void
+    {
+        $user = User::factory()->create();
+        $resources = $this->resources($user, 'Context search', 'owner');
+        $server = $resources['server'];
+        $build = $resources['build'];
+        $platformUser = (new PlatformUser)->forceFill([
+            'id' => (string) Str::ulid(),
+            'name' => 'Search user',
+            'email' => 'context-search@example.test',
+            'status' => 'active',
+        ]);
+        $workspace = (new CoreWorkspace)->forceFill(['id' => (string) Str::ulid()]);
+
+        Schema::connection('core')->create('legacy_identity_maps', function (Blueprint $table): void {
+            $table->string('source_product');
+            $table->string('source_entity');
+            $table->string('source_id');
+            $table->string('canonical_entity');
+            $table->string('canonical_id');
+            $table->string('status');
+        });
+
+        try {
+            DB::connection('core')->table('legacy_identity_maps')->insert([
+                [
+                    'source_product' => 'deployer',
+                    'source_entity' => 'user',
+                    'source_id' => (string) $user->getKey(),
+                    'canonical_entity' => 'user',
+                    'canonical_id' => (string) $platformUser->getKey(),
+                    'status' => 'reconciled',
+                ],
+                [
+                    'source_product' => 'deployer',
+                    'source_entity' => 'organization',
+                    'source_id' => (string) $user->current_organization_id,
+                    'canonical_entity' => 'workspace',
+                    'canonical_id' => (string) $workspace->getKey(),
+                    'status' => 'reconciled',
+                ],
+            ]);
+
+            $results = (new DeployerWorkspaceSearchProvider(new LegacyIdentityResolver))
+                ->search($platformUser, $workspace, 'Context search');
+
+            $this->assertSame([
+                route('servers.show', [
+                    'server' => $server->getKey(),
+                    'organization_id' => $user->current_organization_id,
+                ]),
+                route('builds.show', [
+                    'build' => $build->getKey(),
+                    'organization_id' => $user->current_organization_id,
+                ]),
+            ], array_map(static fn ($result): string => $result->url, $results));
+        } finally {
+            Schema::connection('core')->dropIfExists('legacy_identity_maps');
         }
     }
 

@@ -56,12 +56,15 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
                 ->orWhereRaw("display_name LIKE ? ESCAPE '!'", [$pattern]))
             ->orderByRaw('COALESCE(display_name, name)')
             ->limit(5)
-            ->get(['id', 'name', 'display_name', 'provisioning_status'])
+            ->get(['id', 'organization_id', 'name', 'display_name', 'provisioning_status'])
             ->map(fn (Server $server): WorkspaceSearchResult => new WorkspaceSearchResult(
                 type: __('Server'),
                 title: $server->display_name ?: ($server->name ?: __('Server #:id', ['id' => $server->getKey()])),
                 subtitle: str((string) $server->provisioning_status)->replace('_', ' ')->title()->toString(),
-                url: route('servers.show', $server->getKey()),
+                url: route('servers.show', [
+                    'server' => $server->getKey(),
+                    'organization_id' => $server->organization_id,
+                ]),
             ));
 
         $builds = Build::query()
@@ -74,20 +77,39 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
                     ->orWhereRaw("builds.status LIKE ? ESCAPE '!'", [$pattern])
                     ->orWhereHas('repository', fn ($repository) => $repository->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]));
             })
-            ->with('repository:id,name')
+            ->with([
+                'repository:id,organization_id,name',
+                'environment.project:id,organization_id',
+            ])
             ->latest('builds.id')
             ->limit(5)
             ->get(['builds.id', 'builds.repository_id', 'builds.status', 'builds.revision'])
-            ->map(fn (Build $build): WorkspaceSearchResult => new WorkspaceSearchResult(
-                type: __('Deployment'),
-                title: __('Build #:id', ['id' => $build->getKey()]),
-                subtitle: collect([
-                    $build->repository?->name,
-                    str((string) $build->status)->replace('_', ' ')->title()->toString(),
-                    $build->shortRevision(),
-                ])->filter()->implode(' · '),
-                url: route('builds.show', $build->getKey()),
-            ));
+            ->map(function (Build $build) use ($organizationIds): ?WorkspaceSearchResult {
+                $organizationId = collect([
+                    $build->repository?->organization_id,
+                    $build->environment?->project?->organization_id,
+                ])->first(fn ($id): bool => $id !== null && $organizationIds->contains((string) $id));
+
+                if ($organizationId === null) {
+                    return null;
+                }
+
+                return new WorkspaceSearchResult(
+                    type: __('Deployment'),
+                    title: __('Build #:id', ['id' => $build->getKey()]),
+                    subtitle: collect([
+                        $build->repository?->name,
+                        str((string) $build->status)->replace('_', ' ')->title()->toString(),
+                        $build->shortRevision(),
+                    ])->filter()->implode(' · '),
+                    url: route('builds.show', [
+                        'build' => $build->getKey(),
+                        'organization_id' => $organizationId,
+                    ]),
+                );
+            })
+            ->filter()
+            ->values();
 
         return $servers->concat($builds)->values()->all();
     }
