@@ -7,20 +7,24 @@ use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
+use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
+use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Monitor\Models\Application as MonitorApplication;
 use App\Modules\Monitor\Models\User as MonitorUser;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
+use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\CurrentWorkspace as MonitorCurrentWorkspace;
 use Illuminate\Database\Schema\Blueprint;
@@ -89,6 +93,28 @@ final class ProjectProductLinksTest extends TestCase
         $this->assertNull(app(MonitorProjectLink::class)->resolve($this->platformUser(), $this->project()));
     }
 
+    public function test_monitor_resource_destination_is_keyed_by_the_core_mapping_id_and_checks_membership(): void
+    {
+        Route::get('/monitor/applications/{application}', static fn () => null)
+            ->name('monitor.applications.show');
+        Route::getRoutes()->refreshNameLookups();
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        $mapping = ProjectResource::query()->findOrFail('01J8AA00000000000000000011');
+
+        $destinations = app(MonitorResourceDestinationProvider::class)
+            ->destinations($this->platformUser(), collect([$mapping]));
+
+        $this->assertSame(['01J8AA00000000000000000011'], array_keys($destinations));
+        $this->assertSame('/monitor/applications/31', parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_PATH));
+
+        DB::connection('monitor')->table('user_workspace')->delete();
+
+        $this->assertSame([], app(MonitorResourceDestinationProvider::class)
+            ->destinations($this->platformUser(), collect([$mapping])));
+    }
+
     public function test_analytics_link_keeps_the_mapped_site_in_the_url_and_selects_its_workspace_per_request(): void
     {
         Route::get('/analytics/dashboard', static fn () => null)->name('analytics.dashboard');
@@ -109,6 +135,91 @@ final class ProjectProductLinksTest extends TestCase
 
         $this->assertSame(200, $workspace->getKey());
         $this->assertSame(100, session('analytics_workspace_id'));
+    }
+
+    public function test_analytics_resource_destination_is_keyed_by_the_core_mapping_id_and_checks_membership(): void
+    {
+        Route::get('/analytics/dashboard', static fn () => null)->name('analytics.dashboard');
+        Route::getRoutes()->refreshNameLookups();
+        $this->addIdentity('analytics', '23');
+        $this->addProjectResource('analytics', 'site', '71');
+        $this->addAnalyticsWorkspacesAndSite(memberId: 23, firstWorkspaceId: 100, secondWorkspaceId: 200, siteId: 71);
+        $mapping = ProjectResource::query()->findOrFail('01J8AA00000000000000000011');
+
+        $destinations = app(AnalyticsResourceDestinationProvider::class)
+            ->destinations($this->platformUser(), collect([$mapping]));
+
+        $this->assertSame(['01J8AA00000000000000000011'], array_keys($destinations));
+        $this->assertSame('/analytics/dashboard', parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_PATH));
+        parse_str((string) parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_QUERY), $destinationQuery);
+        $this->assertSame('71', $destinationQuery['site']);
+
+        DB::connection('analytics')->table('workspace_user')->delete();
+
+        $this->assertSame([], app(AnalyticsResourceDestinationProvider::class)
+            ->destinations($this->platformUser(), collect([$mapping])));
+    }
+
+    public function test_deployer_resource_destination_is_keyed_by_the_core_mapping_id_and_checks_organization_access(): void
+    {
+        Route::get('/projects/{project}', static fn () => null)->name('projects.show');
+        Route::getRoutes()->refreshNameLookups();
+        $this->addIdentity('deployer', '17');
+        $this->addProjectResource('deployer', 'project', '31');
+
+        $schema = Schema::connection('deployer');
+        $schema->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->unsignedBigInteger('current_organization_id')->nullable();
+        });
+        $schema->create('organizations', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('owner_id');
+        });
+        $schema->create('organization_user', function (Blueprint $table): void {
+            $table->unsignedBigInteger('organization_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('role')->default('viewer');
+        });
+        $schema->create('projects', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('organization_id');
+        });
+
+        try {
+            DB::connection('deployer')->table('users')->insert([
+                'id' => 17,
+                'name' => 'Deployer user',
+                'current_organization_id' => 50,
+            ]);
+            DB::connection('deployer')->table('organizations')->insert([
+                'id' => 50,
+                'owner_id' => 999,
+            ]);
+            DB::connection('deployer')->table('projects')->insert([
+                'id' => 31,
+                'organization_id' => 50,
+            ]);
+            $mapping = ProjectResource::query()->findOrFail('01J8AA00000000000000000011');
+            $provider = app(DeployerResourceDestinationProvider::class);
+
+            $this->assertSame([], $provider->destinations($this->platformUser(), collect([$mapping])));
+
+            DB::connection('deployer')->table('organization_user')->insert([
+                'organization_id' => 50,
+                'user_id' => 17,
+                'role' => 'viewer',
+            ]);
+
+            $destinations = $provider->destinations($this->platformUser(), collect([$mapping]));
+            $this->assertSame(['01J8AA00000000000000000011'], array_keys($destinations));
+            $this->assertSame('/projects/31', parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_PATH));
+        } finally {
+            foreach (['projects', 'organization_user', 'organizations', 'users'] as $table) {
+                $schema->dropIfExists($table);
+            }
+        }
     }
 
     public function test_monitor_application_deep_link_does_not_retarget_the_session_workspace(): void

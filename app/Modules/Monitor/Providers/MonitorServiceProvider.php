@@ -8,6 +8,7 @@ use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
+use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
@@ -65,6 +66,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('monitor', app(MonitorProjectLink::class));
+        app(ProjectResourceDestinationRegistry::class)->register('monitor', app(MonitorResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));
         app(ProjectResourceLinkRegistry::class)->register('monitor', app(MonitorResourceLinkProvider::class));
         app(ProjectSetupRegistry::class)->register('monitor', app(MonitorProjectSetup::class));

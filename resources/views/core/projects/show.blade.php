@@ -248,11 +248,23 @@
     @endif
 
     <section id="resources" aria-labelledby="project-resources-heading" class="mb-8">
+        <div class="mb-4">
+            <p class="ui-eyebrow">{{ __('Shared project context') }}</p>
+            <h2 id="project-resources-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Project resources') }}</h2>
+        </div>
+
+        <x-signal.ui.project-resource-map
+            :products="$products"
+            :resources="$project->resources"
+            :connections="$project->connections"
+            :resource-destinations="$resourceDestinations"
+            class="mb-4"
+        />
+
         <x-signal.ui.card>
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
                 <div>
-                    <p class="ui-eyebrow">{{ __('Shared project context') }}</p>
-                    <h2 id="project-resources-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('Project resources') }}</h2>
+                    <h3 class="text-base font-extrabold text-ink">{{ __('Resource inventory') }}</h3>
                 </div>
                 <span class="text-xs text-muted">{{ trans_choice(':count resource|:count resources', $project->resources->count(), ['count' => $project->resources->count()]) }}</span>
             </div>

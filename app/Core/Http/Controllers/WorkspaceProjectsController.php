@@ -15,6 +15,7 @@ use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\ProjectProductSummaries;
+use App\Core\Services\ProjectResourceDestinations;
 use App\Core\Services\ProjectResourceLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
 use App\Core\Services\Projects\SetCanonicalProjectArchiveState;
@@ -222,6 +223,7 @@ final class WorkspaceProjectsController
         ProjectProductSummaries $productSummaries,
         ProjectSetup $projectSetup,
         ProjectResourceLinks $resourceLinks,
+        ProjectResourceDestinations $resourceDestinations,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -264,12 +266,20 @@ final class WorkspaceProjectsController
             'resources.environment',
             'connections' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
-                : $query->whereHas('sourceResource', fn ($source) => $source->whereIn('product', $visibleProducts))
-                    ->whereHas('targetResource', fn ($target) => $target->whereIn('product', $visibleProducts))
+                : $query->whereHas('sourceResource', fn ($source) => $source
+                    ->whereIn('product', $visibleProducts)
+                    ->where('project_id', $project->getKey())
+                    ->where('status', 'active'))
+                    ->whereHas('targetResource', fn ($target) => $target
+                        ->whereIn('product', $visibleProducts)
+                        ->where('project_id', $project->getKey())
+                        ->where('status', 'active'))
                     ->where('status', '!=', 'disconnected')
                     ->whereNull('disconnected_at'),
             'connections.sourceResource',
+            'connections.sourceResource.environment',
             'connections.targetResource',
+            'connections.targetResource.environment',
             'connections.events.actor',
             'connections.deliveries',
         ]);
@@ -285,6 +295,7 @@ final class WorkspaceProjectsController
             'productLinks' => $authorizedProductLinks,
             'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts),
             'projectSetupSteps' => $projectSetupSteps,
+            'resourceDestinations' => $resourceDestinations->forResources($user, $project->resources),
             'resourceCandidates' => $canManageConnections
                 ? $resourceLinks->candidates($user, $availableProducts)
                 : collect(),

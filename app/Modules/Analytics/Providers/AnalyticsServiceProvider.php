@@ -8,6 +8,7 @@ use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
+use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
@@ -64,6 +65,7 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('analytics', app(AnalyticsProjectLink::class));
+        app(ProjectResourceDestinationRegistry::class)->register('analytics', app(AnalyticsResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('analytics', app(AnalyticsProjectSummary::class));
         app(ProjectTrafficContextRegistry::class)->register('analytics', app(AnalyticsTrafficContextProvider::class));
         app(ProjectResourceLinkRegistry::class)->register('analytics', app(AnalyticsResourceLinkProvider::class));

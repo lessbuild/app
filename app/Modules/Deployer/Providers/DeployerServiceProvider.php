@@ -8,6 +8,7 @@ use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
+use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
@@ -23,6 +24,7 @@ use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
+use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\SshServerTroubleshootingTransport;
@@ -49,6 +51,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
 
         Cashier::useCustomerModel(User::class);
         app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
+        app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(ProjectResourceLinkRegistry::class)->register('deployer', app(DeployerResourceLinkProvider::class));
         app(ProjectSetupRegistry::class)->register('deployer', app(DeployerProjectSetup::class));

@@ -12,6 +12,7 @@ use App\Core\Services\Billing\ResolveProductPlan;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
+use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
@@ -29,6 +30,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
     {
         $this->app->singleton(ProjectProductLinkRegistry::class);
         $this->app->singleton(ProjectProductSummaryRegistry::class);
+        $this->app->singleton(ProjectResourceDestinationRegistry::class);
         $this->app->singleton(ProjectResourceLinkRegistry::class);
         $this->app->singleton(ProjectSetupRegistry::class);
         $this->app->singleton(ProjectTrafficContextRegistry::class);
