@@ -16,17 +16,18 @@ class PlanLimits
      *
      * @param  MonetizationTelemetry  $telemetry  Records limit denials by workspace and capability.
      */
-    public function __construct(private readonly MonetizationTelemetry $telemetry) {}
+    public function __construct(
+        private readonly MonetizationTelemetry $telemetry,
+        private readonly DeployerPlanAuthority $planAuthority,
+    ) {}
 
-    /** @return array{plan: string, used: int, limit: int|null, allowed: bool} */
+    /** @return array{plan: string, plan_name: string, used: int, limit: int|null, allowed: bool, plan_available: bool, limit_configured: bool} */
     public function usage(User $user, string $resource): array
     {
         if ($user->currentOrganization) {
             return $this->usageForOrganization($user->currentOrganization, $resource);
         }
 
-        $plan = $user->billingPlan();
-        $limit = config("billing.plans.{$plan}.limits.{$resource}");
         $used = match ($resource) {
             'servers' => $user->servers()->count(),
             'websites' => $user->websites()->count(),
@@ -38,19 +39,19 @@ class PlanLimits
             default => throw new \InvalidArgumentException("Unsupported billing resource [{$resource}]."),
         };
 
-        return [
-            'plan' => $plan,
-            'used' => $used,
-            'limit' => $limit,
-            'allowed' => ! config('billing.enforce_limits') || $limit === null || $used < $limit,
-        ];
+        if ($this->planAuthority->usesCore()) {
+            return $this->usageResult('unavailable', $used, null, false, false);
+        }
+
+        $plan = $user->billingPlan();
+        $limit = config("billing.plans.{$plan}.limits.{$resource}");
+
+        return $this->usageResult($plan, $used, $limit);
     }
 
-    /** @return array{plan: string, used: int, limit: int|null, allowed: bool} */
+    /** @return array{plan: string, plan_name: string, used: int, limit: int|null, allowed: bool, plan_available: bool, limit_configured: bool} */
     public function usageForOrganization(Organization $organization, string $resource): array
     {
-        $plan = $organization->owner->billingPlan();
-        $limit = config("billing.plans.{$plan}.limits.{$resource}");
         $used = match ($resource) {
             'servers' => $organization->servers()->count(),
             'websites' => $organization->websites()->count(),
@@ -62,12 +63,29 @@ class PlanLimits
             default => throw new \InvalidArgumentException("Unsupported billing resource [{$resource}]."),
         };
 
-        return [
-            'plan' => $plan,
-            'used' => $used,
-            'limit' => $limit,
-            'allowed' => ! config('billing.enforce_limits') || $limit === null || $used < $limit,
-        ];
+        if ($this->planAuthority->usesCore()) {
+            $resolution = $this->planAuthority->resolve($organization);
+
+            if (! $resolution->available) {
+                return $this->usageResult('unavailable', $used, null, false, false);
+            }
+
+            $limitConfigured = $resolution->hasLimit($resource);
+
+            return $this->usageResult(
+                $resolution->planKey ?? 'unavailable',
+                $used,
+                $resolution->limit($resource),
+                planAvailable: true,
+                limitConfigured: $limitConfigured,
+                planName: $resolution->planName,
+            );
+        }
+
+        $plan = $organization->owner->billingPlan();
+        $limit = config("billing.plans.{$plan}.limits.{$resource}");
+
+        return $this->usageResult($plan, $used, $limit);
     }
 
     /**
@@ -119,7 +137,7 @@ class PlanLimits
         }, 3);
     }
 
-    /** @param array{plan: string, used: int, limit: int|null, allowed: bool} $usage */
+    /** @param array{plan: string, plan_name: string, used: int, limit: int|null, allowed: bool, plan_available: bool, limit_configured: bool} $usage */
     private function enforceUsage(array $usage, string $resource, ?Organization $organization): void
     {
 
@@ -129,6 +147,20 @@ class PlanLimits
 
         $this->telemetry->denied('limit', $resource, $organization);
 
+        if (! $usage['plan_available']) {
+            throw ValidationException::withMessages([
+                'plan' => __('We could not confirm this workspace’s Deployer plan, so this change was not made. Retry shortly or contact support.'),
+            ]);
+        }
+
+        if (! $usage['limit_configured']) {
+            throw ValidationException::withMessages([
+                'plan' => __('We could not confirm the Deployer :resource limit for this workspace, so this change was not made. Retry shortly or contact support.', [
+                    'resource' => str_replace('_', ' ', $resource),
+                ]),
+            ]);
+        }
+
         $label = match ($resource) {
             'servers' => 'server',
             'websites' => 'website',
@@ -137,9 +169,30 @@ class PlanLimits
         };
         throw ValidationException::withMessages([
             'plan' => __("Your :plan plan allows :limit {$label}(s). Upgrade your plan to create another.", [
-                'plan' => config("billing.plans.{$usage['plan']}.name"),
+                'plan' => $usage['plan_name'],
                 'limit' => $usage['limit'],
             ]),
         ]);
+    }
+
+    /** @return array{plan: string, plan_name: string, used: int, limit: int|null, allowed: bool, plan_available: bool, limit_configured: bool} */
+    private function usageResult(
+        string $plan,
+        int $used,
+        ?int $limit,
+        bool $planAvailable = true,
+        bool $limitConfigured = true,
+        ?string $planName = null,
+    ): array {
+        return [
+            'plan' => $plan,
+            'plan_name' => $planName ?? config("billing.plans.{$plan}.name", ucfirst($plan)),
+            'used' => $used,
+            'limit' => $limit,
+            'allowed' => ! config('billing.enforce_limits')
+                || ($planAvailable && $limitConfigured && ($limit === null || $used < $limit)),
+            'plan_available' => $planAvailable,
+            'limit_configured' => $limitConfigured,
+        ];
     }
 }

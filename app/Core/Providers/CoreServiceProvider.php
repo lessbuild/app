@@ -3,9 +3,11 @@
 namespace App\Core\Providers;
 
 use App\Core\Auth\PlatformUserProvider;
+use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Http\Middleware\ResolveProductPrincipal;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
+use App\Core\Services\Billing\ResolveProductPlan;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -22,6 +24,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
     {
         $this->app->singleton(ProjectProductLinkRegistry::class);
         $this->app->singleton(ProductPrincipalRegistry::class);
+        $this->app->bind(ProductPlanResolver::class, ResolveProductPlan::class);
 
         Passkeys::useUserModel(PlatformUser::class);
         Passkeys::usePasskeyModel(Passkey::class);

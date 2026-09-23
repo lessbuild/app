@@ -38,7 +38,11 @@
     </x-ui.alert>
 @endif
 
-@if (! $planUsage['allowed'])
+@if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
+    <x-ui.alert tone="warning" class="m-5">
+        {{ __('We could not confirm this workspace’s Deployer plan and server allowance. Retry shortly or contact support.') }}
+    </x-ui.alert>
+@elseif (! $planUsage['allowed'])
     <x-ui.alert tone="warning" class="m-5">
         <p class="font-semibold">{{ __('Your plan’s server limit has been reached.') }}</p>
         <x-ui.button :href="route('billing.index')" variant="secondary" class="mt-3">{{ __('Upgrade plan') }}</x-ui.button>

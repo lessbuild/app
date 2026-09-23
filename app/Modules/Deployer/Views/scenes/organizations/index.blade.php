@@ -68,8 +68,8 @@
             />
             <x-ui.stat
                 :label="__('Seat usage')"
-                :value="$memberUsage['used'].' / '.($memberUsage['limit'] ?? __('Unlimited'))"
-                :description="__('Members and active invitations.')"
+                :value="$memberUsage['plan_available'] && $memberUsage['limit_configured'] ? $memberUsage['used'].' / '.($memberUsage['limit'] ?? __('Unlimited')) : __('Unverified')"
+                :description="$memberUsage['plan_available'] && $memberUsage['limit_configured'] ? __('Members and active invitations.') : __('Workspace plan details could not be confirmed.')"
             />
             <x-ui.stat
                 :label="__('Two-factor policy')"

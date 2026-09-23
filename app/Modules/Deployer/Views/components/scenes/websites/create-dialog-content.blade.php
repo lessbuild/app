@@ -36,7 +36,11 @@
     </aside>
 @endif
 
-@if (! $planUsage['allowed'])
+@if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
+    <x-ui.alert tone="warning" class="m-5">
+        {{ __('We could not confirm this workspace’s Deployer plan and website allowance. Retry shortly or contact support.') }}
+    </x-ui.alert>
+@elseif (! $planUsage['allowed'])
     <aside class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p>{{ __('Your plan’s website limit has been reached.') }}</p>

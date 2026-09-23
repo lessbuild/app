@@ -1,7 +1,11 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('servers.index')" :title="__('Back to servers')" />
 
-    @if (! $planUsage['allowed'])
+    @if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
+        <x-ui.alert tone="warning" class="my-4">
+            {{ __('We could not confirm this workspace’s Deployer plan and server allowance. Retry shortly or contact support.') }}
+        </x-ui.alert>
+    @elseif (! $planUsage['allowed'])
         <x-ui.alert tone="warning" class="my-4">
             <p class="font-semibold">{{ __('Your plan’s server limit has been reached') }}</p>
             <x-ui.button :href="route('pricing')" variant="secondary" class="mt-3">{{ __('View plans') }}</x-ui.button>

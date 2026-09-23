@@ -16,7 +16,7 @@
 @plugin "@tailwindcss/forms";
 
 :root {
-    --mobile-quick-navigation-space: env(safe-area-inset-bottom, 0px);
+    --mobile-quick-navigation-space: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 html {

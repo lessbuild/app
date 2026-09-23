@@ -10,6 +10,16 @@
             @csrf
             <x-ui.card class="overflow-hidden">
                 <div class="space-y-6 bg-surface px-5 py-5 sm:px-8">
+                    @if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
+                        <x-ui.alert tone="warning">
+                            {{ __('We could not confirm this workspace’s Deployer plan and website allowance. Retry shortly or contact support.') }}
+                        </x-ui.alert>
+                    @elseif (! $planUsage['allowed'])
+                        <x-ui.alert tone="warning">
+                            {{ __('Your plan’s website limit has been reached.') }} <a href="{{ route('billing.index') }}" class="ui-link">{{ __('Upgrade plan') }}</a>
+                        </x-ui.alert>
+                    @endif
+
                     <div>
                         <label for="server_id" class="ui-label">{{ __('Active server') }}</label>
                         <select id="server_id" name="server_id" required class="ui-input">

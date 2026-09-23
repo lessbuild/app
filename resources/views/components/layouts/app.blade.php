@@ -194,6 +194,10 @@
             {{ $slot }}
         </main>
         <x-layouts.mobile-navigation :navigation="$navigation ?? []" />
+        <x-layouts.mobile-quick-navigation
+            :create-url="$applicationCreateDialogUrl"
+            :create-open="$applicationCreateDialogOpen"
+        />
 
         <div
             data-network-status

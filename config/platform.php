@@ -13,6 +13,16 @@ return [
     'auth_host' => env('PLATFORM_AUTH_HOST'),
     'auth_url' => env('PLATFORM_AUTH_URL', filled(env('PLATFORM_AUTH_HOST')) ? 'https://'.env('PLATFORM_AUTH_HOST') : null),
 
+    'billing' => [
+        // These defaults intentionally exclude past-due and canceled plans.
+        // Product-specific grace-period policy must be agreed before changing them.
+        'entitled_statuses' => [
+            'deployer' => ['active', 'trialing'],
+            'monitor' => ['active', 'trialing'],
+            'analytics' => ['active', 'trialing'],
+        ],
+    ],
+
     'products' => [
         'deployer' => [
             'label' => 'Deployer',
