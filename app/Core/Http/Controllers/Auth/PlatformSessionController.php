@@ -6,6 +6,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\PlatformAuthenticationSessions;
 use App\Core\Services\Auth\PlatformRedirectTarget;
 use App\Core\Services\Auth\PlatformSsoHandoff;
+use App\Core\Services\Auth\RegisterPlatformAccount;
 use App\Core\Services\Auth\VerifyPlatformTwoFactorCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,8 +17,12 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class PlatformSessionController
 {
-    public function create(Request $request, PlatformRedirectTarget $redirects, PlatformSsoHandoff $handoff): View|Response
-    {
+    public function create(
+        Request $request,
+        PlatformRedirectTarget $redirects,
+        PlatformSsoHandoff $handoff,
+        RegisterPlatformAccount $registration,
+    ): View|Response {
         $requestedTarget = $request->query('return_to');
         $target = $redirects->resolve(is_string($requestedTarget) ? $requestedTarget : null, $request);
 
@@ -27,7 +32,10 @@ final class PlatformSessionController
             return $handoff->respond($request, $user, $target ?? route('core.home'));
         }
 
-        return view('core::auth.login', ['returnTo' => $target]);
+        return view('core::auth.login', [
+            'returnTo' => $target,
+            'registrationOpen' => $registration->available(),
+        ]);
     }
 
     public function store(

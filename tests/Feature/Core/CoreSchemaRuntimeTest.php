@@ -94,6 +94,7 @@ final class CoreSchemaRuntimeTest extends TestCase
         $this->assertTrue(Schema::connection('core')->hasTable('workspace_project_pins'));
         $this->assertTrue(Schema::connection('core')->hasTable('platform_auth_sessions'));
         $this->assertTrue(Schema::connection('core')->hasTable('platform_sso_tickets'));
+        $this->assertTrue(Schema::connection('core')->hasTable('platform_registration_mutexes'));
 
         $projectId = (string) Str::ulid();
         DB::connection('core')->table('projects')->insert([

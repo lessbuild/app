@@ -62,6 +62,10 @@ final class PlatformAuthenticationTest extends TestCase
             $table->timestamp('consumed_at')->nullable()->index();
             $table->timestamp('created_at')->nullable();
         });
+        Schema::connection('core')->create('platform_registration_mutexes', function (Blueprint $table): void {
+            $table->unsignedTinyInteger('id')->primary();
+        });
+        DB::connection('core')->table('platform_registration_mutexes')->insert(['id' => 1]);
 
         Auth::forgetGuards();
     }
@@ -71,6 +75,7 @@ final class PlatformAuthenticationTest extends TestCase
         Auth::forgetGuards();
         Schema::connection('core')->dropIfExists('platform_sso_tickets');
         Schema::connection('core')->dropIfExists('platform_auth_sessions');
+        Schema::connection('core')->dropIfExists('platform_registration_mutexes');
         Schema::connection('core')->dropIfExists('password_reset_tokens');
         Schema::connection('core')->dropIfExists('users');
 

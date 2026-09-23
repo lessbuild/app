@@ -2,6 +2,7 @@
 
 namespace App\Core\Models;
 
+use App\Core\Notifications\PlatformVerifyEmail;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -91,5 +92,10 @@ class PlatformUser extends Authenticatable implements MustVerifyEmailContract, P
     public function twoFactorEnabled(): bool
     {
         return filled($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new PlatformVerifyEmail);
     }
 }

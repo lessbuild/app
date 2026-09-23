@@ -43,6 +43,12 @@
             </x-signal.ui.card>
 
             <p class="mt-5 text-center text-xs leading-5 text-muted">{{ __('If you joined through a product account, use the email and password carried over from that account.') }}</p>
+            @if ($registrationOpen)
+                <p class="mt-3 text-center text-sm text-muted">
+                    {{ __('New to Buildpusher?') }}
+                    <a href="{{ route('platform.register') }}" class="font-bold text-primary underline">{{ __('Create a workspace') }}</a>
+                </p>
+            @endif
         </div>
     </main>
 </x-signal.layouts.core>
