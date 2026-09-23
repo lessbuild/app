@@ -73,6 +73,9 @@ final class WorkspaceDashboardTest extends TestCase
         Auth::forgetGuards();
 
         foreach ([
+            'workspace_project_pins',
+            'workspace_dashboard_selections',
+            'workspace_dashboard_views',
             'current_product_subscriptions',
             'product_subscriptions',
             'project_connections',
@@ -273,7 +276,6 @@ final class WorkspaceDashboardTest extends TestCase
 
         $response = $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
             ->get(route('core.workspace.dashboard', $this->workspaceId));
-
         $response
             ->assertOk()
             ->assertSeeText('Overview')
@@ -557,8 +559,315 @@ final class WorkspaceDashboardTest extends TestCase
         ], 'core');
     }
 
+    public function test_personal_saved_views_and_project_pins_persist_and_filter_only_currently_authorized_projects(): void
+    {
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Pinned storefront',
+            'slug' => 'pinned-storefront',
+            'status' => 'active',
+            'description' => null,
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $this->userId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->post(route('core.workspace.views.store', $this->workspaceId), [
+                'name' => 'My pinned projects',
+                'visibility' => 'personal',
+                'product' => 'all',
+                'pinned_only' => '1',
+            ])
+            ->assertRedirect();
+
+        $view = DB::connection('core')->table('workspace_dashboard_views')->first();
+        $this->assertNotNull($view);
+        $this->assertSame($this->userId, $view->owner_user_id);
+        $this->assertSame('user:'.$this->userId, $view->scope_key);
+
+        $this->put(route('core.workspace.views.update', [$this->workspaceId, $view->id]), [
+            'name' => 'My pinned projects',
+            'visibility' => 'personal',
+            'product' => 'all',
+            'pinned_only' => '1',
+        ])->assertRedirect();
+        $this->post(route('core.workspace.views.store', $this->workspaceId), [
+            'name' => 'My pinned projects',
+            'visibility' => 'personal',
+            'product' => 'all',
+            'pinned_only' => '1',
+        ])->assertSessionHasErrors('name');
+
+        $pinRoute = route('core.workspace.project-pins.update', [$this->workspaceId, $projectId, 'personal']);
+        $this->put($pinRoute)->assertRedirect();
+        $this->put($pinRoute)->assertRedirect();
+        $this->assertDatabaseCount('workspace_project_pins', 1, 'core');
+
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]))
+            ->assertOk()
+            ->assertSeeText('My pinned projects')
+            ->assertSeeText('Pinned storefront')
+            ->assertSeeText('Unpin for me');
+        $this->assertDatabaseHas('workspace_dashboard_selections', [
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $this->userId,
+            'view_id' => $view->id,
+        ], 'core');
+
+        // A fresh workspace landing, such as returning from another app host, restores the saved view.
+        $this->get(route('core.workspace.dashboard', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('My pinned projects')
+            ->assertSeeText('Pinned storefront');
+
+        $this->delete(route('core.workspace.project-pins.destroy', [$this->workspaceId, $projectId, 'personal']))
+            ->assertRedirect();
+        $this->get(route('core.workspace.dashboard', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('My pinned projects')
+            ->assertSeeText('No projects match this view')
+            ->assertDontSeeText('Unpin for me');
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => 'all']))
+            ->assertOk()
+            ->assertSeeText('Recently updated');
+        $this->assertDatabaseHas('workspace_dashboard_selections', [
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $this->userId,
+            'view_id' => null,
+        ], 'core');
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]))
+            ->assertOk()
+            ->assertSeeText('My pinned projects');
+        $this->delete(route('core.workspace.views.destroy', [$this->workspaceId, $view->id]))
+            ->assertRedirect();
+        $this->assertDatabaseMissing('workspace_dashboard_views', ['id' => $view->id], 'core');
+        $this->get(route('core.workspace.dashboard', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('Recently updated');
+        $this->assertDatabaseHas('workspace_dashboard_selections', [
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $this->userId,
+            'view_id' => null,
+        ], 'core');
+    }
+
+    public function test_shared_pinned_only_views_use_workspace_pins_not_personal_pins(): void
+    {
+        $workspacePinnedId = (string) Str::ulid();
+        $personalPinnedId = (string) Str::ulid();
+
+        foreach ([[$workspacePinnedId, 'Workspace pinned project'], [$personalPinnedId, 'Personal pinned project']] as [$projectId, $name]) {
+            DB::connection('core')->table('projects')->insert([
+                'id' => $projectId,
+                'workspace_id' => $this->workspaceId,
+                'created_by_user_id' => $this->userId,
+                'name' => $name,
+                'slug' => Str::slug($name),
+                'status' => 'active',
+                'description' => null,
+                'metadata' => json_encode([]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('project_memberships')->insert([
+                'id' => (string) Str::ulid(),
+                'project_id' => $projectId,
+                'user_id' => $this->userId,
+                'role' => 'owner',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->put(route('core.workspace.project-pins.update', [$this->workspaceId, $workspacePinnedId, 'workspace']))
+            ->assertRedirect();
+        $this->put(route('core.workspace.project-pins.update', [$this->workspaceId, $personalPinnedId, 'personal']))
+            ->assertRedirect();
+        $this->post(route('core.workspace.views.store', $this->workspaceId), [
+            'name' => 'Shared pins only',
+            'visibility' => 'workspace',
+            'product' => 'all',
+            'pinned_only' => '1',
+        ])->assertRedirect();
+
+        $view = DB::connection('core')->table('workspace_dashboard_views')->first();
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]))
+            ->assertOk()
+            ->assertSeeText('Workspace pinned project')
+            ->assertSeeText('Unpin for workspace')
+            ->assertDontSeeText('Unpin for me');
+    }
+
+    public function test_workspace_views_are_shared_but_each_request_rechecks_product_and_project_access(): void
+    {
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Shared view project',
+            'slug' => 'shared-view-project',
+            'status' => 'active',
+            'description' => null,
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $this->userId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $owner = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($owner, 'platform')
+            ->post(route('core.workspace.views.store', $this->workspaceId), [
+                'name' => 'Shared Monitor view',
+                'visibility' => 'workspace',
+                'product' => 'monitor',
+                'pinned_only' => '0',
+            ])
+            ->assertRedirect();
+        $this->post(route('core.workspace.views.store', $this->workspaceId), [
+            'name' => 'Shared all projects',
+            'visibility' => 'workspace',
+            'product' => 'all',
+            'pinned_only' => '0',
+        ])->assertRedirect();
+
+        $view = DB::connection('core')->table('workspace_dashboard_views')->where('name', 'Shared Monitor view')->first();
+        $allProjectsView = DB::connection('core')->table('workspace_dashboard_views')->where('name', 'Shared all projects')->first();
+        $this->assertSame('workspace', $view->visibility);
+        $this->assertNull($view->owner_user_id);
+        $this->assertSame('workspace', $view->scope_key);
+
+        $memberId = (string) Str::ulid();
+        DB::connection('core')->table('users')->insert([
+            'id' => $memberId,
+            'name' => 'Jamie Member',
+            'email' => 'jamie@example.test',
+            'email_normalized' => 'jamie@example.test',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('workspace_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $memberId,
+            'role' => 'member',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $member = PlatformUser::query()->findOrFail($memberId);
+        $this->actingAs($member, 'platform')
+            ->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]))
+            ->assertOk()
+            ->assertSeeText('Shared Monitor view')
+            ->assertSeeText('This saved view depends on an app filter you can no longer access')
+            ->assertDontSeeText('Shared view project');
+
+        $personalViewId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_dashboard_views')->insert([
+            'id' => $personalViewId,
+            'workspace_id' => $this->workspaceId,
+            'visibility' => 'personal',
+            'scope_key' => 'user:'.$this->userId,
+            'owner_user_id' => $this->userId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Owner private view',
+            'filters' => json_encode(['product' => 'all', 'pinned_only' => false]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $personalViewId]))
+            ->assertNotFound();
+        $this->put(route('core.workspace.views.update', [$this->workspaceId, $view->id]), [
+            'name' => 'Changed shared view',
+            'visibility' => 'workspace',
+            'product' => 'all',
+            'pinned_only' => '0',
+        ])->assertForbidden();
+        $this->delete(route('core.workspace.views.destroy', [$this->workspaceId, $view->id]))
+            ->assertForbidden();
+
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $allProjectsView->id]))
+            ->assertOk()
+            ->assertSeeText('Shared all projects')
+            ->assertDontSeeText('Open project');
+
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $memberId,
+            'role' => 'member',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $allProjectsView->id]))
+            ->assertOk()
+            ->assertSeeText('Shared view project');
+        $this->put(route('core.workspace.project-pins.update', [$this->workspaceId, $projectId, 'workspace']))
+            ->assertForbidden();
+
+        DB::connection('core')->table('project_memberships')->where('project_id', $projectId)->where('user_id', $memberId)->delete();
+        $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $allProjectsView->id]))
+            ->assertOk()
+            ->assertDontSeeText('Open project');
+    }
+
     private function createTables(): void
     {
+        Schema::connection('core')->create('workspace_dashboard_views', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->string('visibility', 16);
+            $table->string('scope_key', 64);
+            $table->char('owner_user_id', 26)->nullable();
+            $table->char('created_by_user_id', 26)->nullable();
+            $table->string('name', 80);
+            $table->json('filters');
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspace_dashboard_selections', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('user_id', 26);
+            $table->char('view_id', 26)->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspace_project_pins', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('project_id', 26);
+            $table->string('visibility', 16);
+            $table->string('scope_key', 64);
+            $table->char('owner_user_id', 26)->nullable();
+            $table->char('created_by_user_id', 26)->nullable();
+            $table->timestamps();
+        });
         Schema::connection('core')->create('users', function (Blueprint $table): void {
             $table->char('id', 26)->primary();
             $table->string('name')->nullable();

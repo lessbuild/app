@@ -3,6 +3,7 @@
 use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
+use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
 use App\Core\Http\Controllers\WorkspaceSearchController;
 use Illuminate\Support\Facades\Route;
@@ -15,6 +16,23 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::get('/workspaces/{workspace}/overview', WorkspaceDashboardController::class)
         ->name('core.workspace.dashboard');
+
+    Route::post('/workspaces/{workspace}/dashboard/views', [WorkspaceDashboardPreferencesController::class, 'storeView'])
+        ->name('core.workspace.views.store');
+    Route::put('/workspaces/{workspace}/dashboard/views/{view}', [WorkspaceDashboardPreferencesController::class, 'updateView'])
+        ->scopeBindings()
+        ->name('core.workspace.views.update');
+    Route::delete('/workspaces/{workspace}/dashboard/views/{view}', [WorkspaceDashboardPreferencesController::class, 'destroyView'])
+        ->scopeBindings()
+        ->name('core.workspace.views.destroy');
+    Route::put('/workspaces/{workspace}/projects/{project}/pins/{visibility}', [WorkspaceDashboardPreferencesController::class, 'pin'])
+        ->scopeBindings()
+        ->whereIn('visibility', ['personal', 'workspace'])
+        ->name('core.workspace.project-pins.update');
+    Route::delete('/workspaces/{workspace}/projects/{project}/pins/{visibility}', [WorkspaceDashboardPreferencesController::class, 'unpin'])
+        ->scopeBindings()
+        ->whereIn('visibility', ['personal', 'workspace'])
+        ->name('core.workspace.project-pins.destroy');
 
     Route::get('/workspaces/{workspace}/search', WorkspaceSearchController::class)
         ->middleware('throttle:60,1')

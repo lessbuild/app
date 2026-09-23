@@ -8,8 +8,11 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\Workspace;
+use App\Core\Models\WorkspaceDashboardSelection;
+use App\Core\Models\WorkspaceDashboardView;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Models\WorkspaceProjectPin;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\Projects\WorkspaceDashboardPriorities;
@@ -49,36 +52,128 @@ final class WorkspaceDashboardController
             ->keyBy('product');
         $visibleProducts = $productGrants->keys()->all();
         $projectScope = fn (Builder $query) => $this->visibleProjects($query, $workspace, $user);
+        $dashboardViews = WorkspaceDashboardView::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where(fn (Builder $query) => $query
+                ->where('visibility', 'workspace')
+                ->orWhere('owner_user_id', $user->getKey()))
+            ->orderBy('name')
+            ->get();
+        $selection = WorkspaceDashboardSelection::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where('user_id', $user->getKey())
+            ->first();
+        $hasExplicitView = $request->query->has('view');
+        $requestedView = $hasExplicitView ? $request->query('view') : $selection?->view_id;
+        $selectedView = null;
+
+        if (filled($requestedView) && $requestedView !== 'all') {
+            $selectedView = $dashboardViews->firstWhere('id', (string) $requestedView);
+
+            if ($hasExplicitView) {
+                abort_if($selectedView === null, 404);
+            }
+        }
+
+        if ($hasExplicitView || ($selection !== null && $requestedView !== null && $selectedView === null)) {
+            WorkspaceDashboardSelection::query()->updateOrCreate([
+                'workspace_id' => $workspace->getKey(),
+                'user_id' => $user->getKey(),
+            ], [
+                'view_id' => $selectedView?->getKey(),
+            ]);
+        }
+
+        $viewFilters = $selectedView?->filters ?? [];
+        $viewProduct = $viewFilters['product'] ?? 'all';
+        $validViewProduct = is_string($viewProduct) && in_array($viewProduct, ['all', 'deployer', 'monitor', 'analytics'], true);
+        $selectedViewUnavailable = $selectedView !== null
+            && (! $validViewProduct || ($viewProduct !== 'all' && ! in_array($viewProduct, $visibleProducts, true)));
+        $pinnedOnly = (bool) ($viewFilters['pinned_only'] ?? false);
+
+        $visiblePins = WorkspaceProjectPin::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where(fn (Builder $query) => $query
+                ->where('visibility', 'workspace')
+                ->orWhere('owner_user_id', $user->getKey()));
+        $viewScopePins = WorkspaceProjectPin::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where('visibility', $selectedView?->visibility === 'workspace' ? 'workspace' : 'personal')
+            ->when($selectedView?->visibility !== 'workspace', fn (Builder $query) => $query->where('owner_user_id', $user->getKey()));
 
         $projectCount = $this->visibleProjects(Project::query(), $workspace, $user)->count();
-        $projects = $this->visibleProjects(Project::query(), $workspace, $user)
-            ->with([
-                'products' => fn ($query) => $visibleProducts === []
-                    ? $query->whereRaw('1 = 0')
-                    : $query->whereIn('product', $visibleProducts),
-            ])
-            ->withCount(['connections as active_connections_count' => function (Builder $query) use ($visibleProducts): void {
-                $query->where('status', '!=', 'disconnected')
-                    ->whereNull('disconnected_at');
+        $projectList = function () use ($workspace, $user, $visibleProducts, $viewProduct, $validViewProduct, $selectedViewUnavailable, $pinnedOnly, $viewScopePins): Builder {
+            $query = $this->visibleProjects(Project::query(), $workspace, $user);
 
-                if ($visibleProducts === []) {
-                    $query->whereRaw('1 = 0');
+            if ($selectedViewUnavailable || ! $validViewProduct) {
+                $query->whereRaw('1 = 0');
+            } elseif ($viewProduct !== 'all') {
+                $query->whereHas('products', fn (Builder $product) => $product
+                    ->where('product', $viewProduct)
+                    ->where('status', 'active'));
+            }
 
-                    return;
-                }
+            if ($pinnedOnly) {
+                $query->whereIn('projects.id', (clone $viewScopePins)->select('project_id'));
+            }
 
-                $query->whereHas('sourceResource', fn (Builder $resource) => $resource
-                    ->whereIn('product', $visibleProducts)
-                    ->where('status', 'active')
-                    ->whereColumn('project_id', 'project_connections.project_id'))
-                    ->whereHas('targetResource', fn (Builder $resource) => $resource
+            return $query
+                ->with([
+                    'products' => fn ($products) => $visibleProducts === []
+                        ? $products->whereRaw('1 = 0')
+                        : $products->whereIn('product', $visibleProducts),
+                ])
+                ->withCount(['connections as active_connections_count' => function (Builder $connections) use ($visibleProducts): void {
+                    $connections->where('status', '!=', 'disconnected')
+                        ->whereNull('disconnected_at');
+
+                    if ($visibleProducts === []) {
+                        $connections->whereRaw('1 = 0');
+
+                        return;
+                    }
+
+                    $connections->whereHas('sourceResource', fn (Builder $resource) => $resource
                         ->whereIn('product', $visibleProducts)
                         ->where('status', 'active')
-                        ->whereColumn('project_id', 'project_connections.project_id'));
-            }])
-            ->orderByDesc('updated_at')
-            ->limit(6)
-            ->get();
+                        ->whereColumn('project_id', 'project_connections.project_id'))
+                        ->whereHas('targetResource', fn (Builder $resource) => $resource
+                            ->whereIn('product', $visibleProducts)
+                            ->where('status', 'active')
+                            ->whereColumn('project_id', 'project_connections.project_id'));
+                }]);
+        };
+
+        $pinnedProjects = $selectedViewUnavailable
+            ? collect()
+            : $projectList()
+                ->whereIn('projects.id', (clone $visiblePins)->select('project_id'))
+                ->orderByDesc('updated_at')
+                ->limit(6)
+                ->get();
+        $recentProjects = $selectedViewUnavailable
+            ? collect()
+            : $projectList()
+                ->orderByDesc('updated_at')
+                ->limit(6)
+                ->get();
+        $projects = $pinnedProjects
+            ->concat($recentProjects)
+            ->unique(fn (Project $project): string => (string) $project->getKey())
+            ->take(12)
+            ->values();
+        $projectPinStates = WorkspaceProjectPin::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->whereIn('project_id', $projects->pluck('id'))
+            ->where(fn (Builder $query) => $query
+                ->where('visibility', 'workspace')
+                ->orWhere('owner_user_id', $user->getKey()))
+            ->get()
+            ->groupBy('project_id')
+            ->map(fn (Collection $pins): array => [
+                'personal' => $pins->contains('visibility', 'personal'),
+                'workspace' => $pins->contains('visibility', 'workspace'),
+            ]);
         $projectSummaries = $projects->mapWithKeys(function (Project $project) use ($productSummaries, $user): array {
             $activeProducts = $project->products
                 ->where('status', 'active')
@@ -169,6 +264,10 @@ final class WorkspaceDashboardController
             'workspace' => $workspace,
             'workspaces' => $this->workspacesFor($user),
             'projects' => $projects,
+            'dashboardViews' => $dashboardViews,
+            'selectedView' => $selectedView,
+            'selectedViewUnavailable' => $selectedViewUnavailable,
+            'projectPinStates' => $projectPinStates,
             'projectSummaries' => $projectSummaries,
             'priorities' => $priorities,
             'projectCount' => $projectCount,
@@ -184,6 +283,7 @@ final class WorkspaceDashboardController
             'subscriptions' => $subscriptions,
             'canManageBilling' => $canManageBilling,
             'canCreateProjects' => $access->canManageWorkspace($user, $workspace),
+            'canManageWorkspace' => $access->canManageWorkspace($user, $workspace),
             'contextProjects' => $this->contextProjects($workspace, $user),
         ]);
     }

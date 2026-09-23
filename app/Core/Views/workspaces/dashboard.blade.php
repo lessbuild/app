@@ -40,6 +40,84 @@
         <x-signal.ui.stat :label="__('Team members')" :value="$memberCount" :description="__('People with workspace membership')" />
     </dl>
 
+    <section aria-labelledby="workspace-saved-views-title" class="mb-8">
+        <div class="mb-3 flex flex-wrap items-end justify-between gap-3">
+            <div>
+                <p class="ui-eyebrow">{{ __('Workspace dashboard') }}</p>
+                <h2 id="workspace-saved-views-title" class="mt-1 text-lg font-extrabold text-ink">{{ __('Saved views') }}</h2>
+            </div>
+            <p class="text-xs text-muted">{{ __('Views filter project activity. Workspace totals, subscriptions, and connections remain unchanged.') }}</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+            <x-signal.ui.link :href="route('core.workspace.dashboard', ['workspace' => $workspace, 'view' => 'all'])" :variant="$selectedView === null ? 'primary' : 'muted'" size="sm" :aria-current="$selectedView === null ? 'page' : null">
+                {{ __('All projects') }}
+            </x-signal.ui.link>
+            @foreach ($dashboardViews as $savedView)
+                <x-signal.ui.link :href="route('core.workspace.dashboard', ['workspace' => $workspace, 'view' => $savedView->getKey()])" :variant="$selectedView?->is($savedView) ? 'primary' : 'muted'" size="sm" :aria-current="$selectedView?->is($savedView) ? 'page' : null">
+                    {{ $savedView->name }}
+                    <x-signal.ui.badge :tone="$savedView->visibility === 'workspace' ? 'accent' : 'neutral'">{{ $savedView->visibility === 'workspace' ? __('Workspace') : __('Personal') }}</x-signal.ui.badge>
+                </x-signal.ui.link>
+            @endforeach
+
+            <x-signal.ui.menu align="right" trigger-class="ui-btn ui-btn-secondary ui-btn-sm items-center" panel-class="w-[min(34rem,calc(100vw-2rem))] p-0" data-signal-menu>
+                <x-slot:trigger>{{ __('Save a view') }}</x-slot:trigger>
+                <x-signal.ui.card class="p-4 sm:p-5">
+                    <h3 class="mb-4 text-base font-extrabold text-ink">{{ __('Create a saved view') }}</h3>
+                    <x-signal.ui.workspace-view-form :workspace="$workspace" :can-share="$canManageWorkspace" :return-view="$selectedView?->getKey() ?? 'all'" />
+                </x-signal.ui.card>
+            </x-signal.ui.menu>
+
+            @if ($dashboardViews->isNotEmpty())
+                <x-signal.ui.menu align="right" trigger-class="ui-btn ui-btn-ghost ui-btn-sm items-center" panel-class="max-h-[min(70vh,36rem)] w-[min(38rem,calc(100vw-2rem))] overflow-y-auto p-0" data-signal-menu>
+                    <x-slot:trigger>{{ __('Manage views') }}</x-slot:trigger>
+                    <x-signal.ui.card class="grid gap-3 p-4 sm:p-5">
+                        @foreach ($dashboardViews as $savedView)
+                            @php
+                                $canManageSavedView = $savedView->visibility === 'personal'
+                                    ? $savedView->owner_user_id === $user->getKey()
+                                    : $canManageWorkspace;
+                            @endphp
+                            <div class="rounded-panel border border-line p-3">
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <p class="text-sm font-extrabold text-ink">{{ $savedView->name }}</p>
+                                        <p class="text-xs text-muted">{{ __(':product · :pins', ['product' => str($savedView->filters['product'] ?? 'all')->headline(), 'pins' => ($savedView->filters['pinned_only'] ?? false) ? __('pinned projects only') : __('all visible projects')]) }}</p>
+                                    </div>
+                                    @if ($canManageSavedView)
+                                        <div class="flex items-center gap-2">
+                                            <x-signal.ui.menu align="right" trigger-class="ui-btn ui-btn-ghost ui-btn-sm items-center" panel-class="w-[min(34rem,calc(100vw-2rem))] p-0" data-signal-menu>
+                                                <x-slot:trigger>{{ __('Edit') }}</x-slot:trigger>
+                                                <x-signal.ui.card class="p-4 sm:p-5">
+                                                    <x-signal.ui.workspace-view-form :workspace="$workspace" :view="$savedView" :can-share="$canManageWorkspace" :return-view="$selectedView?->getKey() ?? 'all'" />
+                                                </x-signal.ui.card>
+                                            </x-signal.ui.menu>
+                                            <form method="POST" action="{{ route('core.workspace.views.destroy', [$workspace, $savedView]) }}">
+                                                @csrf
+                                                @method('DELETE')
+                                                <input type="hidden" name="return_view" value="{{ $selectedView?->getKey() ?? 'all' }}">
+                                                <x-signal.ui.button type="submit" variant="danger" class="ui-btn-sm">{{ __('Delete') }}</x-signal.ui.button>
+                                            </form>
+                                        </div>
+                                    @endif
+                                </div>
+                            </div>
+                        @endforeach
+                    </x-signal.ui.card>
+                </x-signal.ui.menu>
+            @endif
+        </div>
+
+        @if (session('success'))
+            <x-signal.ui.alert tone="success" class="mt-3">{{ session('success') }}</x-signal.ui.alert>
+        @endif
+        @if ($selectedViewUnavailable)
+            <x-signal.ui.alert tone="warning" class="mt-3">
+                {{ __('This saved view depends on an app filter you can no longer access. Project activity was not loaded. Restore access or change the saved filter.') }}
+            </x-signal.ui.alert>
+        @endif
+    </section>
+
     <section aria-labelledby="workspace-priorities-title" class="mb-9">
         <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
             <div>
@@ -124,18 +202,18 @@
             <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Shared project directory') }}</p>
-                    <h2 id="recent-projects-title" class="mt-1 text-lg font-extrabold text-ink">{{ __('Recently updated') }}</h2>
+                    <h2 id="recent-projects-title" class="mt-1 text-lg font-extrabold text-ink">{{ $selectedView?->name ?? __('Recently updated') }}</h2>
                 </div>
                 <x-signal.ui.link :href="route('core.projects.index', $workspace)" size="sm">
                     {{ __('All projects') }}
                 </x-signal.ui.link>
             </div>
-            <p class="-mt-2 mb-4 text-xs text-muted">{{ __('Latest deployments, service health, and traffic from connected apps.') }}</p>
+            <p class="-mt-2 mb-4 text-xs text-muted">{{ $selectedView ? __('Projects matching this saved view, with current access checked on every load.') : __('Latest deployments, service health, and traffic from connected apps.') }}</p>
 
             @if ($projects->isEmpty())
                 <x-signal.ui.empty-state
-                    :title="__('No projects yet')"
-                    :description="__('Create a project once, then connect Deployer, Monitor, or Analytics when your team is ready.')"
+                    :title="$selectedView ? __('No projects match this view') : __('No projects yet')"
+                    :description="$selectedView ? __('Try a different product filter or pin projects to this view’s scope.') : __('Create a project once, then connect Deployer, Monitor, or Analytics when your team is ready.')"
                     icon="view-grid"
                 >
                     @if ($canCreateProjects)
@@ -164,10 +242,22 @@
                                         <p class="mt-1 text-xs text-muted">{{ __('Updated :date', ['date' => $project->updated_at->diffForHumans()]) }}</p>
                                     @endif
                                 </div>
-                                <x-signal.ui.link :href="route('core.projects.show', [$workspace, $project])" size="sm">
-                                    {{ __('Open project') }}
-                                    <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-right"></use></svg>
-                                </x-signal.ui.link>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    @php
+                                        $pinState = $projectPinStates->get((string) $project->getKey(), ['personal' => false, 'workspace' => false]);
+                                    @endphp
+                                    <x-signal.ui.workspace-project-pin
+                                        :workspace="$workspace"
+                                        :project="$project"
+                                        :state="$pinState"
+                                        :can-manage-workspace="$canManageWorkspace"
+                                        :return-view="$selectedView?->getKey() ?? 'all'"
+                                    />
+                                    <x-signal.ui.link :href="route('core.projects.show', [$workspace, $project])" size="sm">
+                                        {{ __('Open project') }}
+                                        <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-right"></use></svg>
+                                    </x-signal.ui.link>
+                                </div>
                             </div>
 
                             <div class="mt-4 flex flex-wrap items-center gap-2">

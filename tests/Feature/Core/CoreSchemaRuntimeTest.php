@@ -4,6 +4,9 @@ namespace Tests\Feature\Core;
 
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
+use App\Core\Models\WorkspaceDashboardSelection;
+use App\Core\Models\WorkspaceDashboardView;
+use App\Core\Models\WorkspaceProjectPin;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -86,5 +89,53 @@ final class CoreSchemaRuntimeTest extends TestCase
             ->get(route('core.workspace.dashboard', $workspace))
             ->assertOk()
             ->assertSeeText('Migration smoke workspace');
+        $this->assertTrue(Schema::connection('core')->hasTable('workspace_dashboard_views'));
+        $this->assertTrue(Schema::connection('core')->hasTable('workspace_dashboard_selections'));
+        $this->assertTrue(Schema::connection('core')->hasTable('workspace_project_pins'));
+
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $workspaceId,
+            'created_by_user_id' => $userId,
+            'name' => 'Pinned migration project',
+            'slug' => 'pinned-migration-project',
+            'status' => 'active',
+            'description' => null,
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $view = WorkspaceDashboardView::query()->create([
+            'workspace_id' => $workspaceId,
+            'visibility' => 'workspace',
+            'scope_key' => 'workspace',
+            'owner_user_id' => null,
+            'created_by_user_id' => $userId,
+            'name' => 'Migration saved view',
+            'filters' => ['product' => 'all', 'pinned_only' => true],
+        ]);
+        WorkspaceProjectPin::query()->create([
+            'workspace_id' => $workspaceId,
+            'project_id' => $projectId,
+            'visibility' => 'workspace',
+            'scope_key' => 'workspace',
+            'owner_user_id' => null,
+            'created_by_user_id' => $userId,
+        ]);
+        WorkspaceDashboardSelection::query()->create([
+            'workspace_id' => $workspaceId,
+            'user_id' => $userId,
+            'view_id' => $view->getKey(),
+        ]);
+
+        $this->assertSame(['product' => 'all', 'pinned_only' => true], $view->fresh()->filters);
+        $view->delete();
+        $this->assertDatabaseHas('workspace_dashboard_selections', [
+            'workspace_id' => $workspaceId,
+            'user_id' => $userId,
+            'view_id' => null,
+        ], 'core');
+
     }
 }
