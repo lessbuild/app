@@ -400,7 +400,7 @@ final class WorkspaceProjectsController
             ->whereNull('archived_at')
             ->whereHas('memberships', fn ($query) => $query
                 ->where('user_id', $user->getKey())
-                ->where('status', 'active'))
+                ->currentlyActive())
             ->orderBy('name')
             ->get();
     }

@@ -474,7 +474,7 @@ final class ImportMonitorWorkspacesAndApplicationsIntoCore
 
             foreach (WorkspaceMembership::query()
                 ->where('workspace_id', $workspaceId)
-                ->where('status', 'active')
+                ->currentlyActive()
                 ->get(['user_id', 'role']) as $membership) {
                 ProjectMembership::query()->create([
                     'project_id' => $project->getKey(),

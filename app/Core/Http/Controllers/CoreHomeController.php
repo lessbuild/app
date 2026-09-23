@@ -15,7 +15,7 @@ final class CoreHomeController
         $user = $request->user('platform');
 
         $workspaces = $user->workspaceMemberships()
-            ->where('status', 'active')
+            ->currentlyActive()
             ->whereHas('workspace', fn ($query) => $query
                 ->where('status', 'active')
                 ->whereNull('archived_at'))

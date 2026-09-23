@@ -3,6 +3,7 @@
 namespace App\Core\Models;
 
 use App\Core\Database\CoreModel;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -16,6 +17,8 @@ class WorkspaceMembership extends CoreModel
         'invited_by_user_id',
         'invited_at',
         'joined_at',
+        'expires_at',
+        'revoked_at',
     ];
 
     protected function casts(): array
@@ -23,7 +26,26 @@ class WorkspaceMembership extends CoreModel
         return [
             'invited_at' => 'datetime',
             'joined_at' => 'datetime',
+            'expires_at' => 'datetime',
+            'revoked_at' => 'datetime',
         ];
+    }
+
+    public function scopeCurrentlyActive(Builder $query): Builder
+    {
+        return $query
+            ->where('status', 'active')
+            ->whereNull('revoked_at')
+            ->where(fn (Builder $membership): Builder => $membership
+                ->whereNull('expires_at')
+                ->orWhere('expires_at', '>', now()));
+    }
+
+    public function currentlyActive(): bool
+    {
+        return $this->status === 'active'
+            && $this->revoked_at === null
+            && ($this->expires_at === null || $this->expires_at->isFuture());
     }
 
     /** @return BelongsTo<Workspace, $this> */

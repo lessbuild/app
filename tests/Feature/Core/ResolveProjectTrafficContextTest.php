@@ -172,6 +172,7 @@ final class ResolveProjectTrafficContextTest extends TestCase
             $table->string('user_id', 26);
             $table->string('role');
             $table->string('status');
+            $table->timestamp('expires_at')->nullable();
             $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
         });

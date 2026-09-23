@@ -201,6 +201,8 @@ final class AnalyticsWorkspaceSiteImportTest extends TestCase
             $table->char('user_id', 26);
             $table->string('role', 32);
             $table->string('status', 24);
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
             $table->char('invited_by_user_id', 26)->nullable();
             $table->timestamp('invited_at')->nullable();
             $table->timestamp('joined_at')->nullable();

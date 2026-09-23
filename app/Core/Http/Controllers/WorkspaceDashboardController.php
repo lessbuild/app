@@ -119,7 +119,7 @@ final class WorkspaceDashboardController
             'recentConnections' => $recentConnections,
             'memberCount' => WorkspaceMembership::query()
                 ->where('workspace_id', $workspace->getKey())
-                ->where('status', 'active')
+                ->currentlyActive()
                 ->count(),
             'subscriptions' => $subscriptions,
             'canManageBilling' => $canManageBilling,
@@ -149,7 +149,7 @@ final class WorkspaceDashboardController
             ->whereNull('archived_at')
             ->whereHas('memberships', fn (Builder $query) => $query
                 ->where('user_id', $user->getKey())
-                ->where('status', 'active'))
+                ->currentlyActive())
             ->orderBy('name')
             ->get();
     }

@@ -486,6 +486,8 @@ final class WorkspaceDashboardTest extends TestCase
             $table->char('user_id', 26);
             $table->string('role', 24);
             $table->string('status', 24);
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
         });
         Schema::connection('core')->create('workspace_product_access', function (Blueprint $table): void {

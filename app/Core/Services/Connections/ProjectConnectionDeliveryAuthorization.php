@@ -128,7 +128,7 @@ final class ProjectConnectionDeliveryAuthorization
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->whereHas('membership', fn ($query) => $query
                 ->where('workspace_id', $workspaceId)
-                ->where('status', 'active'))
+                ->currentlyActive())
             ->pluck('product')
             ->unique()
             ->all();

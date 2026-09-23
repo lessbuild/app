@@ -44,7 +44,7 @@ final class CreateCanonicalProject
             $now = now();
             $members = WorkspaceMembership::query()
                 ->where('workspace_id', $lockedWorkspace->getKey())
-                ->where('status', 'active')
+                ->currentlyActive()
                 ->lockForUpdate()
                 ->get(['user_id', 'role']);
 

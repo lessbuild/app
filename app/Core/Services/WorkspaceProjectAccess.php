@@ -27,8 +27,7 @@ final class WorkspaceProjectAccess
         return WorkspaceMembership::query()
             ->where('workspace_id', $workspace->getKey())
             ->where('user_id', $user->getKey())
-            ->where('status', 'active')
-            ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+            ->currentlyActive()
             ->first();
     }
 
@@ -51,7 +50,7 @@ final class WorkspaceProjectAccess
         ProductKey|string $product,
         ?DateTimeInterface $at = null,
     ): bool {
-        if ($membership->status !== 'active') {
+        if (! $membership->currentlyActive()) {
             return false;
         }
 
