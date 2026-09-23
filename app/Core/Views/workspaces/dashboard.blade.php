@@ -108,6 +108,7 @@
                     {{ __('All projects') }}
                 </x-signal.ui.link>
             </div>
+            <p class="-mt-2 mb-4 text-xs text-muted">{{ __('Latest deployments, service health, and traffic from connected apps.') }}</p>
 
             @if ($projects->isEmpty())
                 <x-signal.ui.empty-state
@@ -163,6 +164,21 @@
                                 @endforeach
                                 <span class="ml-auto text-xs text-muted">{{ trans_choice(':count workflow|:count workflows', $project->active_connections_count, ['count' => $project->active_connections_count]) }}</span>
                             </div>
+
+                            @php
+                                $summaries = $projectSummaries->get((string) $project->getKey(), collect());
+                            @endphp
+                            @if ($summaries->isNotEmpty())
+                                <div class="mt-4 grid gap-2 border-t border-line pt-4 sm:grid-cols-2 xl:grid-cols-3" aria-label="{{ __('Product activity for :project', ['project' => $project->name]) }}">
+                                    @foreach ($summaries as $key => $summary)
+                                        <x-signal.ui.project-product-summary
+                                            :summary="$summary"
+                                            :product-label="$products[$key]['label'] ?? str($key)->headline()"
+                                            compact
+                                        />
+                                    @endforeach
+                                </div>
+                            @endif
                         </x-signal.ui.card>
                     @endforeach
                 </div>

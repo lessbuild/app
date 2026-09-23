@@ -11,6 +11,7 @@ use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\ResolvePlatformUser;
+use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -24,6 +25,7 @@ final class WorkspaceDashboardController
         Workspace $workspace,
         ResolvePlatformUser $platformUsers,
         WorkspaceProjectAccess $access,
+        ProjectProductSummaries $productSummaries,
     ): View {
         $principal = $request->user();
         abort_unless($principal !== null, 401);
@@ -67,6 +69,16 @@ final class WorkspaceDashboardController
             ->orderByDesc('updated_at')
             ->limit(6)
             ->get();
+        $projectSummaries = $projects->mapWithKeys(function (Project $project) use ($productSummaries, $user): array {
+            $activeProducts = $project->products
+                ->where('status', 'active')
+                ->pluck('product')
+                ->all();
+
+            return [
+                (string) $project->getKey() => $productSummaries->forProject($user, $project, $activeProducts),
+            ];
+        });
 
         $activeProductCounts = $visibleProducts === []
             ? collect()
@@ -111,6 +123,7 @@ final class WorkspaceDashboardController
             'workspace' => $workspace,
             'workspaces' => $this->workspacesFor($user),
             'projects' => $projects,
+            'projectSummaries' => $projectSummaries,
             'projectCount' => $projectCount,
             'productGrants' => $productGrants,
             'activeProductCounts' => $activeProductCounts,

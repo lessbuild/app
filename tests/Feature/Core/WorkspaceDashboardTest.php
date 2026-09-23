@@ -2,7 +2,12 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Contracts\ProjectProductSummaryProvider;
+use App\Core\Data\Projects\ProjectProductSnapshot;
+use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Models\PlatformUser;
+use App\Core\Models\Project;
+use App\Core\Services\ProjectProductSummaryRegistry;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -85,6 +90,26 @@ final class WorkspaceDashboardTest extends TestCase
 
     public function test_workspace_overview_shows_only_accessible_projects_and_separate_app_subscriptions(): void
     {
+        $summaryCalls = (object) ['products' => []];
+        $summaryRegistry = app(ProjectProductSummaryRegistry::class);
+        foreach (['deployer', 'monitor', 'analytics'] as $product) {
+            $summaryRegistry->register($product, new class($product, $summaryCalls) implements ProjectProductSummaryProvider
+            {
+                public function __construct(private readonly string $product, private readonly object $calls) {}
+
+                public function summarize(PlatformUser $user, Project $project): ?ProjectProductSnapshot
+                {
+                    $this->calls->products[] = $this->product.':'.$project->name;
+
+                    return new ProjectProductSnapshot(
+                        title: str($this->product)->headline().' activity',
+                        detail: 'Fresh summary for '.$project->name,
+                        state: ProjectProductSnapshotState::Current,
+                    );
+                }
+            });
+        }
+
         $visibleProjectId = (string) Str::ulid();
         $secondProjectId = (string) Str::ulid();
         $hiddenProjectId = (string) Str::ulid();
@@ -223,9 +248,20 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertSeeText('Monitor · Setting up')
             ->assertSeeText('Docs portal')
             ->assertSeeText('Growth')
+            ->assertSeeText('Deployer activity')
+            ->assertSeeText('Monitor activity')
+            ->assertSeeText('Analytics activity')
+            ->assertSeeText('Fresh summary for Checkout')
+            ->assertDontSeeText('Fresh summary for Private project')
             ->assertSeeText('Production → Production checks')
             ->assertDontSeeText('Private project')
             ->assertSeeText('Each app keeps its own plan and usage limits.');
+
+        $this->assertEqualsCanonicalizing([
+            'deployer:Checkout',
+            'monitor:Checkout',
+            'analytics:Docs portal',
+        ], $summaryCalls->products);
 
         DB::connection('core')->table('workspace_product_access')
             ->where('membership_id', $this->membershipId)
@@ -235,6 +271,7 @@ final class WorkspaceDashboardTest extends TestCase
         $this->get(route('core.workspace.dashboard', $this->workspaceId))
             ->assertOk()
             ->assertDontSeeText('Production checks')
+            ->assertDontSeeText('Monitor activity')
             ->assertSeeText('0 workflows');
     }
 

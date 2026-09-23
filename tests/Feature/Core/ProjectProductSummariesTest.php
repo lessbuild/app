@@ -9,7 +9,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\ProjectProductSummaryRegistry;
-use Illuminate\Database\QueryException;
+use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
 
 final class ProjectProductSummariesTest extends TestCase
@@ -21,7 +21,7 @@ final class ProjectProductSummariesTest extends TestCase
         {
             public function summarize(PlatformUser $user, Project $project): ?ProjectProductSnapshot
             {
-                throw new QueryException('monitor', 'select * from incidents', [], new \RuntimeException('Connection failed.'));
+                throw new \PDOException('Connection failed.');
             }
         });
         $registry->register('analytics', new class implements ProjectProductSummaryProvider
@@ -70,5 +70,21 @@ final class ProjectProductSummariesTest extends TestCase
         );
 
         $this->assertFalse($called->value);
+    }
+
+    public function test_unavailable_summary_does_not_claim_that_no_recent_activity_exists(): void
+    {
+        $summary = new ProjectProductSnapshot(
+            title: 'Product data',
+            detail: 'This application’s data is temporarily unavailable.',
+            state: ProjectProductSnapshotState::Unavailable,
+        );
+
+        $html = Blade::render('<x-signal.ui.project-product-summary :summary="$summary" product-label="Monitor" compact />', [
+            'summary' => $summary,
+        ]);
+
+        $this->assertStringContainsString('Freshness is unavailable while app data cannot be reached.', $html);
+        $this->assertStringNotContainsString('No recent activity to report.', $html);
     }
 }
