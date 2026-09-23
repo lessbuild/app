@@ -84,6 +84,7 @@ class AnalyticsCollectionTest extends TestCase
 
     public function test_duplicate_event_ids_are_ignored(): void
     {
+        Queue::fake();
         $site = $this->makeSite();
         $eventId = (string) Str::uuid();
         $payload = ['events' => [[
@@ -93,12 +94,40 @@ class AnalyticsCollectionTest extends TestCase
             'visitor' => 'visitor-1',
         ]]];
 
-        $this->postJson("/api/v1/collect/{$site->public_id}", $payload)->assertAccepted();
-        $this->postJson("/api/v1/collect/{$site->public_id}", $payload)->assertAccepted();
+        $this->postJson("/api/v1/collect/{$site->public_id}", $payload)
+            ->assertAccepted()
+            ->assertJsonPath('accepted', 1);
+        $this->postJson("/api/v1/collect/{$site->public_id}", $payload)
+            ->assertAccepted()
+            ->assertJsonPath('accepted', 0)
+            ->assertJsonPath('batch_id', null);
 
         $this->assertDatabaseCount('analytics_events', 1);
-        $this->assertDatabaseCount('ingestion_batches', 2);
+        $this->assertDatabaseCount('ingestion_batches', 1);
+    }
 
+    public function test_duplicate_event_ids_within_a_batch_count_only_inserted_events(): void
+    {
+        Queue::fake();
+        $site = $this->makeSite();
+        $eventId = (string) Str::uuid();
+        $event = [
+            'id' => $eventId,
+            'type' => 'pageview',
+            'path' => '/',
+            'visitor' => 'visitor-1',
+        ];
+
+        $this->postJson("/api/v1/collect/{$site->public_id}", ['events' => [$event, $event]])
+            ->assertAccepted()
+            ->assertJsonPath('accepted', 1);
+
+        $this->assertDatabaseCount('analytics_events', 1);
+        $this->assertDatabaseCount('ingestion_batches', 1);
+        $this->assertDatabaseHas('ingestion_batches', [
+            'site_id' => $site->id,
+            'event_count' => 1,
+        ]);
     }
 
     public function test_pending_events_are_not_reported_until_their_batch_is_processed(): void
