@@ -3,10 +3,14 @@
     'name',
     'value' => '1',
     'checked' => false,
+    'uncheckedValue' => null,
 ])
 
 @php($id = $id ?: $name)
 
+@if ($uncheckedValue !== null)
+    <input type="hidden" name="{{ $name }}" value="{{ $uncheckedValue }}">
+@endif
 <label class="inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold text-ink">
     <input
         id="{{ $id }}"

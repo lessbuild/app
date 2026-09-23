@@ -1,6 +1,25 @@
-@if ($errors->any())<div class="rounded-card border border-danger/30 bg-danger-soft p-4 text-sm text-danger"><ul class="list-disc pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
-<div><label class="ui-label" for="name">Goal name</label><input class="ui-input" id="name" name="name" value="{{ old('name', $goal->name ?? '') }}" placeholder="Demo requested" required></div>
-<div><label class="ui-label" for="kind">Goal type</label><select class="ui-input" id="kind" name="kind" required><option value="path" @selected(old('kind', $goal->kind ?? 'path') === 'path')>Path</option><option value="event" @selected(old('kind', $goal->kind ?? '') === 'event')>Named event</option></select></div>
-<div><label class="ui-label" for="match_type">Match rule</label><select class="ui-input" id="match_type" name="match_type" required><option value="exact" @selected(old('match_type', $goal->match_type ?? 'exact') === 'exact')>Exact match</option><option value="prefix" @selected(old('match_type', $goal->match_type ?? '') === 'prefix')>Prefix match</option></select></div>
-<div><label class="ui-label" for="match_value">Match value</label><input class="ui-input" id="match_value" name="match_value" value="{{ old('match_value', $goal->match_value ?? '') }}" placeholder="/thank-you or demo_requested" required><p class="mt-2 text-xs text-muted">Path goals start with `/`. Event goals use the name passed to the tracker.</p></div>
-<label class="flex items-center gap-3 text-sm text-muted"><input class="rounded border-line" name="active" type="checkbox" value="1" @checked(old('active', $goal->active ?? true))> Count this goal in reports</label>
+<x-signal.ui.field label="Goal name" name="name" required>
+    <x-signal.ui.input name="name" :value="$goal->name ?? ''" placeholder="Demo requested" maxlength="120" required />
+</x-signal.ui.field>
+
+<x-signal.ui.field label="Goal type" name="kind" required>
+    <x-signal.ui.select name="kind" required>
+        <option value="path" @selected(old('kind', $goal->kind ?? 'path') === 'path')>Path</option>
+        <option value="event" @selected(old('kind', $goal->kind ?? '') === 'event')>Named event</option>
+    </x-signal.ui.select>
+</x-signal.ui.field>
+
+<x-signal.ui.field label="Match rule" name="match_type" required>
+    <x-signal.ui.select name="match_type" required>
+        <option value="exact" @selected(old('match_type', $goal->match_type ?? 'exact') === 'exact')>Exact match</option>
+        <option value="prefix" @selected(old('match_type', $goal->match_type ?? '') === 'prefix')>Prefix match</option>
+    </x-signal.ui.select>
+</x-signal.ui.field>
+
+<x-signal.ui.field label="Match value" name="match_value" required description="Path goals start with `/`. Event goals use the name passed to the tracker.">
+    <x-signal.ui.input name="match_value" :value="$goal->match_value ?? ''" placeholder="/thank-you or demo_requested" maxlength="255" required />
+</x-signal.ui.field>
+
+<x-signal.ui.checkbox name="active" :checked="$goal->active ?? true" :unchecked-value="0">
+    Count this goal in reports
+</x-signal.ui.checkbox>
