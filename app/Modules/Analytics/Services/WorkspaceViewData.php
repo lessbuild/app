@@ -2,6 +2,7 @@
 
 namespace App\Modules\Analytics\Services;
 
+use App\Core\Services\ResolveSharedProjectContextForRequest;
 use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Analytics\Models\Site;
 use Illuminate\Http\Request;
@@ -37,6 +38,13 @@ final class WorkspaceViewData
             $currentSite = $currentWorkspace?->sites->firstWhere('id', (int) $currentSiteId)
                 ?? $currentWorkspace?->sites->first();
         }
+
+        $sharedProjectContext = app(ResolveSharedProjectContextForRequest::class)->handle(
+            $this->request,
+            'analytics',
+            $currentSite instanceof Site ? 'site' : null,
+            $currentSite?->getKey(),
+        );
 
         $contextOptions = $currentWorkspace?->sites
             ->map(fn (Site $site): array => [
@@ -102,6 +110,8 @@ final class WorkspaceViewData
             'workspaceOptions' => $workspaces,
             'currentAnalyticsSite' => $currentSite,
             'currentAnalyticsWorkspaceRole' => $currentWorkspaceRole,
+            'productUrlOverrides' => $sharedProjectContext->isAvailable() ? $sharedProjectContext->productUrlOverrides : null,
+            'sharedContextUnavailable' => $sharedProjectContext->isUnavailable(),
             'signalTopbar' => [
                 'projects_url' => $projectsUrl,
                 'groups' => $groups,

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Monitor\Services;
 
+use App\Core\Services\ResolveSharedProjectContextForRequest;
 use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
@@ -38,6 +39,19 @@ final class WorkspaceViewData
         if (! $application instanceof Application && $environment instanceof Environment) {
             $application = $environment->application;
         }
+
+        $sourceResourceType = $environment instanceof Environment
+            ? 'environment'
+            : ($application instanceof Application ? 'application' : null);
+        $sourceResourceId = $environment instanceof Environment
+            ? $environment->getKey()
+            : ($application instanceof Application ? $application->getKey() : null);
+        $sharedProjectContext = app(ResolveSharedProjectContextForRequest::class)->handle(
+            $this->request,
+            'monitor',
+            $sourceResourceType,
+            $sourceResourceId,
+        );
 
         $applications = $workspace->applications()
             ->orderBy('name')
@@ -101,6 +115,8 @@ final class WorkspaceViewData
             'signalTopbarContext' => $application,
             'signalTopbarEnvironments' => $environmentOptions,
             'signalTopbarEnvironment' => $environment,
+            'productUrlOverrides' => $sharedProjectContext->isAvailable() ? $sharedProjectContext->productUrlOverrides : null,
+            'sharedContextUnavailable' => $sharedProjectContext->isUnavailable(),
         ]);
     }
 }

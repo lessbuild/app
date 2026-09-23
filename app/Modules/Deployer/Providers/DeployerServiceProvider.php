@@ -11,6 +11,7 @@ use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
+use App\Core\Services\ResolveSharedProjectContextForRequest;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
@@ -20,6 +21,8 @@ use App\Modules\Deployer\Http\Livewire\ServerSetup;
 use App\Modules\Deployer\Http\Livewire\ServerShow;
 use App\Modules\Deployer\Http\Livewire\WebsiteProvisioningLog;
 use App\Modules\Deployer\Http\Livewire\WebsiteSetup;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
@@ -83,12 +86,29 @@ final class DeployerServiceProvider extends ModuleServiceProvider
                 $creationDialogData = app(DashboardCreationDialogData::class)->for($user);
             }
 
+            $environment = request()->route('environment');
+            $project = request()->route('project');
+            $sourceResourceType = $environment instanceof Environment
+                ? 'environment'
+                : ($project instanceof Project ? 'project' : null);
+            $sourceResourceId = $environment instanceof Environment
+                ? $environment->getKey()
+                : ($project instanceof Project ? $project->getKey() : null);
+            $sharedProjectContext = app(ResolveSharedProjectContextForRequest::class)->handle(
+                request(),
+                'deployer',
+                $sourceResourceType,
+                $sourceResourceId,
+            );
+
             $view->with([
                 'navigation' => $user instanceof User ? app(WorkspaceNavigation::class)->for($user) : [],
                 'applicationCreationTemplates' => $user instanceof User
                     ? app(ApplicationTemplateCatalog::class)->all()
                     : [],
                 'creationDialogData' => $creationDialogData,
+                'productUrlOverrides' => $sharedProjectContext->isAvailable() ? $sharedProjectContext->productUrlOverrides : null,
+                'sharedContextUnavailable' => $sharedProjectContext->isUnavailable(),
             ]);
         });
     }

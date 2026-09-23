@@ -24,6 +24,7 @@
     'environmentIndexUrl' => null,
     'environmentContextUnavailable' => false,
     'productUrlOverrides' => null,
+    'sharedContextUnavailable' => false,
     'showProjectContext' => true,
     'showEnvironmentContext' => true,
 ])
@@ -277,6 +278,12 @@
 
         <div class="flex min-h-14 flex-wrap items-center justify-between gap-x-4 gap-y-1 border-t border-line py-2">
             <div class="flex min-w-0 flex-wrap items-center gap-2" aria-label="{{ $contextLabel }} and environment context">
+            @if ($sharedContextUnavailable)
+                <x-signal.ui.alert tone="warning" class="min-h-9 items-center rounded-control px-3 py-2 text-xs font-bold" role="status">
+                    <svg class="h-4 w-4 shrink-0 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg>
+                    {{ __('Shared project context could not be verified') }}
+                </x-signal.ui.alert>
+            @endif
             @if ($showProjectContext)
             <details data-signal-menu class="ui-topbar-menu group relative shrink-0">
                 <summary class="inline-flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-control border border-line bg-surface px-3 text-left marker:hidden hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">

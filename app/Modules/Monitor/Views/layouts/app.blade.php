@@ -22,6 +22,8 @@
         :current-environment="$signalTopbarEnvironment"
         :environment-options="$signalTopbarEnvironments"
         :environment-index-url="$signalTopbarContext ? route('monitor.applications.show', $signalTopbarContext) : route('monitor.applications.index')"
+        :product-url-overrides="$productUrlOverrides ?? null"
+        :shared-context-unavailable="$sharedContextUnavailable ?? false"
     />
 
     <main id="main-content" tabindex="-1" class="mx-auto max-w-screen-2xl space-y-6 px-5 py-8 pb-24 sm:px-8 sm:py-10 lg:pb-10">

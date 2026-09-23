@@ -187,7 +187,12 @@
         @keydown.window.prevent.ctrl.k="openPalette()"
     >
 
-        <x-signal.layouts.topbar :navigation="$navigation ?? []" :title="$resolvedTitle" />
+        <x-signal.layouts.topbar
+            :navigation="$navigation ?? []"
+            :title="$resolvedTitle"
+            :product-url-overrides="$productUrlOverrides ?? null"
+            :shared-context-unavailable="$sharedContextUnavailable ?? false"
+        />
 
         <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="mx-auto w-full max-w-screen-2xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
             <x-alerts.flash />
