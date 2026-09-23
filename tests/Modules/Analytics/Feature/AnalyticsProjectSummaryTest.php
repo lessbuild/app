@@ -17,6 +17,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSetup;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Route;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
@@ -58,6 +59,11 @@ final class AnalyticsProjectSummaryTest extends TestCase
             'domains' => ['storefront.example.test'],
             'timezone' => 'UTC',
         ]);
+        $secondSite = $analyticsWorkspace->sites()->create([
+            'name' => 'Storefront staging site',
+            'domains' => ['staging.storefront.example.test'],
+            'timezone' => 'UTC',
+        ]);
 
         $outsider = AnalyticsUser::query()->create([
             'name' => 'Different owner',
@@ -92,6 +98,14 @@ final class AnalyticsProjectSummaryTest extends TestCase
             'project_id' => $project->getKey(),
             'product' => 'analytics',
             'resource_type' => 'site',
+            'resource_id' => (string) $secondSite->getKey(),
+            'name' => 'Storefront staging site',
+            'status' => 'active',
+        ]);
+        ProjectResource::query()->create([
+            'project_id' => $project->getKey(),
+            'product' => 'analytics',
+            'resource_type' => 'site',
             'resource_id' => (string) $privateSite->getKey(),
             'name' => 'Private site',
             'status' => 'active',
@@ -104,10 +118,23 @@ final class AnalyticsProjectSummaryTest extends TestCase
             'received_at' => now(),
             'path' => '/private',
         ]);
+        Route::get('/analytics/sites/{site}/setup', static fn () => null)->name('analytics.sites.setup');
+        Route::get('/analytics/dashboard/{site?}', static fn () => null)->name('analytics.dashboard');
+        Route::getRoutes()->refreshNameLookups();
+
         $setupProvider = new AnalyticsProjectSetup(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
-        $pendingSteps = $setupProvider->steps($platformUser, $project);
-        $this->assertSame(ProjectSetupStepState::NeedsAction, $pendingSteps[0]->state);
-        $this->assertSame(ProjectSetupStepState::NeedsAction, $pendingSteps[1]->state);
+        $pendingSteps = collect($setupProvider->steps($platformUser, $project));
+        $this->assertCount(4, $pendingSteps);
+        $firstSiteVerification = $pendingSteps->firstWhere('id', 'analytics.site.'.$site->getKey());
+        $firstSiteEvent = $pendingSteps->firstWhere('id', 'analytics.event.'.$site->getKey());
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $firstSiteVerification->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $firstSiteEvent->state);
+        $this->assertSame('Site', $firstSiteEvent->contextLabel);
+        $this->assertSame('Storefront site', $firstSiteEvent->contextName);
+        $this->assertSame(route('analytics.sites.setup', $site), $firstSiteEvent->url);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $pendingSteps->firstWhere('id', 'analytics.site.'.$secondSite->getKey())->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $pendingSteps->firstWhere('id', 'analytics.event.'.$secondSite->getKey())->state);
+        $this->assertFalse($pendingSteps->contains(fn ($step): bool => $step->contextName === $privateSite->name));
 
         $site->update(['verified_at' => now()]);
         $site->events()->create([
@@ -117,9 +144,11 @@ final class AnalyticsProjectSummaryTest extends TestCase
             'received_at' => now(),
             'path' => '/',
         ]);
-        $completeSteps = $setupProvider->steps($platformUser, $project);
-        $this->assertSame(ProjectSetupStepState::Complete, $completeSteps[0]->state);
-        $this->assertSame(ProjectSetupStepState::Complete, $completeSteps[1]->state);
+        $completeSteps = collect($setupProvider->steps($platformUser, $project));
+        $this->assertSame(ProjectSetupStepState::Complete, $completeSteps->firstWhere('id', 'analytics.site.'.$site->getKey())->state);
+        $this->assertSame(ProjectSetupStepState::Complete, $completeSteps->firstWhere('id', 'analytics.event.'.$site->getKey())->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $completeSteps->firstWhere('id', 'analytics.site.'.$secondSite->getKey())->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $completeSteps->firstWhere('id', 'analytics.event.'.$secondSite->getKey())->state);
 
         $today = CarbonImmutable::now('UTC');
         $this->aggregate($site, $today, 42, 12);

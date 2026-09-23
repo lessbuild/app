@@ -395,8 +395,8 @@ final class ProjectProductLinksTest extends TestCase
 
         $this->assertSame(ProjectSetupStepState::Complete, $steps[0]->state);
         $this->assertCount(3, $steps);
-        $production = collect($steps)->firstWhere('environmentName', 'Production');
-        $staging = collect($steps)->firstWhere('environmentName', 'Staging');
+        $production = collect($steps)->firstWhere('contextName', 'Production');
+        $staging = collect($steps)->firstWhere('contextName', 'Staging');
         $this->assertSame(ProjectSetupStepState::NeedsAction, $production->state);
         $this->assertSame(ProjectSetupStepState::NeedsAction, $staging->state);
 
@@ -409,8 +409,8 @@ final class ProjectProductLinksTest extends TestCase
         ]);
         $steps = $setup->steps($this->platformUser(), $this->project());
 
-        $production = collect($steps)->firstWhere('environmentName', 'Production');
-        $staging = collect($steps)->firstWhere('environmentName', 'Staging');
+        $production = collect($steps)->firstWhere('contextName', 'Production');
+        $staging = collect($steps)->firstWhere('contextName', 'Staging');
         $this->assertSame(ProjectSetupStepState::Complete, $production->state);
         $this->assertSame(ProjectSetupStepState::NeedsAction, $staging->state);
     }

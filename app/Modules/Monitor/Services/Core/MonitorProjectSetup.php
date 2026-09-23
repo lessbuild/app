@@ -143,7 +143,8 @@ final class MonitorProjectSetup implements ProjectSetupProvider
                     state: ProjectSetupStepState::NeedsAction,
                     url: $applicationIndexUrl,
                     actionLabel: $applicationIndexUrl === null ? null : __('Review Monitor'),
-                    environmentName: $canonicalEnvironment?->name ?? $mapping->name,
+                    contextName: $canonicalEnvironment?->name ?? $mapping->name,
+                    contextLabel: __('Environment'),
                 );
             }
 
@@ -171,7 +172,8 @@ final class MonitorProjectSetup implements ProjectSetupProvider
                 state: $hasReceivedData ? ProjectSetupStepState::Complete : ProjectSetupStepState::NeedsAction,
                 url: $hasReceivedData ? null : $environmentUrl,
                 actionLabel: $hasReceivedData || $environmentUrl === null ? null : __('Open environment'),
-                environmentName: $canonicalEnvironment->name,
+                contextName: $canonicalEnvironment->name,
+                contextLabel: __('Environment'),
             );
         })->values()->all();
     }

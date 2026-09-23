@@ -159,8 +159,10 @@
                                     };
                                 @endphp
                                 <li class="py-4 first:pt-0 last:pb-0">
-                                    @if ($step->environmentName)
-                                        <p class="mb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-subtle">{{ $step->environmentName }}</p>
+                                    @if ($step->contextName)
+                                        <p class="mb-1 text-[10px] font-extrabold uppercase tracking-[0.14em] text-subtle">
+                                            @if ($step->contextLabel){{ $step->contextLabel }} · @endif{{ $step->contextName }}
+                                        </p>
                                     @endif
                                     <div class="flex items-start justify-between gap-3">
                                         <h4 class="text-sm font-extrabold text-ink">{{ $step->title }}</h4>

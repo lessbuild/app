@@ -182,8 +182,8 @@ final class DeployerProjectEnvironmentSetupTest extends TestCase
             ->steps($platformUser, $coreProject);
         $productionRepository = collect($steps)->firstWhere('id', 'deployer.repository.'.$environmentResourceIds['production']);
         $productionDeployment = collect($steps)->firstWhere('id', 'deployer.deployment.'.$environmentResourceIds['production']);
-        $stagingRepository = collect($steps)->first(fn ($step): bool => $step->environmentName === 'Staging' && str_starts_with($step->id, 'deployer.repository.'));
-        $stagingDeployment = collect($steps)->first(fn ($step): bool => $step->environmentName === 'Staging' && str_starts_with($step->id, 'deployer.deployment.'));
+        $stagingRepository = collect($steps)->first(fn ($step): bool => $step->contextName === 'Staging' && str_starts_with($step->id, 'deployer.repository.'));
+        $stagingDeployment = collect($steps)->first(fn ($step): bool => $step->contextName === 'Staging' && str_starts_with($step->id, 'deployer.deployment.'));
 
         $this->assertNotNull($productionRepository);
         $this->assertNotNull($productionDeployment);

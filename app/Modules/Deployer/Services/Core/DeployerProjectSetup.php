@@ -147,7 +147,8 @@ final class DeployerProjectSetup implements ProjectSetupProvider
                     state: ProjectSetupStepState::NeedsAction,
                     url: $projectUrl,
                     actionLabel: $projectUrl === null ? null : __('Review project'),
-                    environmentName: $canonicalEnvironment?->name ?? $mapping->name,
+                    contextName: $canonicalEnvironment?->name ?? $mapping->name,
+                    contextLabel: __('Environment'),
                 );
             }
 
@@ -176,7 +177,8 @@ final class DeployerProjectSetup implements ProjectSetupProvider
                 state: $repositoryConnected ? ProjectSetupStepState::Complete : ProjectSetupStepState::NeedsAction,
                 url: $repositoryConnected ? null : $environmentUrl,
                 actionLabel: $repositoryConnected ? null : __('Open environment'),
-                environmentName: $canonicalEnvironment->name,
+                contextName: $canonicalEnvironment->name,
+                contextLabel: __('Environment'),
             );
         })->concat($mappings->map(function (ProjectResource $mapping) use ($canonicalEnvironments, $sourceEnvironments, $projectUrl): ?ProjectSetupStep {
             $sourceEnvironment = $sourceEnvironments->get((string) $mapping->resource_id);
@@ -207,7 +209,8 @@ final class DeployerProjectSetup implements ProjectSetupProvider
                     ? null
                     : $projectUrl.'#environment-'.$sourceEnvironment->getKey(),
                 actionLabel: $deploymentSucceeded || $projectUrl === null ? null : __('Open environment'),
-                environmentName: $canonicalEnvironment->name,
+                contextName: $canonicalEnvironment->name,
+                contextLabel: __('Environment'),
             );
         }))->filter()->values()->all();
     }
