@@ -25,47 +25,9 @@
         'href' => route('core.projects.show', [$workspace, $project, 'context_environment' => $environment->getKey()]).'#environment-'.$environment->getKey(),
     ]);
     $environmentIndexUrl = route('core.projects.show', [$workspace, $project]);
-    $productContextLinks = [];
-    $productContextStatus = [];
-    $productUrlOverrides = null;
-
-    if ($environmentContext->isUnavailable()) {
-        $unavailableContextId = $environmentContext->requestedId ?? 'unavailable';
-        $contextFallbackUrl = route('core.projects.show', [
-            $workspace,
-            $project,
-            'context_environment' => $unavailableContextId,
-        ]).'#environments';
-        $productUrlOverrides = array_fill_keys(array_keys($products), $contextFallbackUrl);
-    } elseif ($environmentContext->isSelected()) {
-        $contextFallbackUrl = route('core.projects.show', [
-            $workspace,
-            $project,
-            'context_environment' => $environmentContext->environment->getKey(),
-        ]).'#environments';
-        $productUrlOverrides = [];
-
-        foreach (array_keys($products) as $productKey) {
-            $expectedResourceType = $productKey === 'analytics' ? 'site' : 'environment';
-            $mappings = $project->resources->filter(fn ($resource): bool => $resource->product === $productKey
-                && $resource->resource_type === $expectedResourceType
-                && (string) $resource->environment_id === (string) $environmentContext->environment->getKey());
-            $mapping = $mappings->first(fn ($resource): bool => $resource->status === 'active'
-                && ($resourceDestinations[(string) $resource->getKey()]->state ?? null) === \App\Core\Data\Projects\ProjectResourceDestinationState::Available
-                && filled($resourceDestinations[(string) $resource->getKey()]->url ?? null)) ?? $mappings->first();
-            $destination = $mapping === null ? null : ($resourceDestinations[(string) $mapping->getKey()] ?? null);
-            $availableDestination = $mapping !== null
-                && $mapping->status === 'active'
-                && $destination?->state === \App\Core\Data\Projects\ProjectResourceDestinationState::Available
-                && filled($destination->url);
-
-            $productContextLinks[$productKey] = $availableDestination ? $destination->url : null;
-            $productContextStatus[$productKey] = $mapping === null
-                ? __('Not mapped to this environment')
-                : ($availableDestination ? null : ($destination?->state->label() ?? __('Mapping unavailable')));
-            $productUrlOverrides[$productKey] = $availableDestination ? $destination->url : $contextFallbackUrl;
-        }
-    }
+    $productContextLinks = $productContextNavigation['links'];
+    $productContextStatus = $productContextNavigation['status'];
+    $productUrlOverrides = $productContextNavigation['urls'];
 @endphp
 
 <x-signal.layouts.platform

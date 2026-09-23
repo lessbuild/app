@@ -359,12 +359,18 @@ final class WorkspaceDashboardTest extends TestCase
             $projectId,
             'context_environment' => $environmentId,
         ]);
+        $selectedContextUrl = route('core.projects.show', [
+            $this->workspaceId,
+            $projectId,
+            'context_project' => $projectId,
+            'context_environment' => $environmentId,
+        ]);
         $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
             ->get($selectedUrl)
             ->assertOk()
             ->assertSeeText('Environment')
             ->assertSeeText('Staging')
-            ->assertSee($selectedUrl.'#environments')
+            ->assertSee($selectedContextUrl.'#environments')
             ->assertSee(route('core.projects.show', [
                 $this->workspaceId,
                 $projectId,

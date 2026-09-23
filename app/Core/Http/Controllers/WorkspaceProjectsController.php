@@ -12,6 +12,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Services\BuildProjectContextNavigation;
 use App\Core\Services\Connections\ProjectConnectionDiagnostics;
 use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
@@ -231,6 +232,7 @@ final class WorkspaceProjectsController
         ProjectConnectionDiagnostics $connectionDiagnostics,
         ProjectWorkflowProgress $workflowProgress,
         ResolveProjectEnvironmentContext $environmentContexts,
+        BuildProjectContextNavigation $contextNavigation,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -291,6 +293,12 @@ final class WorkspaceProjectsController
         ]);
         $authorizedProductLinks = $productLinks->forProject($user, $project, $visibleProducts);
         $resourceDestinationsForProject = $resourceDestinations->forResources($user, $project->resources);
+        $productContextNavigation = $contextNavigation->forProject(
+            $workspace,
+            $project,
+            $environmentContext,
+            $resourceDestinationsForProject,
+        );
         $projectConnections = $project->connections
             ->filter(fn ($connection): bool => ($resourceDestinationsForProject[(string) $connection->source_resource_id]->state ?? null) === ProjectResourceDestinationState::Available
                 && ($resourceDestinationsForProject[(string) $connection->target_resource_id]->state ?? null) === ProjectResourceDestinationState::Available)
@@ -319,6 +327,7 @@ final class WorkspaceProjectsController
             'contextProjects' => $this->contextProjects($workspace, $user),
             'productGrants' => $productGrants,
             'productLinks' => $authorizedProductLinks,
+            'productContextNavigation' => $productContextNavigation,
             'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts, $environmentContext),
             'environmentContext' => $environmentContext,
             'projectSetupSteps' => $projectSetupSteps,
