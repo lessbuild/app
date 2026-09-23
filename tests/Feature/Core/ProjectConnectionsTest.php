@@ -87,6 +87,26 @@ final class ProjectConnectionsTest extends TestCase
         ], 'core');
     }
 
+    public function test_owner_can_create_an_active_read_only_analytics_traffic_context_connection(): void
+    {
+        $connection = app(CreateProjectConnection::class)->handle(
+            user: $this->user,
+            project: Project::query()->findOrFail($this->projectId),
+            sourceResourceId: $this->analyticsResourceId,
+            targetResourceId: $this->monitorResourceId,
+            capabilities: ['traffic_context'],
+        );
+
+        $this->assertSame(['traffic_context'], $connection->capabilities);
+        $this->assertSame('active', $connection->status);
+        $this->assertNull($connection->last_succeeded_at);
+        $this->assertDatabaseHas('project_connection_events', [
+            'project_connection_id' => $connection->getKey(),
+            'actor_user_id' => $this->user->getKey(),
+            'event_type' => 'created',
+        ], 'core');
+    }
+
     public function test_owner_can_connect_a_deployer_environment_to_an_analytics_site(): void
     {
         $connection = app(CreateProjectConnection::class)->handle(
@@ -266,6 +286,62 @@ final class ProjectConnectionsTest extends TestCase
             sourceResourceId: $this->monitorResourceId,
             targetResourceId: $this->analyticsResourceId,
             capabilities: ['incident_annotations'],
+        );
+    }
+
+    public function test_traffic_context_requires_the_analytics_plan_entitlement(): void
+    {
+        app()->instance(ProductPlanResolver::class, new class implements ProductPlanResolver
+        {
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: $product->value,
+                    subscriptionStatus: 'active',
+                    entitlements: $product === ProductKey::Analytics ? [] : ['*'],
+                    limits: $product === ProductKey::Monitor ? ['deployment_context_minutes' => 60] : [],
+                );
+            }
+        });
+
+        $this->expectException(ValidationException::class);
+        app(CreateProjectConnection::class)->handle(
+            user: $this->user,
+            project: Project::query()->findOrFail($this->projectId),
+            sourceResourceId: $this->analyticsResourceId,
+            targetResourceId: $this->monitorResourceId,
+            capabilities: ['traffic_context'],
+        );
+    }
+
+    public function test_traffic_context_requires_a_positive_monitor_context_window(): void
+    {
+        app()->instance(ProductPlanResolver::class, new class implements ProductPlanResolver
+        {
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: $product->value,
+                    subscriptionStatus: 'active',
+                    entitlements: ['*'],
+                    limits: $product === ProductKey::Monitor ? ['deployment_context_minutes' => 0] : [],
+                );
+            }
+        });
+
+        $this->expectException(ValidationException::class);
+        app(CreateProjectConnection::class)->handle(
+            user: $this->user,
+            project: Project::query()->findOrFail($this->projectId),
+            sourceResourceId: $this->analyticsResourceId,
+            targetResourceId: $this->monitorResourceId,
+            capabilities: ['traffic_context'],
         );
     }
 

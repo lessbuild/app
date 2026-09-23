@@ -373,7 +373,7 @@
                             </fieldset>
 
                             <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-                            <p class="max-w-xl text-xs leading-5 text-muted">{{ __('Deployment context is delivered to Monitor when a deployment succeeds. Product data and subscriptions remain separate.') }}</p>
+                            <p class="max-w-xl text-xs leading-5 text-muted">{{ __('Deployment and incident annotations are delivered as product events. Analytics traffic context is read-only and shown during Monitor investigations. Product data and subscriptions remain separate.') }}</p>
                                 <x-signal.ui.button variant="primary" type="submit">
                                     {{ __('Save connection') }}
                                 </x-signal.ui.button>

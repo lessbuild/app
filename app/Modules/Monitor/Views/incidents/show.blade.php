@@ -71,6 +71,37 @@
             <div class="divide-y divide-line dark:divide-line">@forelse($recentDeployments as $deployment)<a href="{{ route('monitor.deployments.show', [$deployment->environment->application_id, $deployment->environment_id, $deployment->id]) }}" class="block py-3 first:pt-0 last:pb-0 hover:text-primary dark:hover:text-primary"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate text-sm font-semibold">{{ $deployment->release->version }}</p><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $deployment->release->serviceLabel() }} · {{ $deployment->actor?->name ?? 'Automated deployment' }}</p></div><time class="shrink-0 text-right text-[11px] text-muted dark:text-subtle">{{ $deployment->deployed_at->utc()->format('Y-m-d H:i') }} UTC</time></div></a>@empty<p class="text-sm text-muted dark:text-subtle">No deployment was recorded in this context window.</p>@endforelse</div>
         </section>
         @endif
+        @foreach($analyticsTrafficContexts as $trafficContext)
+        <section class="space-y-3" aria-label="Analytics traffic context for {{ $trafficContext->siteName }}">
+            <x-monitor::ui.panel class="space-y-2">
+                <h2 class="font-bold">Analytics traffic context</h2>
+                <p class="text-sm">{{ $trafficContext->siteName }}</p>
+                <p class="text-xs leading-5 text-muted dark:text-subtle">Pageviews and distinct visitors during the {{ $trafficContext->windowMinutes }} minutes before this incident opened, compared with the preceding window.</p>
+            </x-monitor::ui.panel>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <x-monitor::ui.stat-card
+                    label="Pageviews"
+                    :value="number_format($trafficContext->incidentWindow->pageviews)"
+                    :caption="'Previous window: '.number_format($trafficContext->previousWindow->pageviews)"
+                    icon="activity"
+                />
+                <x-monitor::ui.stat-card
+                    label="Distinct visitors"
+                    :value="number_format($trafficContext->incidentWindow->visitors)"
+                    :caption="'Previous window: '.number_format($trafficContext->previousWindow->visitors)"
+                    icon="users"
+                />
+            </div>
+            <p class="px-1 text-xs leading-5 text-muted dark:text-subtle">
+                @if($trafficContext->incidentWindow->processedAt)
+                    Analytics processed through {{ $trafficContext->incidentWindow->processedAt->utc()->format('Y-m-d H:i:s') }} UTC.
+                @else
+                    Analytics has not processed traffic for this site yet.
+                @endif
+                Aggregated data only; this is investigation context, not proof of causation.
+            </p>
+        </section>
+        @endforeach
         @can('update', $incident)
         <form method="POST" action="{{ route('monitor.incidents.update', $incident) }}" class="ui-panel space-y-4 p-5">
             @csrf @method('PATCH') <input type="hidden" name="version" value="{{ $incident->state_version }}">

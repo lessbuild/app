@@ -8,6 +8,7 @@ use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\Incident;
 use App\Modules\Monitor\Models\IncidentActivity;
 use App\Modules\Monitor\Services\ChangeIncident;
+use App\Modules\Monitor\Services\Core\IncidentTrafficContext;
 use App\Modules\Monitor\Services\CurrentWorkspace;
 use App\Modules\Monitor\Services\IncidentDeploymentContext;
 use App\Modules\Monitor\Services\Telemetry\TelemetryRedactor;
@@ -41,7 +42,7 @@ class IncidentController extends Controller
         return response()->view('monitor::incidents.index', compact('incidents', 'status', 'selectedRule', 'totals'))->header('Cache-Control', 'private, no-store');
     }
 
-    public function show(SearchIncidentsRequest $request, Incident $incident, CurrentWorkspace $currentWorkspace, TelemetryRedactor $redactor, IncidentDeploymentContext $deploymentContext, WorkspacePlanLimits $limits): Response
+    public function show(SearchIncidentsRequest $request, Incident $incident, CurrentWorkspace $currentWorkspace, TelemetryRedactor $redactor, IncidentDeploymentContext $deploymentContext, IncidentTrafficContext $trafficContext, WorkspacePlanLimits $limits): Response
     {
         $workspace = $currentWorkspace->get();
         $incident->load(['alertRule.environment.application', 'monitor.environment.application', 'acknowledgedBy:id,name', 'assignee:id,name']);
@@ -52,11 +53,13 @@ class IncidentController extends Controller
             ->paginate(25, ['*'], 'page', (int) ($request->validated('page') ?? 1));
         $activities->each(fn (IncidentActivity $activity): IncidentActivity => $activity->forceFill($redactor->redact($activity->only('note'))));
         $recentDeployments = $deploymentContext->recent($workspace, $incident);
+        $analyticsTrafficContexts = $trafficContext->forIncident($request->user(), $incident);
 
         return response()->view('monitor::incidents.show', [
             'incident' => $incident,
             'activities' => $activities,
             'recentDeployments' => $recentDeployments,
+            'analyticsTrafficContexts' => $analyticsTrafficContexts,
             'deploymentContextMinutes' => $limits->deploymentContextMinutes($workspace),
             'assignees' => $workspace->members()->wherePivotIn('role', ['owner', 'admin', 'member'])
                 ->select(['users.id', 'users.name'])->orderBy('users.name')->orderBy('users.id')->get(),

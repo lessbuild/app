@@ -74,7 +74,10 @@ final class CreateProjectConnection
             $selected = array_values(array_unique($capabilities));
             $supported = array_values(array_filter(
                 ProjectConnectionCapability::supportedBetween($source->product, $target->product),
-                fn (ProjectConnectionCapability $capability): bool => $capability->hasDeliveryHandler()
+                fn (ProjectConnectionCapability $capability): bool => (
+                    $capability->hasDeliveryHandler()
+                    || $capability === ProjectConnectionCapability::TrafficContext
+                )
                     && $capability->supportsResources($source, $target),
             ));
             $supportedValues = array_map(
@@ -116,7 +119,9 @@ final class CreateProjectConnection
                 'source_environment_id' => $source->environment_id,
                 'target_environment_id' => $target->environment_id,
                 'capabilities' => $selected,
-                'status' => 'pending',
+                'status' => collect($selected)->contains(fn (string $key): bool => ProjectConnectionCapability::tryFrom($key)?->hasDeliveryHandler() ?? false)
+                    ? 'pending'
+                    : 'active',
                 'created_by_user_id' => $user->getKey(),
                 'last_succeeded_at' => null,
                 'last_error_code' => null,

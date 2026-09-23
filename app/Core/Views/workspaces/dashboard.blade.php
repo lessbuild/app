@@ -34,18 +34,10 @@
     </x-signal.ui.page-header>
 
     <dl aria-label="{{ __('Workspace summary') }}" class="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <x-signal.ui.card class="p-4 sm:p-5">
-            <x-signal.ui.stat :label="__('Projects')" :value="$projectCount" :description="__('Projects you can access in this workspace')" />
-        </x-signal.ui.card>
-        <x-signal.ui.card class="p-4 sm:p-5">
-            <x-signal.ui.stat :label="__('App connections')" :value="$activeProductCount" :description="__('Product modules active on your projects')" />
-        </x-signal.ui.card>
-        <x-signal.ui.card class="p-4 sm:p-5">
-            <x-signal.ui.stat :label="__('Workflows')" :value="$connectionCount" :description="__('Enabled links between applications')" />
-        </x-signal.ui.card>
-        <x-signal.ui.card class="p-4 sm:p-5">
-            <x-signal.ui.stat :label="__('Team members')" :value="$memberCount" :description="__('People with workspace membership')" />
-        </x-signal.ui.card>
+        <x-signal.ui.stat :label="__('Projects')" :value="$projectCount" :description="__('Projects you can access in this workspace')" />
+        <x-signal.ui.stat :label="__('App connections')" :value="$activeProductCount" :description="__('Product modules active on your projects')" />
+        <x-signal.ui.stat :label="__('Workflows')" :value="$connectionCount" :description="__('Enabled links between applications')" />
+        <x-signal.ui.stat :label="__('Team members')" :value="$memberCount" :description="__('People with workspace membership')" />
     </dl>
 
     <section aria-labelledby="workspace-products-title" class="mb-9">
