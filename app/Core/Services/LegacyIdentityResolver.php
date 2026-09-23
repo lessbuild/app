@@ -11,6 +11,21 @@ use Illuminate\Contracts\Auth\Authenticatable;
  */
 final class LegacyIdentityResolver
 {
+    public function canonicalIdForSource(
+        string $product,
+        string $sourceEntity,
+        string|int $sourceId,
+        ?string $canonicalEntity = null,
+    ): ?string {
+        return LegacyIdentityMap::query()
+            ->where('source_product', $product)
+            ->where('source_entity', $sourceEntity)
+            ->where('source_id', (string) $sourceId)
+            ->where('canonical_entity', $canonicalEntity ?? $sourceEntity)
+            ->where('status', 'reconciled')
+            ->value('canonical_id');
+    }
+
     /** @return list<string> */
     public function sourceIdsFor(Authenticatable|string $user, string $product, string $entity = 'user'): array
     {

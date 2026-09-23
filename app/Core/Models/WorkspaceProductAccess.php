@@ -7,6 +7,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class WorkspaceProductAccess extends CoreModel
 {
+    protected $table = 'workspace_product_access';
+
     protected $fillable = [
         'membership_id',
         'product',
