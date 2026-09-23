@@ -24,20 +24,20 @@ class DashboardTest extends TestCase
     {
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('Deploy with clarity. Recover with confidence.')
-            ->assertSee('The release lifecycle, without the tool sprawl.')
-            ->assertSee('Connect. Provision. Deploy.')
-            ->assertSee(route('login'));
+            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Deployer')
+            ->assertSee('Monitor')
+            ->assertSee('Analytics');
     }
 
-    public function test_authenticated_root_visits_redirect_into_the_dashboard_verification_flow(): void
+    public function test_signed_in_visitors_can_open_the_public_homepage_and_dashboard_directly(): void
     {
         $verified = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($verified)->get('/')->assertRedirect(route('dashboard'));
+        $this->actingAs($verified)->get('/')->assertSuccessful()->assertSee('One workspace for the work behind your software.');
         $this->get(route('dashboard'))->assertSuccessful();
 
         $unverified = User::factory()->unverified()->create();
-        $this->actingAs($unverified)->get('/')->assertRedirect(route('dashboard'));
+        $this->actingAs($unverified)->get('/')->assertSuccessful()->assertSee('One workspace for the work behind your software.');
         $this->get(route('dashboard'))->assertRedirect(route('verification.notice'));
     }
 

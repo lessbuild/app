@@ -26,7 +26,11 @@ class AccessRequestTest extends TestCase
 
     public function test_closed_registration_has_a_complete_public_request_path(): void
     {
-        $this->get('/')->assertOk()->assertSee(route('access-request.create'))->assertSee('Request access');
+        $this->get('/')->assertOk()
+            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Deployer')
+            ->assertSee('Monitor')
+            ->assertSee('Analytics');
         $this->get(route('pricing'))->assertOk()->assertSee('Request access')->assertDontSee('Start 14-day trial');
         $this->get(route('login'))->assertOk()->assertSee('Request an account');
         $this->get(route('access-request.create', ['plan' => 'pro']))

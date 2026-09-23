@@ -14,7 +14,7 @@
     <ul class="mt-5 grid gap-3" aria-label="{{ __(':name highlights', ['name' => $name]) }}">
         @foreach ($features as $feature)
             <li class="flex items-start gap-3 text-sm font-semibold text-ink">
-                <span class="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-emphasis text-[0.65rem] font-black text-emphasis-ink" aria-hidden="true">✓</span>
+                <span class="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-emphasis text-[0.65rem] font-extrabold text-emphasis-ink" aria-hidden="true">✓</span>
                 <span>{{ $feature }}</span>
             </li>
         @endforeach

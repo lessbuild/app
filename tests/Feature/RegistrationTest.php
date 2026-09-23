@@ -74,7 +74,7 @@ class RegistrationTest extends TestCase
         $this->get('/')
             ->assertSuccessful()
             ->assertDontSee(route('register'))
-            ->assertSee(route('login'))
+            ->assertSee(route('platform.login'))
             ->assertSee('Sign in');
     }
 

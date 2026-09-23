@@ -6,11 +6,30 @@ use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class BrowserSessionManagementTest extends TestCase
 {
     use RefreshDatabase;
+
+    private bool $createdCoreSessionsTable = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        $this->ensureCoreSessionsTable();
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->createdCoreSessionsTable) {
+            Schema::connection('core')->dropIfExists('sessions');
+        }
+
+        parent::tearDown();
+    }
 
     public function test_account_lists_only_recent_owner_sessions_without_loading_payloads(): void
     {
@@ -65,7 +84,7 @@ class BrowserSessionManagementTest extends TestCase
             'current_password' => 'current-password',
         ])->assertSessionHas('sessions_status', 'Browser session logged out.');
 
-        $this->assertDatabaseMissing('sessions', ['id' => $sessionId]);
+        $this->assertFalse(DB::connection('core')->table('sessions')->where('id', $sessionId)->exists());
         $this->assertDatabaseHas('events', [
             'user_id' => $user->id,
             'category' => 'account',
@@ -94,13 +113,13 @@ class BrowserSessionManagementTest extends TestCase
             'current_password' => 'incorrect-password',
         ])->assertSessionHasErrors(['current_password'], errorBag: 'sessions')
             ->assertSessionMissing('_old_input.current_password');
-        $this->assertDatabaseHas('sessions', ['id' => $ownedId, 'user_id' => $user->id]);
+        $this->assertTrue(DB::connection('core')->table('sessions')->where('id', $ownedId)->where('user_id', $user->id)->exists());
 
         $this->delete(route('account.sessions.destroy', $otherId), [
             'session_id' => $otherId,
             'current_password' => 'current-password',
         ])->assertSessionHas('sessions_status', 'That browser session is no longer active.');
-        $this->assertDatabaseHas('sessions', ['id' => $otherId, 'user_id' => $other->id]);
+        $this->assertTrue(DB::connection('core')->table('sessions')->where('id', $otherId)->where('user_id', $other->id)->exists());
     }
 
     public function test_current_browser_cannot_be_revoked_individually(): void
@@ -119,7 +138,7 @@ class BrowserSessionManagementTest extends TestCase
                 'current_password' => 'current-password',
             ])->assertSessionHas('sessions_error', 'You cannot log out the browser you are using now.');
 
-        $this->assertDatabaseHas('sessions', ['id' => $currentId, 'user_id' => $user->id]);
+        $this->assertTrue(DB::connection('core')->table('sessions')->where('id', $currentId)->where('user_id', $user->id)->exists());
         $this->assertAuthenticatedAs($user);
     }
 
@@ -143,9 +162,9 @@ class BrowserSessionManagementTest extends TestCase
             ])->assertSessionHas('sessions_status', 'Other browser sessions logged out.');
 
         foreach ($otherIds as $otherId) {
-            $this->assertDatabaseMissing('sessions', ['id' => $otherId]);
+            $this->assertFalse(DB::connection('core')->table('sessions')->where('id', $otherId)->exists());
         }
-        $this->assertSame(1, DB::table('sessions')->where('user_id', $user->id)->count());
+        $this->assertSame(1, DB::connection('core')->table('sessions')->where('user_id', $user->id)->count());
         $this->assertAuthenticatedAs($user);
     }
 
@@ -153,9 +172,27 @@ class BrowserSessionManagementTest extends TestCase
     {
         config([
             'session.driver' => 'database',
+            'session.connection' => 'core',
             'session.encrypt' => true,
         ]);
         $this->app['session']->forgetDrivers();
+    }
+
+    private function ensureCoreSessionsTable(): void
+    {
+        if (Schema::connection('core')->hasTable('sessions')) {
+            return;
+        }
+
+        Schema::connection('core')->create('sessions', function ($table): void {
+            $table->string('id')->primary();
+            $table->ulid('user_id')->nullable()->index();
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->longText('payload');
+            $table->unsignedInteger('last_activity')->index();
+        });
+        $this->createdCoreSessionsTable = true;
     }
 
     private function insertSession(
@@ -165,7 +202,7 @@ class BrowserSessionManagementTest extends TestCase
         string $userAgent = 'Mozilla/5.0 Firefox/140.0',
         ?int $lastActivity = null,
     ): void {
-        DB::table('sessions')->insert([
+        DB::connection('core')->table('sessions')->insert([
             'id' => $id,
             'user_id' => $user->id,
             'ip_address' => $ipAddress,

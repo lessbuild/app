@@ -31,6 +31,34 @@ class DemoSeederTest extends TestCase
 {
     use RefreshDatabase;
 
+    private bool $createdCoreSessionsTable = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (! Schema::connection('core')->hasTable('sessions')) {
+            Schema::connection('core')->create('sessions', function ($table): void {
+                $table->string('id')->primary();
+                $table->ulid('user_id')->nullable()->index();
+                $table->string('ip_address', 45)->nullable();
+                $table->text('user_agent')->nullable();
+                $table->longText('payload');
+                $table->unsignedInteger('last_activity')->index();
+            });
+            $this->createdCoreSessionsTable = true;
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->createdCoreSessionsTable) {
+            Schema::connection('core')->dropIfExists('sessions');
+        }
+
+        parent::tearDown();
+    }
+
     public function test_demo_seeder_creates_an_idempotent_full_feature_workspace(): void
     {
         $this->assertSame(0, Artisan::call('db:seed', [
@@ -49,11 +77,11 @@ class DemoSeederTest extends TestCase
             [SignInEvent::METHOD_PASSWORD, 'github', 'gitlab'],
             $user->signIns()->pluck('method')->all(),
         );
-        $this->assertDatabaseHas('sessions', [
-            'id' => DemoAccountSeeder::SESSION_ID,
-            'user_id' => $user->id,
-            'ip_address' => '192.0.2.10',
-        ]);
+        $this->assertTrue(DB::connection('core')->table('sessions')
+            ->where('id', DemoAccountSeeder::SESSION_ID)
+            ->where('user_id', $user->id)
+            ->where('ip_address', '192.0.2.10')
+            ->exists());
         $this->assertSame(5, $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertEqualsCanonicalizing([
             Provider::TYPE_DIGITALOCEAN,
@@ -296,7 +324,7 @@ class DemoSeederTest extends TestCase
         $this->assertSame(1, $user->providers()->where('name', 'Personal provider')->count());
     }
 
-    public function test_deployer_demo_seeders_use_the_named_connection_when_core_is_default(): void
+    public function test_demo_seeders_store_browser_sessions_on_the_shared_auth_connection(): void
     {
         $previousConnection = DB::getDefaultConnection();
 
@@ -313,11 +341,11 @@ class DemoSeederTest extends TestCase
 
         $user = User::query()->where('email', DemoSeeder::EMAIL)->sole();
 
-        $this->assertDatabaseHas('sessions', [
-            'id' => DemoAccountSeeder::SESSION_ID,
-            'user_id' => $user->id,
-        ]);
-        $this->assertFalse(Schema::connection('core')->hasTable('sessions'));
+        $this->assertTrue(DB::connection('core')->table('sessions')
+            ->where('id', DemoAccountSeeder::SESSION_ID)
+            ->where('user_id', $user->id)
+            ->exists());
+        $this->assertTrue(Schema::connection('core')->hasTable('sessions'));
         $this->assertFalse(Schema::connection('core')->hasTable('region_size'));
         $this->assertSame($previousConnection, DB::getDefaultConnection());
     }
@@ -1155,7 +1183,7 @@ class DemoSeederTest extends TestCase
                 ->count(),
             'events' => $user->events()->where('event', 'like', 'Demo:%')->count(),
             'notifications' => $user->notifications()->where('data->demo', true)->count(),
-            'browser_sessions' => DB::table('sessions')
+            'browser_sessions' => DB::connection('core')->table('sessions')
                 ->where('id', DemoAccountSeeder::SESSION_ID)
                 ->where('user_id', $user->id)
                 ->count(),

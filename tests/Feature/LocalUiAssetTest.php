@@ -33,15 +33,14 @@ class LocalUiAssetTest extends TestCase
 
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('Illustrative workspace preview')
-            ->assertSee('data-landing-hero', false)
-            ->assertSee('ui-panel relative overflow-hidden p-3', false)
-            ->assertSee('ui-emphasis relative overflow-hidden rounded-panel p-6 sm:p-10', false)
-            ->assertSee('group rounded-card border border-line bg-surface p-4', false)
-            ->assertDontSee('ui-landing-hero', false)
+            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('The Buildpusher apps')
+            ->assertSee('Projects carry across apps')
+            ->assertSee('Deployer')
+            ->assertSee('Monitor')
+            ->assertSee('Analytics')
             ->assertSee('bg-surface-muted', false)
             ->assertSee('text-emphasis-ink', false)
-            ->assertSee('Health verification')
             ->assertDontSee('i.imgur.com', false)
             ->assertDontSee('gopayee.test', false);
 
@@ -539,7 +538,7 @@ class LocalUiAssetTest extends TestCase
             resource_path('views/load-balancers/index.blade.php'),
             resource_path('views/components/forms/section.blade.php'),
             resource_path('views/components/ui/insights.blade.php'),
-            resource_path('views/scenes/index.blade.php'),
+            app_path('Core/Views/marketing/home.blade.php'),
             resource_path('views/livewire/build-deployment-status.blade.php'),
             resource_path('views/backups/_mobile-backup-card.blade.php'),
             resource_path('views/notifications/index.blade.php'),
@@ -637,113 +636,48 @@ class LocalUiAssetTest extends TestCase
     {
         $guestHtml = $this->get('/')
             ->assertSuccessful()
-            ->assertSee('<title>Deploy with clarity · '.config('app.name').'</title>', false)
-            ->assertSee('name="description" content="Provision infrastructure, ship Git releases, monitor health, and recover confidently from one focused control plane."', false)
+            ->assertSee('<title>One workspace for your software operations · '.config('app.name').'</title>', false)
             ->assertSee('name="robots" content="index, follow"', false)
             ->assertSee('rel="canonical" href="'.url('/').'"', false)
             ->assertSee('property="og:type" content="website"', false)
             ->assertSee('property="og:site_name" content="'.config('app.name').'"', false)
-            ->assertSee('property="og:title" content="Deploy with clarity · '.config('app.name').'"', false)
-            ->assertSee('property="og:url" content="'.url('/').'"', false)
             ->assertSee('name="twitter:card" content="summary"', false)
             ->assertSee('name="theme-color" content="#f4f7fb" data-theme-color', false)
-            ->assertSee('rel="icon" href="/favicon.svg" type="image/svg+xml"', false)
             ->assertSee('href="#main-content"', false)
             ->assertSee('id="main-content" tabindex="-1"', false)
-            ->assertSee('aria-controls="navbarCollapse"', false)
-            ->assertSee('aria-expanded="false"', false)
-            ->assertSee('data-mobile-drawer', false)
-            ->assertSee('data-mobile-toggle', false)
-            ->assertSee('aria-hidden="true"', false)
-            ->assertSee('aria-label="Homepage navigation"', false)
-            ->assertSee('aria-label="Mobile homepage navigation"', false)
-            ->assertSee('<noscript>', false)
-            ->assertSee('aria-label="Navigation without JavaScript"', false)
-            ->assertSee('id="features"', false)
-            ->assertSee('id="product"', false)
-            ->assertSee('id="how-it-works"', false)
-            ->assertSee('id="questions"', false)
-            ->assertSee('Deploy with clarity. Recover with confidence.')
-            ->assertSee('Provision without the guesswork')
-            ->assertSee('Make every deployment traceable')
-            ->assertSee('See health in context')
-            ->assertSee('Act safely when it matters')
-            ->assertSee('Framework-ready runtimes')
-            ->assertSee('Safe release strategies')
-            ->assertSee('Preview environments')
-            ->assertSee('Cloudflare automation')
-            ->assertSee('High availability')
-            ->assertSee('Managed data services')
-            ->assertSee('Server telemetry')
-            ->assertSee('Threshold alerts')
-            ->assertSee('Scheduled tasks')
-            ->assertSee('CLI and MCP')
-            ->assertSee('Organizations and roles')
-            ->assertSee('Enterprise sign-in')
-            ->assertSee('Access policies')
-            ->assertSee('Verified backups')
-            ->assertSee('Platform diagnostics')
-            ->assertSee('Preflight and approvals')
-            ->assertSee('Automatic recovery')
-            ->assertSee('Cost visibility')
-            ->assertSee('Incident command centre')
-            ->assertSee("activeFeature: 'ship'", false)
-            ->assertSee("x-show=\"activeFeature === 'recover'\"", false)
-            ->assertSee('36</strong> capabilities', false)
-            ->assertSee('Works with the providers you already use')
-            ->assertSee('DigitalOcean')
-            ->assertSee('GitHub')
-            ->assertSee('GitLab')
-            ->assertSee('Bitbucket')
-            ->assertSee('Illustrative workspace')
-            ->assertSee('Example data · not live telemetry')
-            ->assertSee('Designed for the difficult day.')
-            ->assertSee('Exact-revision recovery')
-            ->assertSee('Where does my application run?')
-            ->assertSee('Can I recover a previous release?')
-            ->assertSee('One workspace, every operational stage.')
-            ->assertSee('One calm operational overview')
-            ->assertSee('Infrastructure with visible progress')
-            ->assertSee('Every release stays explainable')
-            ->assertSee('Health checks that tell a story')
-            ->assertSee('Actions keep their accountability')
-            ->assertSee('Repeat the setup that works')
-            ->assertSee('Explore representative workflows with illustrative data.')
-            ->assertSee('Illustrative previews · no live workspace data.')
-            ->assertSee('role="tablist"', false)
-            ->assertSee('aria-label="Product areas"', false)
-            ->assertSee("activeArea: 'overview'", false)
-            ->assertSee('moveArea(offset)', false)
-            ->assertSee(':tabindex="activeArea ===', false)
-            ->assertSee('@keydown.right.prevent="moveArea(1)"', false)
-            ->assertSee('@keydown.left.prevent="moveArea(-1)"', false)
-            ->assertSee('@keydown.home.prevent="focusArea(0)"', false)
-            ->assertSee('@keydown.end.prevent="focusArea(areas.length - 1)"', false)
-            ->assertSee("x-show=\"activeArea === 'monitor'\"", false)
-            ->assertSee('aria-controls="area-panel-reuse"', false)
-            ->assertSee('Make the next deployment the clear one.')
-            ->assertSee(route('register'))
-            ->assertSee('Get started')
-            ->assertDontSee('Choose plan')
-            ->assertDontSee('£5')
-            ->assertDontSee('£15')
-            ->assertDontSee('£25')
+            ->assertSee('aria-label="Product navigation"', false)
+            ->assertSee('aria-label="Mobile product navigation"', false)
+            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('The Buildpusher apps')
+            ->assertSee('Projects carry across apps')
+            ->assertSee('Independent app plans')
+            ->assertSee('Each app keeps its own operational database')
+            ->assertSee(route('platform.login'))
+            ->assertSee(route('platform.register'))
+            ->assertSee(route('privacy'))
+            ->assertSee(route('terms'))
             ->getContent();
 
-        $this->assertGreaterThanOrEqual(3, substr_count($guestHtml, 'href="'.route('register').'"'));
-        $this->assertSame(6, substr_count($guestHtml, 'role="tabpanel"'));
+        foreach (config('marketing.products') as $slug => $product) {
+            $this->assertStringContainsString('href="'.route('core.marketing.product', $slug).'"', $guestHtml);
+            $this->get(route('core.marketing.product', $slug))
+                ->assertSuccessful()
+                ->assertSee($product['name'])
+                ->assertSee('Separate app plan')
+                ->assertSee('What you can do')
+                ->assertSee('Open '.$product['name']);
+        }
 
-        $homepage = File::get(resource_path('views/scenes/index.blade.php'));
+        $homepage = File::get(app_path('Core/Views/marketing/home.blade.php'));
+        $productPage = File::get(app_path('Core/Views/marketing/product.blade.php'));
         $coreLayout = File::get(resource_path('views/components/signal/layouts/core.blade.php'));
         $styles = File::get(resource_path('css/app.css'));
-        $alpineEntry = File::get(resource_path('js/alpine.js'));
-        $drawerScript = File::get(resource_path('js/signal-drawer.js'));
+        $this->assertStringContainsString('<x-signal.layouts.core', $homepage);
+        $this->assertStringContainsString('<x-signal.blocks.product-card', $homepage);
+        $this->assertStringContainsString('<x-signal.ui.button', $homepage);
+        $this->assertStringContainsString('<x-signal.ui.card', $productPage);
+        $this->assertStringContainsString('<x-signal.blocks.product-feature', $productPage);
         $this->assertStringContainsString(':livewire="false"', $homepage);
-        $this->assertStringContainsString("@vite('resources/js/signal-drawer.js')", $coreLayout);
-        $this->assertStringNotContainsString('signal-drawer', $alpineEntry);
-        $this->assertStringContainsString("document.addEventListener('DOMContentLoaded', initSignalPublicDrawers", $drawerScript);
-        $this->assertStringContainsString("event.key === 'Escape'", $drawerScript);
-        $this->assertStringContainsString("event.key !== 'Tab'", $drawerScript);
         $this->assertStringContainsString('@if ($livewire)', $coreLayout);
         $this->assertStringContainsString('[x-cloak]', $styles);
         $this->assertStringContainsString('#main-content .border:is(', $styles);
@@ -753,7 +687,7 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('text-primary', $homepage);
         $this->assertStringNotContainsString('text-secondary', $homepage);
         $this->assertStringNotContainsString('text-ternary', $homepage);
-        $this->assertDoesNotMatchRegularExpression('/(?:^|[\s\'\"])bg-primary(?:[\s\'\"]|$)/', $homepage);
+        $this->assertDoesNotMatchRegularExpression('/(?:^|[\s\'"])bg-primary(?:[\s\'"]|$)/', $homepage);
         $this->assertStringNotContainsString('bg-secondary', $homepage);
         $this->assertStringNotContainsString('border-primary', $homepage);
     }

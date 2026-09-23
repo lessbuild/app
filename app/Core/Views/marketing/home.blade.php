@@ -24,7 +24,7 @@
 
                     <ul class="mt-7 flex flex-wrap gap-x-6 gap-y-3 text-sm font-semibold text-muted">
                         @foreach ([__('One shared account'), __('Projects carry across apps'), __('Independent app plans')] as $promise)
-                            <li class="flex items-center gap-2"><span class="grid size-5 place-items-center rounded-full bg-emphasis text-[0.65rem] font-black text-emphasis-ink" aria-hidden="true">✓</span>{{ $promise }}</li>
+                            <li class="flex items-center gap-2"><span class="grid size-5 place-items-center rounded-full bg-emphasis text-[0.65rem] font-extrabold text-emphasis-ink" aria-hidden="true">✓</span>{{ $promise }}</li>
                         @endforeach
                     </ul>
                 </div>
@@ -46,7 +46,7 @@
                             ['Analytics', __('Traffic and conversion goals')],
                         ] as [$name, $context])
                             <div class="flex items-center gap-3 rounded-control border border-line bg-surface-muted p-3">
-                                <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-emphasis text-xs font-black text-emphasis-ink" aria-hidden="true">{{ mb_substr($name, 0, 1) }}</span>
+                                <span class="grid size-9 shrink-0 place-items-center rounded-xl bg-emphasis text-xs font-extrabold text-emphasis-ink" aria-hidden="true">{{ mb_substr($name, 0, 1) }}</span>
                                 <div class="min-w-0"><p class="text-sm font-bold text-ink">{{ $name }}</p><p class="mt-0.5 truncate text-xs text-muted">{{ $context }}</p></div>
                                 <span class="ml-auto text-muted" aria-hidden="true">↗</span>
                             </div>
@@ -151,6 +151,8 @@
             ['label' => __('Deployer'), 'href' => route('core.marketing.product', 'deployer')],
             ['label' => __('Monitor'), 'href' => route('core.marketing.product', 'monitor')],
             ['label' => __('Analytics'), 'href' => route('core.marketing.product', 'analytics')],
+            ['label' => __('Privacy'), 'href' => route('privacy')],
+            ['label' => __('Terms'), 'href' => route('terms')],
             ['label' => __('Sign in'), 'href' => route('platform.login')],
         ]"
         :closing-eyebrow="__('Your workspace, your tools')"

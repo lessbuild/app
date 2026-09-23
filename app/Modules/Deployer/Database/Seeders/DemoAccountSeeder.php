@@ -28,7 +28,7 @@ class DemoAccountSeeder extends Seeder
             ],
         );
 
-        DB::connection('deployer')->table('sessions')->updateOrInsert(
+        DB::connection(config('session.connection'))->table('sessions')->updateOrInsert(
             ['id' => self::SESSION_ID],
             [
                 'user_id' => $user->id,
