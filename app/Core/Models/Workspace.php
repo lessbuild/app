@@ -54,4 +54,10 @@ class Workspace extends CoreModel
     {
         return $this->hasMany(CurrentProductSubscription::class);
     }
+
+    /** @return HasMany<ProductBillingEvent, $this> */
+    public function productBillingEvents(): HasMany
+    {
+        return $this->hasMany(ProductBillingEvent::class);
+    }
 }
