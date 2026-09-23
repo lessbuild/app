@@ -4,6 +4,7 @@ namespace App\Core\Models;
 
 use App\Core\Database\CoreModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class ProjectConnection extends CoreModel
 {
@@ -68,5 +69,11 @@ class ProjectConnection extends CoreModel
     public function createdBy(): BelongsTo
     {
         return $this->belongsTo(PlatformUser::class, 'created_by_user_id');
+    }
+
+    /** @return HasMany<ProjectConnectionEvent, $this> */
+    public function events(): HasMany
+    {
+        return $this->hasMany(ProjectConnectionEvent::class)->orderBy('occurred_at');
     }
 }

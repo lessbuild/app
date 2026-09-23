@@ -164,14 +164,151 @@
                     <h2 id="project-connections-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('App connections') }}</h2>
                 </div>
                 <div class="p-5 sm:p-6">
+                    @if ($canManageConnections && $connectionResources->count() >= 2)
+                        <form
+                            method="POST"
+                            action="{{ route('core.projects.connections.store', [$workspace, $project]) }}"
+                            data-project-connection-form
+                            class="mb-6 grid gap-4 rounded-control border border-line bg-surface-muted p-4"
+                        >
+                            @csrf
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <x-signal.ui.field
+                                    name="source_resource_id"
+                                    :label="__('From application')"
+                                    :description="__('Choose the resource that will provide context.')"
+                                    required
+                                >
+                                    <x-signal.ui.select name="source_resource_id" required>
+                                        <option value="">{{ __('Choose a resource') }}</option>
+                                        @foreach ($connectionResources as $resource)
+                                            <option
+                                                value="{{ $resource->getKey() }}"
+                                                data-product="{{ $resource->product }}"
+                                                @selected(old('source_resource_id') === $resource->getKey())
+                                            >{{ $products[$resource->product] ?? str($resource->product)->headline() }} · {{ $resource->name ?: str($resource->resource_type)->headline() }}{{ $resource->environment?->name ? ' · '.$resource->environment->name : '' }}</option>
+                                        @endforeach
+                                    </x-signal.ui.select>
+                                </x-signal.ui.field>
+
+                                <x-signal.ui.field
+                                    name="target_resource_id"
+                                    :label="__('To application')"
+                                    :description="__('Choose the resource that will receive context.')"
+                                    required
+                                >
+                                    <x-signal.ui.select name="target_resource_id" required>
+                                        <option value="">{{ __('Choose a resource') }}</option>
+                                        @foreach ($connectionResources as $resource)
+                                            <option
+                                                value="{{ $resource->getKey() }}"
+                                                data-product="{{ $resource->product }}"
+                                                @selected(old('target_resource_id') === $resource->getKey())
+                                            >{{ $products[$resource->product] ?? str($resource->product)->headline() }} · {{ $resource->name ?: str($resource->resource_type)->headline() }}{{ $resource->environment?->name ? ' · '.$resource->environment->name : '' }}</option>
+                                        @endforeach
+                                    </x-signal.ui.select>
+                                </x-signal.ui.field>
+                            </div>
+
+                            <fieldset class="grid gap-2">
+                                <legend class="text-sm font-bold text-ink">{{ __('Enable behavior') }}</legend>
+                                <p class="text-xs leading-5 text-muted">{{ __('Only behaviors supported by the selected application direction can be enabled.') }}</p>
+                                @foreach ($connectionCapabilities as $capability)
+                                    <div
+                                        data-connection-capability
+                                        data-source-product="{{ $capability->sourceProduct() }}"
+                                        data-target-product="{{ $capability->targetProduct() }}"
+                                    >
+                                        <x-signal.ui.checkbox
+                                            :id="'project-connection-capability-'.$capability->value"
+                                            name="capabilities[]"
+                                            :value="$capability->value"
+                                            :checked="in_array($capability->value, (array) old('capabilities', []), true)"
+                                        >
+                                            {{ $capability->label() }}
+                                            <span class="ml-1 text-xs font-medium text-muted">{{ $products[$capability->sourceProduct()] }} → {{ $products[$capability->targetProduct()] }}</span>
+                                        </x-signal.ui.checkbox>
+                                    </div>
+                                @endforeach
+                                <p
+                                    data-connection-hint
+                                    data-hint-default="{{ __('Choose two resources from a supported application direction to see available behaviors.') }}"
+                                    data-hint-unavailable="{{ __('No workflow behavior is available for this application direction yet.') }}"
+                                    class="text-xs leading-5 text-muted"
+                                >{{ __('Choose two resources from a supported application direction to see available behaviors.') }}</p>
+                                <x-forms.errors name="capabilities" />
+                            </fieldset>
+
+                            <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                                <p class="max-w-xl text-xs leading-5 text-muted">{{ __('This saves an approved resource mapping. Workflow delivery is not active until the connection runner is enabled.') }}</p>
+                                <x-signal.ui.button variant="primary" type="submit">
+                                    {{ __('Save connection') }}
+                                </x-signal.ui.button>
+                            </div>
+                        </form>
+                    @elseif ($canManageConnections)
+                        <x-signal.ui.empty-state
+                            :title="__('No cross-app resources yet')"
+                            :description="__('Map active resources from at least two applications to create a project connection.')"
+                            icon="link"
+                        />
+                    @else
+                        <p class="mb-5 text-sm leading-6 text-muted">{{ __('Ask a workspace owner or admin to manage app connections.') }}</p>
+                    @endif
+
                     @if ($project->connections->isEmpty())
-                        <p class="text-sm leading-6 text-muted">{{ __('Connect products to share deployment context, health changes, and release annotations.') }}</p>
+                        <p class="text-sm leading-6 text-muted">{{ __('No application connections have been configured for this project.') }}</p>
                     @else
                         <ul class="divide-y divide-line">
                             @foreach ($project->connections as $connection)
-                                <li class="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-                                    <span class="text-sm font-bold text-ink">{{ $connection->sourceResource?->name }} → {{ $connection->targetResource?->name }}</span>
-                                    <x-signal.ui.badge :tone="in_array($connection->status, ['active', 'connected'], true) ? 'success' : (in_array($connection->status, ['failed', 'error'], true) ? 'danger' : 'warning')">{{ str($connection->status)->headline() }}</x-signal.ui.badge>
+                                <li class="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0">
+                                    <div class="min-w-0 space-y-1">
+                                        <p class="truncate text-sm font-bold text-ink">
+                                            {{ $products[$connection->sourceResource?->product] ?? __('Application') }} · {{ $connection->sourceResource?->name ?: str($connection->sourceResource?->resource_type ?? 'resource')->headline() }}
+                                            <span aria-hidden="true">→</span>
+                                            {{ $products[$connection->targetResource?->product] ?? __('Application') }} · {{ $connection->targetResource?->name ?: str($connection->targetResource?->resource_type ?? 'resource')->headline() }}
+                                        </p>
+                                        <p class="text-xs text-muted">
+                                            @foreach ((array) $connection->capabilities as $capabilityKey)
+                                                {{ \App\Core\Enums\ProjectConnectionCapability::tryFrom($capabilityKey)?->label() ?? str($capabilityKey)->headline() }}@if (! $loop->last) · @endif
+                                            @endforeach
+                                            @if ($connection->last_succeeded_at)
+                                                · {{ __('Last synced :date', ['date' => $connection->last_succeeded_at->diffForHumans()]) }}
+                                            @elseif ($connection->status === 'pending')
+                                                · {{ __('Waiting for workflow setup') }}
+                                            @endif
+                                        </p>
+                                        @if ($connection->last_error_code)
+                                            <p class="text-xs font-semibold text-danger">{{ __('Last error: :code', ['code' => $connection->last_error_code]) }}</p>
+                                        @endif
+                                        @if ($connection->events->isNotEmpty())
+                                            <ul class="mt-2 space-y-1 border-l-2 border-line pl-3">
+                                                @foreach ($connection->events as $event)
+                                                    <li class="text-xs text-muted">
+                                                        {{ \App\Core\Enums\ProjectConnectionEventType::tryFrom($event->event_type)?->label() ?? str($event->event_type)->headline() }}
+                                                        · {{ $event->actor?->name ?? __('Workspace administrator') }}
+                                                        · {{ $event->occurred_at->diffForHumans() }}
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
+                                    </div>
+                                    <div class="flex items-center gap-3">
+                                        <x-signal.ui.badge :tone="in_array($connection->status, ['active', 'connected'], true) ? 'success' : (in_array($connection->status, ['failed', 'error'], true) ? 'danger' : 'warning')">{{ $connection->status === 'pending' ? __('Setup pending') : str($connection->status)->headline() }}</x-signal.ui.badge>
+                                        @if ($canManageConnections)
+                                            <form
+                                                method="POST"
+                                                action="{{ route('core.projects.connections.destroy', [$workspace, $project, $connection]) }}"
+                                                data-confirm="{{ __('Disconnect these applications? Existing product data will remain.') }}"
+                                            >
+                                                @csrf
+                                                @method('DELETE')
+                                                <x-signal.ui.button variant="danger" type="submit" class="min-h-8 px-3 text-xs">
+                                                    {{ __('Disconnect') }}
+                                                </x-signal.ui.button>
+                                            </form>
+                                        @endif
+                                    </div>
                                 </li>
                             @endforeach
                         </ul>

@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Http\Controllers\CoreHomeController;
+use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,5 +20,9 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::get('/projects/create', 'create')->name('create');
             Route::post('/projects', 'store')->name('store');
             Route::get('/projects/{project}', 'show')->name('show');
+            Route::post('/projects/{project}/connections', [ProjectConnectionsController::class, 'store'])
+                ->name('connections.store');
+            Route::delete('/projects/{project}/connections/{connection}', [ProjectConnectionsController::class, 'destroy'])
+                ->name('connections.destroy');
         });
 });

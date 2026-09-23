@@ -2,6 +2,7 @@
 
 namespace App\Core\Http\Controllers;
 
+use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Http\Requests\StoreWorkspaceProjectRequest;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\PlatformUser;
@@ -152,14 +153,17 @@ final class WorkspaceProjectsController
                 : $query->whereIn('product', $visibleProducts),
             'resources' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
-                : $query->whereIn('product', $visibleProducts),
+                : $query->whereIn('product', $visibleProducts)->where('status', 'active'),
             'resources.environment',
             'connections' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
                 : $query->whereHas('sourceResource', fn ($source) => $source->whereIn('product', $visibleProducts))
-                    ->whereHas('targetResource', fn ($target) => $target->whereIn('product', $visibleProducts)),
+                    ->whereHas('targetResource', fn ($target) => $target->whereIn('product', $visibleProducts))
+                    ->where('status', '!=', 'disconnected')
+                    ->whereNull('disconnected_at'),
             'connections.sourceResource',
             'connections.targetResource',
+            'connections.events.actor',
         ]);
         $authorizedProductLinks = $productLinks->forProject($user, $project, $visibleProducts);
 
@@ -179,6 +183,12 @@ final class WorkspaceProjectsController
                     ->keyBy('product')
                 : collect(),
             'canManageBilling' => $canManageBilling,
+            'canManageConnections' => $access->canManageWorkspace($user, $workspace),
+            'connectionCapabilities' => ProjectConnectionCapability::cases(),
+            'connectionResources' => $project->resources->sortBy([
+                ['product', 'asc'],
+                ['name', 'asc'],
+            ])->values(),
         ]);
     }
 
