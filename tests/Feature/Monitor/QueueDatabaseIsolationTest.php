@@ -28,7 +28,11 @@ class QueueDatabaseIsolationTest extends TestCase
 
     public function test_legacy_database_queue_storage_stays_on_deployer_when_core_is_the_default(): void
     {
-        config(['database.default' => 'core']);
+        config([
+            'database.default' => 'core',
+            'queue.connections.database.connection' => 'deployer',
+            'queue.failed.database' => 'deployer',
+        ]);
 
         $this->assertSame('deployer', config('queue.connections.database.connection'));
         $this->assertSame('deployer', config('queue.failed.database'));

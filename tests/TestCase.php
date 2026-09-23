@@ -17,6 +17,15 @@ abstract class TestCase extends BaseTestCase
 
         $this->withoutVite();
 
+        if (app()->environment('testing')) {
+            // The established feature suite uses one SQLite schema; module queue
+            // boundary tests opt back into the named production connections.
+            config([
+                'queue.connections.database.connection' => config('database.default'),
+                'queue.failed.database' => config('database.default'),
+            ]);
+        }
+
         if (app()->environment('testing')
             && Schema::hasTable('builds')
             && ! Schema::hasTable('deployment_succeeded_outbox_events')) {

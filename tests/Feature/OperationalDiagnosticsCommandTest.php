@@ -100,7 +100,9 @@ class OperationalDiagnosticsCommandTest extends TestCase
                 'caddy.service',
             ],
         ]);
-        Process::fake(fn () => Process::result(output: "active\nactive\nactive\n"));
+        Process::fake(fn ($process) => in_array('is-active', $process->command, true)
+            ? Process::result(output: "active\nactive\nactive\n")
+            : Process::result(output: "enabled\nenabled\nenabled\n"));
 
         $this->assertSame(0, Artisan::call('lessbuild:diagnose', ['--json' => true]));
         $check = collect(json_decode(Artisan::output(), true, flags: JSON_THROW_ON_ERROR)['checks'])
@@ -192,6 +194,7 @@ class OperationalDiagnosticsCommandTest extends TestCase
     {
         config([
             'queue.default' => 'database',
+            'queue.connections.database.connection' => config('database.default'),
             'queue.failed.database' => config('database.default'),
             'lessbuild.diagnostics.queue_backlog_limit' => 1,
             'lessbuild.diagnostics.queue_oldest_minutes' => 5,
