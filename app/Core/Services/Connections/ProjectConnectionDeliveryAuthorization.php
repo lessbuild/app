@@ -3,6 +3,7 @@
 namespace App\Core\Services\Connections;
 
 use App\Core\Contracts\ProductPlanResolver;
+use App\Core\Data\Billing\ProductPlanResolution;
 use App\Core\Data\Connections\ProjectConnectionDeliveryAuthority;
 use App\Core\Enums\ProductKey;
 use App\Core\Enums\ProjectConnectionCapability;
@@ -59,14 +60,14 @@ final class ProjectConnectionDeliveryAuthorization
         string $targetResourceType,
         string $targetResourceId,
     ): ProjectConnectionDelivery {
-        abort_unless($authority->capability === $capability->value, 403);
+        $this->blockUnless($authority->capability === $capability->value, 'unsupported_capability');
 
         $delivery = ProjectConnectionDelivery::query()
             ->whereKey($authority->deliveryId)
             ->where('project_connection_id', $authority->connectionId)
             ->where('status', 'processing')
             ->first();
-        abort_unless($delivery instanceof ProjectConnectionDelivery, 403);
+        $this->blockUnless($delivery instanceof ProjectConnectionDelivery, 'delivery_unavailable');
 
         $connection = ProjectConnection::query()
             ->whereKey($authority->connectionId)
@@ -74,8 +75,8 @@ final class ProjectConnectionDeliveryAuthorization
             ->whereNull('disconnected_at')
             ->with(['project.workspace', 'sourceResource', 'targetResource'])
             ->first();
-        abort_unless($connection instanceof ProjectConnection, 403);
-        abort_unless(in_array($capability->value, (array) $connection->capabilities, true), 403);
+        $this->blockUnless($connection instanceof ProjectConnection, 'connection_unavailable');
+        $this->blockUnless(in_array($capability->value, (array) $connection->capabilities, true), 'unsupported_capability');
 
         if ($connection->automation_paused_at !== null) {
             throw new ProjectConnectionDeliveryBlocked('automation_paused');
@@ -88,7 +89,7 @@ final class ProjectConnectionDeliveryAuthorization
                 && (string) $target?->environment_id === (string) $connection->target_environment_id
             : $target?->environment_id === null && $connection->target_environment_id === null;
 
-        abort_unless(
+        $resourcesMatch =
             $source instanceof ProjectResource
                 && $source->product === $capability->sourceProduct()
                 && $source->resource_type === 'environment'
@@ -102,12 +103,17 @@ final class ProjectConnectionDeliveryAuthorization
                 && $target->status === 'active'
                 && $targetEnvironmentMatches
                 && $connection->project_id === $source->project_id
-                && $connection->project_id === $target->project_id
-                && $connection->project?->status === 'active'
-                && $connection->project?->archived_at === null
-                && $connection->project?->workspace?->status === 'active'
-                && $connection->project?->workspace?->archived_at === null,
-            403,
+                && $connection->project_id === $target->project_id;
+        $this->blockUnless($resourcesMatch, 'resource_mapping_changed');
+
+        $project = $connection->project;
+        $workspace = $project?->workspace;
+        $this->blockUnless(
+            $project?->status === 'active'
+                && $project?->archived_at === null
+                && $workspace?->status === 'active'
+                && $workspace?->archived_at === null,
+            'project_unavailable',
         );
 
         $products = [$capability->sourceProduct(), $capability->targetProduct()];
@@ -118,9 +124,9 @@ final class ProjectConnectionDeliveryAuthorization
             ->pluck('product')
             ->unique()
             ->all();
-        abort_unless(count($activeProducts) === 2, 403);
+        $this->blockUnless(count($activeProducts) === 2, 'product_not_enabled');
 
-        $workspaceId = (string) $connection->project?->workspace_id;
+        $workspaceId = (string) $project->workspace_id;
         $grantedProducts = WorkspaceProductAccess::query()
             ->whereIn('product', $products)
             ->where('status', 'active')
@@ -132,23 +138,52 @@ final class ProjectConnectionDeliveryAuthorization
             ->pluck('product')
             ->unique()
             ->all();
-        abort_unless(count($grantedProducts) === 2, 403);
+        $this->blockUnless(count($grantedProducts) === 2, 'product_access_changed');
 
         $sourcePlan = $this->plans->resolve($workspaceId, ProductKey::from($capability->sourceProduct()));
         $targetPlan = $this->plans->resolve($workspaceId, ProductKey::from($capability->targetProduct()));
-        abort_unless($sourcePlan->available && $targetPlan->available, 403);
+        $this->blockUnless($sourcePlan->available && $targetPlan->available, 'product_subscription_unavailable');
 
-        $entitled = match ($capability) {
-            ProjectConnectionCapability::DeploymentContext => $sourcePlan->allows('monitoring')
-                && $targetPlan->hasLimit('deployment_context_minutes')
-                && ($targetPlan->limit('deployment_context_minutes') === null || $targetPlan->limit('deployment_context_minutes') > 0),
-            ProjectConnectionCapability::ReleaseAnnotations => $sourcePlan->allows('releases')
-                && $targetPlan->allows('release_annotations'),
-            ProjectConnectionCapability::IncidentAnnotations => $targetPlan->allows('incident_annotations'),
-            default => false,
-        };
-        abort_unless($entitled, 403);
+        switch ($capability) {
+            case ProjectConnectionCapability::DeploymentContext:
+                $this->authorizeDeploymentContextPlan($sourcePlan, $targetPlan);
+                break;
+            case ProjectConnectionCapability::ReleaseAnnotations:
+                $this->blockUnless(
+                    $sourcePlan->allows('releases') && $targetPlan->allows('release_annotations'),
+                    'product_feature_not_included',
+                );
+                break;
+            case ProjectConnectionCapability::IncidentAnnotations:
+                $this->blockUnless(
+                    $targetPlan->allows('incident_annotations'),
+                    'product_feature_not_included',
+                );
+                break;
+            case ProjectConnectionCapability::TrafficContext:
+                $this->blockUnless(false, 'unsupported_capability');
+        }
 
         return $delivery;
+    }
+
+    private function authorizeDeploymentContextPlan(
+        ProductPlanResolution $sourcePlan,
+        ProductPlanResolution $targetPlan,
+    ): void {
+        $this->blockUnless(
+            $sourcePlan->allows('monitoring') && $targetPlan->hasLimit('deployment_context_minutes'),
+            'product_feature_not_included',
+        );
+
+        $limit = $targetPlan->limit('deployment_context_minutes');
+        $this->blockUnless($limit === null || $limit > 0, 'product_limit_unavailable');
+    }
+
+    private function blockUnless(bool $condition, string $reasonCode): void
+    {
+        if (! $condition) {
+            throw new ProjectConnectionDeliveryBlocked($reasonCode);
+        }
     }
 }

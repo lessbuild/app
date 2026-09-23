@@ -59,6 +59,34 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
         $this->assertStringNotContainsString('provider-token-leaked-in-bad-code', $html);
     }
 
+    public function test_access_and_plan_error_codes_have_safe_specific_next_steps(): void
+    {
+        $scenarios = [
+            ['product_access_changed', 'Access changed', 'Restore the required workspace app access'],
+            ['connection_unavailable', 'Mapping needs review', 'Review both project resources'],
+            ['product_subscription_unavailable', 'Subscription needs attention', 'Review the subscription'],
+            ['product_feature_not_included', 'Plan needs review', 'Review the plans for both connected apps'],
+            ['product_limit_unavailable', 'Plan limit needs review', 'Review the receiving app plan'],
+        ];
+
+        foreach ($scenarios as [$errorCode, $expectedStatus, $expectedNextStep]) {
+            $connection = (new ProjectConnection)->forceFill([
+                'status' => 'failed',
+                'last_error_code' => $errorCode,
+            ]);
+            $connection->setRelation('deliveries', collect());
+
+            $diagnostic = (new ProjectConnectionDiagnostics)->forConnection($connection);
+            $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
+                'diagnostic' => $diagnostic,
+            ]);
+
+            $this->assertSame($expectedStatus, $diagnostic->status);
+            $this->assertStringContainsString($expectedNextStep, $html);
+            $this->assertStringNotContainsString($errorCode, $html);
+        }
+    }
+
     public function test_waiting_connection_has_a_clear_first_event_state(): void
     {
         $connection = (new ProjectConnection)->forceFill(['status' => 'pending']);

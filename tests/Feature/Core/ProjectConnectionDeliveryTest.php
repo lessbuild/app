@@ -14,6 +14,7 @@ use App\Core\Models\Workspace;
 use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
 use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
+use App\Core\Services\Connections\ProjectConnectionDiagnostics;
 use App\Core\Services\Connections\RetryProjectConnectionDelivery;
 use App\Core\Services\Projects\ProjectWorkflowProgress;
 use App\Core\Services\Projects\SetProjectConnectionAutomationState;
@@ -382,9 +383,16 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $status = app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey());
 
         $this->assertSame('blocked', $status);
+        $this->assertSame('product_access_changed', $delivery->fresh()->last_error_code);
         $this->assertSame('failed', ProjectConnection::query()->findOrFail($this->connectionId)->status);
         $this->assertSame(0, Deployment::query()->count());
         $this->assertSame(0, ProjectConnectionEventReceipt::query()->count());
+
+        $diagnostic = app(ProjectConnectionDiagnostics::class)->forConnection(
+            ProjectConnection::query()->with('deliveries')->findOrFail($this->connectionId),
+        );
+        $this->assertSame('Access changed', $diagnostic->status);
+        $this->assertStringNotContainsString('product_access_changed', $diagnostic->detail);
 
         DB::connection('core')->table('workspace_product_access')->where('product', 'monitor')->update([
             'status' => 'active',
@@ -401,6 +409,63 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
         $this->assertSame(1, Deployment::query()->count());
         $this->assertSame(1, ProjectConnectionEventReceipt::query()->count());
+    }
+
+    public function test_unavailable_product_subscription_has_a_distinct_safe_delivery_diagnostic(): void
+    {
+        $delivery = $this->makeDelivery();
+
+        app()->instance(ProductPlanResolver::class, new class implements ProductPlanResolver
+        {
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                if ($product === ProductKey::Monitor) {
+                    return ProductPlanResolution::unavailable($product, $workspaceId, 'current_subscription_missing');
+                }
+
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: 'test',
+                    subscriptionStatus: 'active',
+                    entitlements: ['*'],
+                    limits: ['deployment_context_minutes' => 60],
+                );
+            }
+        });
+
+        $status = app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey());
+
+        $this->assertSame('blocked', $status);
+        $this->assertSame('product_subscription_unavailable', $delivery->fresh()->last_error_code);
+        $this->assertSame(0, Deployment::query()->count());
+
+        $diagnostic = app(ProjectConnectionDiagnostics::class)->forConnection(
+            ProjectConnection::query()->with('deliveries')->findOrFail($this->connectionId),
+        );
+        $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
+            'diagnostic' => $diagnostic,
+        ]);
+
+        $this->assertSame('Subscription needs attention', $diagnostic->status);
+        $this->assertStringContainsString('Review the subscription for each connected app', $html);
+        $this->assertStringNotContainsString('current_subscription_missing', $html);
+    }
+
+    public function test_plan_feature_and_configured_limit_failures_keep_distinct_reason_codes(): void
+    {
+        foreach ([
+            ['feature', 'product_feature_not_included'],
+            ['limit', 'product_limit_unavailable'],
+        ] as [$restriction, $expectedReason]) {
+            app()->instance(ProductPlanResolver::class, $this->restrictedPlans($restriction));
+            $delivery = $this->makeDelivery();
+
+            $this->assertSame('blocked', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+            $this->assertSame($expectedReason, $delivery->fresh()->last_error_code);
+            $this->assertSame(0, Deployment::query()->count());
+        }
     }
 
     public function test_retry_resets_only_the_selected_failed_workflow_step(): void
@@ -756,6 +821,34 @@ final class ProjectConnectionDeliveryTest extends TestCase
                 );
             }
         });
+    }
+
+    private function restrictedPlans(string $restriction): ProductPlanResolver
+    {
+        return new class($restriction) implements ProductPlanResolver
+        {
+            public function __construct(private readonly string $restriction) {}
+
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                $entitlements = $product === ProductKey::Deployer && $this->restriction === 'feature'
+                    ? ['releases']
+                    : ['*'];
+                $limits = $product === ProductKey::Monitor
+                    ? ['deployment_context_minutes' => $this->restriction === 'limit' ? 0 : 60]
+                    : [];
+
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: 'test',
+                    subscriptionStatus: 'active',
+                    entitlements: $entitlements,
+                    limits: $limits,
+                );
+            }
+        };
     }
 
     private function createCoreTables(): void

@@ -141,6 +141,36 @@ final class ProjectConnectionDiagnostics
                 __('The workflow stopped because current app access could not be confirmed.'),
                 __('Restore workspace access at both ends, then retry the update.'),
             ],
+            'product_access_changed' => [
+                'warning', __('Access changed'), __('Workspace access to a connected app changed.'),
+                __('The workflow stopped because one of the required app grants is no longer active.'),
+                __('Restore the required workspace app access, then retry this delivery.'),
+            ],
+            'connection_unavailable', 'resource_mapping_changed' => [
+                'warning', __('Mapping needs review'), __('A connected resource mapping changed.'),
+                __('The workflow stopped because the current resource mapping could not be confirmed.'),
+                __('Review both project resources and reconnect them before retrying.'),
+            ],
+            'project_unavailable', 'product_not_enabled' => [
+                'warning', __('Project setup changed'), __('The project or an app connection is no longer active.'),
+                __('The workflow stopped because its project context is unavailable.'),
+                __('Restore the project and app connections before retrying.'),
+            ],
+            'product_subscription_unavailable' => [
+                'warning', __('Subscription needs attention'), __('A connected app subscription could not be confirmed.'),
+                __('The source event is preserved while the app plan is checked.'),
+                __('Review the subscription for each connected app, then retry this delivery.'),
+            ],
+            'product_feature_not_included' => [
+                'warning', __('Plan needs review'), __('A connected app plan does not include this workflow behavior.'),
+                __('The source event remains recorded; no app data was changed by this blocked step.'),
+                __('Review the plans for both connected apps before retrying.'),
+            ],
+            'product_limit_unavailable' => [
+                'warning', __('Plan limit needs review'), __('The receiving app plan does not allow this context window.'),
+                __('The source event remains recorded; this configured limit does not permit the requested workflow.'),
+                __('Review the receiving app plan and its connection limits before retrying.'),
+            ],
             'connection_disconnected' => [
                 'warning', __('Reconnect required'), __('This connection is no longer active.'),
                 __('Queued updates were stopped after the connection was disconnected.'),
