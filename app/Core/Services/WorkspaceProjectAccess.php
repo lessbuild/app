@@ -20,6 +20,10 @@ final class WorkspaceProjectAccess
 {
     public function activeMembership(PlatformUser $user, Workspace $workspace): ?WorkspaceMembership
     {
+        if ($workspace->status !== 'active' || $workspace->archived_at !== null) {
+            return null;
+        }
+
         return WorkspaceMembership::query()
             ->where('workspace_id', $workspace->getKey())
             ->where('user_id', $user->getKey())
@@ -32,6 +36,13 @@ final class WorkspaceProjectAccess
         $membership = $this->activeMembership($user, $workspace);
 
         return $membership !== null && in_array($membership->role, ['owner', 'admin'], true);
+    }
+
+    public function canManageBilling(PlatformUser $user, Workspace $workspace): bool
+    {
+        $membership = $this->activeMembership($user, $workspace);
+
+        return $membership !== null && in_array($membership->role, ['owner', 'billing'], true);
     }
 
     public function hasProductAccess(

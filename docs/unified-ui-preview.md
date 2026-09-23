@@ -1,12 +1,8 @@
 # Unified app UI preview
 
-These screens use Signal's two-row Topbar SaaS shell. The first row carries the brand, workspace switcher, product navigation, and quick actions. The second row pairs the current resource context with product navigation; it shows project and environment controls where they apply, and a Site selector in Analytics.
+These screens use Signal's two-row Topbar SaaS shell. The first row carries the brand, workspace switcher, product navigation, and quick actions. The second row pairs the shared project and environment context with each product's own navigation. Analytics keeps its site-specific controls inside the product page.
 
-The screenshots use sample data and are visual review artifacts, not live application screens. The latest Analytics shell rendering uses the production Signal CSS and graphite palette. Monitor and Analytics remain gated while shared authentication, canonical projects, billing, and data migration are unfinished.
-
-## Analytics with the shared shell
-
-![Analytics dashboard in the implemented two-row Signal topbar shell, shown with sample data](ui-preview/signal-topbar-analytics.png)
+The screenshots use sample data and are visual review artifacts, not live application screens. Monitor and Analytics remain gated while shared authentication, canonical projects, billing, and data migration are unfinished.
 
 ## Projects dashboard
 

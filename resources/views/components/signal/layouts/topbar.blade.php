@@ -47,11 +47,11 @@
         request()->routeIs($key.'.*')
         || (filled($products[$key]['host'] ?? null) && strcasecmp((string) $products[$key]['host'], $currentHost) === 0)
     ) ?? 'deployer';
-    $activeProductLabel = $products[$activeProduct]['label'] ?? __('Deployer');
+    $activeProductLabel = $products[$activeProduct]['label'] ?? ($activeProduct === 'core' ? __('Workspace') : __('Deployer'));
     $brandUrl ??= \Illuminate\Support\Facades\Route::has($activeProduct.'.dashboard')
         ? route($activeProduct.'.dashboard')
         : (\Illuminate\Support\Facades\Route::has('dashboard') ? route('dashboard') : url('/'));
-    $projectsUrl ??= \Illuminate\Support\Facades\Route::has('projects.index') ? route('projects.index') : url('/projects');
+    $projectsUrl ??= $navigation['projects_url'] ?? (\Illuminate\Support\Facades\Route::has('projects.index') ? route('projects.index') : url('/projects'));
     $contextIndexUrl ??= $projectsUrl;
     $environmentIndexUrl ??= ($currentProject && \Illuminate\Support\Facades\Route::has('projects.show'))
         ? route('projects.show', $currentProject).'#environment-'.data_get($environmentOptions, '0.id').'-heading'
@@ -66,7 +66,7 @@
 <header class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur" data-mobile-header data-topbar-shell>
     <div class="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         <div class="flex min-h-16 items-center gap-3">
-            @if (in_array($activeProduct, ['monitor', 'analytics'], true))
+            @if (in_array($activeProduct, ['core', 'monitor', 'analytics'], true))
                 <details class="ui-topbar-menu group relative shrink-0 lg:hidden">
                     <summary class="ui-icon-btn cursor-pointer list-none" aria-label="{{ __('Open application navigation') }}" aria-haspopup="true">
                         <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
@@ -205,7 +205,7 @@
                     <x-signal.ui.icon-button label="{{ __('Open quick navigation') }}" class="sm:hidden" aria-controls="global-command" aria-haspopup="dialog" data-global-command-open>
                         <svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
                     </x-signal.ui.icon-button>
-                @elseif ($activeProduct === 'analytics')
+                @elseif (in_array($activeProduct, ['core', 'analytics'], true))
                     <x-signal.ui.button type="button" class="ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
                         <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
                         <span class="hidden xl:inline">{{ __('Search') }}</span>

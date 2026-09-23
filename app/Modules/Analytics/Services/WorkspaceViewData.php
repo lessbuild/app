@@ -2,6 +2,7 @@
 
 namespace App\Modules\Analytics\Services;
 
+use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Analytics\Models\Site;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -34,6 +35,14 @@ final class WorkspaceViewData
         $currentWorkspaceRole = $user && $currentWorkspace
             ? $access->roleFor($user, $currentWorkspace)
             : null;
+        $projectsUrl = $currentWorkspace
+            ? app(WorkspaceProjectNavigation::class)->directoryUrl(
+                'analytics',
+                'workspace',
+                $currentWorkspace->getKey(),
+                route('analytics.dashboard'),
+            )
+            : route('analytics.dashboard');
 
         $groups = [[
             'label' => 'Reports',
@@ -81,6 +90,7 @@ final class WorkspaceViewData
             'currentAnalyticsSite' => $currentSite,
             'currentAnalyticsWorkspaceRole' => $currentWorkspaceRole,
             'signalTopbar' => [
+                'projects_url' => $projectsUrl,
                 'groups' => $groups,
                 'workspaces' => $workspaces,
                 'contexts' => $contextOptions,

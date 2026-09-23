@@ -3,6 +3,11 @@
 namespace Tests\Feature\Core;
 
 use App\Modules\Deployer\Services\Migration\ImportWorkspacesAndProjectsIntoCore;
+use App\Core\Models\PlatformUser;
+use App\Core\Models\Workspace;
+use App\Core\Models\WorkspaceMembership;
+use App\Core\Services\Projects\CreateCanonicalProject;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -166,6 +171,83 @@ final class DeployerWorkspaceProjectImportTest extends TestCase
         $this->assertSame(1, $report['projects_blocked']);
         $this->assertDatabaseCount('workspaces', 0, 'core');
         $this->assertDatabaseCount('projects', 0, 'core');
+    }
+
+    public function test_new_project_is_shared_with_active_workspace_members_without_activating_products(): void
+    {
+        $this->addCanonicalUser(100, 'owner@example.test');
+        $this->addCanonicalUser(101, 'developer@example.test');
+        $ownerId = $this->canonicalUserId(100);
+        $developerId = $this->canonicalUserId(101);
+        $workspace = Workspace::query()->create([
+            'owner_user_id' => $ownerId,
+            'name' => 'New Workspace',
+            'slug' => 'new-workspace',
+            'status' => 'active',
+        ]);
+
+        WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $ownerId,
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+        WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $developerId,
+            'role' => 'developer',
+            'status' => 'active',
+        ]);
+
+        $creator = PlatformUser::query()->findOrFail($ownerId);
+        $create = app(CreateCanonicalProject::class);
+        $first = $create->handle($workspace, $creator, 'Storefront');
+        $second = $create->handle($workspace, $creator, 'Storefront');
+
+        $this->assertSame('storefront', $first->slug);
+        $this->assertSame('storefront-2', $second->slug);
+        $this->assertDatabaseCount('project_memberships', 4, 'core');
+        $this->assertDatabaseHas('project_memberships', [
+            'project_id' => $first->getKey(),
+            'user_id' => $developerId,
+            'role' => 'developer',
+            'status' => 'active',
+        ], 'core');
+        $this->assertDatabaseCount('project_products', 0, 'core');
+    }
+
+    public function test_project_creation_rejects_non_manager_workspace_members(): void
+    {
+        $this->addCanonicalUser(100, 'developer@example.test');
+        $this->addCanonicalUser(101, 'owner@example.test');
+        $developerId = $this->canonicalUserId(100);
+        $ownerId = $this->canonicalUserId(101);
+        $workspace = Workspace::query()->create([
+            'owner_user_id' => $ownerId,
+            'name' => 'Workspace',
+            'slug' => 'workspace',
+            'status' => 'active',
+        ]);
+        WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $ownerId,
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+        WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $developerId,
+            'role' => 'developer',
+            'status' => 'active',
+        ]);
+        $developer = PlatformUser::query()->findOrFail($developerId);
+
+        try {
+            app(CreateCanonicalProject::class)->handle($workspace, $developer, 'Unauthorized project');
+            $this->fail('A developer membership must not create workspace projects.');
+        } catch (AuthorizationException) {
+            $this->assertDatabaseCount('projects', 0, 'core');
+        }
     }
 
     private function createCoreTables(): void

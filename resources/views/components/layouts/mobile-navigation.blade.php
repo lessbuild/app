@@ -8,6 +8,7 @@
         || (filled($products[$key]['host'] ?? null) && strcasecmp((string) $products[$key]['host'], $currentHost) === 0)
     ) ?? 'deployer';
     $activeProductLabel = $products[$activeProduct]['label'] ?? __('Deployer');
+    $projectsUrl = $navigation['projects_url'] ?? (\Illuminate\Support\Facades\Route::has('projects.index') ? route('projects.index') : url('/projects'));
 @endphp
 
 <section
@@ -43,7 +44,7 @@
         <nav class="mt-6 border-b border-line pb-5" aria-label="{{ __('Products') }}">
             <p class="mb-2 px-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-subtle">{{ __('Platform') }}</p>
             <div class="grid gap-1">
-                <a href="{{ route('projects.index') }}" @class(['app-sidebar-link', 'bg-primary-soft text-primary' => request()->routeIs('projects.*')]) @if(request()->routeIs('projects.*')) aria-current="page" @endif>
+                <a href="{{ $projectsUrl }}" @class(['app-sidebar-link', 'bg-primary-soft text-primary' => request()->routeIs('projects.*', 'core.projects.*')]) @if(request()->routeIs('projects.*', 'core.projects.*')) aria-current="page" @endif>
                     <svg class="h-4 w-4 shrink-0 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Projects') }}</span>
                 </a>
                 @foreach (['deployer' => ['label' => __('Deployer'), 'route' => 'dashboard'], 'monitor' => ['label' => __('Monitor')], 'analytics' => ['label' => __('Analytics')]] as $key => $product)

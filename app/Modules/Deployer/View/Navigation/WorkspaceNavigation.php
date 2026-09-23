@@ -2,7 +2,9 @@
 
 namespace App\Modules\Deployer\View\Navigation;
 
+use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Deployer\Models\User;
+use Illuminate\Support\Facades\Route;
 
 /**
  * Builds the shared workspace navigation model for authenticated layouts.
@@ -13,6 +15,8 @@ use App\Modules\Deployer\Models\User;
  */
 final class WorkspaceNavigation
 {
+    public function __construct(private readonly WorkspaceProjectNavigation $projectNavigation) {}
+
     /**
      * @return array{
      *     groups: list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>,
@@ -24,6 +28,7 @@ final class WorkspaceNavigation
      *     unread_notifications: int,
      *     workspaces: \Illuminate\Support\Collection<int, \App\Modules\Deployer\Models\Organization>,
      *     projects: \Illuminate\Support\Collection<int, \App\Modules\Deployer\Models\Project>,
+     *     projects_url: string,
      * }
      */
     public function for(User $user): array
@@ -35,6 +40,10 @@ final class WorkspaceNavigation
             ->orderBy('name')
             ->limit(30)
             ->get(['projects.id', 'projects.name', 'projects.slug']) ?? collect();
+        $fallbackProjectsUrl = Route::has('projects.index') ? route('projects.index') : url('/projects');
+        $projectsUrl = $workspace
+            ? $this->projectNavigation->directoryUrl('deployer', 'organization', $workspace->getKey(), $fallbackProjectsUrl)
+            : $fallbackProjectsUrl;
 
         $groups = [
             $this->group(__('Overview'), [
@@ -109,6 +118,7 @@ final class WorkspaceNavigation
             'unread_notifications' => $unreadNotifications,
             'workspaces' => $workspaces,
             'projects' => $projects,
+            'projects_url' => $projectsUrl,
         ];
     }
 

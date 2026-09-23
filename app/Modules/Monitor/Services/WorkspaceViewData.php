@@ -2,6 +2,7 @@
 
 namespace App\Modules\Monitor\Services;
 
+use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Issue;
@@ -52,6 +53,12 @@ final class WorkspaceViewData
             : [];
 
         $productNavigation = $this->navigation->forWorkspace($workspace);
+        $projectsUrl = app(WorkspaceProjectNavigation::class)->directoryUrl(
+            'monitor',
+            'workspace',
+            $workspace->getKey(),
+            route('monitor.applications.index'),
+        );
         $groups = collect($productNavigation)->map(fn (array $items, string $label): array => [
             'label' => $label,
             'items' => array_values($items),
@@ -68,6 +75,7 @@ final class WorkspaceViewData
             'workspaceOpenIssues' => Issue::forWorkspace($workspace)->where('status', 'open')->count(),
             'workspaceNavigation' => $productNavigation,
             'signalTopbar' => [
+                'projects_url' => $projectsUrl,
                 'groups' => $groups,
                 'profile' => [
                     ['label' => 'Team access', 'route' => 'monitor.settings.team', 'href' => route('monitor.settings.team'), 'active' => $this->request->routeIs('monitor.settings.team')],

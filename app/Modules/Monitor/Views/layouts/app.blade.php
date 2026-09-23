@@ -4,7 +4,7 @@
         product-key="monitor"
         :navigation="$signalTopbar"
         :brand-url="route('monitor.dashboard')"
-        :projects-url="route('projects.index')"
+        :projects-url="$signalTopbar['projects_url']"
         :current-workspace="$currentWorkspace"
         :workspace-options="$signalTopbar['workspaces']"
         workspace-switch-route="monitor.workspaces.switch"

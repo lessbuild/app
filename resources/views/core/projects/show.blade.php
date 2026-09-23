@@ -1,0 +1,196 @@
+@php
+    $products = [
+        'deployer' => __('Deployer'),
+        'monitor' => __('Monitor'),
+        'analytics' => __('Analytics'),
+    ];
+    $navigation = [
+        'groups' => [[
+            'label' => __('Project'),
+            'items' => [
+                ['label' => __('Overview'), 'href' => route('core.projects.show', [$workspace, $project]), 'active' => ['core.projects.show']],
+                ['label' => __('Resources'), 'href' => '#resources'],
+                ['label' => __('Connections'), 'href' => '#connections'],
+                ['label' => __('Team access'), 'href' => '#team-access'],
+            ],
+        ]],
+    ];
+    $environmentOptions = $project->environments->map(fn ($environment): array => [
+        'id' => $environment->getKey(),
+        'name' => $environment->name,
+        'href' => route('core.projects.show', [$workspace, $project]).'#environment-'.$environment->getKey(),
+    ]);
+@endphp
+
+<x-signal.layouts.platform
+    :title="$project->name"
+    :description="$project->description ?? __('Deployment, monitoring, and analytics for :project.', ['project' => $project->name])"
+    :navigation="$navigation"
+    :account-user="$user"
+    :current-workspace="$workspace"
+    :workspaces="$workspaces"
+    :context-projects="$contextProjects"
+    :current-project="$project"
+    :environment-options="$environmentOptions"
+    :show-environment-context="true"
+    :environment-index-url="route('core.projects.show', [$workspace, $project])"
+>
+    <x-signal.ui.page-header
+        :eyebrow="$workspace->name.' · '.__('Project overview')"
+        :title="$project->name"
+        :description="$project->description ?? __('One shared project for your connected applications.')"
+    >
+        <x-slot:actions>
+            <x-signal.ui.button :href="route('core.projects.index', $workspace)">
+                <svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg>
+                {{ __('All projects') }}
+            </x-signal.ui.button>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
+
+    <section aria-label="{{ __('Connected products') }}" class="mb-8 grid gap-4 lg:grid-cols-3">
+        @foreach ($products as $key => $label)
+            @php
+                $subscription = $subscriptions->get($key)?->subscription;
+                $product = $project->products->firstWhere('product', $key);
+                $hasAccess = $productGrants->has($key);
+                $isConnected = $product !== null && $product->status === 'active';
+                $productUrl = $productLinks[$key] ?? null;
+            @endphp
+            <x-signal.ui.card class="p-5">
+                <div class="flex items-center justify-between gap-3">
+                    <h2 class="text-base font-extrabold text-ink">{{ $label }}</h2>
+                    @if (! $hasAccess)
+                        <x-signal.ui.badge tone="neutral">{{ __('No access') }}</x-signal.ui.badge>
+                    @elseif ($isConnected)
+                        <x-signal.ui.badge tone="success">{{ __('Connected') }}</x-signal.ui.badge>
+                    @else
+                        <x-signal.ui.badge tone="neutral">{{ __('Not connected') }}</x-signal.ui.badge>
+                    @endif
+                </div>
+                @if ($canManageBilling)
+                    <p class="mt-4 text-sm text-muted">{{ __('Workspace plan') }}</p>
+                    <p class="mt-1 text-lg font-extrabold text-ink">{{ $subscription?->plan_key ? str($subscription->plan_key)->headline() : __('No plan') }}</p>
+                    <p class="mt-1 text-xs text-muted">{{ $subscription ? str($subscription->status)->headline() : __('Subscription is managed separately') }}</p>
+                @else
+                    <p class="mt-4 text-sm leading-6 text-muted">{{ __('Billing details are limited to workspace owners and billing managers.') }}</p>
+                @endif
+                @if ($isConnected && $productUrl)
+                    <a href="{{ $productUrl }}" class="mt-5 inline-flex min-h-9 items-center gap-2 rounded-control px-3 text-sm font-extrabold text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                        {{ __('Open :product', ['product' => $label]) }}
+                        <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-up-right"></use></svg>
+                    </a>
+                @elseif ($hasAccess && ! $isConnected)
+                    <p class="mt-5 text-xs leading-5 text-muted">{{ __('Connect this app from its product setup when you are ready.') }}</p>
+                @endif
+            </x-signal.ui.card>
+        @endforeach
+    </section>
+
+    @if ($project->environments->isNotEmpty())
+        <section id="environments" aria-label="{{ __('Project environments') }}" class="mb-8 grid gap-4 lg:grid-cols-2">
+            @foreach ($project->environments as $environment)
+                <x-signal.ui.card class="p-5" id="environment-{{ $environment->getKey() }}">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div>
+                            <p class="ui-eyebrow">{{ str($environment->environment_type)->headline() }}</p>
+                            <h2 class="mt-1 text-base font-extrabold text-ink">{{ $environment->name }}</h2>
+                            @if (data_get($environment->metadata, 'branch'))
+                                <p class="mt-1 font-mono text-xs text-muted">{{ data_get($environment->metadata, 'branch') }}</p>
+                            @endif
+                        </div>
+                        <x-signal.ui.badge :tone="in_array($environment->status, ['ready', 'active', 'running'], true) ? 'success' : (in_array($environment->status, ['failed', 'error'], true) ? 'danger' : 'warning')">
+                            {{ str($environment->status)->headline() }}
+                        </x-signal.ui.badge>
+                    </div>
+                    @if ($environment->resources->isNotEmpty())
+                        <ul class="mt-4 grid gap-2 border-t border-line pt-4">
+                            @foreach ($environment->resources as $resource)
+                                <li class="flex items-center justify-between gap-3 text-sm">
+                                    <span class="truncate font-bold text-ink">{{ $resource->name ?: str($resource->resource_type)->headline() }}</span>
+                                    <span class="shrink-0 text-xs text-muted">{{ $products[$resource->product] ?? str($resource->product)->headline() }}</span>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </x-signal.ui.card>
+            @endforeach
+        </section>
+    @endif
+
+    <section id="resources" aria-labelledby="project-resources-heading" class="mb-8">
+        <x-signal.ui.card>
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6">
+                <div>
+                    <p class="ui-eyebrow">{{ __('Shared project context') }}</p>
+                    <h2 id="project-resources-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('Project resources') }}</h2>
+                </div>
+                <span class="text-xs text-muted">{{ trans_choice(':count resource|:count resources', $project->resources->count(), ['count' => $project->resources->count()]) }}</span>
+            </div>
+
+            @if ($project->resources->isEmpty())
+                <div class="p-5 sm:p-6">
+                    <x-signal.ui.empty-state
+                        :title="$project->products->isEmpty() ? __('No resources available to your account') : __('No connected resources yet')"
+                        :description="$project->products->isEmpty() ? __('Ask a workspace administrator for product access, then connect the apps you need.') : __('Connect a Deployer application, Monitor service, or Analytics site to see its resources here.')"
+                        icon="link"
+                    />
+                </div>
+            @else
+                <div class="overflow-x-auto">
+                    <table class="ui-table min-w-full">
+                        <thead><tr><th scope="col">{{ __('Resource') }}</th><th scope="col">{{ __('Product') }}</th><th scope="col">{{ __('Environment') }}</th><th scope="col">{{ __('Status') }}</th></tr></thead>
+                        <tbody>
+                            @foreach ($project->resources as $resource)
+                                <tr>
+                                    <td><span class="font-bold text-ink">{{ $resource->name ?: str($resource->resource_type)->headline() }}</span></td>
+                                    <td>{{ $products[$resource->product] ?? str($resource->product)->headline() }}</td>
+                                    <td>{{ $resource->environment?->name ?? __('All environments') }}</td>
+                                    <td><x-signal.ui.badge :tone="$resource->status === 'active' ? 'success' : 'neutral'">{{ str($resource->status)->headline() }}</x-signal.ui.badge></td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
+        </x-signal.ui.card>
+    </section>
+
+    <div class="grid gap-4 xl:grid-cols-2">
+        <section id="connections" aria-labelledby="project-connections-heading">
+            <x-signal.ui.card class="h-full">
+                <div class="border-b border-line px-5 py-4 sm:px-6">
+                    <p class="ui-eyebrow">{{ __('Connected workflows') }}</p>
+                    <h2 id="project-connections-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('App connections') }}</h2>
+                </div>
+                <div class="p-5 sm:p-6">
+                    @if ($project->connections->isEmpty())
+                        <p class="text-sm leading-6 text-muted">{{ __('Connect products to share deployment context, health changes, and release annotations.') }}</p>
+                    @else
+                        <ul class="divide-y divide-line">
+                            @foreach ($project->connections as $connection)
+                                <li class="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                                    <span class="text-sm font-bold text-ink">{{ $connection->sourceResource?->name }} → {{ $connection->targetResource?->name }}</span>
+                                    <x-signal.ui.badge :tone="in_array($connection->status, ['active', 'connected'], true) ? 'success' : (in_array($connection->status, ['failed', 'error'], true) ? 'danger' : 'warning')">{{ str($connection->status)->headline() }}</x-signal.ui.badge>
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            </x-signal.ui.card>
+        </section>
+
+        <section id="team-access" aria-labelledby="project-team-heading">
+            <x-signal.ui.card class="h-full">
+                <div class="border-b border-line px-5 py-4 sm:px-6">
+                    <p class="ui-eyebrow">{{ __('Access') }}</p>
+                    <h2 id="project-team-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('Team access') }}</h2>
+                </div>
+                <div class="p-5 sm:p-6">
+                    <p class="text-sm leading-6 text-muted">{{ __('Project access requires an active project membership. Product grants and subscriptions are managed separately for each app.') }}</p>
+                    <p class="mt-4 text-xs text-muted">{{ __('Project created :date', ['date' => $project->created_at->toFormattedDateString()]) }}</p>
+                </div>
+            </x-signal.ui.card>
+        </section>
+    </div>
+</x-signal.layouts.platform>

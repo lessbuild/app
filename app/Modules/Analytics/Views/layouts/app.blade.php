@@ -3,7 +3,7 @@
         product-key="analytics"
         :navigation="$signalTopbar"
         :brand-url="route('analytics.dashboard')"
-        :projects-url="\Illuminate\Support\Facades\Route::has('projects.index') ? route('projects.index') : route('analytics.dashboard')"
+        :projects-url="$signalTopbar['projects_url']"
         :current-workspace="$currentWorkspace"
         :workspace-options="$workspaceOptions"
         workspace-switch-route="analytics.workspaces.select"
