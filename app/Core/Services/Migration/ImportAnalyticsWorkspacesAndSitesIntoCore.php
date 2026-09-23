@@ -75,6 +75,7 @@ final class ImportAnalyticsWorkspacesAndSitesIntoCore
             'invitations_imported' => 0,
             'review_records_created' => 0,
         ];
+        $workspacesReadyForPreview = [];
 
         foreach ($workspaces as $workspace) {
             $sourceId = (string) $workspace->id;
@@ -122,6 +123,7 @@ final class ImportAnalyticsWorkspacesAndSitesIntoCore
             }
 
             $report['workspaces_ready']++;
+            $workspacesReadyForPreview[$sourceId] = true;
 
             if ($apply && $this->importWorkspace(
                 $workspace,
@@ -154,7 +156,12 @@ final class ImportAnalyticsWorkspacesAndSitesIntoCore
 
             $workspaceMapping = $workspaceMaps->get((string) $site->workspace_id);
 
-            if ($workspaceMapping === null || $workspaceMapping->status !== 'reconciled') {
+            $workspaceReadyInPreview = ! $apply
+                && isset($workspacesReadyForPreview[(string) $site->workspace_id])
+                && ($workspaceMapping === null
+                    || ($workspaceMapping->status === 'needs_review' && $workspaceMapping->canonical_id === null));
+
+            if (($workspaceMapping === null || $workspaceMapping->status !== 'reconciled') && ! $workspaceReadyInPreview) {
                 $report['sites_blocked']++;
                 if ($apply && $this->recordReview('site', $sourceId, ['analytics_workspace_not_reconciled'])) {
                     $report['review_records_created']++;
@@ -163,9 +170,11 @@ final class ImportAnalyticsWorkspacesAndSitesIntoCore
                 continue;
             }
 
-            $coreWorkspace = Workspace::query()->find($workspaceMapping->canonical_id);
+            $coreWorkspace = $workspaceMapping?->status === 'reconciled'
+                ? Workspace::query()->find($workspaceMapping->canonical_id)
+                : null;
 
-            if ($coreWorkspace === null) {
+            if ($coreWorkspace === null && ! $workspaceReadyInPreview) {
                 $report['sites_blocked']++;
                 if ($apply && $this->recordReview('site', $sourceId, ['canonical_workspace_missing'])) {
                     $report['review_records_created']++;
@@ -189,7 +198,7 @@ final class ImportAnalyticsWorkspacesAndSitesIntoCore
 
             $report['sites_ready']++;
 
-            if ($apply && $this->importSite($site, $coreWorkspace)) {
+            if ($apply && $coreWorkspace !== null && $this->importSite($site, $coreWorkspace)) {
                 $report['sites_imported']++;
             }
         }
