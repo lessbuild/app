@@ -28,7 +28,7 @@ Use `resources/views/components/signal/` as the source of truth for shared Blade
 | `x-signal.ui.page-header` | Page title, eyebrow, description, icon, and actions slot. |
 | `x-signal.ui.stat` | Definition-list metric with label, value, and description. |
 | `x-signal.ui.workflow-run` | Correlated source/delivery step timeline with states, timestamps, and an optional retry action. |
-| `x-signal.ui.workspace-view-form` | Reusable Core form composition for personal/workspace dashboard view filters. |
+| `x-signal.ui.workspace-view-form` | Reusable Core form for personal/workspace visibility, product, pinned-only, and project-name-contains dashboard filters. |
 | `x-signal.ui.workspace-project-pin` | Authorized personal/workspace project pin controls built from shared forms and buttons. |
 | `x-signal.overlays.modal` | Accessible native dialog with title, description, content, and close behavior. |
 | `x-signal.overlays.delete-confirmation` | Reusable delete confirmation composition on the shared dialog and button primitives. |

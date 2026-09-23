@@ -191,12 +191,13 @@ final class WorkspaceDashboardPreferencesController
         abort_unless($access->canManageWorkspace($user, $workspace), 403);
     }
 
-    /** @return array{product:string,pinned_only:bool} */
+    /** @return array{product:string,pinned_only:bool,project_name:string} */
     private function filters(array $data): array
     {
         return [
             'product' => $data['product'],
             'pinned_only' => filter_var($data['pinned_only'], FILTER_VALIDATE_BOOLEAN),
+            'project_name' => trim((string) ($data['project_name'] ?? '')),
         ];
     }
 

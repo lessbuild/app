@@ -20,6 +20,7 @@ final class StoreWorkspaceDashboardViewRequest extends FormRequest
             'visibility' => ['required', Rule::in(['personal', 'workspace'])],
             'product' => ['required', Rule::in(['all', 'deployer', 'monitor', 'analytics'])],
             'pinned_only' => ['required', 'boolean'],
+            'project_name' => ['nullable', 'string', 'max:80'],
         ];
     }
 }

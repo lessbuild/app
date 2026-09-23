@@ -82,7 +82,12 @@
                                 <div class="flex flex-wrap items-center justify-between gap-2">
                                     <div>
                                         <p class="text-sm font-extrabold text-ink">{{ $savedView->name }}</p>
-                                        <p class="text-xs text-muted">{{ __(':product · :pins', ['product' => str($savedView->filters['product'] ?? 'all')->headline(), 'pins' => ($savedView->filters['pinned_only'] ?? false) ? __('pinned projects only') : __('all visible projects')]) }}</p>
+                                        <p class="text-xs text-muted">
+                                            {{ __(':product · :pins', ['product' => str($savedView->filters['product'] ?? 'all')->headline(), 'pins' => ($savedView->filters['pinned_only'] ?? false) ? __('pinned projects only') : __('all visible projects')]) }}
+                                            @if (is_string($savedView->filters['project_name'] ?? null) && filled($savedView->filters['project_name']))
+                                                · {{ __('name contains “:name”', ['name' => $savedView->filters['project_name']]) }}
+                                            @endif
+                                        </p>
                                     </div>
                                     @if ($canManageSavedView)
                                         <div class="flex items-center gap-2">
@@ -113,7 +118,7 @@
         @endif
         @if ($selectedViewUnavailable)
             <x-signal.ui.alert tone="warning" class="mt-3">
-                {{ __('This saved view depends on an app filter you can no longer access. Project activity was not loaded. Restore access or change the saved filter.') }}
+                {{ __('This saved view has an unavailable or invalid filter. Project activity was not loaded. Restore app access or update the saved filters.') }}
             </x-signal.ui.alert>
         @endif
     </section>

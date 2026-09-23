@@ -17,6 +17,7 @@ use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\Projects\WorkspaceDashboardPriorities;
 use App\Core\Services\ProjectSetup;
+use App\Core\Services\Search\WorkspaceSearchPattern;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -87,8 +88,13 @@ final class WorkspaceDashboardController
         $viewFilters = $selectedView?->filters ?? [];
         $viewProduct = $viewFilters['product'] ?? 'all';
         $validViewProduct = is_string($viewProduct) && in_array($viewProduct, ['all', 'deployer', 'monitor', 'analytics'], true);
+        $viewProjectName = $viewFilters['project_name'] ?? '';
+        $validViewProjectName = is_string($viewProjectName) && mb_strlen($viewProjectName) <= 80;
+        $viewProjectName = $validViewProjectName ? trim($viewProjectName) : '';
         $selectedViewUnavailable = $selectedView !== null
-            && (! $validViewProduct || ($viewProduct !== 'all' && ! in_array($viewProduct, $visibleProducts, true)));
+            && (! $validViewProduct
+                || ! $validViewProjectName
+                || ($viewProduct !== 'all' && ! in_array($viewProduct, $visibleProducts, true)));
         $pinnedOnly = (bool) ($viewFilters['pinned_only'] ?? false);
 
         $visiblePins = WorkspaceProjectPin::query()
@@ -102,7 +108,7 @@ final class WorkspaceDashboardController
             ->when($selectedView?->visibility !== 'workspace', fn (Builder $query) => $query->where('owner_user_id', $user->getKey()));
 
         $projectCount = $this->visibleProjects(Project::query(), $workspace, $user)->count();
-        $projectList = function () use ($workspace, $user, $visibleProducts, $viewProduct, $validViewProduct, $selectedViewUnavailable, $pinnedOnly, $viewScopePins): Builder {
+        $projectList = function () use ($workspace, $user, $visibleProducts, $viewProduct, $validViewProduct, $viewProjectName, $selectedViewUnavailable, $pinnedOnly, $viewScopePins): Builder {
             $query = $this->visibleProjects(Project::query(), $workspace, $user);
 
             if ($selectedViewUnavailable || ! $validViewProduct) {
@@ -111,6 +117,10 @@ final class WorkspaceDashboardController
                 $query->whereHas('products', fn (Builder $product) => $product
                     ->where('product', $viewProduct)
                     ->where('status', 'active'));
+            }
+
+            if ($viewProjectName !== '') {
+                $query->whereRaw("projects.name LIKE ? ESCAPE '!'", [WorkspaceSearchPattern::contains($viewProjectName)]);
             }
 
             if ($pinnedOnly) {

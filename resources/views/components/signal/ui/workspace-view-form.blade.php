@@ -8,6 +8,8 @@
 @php
     $filters = $view?->filters ?? [];
     $formId = $view?->getKey() ?? 'new';
+    $projectNameValue = old('project_name', $filters['project_name'] ?? '');
+    $projectNameValue = is_string($projectNameValue) ? $projectNameValue : '';
 @endphp
 
 <form method="POST" action="{{ $view ? route('core.workspace.views.update', [$workspace, $view]) : route('core.workspace.views.store', $workspace) }}" class="grid gap-4">
@@ -22,6 +24,10 @@
     <div class="grid gap-4 sm:grid-cols-2">
         <x-signal.ui.field :label="__('View name')" name="name" :id="'workspace-view-name-'.$formId">
             <x-signal.ui.input name="name" :id="'workspace-view-name-'.$formId" :value="$view?->name" maxlength="80" required />
+        </x-signal.ui.field>
+
+        <x-signal.ui.field :label="__('Project name contains')" name="project_name" :id="'workspace-view-project-name-'.$formId" :hint="__('Leave blank to include every visible project name.')">
+            <x-signal.ui.input name="project_name" :id="'workspace-view-project-name-'.$formId" :value="$projectNameValue" maxlength="80" />
         </x-signal.ui.field>
 
         <x-signal.ui.field :label="__('Visibility')" name="visibility" :id="'workspace-view-visibility-'.$formId">

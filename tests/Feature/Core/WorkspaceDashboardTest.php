@@ -664,6 +664,52 @@ final class WorkspaceDashboardTest extends TestCase
         ], 'core');
     }
 
+    public function test_saved_view_filters_project_names_with_literal_contains_semantics(): void
+    {
+        $this->createVisibleProject('Invoice 100% release');
+        $this->createVisibleProject('Invoice 100x release');
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->post(route('core.workspace.views.store', $this->workspaceId), [
+                'name' => 'Literal percent invoices',
+                'visibility' => 'personal',
+                'product' => 'all',
+                'pinned_only' => '0',
+                'project_name' => ' 100% ',
+            ])
+            ->assertRedirect();
+
+        $view = DB::connection('core')->table('workspace_dashboard_views')->first();
+        $this->assertNotNull($view);
+        $this->assertSame('100%', json_decode($view->filters, true, flags: JSON_THROW_ON_ERROR)['project_name']);
+
+        $response = $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]));
+        $response
+            ->assertOk()
+            ->assertSeeText('Invoice 100% release')
+            ->assertSeeText('name contains “100%”');
+        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Project pin options"'));
+
+        $invalidViewId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_dashboard_views')->insert([
+            'id' => $invalidViewId,
+            'workspace_id' => $this->workspaceId,
+            'visibility' => 'personal',
+            'scope_key' => 'user:'.$this->userId,
+            'owner_user_id' => $this->userId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Invalid filter',
+            'filters' => json_encode(['product' => 'all', 'pinned_only' => false, 'project_name' => ['not-a-string']]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $invalidResponse = $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $invalidViewId]))
+            ->assertOk()
+            ->assertSeeText('This saved view has an unavailable or invalid filter');
+        $this->assertSame(0, substr_count($invalidResponse->getContent(), 'aria-label="Project pin options"'));
+    }
+
     public function test_shared_pinned_only_views_use_workspace_pins_not_personal_pins(): void
     {
         $workspacePinnedId = (string) Str::ulid();
@@ -785,7 +831,7 @@ final class WorkspaceDashboardTest extends TestCase
             ->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $view->id]))
             ->assertOk()
             ->assertSeeText('Shared Monitor view')
-            ->assertSeeText('This saved view depends on an app filter you can no longer access')
+            ->assertSeeText('This saved view has an unavailable or invalid filter')
             ->assertDontSeeText('Shared view project');
 
         $personalViewId = (string) Str::ulid();
@@ -991,5 +1037,31 @@ final class WorkspaceDashboardTest extends TestCase
             $table->char('product_subscription_id', 26);
             $table->timestamps();
         });
+    }
+
+    private function createVisibleProject(string $name): string
+    {
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => $name,
+            'slug' => Str::slug($name),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $this->userId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $projectId;
     }
 }
