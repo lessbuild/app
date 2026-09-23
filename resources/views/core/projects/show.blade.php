@@ -4,15 +4,19 @@
         'monitor' => __('Monitor'),
         'analytics' => __('Analytics'),
     ];
+    $projectNavigationItems = [
+        ['label' => __('Overview'), 'href' => route('core.projects.show', [$workspace, $project]), 'active' => ['core.projects.show']],
+        ['label' => __('Resources'), 'href' => '#resources'],
+        ['label' => __('Connections'), 'href' => '#connections'],
+        ['label' => __('Team access'), 'href' => '#team-access'],
+    ];
+    if ($projectSetupSteps->isNotEmpty()) {
+        $projectNavigationItems[] = ['label' => __('Setup'), 'href' => '#setup'];
+    }
     $navigation = [
         'groups' => [[
             'label' => __('Project'),
-            'items' => [
-                ['label' => __('Overview'), 'href' => route('core.projects.show', [$workspace, $project]), 'active' => ['core.projects.show']],
-                ['label' => __('Resources'), 'href' => '#resources'],
-                ['label' => __('Connections'), 'href' => '#connections'],
-                ['label' => __('Team access'), 'href' => '#team-access'],
-            ],
+            'items' => $projectNavigationItems,
         ]],
     ];
     $environmentOptions = $project->environments->map(fn ($environment): array => [
@@ -126,6 +130,49 @@
         </section>
     @endif
 
+    @if ($projectSetupSteps->isNotEmpty())
+        <section id="setup" aria-labelledby="project-setup-heading" class="mb-8">
+            <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p class="ui-eyebrow">{{ __('Guided setup') }}</p>
+                    <h2 id="project-setup-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Get this project ready') }}</h2>
+                </div>
+                <p class="text-sm text-muted">{{ __('Progress follows verified app data and resumes when you return.') }}</p>
+            </div>
+            <div class="grid gap-4 lg:grid-cols-3">
+                @foreach ($projectSetupSteps->groupBy('product') as $productKey => $steps)
+                    <x-signal.ui.card class="p-5">
+                        <h3 class="text-base font-extrabold text-ink">{{ $products[$productKey] ?? str($productKey)->headline() }}</h3>
+                        <ol class="mt-4 divide-y divide-line">
+                            @foreach ($steps as $step)
+                                @php
+                                    [$stepTone, $stepLabel] = match ($step->state) {
+                                        \App\Core\Data\Projects\ProjectSetupStepState::Complete => ['success', __('Complete')],
+                                        \App\Core\Data\Projects\ProjectSetupStepState::NeedsAction => ['warning', __('Next step')],
+                                        \App\Core\Data\Projects\ProjectSetupStepState::Unavailable => ['neutral', __('Unavailable')],
+                                    };
+                                @endphp
+                                <li class="py-4 first:pt-0 last:pb-0">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <h4 class="text-sm font-extrabold text-ink">{{ $step->title }}</h4>
+                                        <x-signal.ui.badge :tone="$stepTone">{{ $stepLabel }}</x-signal.ui.badge>
+                                    </div>
+                                    <p class="mt-2 text-sm leading-6 text-muted">{{ $step->detail }}</p>
+                                    @if ($step->url && $step->actionLabel)
+                                        <x-signal.ui.link :href="$step->url" size="sm" class="mt-3">
+                                            {{ $step->actionLabel }}
+                                            <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-up-right"></use></svg>
+                                        </x-signal.ui.link>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ol>
+                    </x-signal.ui.card>
+                @endforeach
+            </div>
+        </section>
+    @endif
+
     @if ($project->environments->isNotEmpty())
         <section id="environments" aria-label="{{ __('Project environments') }}" class="mb-8 grid gap-4 lg:grid-cols-2">
             @foreach ($project->environments as $environment)
@@ -154,6 +201,43 @@
                     @endif
                 </x-signal.ui.card>
             @endforeach
+        </section>
+    @endif
+
+    @if ($canManageConnections && $resourceCandidates->isNotEmpty())
+        <section aria-labelledby="link-existing-resources-heading" class="mb-8">
+            <div class="mb-4">
+                <p class="ui-eyebrow">{{ __('Keep your existing setup') }}</p>
+                <h2 id="link-existing-resources-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Link an existing resource') }}</h2>
+                <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ __('Choose an app resource you already manage. It will join this shared project without creating a duplicate.') }}</p>
+            </div>
+            <div class="grid gap-4 lg:grid-cols-3">
+                @foreach ($resourceCandidates as $productKey => $candidates)
+                    <x-signal.ui.card class="p-5">
+                        <form method="POST" action="{{ route('core.projects.resources.store', [$workspace, $project]) }}" class="grid gap-4">
+                            @csrf
+                            <input type="hidden" name="product" value="{{ $productKey }}">
+                            <x-signal.ui.field
+                                :label="__('Choose :product resource', ['product' => $products[$productKey] ?? str($productKey)->headline()])"
+                                name="resource_id"
+                                :description="__('Existing resources stay in their current app database and retain their current settings.')"
+                            >
+                                <x-signal.ui.select name="resource_id" required>
+                                    <option value="">{{ __('Select a resource') }}</option>
+                                    @foreach ($candidates as $candidate)
+                                        <option value="{{ $candidate->id }}" @selected(old('resource_id') === $candidate->id)>
+                                            {{ $candidate->name }}{{ $candidate->detail ? ' · '.$candidate->detail : '' }}
+                                        </option>
+                                    @endforeach
+                                </x-signal.ui.select>
+                            </x-signal.ui.field>
+                            <x-signal.ui.button variant="primary" type="submit" class="justify-center">
+                                {{ __('Link :product resource', ['product' => $products[$productKey] ?? str($productKey)->headline()]) }}
+                            </x-signal.ui.button>
+                        </form>
+                    </x-signal.ui.card>
+                @endforeach
+            </div>
         </section>
     @endif
 

@@ -2,6 +2,7 @@
 
 namespace App\Core\Http\Controllers;
 
+use App\Core\Http\Requests\StoreProjectResourceRequest;
 use App\Core\Http\Requests\StoreWorkspaceProjectRequest;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\PlatformUser;
@@ -13,7 +14,9 @@ use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\ProjectProductSummaries;
+use App\Core\Services\ProjectResourceLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
+use App\Core\Services\ProjectSetup;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -122,6 +125,8 @@ final class WorkspaceProjectsController
         WorkspaceProjectAccess $access,
         ProjectConnectionEntitlementPolicy $connectionEntitlements,
         ProjectProductSummaries $productSummaries,
+        ProjectSetup $projectSetup,
+        ProjectResourceLinks $resourceLinks,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -130,6 +135,7 @@ final class WorkspaceProjectsController
         $membership = $access->activeMembership($user, $workspace);
         abort_if($membership === null, 404);
         $canManageBilling = $access->canManageBilling($user, $workspace);
+        $canManageConnections = $access->canManageWorkspace($user, $workspace);
 
         $productGrants = WorkspaceProductAccess::query()
             ->where('membership_id', $membership->getKey())
@@ -138,12 +144,14 @@ final class WorkspaceProjectsController
             ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
             ->get()
             ->keyBy('product');
+        $availableProducts = $productGrants->keys()->all();
         $activeProjectProducts = ProjectProduct::query()
             ->where('project_id', $project->getKey())
             ->where('status', 'active')
             ->pluck('product')
             ->all();
         $visibleProducts = array_values(array_intersect($productGrants->keys()->all(), $activeProjectProducts));
+        $projectSetupSteps = $projectSetup->forProject($user, $project, $availableProducts);
         $project->load([
             'products' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
@@ -180,6 +188,10 @@ final class WorkspaceProjectsController
             'productGrants' => $productGrants,
             'productLinks' => $authorizedProductLinks,
             'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts),
+            'projectSetupSteps' => $projectSetupSteps,
+            'resourceCandidates' => $canManageConnections
+                ? $resourceLinks->candidates($user, $availableProducts)
+                : collect(),
             'subscriptions' => $canManageBilling
                 ? CurrentProductSubscription::query()
                     ->where('workspace_id', $workspace->getKey())
@@ -188,13 +200,39 @@ final class WorkspaceProjectsController
                     ->keyBy('product')
                 : collect(),
             'canManageBilling' => $canManageBilling,
-            'canManageConnections' => $access->canManageWorkspace($user, $workspace),
+            'canManageConnections' => $canManageConnections,
             'connectionCapabilities' => $connectionEntitlements->availableFor($project),
             'connectionResources' => $project->resources->sortBy([
                 ['product', 'asc'],
                 ['name', 'asc'],
             ])->values(),
         ]);
+    }
+
+    public function storeResource(
+        StoreProjectResourceRequest $request,
+        Workspace $workspace,
+        Project $project,
+        ResolvePlatformUser $platformUsers,
+        WorkspaceProjectAccess $access,
+        ProjectResourceLinks $resourceLinks,
+    ): RedirectResponse {
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+
+        $user = $this->platformUser($request, $platformUsers);
+        abort_unless($access->canManageWorkspace($user, $workspace), 403);
+
+        $product = $request->validated('product');
+        abort_unless($access->canLinkProductResource($user, $project, $product), 404);
+
+        $resource = $resourceLinks->link($user, $project, $product, $request->validated('resource_id'));
+        abort_if($resource === null, 404);
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project]).'#resources'
+            ->with('success', __('Existing :product resource linked to this project.', [
+                'product' => str($product)->headline(),
+            ]));
     }
 
     public function selectWorkspace(

@@ -24,6 +24,7 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::get('/projects/create', 'create')->name('create');
             Route::post('/projects', 'store')->name('store');
             Route::get('/projects/{project}', 'show')->name('show');
+            Route::post('/projects/{project}/resources', 'storeResource')->name('resources.store');
             Route::post('/projects/{project}/connections', [ProjectConnectionsController::class, 'store'])
                 ->name('connections.store');
             Route::delete('/projects/{project}/connections/{connection}', [ProjectConnectionsController::class, 'destroy'])

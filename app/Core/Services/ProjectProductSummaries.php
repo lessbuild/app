@@ -6,7 +6,7 @@ use App\Core\Data\Projects\ProjectProductSnapshot;
 use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 
@@ -30,7 +30,7 @@ final class ProjectProductSummaries
 
             try {
                 $summary = $provider->summarize($user, $project);
-            } catch (ConnectionException|QueryException) {
+            } catch (LostConnectionException|QueryException) {
                 $summary = new ProjectProductSnapshot(
                     title: __('Product data'),
                     detail: __('This application’s data is temporarily unavailable.'),

@@ -7,7 +7,7 @@ use App\Core\Data\Billing\ProductPlanResolution;
 use App\Core\Enums\ProductKey;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Monitor\Models\Workspace;
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 
 final readonly class MonitorPlanAuthority
@@ -42,7 +42,7 @@ final readonly class MonitorPlanAuthority
             }
 
             return $this->plans->resolve($workspaceId, ProductKey::Monitor);
-        } catch (ConnectionException|QueryException) {
+        } catch (LostConnectionException|QueryException) {
             return ProductPlanResolution::unavailable(
                 ProductKey::Monitor,
                 null,

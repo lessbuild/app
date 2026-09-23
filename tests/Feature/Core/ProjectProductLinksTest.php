@@ -4,17 +4,24 @@ namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectProductLink;
 use App\Core\Data\Projects\ProjectProductSnapshotState;
+use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
+use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
+use App\Modules\Deployer\Services\Core\DeployerProjectLink;
+use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Monitor\Models\Application as MonitorApplication;
 use App\Modules\Monitor\Models\User as MonitorUser;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
+use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
+use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\CurrentWorkspace as MonitorCurrentWorkspace;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
@@ -45,7 +52,7 @@ final class ProjectProductLinksTest extends TestCase
             Schema::connection('analytics')->dropIfExists($table);
         }
 
-        foreach (['incidents', 'alert_rules', 'monitors', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
+        foreach (['telemetry_events', 'monitor_checks', 'incidents', 'alert_rules', 'monitors', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
 
@@ -188,6 +195,89 @@ final class ProjectProductLinksTest extends TestCase
         $this->assertSame('0 open incidents · 1 checks up · 0 checks down · 1 unknown · 0 paused', $summary->detail);
     }
 
+    public function test_monitor_setup_progress_comes_from_authorized_application_data(): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        DB::connection('monitor')->table('environments')->insert([
+            'id' => 41,
+            'application_id' => 31,
+            'name' => 'Production',
+            'slug' => 'production',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $setup = new MonitorProjectSetup(app(MonitorProjectLink::class));
+        $steps = $setup->steps($this->platformUser(), $this->project());
+
+        $this->assertSame(ProjectSetupStepState::Complete, $steps[0]->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $steps[1]->state);
+
+        DB::connection('monitor')->table('telemetry_events')->insert([
+            'id' => 61,
+            'environment_id' => 41,
+            'type' => 'log',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $steps = $setup->steps($this->platformUser(), $this->project());
+
+        $this->assertSame(ProjectSetupStepState::Complete, $steps[1]->state);
+    }
+
+    public function test_monitor_resource_candidates_require_mapped_workspace_membership_and_exclude_linked_apps(): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+
+        $provider = new MonitorResourceLinkProvider(app(LegacyIdentityResolver::class));
+        $candidates = $provider->candidates($this->platformUser());
+
+        $this->assertCount(1, $candidates);
+        $this->assertSame('31', $candidates[0]->id);
+        $this->assertSame('Monitor workspace', $candidates[0]->detail);
+
+        $this->addProjectResource('monitor', 'application', '31');
+
+        $this->assertNull($provider->candidate($this->platformUser(), '31'));
+    }
+
+    public function test_analytics_resource_candidates_require_mapped_workspace_membership_and_exclude_linked_sites(): void
+    {
+        $this->addIdentity('analytics', '23');
+        $this->addAnalyticsWorkspacesAndSite(memberId: 23, firstWorkspaceId: 100, secondWorkspaceId: 200, siteId: 71);
+
+        $provider = new AnalyticsResourceLinkProvider(app(LegacyIdentityResolver::class));
+        $candidates = $provider->candidates($this->platformUser());
+
+        $this->assertCount(1, $candidates);
+        $this->assertSame('71', $candidates[0]->id);
+        $this->assertSame('Analytics workspace 200', $candidates[0]->detail);
+
+        $this->addProjectResource('analytics', 'site', '71');
+
+        $this->assertNull($provider->candidate($this->platformUser(), '71'));
+    }
+
+    public function test_deployer_setup_resumes_from_the_existing_project_list_when_not_yet_linked(): void
+    {
+        Route::get('/deployer/projects', static fn () => null)->name('projects.index');
+        Route::getRoutes()->refreshNameLookups();
+
+        $steps = (new DeployerProjectSetup(app(DeployerProjectLink::class)))
+            ->steps($this->platformUser(), $this->project());
+
+        $this->assertCount(3, $steps);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $steps[0]->state);
+        $this->assertSame('Connect a Deployer project', $steps[0]->title);
+        $this->assertNotNull($steps[0]->url);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $steps[1]->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $steps[2]->state);
+    }
+
     public function test_core_project_membership_and_product_grant_gate_module_destinations(): void
     {
         $workspaceId = '01J8AA00000000000000000020';
@@ -258,6 +348,15 @@ final class ProjectProductLinksTest extends TestCase
         $this->assertSame([
             'monitor' => 'https://monitor.example.test/applications/31',
         ], $links->forProject($this->platformUser(), $project, ['monitor']));
+
+        $access = app(WorkspaceProjectAccess::class);
+        $this->assertTrue($access->canLinkProductResource($this->platformUser(), $project, 'monitor'));
+        $this->assertTrue($access->canAccessProductResource($this->platformUser(), $project, 'monitor'));
+
+        DB::connection('core')->table('project_products')->where('project_id', self::PROJECT_ID)->delete();
+
+        $this->assertTrue($access->canLinkProductResource($this->platformUser(), $project, 'monitor'));
+        $this->assertFalse($access->canAccessProductResource($this->platformUser(), $project, 'monitor'));
 
         DB::connection('core')->table('project_memberships')
             ->where('project_id', self::PROJECT_ID)
@@ -414,6 +513,17 @@ final class ProjectProductLinksTest extends TestCase
             $table->unsignedBigInteger('monitor_id')->nullable();
             $table->string('status');
             $table->timestamp('opened_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('monitor_checks', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->unsignedBigInteger('monitor_id');
+            $table->timestamp('finished_at')->nullable();
+        });
+        Schema::connection('monitor')->create('telemetry_events', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('environment_id');
+            $table->string('type');
             $table->timestamps();
         });
     }

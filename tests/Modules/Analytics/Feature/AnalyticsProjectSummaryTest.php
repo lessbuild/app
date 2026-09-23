@@ -2,6 +2,7 @@
 
 namespace Tests\Modules\Analytics\Feature;
 
+use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
@@ -13,6 +14,7 @@ use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Analytics\Models\Workspace as AnalyticsWorkspace;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
+use App\Modules\Analytics\Services\Core\AnalyticsProjectSetup;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
 use Carbon\CarbonImmutable;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
@@ -94,6 +96,30 @@ final class AnalyticsProjectSummaryTest extends TestCase
             'name' => 'Private site',
             'status' => 'active',
         ]);
+
+        $privateSite->events()->create([
+            'event_id' => '00000000-0000-4000-8000-000000000071',
+            'type' => 'pageview',
+            'occurred_at' => now(),
+            'received_at' => now(),
+            'path' => '/private',
+        ]);
+        $setupProvider = new AnalyticsProjectSetup(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
+        $pendingSteps = $setupProvider->steps($platformUser, $project);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $pendingSteps[0]->state);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $pendingSteps[1]->state);
+
+        $site->update(['verified_at' => now()]);
+        $site->events()->create([
+            'event_id' => '00000000-0000-4000-8000-000000000072',
+            'type' => 'pageview',
+            'occurred_at' => now(),
+            'received_at' => now(),
+            'path' => '/',
+        ]);
+        $completeSteps = $setupProvider->steps($platformUser, $project);
+        $this->assertSame(ProjectSetupStepState::Complete, $completeSteps[0]->state);
+        $this->assertSame(ProjectSetupStepState::Complete, $completeSteps[1]->state);
 
         $today = CarbonImmutable::now('UTC');
         $this->aggregate($site, $today, 42, 12);

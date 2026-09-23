@@ -100,21 +100,10 @@ final class WorkspaceProjectAccess
         PlatformUser $user,
         Project $project,
         ProductKey|string $product,
-    ): bool
-    {
+    ): bool {
         $product = $this->productKey($product);
 
-        if ($product === null) {
-            return false;
-        }
-
-        if (! $this->canViewProject($user, $project)) {
-            return false;
-        }
-
-        $membership = $this->activeMembership($user, $project->workspace);
-
-        if ($membership === null || ! $this->hasProductAccess($membership, $product)) {
+        if ($product === null || ! $this->canLinkProductResource($user, $project, $product)) {
             return false;
         }
 
@@ -123,6 +112,27 @@ final class WorkspaceProjectAccess
             ->where('product', $product)
             ->where('status', 'active')
             ->exists();
+    }
+
+    /**
+     * Linking an existing product resource may activate its project module, so
+     * this checks project membership and the workspace grant without requiring
+     * a ProjectProduct row to exist yet.
+     */
+    public function canLinkProductResource(
+        PlatformUser $user,
+        Project $project,
+        ProductKey|string $product,
+    ): bool {
+        $product = $this->productKey($product);
+
+        if ($product === null || ! $this->canViewProject($user, $project)) {
+            return false;
+        }
+
+        $membership = $this->activeMembership($user, $project->workspace);
+
+        return $membership !== null && $this->hasProductAccess($membership, $product);
     }
 
     private function productKey(ProductKey|string $product): ?string

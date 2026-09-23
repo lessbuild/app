@@ -7,7 +7,7 @@ use App\Core\Data\Billing\ProductPlanResolution;
 use App\Core\Enums\ProductKey;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\Workspace;
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 
 final readonly class AnalyticsPlanAuthority
@@ -46,7 +46,7 @@ final readonly class AnalyticsPlanAuthority
             }
 
             return $this->plans->resolve($workspaceId, ProductKey::Analytics);
-        } catch (ConnectionException|QueryException) {
+        } catch (LostConnectionException|QueryException) {
             return ProductPlanResolution::unavailable(
                 ProductKey::Analytics,
                 null,

@@ -8,7 +8,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Monitor\Models\Application;
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +29,7 @@ final class MonitorProjectLink implements ProjectProductLink
             if ($application !== null) {
                 return route('monitor.applications.show', $application->getKey());
             }
-        } catch (ConnectionException|QueryException) {
+        } catch (LostConnectionException|QueryException) {
             return null;
         }
 

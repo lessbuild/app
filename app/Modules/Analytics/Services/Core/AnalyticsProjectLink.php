@@ -8,7 +8,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\Site;
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
@@ -29,7 +29,7 @@ final class AnalyticsProjectLink implements ProjectProductLink
             if ($site !== null) {
                 return route('analytics.dashboard', ['site' => $site->getKey()]);
             }
-        } catch (ConnectionException|QueryException) {
+        } catch (LostConnectionException|QueryException) {
             return null;
         }
 

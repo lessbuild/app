@@ -2,7 +2,7 @@
 
 namespace App\Core\Services;
 
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
 
@@ -27,7 +27,7 @@ final class WorkspaceProjectNavigation
                 sourceId: $sourceWorkspaceId,
                 canonicalEntity: 'workspace',
             );
-        } catch (ConnectionException|QueryException) {
+        } catch (LostConnectionException|QueryException) {
             return $fallbackUrl;
         }
 

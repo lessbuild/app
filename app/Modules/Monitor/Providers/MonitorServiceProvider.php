@@ -8,6 +8,8 @@ use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
+use App\Core\Services\ProjectResourceLinkRegistry;
+use App\Core\Services\ProjectSetupRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
 use App\Modules\Monitor\Contracts\DnsResolver;
 use App\Modules\Monitor\Contracts\TcpConnector;
@@ -20,7 +22,9 @@ use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
+use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
+use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;
 use App\Modules\Monitor\Services\NativeDnsRecordResolver;
 use App\Modules\Monitor\Services\NativeDnsResolver;
@@ -62,6 +66,8 @@ final class MonitorServiceProvider extends ModuleServiceProvider
 
         app(ProjectProductLinkRegistry::class)->register('monitor', app(MonitorProjectLink::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));
+        app(ProjectResourceLinkRegistry::class)->register('monitor', app(MonitorResourceLinkProvider::class));
+        app(ProjectSetupRegistry::class)->register('monitor', app(MonitorProjectSetup::class));
         app(ProductPrincipalRegistry::class)->register(
             'monitor',
             new MappedProductPrincipalAdapter('monitor', User::class, app(LegacyIdentityResolver::class)),

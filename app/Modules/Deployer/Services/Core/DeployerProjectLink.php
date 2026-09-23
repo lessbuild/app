@@ -9,7 +9,7 @@ use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
-use Illuminate\Database\ConnectionException;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Route;
 
@@ -25,7 +25,7 @@ final class DeployerProjectLink implements ProjectProductLink
 
         try {
             $legacyProject = $this->projectFor($user, $project);
-        } catch (ConnectionException|QueryException) {
+        } catch (LostConnectionException|QueryException) {
             return null;
         }
 
