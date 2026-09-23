@@ -2,6 +2,8 @@
 
 namespace App\Modules\Deployer\Providers;
 
+use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\ProjectProductLinkRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
 use App\Modules\Deployer\Http\Livewire\RepositoryDeploymentTimeline;
@@ -12,10 +14,10 @@ use App\Modules\Deployer\Http\Livewire\WebsiteProvisioningLog;
 use App\Modules\Deployer\Http\Livewire\WebsiteSetup;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\SshServerTroubleshootingTransport;
 use App\Modules\Deployer\View\Navigation\WorkspaceNavigation;
-use App\Core\Providers\ModuleServiceProvider;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\View as ViewInstance;
 use Laravel\Cashier\Cashier;
@@ -37,6 +39,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         }
 
         Cashier::useCustomerModel(User::class);
+        app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
 
         Livewire::component('build-deployment-status', BuildDeploymentStatus::class);
         Livewire::component('repository-deployment-timeline', RepositoryDeploymentTimeline::class);

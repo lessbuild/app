@@ -30,7 +30,7 @@ class Overview extends Component
 
     public function mount(EnsurePersonalWorkspace $ensureWorkspace): void
     {
-        $workspace = $ensureWorkspace->handle(auth()->user());
+        $workspace = $ensureWorkspace->handle(auth()->user(), $this->selectedSiteId);
         $this->selectedSiteId ??= $workspace->sites()->value('id');
     }
 
@@ -49,7 +49,7 @@ class Overview extends Component
 
     public function render(OverviewReport $report): View
     {
-        $workspace = app(EnsurePersonalWorkspace::class)->handle(auth()->user());
+        $workspace = app(EnsurePersonalWorkspace::class)->handle(auth()->user(), $this->selectedSiteId);
         $sites = $workspace?->sites()->orderBy('name')->get() ?? collect();
         $site = $sites->firstWhere('id', $this->selectedSiteId) ?? $sites->first();
 

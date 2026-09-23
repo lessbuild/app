@@ -3,6 +3,7 @@
 namespace App\Modules\Analytics\Actions\Workspaces;
 
 use App\Modules\Analytics\Enums\WorkspaceRole;
+use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Illuminate\Contracts\Auth\Authenticatable;
@@ -12,9 +13,19 @@ final class EnsurePersonalWorkspace
 {
     public function __construct(private readonly AnalyticsWorkspaceAccess $access) {}
 
-    public function handle(Authenticatable $user): Workspace
+    public function handle(Authenticatable $user, int|string|null $siteId = null): Workspace
     {
         $workspaces = $this->access->workspacesFor($user);
+
+        if ($siteId !== null) {
+            $site = Site::query()->find($siteId);
+            $siteWorkspace = $site === null ? null : $workspaces->firstWhere('id', (int) $site->workspace_id);
+
+            if ($siteWorkspace !== null) {
+                return $siteWorkspace;
+            }
+        }
+
         $selectedWorkspaceId = session()->get('analytics_workspace_id');
         $workspace = $workspaces->firstWhere('id', (int) $selectedWorkspaceId) ?? $workspaces->first();
 

@@ -3,13 +3,15 @@
 namespace App\Modules\Analytics\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\ProjectProductLinkRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Policies\SitePolicy;
+use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\WorkspaceViewData;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\View\View as ViewInstance;
 
@@ -28,6 +30,8 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
             || ! filled(config('platform.products.analytics.host'))) {
             return;
         }
+
+        app(ProjectProductLinkRegistry::class)->register('analytics', app(AnalyticsProjectLink::class));
 
         Gate::policy(Site::class, SitePolicy::class);
 

@@ -4,24 +4,19 @@ namespace App\Core\Http\Controllers;
 
 use App\Core\Http\Requests\StoreWorkspaceProjectRequest;
 use App\Core\Models\CurrentProductSubscription;
-use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\ResolvePlatformUser;
-use App\Core\Services\LegacyIdentityResolver;
+use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
 use App\Core\Services\WorkspaceProjectAccess;
-use App\Modules\Deployer\Models\Project as DeployerProject;
-use App\Modules\Deployer\Models\User as DeployerUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Database\ConnectionException;
-use Illuminate\Database\QueryException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Collection;
 
 final class WorkspaceProjectsController
 {
@@ -121,7 +116,7 @@ final class WorkspaceProjectsController
         Workspace $workspace,
         Project $project,
         ResolvePlatformUser $platformUsers,
-        LegacyIdentityResolver $identities,
+        ProjectProductLinks $productLinks,
         WorkspaceProjectAccess $access,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
@@ -166,30 +161,7 @@ final class WorkspaceProjectsController
             'connections.sourceResource',
             'connections.targetResource',
         ]);
-        $legacyProjectId = LegacyIdentityMap::query()
-            ->where('source_product', 'deployer')
-            ->where('source_entity', 'project')
-            ->where('canonical_entity', 'project')
-            ->where('canonical_id', $project->getKey())
-            ->where('status', 'reconciled')
-            ->value('source_id');
-        $productLinks = [];
-
-        if ($legacyProjectId !== null && Route::has('projects.show')) {
-            if (in_array('deployer', $visibleProducts, true)) {
-                $deployerProjectUrl = $this->deployerProjectUrl($user, $identities, $legacyProjectId);
-
-                if ($deployerProjectUrl !== null) {
-                    $productLinks['deployer'] = $deployerProjectUrl;
-                }
-            }
-        }
-
-        foreach (['monitor', 'analytics'] as $product) {
-            if (in_array($product, $visibleProducts, true)) {
-                $productLinks[$product] = config('platform.products.'.$product.'.url');
-            }
-        }
+        $authorizedProductLinks = $productLinks->forProject($user, $project, $visibleProducts);
 
         return view('core.projects.show', [
             'user' => $user,
@@ -198,7 +170,7 @@ final class WorkspaceProjectsController
             'project' => $project,
             'contextProjects' => $this->contextProjects($workspace, $user),
             'productGrants' => $productGrants,
-            'productLinks' => $productLinks,
+            'productLinks' => $authorizedProductLinks,
             'subscriptions' => $canManageBilling
                 ? CurrentProductSubscription::query()
                     ->where('workspace_id', $workspace->getKey())
@@ -233,36 +205,6 @@ final class WorkspaceProjectsController
         return $platformUser;
     }
 
-    private function deployerProjectUrl(
-        PlatformUser $platformUser,
-        LegacyIdentityResolver $identities,
-        string $legacyProjectId,
-    ): ?string {
-        try {
-            $project = DeployerProject::query()->with('organization')->find($legacyProjectId);
-
-            if ($project === null || $project->organization === null) {
-                return null;
-            }
-
-            foreach ($identities->sourceIdsFor($platformUser, 'deployer') as $legacyUserId) {
-                $deployerUser = DeployerUser::query()->find($legacyUserId);
-
-                if ($deployerUser === null
-                    || (int) $deployerUser->current_organization_id !== (int) $project->organization_id
-                    || ! $project->organization->permits($deployerUser, 'view')) {
-                    continue;
-                }
-
-                return route('projects.show', $legacyProjectId);
-            }
-        } catch (ConnectionException|QueryException) {
-            return null;
-        }
-
-        return null;
-    }
-
     /** @return \Illuminate\Database\Eloquent\Collection<int, Workspace> */
     private function workspacesFor(PlatformUser $user): \Illuminate\Database\Eloquent\Collection
     {
@@ -276,8 +218,8 @@ final class WorkspaceProjectsController
             ->get();
     }
 
-    /** @return \Illuminate\Support\Collection<int, array{id:string,name:string,href:string}> */
-    private function contextProjects(Workspace $workspace, PlatformUser $user): \Illuminate\Support\Collection
+    /** @return Collection<int, array{id:string,name:string,href:string}> */
+    private function contextProjects(Workspace $workspace, PlatformUser $user): Collection
     {
         $projects = Project::query()
             ->where('workspace_id', $workspace->getKey())

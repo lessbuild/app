@@ -5,6 +5,7 @@ namespace App\Core\Providers;
 use App\Core\Auth\PlatformUserProvider;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
+use App\Core\Services\ProjectProductLinkRegistry;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passkeys\Passkeys;
@@ -13,6 +14,8 @@ final class CoreServiceProvider extends ModuleServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(ProjectProductLinkRegistry::class);
+
         Passkeys::useUserModel(PlatformUser::class);
         Passkeys::usePasskeyModel(Passkey::class);
     }

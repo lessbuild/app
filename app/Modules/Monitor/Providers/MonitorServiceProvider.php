@@ -3,13 +3,18 @@
 namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\ProjectProductLinkRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
 use App\Modules\Monitor\Contracts\DnsResolver;
 use App\Modules\Monitor\Contracts\TcpConnector;
 use App\Modules\Monitor\Contracts\TelemetryIngestor;
 use App\Modules\Monitor\Contracts\TelemetryPayloadMapper;
 use App\Modules\Monitor\Contracts\TlsCertificateInspector;
+use App\Modules\Monitor\Http\Middleware\AuthenticateIngestToken;
+use App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace;
+use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
+use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;
 use App\Modules\Monitor\Services\NativeDnsRecordResolver;
 use App\Modules\Monitor\Services\NativeDnsResolver;
@@ -49,9 +54,11 @@ final class MonitorServiceProvider extends ModuleServiceProvider
             return;
         }
 
-        app('router')->aliasMiddleware('monitor.ingest.token', \App\Modules\Monitor\Http\Middleware\AuthenticateIngestToken::class);
-        app('router')->aliasMiddleware('monitor.workspace', \App\Modules\Monitor\Http\Middleware\RequireWorkspace::class);
-        app('router')->aliasMiddleware('monitor.application.workspace', \App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace::class);
+        app(ProjectProductLinkRegistry::class)->register('monitor', app(MonitorProjectLink::class));
+
+        app('router')->aliasMiddleware('monitor.ingest.token', AuthenticateIngestToken::class);
+        app('router')->aliasMiddleware('monitor.workspace', RequireWorkspace::class);
+        app('router')->aliasMiddleware('monitor.application.workspace', EnsureApplicationWorkspace::class);
 
         foreach (glob(app_path('Modules/Monitor/Models/*.php')) ?: [] as $modelFile) {
             $model = 'App\\Modules\\Monitor\\Models\\'.pathinfo($modelFile, PATHINFO_FILENAME);

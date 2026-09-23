@@ -16,14 +16,27 @@ final class WorkspaceViewData
         $user = $this->request->user();
         $access = app(AnalyticsWorkspaceAccess::class);
         $workspaces = $user ? $access->workspacesFor($user) : collect();
-
-        $currentWorkspace = $workspaces->firstWhere('id', (int) $this->request->session()->get('analytics_workspace_id'))
-            ?? $workspaces->first();
-
         $siteParameter = $this->request->route('site') ?? $this->request->query('site');
         $currentSiteId = $siteParameter instanceof Site ? $siteParameter->getKey() : $siteParameter;
-        $currentSite = $currentWorkspace?->sites->firstWhere('id', (int) $currentSiteId)
-            ?? $currentWorkspace?->sites->first();
+        $requestedSite = $siteParameter instanceof Site
+            ? $siteParameter
+            : (is_numeric($currentSiteId) ? Site::query()->find($currentSiteId) : null);
+        $requestedSiteWorkspaceRecord = $requestedSite?->workspace;
+        $requestedSiteWorkspace = $requestedSite !== null && $user !== null
+            && $requestedSiteWorkspaceRecord !== null
+            && $access->hasAccess($user, $requestedSiteWorkspaceRecord)
+                ? $workspaces->firstWhere('id', (int) $requestedSite->workspace_id)
+                : null;
+        $currentWorkspace = $requestedSiteWorkspace
+            ?? $workspaces->firstWhere('id', (int) $this->request->session()->get('analytics_workspace_id'))
+            ?? $workspaces->first();
+
+        if ($requestedSiteWorkspace !== null && $requestedSiteWorkspace->is($currentWorkspace)) {
+            $currentSite = $requestedSite;
+        } else {
+            $currentSite = $currentWorkspace?->sites->firstWhere('id', (int) $currentSiteId)
+                ?? $currentWorkspace?->sites->first();
+        }
 
         $contextOptions = $currentWorkspace?->sites
             ->map(fn (Site $site): array => [
