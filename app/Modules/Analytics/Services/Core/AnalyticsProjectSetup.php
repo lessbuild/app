@@ -2,22 +2,73 @@
 
 namespace App\Modules\Analytics\Services\Core;
 
-use App\Core\Contracts\ProjectSetupProvider;
+use App\Core\Contracts\ProjectEnvironmentAwareSetupProvider;
 use App\Core\Data\Projects\ProjectSetupStep;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\ProjectEnvironment;
+use App\Core\Models\ProjectResource;
 use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\Site;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
-final class AnalyticsProjectSetup implements ProjectSetupProvider
+final class AnalyticsProjectSetup implements ProjectEnvironmentAwareSetupProvider
 {
     public function __construct(private readonly AnalyticsProjectLink $sites) {}
 
     public function steps(PlatformUser $user, Project $project): array
     {
+        return $this->stepsForSites($this->sites->accessibleSites($user, $project));
+    }
+
+    public function stepsForEnvironment(
+        PlatformUser $user,
+        Project $project,
+        ProjectEnvironment $environment,
+    ): array {
         $authorizedSites = $this->sites->accessibleSites($user, $project);
+
+        if ($authorizedSites->isEmpty()) {
+            return $this->stepsForSites($authorizedSites);
+        }
+
+        $mappedSiteIds = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('environment_id', $environment->getKey())
+            ->where('product', 'analytics')
+            ->where('resource_type', 'site')
+            ->where('status', 'active')
+            ->pluck('resource_id');
+        $environmentSites = $authorizedSites
+            ->filter(fn (Site $site): bool => $mappedSiteIds->contains((string) $site->getKey()))
+            ->values();
+
+        if ($environmentSites->isEmpty()) {
+            $coreProjectUrl = Route::has('core.projects.show')
+                ? route('core.projects.show', [$project->workspace_id, $project, 'context_environment' => $environment->getKey()])
+                : null;
+
+            return [new ProjectSetupStep(
+                id: 'analytics.environment-site-mapping',
+                product: 'analytics',
+                title: __('Map an Analytics site'),
+                detail: __('Choose an authorized Analytics site to associate with :environment. Its traffic and setup will stay site-scoped.', ['environment' => $environment->name]),
+                state: ProjectSetupStepState::NeedsAction,
+                url: $coreProjectUrl === null ? null : $coreProjectUrl.'#link-existing-resources-heading',
+                actionLabel: $coreProjectUrl === null ? null : __('Map an Analytics site'),
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            )];
+        }
+
+        return $this->stepsForSites($environmentSites);
+    }
+
+    /** @param Collection<int, Site> $authorizedSites */
+    private function stepsForSites(Collection $authorizedSites): array
+    {
         $siteIds = $authorizedSites->modelKeys();
         $dashboardUrl = Route::has('analytics.dashboard') ? route('analytics.dashboard') : null;
 

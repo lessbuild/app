@@ -22,8 +22,50 @@
     $environmentOptions = $project->environments->map(fn ($environment): array => [
         'id' => $environment->getKey(),
         'name' => $environment->name,
-        'href' => route('core.projects.show', [$workspace, $project]).'#environment-'.$environment->getKey(),
+        'href' => route('core.projects.show', [$workspace, $project, 'context_environment' => $environment->getKey()]).'#environment-'.$environment->getKey(),
     ]);
+    $environmentIndexUrl = route('core.projects.show', [$workspace, $project]);
+    $productContextLinks = [];
+    $productContextStatus = [];
+    $productUrlOverrides = null;
+
+    if ($environmentContext->isUnavailable()) {
+        $unavailableContextId = $environmentContext->requestedId ?? 'unavailable';
+        $contextFallbackUrl = route('core.projects.show', [
+            $workspace,
+            $project,
+            'context_environment' => $unavailableContextId,
+        ]).'#environments';
+        $productUrlOverrides = array_fill_keys(array_keys($products), $contextFallbackUrl);
+    } elseif ($environmentContext->isSelected()) {
+        $contextFallbackUrl = route('core.projects.show', [
+            $workspace,
+            $project,
+            'context_environment' => $environmentContext->environment->getKey(),
+        ]).'#environments';
+        $productUrlOverrides = [];
+
+        foreach (array_keys($products) as $productKey) {
+            $expectedResourceType = $productKey === 'analytics' ? 'site' : 'environment';
+            $mappings = $project->resources->filter(fn ($resource): bool => $resource->product === $productKey
+                && $resource->resource_type === $expectedResourceType
+                && (string) $resource->environment_id === (string) $environmentContext->environment->getKey());
+            $mapping = $mappings->first(fn ($resource): bool => $resource->status === 'active'
+                && ($resourceDestinations[(string) $resource->getKey()]->state ?? null) === \App\Core\Data\Projects\ProjectResourceDestinationState::Available
+                && filled($resourceDestinations[(string) $resource->getKey()]->url ?? null)) ?? $mappings->first();
+            $destination = $mapping === null ? null : ($resourceDestinations[(string) $mapping->getKey()] ?? null);
+            $availableDestination = $mapping !== null
+                && $mapping->status === 'active'
+                && $destination?->state === \App\Core\Data\Projects\ProjectResourceDestinationState::Available
+                && filled($destination->url);
+
+            $productContextLinks[$productKey] = $availableDestination ? $destination->url : null;
+            $productContextStatus[$productKey] = $mapping === null
+                ? __('Not mapped to this environment')
+                : ($availableDestination ? null : ($destination?->state->label() ?? __('Mapping unavailable')));
+            $productUrlOverrides[$productKey] = $availableDestination ? $destination->url : $contextFallbackUrl;
+        }
+    }
 @endphp
 
 <x-signal.layouts.platform
@@ -35,9 +77,12 @@
     :workspaces="$workspaces"
     :context-projects="$contextProjects"
     :current-project="$project"
+    :current-environment="$environmentContext->environment"
+    :environment-context-unavailable="$environmentContext->isUnavailable()"
     :environment-options="$environmentOptions"
+    :product-url-overrides="$productUrlOverrides"
     :show-environment-context="true"
-    :environment-index-url="route('core.projects.show', [$workspace, $project])"
+    :environment-index-url="$environmentIndexUrl"
 >
     <x-signal.ui.page-header
         :eyebrow="$workspace->name.' · '.__('Project overview')"
@@ -58,6 +103,18 @@
         </x-slot:actions>
     </x-signal.ui.page-header>
 
+    @if ($environmentContext->isUnavailable())
+        <x-signal.ui.alert tone="warning" class="mb-6" role="alert">
+            {{ __('The selected shared environment is missing, inactive, or belongs to another project. No app activity or setup status is shown until you choose an active environment.') }}
+        </x-signal.ui.alert>
+    @endif
+
+    @if ($environmentContext->isSelected())
+        <p class="mb-6 text-sm text-muted" role="status">
+            {{ __('Activity and setup use :environment. Project resources, subscriptions, and connection operations keep their own explicit scope.', ['environment' => $environmentContext->environment->name]) }}
+        </p>
+    @endif
+
     <section aria-label="{{ __('Connected products') }}" class="mb-8 grid gap-4 lg:grid-cols-3">
         @foreach ($products as $key => $label)
             @php
@@ -65,7 +122,9 @@
                 $product = $project->products->firstWhere('product', $key);
                 $hasAccess = $productGrants->has($key);
                 $isConnected = $product !== null && $product->status === 'active';
-                $productUrl = $productLinks[$key] ?? null;
+                $productUrl = $environmentContext->isSelected()
+                    ? ($productContextLinks[$key] ?? null)
+                    : ($environmentContext->isUnavailable() ? null : ($productLinks[$key] ?? null));
             @endphp
             <x-signal.ui.card class="p-5">
                 <div class="flex items-center justify-between gap-3">
@@ -85,10 +144,19 @@
                 @else
                     <p class="mt-4 text-sm leading-6 text-muted">{{ __('Billing details are limited to workspace owners and billing managers.') }}</p>
                 @endif
+                @if ($environmentContext->isSelected() && $hasAccess && $isConnected && filled($productContextStatus[$key] ?? null))
+                    <p class="mt-3 text-xs leading-5 text-muted">{{ $productContextStatus[$key] }}</p>
+                @endif
                 @if ($isConnected && $productUrl)
                     <a href="{{ $productUrl }}" class="mt-5 inline-flex min-h-9 items-center gap-2 rounded-control px-3 text-sm font-extrabold text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
                         {{ __('Open :product', ['product' => $label]) }}
                         <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-up-right"></use></svg>
+                    </a>
+                @elseif ($environmentContext->isUnavailable() && $hasAccess && $isConnected)
+                    <p class="mt-5 text-xs leading-5 text-muted">{{ __('Choose an active shared environment to open this app in the matching context.') }}</p>
+                @elseif ($environmentContext->isSelected() && $hasAccess && $isConnected)
+                    <a href="#link-existing-resources-heading" class="mt-5 inline-flex min-h-9 items-center gap-2 rounded-control px-3 text-sm font-extrabold text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                        {{ __('Map :product environment', ['product' => $label]) }}
                     </a>
                 @elseif ($hasAccess && ! $isConnected)
                     <p class="mt-5 text-xs leading-5 text-muted">{{ __('Connect this app from its product setup when you are ready.') }}</p>

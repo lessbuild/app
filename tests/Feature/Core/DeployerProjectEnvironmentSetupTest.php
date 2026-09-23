@@ -2,13 +2,16 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project as CoreProject;
+use App\Core\Models\ProjectEnvironment;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\User as DeployerUser;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
+use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -132,12 +135,14 @@ final class DeployerProjectEnvironmentSetupTest extends TestCase
         ]);
 
         $environmentResourceIds = [];
+        $canonicalEnvironmentIds = [];
 
         foreach ([
             [$production, 'Production', 'production'],
             [$staging, 'Staging', 'staging'],
         ] as [$sourceEnvironment, $name, $type]) {
             $canonicalEnvironmentId = (string) Str::ulid();
+            $canonicalEnvironmentIds[$type] = $canonicalEnvironmentId;
             DB::connection('core')->table('project_environments')->insert([
                 'id' => $canonicalEnvironmentId,
                 'project_id' => $coreProjectId,
@@ -193,5 +198,22 @@ final class DeployerProjectEnvironmentSetupTest extends TestCase
         $this->assertSame(ProjectSetupStepState::Complete, $productionDeployment->state);
         $this->assertSame(ProjectSetupStepState::NeedsAction, $stagingRepository->state);
         $this->assertSame(ProjectSetupStepState::NeedsAction, $stagingDeployment->state);
+
+        $summaryProvider = new DeployerProjectSummary(app(DeployerProjectLink::class));
+        $productionSummary = $summaryProvider->summarizeForEnvironment(
+            $platformUser,
+            $coreProject,
+            ProjectEnvironment::query()->findOrFail($canonicalEnvironmentIds['production']),
+        );
+        $stagingSummary = $summaryProvider->summarizeForEnvironment(
+            $platformUser,
+            $coreProject,
+            ProjectEnvironment::query()->findOrFail($canonicalEnvironmentIds['staging']),
+        );
+
+        $this->assertSame(ProjectProductSnapshotState::Current, $productionSummary?->state);
+        $this->assertStringContainsString('Production', $productionSummary?->title ?? '');
+        $this->assertSame(ProjectProductSnapshotState::Empty, $stagingSummary?->state);
+        $this->assertSame('No deployments have been recorded for this mapped environment yet.', $stagingSummary?->detail);
     }
 }

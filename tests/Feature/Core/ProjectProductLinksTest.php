@@ -8,6 +8,7 @@ use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\ProjectEnvironment;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
@@ -34,6 +35,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 final class ProjectProductLinksTest extends TestCase
@@ -347,6 +349,79 @@ final class ProjectProductLinksTest extends TestCase
         $this->assertNotNull($summary);
         $this->assertSame(ProjectProductSnapshotState::Attention, $summary->state);
         $this->assertSame('0 open incidents · 1 checks up · 0 checks down · 1 unknown · 0 paused', $summary->detail);
+    }
+
+    public function test_monitor_environment_summary_only_reads_the_mapped_local_environment(): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        $canonicalIds = [];
+
+        foreach ([[41, 'Production', 'production', 'up'], [42, 'Staging', 'staging', 'down']] as [$sourceId, $name, $type, $health]) {
+            $canonicalId = (string) Str::ulid();
+            $canonicalIds[$type] = $canonicalId;
+            DB::connection('core')->table('project_environments')->insert([
+                'id' => $canonicalId,
+                'project_id' => self::PROJECT_ID,
+                'name' => $name,
+                'slug' => $type,
+                'environment_type' => $type,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('project_resources')->insert([
+                'id' => (string) Str::ulid(),
+                'project_id' => self::PROJECT_ID,
+                'environment_id' => $canonicalId,
+                'product' => 'monitor',
+                'resource_type' => 'environment',
+                'resource_id' => (string) $sourceId,
+                'name' => $name,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('monitor')->table('environments')->insert([
+                'id' => $sourceId,
+                'application_id' => 31,
+                'name' => $name,
+                'slug' => $type,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('monitor')->table('monitors')->insert([
+                'id' => $sourceId + 100,
+                'environment_id' => $sourceId,
+                'name' => $name.' check',
+                'type' => 'http',
+                'health' => $health,
+                'enabled' => true,
+                'checked_at' => now(),
+                'interval_minutes' => 5,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $summaryProvider = new MonitorProjectSummary(app(MonitorProjectLink::class));
+        $staging = $summaryProvider->summarizeForEnvironment(
+            $this->platformUser(),
+            $this->project(),
+            ProjectEnvironment::query()->findOrFail($canonicalIds['staging']),
+        );
+        $production = $summaryProvider->summarizeForEnvironment(
+            $this->platformUser(),
+            $this->project(),
+            ProjectEnvironment::query()->findOrFail($canonicalIds['production']),
+        );
+
+        $this->assertSame(ProjectProductSnapshotState::Attention, $staging?->state);
+        $this->assertSame('0 open incidents · 0 checks up · 1 checks down · 0 unknown · 0 paused', $staging?->detail);
+        $this->assertSame(ProjectProductSnapshotState::Current, $production?->state);
+        $this->assertSame('0 open incidents · 1 checks up · 0 checks down · 0 unknown · 0 paused', $production?->detail);
     }
 
     public function test_monitor_setup_progress_comes_from_authorized_application_data(): void

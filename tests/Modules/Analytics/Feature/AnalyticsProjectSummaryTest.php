@@ -2,6 +2,7 @@
 
 namespace Tests\Modules\Analytics\Feature;
 
+use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
@@ -161,6 +162,40 @@ final class AnalyticsProjectSummaryTest extends TestCase
 
         $this->assertNotNull($summary);
         $this->assertSame('100 pageviews · 30 visits in the last 7 days', $summary->detail);
+
+        $environment = $project->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'environment_type' => 'production',
+            'status' => 'active',
+        ]);
+        $summaryProvider = new AnalyticsProjectSummary(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
+        $unmappedSummary = $summaryProvider
+            ->summarizeForEnvironment($platformUser, $project, $environment);
+        $unmappedSteps = $setupProvider->stepsForEnvironment($platformUser, $project, $environment);
+
+        $this->assertSame(ProjectProductSnapshotState::Unavailable, $unmappedSummary?->state);
+        $this->assertStringContainsString('No authorized Analytics site is mapped', $unmappedSummary?->detail);
+        $this->assertCount(1, $unmappedSteps);
+        $this->assertSame(ProjectSetupStepState::NeedsAction, $unmappedSteps[0]->state);
+        $this->assertSame('Production', $unmappedSteps[0]->contextName);
+
+        ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('product', 'analytics')
+            ->where('resource_type', 'site')
+            ->where('resource_id', (string) $site->getKey())
+            ->update(['environment_id' => $environment->getKey()]);
+        $this->aggregate($secondSite, CarbonImmutable::now('UTC'), 9999, 9999);
+        $environmentSummary = $summaryProvider->summarizeForEnvironment($platformUser, $project, $environment);
+        $environmentSteps = collect($setupProvider->stepsForEnvironment($platformUser, $project, $environment));
+
+        $this->assertSame(ProjectProductSnapshotState::Current, $environmentSummary?->state);
+        $this->assertSame('100 pageviews · 30 visits in the last 7 days', $environmentSummary?->detail);
+        $this->assertSame('Analytics traffic · Production · 7 days', $environmentSummary?->title);
+        $this->assertCount(2, $environmentSteps);
+        $this->assertTrue($environmentSteps->every(fn ($step): bool => $step->contextName === $site->name));
+        $this->assertFalse($environmentSteps->contains(fn ($step): bool => $step->contextName === $secondSite->name));
     }
 
     private function aggregate(Site $site, CarbonImmutable $date, int $pageviews, int $visits): void

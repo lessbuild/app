@@ -2,10 +2,12 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Data\Projects\ProjectEnvironmentContextState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\Workspace;
 use App\Core\Services\Projects\CreateCanonicalEnvironment;
+use App\Core\Services\Projects\ResolveProjectEnvironmentContext;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -170,5 +172,54 @@ final class CanonicalEnvironmentsTest extends TestCase
         } catch (AuthorizationException) {
             $this->assertDatabaseCount('project_environments', 0, 'core');
         }
+    }
+
+    public function test_environment_selection_is_project_scoped_and_never_defaults_when_missing_or_inactive(): void
+    {
+        $workspace = Workspace::query()->findOrFail($this->workspaceId);
+        $project = Project::query()->findOrFail($this->projectId);
+        $user = (new PlatformUser)->forceFill(['id' => $this->userId]);
+        $environment = app(CreateCanonicalEnvironment::class)->handle($workspace, $project, $user, 'Production', 'production');
+        $foreignProjectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $foreignProjectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Another project',
+            'slug' => 'another-project',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $foreignEnvironmentId = (string) Str::ulid();
+        DB::connection('core')->table('project_environments')->insert([
+            'id' => $foreignEnvironmentId,
+            'project_id' => $foreignProjectId,
+            'name' => 'Production',
+            'slug' => 'production',
+            'environment_type' => 'production',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $resolve = app(ResolveProjectEnvironmentContext::class);
+
+        $selected = $resolve->handle($project, (string) $environment->getKey());
+        $foreign = $resolve->handle($project, $foreignEnvironmentId);
+        $missing = $resolve->handle($project, (string) Str::ulid());
+
+        $this->assertSame(ProjectEnvironmentContextState::Selected, $selected->state);
+        $this->assertSame($environment->getKey(), $selected->environment?->getKey());
+        $this->assertSame(ProjectEnvironmentContextState::Unavailable, $foreign->state);
+        $this->assertNull($foreign->environment);
+        $this->assertSame(ProjectEnvironmentContextState::Unavailable, $missing->state);
+        $this->assertNull($missing->environment);
+        $this->assertSame(ProjectEnvironmentContextState::All, $resolve->handle($project, null)->state);
+
+        DB::connection('core')->table('project_environments')->where('id', $environment->getKey())->update(['status' => 'archived']);
+        $inactive = $resolve->handle($project, (string) $environment->getKey());
+
+        $this->assertSame(ProjectEnvironmentContextState::Unavailable, $inactive->state);
+        $this->assertNull($inactive->environment);
     }
 }

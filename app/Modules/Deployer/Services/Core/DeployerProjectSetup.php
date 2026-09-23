@@ -2,7 +2,7 @@
 
 namespace App\Modules\Deployer\Services\Core;
 
-use App\Core\Contracts\ProjectSetupProvider;
+use App\Core\Contracts\ProjectEnvironmentAwareSetupProvider;
 use App\Core\Data\Projects\ProjectSetupStep;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
@@ -14,7 +14,7 @@ use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Project as DeployerProject;
 use Illuminate\Support\Facades\Route;
 
-final class DeployerProjectSetup implements ProjectSetupProvider
+final class DeployerProjectSetup implements ProjectEnvironmentAwareSetupProvider
 {
     public function __construct(private readonly DeployerProjectLink $projects) {}
 
@@ -104,17 +104,88 @@ final class DeployerProjectSetup implements ProjectSetupProvider
         ];
     }
 
+    public function stepsForEnvironment(
+        PlatformUser $user,
+        CoreProject $project,
+        ProjectEnvironment $environment,
+    ): array {
+        $legacyProject = $this->projects->projectFor($user, $project);
+        $coreProjectUrl = Route::has('core.projects.show')
+            ? route('core.projects.show', [$project->workspace_id, $project, 'context_environment' => $environment->getKey()])
+            : null;
+        $mapping = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('environment_id', $environment->getKey())
+            ->where('product', 'deployer')
+            ->where('resource_type', 'environment')
+            ->where('status', 'active')
+            ->exists();
+
+        if ($legacyProject === null) {
+            return [new ProjectSetupStep(
+                id: 'deployer.environment-project',
+                product: 'deployer',
+                title: __('Connect a Deployer project'),
+                detail: __('Connect an authorized Deployer project before using this shared environment.'),
+                state: ProjectSetupStepState::NeedsAction,
+                url: Route::has('projects.index') ? route('projects.index') : null,
+                actionLabel: Route::has('projects.index') ? __('Open Deployer') : null,
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            )];
+        }
+
+        if (! $mapping) {
+            return [new ProjectSetupStep(
+                id: 'deployer.environment-mapping',
+                product: 'deployer',
+                title: __('Map a Deployer environment'),
+                detail: __('Choose an existing Deployer environment to connect it to this shared environment. Deployment status stays unavailable until the mapping is confirmed.'),
+                state: ProjectSetupStepState::NeedsAction,
+                url: $coreProjectUrl === null ? null : $coreProjectUrl.'#link-existing-resources-heading',
+                actionLabel: $coreProjectUrl === null ? null : __('Review environment mapping'),
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            )];
+        }
+
+        $projectUrl = Route::has('projects.show')
+            ? route('projects.show', $legacyProject->getKey())
+            : null;
+        $environmentSteps = $this->stepsForMappedEnvironments($project, $legacyProject, $projectUrl, (string) $environment->getKey()) ?? [];
+
+        return [
+            new ProjectSetupStep(
+                id: 'deployer.project.environment.'.$environment->getKey(),
+                product: 'deployer',
+                title: __('Deployer project connected'),
+                detail: __('This Deployer project is authorized for the shared workspace.'),
+                state: ProjectSetupStepState::Complete,
+                url: $projectUrl,
+                actionLabel: $projectUrl === null ? null : __('Open project'),
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            ),
+            ...$environmentSteps,
+        ];
+    }
+
     /**
      * @return ?list<ProjectSetupStep> Null when the project has no explicit Deployer environment mappings.
      */
-    private function stepsForMappedEnvironments(CoreProject $project, DeployerProject $legacyProject, ?string $projectUrl): ?array
-    {
+    private function stepsForMappedEnvironments(
+        CoreProject $project,
+        DeployerProject $legacyProject,
+        ?string $projectUrl,
+        ?string $canonicalEnvironmentId = null,
+    ): ?array {
         $mappings = ProjectResource::query()
             ->where('project_id', $project->getKey())
             ->where('product', 'deployer')
             ->where('resource_type', 'environment')
             ->where('status', 'active')
             ->whereNotNull('environment_id')
+            ->when($canonicalEnvironmentId !== null, fn ($query) => $query->where('environment_id', $canonicalEnvironmentId))
             ->orderBy('id')
             ->get(['id', 'environment_id', 'resource_id', 'name']);
 

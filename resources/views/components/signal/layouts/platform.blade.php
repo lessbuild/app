@@ -6,9 +6,12 @@
     'workspaces' => [],
     'contextProjects' => [],
     'currentProject' => null,
+    'currentEnvironment' => null,
+    'environmentContextUnavailable' => false,
     'environmentOptions' => [],
     'showEnvironmentContext' => false,
     'environmentIndexUrl' => null,
+    'productUrlOverrides' => null,
     'accountUser' => null,
 ])
 
@@ -35,7 +38,10 @@
         context-all-label="{{ __('View all projects') }}"
         :context-index-url="route('core.projects.index', $currentWorkspace)"
         :environment-options="$environmentOptions"
+        :current-environment="$currentEnvironment"
+        :environment-context-unavailable="$environmentContextUnavailable"
         :environment-index-url="$environmentIndexUrl ?? route('core.projects.index', $currentWorkspace)"
+        :product-url-overrides="$productUrlOverrides"
         :show-project-context="true"
         :show-environment-context="$showEnvironmentContext"
     />

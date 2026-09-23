@@ -81,6 +81,7 @@ final class WorkspaceDashboardTest extends TestCase
             'project_connections',
             'project_lifecycle_events',
             'project_resources',
+            'project_environments',
             'project_products',
             'project_memberships',
             'projects',
@@ -334,6 +335,58 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertDontSeeText('2 open incidents')
             ->assertDontSeeText('Access changed')
             ->assertSeeText('0 workflows');
+    }
+
+    public function test_project_view_preserves_its_selected_environment_in_signal_navigation(): void
+    {
+        $projectId = $this->createVisibleProject('Checkout');
+        $environmentId = (string) Str::ulid();
+        DB::connection('core')->table('project_environments')->insert([
+            'id' => $environmentId,
+            'project_id' => $projectId,
+            'created_by_user_id' => $this->userId,
+            'name' => 'Staging',
+            'slug' => 'staging',
+            'environment_type' => 'staging',
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $selectedUrl = route('core.projects.show', [
+            $this->workspaceId,
+            $projectId,
+            'context_environment' => $environmentId,
+        ]);
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->get($selectedUrl)
+            ->assertOk()
+            ->assertSeeText('Environment')
+            ->assertSeeText('Staging')
+            ->assertSee($selectedUrl.'#environments')
+            ->assertSee(route('core.projects.show', [
+                $this->workspaceId,
+                $projectId,
+                'context_environment' => $environmentId,
+            ]).'#environment-'.$environmentId);
+    }
+
+    public function test_project_view_marks_a_missing_environment_unavailable_without_fallback(): void
+    {
+        $projectId = $this->createVisibleProject('Checkout');
+        $environmentId = (string) Str::ulid();
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->get(route('core.projects.show', [
+                $this->workspaceId,
+                $projectId,
+                'context_environment' => $environmentId,
+            ]))
+            ->assertOk()
+            ->assertSeeText('The selected shared environment is missing, inactive, or belongs to another project')
+            ->assertSee('>Unavailable</span>', false)
+            ->assertSee('context_environment='.$environmentId.'#environments');
     }
 
     public function test_single_workspace_landing_redirects_to_the_overview(): void
@@ -961,6 +1014,17 @@ final class WorkspaceDashboardTest extends TestCase
             $table->text('description')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamp('archived_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('project_environments', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('project_id', 26);
+            $table->char('created_by_user_id', 26)->nullable();
+            $table->string('name');
+            $table->string('slug');
+            $table->string('environment_type');
+            $table->string('status', 24);
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
         Schema::connection('core')->create('project_lifecycle_events', function (Blueprint $table): void {

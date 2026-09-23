@@ -21,6 +21,7 @@ use App\Core\Services\ProjectResourceDestinations;
 use App\Core\Services\ProjectResourceLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
 use App\Core\Services\Projects\ProjectWorkflowProgress;
+use App\Core\Services\Projects\ResolveProjectEnvironmentContext;
 use App\Core\Services\Projects\SetCanonicalProjectArchiveState;
 use App\Core\Services\Projects\UpdateCanonicalProject;
 use App\Core\Services\ProjectSetup;
@@ -229,6 +230,7 @@ final class WorkspaceProjectsController
         ProjectResourceDestinations $resourceDestinations,
         ProjectConnectionDiagnostics $connectionDiagnostics,
         ProjectWorkflowProgress $workflowProgress,
+        ResolveProjectEnvironmentContext $environmentContexts,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -239,6 +241,7 @@ final class WorkspaceProjectsController
         $canManageBilling = $access->canManageBilling($user, $workspace);
         $canManageProjects = $access->canManageWorkspace($user, $workspace);
         $canManageConnections = $canManageProjects;
+        $environmentContext = $environmentContexts->handle($project, $request->query('context_environment'));
 
         $productGrants = WorkspaceProductAccess::query()
             ->where('membership_id', $membership->getKey())
@@ -254,7 +257,7 @@ final class WorkspaceProjectsController
             ->pluck('product')
             ->all();
         $visibleProducts = array_values(array_intersect($productGrants->keys()->all(), $activeProjectProducts));
-        $projectSetupSteps = $projectSetup->forProject($user, $project, $availableProducts);
+        $projectSetupSteps = $projectSetup->forProject($user, $project, $availableProducts, $environmentContext);
         $project->load([
             'products' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
@@ -316,7 +319,8 @@ final class WorkspaceProjectsController
             'contextProjects' => $this->contextProjects($workspace, $user),
             'productGrants' => $productGrants,
             'productLinks' => $authorizedProductLinks,
-            'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts),
+            'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts, $environmentContext),
+            'environmentContext' => $environmentContext,
             'projectSetupSteps' => $projectSetupSteps,
             'resourceDestinations' => $resourceDestinationsForProject,
             'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections),

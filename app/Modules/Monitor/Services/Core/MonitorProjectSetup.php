@@ -2,7 +2,7 @@
 
 namespace App\Modules\Monitor\Services\Core;
 
-use App\Core\Contracts\ProjectSetupProvider;
+use App\Core\Contracts\ProjectEnvironmentAwareSetupProvider;
 use App\Core\Data\Projects\ProjectSetupStep;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
@@ -17,7 +17,7 @@ use App\Modules\Monitor\Models\TelemetryEvent;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
-final class MonitorProjectSetup implements ProjectSetupProvider
+final class MonitorProjectSetup implements ProjectEnvironmentAwareSetupProvider
 {
     public function __construct(private readonly MonitorProjectLink $applications) {}
 
@@ -99,18 +99,97 @@ final class MonitorProjectSetup implements ProjectSetupProvider
         ];
     }
 
+    public function stepsForEnvironment(
+        PlatformUser $user,
+        Project $project,
+        ProjectEnvironment $environment,
+    ): array {
+        $authorizedApplications = $this->applications->accessibleApplications($user, $project);
+        $application = $authorizedApplications->first();
+        $applicationUrl = $application !== null && Route::has('monitor.applications.show')
+            ? route('monitor.applications.show', $application->getKey())
+            : null;
+        $applicationIndexUrl = Route::has('monitor.applications.index') ? route('monitor.applications.index') : null;
+        $coreProjectUrl = Route::has('core.projects.show')
+            ? route('core.projects.show', [$project->workspace_id, $project, 'context_environment' => $environment->getKey()])
+            : null;
+
+        if ($authorizedApplications->isEmpty()) {
+            return [new ProjectSetupStep(
+                id: 'monitor.environment-application',
+                product: 'monitor',
+                title: __('Connect a Monitor application'),
+                detail: __('Connect an authorized Monitor application before using this shared environment.'),
+                state: ProjectSetupStepState::NeedsAction,
+                url: $applicationIndexUrl,
+                actionLabel: $applicationIndexUrl === null ? null : __('Open Monitor'),
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            )];
+        }
+
+        $mappingExists = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('environment_id', $environment->getKey())
+            ->where('product', 'monitor')
+            ->where('resource_type', 'environment')
+            ->where('status', 'active')
+            ->exists();
+
+        if (! $mappingExists) {
+            return [new ProjectSetupStep(
+                id: 'monitor.environment-mapping',
+                product: 'monitor',
+                title: __('Map a Monitor environment'),
+                detail: __('Choose an existing Monitor environment to connect it to this shared environment. Monitoring status stays unavailable until the mapping is confirmed.'),
+                state: ProjectSetupStepState::NeedsAction,
+                url: $coreProjectUrl === null ? null : $coreProjectUrl.'#link-existing-resources-heading',
+                actionLabel: $coreProjectUrl === null ? null : __('Review environment mapping'),
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            )];
+        }
+
+        $environmentSteps = $this->stepsForMappedEnvironments(
+            $project,
+            $authorizedApplications,
+            $applicationIndexUrl,
+            (string) $environment->getKey(),
+        ) ?? [];
+
+        return [
+            new ProjectSetupStep(
+                id: 'monitor.application.environment.'.$environment->getKey(),
+                product: 'monitor',
+                title: __('Monitor application connected'),
+                detail: trans_choice(':count Monitor application is linked to this project.|:count Monitor applications are linked to this project.', $authorizedApplications->count(), ['count' => $authorizedApplications->count()]),
+                state: ProjectSetupStepState::Complete,
+                url: $applicationUrl,
+                actionLabel: $applicationUrl === null ? null : __('Open Monitor'),
+                contextName: $environment->name,
+                contextLabel: __('Environment'),
+            ),
+            ...$environmentSteps,
+        ];
+    }
+
     /**
      * @param  Collection<int, Application>  $authorizedApplications
      * @return ?list<ProjectSetupStep> Null when the project has no explicit Monitor environment mappings.
      */
-    private function stepsForMappedEnvironments(Project $project, Collection $authorizedApplications, ?string $applicationIndexUrl): ?array
-    {
+    private function stepsForMappedEnvironments(
+        Project $project,
+        Collection $authorizedApplications,
+        ?string $applicationIndexUrl,
+        ?string $canonicalEnvironmentId = null,
+    ): ?array {
         $mappings = ProjectResource::query()
             ->where('project_id', $project->getKey())
             ->where('product', 'monitor')
             ->where('resource_type', 'environment')
             ->where('status', 'active')
             ->whereNotNull('environment_id')
+            ->when($canonicalEnvironmentId !== null, fn ($query) => $query->where('environment_id', $canonicalEnvironmentId))
             ->orderBy('id')
             ->get(['id', 'environment_id', 'resource_id', 'name']);
 

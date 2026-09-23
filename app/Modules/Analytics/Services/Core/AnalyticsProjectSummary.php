@@ -2,23 +2,59 @@
 
 namespace App\Modules\Analytics\Services\Core;
 
-use App\Core\Contracts\ProjectProductSummaryProvider;
+use App\Core\Contracts\ProjectEnvironmentAwareSummaryProvider;
 use App\Core\Data\Projects\ProjectProductSnapshot;
 use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\ProjectEnvironment;
+use App\Core\Models\ProjectResource;
 use App\Modules\Analytics\Models\ReportDailyAggregate;
+use App\Modules\Analytics\Models\Site;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
-final class AnalyticsProjectSummary implements ProjectProductSummaryProvider
+final class AnalyticsProjectSummary implements ProjectEnvironmentAwareSummaryProvider
 {
     public function __construct(private readonly AnalyticsProjectLink $sites) {}
 
     public function summarize(PlatformUser $user, Project $project): ?ProjectProductSnapshot
     {
-        $authorizedSites = $this->sites->accessibleSites($user, $project);
+        return $this->summarizeSites($this->sites->accessibleSites($user, $project));
+    }
 
+    public function summarizeForEnvironment(
+        PlatformUser $user,
+        Project $project,
+        ProjectEnvironment $environment,
+    ): ?ProjectProductSnapshot {
+        $authorizedSites = $this->sites->accessibleSites($user, $project);
+        $mappedSiteIds = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('environment_id', $environment->getKey())
+            ->where('product', 'analytics')
+            ->where('resource_type', 'site')
+            ->where('status', 'active')
+            ->pluck('resource_id');
+        $environmentSites = $authorizedSites
+            ->filter(fn ($site): bool => $mappedSiteIds->contains((string) $site->getKey()))
+            ->values();
+
+        if ($environmentSites->isEmpty()) {
+            return new ProjectProductSnapshot(
+                title: __('Analytics traffic · :environment', ['environment' => $environment->name]),
+                detail: __('No authorized Analytics site is mapped to :environment.', ['environment' => $environment->name]),
+                state: ProjectProductSnapshotState::Unavailable,
+            );
+        }
+
+        return $this->summarizeSites($environmentSites, $environment);
+    }
+
+    /** @param Collection<int, Site> $authorizedSites */
+    private function summarizeSites(Collection $authorizedSites, ?ProjectEnvironment $environment = null): ?ProjectProductSnapshot
+    {
         if ($authorizedSites->isEmpty()) {
             return null;
         }
@@ -68,7 +104,9 @@ final class AnalyticsProjectSummary implements ProjectProductSummaryProvider
         $site = $authorizedSites->first();
 
         return new ProjectProductSnapshot(
-            title: __('Analytics traffic · 7 days'),
+            title: $environment === null
+                ? __('Analytics traffic · 7 days')
+                : __('Analytics traffic · :environment · 7 days', ['environment' => $environment->name]),
             detail: $detail,
             state: $state,
             updatedAt: $updatedAt,

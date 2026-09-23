@@ -22,6 +22,8 @@
     'contextIndexUrl' => null,
     'environmentOptions' => null,
     'environmentIndexUrl' => null,
+    'environmentContextUnavailable' => false,
+    'productUrlOverrides' => null,
     'showProjectContext' => true,
     'showEnvironmentContext' => true,
 ])
@@ -82,9 +84,11 @@
                                 $productConfig = $products[$productKeyOption] ?? [];
                                 $productRoute = $productKeyOption.'.dashboard';
                                 if ($productKeyOption === 'deployer') $productRoute = 'dashboard';
-                                $productHref = \Illuminate\Support\Facades\Route::has($productRoute)
-                                    ? route($productRoute)
-                                    : ($productConfig['url'] ?? null);
+                                $productHref = is_array($productUrlOverrides) && array_key_exists($productKeyOption, $productUrlOverrides)
+                                    ? $productUrlOverrides[$productKeyOption]
+                                    : (\Illuminate\Support\Facades\Route::has($productRoute)
+                                        ? route($productRoute)
+                                        : ($productConfig['url'] ?? null));
                             @endphp
                             @if ($productHref)
                                 <a class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink" href="{{ $productHref }}" @if($activeProduct === $productKeyOption) aria-current="page" @endif>{{ $productConfig['label'] ?? ucfirst($productKeyOption) }}</a>
@@ -112,6 +116,9 @@
                         @endif
                         @if ($showEnvironmentContext && count($environmentOptions))
                             <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Environment') }}</p>
+                            @if ($environmentContextUnavailable)
+                                <p class="px-3 py-2 text-xs font-bold text-warning" role="status">{{ __('Selected environment unavailable') }}</p>
+                            @endif
                             <a href="{{ $environmentIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('All environments') }}</a>
                             @foreach ($environmentOptions as $environmentOption)
                                 @php
@@ -160,9 +167,11 @@
                     @php
                         $label = $product['label'];
                         $productRoute = $product['route'];
-                        $productHref = \Illuminate\Support\Facades\Route::has($productRoute)
-                            ? route($productRoute)
-                            : (($products[$key]['enabled'] ?? false) ? ($products[$key]['url'] ?? null) : null);
+                        $productHref = is_array($productUrlOverrides) && array_key_exists($key, $productUrlOverrides)
+                            ? $productUrlOverrides[$key]
+                            : (\Illuminate\Support\Facades\Route::has($productRoute)
+                                ? route($productRoute)
+                                : (($products[$key]['enabled'] ?? false) ? ($products[$key]['url'] ?? null) : null));
                         $productActive = $activeProduct === $key;
                     @endphp
                     @if ($productHref)
@@ -297,7 +306,7 @@
             <details data-signal-menu class="ui-topbar-menu group relative shrink-0">
                 <summary class="inline-flex min-h-9 cursor-pointer list-none items-center gap-2 rounded-control border border-line bg-surface px-3 text-left marker:hidden hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
                     <span class="text-[10px] font-extrabold uppercase tracking-wide text-subtle">{{ __('Environment') }}</span>
-                    <span class="max-w-36 truncate text-xs font-extrabold text-ink">{{ data_get($currentEnvironment, 'name') ?? __('All environments') }}</span>
+                    <span class="max-w-36 truncate text-xs font-extrabold text-ink">{{ data_get($currentEnvironment, 'name') ?? ($environmentContextUnavailable ? __('Unavailable') : __('All environments')) }}</span>
                     <svg class="h-3.5 w-3.5 rotate-90 stroke-2 text-muted transition-transform group-open:-rotate-90" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>
                 </summary>
                 @if (count($environmentOptions))
