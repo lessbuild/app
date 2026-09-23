@@ -1,10 +1,10 @@
 # Unified Buildpusher application plan
 
-Prepared 23 September 2026. Implementation is in progress in the local `lessbuild/app` worktree on `feature/unified-platform`, based on the current `origin/main`. No production settings, data, subscriptions, or deployments have changed.
+Prepared 23 September 2026. Implementation is in progress in `lessbuild/app` on `feature/unified-platform`, based on the current `origin/main`. The first foundation slice is pushed as commit `01855f9`; its [draft pull request](https://github.com/lessbuild/app/pull/1) is open for review. No production settings, data, subscriptions, or deployments have changed.
 
 ## Implementation status
 
-The first foundation slice is in the `app` worktree: Core and peer product service providers, four named database connections with module model bases, Deployer route ownership under `app/Modules/Deployer`, optional exact-host configuration, and the Signal Topbar SaaS shell with reusable navigation and input primitives. The original Deployer database remains the default during this transition. These changes are local and uncommitted; no push or pull request exists yet.
+The first foundation slice is in the `app` worktree: Core and peer product service providers, four named database connections with module model bases, Deployer route ownership under `app/Modules/Deployer`, optional exact-host configuration, and the Signal Topbar SaaS shell with reusable navigation and input primitives. The original Deployer database remains the default during this transition. Commit `01855f9` is pushed to `feature/unified-platform`, and draft PR #1 is open to `main`.
 
 This is an architecture and UI foundation, not a completed merge. Deployer controllers and operational models still use their existing root namespaces; Monitor and Analytics features, canonical Core data, subscription separation, product connections, and legacy data import have not yet been migrated. The full feature-parity matrix and its evidence remain mandatory before cutover.
 
