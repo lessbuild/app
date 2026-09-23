@@ -21,6 +21,7 @@ class ProjectConnection extends CoreModel
         'last_error_code',
         'last_error_at',
         'disconnected_at',
+        'automation_paused_at',
         'metadata',
     ];
 
@@ -31,6 +32,7 @@ class ProjectConnection extends CoreModel
             'last_succeeded_at' => 'datetime',
             'last_error_at' => 'datetime',
             'disconnected_at' => 'datetime',
+            'automation_paused_at' => 'datetime',
             'metadata' => 'array',
         ];
     }

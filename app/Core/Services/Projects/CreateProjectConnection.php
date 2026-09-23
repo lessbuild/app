@@ -127,6 +127,7 @@ final class CreateProjectConnection
                 'last_error_code' => null,
                 'last_error_at' => null,
                 'disconnected_at' => null,
+                'automation_paused_at' => null,
                 'metadata' => null,
             ];
 

@@ -38,6 +38,18 @@ final class ProjectConnectionDiagnostics
             );
         }
 
+        if ($connection->automation_paused_at !== null) {
+            return new ProjectConnectionDiagnostic(
+                tone: 'warning',
+                status: __('Paused'),
+                summary: __('Workflow automation is paused.'),
+                detail: __('The connection and delivery history remain in place. Queued updates wait until automation resumes.'),
+                nextStep: __('Resume automation when you are ready to continue.'),
+                lastAttemptAt: $latestDelivery?->last_attempted_at,
+                lastSucceededAt: $connection->last_succeeded_at,
+            );
+        }
+
         if ($latestDelivery?->status === 'processing') {
             return new ProjectConnectionDiagnostic(
                 tone: 'info',
@@ -133,6 +145,11 @@ final class ProjectConnectionDiagnostics
                 'warning', __('Reconnect required'), __('This connection is no longer active.'),
                 __('Queued updates were stopped after the connection was disconnected.'),
                 __('Reconnect the resources before sending new updates.'),
+            ],
+            'automation_paused' => [
+                'warning', __('Automation paused'), __('This step stopped when automation was paused.'),
+                __('The source event is still recorded. Resume automation before retrying this step.'),
+                __('Resume automation, then retry this delivery step.'),
             ],
             'unsupported_event', 'unsupported_capability' => [
                 'warning', __('Workflow needs review'), __('This workflow can no longer handle the event.'),

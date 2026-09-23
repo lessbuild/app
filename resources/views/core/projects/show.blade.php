@@ -407,6 +407,23 @@
                         <p class="mb-5 text-sm leading-6 text-muted">{{ __('Ask a workspace owner or admin to manage app connections.') }}</p>
                     @endif
 
+                    @if ($projectWorkflowRuns->isNotEmpty())
+                        <section class="mb-6" aria-labelledby="project-workflow-runs-heading">
+                            <div class="mb-3 flex flex-wrap items-end justify-between gap-2">
+                                <div>
+                                    <p class="ui-eyebrow">{{ __('Delivery progress') }}</p>
+                                    <h3 id="project-workflow-runs-heading" class="mt-1 text-sm font-extrabold text-ink">{{ __('Recent workflow runs') }}</h3>
+                                </div>
+                                <p class="text-xs text-muted">{{ __('Source success stays recorded if a connected step needs attention.') }}</p>
+                            </div>
+                            <div class="grid gap-3">
+                                @foreach ($projectWorkflowRuns as $workflowRun)
+                                    <x-signal.ui.workflow-run :run="$workflowRun" />
+                                @endforeach
+                            </div>
+                        </section>
+                    @endif
+
                     @if ($projectConnections->isEmpty())
                         @if ($hiddenConnectionCount > 0)
                             <p class="text-sm leading-6 text-muted">{{ __('Configured workflows are hidden until access to both connected resources can be confirmed.') }}</p>
@@ -448,25 +465,18 @@
                                                 @endforeach
                                             </ul>
                                         @endif
-                                        @if ($connection->deliveries->isNotEmpty())
-                                            <ul class="mt-2 space-y-1 border-l-2 border-line pl-3" aria-label="{{ __('Recent delivery attempts') }}">
-                                                @foreach ($connection->deliveries->take(3) as $delivery)
-                                                    <li class="text-xs text-muted">
-                                                        {{ str($delivery->status)->headline() }}
-                                                        · {{ trans_choice(':count attempt|:count attempts', $delivery->attempts, ['count' => $delivery->attempts]) }}
-                                                        @if ($delivery->delivered_at) · {{ __('Delivered :date', ['date' => $delivery->delivered_at->diffForHumans()]) }} @endif
-                                                    </li>
-                                                @endforeach
-                                            </ul>
-                                        @endif
                                     </div>
                                     <div class="flex items-center gap-3">
                                         <x-signal.ui.badge :tone="in_array($connection->status, ['active', 'connected'], true) ? 'success' : (in_array($connection->status, ['failed', 'error'], true) ? 'danger' : 'warning')">{{ $connection->status === 'pending' ? __('Setup pending') : str($connection->status)->headline() }}</x-signal.ui.badge>
+                                        @if ($connection->automation_paused_at)
+                                            <x-signal.ui.badge tone="warning">{{ __('Automation paused') }}</x-signal.ui.badge>
+                                        @endif
                                         @if ($canManageConnections)
-                                            @if ($connection->deliveries->contains(fn ($delivery) => in_array($delivery->status, ['failed', 'blocked'], true)))
-                                                <form method="POST" action="{{ route('core.projects.connections.retry', [$workspace, $project, $connection]) }}">
+                                            @if (collect((array) $connection->capabilities)->contains(fn (string $capability): bool => \App\Core\Enums\ProjectConnectionCapability::tryFrom($capability)?->hasDeliveryHandler() ?? false))
+                                                <form method="POST" action="{{ route('core.projects.connections.automation', [$workspace, $project, $connection]) }}">
                                                     @csrf
-                                                    <x-signal.ui.button type="submit" class="min-h-8 px-3 text-xs">{{ __('Retry failed deliveries') }}</x-signal.ui.button>
+                                                    <input type="hidden" name="paused" value="{{ $connection->automation_paused_at ? '0' : '1' }}">
+                                                    <x-signal.ui.button type="submit" class="min-h-8 px-3 text-xs">{{ $connection->automation_paused_at ? __('Resume automation') : __('Pause automation') }}</x-signal.ui.button>
                                                 </form>
                                             @endif
                                             <form

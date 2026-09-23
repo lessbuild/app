@@ -20,6 +20,7 @@ use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\ProjectResourceDestinations;
 use App\Core\Services\ProjectResourceLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
+use App\Core\Services\Projects\ProjectWorkflowProgress;
 use App\Core\Services\Projects\SetCanonicalProjectArchiveState;
 use App\Core\Services\Projects\UpdateCanonicalProject;
 use App\Core\Services\ProjectSetup;
@@ -227,6 +228,7 @@ final class WorkspaceProjectsController
         ProjectResourceLinks $resourceLinks,
         ProjectResourceDestinations $resourceDestinations,
         ProjectConnectionDiagnostics $connectionDiagnostics,
+        ProjectWorkflowProgress $workflowProgress,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -293,6 +295,12 @@ final class WorkspaceProjectsController
                 && ($resourceDestinationsForProject[(string) $connection->target_resource_id]->state ?? null) === ProjectResourceDestinationState::Available)
             ->values();
         $hiddenConnectionCount = $project->connections->count() - $projectConnections->count();
+        $projectWorkflowRuns = $workflowProgress->forProject(
+            $workspace,
+            $project,
+            $projectConnections,
+            $canManageConnections,
+        );
         $connectionResources = $project->resources
             ->filter(fn ($resource): bool => $resource->status === 'active'
                 && ($resourceDestinationsForProject[(string) $resource->getKey()]->state ?? null) === ProjectResourceDestinationState::Available)
@@ -315,6 +323,7 @@ final class WorkspaceProjectsController
             'resourceDestinations' => $resourceDestinationsForProject,
             'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections),
             'projectConnections' => $projectConnections,
+            'projectWorkflowRuns' => $projectWorkflowRuns,
             'hiddenConnectionCount' => $hiddenConnectionCount,
             'resourceCandidates' => $canManageConnections
                 ? $resourceLinks->candidates($user, $availableProducts)

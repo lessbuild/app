@@ -6,11 +6,13 @@ use App\Core\Http\Requests\StoreProjectConnectionRequest;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectConnection;
+use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Models\Workspace;
-use App\Core\Services\Connections\RetryProjectConnectionDeliveries;
+use App\Core\Services\Connections\RetryProjectConnectionDelivery;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\Projects\CreateProjectConnection;
 use App\Core\Services\Projects\DisconnectProjectConnection;
+use App\Core\Services\Projects\SetProjectConnectionAutomationState;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 
@@ -60,18 +62,39 @@ final class ProjectConnectionsController
         Workspace $workspace,
         Project $project,
         ProjectConnection $connection,
+        ProjectConnectionDelivery $delivery,
         ResolvePlatformUser $platformUsers,
-        RetryProjectConnectionDeliveries $retryDeliveries,
+        RetryProjectConnectionDelivery $retryDelivery,
     ): RedirectResponse {
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
         $user = $this->platformUser($request, $platformUsers);
-        $retried = $retryDeliveries->handle($user, $project, $connection);
+        $retried = $retryDelivery->handle($user, $project, $connection, $delivery);
 
         return redirect()
             ->route('core.projects.show', [$workspace, $project])
-            ->with($retried > 0 ? 'success' : 'info', $retried > 0
-                ? __(':count connection delivery attempt(s) queued for retry.', ['count' => $retried])
-                : __('There are no failed deliveries to retry.'));
+            ->with($retried ? 'success' : 'info', $retried
+                ? __('This workflow step was queued for retry.')
+                : __('This step is no longer retryable, or automation is paused.'));
+    }
+
+    public function automation(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        ProjectConnection $connection,
+        ResolvePlatformUser $platformUsers,
+        SetProjectConnectionAutomationState $automation,
+    ): RedirectResponse {
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+        $user = $this->platformUser($request, $platformUsers);
+        $paused = (bool) $request->validate(['paused' => ['required', 'boolean']])['paused'];
+        $automation->handle($user, $project, $connection, $paused);
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project])
+            ->with('success', $paused
+                ? __('Automation paused. The connection and delivery history were kept.')
+                : __('Automation resumed. Queued updates can continue.'));
     }
 
     private function platformUser(Request $request, ResolvePlatformUser $platformUsers): PlatformUser

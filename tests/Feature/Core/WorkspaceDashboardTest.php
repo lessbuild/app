@@ -558,6 +558,7 @@ final class WorkspaceDashboardTest extends TestCase
             $table->string('status', 24);
             $table->timestamp('last_succeeded_at')->nullable();
             $table->timestamp('disconnected_at')->nullable();
+            $table->timestamp('automation_paused_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
         });

@@ -6,6 +6,7 @@ use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Data\Connections\ProjectConnectionDeliveryAuthority;
 use App\Core\Enums\ProductKey;
 use App\Core\Enums\ProjectConnectionCapability;
+use App\Core\Exceptions\Connections\ProjectConnectionDeliveryBlocked;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Models\ProjectProduct;
@@ -75,6 +76,10 @@ final class ProjectConnectionDeliveryAuthorization
             ->first();
         abort_unless($connection instanceof ProjectConnection, 403);
         abort_unless(in_array($capability->value, (array) $connection->capabilities, true), 403);
+
+        if ($connection->automation_paused_at !== null) {
+            throw new ProjectConnectionDeliveryBlocked('automation_paused');
+        }
 
         $source = $connection->sourceResource;
         $target = $connection->targetResource;

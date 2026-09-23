@@ -5,14 +5,18 @@ namespace Tests\Feature\Core;
 use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Data\Billing\ProductPlanResolution;
 use App\Core\Enums\ProductKey;
+use App\Core\Enums\ProjectWorkflowStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
+use App\Core\Models\Workspace;
 use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
 use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
-use App\Core\Services\Connections\RetryProjectConnectionDeliveries;
+use App\Core\Services\Connections\RetryProjectConnectionDelivery;
+use App\Core\Services\Projects\ProjectWorkflowProgress;
+use App\Core\Services\Projects\SetProjectConnectionAutomationState;
 use App\Modules\Analytics\Models\SiteIncidentAnnotation;
 use App\Modules\Analytics\Models\SiteReleaseAnnotation;
 use App\Modules\Analytics\Services\Connections\ConsumeDeployerReleaseAnnotation;
@@ -26,7 +30,9 @@ use App\Modules\Monitor\Models\ProjectConnectionEventReceipt;
 use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
 use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
 use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
@@ -77,7 +83,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
     protected function tearDown(): void
     {
         foreach ([
-            'project_connection_deliveries', 'project_connections', 'project_resources', 'project_environments',
+            'project_connection_deliveries', 'project_connection_events', 'project_connections', 'project_resources', 'project_environments',
             'project_products', 'project_memberships', 'workspace_product_access', 'workspace_memberships',
             'projects', 'workspaces', 'users',
         ] as $table) {
@@ -172,6 +178,24 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $event = $this->outboxEvent();
 
         $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event));
+        $connections = ProjectConnection::query()
+            ->where('project_id', $this->projectId)
+            ->with(['sourceResource', 'targetResource'])
+            ->get();
+        $workflow = app(ProjectWorkflowProgress::class)->forProject(
+            Workspace::query()->findOrFail($this->workspaceId),
+            Project::query()->findOrFail($this->projectId),
+            $connections,
+            canManageConnections: true,
+        )->sole();
+        $this->assertCount(3, $workflow->steps);
+        $this->assertSame(ProjectWorkflowStepState::Succeeded, $workflow->steps[0]->state);
+        $this->assertSame(ProjectWorkflowStepState::Pending, $workflow->steps[1]->state);
+        $this->assertSame(ProjectWorkflowStepState::Pending, $workflow->steps[2]->state);
+        $workflowHtml = Blade::render('<x-signal.ui.workflow-run :run="$run" />', ['run' => $workflow]);
+        $this->assertStringContainsString('Deployment', $workflowHtml);
+        $this->assertStringNotContainsString((string) $event->getKey(), $workflowHtml);
+
         $delivery = ProjectConnectionDelivery::query()
             ->where('project_connection_id', $analyticsConnectionId)
             ->sole();
@@ -184,18 +208,30 @@ final class ProjectConnectionDeliveryTest extends TestCase
         ]);
         $this->assertSame('blocked', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
         $this->assertSame(0, SiteReleaseAnnotation::query()->count());
+        $workflow = app(ProjectWorkflowProgress::class)->forProject(
+            Workspace::query()->findOrFail($this->workspaceId),
+            Project::query()->findOrFail($this->projectId),
+            ProjectConnection::query()->where('project_id', $this->projectId)->with(['sourceResource', 'targetResource'])->get(),
+            canManageConnections: true,
+        )->sole();
+        $this->assertSame(ProjectWorkflowStepState::Succeeded, $workflow->steps[0]->state);
+        $analyticsStep = collect($workflow->steps)->firstWhere('product', 'analytics');
+        $this->assertSame(ProjectWorkflowStepState::Blocked, $analyticsStep->state);
+        $workflowHtml = Blade::render('<x-signal.ui.workflow-run :run="$run" />', ['run' => $workflow]);
+        $this->assertStringNotContainsString('connection_authorization_failed', $workflowHtml);
 
         DB::connection('core')->table('workspace_product_access')->where('product', 'analytics')->update([
             'status' => 'active',
             'revoked_at' => null,
         ]);
-        $retried = app(RetryProjectConnectionDeliveries::class)->handle(
+        $retried = app(RetryProjectConnectionDelivery::class)->handle(
             PlatformUser::query()->findOrFail($this->ownerUserId),
             Project::query()->findOrFail($this->projectId),
             ProjectConnection::query()->findOrFail($analyticsConnectionId),
+            $delivery,
         );
 
-        $this->assertSame(1, $retried);
+        $this->assertTrue($retried);
         $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
         $annotation = SiteReleaseAnnotation::query()->sole();
         $this->assertSame($this->analyticsSiteId, $annotation->site_id);
@@ -354,16 +390,95 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'status' => 'active',
             'revoked_at' => null,
         ]);
-        $retried = app(RetryProjectConnectionDeliveries::class)->handle(
+        $retried = app(RetryProjectConnectionDelivery::class)->handle(
             PlatformUser::query()->findOrFail($this->ownerUserId),
             Project::query()->findOrFail($this->projectId),
             ProjectConnection::query()->findOrFail($this->connectionId),
+            $delivery,
         );
 
-        $this->assertSame(1, $retried);
+        $this->assertTrue($retried);
         $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
         $this->assertSame(1, Deployment::query()->count());
         $this->assertSame(1, ProjectConnectionEventReceipt::query()->count());
+    }
+
+    public function test_retry_resets_only_the_selected_failed_workflow_step(): void
+    {
+        $selected = $this->makeDelivery();
+        $other = $this->makeDelivery();
+        $selected->forceFill(['status' => 'blocked', 'attempts' => 4, 'last_error_code' => 'connection_authorization_failed'])->save();
+        $other->forceFill(['status' => 'failed', 'attempts' => 12, 'last_error_code' => 'target_delivery_failed'])->save();
+
+        $retried = app(RetryProjectConnectionDelivery::class)->handle(
+            PlatformUser::query()->findOrFail($this->ownerUserId),
+            Project::query()->findOrFail($this->projectId),
+            ProjectConnection::query()->findOrFail($this->connectionId),
+            $selected,
+        );
+
+        $this->assertTrue($retried);
+        $this->assertSame('pending', $selected->fresh()->status);
+        $this->assertSame(0, $selected->fresh()->attempts);
+        $this->assertSame('failed', $other->fresh()->status);
+        $this->assertSame(12, $other->fresh()->attempts);
+    }
+
+    public function test_paused_automation_holds_queued_steps_and_resume_keeps_the_connection_history(): void
+    {
+        $delivery = $this->makeDelivery();
+        $user = PlatformUser::query()->findOrFail($this->ownerUserId);
+        $project = Project::query()->findOrFail($this->projectId);
+        $connection = ProjectConnection::query()->findOrFail($this->connectionId);
+        $automation = app(SetProjectConnectionAutomationState::class);
+
+        $automation->handle($user, $project, $connection, paused: true);
+        $this->assertNotNull($connection->fresh()->automation_paused_at);
+        $this->assertSame('pending', $connection->fresh()->status);
+        $this->assertNull($connection->fresh()->disconnected_at);
+        $this->assertSame('paused', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+        $this->assertSame('pending', $delivery->fresh()->status);
+        $this->assertSame(0, $delivery->fresh()->attempts);
+        $this->assertSame(0, Deployment::query()->count());
+
+        $automation->handle($user, $project, $connection, paused: false);
+
+        $this->assertNull($connection->fresh()->automation_paused_at);
+        $this->assertSame([
+            'automation_paused',
+            'automation_resumed',
+        ], DB::connection('core')->table('project_connection_events')->orderBy('occurred_at')->pluck('event_type')->all());
+        $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+        $this->assertSame(1, Deployment::query()->count());
+    }
+
+    public function test_pausing_after_a_delivery_is_claimed_blocks_the_step_without_failing_the_connection(): void
+    {
+        $delivery = $this->makeDelivery();
+        $user = PlatformUser::query()->findOrFail($this->ownerUserId);
+        $project = Project::query()->findOrFail($this->projectId);
+        $connection = ProjectConnection::query()->findOrFail($this->connectionId);
+        $paused = false;
+
+        DB::listen(function (QueryExecuted $query) use ($user, $project, $connection, &$paused): void {
+            if ($paused || $query->connectionName !== 'monitor'
+                || ! str_contains($query->sql, 'project_connection_event_receipts')) {
+                return;
+            }
+
+            $paused = true;
+            app(SetProjectConnectionAutomationState::class)->handle($user, $project, $connection, paused: true);
+        });
+
+        $status = app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey());
+
+        $this->assertTrue($paused);
+        $this->assertSame('blocked', $status);
+        $this->assertSame('automation_paused', $delivery->fresh()->last_error_code);
+        $this->assertSame('pending', $connection->fresh()->status);
+        $this->assertNotNull($connection->fresh()->automation_paused_at);
+        $this->assertSame(0, Deployment::query()->count());
+        $this->assertSame(0, ProjectConnectionEventReceipt::query()->count());
     }
 
     private function outboxEvent(): DeploymentSucceededOutboxEvent
@@ -666,6 +781,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
             $table->string('user_id', 26);
             $table->string('role');
             $table->string('status');
+            $table->timestamp('expires_at')->nullable();
             $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
         });
@@ -734,7 +850,17 @@ final class ProjectConnectionDeliveryTest extends TestCase
             $table->string('last_error_code')->nullable();
             $table->timestamp('last_error_at')->nullable();
             $table->timestamp('disconnected_at')->nullable();
+            $table->timestamp('automation_paused_at')->nullable();
             $table->json('metadata')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('project_connection_events', function (Blueprint $table): void {
+            $table->ulid('id')->primary();
+            $table->string('project_connection_id', 26);
+            $table->string('actor_user_id', 26)->nullable();
+            $table->string('event_type', 40);
+            $table->json('details')->nullable();
+            $table->timestamp('occurred_at');
             $table->timestamps();
         });
         Schema::connection('core')->create('project_connection_deliveries', function (Blueprint $table): void {

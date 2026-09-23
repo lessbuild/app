@@ -475,6 +475,7 @@ final class ProjectConnectionsTest extends TestCase
             $table->string('last_error_code')->nullable();
             $table->timestamp('last_error_at')->nullable();
             $table->timestamp('disconnected_at')->nullable();
+            $table->timestamp('automation_paused_at')->nullable();
             $table->json('metadata')->nullable();
             $table->timestamps();
             $table->unique(['source_resource_id', 'target_resource_id']);

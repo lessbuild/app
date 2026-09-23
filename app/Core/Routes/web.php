@@ -38,7 +38,9 @@ Route::middleware('auth:platform')->group(function (): void {
                 ->name('connections.store');
             Route::delete('/projects/{project}/connections/{connection}', [ProjectConnectionsController::class, 'destroy'])
                 ->name('connections.destroy');
-            Route::post('/projects/{project}/connections/{connection}/retry', [ProjectConnectionsController::class, 'retry'])
-                ->name('connections.retry');
+            Route::post('/projects/{project}/connections/{connection}/deliveries/{delivery}/retry', [ProjectConnectionsController::class, 'retry'])
+                ->name('connections.deliveries.retry');
+            Route::post('/projects/{project}/connections/{connection}/automation', [ProjectConnectionsController::class, 'automation'])
+                ->name('connections.automation');
         });
 });

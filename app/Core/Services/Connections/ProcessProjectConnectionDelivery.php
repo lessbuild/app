@@ -28,9 +28,25 @@ final class ProcessProjectConnectionDelivery
 
     public function process(string $deliveryId): string
     {
-        $delivery = DB::connection('core')->transaction(function () use ($deliveryId): ?ProjectConnectionDelivery {
+        $delivery = DB::connection('core')->transaction(function () use ($deliveryId): ProjectConnectionDelivery|string|null {
+            $connectionId = ProjectConnectionDelivery::query()->whereKey($deliveryId)->value('project_connection_id');
+
+            if ($connectionId === null) {
+                return null;
+            }
+
+            $connection = ProjectConnection::query()
+                ->whereKey($connectionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $connection instanceof ProjectConnection) {
+                return null;
+            }
+
             $delivery = ProjectConnectionDelivery::query()
                 ->whereKey($deliveryId)
+                ->where('project_connection_id', $connection->getKey())
                 ->where('status', 'pending')
                 ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
                 ->lockForUpdate()
@@ -38,6 +54,10 @@ final class ProcessProjectConnectionDelivery
 
             if ($delivery === null) {
                 return null;
+            }
+
+            if ($connection->automation_paused_at !== null) {
+                return 'paused';
             }
 
             $delivery->forceFill([
@@ -48,6 +68,10 @@ final class ProcessProjectConnectionDelivery
 
             return $delivery->refresh();
         });
+
+        if ($delivery === 'paused') {
+            return 'paused';
+        }
 
         if (! $delivery instanceof ProjectConnectionDelivery) {
             return 'skipped';
@@ -112,9 +136,31 @@ final class ProcessProjectConnectionDelivery
     private function markDelivered(ProjectConnectionDelivery $delivery): string
     {
         return DB::connection('core')->transaction(function () use ($delivery): string {
-            $locked = ProjectConnectionDelivery::query()->whereKey($delivery->getKey())->lockForUpdate()->firstOrFail();
-            if ($locked->status !== 'processing') {
-                return $locked->status;
+            $connectionId = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->value('project_connection_id');
+
+            if ($connectionId === null) {
+                return 'skipped';
+            }
+
+            $connection = ProjectConnection::query()
+                ->whereKey($connectionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $connection instanceof ProjectConnection) {
+                return 'skipped';
+            }
+
+            $locked = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->where('project_connection_id', $connection->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null || $locked->status !== 'processing') {
+                return $locked?->status ?? 'skipped';
             }
 
             $locked->forceFill([
@@ -125,16 +171,14 @@ final class ProcessProjectConnectionDelivery
                 'last_error_at' => null,
             ])->save();
 
-            ProjectConnection::query()
-                ->whereKey($locked->project_connection_id)
-                ->whereNull('disconnected_at')
-                ->update([
+            if ($connection->disconnected_at === null) {
+                $connection->forceFill([
                     'status' => 'active',
                     'last_succeeded_at' => now(),
                     'last_error_code' => null,
                     'last_error_at' => null,
-                    'updated_at' => now(),
-                ]);
+                ])->save();
+            }
 
             return 'delivered';
         });
@@ -142,31 +186,50 @@ final class ProcessProjectConnectionDelivery
 
     private function markFailure(ProjectConnectionDelivery $delivery, Throwable $exception): string
     {
-        $disconnected = ProjectConnection::query()
-            ->whereKey($delivery->project_connection_id)
-            ->where(fn ($query) => $query->where('status', 'disconnected')->orWhereNotNull('disconnected_at'))
-            ->exists();
-
-        $blocked = $disconnected
-            || $exception instanceof ProjectConnectionDeliveryBlocked
-            || $exception instanceof AuthorizationException
-            || $exception instanceof ModelNotFoundException
-            || $exception instanceof ValidationException
-            || ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() < 500);
-        $terminal = $blocked || $delivery->attempts >= self::MAX_ATTEMPTS;
-        $status = $disconnected ? 'discarded' : ($blocked ? 'blocked' : ($terminal ? 'failed' : 'pending'));
-        $errorCode = $disconnected
-            ? 'connection_disconnected'
-            : ($exception instanceof ProjectConnectionDeliveryBlocked
-                ? $exception->reasonCode
-                : ($blocked ? 'connection_authorization_failed' : 'target_delivery_failed'));
         $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $delivery->attempts - 1))));
 
-        DB::connection('core')->transaction(function () use ($delivery, $status, $errorCode, $terminal, $backoffSeconds): void {
-            $locked = ProjectConnectionDelivery::query()->whereKey($delivery->getKey())->lockForUpdate()->first();
-            if ($locked === null || $locked->status !== 'processing') {
-                return;
+        return DB::connection('core')->transaction(function () use ($delivery, $exception, $backoffSeconds): string {
+            $connectionId = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->value('project_connection_id');
+
+            if ($connectionId === null) {
+                return 'skipped';
             }
+
+            $connection = ProjectConnection::query()
+                ->whereKey($connectionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $connection instanceof ProjectConnection) {
+                return 'skipped';
+            }
+
+            $locked = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->where('project_connection_id', $connection->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null || $locked->status !== 'processing') {
+                return $locked?->status ?? 'skipped';
+            }
+
+            $disconnected = $connection->status === 'disconnected' || $connection->disconnected_at !== null;
+            $blocked = $disconnected
+                || $exception instanceof ProjectConnectionDeliveryBlocked
+                || $exception instanceof AuthorizationException
+                || $exception instanceof ModelNotFoundException
+                || $exception instanceof ValidationException
+                || ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() < 500);
+            $terminal = $blocked || $locked->attempts >= self::MAX_ATTEMPTS;
+            $status = $disconnected ? 'discarded' : ($blocked ? 'blocked' : ($terminal ? 'failed' : 'pending'));
+            $errorCode = $disconnected
+                ? 'connection_disconnected'
+                : ($exception instanceof ProjectConnectionDeliveryBlocked
+                    ? $exception->reasonCode
+                    : ($blocked ? 'connection_authorization_failed' : 'target_delivery_failed'));
 
             $locked->forceFill([
                 'status' => $status,
@@ -175,19 +238,15 @@ final class ProcessProjectConnectionDelivery
                 'last_error_at' => now(),
             ])->save();
 
-            if ($terminal && $status !== 'discarded') {
-                ProjectConnection::query()
-                    ->whereKey($locked->project_connection_id)
-                    ->whereNull('disconnected_at')
-                    ->update([
-                        'status' => 'failed',
-                        'last_error_code' => $errorCode,
-                        'last_error_at' => now(),
-                        'updated_at' => now(),
-                    ]);
+            if ($terminal && ! $disconnected && $errorCode !== 'automation_paused') {
+                $connection->forceFill([
+                    'status' => 'failed',
+                    'last_error_code' => $errorCode,
+                    'last_error_at' => now(),
+                ])->save();
             }
-        });
 
-        return $status;
+            return $status;
+        });
     }
 }
