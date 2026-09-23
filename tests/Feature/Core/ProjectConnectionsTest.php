@@ -102,6 +102,21 @@ final class ProjectConnectionsTest extends TestCase
         $this->assertSame('pending', $connection->status);
     }
 
+    public function test_owner_can_connect_a_monitor_environment_to_an_analytics_site(): void
+    {
+        $connection = app(CreateProjectConnection::class)->handle(
+            user: $this->user,
+            project: Project::query()->findOrFail($this->projectId),
+            sourceResourceId: $this->monitorResourceId,
+            targetResourceId: $this->analyticsResourceId,
+            capabilities: ['incident_annotations'],
+        );
+
+        $this->assertSame(['incident_annotations'], $connection->capabilities);
+        $this->assertSame($this->monitorEnvironmentId, $connection->source_environment_id);
+        $this->assertNull($connection->target_environment_id);
+    }
+
     public function test_connection_rejects_unavailable_behavior_and_same_app_resources(): void
     {
         $project = Project::query()->findOrFail($this->projectId);
@@ -224,6 +239,33 @@ final class ProjectConnectionsTest extends TestCase
             sourceResourceId: $this->deployerResourceId,
             targetResourceId: $this->analyticsResourceId,
             capabilities: ['release_annotations'],
+        );
+    }
+
+    public function test_incident_annotations_require_the_analytics_plan_entitlement(): void
+    {
+        app()->instance(ProductPlanResolver::class, new class implements ProductPlanResolver
+        {
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: $product->value,
+                    subscriptionStatus: 'active',
+                    entitlements: $product === ProductKey::Analytics ? [] : ['*'],
+                );
+            }
+        });
+
+        $this->expectException(ValidationException::class);
+        app(CreateProjectConnection::class)->handle(
+            user: $this->user,
+            project: Project::query()->findOrFail($this->projectId),
+            sourceResourceId: $this->monitorResourceId,
+            targetResourceId: $this->analyticsResourceId,
+            capabilities: ['incident_annotations'],
         );
     }
 

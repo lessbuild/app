@@ -4,8 +4,10 @@ namespace App\Core\Console\Commands;
 
 use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
+use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
 use App\Modules\Deployer\Models\DeploymentSucceededOutboxEvent;
+use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -19,6 +21,7 @@ final class DeliverProjectConnectionEventsCommand extends Command
 
     public function handle(
         DispatchDeploymentSucceededOutboxEvent $dispatch,
+        DispatchMonitorIncidentOutboxEvent $monitorDispatch,
         ProcessProjectConnectionDelivery $deliveries,
     ): int {
         $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
@@ -36,14 +39,16 @@ final class DeliverProjectConnectionEventsCommand extends Command
         }
 
         if (config('platform.products.monitor.enabled', false)
-            && ! Schema::connection('monitor')->hasTable('project_connection_event_receipts')) {
+            && (! Schema::connection('monitor')->hasTable('project_connection_event_receipts')
+                || ! Schema::connection('monitor')->hasTable('project_connection_incident_outbox_events'))) {
             $this->error('Run the Monitor module migration before enabling Monitor connection deliveries.');
 
             return self::FAILURE;
         }
 
         if (config('platform.products.analytics.enabled', false)
-            && ! Schema::connection('analytics')->hasTable('site_release_annotations')) {
+            && (! Schema::connection('analytics')->hasTable('site_release_annotations')
+                || ! Schema::connection('analytics')->hasTable('site_incident_annotations'))) {
             $this->error('Run the Analytics module migration before enabling Analytics connection deliveries.');
 
             return self::FAILURE;
@@ -60,10 +65,26 @@ final class DeliverProjectConnectionEventsCommand extends Command
                     'last_error_at' => null,
                     'updated_at' => now(),
                 ]);
+
+            if (config('platform.products.monitor.enabled', false)) {
+                ProjectConnectionIncidentOutboxEvent::query()
+                    ->where('status', 'failed')
+                    ->update([
+                        'status' => 'pending',
+                        'attempts' => 0,
+                        'available_at' => now(),
+                        'last_error_code' => null,
+                        'last_error_at' => null,
+                        'updated_at' => now(),
+                    ]);
+            }
         }
 
         $this->recoverExpiredClaims();
         $dispatched = $this->dispatchDue($dispatch, $limit);
+        if (config('platform.products.monitor.enabled', false)) {
+            $dispatched += $this->dispatchMonitorDue($monitorDispatch, $limit);
+        }
         $deliveryResults = $this->deliverDue($deliveries, $limit);
 
         $this->info(sprintf(
@@ -141,6 +162,68 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return $dispatched;
     }
 
+    private function dispatchMonitorDue(DispatchMonitorIncidentOutboxEvent $dispatcher, int $limit): int
+    {
+        $dispatched = 0;
+        $eventIds = ProjectConnectionIncidentOutboxEvent::query()
+            ->where('status', 'pending')
+            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
+            ->orderBy('created_at')
+            ->limit($limit)
+            ->pluck('id');
+
+        foreach ($eventIds as $eventId) {
+            $event = DB::connection((new ProjectConnectionIncidentOutboxEvent)->getConnectionName())
+                ->transaction(function () use ($eventId): ?ProjectConnectionIncidentOutboxEvent {
+                    $event = ProjectConnectionIncidentOutboxEvent::query()
+                        ->whereKey($eventId)
+                        ->where('status', 'pending')
+                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
+                        ->lockForUpdate()
+                        ->first();
+
+                    if ($event === null) {
+                        return null;
+                    }
+
+                    $event->forceFill([
+                        'status' => 'processing',
+                        'attempts' => $event->attempts + 1,
+                        'last_error_code' => null,
+                    ])->save();
+
+                    return $event->refresh();
+                });
+
+            if (! $event instanceof ProjectConnectionIncidentOutboxEvent) {
+                continue;
+            }
+
+            try {
+                $dispatcher->dispatch($event);
+                $event->forceFill([
+                    'status' => 'dispatched',
+                    'dispatched_at' => now(),
+                    'available_at' => null,
+                    'last_error_code' => null,
+                    'last_error_at' => null,
+                ])->save();
+                $dispatched++;
+            } catch (Throwable) {
+                $terminal = $event->attempts >= 12;
+                $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $event->attempts - 1))));
+                $event->forceFill([
+                    'status' => $terminal ? 'failed' : 'pending',
+                    'available_at' => $terminal ? null : now()->addSeconds($backoffSeconds),
+                    'last_error_code' => 'core_dispatch_failed',
+                    'last_error_at' => now(),
+                ])->save();
+            }
+        }
+
+        return $dispatched;
+    }
+
     /** @return array{delivered: int, pending: int, blocked: int, failed: int, discarded: int} */
     private function deliverDue(ProcessProjectConnectionDelivery $processor, int $limit): array
     {
@@ -174,6 +257,20 @@ final class DeliverProjectConnectionEventsCommand extends Command
                 'last_error_at' => now(),
                 'updated_at' => now(),
             ]);
+
+        if (config('platform.products.monitor.enabled', false)
+            && Schema::connection('monitor')->hasTable('project_connection_incident_outbox_events')) {
+            ProjectConnectionIncidentOutboxEvent::query()
+                ->where('status', 'processing')
+                ->where('updated_at', '<', now()->subMinutes(10))
+                ->update([
+                    'status' => 'pending',
+                    'available_at' => now(),
+                    'last_error_code' => 'dispatch_lease_expired',
+                    'last_error_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        }
 
         ProjectConnectionDelivery::query()
             ->where('status', 'processing')

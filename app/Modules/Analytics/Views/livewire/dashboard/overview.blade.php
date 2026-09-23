@@ -76,6 +76,7 @@
             <details class="mt-5"><summary class="cursor-pointer text-xs font-bold text-muted">View chart data</summary><div class="mt-3 overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="text-muted"><th class="pb-2 pr-4">Date</th><th class="pb-2">Pageviews</th></tr></thead><tbody>@foreach ($summary['series'] as $point)<tr class="table-row"><td class="py-2 pr-4">{{ $point['date'] }}</td><td class="py-2">{{ number_format($point['value']) }}</td></tr>@endforeach</tbody></table></div></details>
         </section>
 
+        <div class="grid gap-5 lg:grid-cols-2">
         <section aria-labelledby="release-annotations-heading">
             <x-signal.ui.card class="overflow-hidden">
             <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5">
@@ -103,6 +104,33 @@
             </div>
             </x-signal.ui.card>
         </section>
+
+        <section aria-labelledby="incident-annotations-heading">
+            <x-signal.ui.card class="overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5">
+                <div>
+                    <p class="ui-eyebrow">Shared project activity</p>
+                    <h3 id="incident-annotations-heading" class="mt-2 text-lg font-extrabold">Recent Monitor incidents</h3>
+                    <p class="mt-1 text-xs text-muted">Incident state changes from connected Monitor environments.</p>
+                </div>
+                <x-signal.ui.badge tone="neutral">{{ trans_choice(':count recent change|:count recent changes', $incidentAnnotations->count(), ['count' => $incidentAnnotations->count()]) }}</x-signal.ui.badge>
+            </div>
+            <div class="divide-y divide-line px-5">
+                @forelse ($incidentAnnotations as $incident)
+                    <article class="flex flex-wrap items-center justify-between gap-3 py-4">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <x-signal.ui.badge :tone="match ($incident->status) { 'open' => 'warning', 'resolved' => 'success', default => 'neutral' }">{{ ucfirst($incident->status) }}</x-signal.ui.badge>
+                            <p class="truncate font-mono text-xs text-muted">Incident #{{ $incident->source_incident_id }}</p>
+                        </div>
+                        <time class="shrink-0 text-xs text-muted" datetime="{{ $incident->occurred_at->toIso8601String() }}">{{ $incident->occurred_at->diffForHumans() }}</time>
+                    </article>
+                @empty
+                    <p class="py-5 text-sm text-muted">No connected incidents yet. Connect a Monitor environment from the shared project to add incident context here.</p>
+                @endforelse
+            </div>
+            </x-signal.ui.card>
+        </section>
+        </div>
 
         <div class="grid gap-5 xl:grid-cols-5">
             @foreach ([['title' => 'Top pages', 'eyebrow' => 'Content', 'items' => $summary['pages'], 'empty' => 'Pageviews will appear after your first visit.'], ['title' => 'Entry pages', 'eyebrow' => 'Visits', 'items' => $summary['entryPages'], 'empty' => 'Entry paths appear after visits are processed.'], ['title' => 'Exit pages', 'eyebrow' => 'Visits', 'items' => $summary['exitPages'], 'empty' => 'Exit paths appear after visits are processed.'], ['title' => 'Top sources', 'eyebrow' => 'Acquisition', 'items' => $summary['sources'], 'empty' => 'Sources will appear after collection starts.'], ['title' => 'Campaigns', 'eyebrow' => 'Acquisition', 'items' => $summary['campaigns'], 'empty' => 'Campaign values will appear after tagged visits.']] as $section)

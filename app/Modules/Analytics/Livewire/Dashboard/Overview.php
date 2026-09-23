@@ -62,6 +62,7 @@ class Overview extends Component
             'sites' => $sites,
             'site' => $site,
             'releaseAnnotations' => $site?->releaseAnnotations()->limit(5)->get() ?? collect(),
+            'incidentAnnotations' => $site?->incidentAnnotations()->limit(5)->get() ?? collect(),
             'summary' => $site ? $report->for($site, $this->days, [
                 'path' => $this->pathFilter ?: null,
                 'source' => $this->sourceFilter ?: null,

@@ -75,6 +75,7 @@ class SiteSettingsController extends Controller
             $site->update(['collection_enabled' => false, 'collection_paused_at' => now()]);
             $site->events()->delete();
             $site->releaseAnnotations()->delete();
+            $site->incidentAnnotations()->delete();
             $site->visits()->delete();
             $site->goals()->delete();
             $site->ingestionBatches()->delete();

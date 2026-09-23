@@ -6,6 +6,7 @@ use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Incident;
+use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +17,7 @@ final class EvaluateAlertRules
         private readonly AlertObservation $observations,
         private readonly ChangeIncident $incidents,
         private readonly RecordAlertDeliveries $deliveries,
+        private readonly RecordProjectConnectionIncidentOutboxEvent $connectionEvents,
         private readonly MaintenanceWindowState $maintenance,
     ) {}
 
@@ -91,6 +93,7 @@ final class EvaluateAlertRules
                 ])->save();
                 $incident->activities()->create(['action' => 'opened', 'metadata' => ['observation' => $observation]]);
                 $this->deliveries->record($incident, 'opened');
+                $this->connectionEvents->record($incident, 'opened');
             }
 
             return true;

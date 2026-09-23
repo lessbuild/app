@@ -40,6 +40,18 @@ final class ProjectConnectionDeliveryAuthorization
         );
     }
 
+    public function assertIncidentAnnotation(
+        ProjectConnectionDeliveryAuthority $authority,
+        string $targetSiteId,
+    ): ProjectConnectionDelivery {
+        return $this->assertTarget(
+            $authority,
+            ProjectConnectionCapability::IncidentAnnotations,
+            'site',
+            $targetSiteId,
+        );
+    }
+
     private function assertTarget(
         ProjectConnectionDeliveryAuthority $authority,
         ProjectConnectionCapability $capability,
@@ -127,6 +139,7 @@ final class ProjectConnectionDeliveryAuthorization
                 && ($targetPlan->limit('deployment_context_minutes') === null || $targetPlan->limit('deployment_context_minutes') > 0),
             ProjectConnectionCapability::ReleaseAnnotations => $sourcePlan->allows('releases')
                 && $targetPlan->allows('release_annotations'),
+            ProjectConnectionCapability::IncidentAnnotations => $targetPlan->allows('incident_annotations'),
             default => false,
         };
         abort_unless($entitled, 403);

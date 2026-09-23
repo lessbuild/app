@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Services;
 use App\Modules\Monitor\Data\Telemetry\MonitorObservation;
 use App\Modules\Monitor\Models\Incident;
 use App\Modules\Monitor\Models\Monitor;
+use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
 use Carbon\CarbonImmutable;
 
 final class RecordMonitorResult
@@ -12,6 +13,7 @@ final class RecordMonitorResult
     public function __construct(
         private readonly ChangeIncident $incidents,
         private readonly RecordAlertDeliveries $deliveries,
+        private readonly RecordProjectConnectionIncidentOutboxEvent $connectionEvents,
         private readonly MaintenanceWindowState $maintenance,
     ) {}
 
@@ -49,6 +51,7 @@ final class RecordMonitorResult
             $incident->setRelation('monitor', $monitor);
             $incident->activities()->create(['action' => 'monitor_failed', 'metadata' => ['observation' => $observation]]);
             $this->deliveries->record($incident, 'opened');
+            $this->connectionEvents->record($incident, 'opened');
         }
     }
 }

@@ -10,14 +10,22 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
+use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
 use App\Core\Services\Connections\RetryProjectConnectionDeliveries;
+use App\Modules\Analytics\Models\SiteIncidentAnnotation;
 use App\Modules\Analytics\Models\SiteReleaseAnnotation;
 use App\Modules\Analytics\Services\Connections\ConsumeDeployerReleaseAnnotation;
+use App\Modules\Analytics\Services\Connections\ConsumeMonitorIncidentAnnotation;
 use App\Modules\Deployer\Models\DeploymentSucceededOutboxEvent;
+use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\Deployment;
+use App\Modules\Monitor\Models\Incident;
+use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\ProjectConnectionEventReceipt;
+use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
 use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
+use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -81,11 +89,12 @@ final class ProjectConnectionDeliveryTest extends TestCase
         Schema::dropIfExists('builds');
 
         foreach ([
-            'project_connection_event_receipts', 'deployments', 'releases', 'environments', 'applications', 'workspaces',
+            'project_connection_incident_outbox_events', 'project_connection_event_receipts', 'deployments', 'releases', 'environments', 'applications', 'workspaces',
         ] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
 
+        Schema::connection('analytics')->dropIfExists('site_incident_annotations');
         Schema::connection('analytics')->dropIfExists('site_release_annotations');
         Schema::connection('analytics')->dropIfExists('sites');
 
@@ -203,6 +212,111 @@ final class ProjectConnectionDeliveryTest extends TestCase
 
         $this->assertSame($annotation->getKey(), $replayed->getKey());
         $this->assertSame(1, SiteReleaseAnnotation::query()->count());
+    }
+
+    public function test_monitor_incident_lifecycle_is_delivered_to_analytics_as_a_minimal_timeline(): void
+    {
+        $analyticsConnectionId = (string) Str::ulid();
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => $analyticsConnectionId,
+            'project_id' => $this->projectId,
+            'source_resource_id' => $this->targetResourceId,
+            'target_resource_id' => $this->analyticsResourceId,
+            'source_environment_id' => $this->targetEnvironmentId,
+            'target_environment_id' => null,
+            'capabilities' => json_encode(['incident_annotations'], JSON_THROW_ON_ERROR),
+            'status' => 'pending',
+            'created_by_user_id' => null,
+            'last_succeeded_at' => null,
+            'last_error_code' => null,
+            'last_error_at' => null,
+            'disconnected_at' => null,
+            'metadata' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $dispatcher = app(DispatchMonitorIncidentOutboxEvent::class);
+        $events = [
+            [ProjectConnectionIncidentOutboxEvent::OPENED, 'open'],
+            [ProjectConnectionIncidentOutboxEvent::ACKNOWLEDGED, 'acknowledged'],
+            [ProjectConnectionIncidentOutboxEvent::RESOLVED, 'resolved'],
+        ];
+        $deliveries = collect();
+
+        foreach ($events as $index => [$eventType, $status]) {
+            $event = ProjectConnectionIncidentOutboxEvent::query()->create([
+                'event_type' => $eventType,
+                'event_version' => 1,
+                'source_incident_id' => '44',
+                'source_environment_id' => (string) $this->monitorEnvironmentId,
+                'payload' => [
+                    'incident_id' => '44',
+                    'status' => $status,
+                    'occurred_at' => now()->subMinutes(3 - $index)->utc()->toIso8601String(),
+                ],
+                'status' => 'pending',
+                'attempts' => 0,
+                'available_at' => now(),
+            ]);
+
+            $this->assertSame(1, $dispatcher->dispatch($event));
+            $this->assertSame(0, $dispatcher->dispatch($event));
+            $delivery = ProjectConnectionDelivery::query()
+                ->where('project_connection_id', $analyticsConnectionId)
+                ->where('source_event_id', $event->getKey())
+                ->sole();
+            $this->assertArrayNotHasKey('title', $delivery->payload);
+            $this->assertArrayNotHasKey('observation', $delivery->payload);
+            $this->assertSame($status, $delivery->payload['status']);
+            $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+            $deliveries->push($delivery);
+        }
+
+        $this->assertSame(['resolved', 'acknowledged', 'open'], SiteIncidentAnnotation::query()->orderByDesc('occurred_at')->pluck('status')->all());
+        $this->assertSame(3, SiteIncidentAnnotation::query()->count());
+        $this->assertSame($this->analyticsSiteId, SiteIncidentAnnotation::query()->firstOrFail()->site_id);
+
+        $firstDelivery = $deliveries->first();
+        $annotation = SiteIncidentAnnotation::query()->where('delivery_id', $firstDelivery->getKey())->sole();
+        $replayed = app(ConsumeMonitorIncidentAnnotation::class)->handle(
+            deliveryId: (string) $firstDelivery->getKey(),
+            connectionId: $analyticsConnectionId,
+            payload: $firstDelivery->payload,
+        );
+
+        $this->assertSame($annotation->getKey(), $replayed->getKey());
+        $this->assertSame(3, SiteIncidentAnnotation::query()->count());
+    }
+
+    public function test_monitor_incident_outbox_records_once_inside_the_source_transaction(): void
+    {
+        $incident = new class extends Incident
+        {
+            public function source(): AlertRule|Monitor|null
+            {
+                return (new AlertRule)->forceFill(['environment_id' => 321]);
+            }
+        };
+        $incident->forceFill(['id' => 45, 'opened_at' => now()]);
+
+        $eventId = DB::connection('monitor')->transaction(function () use ($incident): string {
+            $producer = app(RecordProjectConnectionIncidentOutboxEvent::class);
+            $event = $producer->record($incident, 'opened');
+            $replayed = $producer->record($incident, 'opened');
+
+            $this->assertNotNull($event);
+            $this->assertNotNull($replayed);
+            $this->assertSame($event->getKey(), $replayed->getKey());
+
+            return (string) $event->getKey();
+        });
+
+        $event = ProjectConnectionIncidentOutboxEvent::query()->findOrFail($eventId);
+        $this->assertSame('monitor.incident_opened', $event->event_type);
+        $this->assertSame('321', $event->source_environment_id);
+        $this->assertSame('open', $event->payload['status']);
+        $this->assertSame('45', $event->payload['incident_id']);
     }
 
     public function test_disconnected_connections_discard_queued_deliveries_without_writing_monitor_data(): void
@@ -745,6 +859,22 @@ final class ProjectConnectionDeliveryTest extends TestCase
             $table->timestamps(6);
             $table->unique(['delivery_id', 'handler']);
         });
+        Schema::connection('monitor')->create('project_connection_incident_outbox_events', function (Blueprint $table): void {
+            $table->ulid('id')->primary();
+            $table->string('event_type', 64);
+            $table->unsignedSmallInteger('event_version')->default(1);
+            $table->string('source_incident_id', 64);
+            $table->string('source_environment_id', 64);
+            $table->json('payload');
+            $table->string('status', 24)->default('pending');
+            $table->unsignedInteger('attempts')->default(0);
+            $table->timestamp('available_at', 6)->nullable();
+            $table->timestamp('dispatched_at', 6)->nullable();
+            $table->string('last_error_code', 64)->nullable();
+            $table->timestamp('last_error_at', 6)->nullable();
+            $table->timestamps(6);
+            $table->unique(['event_type', 'source_incident_id']);
+        });
     }
 
     private function createAnalyticsTables(): void
@@ -781,6 +911,19 @@ final class ProjectConnectionDeliveryTest extends TestCase
             $table->timestamps(6);
             $table->unique(['delivery_id', 'handler']);
             $table->unique(['site_id', 'deployment_id']);
+        });
+        Schema::connection('analytics')->create('site_incident_annotations', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('site_id');
+            $table->string('delivery_id', 26);
+            $table->string('handler', 100);
+            $table->string('project_connection_id', 26);
+            $table->string('source_incident_id', 64);
+            $table->string('status', 24);
+            $table->timestamp('occurred_at', 6);
+            $table->char('payload_hash', 64);
+            $table->timestamps(6);
+            $table->unique(['delivery_id', 'handler']);
         });
     }
 }

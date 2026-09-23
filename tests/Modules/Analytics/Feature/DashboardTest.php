@@ -4,6 +4,7 @@ namespace Tests\Modules\Analytics\Feature;
 
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\AnalyticsEvent;
+use App\Modules\Analytics\Models\SiteIncidentAnnotation;
 use App\Modules\Analytics\Models\SiteReleaseAnnotation;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
@@ -48,6 +49,16 @@ class DashboardTest extends TestCase
             'deployed_at' => now()->subMinute(),
             'payload_hash' => hash('sha256', 'deployment'),
         ]);
+        SiteIncidentAnnotation::create([
+            'site_id' => $site->id,
+            'delivery_id' => (string) Str::ulid(),
+            'handler' => 'analytics.record-incident-annotation.v1',
+            'project_connection_id' => (string) Str::ulid(),
+            'source_incident_id' => '17',
+            'status' => 'resolved',
+            'occurred_at' => now()->subSeconds(30),
+            'payload_hash' => hash('sha256', 'incident'),
+        ]);
 
         $this->actingAs($user)
             ->get('/dashboard')
@@ -57,6 +68,9 @@ class DashboardTest extends TestCase
             ->assertSee('/pricing')
             ->assertSee('Recent releases')
             ->assertSee('release-2026.09')
+            ->assertSee('Recent Monitor incidents')
+            ->assertSee('Incident #17')
+            ->assertSee('Resolved')
             ->assertSee('Deployer releases connected to this Analytics site.');
     }
 }

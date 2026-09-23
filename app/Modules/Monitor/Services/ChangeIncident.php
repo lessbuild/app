@@ -8,6 +8,7 @@ use App\Modules\Monitor\Models\Incident;
 use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
+use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
 use App\Modules\Monitor\Services\Telemetry\TelemetryRedactor;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,7 +18,12 @@ use Illuminate\Validation\ValidationException;
 
 final class ChangeIncident
 {
-    public function __construct(private readonly TelemetryRedactor $redactor, private readonly RecordAlertDeliveries $deliveries, private readonly LockIncident $lock) {}
+    public function __construct(
+        private readonly TelemetryRedactor $redactor,
+        private readonly RecordAlertDeliveries $deliveries,
+        private readonly RecordProjectConnectionIncidentOutboxEvent $connectionEvents,
+        private readonly LockIncident $lock,
+    ) {}
 
     /** @param array{action: string, version: int|string, assignee_id?: int|string|null, note?: string|null} $data */
     public function update(Incident $incident, Workspace $workspace, User $actor, array $data): Incident
@@ -56,6 +62,9 @@ final class ChangeIncident
                 'metadata' => $data['action'] === 'assign' ? ['assignee_id' => $incident->assignee_id] : null,
                 'note' => $this->redactor->redact(['note' => $data['note'] ?? null])['note'],
             ]);
+            if ($data['action'] === 'acknowledge') {
+                $this->connectionEvents->record($incident, 'acknowledged');
+            }
 
             return $incident;
         }, attempts: 3);
@@ -95,5 +104,6 @@ final class ChangeIncident
         if ($reason === 'recovered') {
             $this->deliveries->record($incident, 'recovered');
         }
+        $this->connectionEvents->record($incident, 'resolved');
     }
 }
