@@ -558,5 +558,3 @@ Route::post('builds/{build}/deployment/callback/revision', BuildRevisionCallback
 Route::post('builds/{build}/deployment/callback/failed', [BuildCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.build.failed');
 
 Route::post('builds/{build}/deployment/callback/log', [BuildCallbackController::class, 'log'])->middleware('signed')->name('callbacks.build.log');
-
-require __DIR__.'/auth.php';

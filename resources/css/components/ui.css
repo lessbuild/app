@@ -1,4 +1,35 @@
 @layer components {
+    .ui-menu__trigger {
+        display: flex;
+        cursor: pointer;
+        list-style: none;
+    }
+
+    .ui-menu__trigger::-webkit-details-marker {
+        display: none;
+    }
+
+    .ui-menu__panel {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        z-index: 40;
+        display: grid;
+        gap: 0.25rem;
+        border: 1px solid var(--ui-line);
+        border-radius: var(--radius-panel-value);
+        background: var(--ui-surface);
+        padding: 0.5rem;
+        box-shadow: var(--shadow-panel-value);
+    }
+
+    .ui-menu__panel--left {
+        left: 0;
+    }
+
+    .ui-menu__panel--right {
+        right: 0;
+    }
+
     .ui-notification[data-read="false"][data-notification-status="failed"] {
         border-left-width: 0.25rem;
         border-left-color: var(--ui-danger);

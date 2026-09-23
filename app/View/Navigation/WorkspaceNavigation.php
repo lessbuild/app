@@ -22,11 +22,19 @@ final class WorkspaceNavigation
      *         groups: list<list<array<string, mixed>>>,
      *     },
      *     unread_notifications: int,
+     *     workspaces: \Illuminate\Support\Collection<int, \App\Models\Organization>,
+     *     projects: \Illuminate\Support\Collection<int, \App\Models\Project>,
      * }
      */
     public function for(User $user): array
     {
         $unreadNotifications = $user->unreadNotifications()->count();
+        $workspace = $user->currentOrganization;
+        $workspaces = $user->organizations()->orderBy('name')->get(['organizations.id', 'organizations.name']);
+        $projects = $workspace?->projects()
+            ->orderBy('name')
+            ->limit(30)
+            ->get(['projects.id', 'projects.name', 'projects.slug']) ?? collect();
 
         $groups = [
             $this->group(__('Overview'), [
@@ -99,6 +107,8 @@ final class WorkspaceNavigation
                 'groups' => $this->mobileGroups($groups),
             ],
             'unread_notifications' => $unreadNotifications,
+            'workspaces' => $workspaces,
+            'projects' => $projects,
         ];
     }
 
