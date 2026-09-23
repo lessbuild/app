@@ -2,8 +2,10 @@
 
 namespace App\Core\Providers;
 
+use App\Core\Auth\PlatformUserProvider;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 use Laravel\Passkeys\Passkeys;
 
@@ -18,6 +20,11 @@ final class CoreServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        Auth::provider('core-platform', static fn ($app, array $config): PlatformUserProvider => new PlatformUserProvider(
+            $app['hash'],
+            $config['model'],
+        ));
 
         $authenticationRoutes = app_path('Core/Routes/auth.php');
 

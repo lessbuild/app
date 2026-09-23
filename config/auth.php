@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Models\PlatformUser;
 use App\Modules\Deployer\Models\User;
 
 return [
@@ -42,6 +43,11 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'platform' => [
+            'driver' => 'session',
+            'provider' => 'platform_users',
+        ],
     ],
 
     /*
@@ -65,6 +71,11 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => User::class,
+        ],
+
+        'platform_users' => [
+            'driver' => 'core-platform',
+            'model' => PlatformUser::class,
         ],
 
         // 'users' => [
@@ -92,6 +103,14 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => 'password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'platform_users' => [
+            'provider' => 'platform_users',
+            'table' => 'password_reset_tokens',
+            'connection' => 'core',
             'expire' => 60,
             'throttle' => 60,
         ],

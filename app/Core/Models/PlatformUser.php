@@ -15,8 +15,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 /**
  * Canonical account record stored in Core.
  *
- * This model is intentionally not the configured auth provider yet: existing
- * product accounts must be reconciled before Core becomes authoritative.
+ * This model is available through Core's platform guard. Product sessions
+ * continue using their legacy principal until the host context bridges are
+ * ready to preserve each module's existing policies and account workflows.
  *
  * @property string $id
  * @property string|null $email_normalized
