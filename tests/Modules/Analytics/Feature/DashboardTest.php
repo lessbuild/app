@@ -6,12 +6,12 @@ use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class DashboardTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshAnalyticsDatabase;
 
     public function test_authenticated_users_can_view_their_site_overview(): void
     {

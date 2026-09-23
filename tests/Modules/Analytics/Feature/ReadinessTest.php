@@ -2,12 +2,12 @@
 
 namespace Tests\Modules\Analytics\Feature;
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class ReadinessTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshAnalyticsDatabase;
 
     public function test_readiness_endpoint_checks_application_dependencies(): void
     {

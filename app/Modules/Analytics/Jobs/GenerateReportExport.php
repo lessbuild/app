@@ -16,13 +16,13 @@ class GenerateReportExport implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $connection = 'analytics';
-
-    public string $queue = 'analytics';
-
     public int $tries = 2;
 
-    public function __construct(public int $exportId) {}
+    public function __construct(public int $exportId)
+    {
+        $this->connection = 'analytics';
+        $this->queue = 'analytics';
+    }
 
     public function handle(OverviewReport $report): void
     {

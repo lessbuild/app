@@ -18,13 +18,13 @@ class ProcessEventBatch implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public string $connection = 'analytics';
-
-    public string $queue = 'analytics';
-
     public int $tries = 3;
 
-    public function __construct(public int $batchId) {}
+    public function __construct(public int $batchId)
+    {
+        $this->connection = 'analytics';
+        $this->queue = 'analytics';
+    }
 
     public function handle(
         RebuildSiteVisits $rebuildSiteVisits,

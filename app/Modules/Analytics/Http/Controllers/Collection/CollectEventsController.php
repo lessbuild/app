@@ -7,6 +7,7 @@ use App\Modules\Analytics\Data\NormalizedEvent;
 use App\Modules\Analytics\Http\Controllers\Controller;
 use App\Modules\Analytics\Http\Requests\Collection\CollectEventsRequest;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Services\AnalyticsPlanAuthority;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,8 +26,12 @@ class CollectEventsController extends Controller
         return response()->json(null, 204, $this->corsHeaders($request));
     }
 
-    public function __invoke(CollectEventsRequest $request, string $publicId, AcceptEventBatch $acceptEventBatch): JsonResponse
-    {
+    public function __invoke(
+        CollectEventsRequest $request,
+        string $publicId,
+        AcceptEventBatch $acceptEventBatch,
+        AnalyticsPlanAuthority $plans,
+    ): JsonResponse {
         $site = Site::query()->where('public_id', $publicId)->first();
 
         if (! $site || ! $site->isCollectionAvailable()) {
@@ -39,6 +44,14 @@ class CollectEventsController extends Controller
 
         if (! $this->originIsAllowed($request->header('Origin'), $site)) {
             return response()->json(['message' => 'Origin is not registered for this site.'], 403);
+        }
+
+        if (! $plans->canCollect($site->workspace)) {
+            return response()->json(
+                ['message' => 'Collection is temporarily unavailable for this workspace.'],
+                503,
+                $this->corsHeaders($request),
+            );
         }
 
         $now = CarbonImmutable::now();

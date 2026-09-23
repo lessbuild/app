@@ -7,32 +7,32 @@ use App\Modules\Analytics\Models\Goal;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class WebsiteManagementTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshAnalyticsDatabase;
 
     public function test_owner_can_create_update_and_remove_a_goal(): void
     {
         [$user, $site] = $this->site();
         $csrf = 'test-token';
 
-        $this->withSession(['_token' => $csrf])->actingAs($user)->post(route('goals.store', $site), [
+        $this->withSession(['_token' => $csrf])->actingAs($user)->post(route('analytics.goals.store', $site), [
             '_token' => $csrf,
             'name' => 'Demo requested',
             'kind' => 'event',
             'match_type' => 'exact',
             'match_value' => 'demo_requested',
             'active' => '1',
-        ])->assertRedirect(route('goals.index', $site));
+        ])->assertRedirect(route('analytics.goals.index', $site));
 
         $goal = Goal::query()->sole();
         $this->assertSame('demo_requested', $goal->match_value);
         $this->assertDatabaseCount('goal_versions', 1);
 
-        $this->withSession(['_token' => $csrf])->actingAs($user)->put(route('goals.update', [$site, $goal]), [
+        $this->withSession(['_token' => $csrf])->actingAs($user)->put(route('analytics.goals.update', [$site, $goal]), [
             '_token' => $csrf,
             'name' => 'Demo completed',
             'kind' => 'event',
@@ -43,7 +43,7 @@ class WebsiteManagementTest extends TestCase
         $this->assertDatabaseCount('goal_versions', 2);
         $this->assertDatabaseHas('goal_versions', ['goal_id' => $goal->id, 'match_value' => 'demo_requested']);
 
-        $this->withSession(['_token' => $csrf])->actingAs($user)->delete(route('goals.destroy', [$site, $goal]), ['_token' => $csrf])->assertRedirect();
+        $this->withSession(['_token' => $csrf])->actingAs($user)->delete(route('analytics.goals.destroy', [$site, $goal]), ['_token' => $csrf])->assertRedirect();
         $this->assertDatabaseMissing('goals', ['id' => $goal->id]);
     }
 
@@ -52,7 +52,7 @@ class WebsiteManagementTest extends TestCase
         [$user, $site] = $this->site();
         $csrf = 'test-token';
 
-        $this->withSession(['_token' => $csrf])->actingAs($user)->put(route('sites.settings.update', $site), [
+        $this->withSession(['_token' => $csrf])->actingAs($user)->put(route('analytics.sites.settings.update', $site), [
             '_token' => $csrf,
             'name' => 'Updated site',
             'domains' => "example.com\nwww.example.com",
@@ -74,7 +74,7 @@ class WebsiteManagementTest extends TestCase
         $site->goals()->create(['name' => 'Signup', 'kind' => 'path', 'match_type' => 'exact', 'match_value' => '/thank-you']);
 
         $csrf = 'test-token';
-        $this->withSession(['_token' => $csrf, 'auth.password_confirmed_at' => now()->timestamp])->actingAs($user)->delete(route('sites.destroy', $site), ['_token' => $csrf])->assertRedirect(route('dashboard'));
+        $this->withSession(['_token' => $csrf, 'auth.password_confirmed_at' => now()->timestamp])->actingAs($user)->delete(route('analytics.sites.destroy', $site), ['_token' => $csrf])->assertRedirect(route('analytics.dashboard'));
 
         $this->assertDatabaseCount('goals', 0);
         $this->assertDatabaseCount('ingestion_batches', 0);

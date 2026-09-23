@@ -15,14 +15,14 @@ use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class ReportingWorkflowTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshAnalyticsDatabase;
 
     public function test_visit_rebuild_uses_identity_and_inactivity_windows(): void
     {
@@ -150,7 +150,7 @@ class ReportingWorkflowTest extends TestCase
             'visitor_hash' => 'visitor-1',
         ]);
 
-        $this->withSession(['_token' => $csrf])->actingAs($user)->post(route('reports.exports.store', $site), ['_token' => $csrf, 'days' => 30])->assertRedirect();
+        $this->withSession(['_token' => $csrf])->actingAs($user)->post(route('analytics.reports.exports.store', $site), ['_token' => $csrf, 'days' => 30])->assertRedirect();
         $export = ReportExport::query()->sole();
         $token = 'export-token';
         $export->update(['token_hash' => hash('sha256', $token)]);
@@ -158,7 +158,7 @@ class ReportingWorkflowTest extends TestCase
         $export->refresh();
 
         $this->assertSame('completed', $export->status);
-        $this->actingAs($user)->get(route('reports.exports.download', $token))->assertOk()->assertHeader('content-disposition');
+        $this->actingAs($user)->get(route('analytics.reports.exports.download', $token))->assertOk()->assertHeader('content-disposition');
     }
 
     /** @return array{0: User, 1: Site} */

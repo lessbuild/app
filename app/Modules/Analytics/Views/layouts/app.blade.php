@@ -1,4 +1,4 @@
-<x-signal.layouts.core :title="$title" product-key="analytics">
+<x-signal.layouts.core :title="$title ?? 'Analytics'" product-key="analytics">
     <x-signal.layouts.topbar
         product-key="analytics"
         :navigation="$signalTopbar"

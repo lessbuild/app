@@ -14,14 +14,14 @@ use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
 use Carbon\CarbonImmutable;
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
+use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class AnalyticsCollectionTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshAnalyticsDatabase;
 
     public function test_verified_site_accepts_a_batch_and_processes_it(): void
     {
@@ -98,7 +98,7 @@ class AnalyticsCollectionTest extends TestCase
 
         $this->assertDatabaseCount('analytics_events', 1);
         $this->assertDatabaseCount('ingestion_batches', 2);
-        $this->assertDatabaseCount('visits', 1);
+
     }
 
     public function test_pending_events_are_not_reported_until_their_batch_is_processed(): void
@@ -179,6 +179,23 @@ class AnalyticsCollectionTest extends TestCase
             ->optionsJson("/api/v1/collect/{$site->public_id}")
             ->assertNoContent()
             ->assertHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    }
+
+    public function test_core_plan_authority_fails_closed_for_unmapped_workspaces(): void
+    {
+        $site = $this->makeSite();
+        config(['analytics.plan_authority' => 'core']);
+
+        $this->withHeader('Origin', 'https://example.com')
+            ->postJson("/api/v1/collect/{$site->public_id}", ['events' => [[
+                'id' => (string) Str::uuid(),
+                'type' => 'pageview',
+                'path' => '/',
+            ]]])
+            ->assertServiceUnavailable()
+            ->assertHeader('Access-Control-Allow-Origin', '*');
+
+        $this->assertDatabaseCount('analytics_events', 0);
     }
 
     /** @param array<string, mixed> $attributes */

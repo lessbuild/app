@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Services;
 
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Enums\WorkspaceRole;
+use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Analytics\Models\Workspace;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
@@ -17,7 +18,13 @@ final class AnalyticsWorkspaceAccess
     /** @return list<string> */
     public function productUserIds(Authenticatable $user): array
     {
-        return $this->identities->sourceIdsFor($user, 'analytics');
+        $mappedIds = $this->identities->sourceIdsFor($user, 'analytics');
+
+        if ($user instanceof AnalyticsUser) {
+            $mappedIds[] = (string) $user->getAuthIdentifier();
+        }
+
+        return array_values(array_unique($mappedIds));
     }
 
     /** @return Collection<int, Workspace> */

@@ -4,12 +4,12 @@ namespace Tests\Modules\Analytics\Feature;
 
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\User;
-use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class ProvisioningTest extends TestCase
 {
-    use RefreshDatabase;
+    use RefreshAnalyticsDatabase;
 
     public function test_owner_provisioning_creates_a_verified_owner_workspace(): void
     {
@@ -21,6 +21,6 @@ class ProvisioningTest extends TestCase
 
         $user = User::query()->sole();
         $this->assertNotNull($user->email_verified_at);
-        $this->assertSame(WorkspaceRole::Owner, $user->defaultWorkspace()?->roleFor($user));
+        $this->assertSame(WorkspaceRole::Owner, $user->defaultWorkspace()?->roleFor($user->getKey()));
     }
 }

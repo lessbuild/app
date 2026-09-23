@@ -40,7 +40,7 @@ return [
         ],
         'analytics' => [
             'label' => 'Analytics',
-            'enabled' => false,
+            'enabled' => (bool) env('ANALYTICS_ENABLED', false),
             'host' => env('ANALYTICS_HOST'),
             'url' => env('ANALYTICS_URL', filled(env('ANALYTICS_HOST')) ? 'https://'.env('ANALYTICS_HOST') : null),
             'database' => 'analytics',

@@ -14,8 +14,9 @@ use Illuminate\Support\Facades\Route;
 
 Route::view('/', 'analytics::marketing.home')->name('home');
 Route::get('/ready', ReadinessController::class)->name('ready');
+Route::view('/verify-email', 'analytics::auth.verify-email')->middleware('auth')->name('verification.notice');
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+Route::middleware(['auth', 'verified:analytics.verification.notice'])->group(function (): void {
     Route::get('/dashboard', Overview::class)->name('dashboard');
     Route::get('/account', [ProfileController::class, 'edit'])->name('account.profile');
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
