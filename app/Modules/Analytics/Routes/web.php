@@ -12,6 +12,7 @@ use App\Modules\Analytics\Http\Controllers\SiteController;
 use App\Modules\Analytics\Http\Controllers\SiteSettingsController;
 use App\Modules\Analytics\Http\Controllers\TeamController;
 use App\Modules\Analytics\Http\Controllers\WorkspaceController;
+use App\Modules\Analytics\Http\Controllers\WorkspaceSearchController;
 use App\Modules\Analytics\Livewire\Dashboard\Overview;
 use Illuminate\Support\Facades\Route;
 
@@ -33,6 +34,9 @@ Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');
     Route::post('/workspaces', [WorkspaceController::class, 'store'])->name('workspaces.store');
     Route::post('/workspaces/{workspace}/select', [WorkspaceController::class, 'select'])->name('workspaces.select');
+    Route::get('/workspaces/{workspace}/search', WorkspaceSearchController::class)
+        ->middleware('throttle:60,1')
+        ->name('workspace.search');
     Route::get('/workspaces/{workspace}/team', [TeamController::class, 'index'])->name('workspaces.team');
     Route::post('/workspaces/{workspace}/invitations', [TeamController::class, 'invite'])->middleware('password.confirm')->name('workspaces.invitations.store');
     Route::put('/workspaces/{workspace}/members/{user}', [TeamController::class, 'updateRole'])->middleware('password.confirm')->name('workspaces.members.update');

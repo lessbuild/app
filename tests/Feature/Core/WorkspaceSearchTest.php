@@ -6,9 +6,11 @@ use App\Core\Contracts\WorkspaceSearchProvider;
 use App\Core\Data\Search\WorkspaceSearchResult;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
+use App\Core\Services\Search\ProductWorkspaceSearch;
 use App\Core\Services\Search\WorkspaceSearch;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceProjectAccess;
+use App\Modules\Monitor\Models\User as MonitorUser;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
@@ -73,6 +75,7 @@ final class WorkspaceSearchTest extends TestCase
             'projects',
             'workspace_product_access',
             'workspace_memberships',
+            'legacy_identity_maps',
             'workspaces',
             'users',
         ] as $table) {
@@ -198,6 +201,54 @@ final class WorkspaceSearchTest extends TestCase
         ]))->assertNotFound();
     }
 
+    public function test_product_search_bridge_requires_reconciled_identity_workspace_and_membership(): void
+    {
+        $this->project('Core infrastructure', true);
+        $sourceUserId = '4701';
+        $sourceWorkspaceId = '7301';
+        $principal = (new MonitorUser)->forceFill(['id' => $sourceUserId]);
+        $this->mapIdentity('user', $sourceUserId, 'user', $this->userId, 'reconciled');
+        $this->mapIdentity('workspace', $sourceWorkspaceId, 'workspace', $this->workspaceId, 'pending');
+        $search = app(ProductWorkspaceSearch::class);
+
+        $this->assertNull($search->fromSourceWorkspace(
+            $principal,
+            'monitor',
+            'workspace',
+            $sourceWorkspaceId,
+            'Core',
+        ));
+
+        DB::connection('core')->table('legacy_identity_maps')
+            ->where('source_entity', 'workspace')
+            ->where('source_id', $sourceWorkspaceId)
+            ->update(['status' => 'reconciled']);
+
+        $results = $search->fromSourceWorkspace(
+            $principal,
+            'monitor',
+            'workspace',
+            $sourceWorkspaceId,
+            'Core',
+        );
+
+        $this->assertNotNull($results);
+        $this->assertSame(['core'], array_column($results['groups'], 'product'));
+        $this->assertSame('Core infrastructure', $results['groups'][0]['results'][0]['title']);
+
+        DB::connection('core')->table('workspace_memberships')
+            ->where('id', $this->membershipId)
+            ->update(['status' => 'revoked']);
+
+        $this->assertNull($search->fromSourceWorkspace(
+            $principal,
+            'monitor',
+            'workspace',
+            $sourceWorkspaceId,
+            'Core',
+        ));
+    }
+
     private function project(string $name, bool $member): string
     {
         $projectId = (string) Str::ulid();
@@ -242,6 +293,23 @@ final class WorkspaceSearchTest extends TestCase
         ]);
     }
 
+    private function mapIdentity(
+        string $sourceEntity,
+        string $sourceId,
+        string $canonicalEntity,
+        string $canonicalId,
+        string $status,
+    ): void {
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'source_product' => 'monitor',
+            'source_entity' => $sourceEntity,
+            'source_id' => $sourceId,
+            'canonical_entity' => $canonicalEntity,
+            'canonical_id' => $canonicalId,
+            'status' => $status,
+        ]);
+    }
+
     private function user(): PlatformUser
     {
         return PlatformUser::query()->findOrFail($this->userId);
@@ -262,6 +330,14 @@ final class WorkspaceSearchTest extends TestCase
             $table->string('password');
             $table->string('status');
             $table->timestamps();
+        });
+        Schema::connection('core')->create('legacy_identity_maps', function (Blueprint $table): void {
+            $table->string('source_product');
+            $table->string('source_entity');
+            $table->string('source_id');
+            $table->string('canonical_entity');
+            $table->string('canonical_id');
+            $table->string('status');
         });
         Schema::connection('core')->create('workspaces', function (Blueprint $table): void {
             $table->char('id', 26)->primary();

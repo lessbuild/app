@@ -2,16 +2,18 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Core\Services\Search\ProductWorkspaceSearch;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Recipe;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Support\SqlLike;
-use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
 
 class SearchController extends Controller
@@ -19,20 +21,68 @@ class SearchController extends Controller
     /**
      * Render workspace-scoped result groups for a trimmed query of at most 100 characters.
      */
-    public function __invoke(Request $request): View
+    public function __invoke(Request $request, ProductWorkspaceSearch $crossAppSearch): Response
     {
         $query = str($request->string('q')->toString())->trim()->limit(100, '')->toString();
 
         $groups = $query === '' ? [] : $this->groups($request, $query);
+        $unavailable = [];
+        $user = $request->user();
 
-        if ($request->string('fragment')->toString() === 'workspace') {
-            return view('search._workspace-results', compact('query', 'groups'));
+        if ($query !== '' && $user instanceof User && $user->current_organization_id !== null) {
+            $platformResults = $crossAppSearch->fromSourceWorkspace(
+                principal: $user,
+                product: 'deployer',
+                sourceEntity: 'organization',
+                sourceWorkspaceId: (string) $user->current_organization_id,
+                query: $query,
+            );
+
+            if ($platformResults !== null) {
+                $unavailable = array_values(array_filter(
+                    $platformResults['unavailable'],
+                    static fn (array $product): bool => $product['product'] !== 'deployer',
+                ));
+
+                foreach ($platformResults['groups'] as $index => $group) {
+                    if ($group['product'] === 'deployer') {
+                        continue;
+                    }
+
+                    $results = collect($group['results'])->map(static fn (array $result): array => [
+                        'title' => $result['title'],
+                        'subtitle' => $result['subtitle'],
+                        'url' => $result['url'],
+                    ]);
+
+                    if ($results->isEmpty()) {
+                        continue;
+                    }
+
+                    $key = 'connected-'.$group['product'].'-'.$index;
+                    $groups[$key] = [
+                        'label' => $group['label'],
+                        'results' => $results,
+                        'has_more' => false,
+                        'more_url' => route('search.index', ['q' => $query]),
+                    ];
+                }
+            }
         }
 
-        return view('search.index', [
-            'query' => $query,
-            'groups' => $groups,
-        ]);
+        if ($request->string('fragment')->toString() === 'workspace') {
+            return response()
+                ->view('search._workspace-results', compact('query', 'groups', 'unavailable'))
+                ->header('Cache-Control', 'private, no-store');
+        }
+
+        return response()
+            ->view('search.index', [
+                'query' => $query,
+                'groups' => $groups,
+                'unavailable' => $unavailable,
+            ])
+            ->header('Cache-Control', 'private, no-store');
     }
 
     /** @return array<string, array{label: string, results: Collection<int, array{title: string, subtitle: ?string, url: string}>, has_more: bool, more_url: string}> */

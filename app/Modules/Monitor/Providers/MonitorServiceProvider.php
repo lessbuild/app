@@ -26,6 +26,7 @@ use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
+use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;

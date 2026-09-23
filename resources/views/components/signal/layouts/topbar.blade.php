@@ -206,16 +206,7 @@
                     </div>
                 </details>
 
-                @if ($activeProduct === 'monitor')
-                    <x-signal.ui.button type="button" class="ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="global-command" aria-haspopup="dialog" data-global-command-open>
-                        <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
-                        <span class="hidden xl:inline">{{ __('Search') }}</span>
-                        <kbd class="ui-kbd hidden xl:inline-flex">⌘K</kbd>
-                    </x-signal.ui.button>
-                    <x-signal.ui.icon-button label="{{ __('Open quick navigation') }}" class="sm:hidden" aria-controls="global-command" aria-haspopup="dialog" data-global-command-open>
-                        <svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
-                    </x-signal.ui.icon-button>
-                @elseif (in_array($activeProduct, ['core', 'analytics'], true))
+                @if (in_array($activeProduct, ['core', 'monitor', 'analytics'], true))
                     <x-signal.ui.button type="button" class="ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
                         <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
                         <span class="hidden xl:inline">{{ __('Search') }}</span>

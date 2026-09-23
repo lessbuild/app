@@ -27,6 +27,12 @@
         </form>
     </x-ui.card>
 
+    @if (($unavailable ?? []) !== [])
+        <x-signal.ui.alert tone="warning" class="mt-6 text-sm leading-6">
+            {{ __('Search could not reach: :apps. Other results are shown.', ['apps' => collect($unavailable)->pluck('label')->implode(', ')]) }}
+        </x-signal.ui.alert>
+    @endif
+
     @if ($query === '')
         <div class="mt-8">
             <x-lists.empty

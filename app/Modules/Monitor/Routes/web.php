@@ -42,6 +42,7 @@ use App\Modules\Monitor\Http\Controllers\WorkspaceController;
 use App\Modules\Monitor\Http\Controllers\WorkspaceDataController;
 use App\Modules\Monitor\Http\Controllers\WorkspaceInvitationController;
 use App\Modules\Monitor\Http\Controllers\WorkspaceMemberController;
+use App\Modules\Monitor\Http\Controllers\WorkspaceSearchController;
 use Illuminate\Support\Facades\Route;
 
 $monitorAuthentication = app(ProductAuthentication::class);
@@ -84,6 +85,11 @@ Route::middleware([...$authenticatedMiddleware, 'auth.session'])->group(function
     });
 
     Route::middleware('monitor.workspace')->group(function (): void {
+        Route::get('/workspaces/{workspace}/search', WorkspaceSearchController::class)
+            ->whereNumber('workspace')
+            ->middleware('throttle:60,1')
+            ->name('workspace.search');
+
         Route::middleware('monitor.application.workspace')->scopeBindings()->group(function (): void {
             Route::resource('applications', ApplicationController::class)->except('show');
             Route::get('/applications/{application}', [ApplicationController::class, 'show'])->withTrashed()->name('applications.show');

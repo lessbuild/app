@@ -62,16 +62,39 @@ final class MonitorWorkspaceSearchProvider implements WorkspaceSearchProvider
                     ->orWhereHas('alertRule', fn ($rules) => $rules->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]))
                     ->orWhereHas('monitor', fn ($monitors) => $monitors->whereRaw("name LIKE ? ESCAPE '!'", [$pattern]));
             })
-            ->with(['alertRule:id,name', 'monitor:id,name'])
+            ->with([
+                'alertRule:id,environment_id,name',
+                'alertRule.environment:id,application_id',
+                'alertRule.environment.application:id,workspace_id',
+                'monitor:id,environment_id,name',
+                'monitor.environment:id,application_id',
+                'monitor.environment.application:id,workspace_id',
+            ])
             ->latest('opened_at')
             ->limit(5)
             ->get(['id', 'alert_rule_id', 'monitor_id', 'status', 'opened_at']);
 
-        return $incidents->map(fn (Incident $incident): WorkspaceSearchResult => new WorkspaceSearchResult(
-            type: __('Incident'),
-            title: __('Incident #:id', ['id' => $incident->getKey()]),
-            subtitle: $incident->statusLabel(),
-            url: route('monitor.incidents.show', $incident->getKey()),
-        ))->all();
+        return $incidents
+            ->map(function (Incident $incident): ?WorkspaceSearchResult {
+                $sourceWorkspaceId = $incident->alertRule?->environment?->application?->workspace_id
+                    ?? $incident->monitor?->environment?->application?->workspace_id;
+
+                if ($sourceWorkspaceId === null) {
+                    return null;
+                }
+
+                return new WorkspaceSearchResult(
+                    type: __('Incident'),
+                    title: __('Incident #:id', ['id' => $incident->getKey()]),
+                    subtitle: $incident->statusLabel(),
+                    url: route('monitor.incidents.show', [
+                        'incident' => $incident->getKey(),
+                        'workspace_id' => $sourceWorkspaceId,
+                    ]),
+                );
+            })
+            ->filter()
+            ->values()
+            ->all();
     }
 }

@@ -24,5 +24,8 @@
         @yield('content'){{ $slot ?? '' }}
     </main>
 
-    <x-signal.layouts.command-palette :navigation="$signalTopbar" />
+    <x-signal.layouts.command-palette
+        :navigation="$signalTopbar"
+        :search-url="$currentWorkspace ? route('analytics.workspace.search', $currentWorkspace) : null"
+    />
 </x-signal.layouts.core>

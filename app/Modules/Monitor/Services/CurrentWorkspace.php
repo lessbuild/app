@@ -30,6 +30,28 @@ final class CurrentWorkspace
             return $workspace;
         }
 
+        $routeWorkspace = $this->request->route('workspace');
+
+        if ($routeWorkspace instanceof Workspace) {
+            $workspace = $user->workspaces()->whereKey($routeWorkspace->getKey())->first();
+            abort_unless($workspace, 404);
+            $this->request->session()->put('workspace_id', $workspace->getKey());
+
+            return $workspace;
+        }
+
+        $requestedWorkspaceId = $this->request->query('workspace_id');
+
+        if ($requestedWorkspaceId !== null) {
+            abort_unless(is_string($requestedWorkspaceId) || is_int($requestedWorkspaceId), 404);
+
+            $workspace = $user->workspaces()->whereKey($requestedWorkspaceId)->first();
+            abort_unless($workspace, 404);
+            $this->request->session()->put('workspace_id', $workspace->getKey());
+
+            return $workspace;
+        }
+
         $workspace = $user->workspaces()
             ->whereKey($this->request->session()->get('workspace_id'))
             ->first();

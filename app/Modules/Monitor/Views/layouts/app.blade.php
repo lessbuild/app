@@ -37,5 +37,8 @@
     </main>
 
     <x-monitor::ui.quick-navigation :navigation="$workspaceNavigation" />
-    <x-monitor::ui.command-palette :navigation="$workspaceNavigation" />
+    <x-signal.layouts.command-palette
+        :navigation="$signalTopbar"
+        :search-url="route('monitor.workspace.search', $currentWorkspace)"
+    />
 </x-monitor::ui.document>

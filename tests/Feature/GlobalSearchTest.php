@@ -7,8 +7,12 @@ use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 class GlobalSearchTest extends TestCase
@@ -90,7 +94,7 @@ class GlobalSearchTest extends TestCase
             'script' => 'echo private',
         ]);
 
-        $this->actingAs($owner)
+        $response = $this->actingAs($owner)
             ->get(route('search.index', ['q' => 'Dialog', 'fragment' => 'workspace']))
             ->assertSuccessful()
             ->assertViewIs('search._workspace-results')
@@ -99,6 +103,97 @@ class GlobalSearchTest extends TestCase
             ->assertSee(route('recipes.show', $recipe))
             ->assertDontSee('<html', false)
             ->assertDontSee('echo private', false);
+
+        $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+    }
+
+    public function test_deployer_workspace_fragment_includes_authorized_core_project_results(): void
+    {
+        $this->createCoreSearchSchema();
+        $user = User::factory()->create();
+        $coreUserId = (string) Str::ulid();
+        $workspaceId = (string) Str::ulid();
+        $membershipId = (string) Str::ulid();
+        $projectId = (string) Str::ulid();
+
+        DB::connection('core')->table('users')->insert([
+            'id' => $coreUserId,
+            'name' => $user->name,
+            'email' => $user->email,
+            'email_normalized' => mb_strtolower($user->email),
+            'password' => 'not-a-real-password-hash',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('workspaces')->insert([
+            'id' => $workspaceId,
+            'owner_user_id' => $coreUserId,
+            'name' => 'Unified workspace',
+            'slug' => 'unified-workspace',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('workspace_memberships')->insert([
+            'id' => $membershipId,
+            'workspace_id' => $workspaceId,
+            'user_id' => $coreUserId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $workspaceId,
+            'created_by_user_id' => $coreUserId,
+            'name' => 'Unified search catalog',
+            'slug' => 'unified-search-catalog',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $coreUserId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            [
+                'source_product' => 'deployer',
+                'source_entity' => 'user',
+                'source_id' => (string) $user->getKey(),
+                'canonical_entity' => 'user',
+                'canonical_id' => $coreUserId,
+                'status' => 'reconciled',
+            ],
+            [
+                'source_product' => 'deployer',
+                'source_entity' => 'organization',
+                'source_id' => (string) $user->current_organization_id,
+                'canonical_entity' => 'workspace',
+                'canonical_id' => $workspaceId,
+                'status' => 'reconciled',
+            ],
+        ]);
+
+        try {
+            $response = $this->actingAs($user)
+                ->get(route('search.index', ['q' => 'Unified search', 'fragment' => 'workspace']));
+
+            $response->assertSuccessful()
+                ->assertViewIs('search._workspace-results')
+                ->assertSee('Unified search catalog')
+                ->assertSee(route('core.projects.show', [$workspaceId, $projectId]));
+        } finally {
+            $this->dropCoreSearchSchema();
+        }
     }
 
     public function test_each_group_is_limited_and_links_to_the_filtered_inventory_for_more_results(): void
@@ -284,5 +379,87 @@ class GlobalSearchTest extends TestCase
         ]);
 
         return compact('project', 'provider', 'server', 'website', 'repository', 'recipe', 'build');
+    }
+
+    private function createCoreSearchSchema(): void
+    {
+        Schema::connection('core')->create('users', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->string('name');
+            $table->string('email');
+            $table->string('email_normalized');
+            $table->string('password');
+            $table->string('status');
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspaces', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('owner_user_id', 26);
+            $table->string('name');
+            $table->string('slug');
+            $table->string('status');
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspace_memberships', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('user_id', 26);
+            $table->string('role');
+            $table->string('status');
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspace_product_access', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('membership_id', 26);
+            $table->string('product');
+            $table->string('status');
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
+        });
+        Schema::connection('core')->create('projects', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('created_by_user_id', 26);
+            $table->string('name');
+            $table->string('slug');
+            $table->string('status');
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('project_memberships', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('project_id', 26);
+            $table->char('user_id', 26);
+            $table->string('role');
+            $table->string('status');
+            $table->timestamp('revoked_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('legacy_identity_maps', function (Blueprint $table): void {
+            $table->string('source_product');
+            $table->string('source_entity');
+            $table->string('source_id');
+            $table->string('canonical_entity');
+            $table->string('canonical_id');
+            $table->string('status');
+        });
+    }
+
+    private function dropCoreSearchSchema(): void
+    {
+        foreach ([
+            'project_memberships',
+            'projects',
+            'workspace_product_access',
+            'workspace_memberships',
+            'workspaces',
+            'legacy_identity_maps',
+            'users',
+        ] as $table) {
+            Schema::connection('core')->dropIfExists($table);
+        }
     }
 }

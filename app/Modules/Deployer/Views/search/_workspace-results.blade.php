@@ -3,6 +3,12 @@
     $resultCount = $matchingGroups->sum(fn (array $group): int => $group['results']->count());
 @endphp
 
+@if (($unavailable ?? []) !== [])
+    <x-signal.ui.alert tone="warning" class="mx-2 mt-2 text-xs leading-5">
+        {{ __('Search could not reach: :apps. Other results are shown.', ['apps' => collect($unavailable)->pluck('label')->implode(', ')]) }}
+    </x-signal.ui.alert>
+@endif
+
 @if ($query === '')
     <p class="px-4 py-3 text-sm text-muted">{{ __('Type a name, URL, IP address, revision, or description to search this workspace.') }}</p>
 @elseif ($resultCount === 0)

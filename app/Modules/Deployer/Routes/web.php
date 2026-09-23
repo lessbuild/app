@@ -306,7 +306,7 @@ Route::middleware([
         Route::patch('observability/operational-incidents/{incident}/assign', [OperationalIncidentController::class, 'assign'])->name('observability.operational-incidents.assign');
         Route::post('observability/operational-incidents/{incident}/notes', [OperationalIncidentController::class, 'note'])->name('observability.operational-incidents.notes.store');
         Route::post('observability/operational-incidents/{incident}/resolve', [OperationalIncidentController::class, 'resolve'])->name('observability.operational-incidents.resolve');
-        Route::get('search', SearchController::class)->name('search.index');
+        Route::get('search', SearchController::class)->middleware('throttle:60,1')->name('search.index');
         Route::get('activity/export', [ActivityController::class, 'export'])
             ->name('activity.export');
         Route::get('activity', ActivityController::class)->name('activity.index');
