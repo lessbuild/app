@@ -3,10 +3,24 @@
     'resources',
     'connections',
     'resourceDestinations' => [],
+    'hiddenConnectionCount' => 0,
 ])
 
 @php
     $resourcesByProduct = $resources->groupBy('product');
+    $visibleConnections = $connections->filter(function ($connection) use ($resourceDestinations): bool {
+        foreach (['source', 'target'] as $endpoint) {
+            $resource = $connection->{$endpoint.'Resource'};
+            $resourceId = (string) ($resource?->getKey() ?? $connection->{$endpoint.'_resource_id'} ?? '');
+
+            if (($resourceDestinations[$resourceId]?->state ?? null) !== \App\Core\Data\Projects\ProjectResourceDestinationState::Available) {
+                return false;
+            }
+        }
+
+        return true;
+    })->values();
+    $hiddenConnectionCount += $connections->count() - $visibleConnections->count();
 @endphp
 
 <div {{ $attributes->class(['grid gap-4']) }}>
@@ -36,19 +50,22 @@
                         <ul class="mt-3 grid gap-2">
                             @foreach ($productResources as $resource)
                                 @php
-                                    $resourceTone = match ($resource->status) {
-                                        'active', 'ready', 'running' => 'success',
-                                        'failed', 'error' => 'danger',
-                                        default => 'warning',
-                                    };
+                                    $resourceDestination = $resourceDestinations[(string) $resource->getKey()] ?? null;
+                                    $destinationState = $resourceDestination?->state
+                                        ?? \App\Core\Data\Projects\ProjectResourceDestinationState::Unavailable;
+                                    $detailsAvailable = $destinationState === \App\Core\Data\Projects\ProjectResourceDestinationState::Available;
                                 @endphp
                                 <li class="min-w-0 rounded-control border border-line bg-surface px-3 py-2.5">
                                     <div class="flex min-w-0 items-start justify-between gap-2">
                                         <div class="min-w-0">
-                                            <p class="truncate text-sm font-bold text-ink">
-                                                @if (isset($resourceDestinations[(string) $resource->getKey()]))
+                                            @if (! $detailsAvailable)
+                                                <p class="text-sm font-bold text-ink">{{ __('Resource details hidden') }}</p>
+                                                <p class="mt-1 text-xs leading-5 text-muted">{{ $destinationState->description() }}</p>
+                                            @else
+                                                <p class="truncate text-sm font-bold text-ink">
+                                                @if ($resourceDestination?->url)
                                                     <a
-                                                        href="{{ $resourceDestinations[(string) $resource->getKey()] }}"
+                                                        href="{{ $resourceDestination->url }}"
                                                         aria-label="{{ __('Open :resource in :product', ['resource' => $resource->name ?: str($resource->resource_type)->headline(), 'product' => $productLabel]) }}"
                                                         class="text-primary underline-offset-2 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
                                                     >{{ $resource->name ?: str($resource->resource_type)->headline() }}</a>
@@ -62,8 +79,14 @@
                                                     · {{ $resource->environment->name }}
                                                 @endif
                                             </p>
+                                            @endif
                                         </div>
-                                        <x-signal.ui.badge :tone="$resourceTone">{{ str($resource->status)->headline() }}</x-signal.ui.badge>
+                                        <div class="flex shrink-0 flex-wrap justify-end gap-1.5">
+                                            <x-signal.ui.badge :tone="$destinationState->tone()">{{ $destinationState->label() }}</x-signal.ui.badge>
+                                            @if ($resource->status !== 'active')
+                                                <x-signal.ui.badge tone="neutral">{{ str($resource->status)->headline() }}</x-signal.ui.badge>
+                                            @endif
+                                        </div>
                                     </div>
                                 </li>
                             @endforeach
@@ -79,16 +102,22 @@
                     <h4 class="text-sm font-extrabold text-ink">{{ __('Connected workflows') }}</h4>
                     <p class="mt-1 text-xs leading-5 text-muted">{{ __('Only configured data flows are shown. Product data and subscriptions remain separate.') }}</p>
                 </div>
-                <span class="text-xs text-muted">{{ trans_choice(':count workflow|:count workflows', $connections->count(), ['count' => $connections->count()]) }}</span>
+                <span class="text-xs text-muted">{{ trans_choice(':count workflow|:count workflows', $visibleConnections->count(), ['count' => $visibleConnections->count()]) }}</span>
             </div>
 
-            @if ($connections->isEmpty())
+            @if ($hiddenConnectionCount > 0)
+                <x-signal.ui.alert tone="warning" class="mt-3 text-xs leading-5">
+                    {{ __('Some configured workflows are temporarily hidden until access to both resources can be confirmed.') }}
+                </x-signal.ui.alert>
+            @endif
+
+            @if ($visibleConnections->isEmpty())
                 <p class="mt-4 rounded-control border border-dashed border-line px-4 py-3 text-sm leading-6 text-muted">
                     {{ __('No workflows connect these resources yet.') }}
                 </p>
             @else
                 <ul class="mt-4 grid gap-3" aria-label="{{ __('Configured cross-app workflows') }}">
-                    @foreach ($connections as $connection)
+                    @foreach ($visibleConnections as $connection)
                         @php
                             $source = $connection->sourceResource;
                             $target = $connection->targetResource;

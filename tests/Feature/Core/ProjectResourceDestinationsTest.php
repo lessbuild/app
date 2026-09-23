@@ -3,6 +3,8 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectResourceDestinationProvider;
+use App\Core\Data\Projects\ProjectResourceDestination;
+use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -13,7 +15,7 @@ use Tests\TestCase;
 
 final class ProjectResourceDestinationsTest extends TestCase
 {
-    public function test_destinations_are_resolved_by_product_and_unknown_products_are_omitted(): void
+    public function test_destinations_are_resolved_by_product_and_unknown_products_are_marked_unavailable(): void
     {
         $registry = new ProjectResourceDestinationRegistry;
         $registry->register('monitor', new class implements ProjectResourceDestinationProvider
@@ -21,7 +23,10 @@ final class ProjectResourceDestinationsTest extends TestCase
             public function destinations(PlatformUser $user, Collection $resources): array
             {
                 return $resources->mapWithKeys(fn (ProjectResource $resource): array => [
-                    (string) $resource->getKey() => '/monitor/applications/'.$resource->resource_id,
+                    (string) $resource->getKey() => new ProjectResourceDestination(
+                        ProjectResourceDestinationState::Available,
+                        '/monitor/applications/'.$resource->resource_id,
+                    ),
                 ])->all();
             }
         });
@@ -32,18 +37,27 @@ final class ProjectResourceDestinationsTest extends TestCase
                 'product' => 'monitor',
                 'resource_type' => 'application',
                 'resource_id' => '42',
+                'status' => 'active',
             ]),
             (new ProjectResource)->forceFill([
                 'id' => 'map_02',
                 'product' => 'unknown',
                 'resource_type' => 'service',
                 'resource_id' => '99',
+                'status' => 'active',
             ]),
         ]);
 
         $destinations = (new ProjectResourceDestinations($registry))->forResources(new PlatformUser, $resources);
 
-        $this->assertSame(['map_01' => '/monitor/applications/42'], $destinations);
+        $this->assertEquals(
+            new ProjectResourceDestination(ProjectResourceDestinationState::Available, '/monitor/applications/42'),
+            $destinations['map_01'],
+        );
+        $this->assertEquals(
+            ProjectResourceDestinationState::Unavailable,
+            $destinations['map_02']->state,
+        );
     }
 
     public function test_unavailable_product_does_not_break_other_resource_destinations(): void
@@ -60,18 +74,24 @@ final class ProjectResourceDestinationsTest extends TestCase
         {
             public function destinations(PlatformUser $user, Collection $resources): array
             {
-                return ['analytics_map' => '/analytics/sites/7'];
+                return ['analytics_map' => new ProjectResourceDestination(
+                    ProjectResourceDestinationState::Available,
+                    '/analytics/sites/7',
+                )];
             }
         });
 
         $resources = collect([
-            (new ProjectResource)->forceFill(['id' => 'monitor_map', 'product' => 'monitor']),
-            (new ProjectResource)->forceFill(['id' => 'analytics_map', 'product' => 'analytics']),
+            (new ProjectResource)->forceFill(['id' => 'monitor_map', 'product' => 'monitor', 'status' => 'active']),
+            (new ProjectResource)->forceFill(['id' => 'analytics_map', 'product' => 'analytics', 'status' => 'active']),
         ]);
 
-        $this->assertSame(
-            ['analytics_map' => '/analytics/sites/7'],
-            (new ProjectResourceDestinations($registry))->forResources(new PlatformUser, $resources),
+        $destinations = (new ProjectResourceDestinations($registry))->forResources(new PlatformUser, $resources);
+
+        $this->assertEquals(
+            new ProjectResourceDestination(ProjectResourceDestinationState::Available, '/analytics/sites/7'),
+            $destinations['analytics_map'],
         );
+        $this->assertSame(ProjectResourceDestinationState::Unavailable, $destinations['monitor_map']->state);
     }
 }

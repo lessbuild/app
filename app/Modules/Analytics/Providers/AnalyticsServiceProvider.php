@@ -18,6 +18,7 @@ use App\Modules\Analytics\Policies\SitePolicy;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSetup;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
+use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsTrafficContextProvider;
 use App\Modules\Analytics\Services\WorkspaceViewData;

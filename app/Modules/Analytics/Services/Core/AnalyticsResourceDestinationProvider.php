@@ -3,6 +3,8 @@
 namespace App\Modules\Analytics\Services\Core;
 
 use App\Core\Contracts\ProjectResourceDestinationProvider;
+use App\Core\Data\Projects\ProjectResourceDestination;
+use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
@@ -16,10 +18,6 @@ final class AnalyticsResourceDestinationProvider implements ProjectResourceDesti
 
     public function destinations(PlatformUser $user, Collection $resources): array
     {
-        if (! Route::has('analytics.dashboard')) {
-            return [];
-        }
-
         $mappingIdsByProductResource = $resources
             ->where('resource_type', 'site')
             ->mapWithKeys(fn (ProjectResource $resource): array => [
@@ -27,17 +25,53 @@ final class AnalyticsResourceDestinationProvider implements ProjectResourceDesti
             ]);
         $sourceUserIds = $this->identities->sourceIdsFor($user, 'analytics');
 
-        if ($mappingIdsByProductResource->isEmpty() || $sourceUserIds === []) {
-            return [];
+        $destinations = $resources->mapWithKeys(fn (ProjectResource $resource): array => [
+            (string) $resource->getKey() => new ProjectResourceDestination(
+                $resource->resource_type === 'site'
+                    ? ProjectResourceDestinationState::Unavailable
+                    : ProjectResourceDestinationState::Unsupported,
+            ),
+        ])->all();
+
+        if ($mappingIdsByProductResource->isEmpty()) {
+            return $destinations;
         }
 
-        return Site::query()
+        if (! Route::has('analytics.dashboard')) {
+            return $destinations;
+        }
+
+        if ($sourceUserIds === []) {
+            foreach ($resources->where('resource_type', 'site') as $resource) {
+                $destinations[(string) $resource->getKey()] = new ProjectResourceDestination(
+                    ProjectResourceDestinationState::AccessChanged,
+                );
+            }
+
+            return $destinations;
+        }
+
+        $sites = Site::withTrashed()->whereKey($mappingIdsByProductResource->keys())->get(['id', 'deleted_at'])->keyBy(fn (Site $site): string => (string) $site->getKey());
+        $accessibleSiteIds = Site::withTrashed()
             ->whereKey($mappingIdsByProductResource->keys())
             ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $sourceUserIds))
-            ->get(['id'])
-            ->mapWithKeys(fn (Site $site): array => [
-                $mappingIdsByProductResource->get((string) $site->getKey()) => route('analytics.dashboard', ['site' => $site->getKey()]),
-            ])
-            ->all();
+            ->pluck('id')
+            ->map(static fn ($id): string => (string) $id);
+
+        foreach ($resources->where('resource_type', 'site') as $resource) {
+            $mappingId = (string) $resource->getKey();
+            $sourceId = (string) $resource->resource_id;
+            $site = $sites->get($sourceId);
+
+            $destinations[$mappingId] = $site === null
+                ? new ProjectResourceDestination(ProjectResourceDestinationState::Missing)
+                : (! $accessibleSiteIds->contains($sourceId)
+                    ? new ProjectResourceDestination(ProjectResourceDestinationState::AccessChanged)
+                    : ($site->trashed()
+                        ? new ProjectResourceDestination(ProjectResourceDestinationState::Stale)
+                        : new ProjectResourceDestination(ProjectResourceDestinationState::Available, route('analytics.dashboard', ['site' => $sourceId]))));
+        }
+
+        return $destinations;
     }
 }

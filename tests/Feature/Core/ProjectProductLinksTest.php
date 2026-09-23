@@ -4,6 +4,7 @@ namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectProductLink;
 use App\Core\Data\Projects\ProjectProductSnapshotState;
+use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
@@ -107,12 +108,31 @@ final class ProjectProductLinksTest extends TestCase
             ->destinations($this->platformUser(), collect([$mapping]));
 
         $this->assertSame(['01J8AA00000000000000000011'], array_keys($destinations));
-        $this->assertSame('/monitor/applications/31', parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_PATH));
+        $this->assertSame(ProjectResourceDestinationState::Available, $destinations['01J8AA00000000000000000011']->state);
+        $this->assertSame('/monitor/applications/31', parse_url($destinations['01J8AA00000000000000000011']->url, PHP_URL_PATH));
+
+        DB::connection('monitor')->table('applications')->update(['deleted_at' => now()]);
+
+        $this->assertSame(
+            ProjectResourceDestinationState::Stale,
+            app(MonitorResourceDestinationProvider::class)->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+        );
+
+        DB::connection('monitor')->table('applications')->update(['deleted_at' => null]);
 
         DB::connection('monitor')->table('user_workspace')->delete();
 
-        $this->assertSame([], app(MonitorResourceDestinationProvider::class)
-            ->destinations($this->platformUser(), collect([$mapping])));
+        $this->assertSame(
+            ProjectResourceDestinationState::AccessChanged,
+            app(MonitorResourceDestinationProvider::class)->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+        );
+
+        DB::connection('monitor')->table('applications')->delete();
+
+        $this->assertSame(
+            ProjectResourceDestinationState::Missing,
+            app(MonitorResourceDestinationProvider::class)->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+        );
     }
 
     public function test_analytics_link_keeps_the_mapped_site_in_the_url_and_selects_its_workspace_per_request(): void
@@ -150,14 +170,24 @@ final class ProjectProductLinksTest extends TestCase
             ->destinations($this->platformUser(), collect([$mapping]));
 
         $this->assertSame(['01J8AA00000000000000000011'], array_keys($destinations));
-        $this->assertSame('/analytics/dashboard', parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_PATH));
-        parse_str((string) parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_QUERY), $destinationQuery);
+        $this->assertSame(ProjectResourceDestinationState::Available, $destinations['01J8AA00000000000000000011']->state);
+        $this->assertSame('/analytics/dashboard', parse_url($destinations['01J8AA00000000000000000011']->url, PHP_URL_PATH));
+        parse_str((string) parse_url($destinations['01J8AA00000000000000000011']->url, PHP_URL_QUERY), $destinationQuery);
         $this->assertSame('71', $destinationQuery['site']);
+
+        DB::connection('analytics')->table('sites')->update(['deleted_at' => now()]);
+
+        $this->assertSame(
+            ProjectResourceDestinationState::Stale,
+            app(AnalyticsResourceDestinationProvider::class)->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+        );
 
         DB::connection('analytics')->table('workspace_user')->delete();
 
-        $this->assertSame([], app(AnalyticsResourceDestinationProvider::class)
-            ->destinations($this->platformUser(), collect([$mapping])));
+        $this->assertSame(
+            ProjectResourceDestinationState::AccessChanged,
+            app(AnalyticsResourceDestinationProvider::class)->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+        );
     }
 
     public function test_deployer_resource_destination_is_keyed_by_the_core_mapping_id_and_checks_organization_access(): void
@@ -204,7 +234,10 @@ final class ProjectProductLinksTest extends TestCase
             $mapping = ProjectResource::query()->findOrFail('01J8AA00000000000000000011');
             $provider = app(DeployerResourceDestinationProvider::class);
 
-            $this->assertSame([], $provider->destinations($this->platformUser(), collect([$mapping])));
+            $this->assertSame(
+                ProjectResourceDestinationState::AccessChanged,
+                $provider->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+            );
 
             DB::connection('deployer')->table('organization_user')->insert([
                 'organization_id' => 50,
@@ -214,7 +247,15 @@ final class ProjectProductLinksTest extends TestCase
 
             $destinations = $provider->destinations($this->platformUser(), collect([$mapping]));
             $this->assertSame(['01J8AA00000000000000000011'], array_keys($destinations));
-            $this->assertSame('/projects/31', parse_url($destinations['01J8AA00000000000000000011'], PHP_URL_PATH));
+            $this->assertSame(ProjectResourceDestinationState::Available, $destinations['01J8AA00000000000000000011']->state);
+            $this->assertSame('/projects/31', parse_url($destinations['01J8AA00000000000000000011']->url, PHP_URL_PATH));
+
+            DB::connection('deployer')->table('projects')->delete();
+
+            $this->assertSame(
+                ProjectResourceDestinationState::Missing,
+                $provider->destinations($this->platformUser(), collect([$mapping]))['01J8AA00000000000000000011']->state,
+            );
         } finally {
             foreach (['projects', 'organization_user', 'organizations', 'users'] as $table) {
                 $schema->dropIfExists($table);

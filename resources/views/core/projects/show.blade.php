@@ -256,8 +256,9 @@
         <x-signal.ui.project-resource-map
             :products="$products"
             :resources="$project->resources"
-            :connections="$project->connections"
+            :connections="$projectConnections"
             :resource-destinations="$resourceDestinations"
+            :hidden-connection-count="$hiddenConnectionCount"
             class="mb-4"
         />
 
@@ -401,11 +402,15 @@
                         <p class="mb-5 text-sm leading-6 text-muted">{{ __('Ask a workspace owner or admin to manage app connections.') }}</p>
                     @endif
 
-                    @if ($project->connections->isEmpty())
-                        <p class="text-sm leading-6 text-muted">{{ __('No application connections have been configured for this project.') }}</p>
+                    @if ($projectConnections->isEmpty())
+                        @if ($hiddenConnectionCount > 0)
+                            <p class="text-sm leading-6 text-muted">{{ __('Configured workflows are hidden until access to both connected resources can be confirmed.') }}</p>
+                        @else
+                            <p class="text-sm leading-6 text-muted">{{ __('No application connections have been configured for this project.') }}</p>
+                        @endif
                     @else
                         <ul class="divide-y divide-line">
-                            @foreach ($project->connections as $connection)
+                            @foreach ($projectConnections as $connection)
                                 <li class="flex flex-wrap items-start justify-between gap-3 py-4 first:pt-0 last:pb-0">
                                     <div class="min-w-0 space-y-1">
                                         <p class="truncate text-sm font-bold text-ink">

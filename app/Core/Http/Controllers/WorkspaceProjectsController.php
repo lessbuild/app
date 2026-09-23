@@ -2,6 +2,7 @@
 
 namespace App\Core\Http\Controllers;
 
+use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Http\Requests\StoreProjectResourceRequest;
 use App\Core\Http\Requests\StoreWorkspaceProjectRequest;
 use App\Core\Http\Requests\UpdateWorkspaceProjectRequest;
@@ -264,7 +265,7 @@ final class WorkspaceProjectsController
                 : $query->whereIn('product', $visibleProducts),
             'resources' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
-                : $query->whereIn('product', $visibleProducts)->where('status', 'active'),
+                : $query->whereIn('product', $visibleProducts),
             'resources.environment',
             'connections' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
@@ -286,6 +287,20 @@ final class WorkspaceProjectsController
             'connections.deliveries',
         ]);
         $authorizedProductLinks = $productLinks->forProject($user, $project, $visibleProducts);
+        $resourceDestinationsForProject = $resourceDestinations->forResources($user, $project->resources);
+        $projectConnections = $project->connections
+            ->filter(fn ($connection): bool => ($resourceDestinationsForProject[(string) $connection->source_resource_id]->state ?? null) === ProjectResourceDestinationState::Available
+                && ($resourceDestinationsForProject[(string) $connection->target_resource_id]->state ?? null) === ProjectResourceDestinationState::Available)
+            ->values();
+        $hiddenConnectionCount = $project->connections->count() - $projectConnections->count();
+        $connectionResources = $project->resources
+            ->filter(fn ($resource): bool => $resource->status === 'active'
+                && ($resourceDestinationsForProject[(string) $resource->getKey()]->state ?? null) === ProjectResourceDestinationState::Available)
+            ->sortBy([
+                ['product', 'asc'],
+                ['name', 'asc'],
+            ])
+            ->values();
 
         return view('core.projects.show', [
             'user' => $user,
@@ -297,8 +312,10 @@ final class WorkspaceProjectsController
             'productLinks' => $authorizedProductLinks,
             'productSummaries' => $productSummaries->forProject($user, $project, $visibleProducts),
             'projectSetupSteps' => $projectSetupSteps,
-            'resourceDestinations' => $resourceDestinations->forResources($user, $project->resources),
-            'connectionDiagnostics' => $connectionDiagnostics->forConnections($project->connections),
+            'resourceDestinations' => $resourceDestinationsForProject,
+            'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections),
+            'projectConnections' => $projectConnections,
+            'hiddenConnectionCount' => $hiddenConnectionCount,
             'resourceCandidates' => $canManageConnections
                 ? $resourceLinks->candidates($user, $availableProducts)
                 : collect(),
@@ -313,10 +330,7 @@ final class WorkspaceProjectsController
             'canManageProjects' => $canManageProjects,
             'canManageConnections' => $canManageConnections,
             'connectionCapabilities' => $connectionEntitlements->availableFor($project),
-            'connectionResources' => $project->resources->sortBy([
-                ['product', 'asc'],
-                ['name', 'asc'],
-            ])->values(),
+            'connectionResources' => $connectionResources,
         ]);
     }
 
