@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ApplyLoadBalancerJob;
-use App\Jobs\Database\CollectDatabaseSnapshotJob;
-use App\Models\Environment;
-use App\Models\EnvironmentResource;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\ApplyLoadBalancerJob;
+use App\Modules\Deployer\Jobs\Database\CollectDatabaseSnapshotJob;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;

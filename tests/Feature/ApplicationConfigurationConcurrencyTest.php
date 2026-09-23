@@ -2,20 +2,20 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\ConfigurationOperation;
-use App\Models\ConfigurationReview;
-use App\Models\Environment;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\ApplicationConfigurationBuilds;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationResults;
-use App\Services\ApplicationConfigurationRetries;
-use App\Services\ApplicationConfigurationReviews;
-use App\Services\DeploymentLauncher;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ConfigurationOperation;
+use App\Modules\Deployer\Models\ConfigurationReview;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ApplicationConfigurationBuilds;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationResults;
+use App\Modules\Deployer\Services\ApplicationConfigurationRetries;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Services\DeploymentLauncher;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;

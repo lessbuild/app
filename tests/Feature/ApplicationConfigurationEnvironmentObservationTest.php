@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\ServerProvider;
-use App\Data\CloudServerData;
-use App\Models\Environment;
-use App\Models\Project;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Services\ApplicationConfigurationEnvironmentObservationQuery;
-use App\Services\ServerProviderResolver;
+use App\Modules\Deployer\Contracts\ServerProvider;
+use App\Modules\Deployer\Data\CloudServerData;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationEnvironmentObservationQuery;
+use App\Modules\Deployer\Services\ServerProviderResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use RuntimeException;

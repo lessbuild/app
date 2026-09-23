@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\TrustHosts;
-use App\Models\User;
+use App\Modules\Deployer\Http\Middleware\TrustHosts;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;

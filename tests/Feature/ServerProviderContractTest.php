@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\ServerProvider;
-use App\Data\CloudServerData;
-use App\Services\DigitalOcean;
-use App\Services\HetznerCloud;
-use App\Services\Vultr;
+use App\Modules\Deployer\Contracts\ServerProvider;
+use App\Modules\Deployer\Data\CloudServerData;
+use App\Modules\Deployer\Services\DigitalOcean;
+use App\Modules\Deployer\Services\HetznerCloud;
+use App\Modules\Deployer\Services\Vultr;
 use Illuminate\Http\Client\ResponseSequence;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;

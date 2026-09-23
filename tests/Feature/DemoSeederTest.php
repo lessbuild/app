@@ -2,21 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\ProviderConnectionCheck;
-use App\Models\Recipe;
-use App\Models\RecipeRating;
-use App\Models\RecipeReport;
-use App\Models\RepositoryWebhookDelivery;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\ServerLogSnapshot;
-use App\Models\SignInEvent;
-use App\Models\StatusPage;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\RecipeRating;
+use App\Modules\Deployer\Models\RecipeReport;
+use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\ServerLogSnapshot;
+use App\Modules\Deployer\Models\SignInEvent;
+use App\Modules\Deployer\Models\StatusPage;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
 use Database\Seeders\DemoAccountSeeder;
 use Database\Seeders\DemoGallerySeeder;
 use Database\Seeders\DemoSeeder;

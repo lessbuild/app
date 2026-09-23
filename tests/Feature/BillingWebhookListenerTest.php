@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\SyncOrganizationSeatQuantityJob;
-use App\Models\User;
+use App\Modules\Deployer\Jobs\SyncOrganizationSeatQuantityJob;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;

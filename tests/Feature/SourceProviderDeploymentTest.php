@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\CloneRepositoryScript;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\CloneRepositoryScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

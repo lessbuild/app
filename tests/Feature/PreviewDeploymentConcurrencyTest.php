@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Data\VerifiedRepositoryWebhook;
-use App\Models\PreviewDeployment;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Data\VerifiedRepositoryWebhook;
+use App\Modules\Deployer\Models\PreviewDeployment;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -156,7 +156,7 @@ class PreviewDeploymentConcurrencyTest extends TestCase
                         touch($this->directory.'/contender');
                     }
 
-                    $status = app('App\\Services\\PreviewDeploymentLifecycle')->handle(
+                    $status = app('App\\Modules\\Deployer\\Services\\PreviewDeploymentLifecycle')->handle(
                         Repository::query()->findOrFail($sourceId),
                         new VerifiedRepositoryWebhook(
                             deliveryId: 'preview-'.$number,

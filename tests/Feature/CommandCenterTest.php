@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\User;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

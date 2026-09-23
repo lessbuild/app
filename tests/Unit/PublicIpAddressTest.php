@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Support\PublicIpAddress;
+use App\Modules\Deployer\Support\PublicIpAddress;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ApplyWebsiteDomainsJob;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\ApplyWebsiteDomainsJob;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Cache;

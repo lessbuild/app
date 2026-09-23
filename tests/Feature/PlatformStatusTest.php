@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\OperationalDiagnostics;
+use App\Modules\Deployer\Services\OperationalDiagnostics;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 

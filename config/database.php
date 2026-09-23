@@ -7,12 +7,15 @@ $moduleConnection = static function (string $prefix, string $database): array {
     $value = static fn (string $key, mixed $default = null): mixed => env($prefix.'_DB_'.$key, $default);
     $driver = $value('CONNECTION', env('DB_CONNECTION', 'mysql'));
     $url = $value('URL');
+    $sqliteDatabase = $database === ':memory:' || str_contains($database, DIRECTORY_SEPARATOR)
+        ? $database
+        : database_path('database/'.$database.'.sqlite');
 
     return match ($driver) {
         'sqlite' => [
             'driver' => 'sqlite',
             'url' => $url,
-            'database' => $value('DATABASE', database_path('database/'.$database.'.sqlite')),
+            'database' => $value('DATABASE', $sqliteDatabase),
             'prefix' => '',
             'foreign_key_constraints' => (bool) $value('FOREIGN_KEYS', env('DB_FOREIGN_KEYS', true)),
             'busy_timeout' => (int) $value('BUSY_TIMEOUT', env('DB_BUSY_TIMEOUT', 5000)),
@@ -83,9 +86,9 @@ return [
     |
     */
 
-    // Keep the legacy default until product models move to their named
-    // connections. Never change this value per request host.
-    'default' => env('DB_CONNECTION', 'mysql'),
+    // DB_CONNECTION selects the common driver; the default connection is a
+    // stable database owner and must never vary by request host.
+    'default' => env('DB_DEFAULT_CONNECTION', env('DB_CONNECTION', 'mysql')),
 
     /*
     |--------------------------------------------------------------------------

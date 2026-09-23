@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ApplyLoadBalancerJob;
-use App\Jobs\RemoveLoadBalancerJob;
-use App\Models\Environment;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\ApplyLoadBalancerJob;
+use App\Modules\Deployer\Jobs\RemoveLoadBalancerJob;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;

@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Data\BackupRecoverySummary;
-use App\Models\BackupDestination;
-use App\Models\BackupRestore;
-use App\Models\BackupRestoreVerification;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteBackup;
-use App\Services\BackupRecoveryEvidenceQuery;
+use App\Modules\Deployer\Data\BackupRecoverySummary;
+use App\Modules\Deployer\Models\BackupDestination;
+use App\Modules\Deployer\Models\BackupRestore;
+use App\Modules\Deployer\Models\BackupRestoreVerification;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteBackup;
+use App\Modules\Deployer\Services\BackupRecoveryEvidenceQuery;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

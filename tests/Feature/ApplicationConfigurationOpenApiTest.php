@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\ApplicationConfigurationDocument;
+use App\Modules\Deployer\Services\ApplicationConfigurationDocument;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 

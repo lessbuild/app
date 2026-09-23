@@ -2,19 +2,19 @@
 
 namespace Database\Seeders;
 
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\ProviderConnectionCheck;
-use App\Models\Recipe;
-use App\Models\Region;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\Size;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
-use App\Services\ServerProvisioningPlan;
-use App\Services\WebsiteProvisioningPlan;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\Region;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Size;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Services\ServerProvisioningPlan;
+use App\Modules\Deployer\Services\WebsiteProvisioningPlan;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;

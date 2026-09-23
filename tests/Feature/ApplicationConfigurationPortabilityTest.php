@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

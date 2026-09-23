@@ -1,0 +1,479 @@
+<?php
+
+namespace App\Modules\Deployer\Services;
+
+use App\Modules\Deployer\Actions\Project\ConfigurePreviewStackAction;
+use App\Modules\Deployer\Actions\Project\QueuePreviewStackCleanupAction;
+use App\Modules\Deployer\Data\VerifiedRepositoryWebhook;
+use App\Modules\Deployer\Jobs\ReportGitHubPreviewJob;
+use App\Modules\Deployer\Jobs\Web\AddWebsiteJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\PreviewDeployment;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Website;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+
+class PreviewDeploymentLifecycle
+{
+    /**
+     * Bind resource limits, deployment requests and plan features for preview lifecycle actions.
+     *
+     * @param  PlanLimits  $limits  Checks website and concurrent-preview capacity under the locked workspace.
+     * @param  DeploymentRequest  $deployments  Captures and dispatches preview builds.
+     * @param  Entitlements  $entitlements  Checks whether the workspace plan permits previews.
+     * @param  PreviewEnvironmentConfiguration  $previewEnvironment  Builds safe preview-owned runtime configuration.
+     * @param  PreviewTrustPolicy  $previewTrust  Admits only trusted target repository and branch events.
+     * @param  PreviewSecretApprovalResolver  $previewSecrets  Resolves only current, explicitly approved secret versions.
+     * @param  ConfigurePreviewStackAction  $previewStack  Persists supported process and managed-resource declarations.
+     * @param  PreviewStackReadiness  $previewReadiness  Records remote resource initialization through deployment callbacks.
+     * @param  PreviewInitializationLifecycle  $previewInitialization  Records one-time application initialization attempts and stale-callback guards.
+     * @param  QueuePreviewStackCleanupAction  $queuePreviewCleanup  Captures and dispatches cleanup after a preview becomes idle.
+     */
+    public function __construct(
+        private readonly PlanLimits $limits,
+        private readonly DeploymentRequest $deployments,
+        private readonly Entitlements $entitlements,
+        private readonly PreviewEnvironmentConfiguration $previewEnvironment,
+        private readonly PreviewTrustPolicy $previewTrust,
+        private readonly PreviewSecretApprovalResolver $previewSecrets,
+        private readonly ConfigurePreviewStackAction $previewStack,
+        private readonly PreviewStackReadiness $previewReadiness,
+        private readonly PreviewInitializationLifecycle $previewInitialization,
+        private readonly QueuePreviewStackCleanupAction $queuePreviewCleanup,
+    ) {}
+
+    /**
+     * Apply a verified pull-request event to the matching preview and queue its next lifecycle step.
+     *
+     * @param  Repository  $source  The repository whose configured project supplies preview settings.
+     * @param  VerifiedRepositoryWebhook  $webhook  A verified repository event with preview identity, action and revision.
+     * @return string The resulting preview status, or a reason the event was ignored or rejected.
+     */
+    public function handle(Repository $source, VerifiedRepositoryWebhook $webhook): string
+    {
+        if (! $webhook->isPreviewEvent()) {
+            return 'event_ignored';
+        }
+
+        $baseEnvironment = Environment::query()
+            ->where('website_id', $source->website_id)
+            ->where('type', '!=', 'preview')
+            ->whereHas('project', fn ($query) => $query->where('preview_enabled', true)->whereNotNull('preview_domain'))
+            ->with('project')
+            ->orderByRaw('CASE WHEN branch = ? THEN 0 ELSE 1 END', [$source->branch])
+            ->orderByRaw("CASE WHEN type = 'production' THEN 0 ELSE 1 END")
+            ->first();
+        if (! $baseEnvironment) {
+            return 'preview_ignored';
+        }
+        if (! $this->entitlements->allows($baseEnvironment->project->organization, 'previews')) {
+            return 'preview_plan_required';
+        }
+
+        if ($webhook->previewAction === 'closed') {
+            return $this->close($source, $webhook->pullRequestNumber);
+        }
+
+        $trust = $this->previewTrust->evaluate($source, $webhook);
+        if (! $trust->allowed()) {
+            return $trust->status;
+        }
+
+        if (! $webhook->revision || ! $webhook->sourceBranch) {
+            return 'invalid_preview';
+        }
+
+        $preview = DB::transaction(function () use ($source, $webhook, $baseEnvironment): ?PreviewDeployment {
+            // The version increment is an internal write-side lock for SQLite and other
+            // drivers that do not implement SELECT ... FOR UPDATE; it is not domain state.
+            DB::table('organizations')
+                ->where('id', $baseEnvironment->project->organization_id)
+                ->increment('preview_quota_lock_version');
+            $organization = Organization::query()->lockForUpdate()->findOrFail($baseEnvironment->project->organization_id);
+            $project = Project::query()
+                ->where('organization_id', $organization->id)
+                ->lockForUpdate()
+                ->findOrFail($baseEnvironment->project_id);
+            $preview = PreviewDeployment::query()
+                ->where('source_repository_id', $source->id)
+                ->where('pull_request_number', $webhook->pullRequestNumber)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $preview || ! $preview->website || $preview->website->trashed()) {
+                if (! $this->limits->usageForOrganization($organization, 'websites')['allowed']
+                    || ! $this->limits->usageForOrganization($organization, 'preview_deployments')['allowed']) {
+                    return null;
+                }
+
+                $preview = $this->create($project, $baseEnvironment, $source, $webhook, $preview);
+            } else {
+                $revisionChanged = ! hash_equals((string) $preview->revision, (string) $webhook->revision);
+                $preview->update([
+                    'source_environment_id' => $baseEnvironment->id,
+                    'title' => $webhook->pullRequestTitle,
+                    'source_branch' => $webhook->sourceBranch,
+                    'revision' => $webhook->revision,
+                    'status' => $preview->website->provisioning_status === Website::STATUS_ACTIVE
+                        ? PreviewDeployment::STATUS_DEPLOYING
+                        : PreviewDeployment::STATUS_PROVISIONING,
+                    'last_activity_at' => now(),
+                    'closed_at' => null,
+                ]);
+                $preview->repository?->update(['branch' => $webhook->sourceBranch]);
+                if ($revisionChanged) {
+                    $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
+                    $this->previewInitialization->resetForRevision($preview, $project);
+                }
+            }
+
+            $this->configure($preview, $webhook);
+            $preview->loadMissing('environment.website');
+            if ($preview->environment) {
+                $this->previewStack->handle($project, $preview->environment);
+            }
+
+            return $preview->fresh(['website', 'repository']);
+        }, 3);
+
+        if (! $preview) {
+            return 'preview_limit_reached';
+        }
+
+        if ($preview->website?->provisioning_status === Website::STATUS_QUEUED) {
+            AddWebsiteJob::dispatch($preview->website);
+        } elseif ($preview->website?->provisioning_status === Website::STATUS_ACTIVE) {
+            $this->queueLatest($preview);
+        }
+
+        ReportGitHubPreviewJob::dispatch($preview->id);
+
+        return $preview->status;
+    }
+
+    /**
+     * Queue the latest preview revision after website provisioning completes.
+     *
+     * @param  Website  $website  The provisioned website used to locate its preview.
+     * @return void No value; skips missing or closed previews.
+     */
+    public function websiteReady(Website $website): void
+    {
+        $preview = PreviewDeployment::query()->where('website_id', $website->id)->first();
+        if ($preview && $preview->status !== PreviewDeployment::STATUS_CLOSED) {
+            $this->queueLatest($preview);
+        }
+    }
+
+    /**
+     * Mark active previews for the website as failed after provisioning failure.
+     *
+     * @param  Website  $website  The website whose nonclosed preview records should be updated.
+     * @return void No value; closed previews retain their status.
+     */
+    public function websiteFailed(Website $website): void
+    {
+        PreviewDeployment::query()
+            ->where('website_id', $website->id)
+            ->where('status', '!=', PreviewDeployment::STATUS_CLOSED)
+            ->update(['status' => PreviewDeployment::STATUS_FAILED]);
+    }
+
+    /**
+     * Reconcile a finished preview build with its current desired revision.
+     *
+     * @param  Build  $build  The finished build used to locate the preview and compare revisions.
+     * @return void No value; marks readiness/failure, queues a newer revision or attempts closed-preview cleanup.
+     */
+    public function buildFinished(Build $build): void
+    {
+        $preview = PreviewDeployment::query()->where('repository_id', $build->repository_id)->first();
+        if (! $preview) {
+            return;
+        }
+        if ($build->status === Build::STATUS_SUCCEEDED) {
+            $this->previewInitialization->recordSuccess($build);
+        } else {
+            $this->previewInitialization->recordFailure($build);
+        }
+        if ($preview->status === PreviewDeployment::STATUS_CLOSED) {
+            $this->deleteWebsiteWhenIdle($preview);
+
+            return;
+        }
+        if ($build->status === Build::STATUS_SUCCEEDED && hash_equals($preview->revision, (string) $build->revision)) {
+            $preview->update(['status' => PreviewDeployment::STATUS_READY, 'last_activity_at' => now()]);
+            ReportGitHubPreviewJob::dispatch($preview->id);
+
+            return;
+        }
+        if (! hash_equals($preview->revision, (string) $build->revision)) {
+            $this->queueLatest($preview);
+
+            return;
+        }
+        $preview->update(['status' => PreviewDeployment::STATUS_FAILED]);
+        ReportGitHubPreviewJob::dispatch($preview->id);
+    }
+
+    /**
+     * Re-check a closed preview after cancellation or timeout and start cleanup when its deployment is idle.
+     *
+     * @param  Build  $build  Terminal deployment whose repository identifies the preview.
+     * @return void No value; active or nonclosed previews remain under their normal lifecycle.
+     */
+    public function deploymentStopped(Build $build): void
+    {
+        $this->previewInitialization->recordStopped($build);
+        $preview = PreviewDeployment::query()->where('repository_id', $build->repository_id)->first();
+        if ($preview?->status === PreviewDeployment::STATUS_CLOSED) {
+            $this->deleteWebsiteWhenIdle($preview);
+        }
+    }
+
+    /**
+     * Close a preview, enqueue its GitHub report and attempt website cleanup.
+     *
+     * @param  PreviewDeployment  $preview  The preview whose closed timestamp and status are recorded.
+     * @return void No value; website deletion is deferred while a deployment remains active.
+     */
+    public function expire(PreviewDeployment $preview): void
+    {
+        $preview->update(['status' => PreviewDeployment::STATUS_CLOSED, 'closed_at' => now()]);
+        $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
+        ReportGitHubPreviewJob::dispatch($preview->id);
+        $this->deleteWebsiteWhenIdle($preview);
+    }
+
+    /**
+     * Create preview website, repository and environment records from the selected source.
+     *
+     * @param  Project  $project  The preview-enabled project and workspace owner.
+     * @param  Environment  $baseEnvironment  The nonpreview environment supplying server placement.
+     * @param  Repository  $source  The source repository whose website settings and hooks are copied.
+     * @param  VerifiedRepositoryWebhook  $webhook  The verified pull-request details used for preview identity and revision.
+     * @param  PreviewDeployment|null  $preview  An existing preview record to repoint, or null to create one.
+     * @return PreviewDeployment The created or updated preview record; the caller supplies the surrounding transaction.
+     */
+    private function create(
+        Project $project,
+        Environment $baseEnvironment,
+        Repository $source,
+        VerifiedRepositoryWebhook $webhook,
+        ?PreviewDeployment $preview,
+    ): PreviewDeployment {
+        $baseWebsite = $source->website;
+        $label = "PR #{$webhook->pullRequestNumber}";
+        $hostname = 'pr-'.$webhook->pullRequestNumber.'-'.$project->slug.'.'.$project->preview_domain;
+        $website = $project->organization->websites()->make([
+            'user_id' => $project->organization->owner_id,
+            'server_id' => $baseEnvironment->server_id ?: $baseWebsite->server_id,
+            'name' => "{$project->name} {$label}",
+            'description' => "Ephemeral preview for {$label}",
+            'environment' => '',
+            'url' => Str::lower($hostname),
+            'database_password' => Str::random(32),
+            'provisioning_status' => Website::STATUS_QUEUED,
+            'health_check_enabled' => $baseWebsite->health_check_enabled,
+            'health_monitoring_enabled' => $baseWebsite->health_monitoring_enabled,
+            'health_check_interval_minutes' => $baseWebsite->health_check_interval_minutes,
+            'health_failure_threshold' => $baseWebsite->health_failure_threshold,
+            'health_check_path' => $baseWebsite->health_check_path,
+            'release_retention' => min(3, $baseWebsite->release_retention),
+        ]);
+        $website->save();
+        $repository = $project->organization->repositories()->create([
+            'user_id' => $project->organization->owner_id,
+            'provider_id' => $source->provider_id,
+            'website_id' => $website->id,
+            'name' => "{$source->name} {$label}",
+            'url' => $source->url,
+            'branch' => $webhook->sourceBranch,
+            'description' => "Ephemeral preview source for {$label}",
+            'deployment_root' => $source->deployment_root,
+            'build_commands' => $source->build_commands,
+            'post_deployment_commands' => $source->post_deployment_commands,
+            'webhook_enabled' => false,
+        ]);
+        $environment = $project->environments()->create([
+            'name' => $label,
+            // Reopened previews retain the old environment for cleanup history. A
+            // fresh slug keeps that cleanup identity disjoint from the new stack.
+            'slug' => $this->environmentSlug($project, $webhook->pullRequestNumber),
+            'type' => 'preview',
+            'branch' => $webhook->sourceBranch,
+            'server_id' => $website->server_id,
+            'website_id' => $website->id,
+            'runtime_type' => $baseEnvironment->runtime_type,
+            'runtime_version' => $baseEnvironment->runtime_version,
+            'build_command' => $baseEnvironment->build_command,
+            'start_command' => $baseEnvironment->start_command,
+            'container_port' => $baseEnvironment->container_port,
+            'dockerfile_path' => $baseEnvironment->dockerfile_path,
+            'is_protected' => false,
+            'requires_deployment_approval' => false,
+            'hibernate_after_minutes' => 60,
+        ]);
+        $attributes = [
+            'project_id' => $project->id,
+            'source_repository_id' => $source->id,
+            'source_environment_id' => $baseEnvironment->id,
+            'environment_id' => $environment->id,
+            'website_id' => $website->id,
+            'repository_id' => $repository->id,
+            'pull_request_number' => $webhook->pullRequestNumber,
+            'title' => $webhook->pullRequestTitle,
+            'source_branch' => $webhook->sourceBranch,
+            'revision' => $webhook->revision,
+            'status' => PreviewDeployment::STATUS_PROVISIONING,
+            'initialization_status' => $this->previewInitialization->statusFor($project),
+            'initialization_attempts' => 0,
+            'initialization_build_id' => null,
+            'initialization_error' => null,
+            'initialization_completed_at' => null,
+            'url' => $website->url,
+            'last_activity_at' => now(),
+            'closed_at' => null,
+        ];
+        if ($preview) {
+            $preview->secretApprovals()->whereNull('revoked_at')->update(['revoked_at' => now()]);
+            $preview->update($attributes);
+
+            return $preview;
+        }
+
+        return PreviewDeployment::query()->create($attributes);
+    }
+
+    /**
+     * Select an unused environment identity for this preview stack generation.
+     *
+     * @param  Project  $project  Project receiving the preview environment.
+     * @param  int  $pullRequestNumber  Pull-request number used for the stable base slug.
+     * @return string A project-unique preview environment slug.
+     */
+    private function environmentSlug(Project $project, int $pullRequestNumber): string
+    {
+        $base = 'pr-'.$pullRequestNumber;
+        $slug = $base;
+        $suffix = 2;
+
+        while (Environment::query()
+            ->where('project_id', $project->id)
+            ->where('slug', $slug)
+            ->exists()) {
+            $slug = "{$base}-{$suffix}";
+            $suffix++;
+        }
+
+        return $slug;
+    }
+
+    /**
+     * Persist independent preview configuration plus the currently approved secret scope.
+     *
+     * @param  PreviewDeployment  $preview  Preview whose website receives the configuration.
+     * @param  VerifiedRepositoryWebhook  $webhook  Verified event supplying the exact revision and PR number.
+     * @return void No value; unapproved or stale scopes produce the safe configuration only.
+     */
+    private function configure(PreviewDeployment $preview, VerifiedRepositoryWebhook $webhook): void
+    {
+        $website = $preview->website;
+        if (! $website) {
+            return;
+        }
+
+        $website->update([
+            'environment' => $this->previewEnvironment->for(
+                $website,
+                $webhook->pullRequestNumber,
+                $this->previewSecrets->valuesFor($preview, (string) $webhook->revision),
+            ),
+        ]);
+    }
+
+    /**
+     * Create and dispatch a preview build when its repository is ready and idle.
+     *
+     * @param  PreviewDeployment  $preview  The preview reloaded for current revision and repository readiness.
+     * @return void No value; skips repositories that are unready or already deploying.
+     */
+    private function queueLatest(PreviewDeployment $preview): void
+    {
+        $preview->refresh()->loadMissing('repository.website.server');
+        if (! $preview->repository?->isDeploymentReady() || $preview->repository->website->hasActiveDeployment()) {
+            return;
+        }
+        $build = DB::transaction(function () use ($preview): ?Build {
+            $current = PreviewDeployment::query()->lockForUpdate()->find($preview->id);
+            if (! $current || $current->status === PreviewDeployment::STATUS_CLOSED) {
+                return null;
+            }
+
+            $initialization = $this->previewInitialization->payload($current);
+            $attributes = [
+                'trigger_source' => Build::TRIGGER_WEBHOOK,
+                'revision' => $current->revision,
+                'commit_message' => $current->title,
+                ...$this->deployments->attributes($current->repository),
+            ];
+            if ($initialization) {
+                $attributes['environment_payload']['preview_initialization'] = $initialization;
+            }
+            $build = $current->repository->builds()->create($attributes);
+            $current->update(['status' => PreviewDeployment::STATUS_DEPLOYING]);
+            $this->previewReadiness->beginProvisioning($build);
+            $this->previewInitialization->begin($current, $build, $initialization);
+
+            return $build;
+        }, 3);
+
+        if ($build) {
+            $this->deployments->dispatch($build);
+        }
+    }
+
+    /**
+     * Find and expire the preview for one source pull request.
+     *
+     * @param  Repository  $source  The repository used to scope the preview lookup.
+     * @param  int  $number  The source pull-request number.
+     * @return string The closed status, or preview_not_found if no preview exists.
+     */
+    private function close(Repository $source, int $number): string
+    {
+        $preview = PreviewDeployment::query()
+            ->where('source_repository_id', $source->id)
+            ->where('pull_request_number', $number)
+            ->first();
+        if (! $preview) {
+            return 'preview_not_found';
+        }
+        $this->expire($preview);
+
+        return PreviewDeployment::STATUS_CLOSED;
+    }
+
+    /**
+     * Soft-delete the preview website once no active deployment remains.
+     *
+     * @param  PreviewDeployment  $preview  The preview whose website may be cleaned up.
+     * @return void No value; missing, already deleted and busy websites are skipped.
+     */
+    private function deleteWebsiteWhenIdle(PreviewDeployment $preview): void
+    {
+        $website = $preview->website;
+        if (! $website || $website->hasActiveDeployment()) {
+            return;
+        }
+
+        $this->queuePreviewCleanup->handle($preview);
+        if (! $website->trashed()) {
+            $website->delete();
+        }
+    }
+}

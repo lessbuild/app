@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\ConfigurationApplication;
-use App\Models\ConfigurationReview;
-use App\Models\Project;
-use App\Models\Repository;
-use App\Models\User;
-use App\Services\ApplicationConfigurationResults;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ConfigurationApplication;
+use App\Modules\Deployer\Models\ConfigurationReview;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationResults;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;

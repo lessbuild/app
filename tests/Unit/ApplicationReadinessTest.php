@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\ApplicationReadiness;
+use App\Modules\Deployer\Services\ApplicationReadiness;
 use Illuminate\Database\Migrations\MigrationRepositoryInterface;
 use Illuminate\Database\Migrations\Migrator;
 use Mockery;

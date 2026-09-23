@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Models\Website;
-use App\Services\WebsiteCaddyConfiguration;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\WebsiteCaddyConfiguration;
 use Illuminate\Support\Collection;
 use Tests\TestCase;
 

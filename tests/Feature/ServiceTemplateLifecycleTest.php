@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\EnvironmentResource;
-use App\Models\PreviewStackCleanup;
-use App\Models\Project;
-use App\Scripts\Repository\ConfigureResourcesScript;
-use App\Scripts\Repository\InstallDependenciesScript;
-use App\Scripts\Repository\RunBuildCommandsScript;
-use App\Services\ApplicationTemplateCatalog;
-use App\Services\PreviewStackCatalog;
-use App\Services\PreviewStackCleanupScript;
-use App\Services\RepositoryDeploymentPlan;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\PreviewStackCleanup;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Scripts\Repository\ConfigureResourcesScript;
+use App\Modules\Deployer\Scripts\Repository\InstallDependenciesScript;
+use App\Modules\Deployer\Scripts\Repository\RunBuildCommandsScript;
+use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Services\PreviewStackCatalog;
+use App\Modules\Deployer\Services\PreviewStackCleanupScript;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;
 use UnexpectedValueException;

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\View\Navigation\WorkspaceNavigation;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\View\Navigation\WorkspaceNavigation;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\File;
@@ -842,7 +842,11 @@ class LocalUiAssetTest extends TestCase
 
     public function test_view_sources_do_not_reintroduce_retired_external_asset_hosts(): void
     {
-        $views = collect(File::allFiles(resource_path('views')))
+        $viewFiles = collect([
+            ...File::allFiles(resource_path('views')),
+            ...File::allFiles(app_path('Modules/Deployer/Views')),
+        ]);
+        $views = $viewFiles
             ->map(fn (\SplFileInfo $file): string => File::get($file->getPathname()))
             ->implode("\n");
 
@@ -865,8 +869,12 @@ class LocalUiAssetTest extends TestCase
     public function test_view_sources_use_signal_weight_and_responsive_form_radius_utilities(): void
     {
         $skipLinkViews = 0;
+        $viewFiles = collect([
+            ...File::allFiles(resource_path('views')),
+            ...File::allFiles(app_path('Modules/Deployer/Views')),
+        ]);
 
-        foreach (File::allFiles(resource_path('views')) as $file) {
+        foreach ($viewFiles as $file) {
             $source = File::get($file->getPathname());
 
             $this->assertStringNotContainsString('font-black', $source, $file->getRelativePathname());

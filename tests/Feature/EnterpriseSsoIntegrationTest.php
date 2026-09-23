@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Data\EnterpriseSsoCallbackData;
-use App\Models\Organization;
-use App\Models\User;
-use App\Services\EnterpriseOidc;
-use App\Support\PublicDnsResolver;
+use App\Modules\Deployer\Data\EnterpriseSsoCallbackData;
+use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\EnterpriseOidc;
+use App\Modules\Deployer\Support\PublicDnsResolver;
 use Illuminate\Contracts\Session\Session;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;

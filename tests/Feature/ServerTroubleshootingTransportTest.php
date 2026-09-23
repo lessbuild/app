@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Contracts\ServerTroubleshootingTransport;
-use App\Data\ServerTroubleshootingTerminalSize;
-use App\Exceptions\ServerTroubleshootingTransportException;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Services\ProcessServerTroubleshootingConnection;
-use App\Services\Runner;
-use App\Services\SshServerTroubleshootingTransport;
+use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
+use App\Modules\Deployer\Data\ServerTroubleshootingTerminalSize;
+use App\Modules\Deployer\Exceptions\ServerTroubleshootingTransportException;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ProcessServerTroubleshootingConnection;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\SshServerTroubleshootingTransport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Symfony\Component\Process\InputStream;
 use Symfony\Component\Process\Process;

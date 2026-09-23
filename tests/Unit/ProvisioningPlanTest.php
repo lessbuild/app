@@ -2,16 +2,16 @@
 
 namespace Tests\Unit;
 
-use App\Contracts\Scripts\BuildScript;
-use App\Contracts\Scripts\ServerScript;
-use App\Contracts\Scripts\WebsiteScript;
-use App\Models\Build;
-use App\Models\Server;
-use App\Models\Website;
-use App\Services\ProvisioningScriptRenderer;
-use App\Services\RepositoryDeploymentPlan;
-use App\Services\ServerProvisioningPlan;
-use App\Services\WebsiteProvisioningPlan;
+use App\Modules\Deployer\Contracts\Scripts\BuildScript;
+use App\Modules\Deployer\Contracts\Scripts\ServerScript;
+use App\Modules\Deployer\Contracts\Scripts\WebsiteScript;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ProvisioningScriptRenderer;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
+use App\Modules\Deployer\Services\ServerProvisioningPlan;
+use App\Modules\Deployer\Services\WebsiteProvisioningPlan;
 use LogicException;
 use Tests\TestCase;
 

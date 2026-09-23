@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Provider;
-use App\Models\ProviderConnectionCheck;
-use App\Models\User;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

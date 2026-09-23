@@ -6,7 +6,7 @@
 ])
 
 @php
-    $registrationOpen = app(\App\Services\RegistrationAccess::class)->allowsNewUser();
+    $registrationOpen = app(\App\Modules\Deployer\Services\RegistrationAccess::class)->allowsNewUser();
     $publicLinks = [
         ['label' => __('Capabilities'), 'href' => '#features'],
         ['label' => __('Product'), 'href' => '#product'],

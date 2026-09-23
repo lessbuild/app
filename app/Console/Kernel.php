@@ -4,71 +4,26 @@ namespace App\Console;
 
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Foundation\Console\Kernel as ConsoleKernel;
-use Illuminate\Support\Facades\Schema;
 
 class Kernel extends ConsoleKernel
 {
     /**
-     * Register recurring maintenance commands with overlap guards, configured intervals, and schema availability checks.
+     * Delegate scheduled work to enabled product modules.
      *
      * Define the application's command schedule.
      *
-     * @param  Schedule  $schedule  Application scheduler receiving maintenance and monitoring registrations.
+     * @param  Schedule  $schedule  Application scheduler shared by product modules.
      * @return void
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('lessbuild:websites:health')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('lessbuild:providers:health')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
-        $schedule->command('lessbuild:deployments:watchdog')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:servers:metrics')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:previews:expire')->everyTenMinutes()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:backups:run')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:deployments:scheduled')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:configuration:process')->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('configuration_operations')
-                && Schema::hasTable('configuration_operation_receipts')
-                && Schema::hasColumn('configuration_operations', 'retry_of_operation_id'))
-            ->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:scaling:scheduled')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:tasks:scheduled')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:environments:hibernate')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:environments:wake')->everyMinute()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:monitoring:heartbeat')
-            ->everyMinute()
-            ->when(fn (): bool => filled(config('monitoring.heartbeat_url')))
-            ->withoutOverlapping()
-            ->runInBackground();
-        $schedule->command('buildpusher:deployments:observe')
-            ->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('deployment_observations'))
-            ->withoutOverlapping()
-            ->runInBackground();
-        $schedule->command('buildpusher:observability:investigations:prune')
-            ->daily()
-            ->when(fn (): bool => Schema::hasTable('observability_investigation_views'))
-            ->withoutOverlapping()
-            ->runInBackground();
-        $schedule->command('buildpusher:troubleshooting:sessions:expire')
-            ->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('server_troubleshooting_sessions'))
-            ->withoutOverlapping()
-            ->runInBackground();
-        $schedule->command('buildpusher:troubleshooting:frames:prune')
-            ->everyMinute()
-            ->when(fn (): bool => Schema::hasTable('server_troubleshooting_frames'))
-            ->withoutOverlapping()
-            ->runInBackground();
-        $schedule->command('lessbuild:webhooks:prune')->daily()->withoutOverlapping()->runInBackground();
-        $schedule->command('lessbuild:commands:prune')->daily()->withoutOverlapping()->runInBackground();
-        $schedule->command('lessbuild:notifications:prune')->daily()->withoutOverlapping()->runInBackground();
-        $schedule->command('lessbuild:sign-ins:prune')->daily()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:access-requests:prune')->daily()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:server-imports:prune')->everyTenMinutes()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:operational-incidents:prune')->daily()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:domains:check')->dailyAt('03:20')->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:database-users:expire')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
-        $schedule->command('buildpusher:load-balancers:check')->everyMinute()->withoutOverlapping()->runInBackground();
+        foreach (config('platform.schedulers', []) as $product => $scheduler) {
+            if (! config("platform.products.{$product}.enabled", false)) {
+                continue;
+            }
+
+            app($scheduler)->register($schedule);
+        }
     }
 
     /**

@@ -2,21 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Project\CleanupPreviewStackAction;
-use App\Actions\Project\QueuePreviewStackCleanupAction;
-use App\Jobs\Project\CleanupPreviewStackJob;
-use App\Models\Environment;
-use App\Models\EnvironmentResource;
-use App\Models\PreviewDeployment;
-use App\Models\PreviewStackCleanup;
-use App\Models\Project;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\ManagedSsh;
-use App\Services\PreviewStackCleanupScript;
-use App\Services\Runner;
+use App\Modules\Deployer\Actions\Project\CleanupPreviewStackAction;
+use App\Modules\Deployer\Actions\Project\QueuePreviewStackCleanupAction;
+use App\Modules\Deployer\Jobs\Project\CleanupPreviewStackJob;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\PreviewDeployment;
+use App\Modules\Deployer\Models\PreviewStackCleanup;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\PreviewStackCleanupScript;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;

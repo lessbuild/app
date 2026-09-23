@@ -1,0 +1,38 @@
+<?php
+
+namespace App\Modules\Deployer\Models;
+
+use App\Modules\Deployer\Database\DeployerModel;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class ScheduledTask extends DeployerModel
+{
+    protected $guarded = [];
+
+    protected $hidden = ['command'];
+
+    protected $casts = [
+        'command' => 'encrypted',
+        'timeout_seconds' => 'integer',
+        'without_overlapping' => 'boolean',
+        'alert_on_failure' => 'boolean',
+        'is_enabled' => 'boolean',
+        'last_queued_at' => 'datetime',
+        'last_finished_at' => 'datetime',
+    ];
+
+    /** @return BelongsTo<Environment, $this> */
+    public function environment(): BelongsTo
+    {
+        return $this->belongsTo(Environment::class);
+    }
+
+    /** @return HasMany<ScheduledTaskRun, $this> */
+    public function runs(): HasMany
+    {
+        return $this->hasMany(ScheduledTaskRun::class);
+    }
+}

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\OperationalDiagnostics;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\OperationalDiagnostics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

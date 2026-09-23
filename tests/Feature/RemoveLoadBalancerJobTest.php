@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\RemoveLoadBalancerJob;
-use App\Models\Server;
-use App\Models\User;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\RemoveLoadBalancerJob;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use PHPUnit\Framework\Attributes\DataProvider;

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationReviews;
-use App\Services\ApplicationConfigurationTransaction;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Services\ApplicationConfigurationTransaction;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;

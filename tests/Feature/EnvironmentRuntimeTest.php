@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\ActivateReleaseScript;
-use App\Scripts\Repository\ConfigureProcessesScript;
-use App\Scripts\Repository\ConfigureWebRuntimeScript;
-use App\Scripts\Repository\InstallDependenciesScript;
-use App\Scripts\Repository\SyncEnvironmentScript;
-use App\Services\DeploymentRequest;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\ActivateReleaseScript;
+use App\Modules\Deployer\Scripts\Repository\ConfigureProcessesScript;
+use App\Modules\Deployer\Scripts\Repository\ConfigureWebRuntimeScript;
+use App\Modules\Deployer\Scripts\Repository\InstallDependenciesScript;
+use App\Modules\Deployer\Scripts\Repository\SyncEnvironmentScript;
+use App\Modules\Deployer\Services\DeploymentRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;

@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Actions\GenerateSizesAndRegionsAction;
-use App\Contracts\ServerProvider;
-use App\Models\Provider;
-use App\Models\Size;
-use App\Services\ServerProviderResolver;
+use App\Modules\Deployer\Actions\GenerateSizesAndRegionsAction;
+use App\Modules\Deployer\Contracts\ServerProvider;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Size;
+use App\Modules\Deployer\Services\ServerProviderResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Tests\TestCase;

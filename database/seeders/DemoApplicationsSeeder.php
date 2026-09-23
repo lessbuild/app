@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\Project;
-use App\Models\StatusPage;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\StatusPage;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 

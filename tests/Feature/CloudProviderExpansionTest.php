@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Provider;
-use App\Models\User;
-use App\Services\HetznerCloud;
-use App\Services\Vultr;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\HetznerCloud;
+use App\Modules\Deployer\Services\Vultr;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;

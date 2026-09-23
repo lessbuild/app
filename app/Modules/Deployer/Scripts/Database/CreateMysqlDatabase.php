@@ -1,0 +1,55 @@
+<?php
+
+namespace App\Modules\Deployer\Scripts\Database;
+
+use App\Modules\Deployer\Abstracts\Scripts\WebsiteProvisioningScript;
+use App\Modules\Deployer\Models\Website;
+
+class CreateMysqlDatabase extends WebsiteProvisioningScript
+{
+    /**
+     * Title of the script
+     */
+    public static string $title = 'Create Mysql Database and User';
+
+    /**
+     * Description of the script
+     */
+    public static string $description = 'Create a mysql database and user for this website';
+
+    /**
+     * Event Identifier of the script
+     */
+    public static string $identifier = 'created-mysql-database';
+
+    /**
+     * Shell script run
+     */
+    public function script(int $step, Website $website): string
+    {
+        $database = $website->databaseIdentifier();
+        $rootPassword = escapeshellarg((string) $website->server->mysql_root_password);
+        $databasePassword = str_replace(['\\', "'"], ['\\\\', "\\'"], $website->database_password);
+        $databaseUser = str_replace("'", "\\'", $database);
+        $progress = $this->progress($step, $website);
+        $queries = [
+            "CREATE DATABASE IF NOT EXISTS `{$database}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;",
+            "CREATE USER IF NOT EXISTS '{$databaseUser}'@'localhost' IDENTIFIED BY '{$databasePassword}';",
+            "ALTER USER '{$databaseUser}'@'localhost' IDENTIFIED BY '{$databasePassword}';",
+            "GRANT ALL PRIVILEGES ON `{$database}`.* TO '{$databaseUser}'@'localhost';",
+            'FLUSH PRIVILEGES;',
+        ];
+        $commands = collect($queries)
+            ->map(fn (string $query): string => 'mysql --user=root --password='.$rootPassword.' --execute='.escapeshellarg($query))
+            ->implode("\n");
+
+        return <<<SCRIPT
+        {$commands}
+
+        service mysql restart
+
+        # Ping
+        {$progress}
+        SCRIPT;
+    }
+}

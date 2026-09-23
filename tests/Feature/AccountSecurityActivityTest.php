@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Event;
-use App\Models\User;
-use App\Notifications\AccountSecurityNotification;
-use App\Notifications\NotificationInbox;
-use App\Services\ActivityRecorder;
+use App\Modules\Deployer\Models\Event;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\AccountSecurityNotification;
+use App\Modules\Deployer\Notifications\NotificationInbox;
+use App\Modules\Deployer\Services\ActivityRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;

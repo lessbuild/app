@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Services\SshKeyPair;
+use App\Modules\Deployer\Services\SshKeyPair;
 use phpseclib4\Crypt\PublicKeyLoader;
 use PHPUnit\Framework\TestCase;
 

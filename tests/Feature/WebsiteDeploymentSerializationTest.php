@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Repository\PublishRepositoryJob;
-use App\Jobs\Web\AddWebsiteJob;
-use App\Models\Build;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\RepositoryWebhookDelivery;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\Repository\PublishRepositoryJob;
+use App\Modules\Deployer\Jobs\Web\AddWebsiteJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Testing\TestResponse;

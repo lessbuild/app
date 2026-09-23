@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Models\EnvironmentResource;
-use App\Services\PreviewResourceCredentials;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Services\PreviewResourceCredentials;
 use Tests\TestCase;
 
 class PreviewResourceCredentialsTest extends TestCase

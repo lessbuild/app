@@ -1,9 +1,9 @@
 <?php
 
-use App\Http\Controllers\Api\V1\ControlPlaneController;
-use App\Http\Controllers\GitHubAppWebhookController;
-use App\Http\Controllers\HealthController;
-use App\Http\Controllers\RepositoryWebhookController;
+use App\Modules\Deployer\Http\Controllers\Api\V1\ControlPlaneController;
+use App\Modules\Deployer\Http\Controllers\GitHubAppWebhookController;
+use App\Modules\Deployer\Http\Controllers\HealthController;
+use App\Modules\Deployer\Http\Controllers\RepositoryWebhookController;
 use Illuminate\Support\Facades\Route;
 
 /*

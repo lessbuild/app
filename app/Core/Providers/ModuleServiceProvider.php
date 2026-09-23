@@ -19,19 +19,13 @@ abstract class ModuleServiceProvider extends ServiceProvider
     protected function bootModule(): void
     {
         $path = app_path($this->modulePath());
-        $migrations = $path.'/Database/Migrations';
         $views = $path.'/Views';
 
-        if (is_dir($migrations)) {
-            $this->loadMigrationsFrom($migrations);
-        }
+        // Module migrations are invoked with platform:migrate so each module
+        // gets an isolated migration path and migration repository.
 
         if (is_dir($views)) {
             $this->loadViewsFrom($views, $this->moduleKey());
-        }
-
-        if ($this->app->routesAreCached()) {
-            return;
         }
 
         if ($this->moduleKey() !== 'core') {
@@ -44,6 +38,16 @@ abstract class ModuleServiceProvider extends ServiceProvider
             if ($this->moduleKey() !== 'deployer' && ! filled($product['host'] ?? null)) {
                 return;
             }
+        }
+
+        $commands = $path.'/Console/Commands';
+
+        if ($this->app->runningInConsole() && is_dir($commands)) {
+            $this->commands($commands);
+        }
+
+        if ($this->app->routesAreCached()) {
+            return;
         }
 
         $routes = $path.'/Routes';

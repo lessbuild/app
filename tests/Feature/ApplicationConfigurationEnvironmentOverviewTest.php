@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\User;
-use App\Services\ApplicationConfigurationEnvironmentOverviewQuery;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationEnvironmentOverviewQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;

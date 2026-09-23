@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Project\CreateProjectAction;
-use App\Models\User;
-use App\Services\Entitlements;
+use App\Modules\Deployer\Actions\Project\CreateProjectAction;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Entitlements;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use RuntimeException;

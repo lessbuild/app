@@ -1,0 +1,42 @@
+<?php
+
+namespace App\Modules\Deployer\Models;
+
+use App\Modules\Deployer\Database\DeployerModel;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class BackupDestination extends DeployerModel
+{
+    protected $guarded = [];
+
+    protected $hidden = ['access_key', 'secret_key', 'repository_password'];
+
+    protected $casts = [
+        'access_key' => 'encrypted',
+        'secret_key' => 'encrypted',
+        'repository_password' => 'encrypted',
+        'is_active' => 'boolean',
+        'last_verified_at' => 'datetime',
+    ];
+
+    /** @return BelongsTo<Organization, $this> */
+    public function organization(): BelongsTo
+    {
+        return $this->belongsTo(Organization::class);
+    }
+
+    /** @return HasMany<WebsiteBackupSchedule, $this> */
+    public function schedules(): HasMany
+    {
+        return $this->hasMany(WebsiteBackupSchedule::class);
+    }
+
+    /** @return HasMany<WebsiteBackup, $this> */
+    public function backups(): HasMany
+    {
+        return $this->hasMany(WebsiteBackup::class, 'backup_destination_id');
+    }
+}

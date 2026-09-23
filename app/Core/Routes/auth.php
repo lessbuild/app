@@ -1,15 +1,15 @@
 <?php
 
-use App\Http\Controllers\Auth\AuthenticatedSessionController;
-use App\Http\Controllers\Auth\ConfirmablePasswordController;
-use App\Http\Controllers\Auth\EmailVerificationNotificationController;
-use App\Http\Controllers\Auth\EmailVerificationPromptController;
-use App\Http\Controllers\Auth\NewPasswordController;
-use App\Http\Controllers\Auth\PasswordResetLinkController;
-use App\Http\Controllers\Auth\RegisteredUserController;
-use App\Http\Controllers\Auth\SocialAuthController;
-use App\Http\Controllers\Auth\TwoFactorChallengeController;
-use App\Http\Controllers\Auth\VerifyEmailController;
+use App\Modules\Deployer\Http\Controllers\Auth\AuthenticatedSessionController;
+use App\Modules\Deployer\Http\Controllers\Auth\ConfirmablePasswordController;
+use App\Modules\Deployer\Http\Controllers\Auth\EmailVerificationNotificationController;
+use App\Modules\Deployer\Http\Controllers\Auth\EmailVerificationPromptController;
+use App\Modules\Deployer\Http\Controllers\Auth\NewPasswordController;
+use App\Modules\Deployer\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Modules\Deployer\Http\Controllers\Auth\RegisteredUserController;
+use App\Modules\Deployer\Http\Controllers\Auth\SocialAuthController;
+use App\Modules\Deployer\Http\Controllers\Auth\TwoFactorChallengeController;
+use App\Modules\Deployer\Http\Controllers\Auth\VerifyEmailController;
 
 Route::middleware('guest')->group(function () {
     Route::get('auth/social/redirect/{provider}', [SocialAuthController::class, 'redirect'])

@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Server\InitialiseServerJob;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Services\SshKeyPair;
+use App\Modules\Deployer\Jobs\Server\InitialiseServerJob;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\SshKeyPair;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;

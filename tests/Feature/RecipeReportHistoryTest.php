@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Recipe;
-use App\Models\RecipeReport;
-use App\Models\User;
-use App\Notifications\RecipeReportStatusNotification;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\RecipeReport;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\RecipeReportStatusNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;

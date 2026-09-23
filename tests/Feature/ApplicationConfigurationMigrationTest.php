@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\ConfigurationApplication;
-use App\Models\ConfigurationOperation;
-use App\Models\ConfigurationOwnership;
-use App\Models\ConfigurationReview;
-use App\Models\User;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ConfigurationApplication;
+use App\Modules\Deployer\Models\ConfigurationOperation;
+use App\Modules\Deployer\Models\ConfigurationOwnership;
+use App\Modules\Deployer\Models\ConfigurationReview;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;

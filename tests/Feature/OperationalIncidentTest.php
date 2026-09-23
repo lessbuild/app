@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\DeliverAlertWebhookJob;
-use App\Models\OperationalIncident;
-use App\Models\Provider;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\IncidentNotifier;
+use App\Modules\Deployer\Jobs\DeliverAlertWebhookJob;
+use App\Modules\Deployer\Models\OperationalIncident;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\IncidentNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;

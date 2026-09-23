@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Database\CreateMysqlDatabase;
-use App\Scripts\Server\UpdateEnviromentScript;
-use App\Scripts\Web\AddWebsiteToCaddyScript;
+use App\Modules\Deployer\Jobs\Web\DeleteWebsiteFromCaddyJob;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Database\CreateMysqlDatabase;
+use App\Modules\Deployer\Scripts\Server\UpdateEnviromentScript;
+use App\Modules\Deployer\Scripts\Web\AddWebsiteToCaddyScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Symfony\Component\Process\Process;

@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Data\RepositoryChangeImpact;
-use App\Models\Repository;
-use App\Services\RepositoryChangeImpactEvaluator;
+use App\Modules\Deployer\Data\RepositoryChangeImpact;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Services\RepositoryChangeImpactEvaluator;
 use Tests\TestCase;
 
 class RepositoryChangeImpactEvaluatorTest extends TestCase

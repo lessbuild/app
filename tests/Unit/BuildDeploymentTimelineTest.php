@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Models\Build;
-use App\Models\Environment;
-use App\Services\BuildDeploymentTimeline;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Services\BuildDeploymentTimeline;
 use Carbon\CarbonImmutable;
 use Tests\TestCase;
 

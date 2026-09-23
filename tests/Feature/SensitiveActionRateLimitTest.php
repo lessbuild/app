@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\SignInEvent;
-use App\Models\User;
+use App\Modules\Deployer\Models\SignInEvent;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;

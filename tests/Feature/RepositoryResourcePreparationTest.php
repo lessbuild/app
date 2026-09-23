@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Repository;
-use App\Models\Website;
-use App\Scripts\Repository\ArtisanCommandsScript;
-use App\Scripts\Repository\ConfigureResourcesScript;
-use App\Scripts\Repository\InstallDependenciesScript;
-use App\Services\RepositoryDeploymentPlan;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\ArtisanCommandsScript;
+use App\Modules\Deployer\Scripts\Repository\ConfigureResourcesScript;
+use App\Modules\Deployer\Scripts\Repository\InstallDependenciesScript;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use PHPUnit\Framework\Attributes\DataProvider;

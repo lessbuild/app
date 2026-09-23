@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Web\CleanupWebsitePlacementJob;
-use App\Jobs\Web\DeleteWebsiteFromCaddyJob;
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\Web\CleanupWebsitePlacementJob;
+use App\Modules\Deployer\Jobs\Web\DeleteWebsiteFromCaddyJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;

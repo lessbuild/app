@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ApplyEnvironmentRuntimeStateJob;
-use App\Jobs\RunScheduledTaskJob;
-use App\Jobs\WakeHibernatedEnvironmentJob;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\Entitlements;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
-use App\Services\WorkflowConfiguration;
+use App\Modules\Deployer\Jobs\ApplyEnvironmentRuntimeStateJob;
+use App\Modules\Deployer\Jobs\RunScheduledTaskJob;
+use App\Modules\Deployer\Jobs\WakeHibernatedEnvironmentJob;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Entitlements;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\WorkflowConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;

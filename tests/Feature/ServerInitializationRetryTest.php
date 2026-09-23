@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Server\UpdateServerIpAction;
-use App\Jobs\Server\InitialiseServerJob;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Services\ProvisioningCallbackUrl;
+use App\Modules\Deployer\Actions\Server\UpdateServerIpAction;
+use App\Modules\Deployer\Jobs\Server\InitialiseServerJob;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ProvisioningCallbackUrl;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;

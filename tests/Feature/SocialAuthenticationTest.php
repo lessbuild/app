@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Notifications\AccountSecurityNotification;
-use App\Services\TwoFactorAuthentication;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\AccountSecurityNotification;
+use App\Modules\Deployer\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Socialite\Contracts\Provider;
 use Laravel\Socialite\Facades\Socialite;

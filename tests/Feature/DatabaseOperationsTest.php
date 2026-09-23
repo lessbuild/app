@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Database\CloneDatabaseJob;
-use App\Jobs\Database\CollectDatabaseSnapshotJob;
-use App\Jobs\Database\ManageDatabaseUserJob;
-use App\Models\DatabaseClone;
-use App\Models\EnvironmentResource;
-use App\Models\Provider;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\Database\CloneDatabaseJob;
+use App\Modules\Deployer\Jobs\Database\CollectDatabaseSnapshotJob;
+use App\Modules\Deployer\Jobs\Database\ManageDatabaseUserJob;
+use App\Modules\Deployer\Models\DatabaseClone;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;

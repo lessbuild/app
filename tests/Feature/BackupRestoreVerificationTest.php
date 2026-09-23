@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Web\VerifyWebsiteBackupJob;
-use App\Models\BackupDestination;
-use App\Models\BackupRestoreVerification;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteBackup;
-use App\Services\BackupRecoveryEvidenceQuery;
-use App\Services\ManagedSsh;
-use App\Services\ResticRepository;
-use App\Services\Runner;
-use App\Services\VerifyWebsiteBackupScript;
+use App\Modules\Deployer\Jobs\Web\VerifyWebsiteBackupJob;
+use App\Modules\Deployer\Models\BackupDestination;
+use App\Modules\Deployer\Models\BackupRestoreVerification;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteBackup;
+use App\Modules\Deployer\Services\BackupRecoveryEvidenceQuery;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\ResticRepository;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\VerifyWebsiteBackupScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;

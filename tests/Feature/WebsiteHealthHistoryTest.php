@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
-use App\Models\WebsiteLogSnapshot;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
-use App\Services\WebsiteHealthMonitor;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Models\WebsiteLogSnapshot;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\WebsiteHealthMonitor;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Mockery;
 use Symfony\Component\Process\Process;

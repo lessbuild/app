@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Recipe;
-use App\Models\Server;
-use App\Models\User;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

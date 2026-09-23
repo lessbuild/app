@@ -1,0 +1,29 @@
+<?php
+
+namespace App\Modules\Deployer\Models;
+
+use App\Modules\Deployer\Database\DeployerModel;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class OperationalIncidentEvent extends DeployerModel
+{
+    protected $guarded = [];
+
+    protected $hidden = ['message', 'metadata'];
+
+    protected $casts = ['message' => 'encrypted', 'metadata' => 'encrypted:array', 'occurred_at' => 'datetime'];
+
+    /** @return BelongsTo<OperationalIncident, $this> */
+    public function incident(): BelongsTo
+    {
+        return $this->belongsTo(OperationalIncident::class, 'operational_incident_id');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function actor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'actor_id');
+    }
+}

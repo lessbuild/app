@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Support\DateRange;
+use App\Modules\Deployer\Support\DateRange;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

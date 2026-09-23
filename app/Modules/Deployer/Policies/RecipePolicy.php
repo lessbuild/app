@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Modules\Deployer\Policies;
+
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\User;
+
+class RecipePolicy
+{
+    /**
+     * Allow the recipe owner or a viewer in its currently selected organization.
+     *
+     * @param  User  $user  Account requesting the ability in its current organization.
+     * @param  Recipe  $recipe  Resource whose ownership and organization permissions are checked.
+     * @return bool Whether the account is authorized; lifecycle eligibility is checked by the action.
+     */
+    public function view(User $user, Recipe $recipe): bool
+    {
+        return $recipe->organization
+            ? (int) $recipe->organization_id === (int) $user->current_organization_id
+                && $recipe->organization->permits($user, 'view')
+            : (int) $recipe->user_id === (int) $user->id;
+    }
+
+    /**
+     * Allow the recipe owner or an organization deployer who can view it.
+     *
+     * @param  User  $user  Account requesting the ability in its current organization.
+     * @param  Recipe  $recipe  Resource whose ownership and organization permissions are checked.
+     * @return bool Whether the account is authorized; lifecycle eligibility is checked by the action.
+     */
+    public function update(User $user, Recipe $recipe): bool
+    {
+        return $this->view($user, $recipe)
+            && ($recipe->organization?->permits($user, 'deploy') ?? true);
+    }
+
+    /**
+     * Allow the recipe owner or an organization manager who can view it.
+     *
+     * @param  User  $user  Account requesting the ability in its current organization.
+     * @param  Recipe  $recipe  Resource whose ownership and organization permissions are checked.
+     * @return bool Whether the account is authorized; lifecycle eligibility is checked by the action.
+     */
+    public function delete(User $user, Recipe $recipe): bool
+    {
+        return $this->view($user, $recipe)
+            && ($recipe->organization?->permits($user, 'manage') ?? true);
+    }
+
+    /**
+     * Allow a user to report another user's recipe after publication is checked by the HTTP boundary.
+     *
+     * @param  User  $user  The account submitting the report.
+     * @param  Recipe  $recipe  The published gallery recipe being reported.
+     * @return bool Whether the account is not the recipe owner.
+     */
+    public function report(User $user, Recipe $recipe): bool
+    {
+        return (int) $recipe->user_id !== (int) $user->id;
+    }
+
+    /**
+     * Allow an installed contributor's account to rate another user's published recipe.
+     *
+     * Publication availability is checked by the request before this actor decision.
+     */
+    public function rate(User $user, Recipe $recipe): bool
+    {
+        return (int) $recipe->user_id !== (int) $user->id
+            && $user->workspaceRecipes()
+                ->where('source_recipe_id', $recipe->id)
+                ->exists();
+    }
+}

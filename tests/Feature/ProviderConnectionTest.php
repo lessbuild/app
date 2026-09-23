@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Provider;
-use App\Models\ProviderConnectionCheck;
-use App\Models\User;
-use App\Services\ProviderConnectionTester;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ProviderConnectionTester;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;

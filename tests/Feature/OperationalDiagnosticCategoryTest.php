@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Enums\OperationalDiagnosticCategory;
-use App\Services\OperationalDiagnostics;
+use App\Modules\Deployer\Enums\OperationalDiagnosticCategory;
+use App\Modules\Deployer\Services\OperationalDiagnostics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

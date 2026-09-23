@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Server\RetryRemoteServerProvisioningJob;
-use App\Models\Server;
-use App\Models\ServerImportAssessment;
-use App\Models\User;
-use App\Services\ServerDiscovery;
+use App\Modules\Deployer\Jobs\Server\RetryRemoteServerProvisioningJob;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerImportAssessment;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ServerDiscovery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;

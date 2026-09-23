@@ -2,17 +2,17 @@
 
 namespace Database\Seeders;
 
-use App\Models\Build;
-use App\Models\Event;
-use App\Models\Repository;
-use App\Models\RepositoryWebhookDelivery;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\ServerLogSnapshot;
-use App\Models\User;
-use App\Models\Website;
-use App\Notifications\AccountSecurityNotification;
-use App\Notifications\FailureNotification;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Event;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\ServerLogSnapshot;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Notifications\AccountSecurityNotification;
+use App\Modules\Deployer\Notifications\FailureNotification;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;

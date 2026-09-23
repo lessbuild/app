@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Services\OperationalDiagnostics;
-use App\Services\SystemHealth;
+use App\Modules\Deployer\Services\OperationalDiagnostics;
+use App\Modules\Deployer\Services\SystemHealth;
 use Illuminate\Support\Facades\Cache;
 use Tests\TestCase;
 

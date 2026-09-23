@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Data\OperationalDiagnosticCheck;
-use App\Data\OperationalDiagnosticReport;
-use App\Enums\OperationalDiagnosticCategory;
+use App\Modules\Deployer\Data\OperationalDiagnosticCheck;
+use App\Modules\Deployer\Data\OperationalDiagnosticReport;
+use App\Modules\Deployer\Enums\OperationalDiagnosticCategory;
 use PHPUnit\Framework\TestCase;
 
 class OperationalDiagnosticReportTest extends TestCase

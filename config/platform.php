@@ -32,4 +32,29 @@ return [
             'database' => 'analytics',
         ],
     ],
+
+    'schedulers' => [
+        'deployer' => App\Modules\Deployer\Console\DeployerSchedule::class,
+    ],
+
+    // Module migrations run only against their named database. The old
+    // database/migrations path remains a compatibility symlink for Deployer.
+    'migrations' => [
+        'core' => [
+            'connection' => 'core',
+            'path' => app_path('Core/Database/Migrations'),
+        ],
+        'deployer' => [
+            'connection' => 'deployer',
+            'path' => app_path('Modules/Deployer/Database/Migrations'),
+        ],
+        'monitor' => [
+            'connection' => 'monitor',
+            'path' => app_path('Modules/Monitor/Database/Migrations'),
+        ],
+        'analytics' => [
+            'connection' => 'analytics',
+            'path' => app_path('Modules/Analytics/Database/Migrations'),
+        ],
+    ],
 ];

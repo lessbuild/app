@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Notifications\FailureNotification;
-use App\Notifications\NotificationInbox;
-use App\Services\NotificationDestinationResolver;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Notifications\FailureNotification;
+use App\Modules\Deployer\Notifications\NotificationInbox;
+use App\Modules\Deployer\Services\NotificationDestinationResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Tests\TestCase;

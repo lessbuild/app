@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Notifications\FailureNotification;
-use App\Notifications\NotificationInbox;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\FailureNotification;
+use App\Modules\Deployer\Notifications\NotificationInbox;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\DatabaseNotification;
 use Tests\TestCase;

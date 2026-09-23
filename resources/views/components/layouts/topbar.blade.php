@@ -9,7 +9,7 @@
     $currentProject = request()->route('project');
     $currentEnvironment = request()->route('environment');
 
-    if (! $currentProject && $currentEnvironment instanceof \App\Models\Environment) {
+    if (! $currentProject && $currentEnvironment instanceof \App\Modules\Deployer\Models\Environment) {
         $currentProject = $currentEnvironment->project;
     }
 

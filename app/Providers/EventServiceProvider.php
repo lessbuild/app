@@ -2,15 +2,15 @@
 
 namespace App\Providers;
 
-use App\Listeners\SyncSeatsAfterBillingWebhook;
-use App\Models\Build;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\Website;
-use App\Observers\BuildActivityObserver;
-use App\Observers\ServerCommandExecutionObserver;
-use App\Observers\ServerObserver;
-use App\Observers\WebsiteObserver;
+use App\Modules\Deployer\Listeners\SyncSeatsAfterBillingWebhook;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Observers\BuildActivityObserver;
+use App\Modules\Deployer\Observers\ServerCommandExecutionObserver;
+use App\Modules\Deployer\Observers\ServerObserver;
+use App\Modules\Deployer\Observers\WebsiteObserver;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;

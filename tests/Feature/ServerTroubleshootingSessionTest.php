@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Server\CloseServerTroubleshootingSessionAction;
-use App\Actions\Server\ExpireServerTroubleshootingSessionsAction;
-use App\Actions\Server\OpenServerTroubleshootingSessionAction;
-use App\Actions\Server\RevokeServerTroubleshootingSessionAction;
-use App\Actions\Server\TouchServerTroubleshootingSessionAction;
-use App\Enums\ServerTroubleshootingSessionStatus;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\ServerTroubleshootingSession;
-use App\Models\User;
-use App\Policies\ServerTroubleshootingSessionPolicy;
+use App\Modules\Deployer\Actions\Server\CloseServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Actions\Server\ExpireServerTroubleshootingSessionsAction;
+use App\Modules\Deployer\Actions\Server\OpenServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Actions\Server\RevokeServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Actions\Server\TouchServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Enums\ServerTroubleshootingSessionStatus;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerTroubleshootingSession;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Policies\ServerTroubleshootingSessionPolicy;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Gate;

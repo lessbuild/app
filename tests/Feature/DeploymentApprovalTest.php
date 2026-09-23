@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Repository\PublishRepositoryJob;
-use App\Jobs\Repository\RollbackReleaseJob;
-use App\Models\Build;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\ActivateReleaseScript;
-use App\Scripts\Repository\ArtisanCommandsScript;
-use App\Scripts\Repository\SymlinkScript;
-use App\Services\RepositoryDeploymentPlan;
+use App\Modules\Deployer\Jobs\Repository\PublishRepositoryJob;
+use App\Modules\Deployer\Jobs\Repository\RollbackReleaseJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\ActivateReleaseScript;
+use App\Modules\Deployer\Scripts\Repository\ArtisanCommandsScript;
+use App\Modules\Deployer\Scripts\Repository\SymlinkScript;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;

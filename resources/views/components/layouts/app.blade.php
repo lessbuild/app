@@ -4,7 +4,7 @@
 ])
 
 @php
-    $resolvedTitle = $title ?: app(\App\View\PageTitle::class)->for(request()->route());
+    $resolvedTitle = $title ?: app(\App\Modules\Deployer\View\PageTitle::class)->for(request()->route());
     $applicationCreateDialogOpen = request()->query('dialog') === 'create-application';
     $applicationCreateDialogUrl = request()->url().'?dialog=create-application';
     $applicationCreateDialogCancelUrl = request()->url();

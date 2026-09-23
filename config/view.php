@@ -14,6 +14,10 @@ return [
     */
 
     'paths' => [
+        // Deployer's existing view names remain stable while its product
+        // screens live with the module. Shared Signal components fall back
+        // to the application resource path below.
+        app_path('Modules/Deployer/Views'),
         resource_path('views'),
     ],
 

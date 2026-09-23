@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Services\ApplicationConfigurationAuthoringGuide;
-use App\Services\ApplicationConfigurationDocument;
+use App\Modules\Deployer\Services\ApplicationConfigurationAuthoringGuide;
+use App\Modules\Deployer\Services\ApplicationConfigurationDocument;
 use Tests\TestCase;
 
 class ApplicationConfigurationAuthoringGuideTest extends TestCase

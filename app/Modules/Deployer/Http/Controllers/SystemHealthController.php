@@ -1,0 +1,75 @@
+<?php
+
+namespace App\Modules\Deployer\Http\Controllers;
+
+use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Services\SystemHealth;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+
+class SystemHealthController extends Controller
+{
+    /**
+     * Render a fresh, uncached health snapshot for a workspace manager.
+     */
+    public function __invoke(Request $request, SystemHealth $systemHealth): Response
+    {
+        $this->authorizeAccess($request);
+        $snapshot = $systemHealth->fresh();
+        $viewData = [
+            'checks' => $snapshot['checks'],
+            'passed' => $snapshot['passed'],
+            'passedCount' => $snapshot['passed_count'],
+            'checkedAt' => $snapshot['checked_at'],
+        ];
+
+        if ($request->string('fragment')->toString() === 'system-health') {
+            return response()->view('system-health._content', $viewData)->withHeaders([
+                'Cache-Control' => 'no-store, private',
+                'Pragma' => 'no-cache',
+            ]);
+        }
+
+        return response()->view('system-health.index', $viewData)->withHeaders([
+            'Cache-Control' => 'no-store, private',
+            'Pragma' => 'no-cache',
+        ]);
+    }
+
+    /**
+     * Download a fresh health snapshot as JSON after checking workspace management access.
+     */
+    public function report(Request $request, SystemHealth $systemHealth): JsonResponse
+    {
+        $this->authorizeAccess($request);
+        $snapshot = $systemHealth->fresh();
+        $filename = 'lessbuild-system-health-'.$snapshot['checked_at']->utc()->format('Ymd-His').'.json';
+
+        return response()->json([
+            'status' => $snapshot['passed'] ? 'ready' : 'failed',
+            'generated_at' => $snapshot['checked_at']->toIso8601String(),
+            'summary' => [
+                'passed' => $snapshot['passed_count'],
+                'total' => count($snapshot['checks']),
+            ],
+            'checks' => $snapshot['checks'],
+        ], headers: [
+            'Cache-Control' => 'no-store, private',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+            'Pragma' => 'no-cache',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    /**
+     * Require the request user to manage their current workspace through its policy.
+     */
+    private function authorizeAccess(Request $request): void
+    {
+        $organization = $request->user()->currentOrganization;
+
+        abort_unless($organization instanceof Organization, 403);
+        $this->authorize('manage', $organization);
+    }
+}

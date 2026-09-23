@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Server;
-use App\Models\User;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;

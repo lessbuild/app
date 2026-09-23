@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Web\CreateWebsiteBackupJob;
-use App\Jobs\Web\RestoreWebsiteBackupJob;
-use App\Models\BackupDestination;
-use App\Models\BackupRestore;
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteBackup;
-use App\Services\ManagedSsh;
-use App\Services\ResticRepository;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\Web\CreateWebsiteBackupJob;
+use App\Modules\Deployer\Jobs\Web\RestoreWebsiteBackupJob;
+use App\Modules\Deployer\Models\BackupDestination;
+use App\Modules\Deployer\Models\BackupRestore;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteBackup;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\ResticRepository;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;

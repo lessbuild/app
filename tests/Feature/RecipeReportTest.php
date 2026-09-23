@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\Recipe;
-use App\Models\RecipeReport;
-use App\Models\User;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\RecipeReport;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
