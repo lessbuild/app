@@ -153,34 +153,80 @@
         </section>
     @endif
 
-    @if ($project->environments->isNotEmpty())
-        <section id="environments" aria-label="{{ __('Project environments') }}" class="mb-8 grid gap-4 lg:grid-cols-2">
-            @foreach ($project->environments as $environment)
-                <x-signal.ui.card class="p-5" id="environment-{{ $environment->getKey() }}">
-                    <div class="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                            <p class="ui-eyebrow">{{ str($environment->environment_type)->headline() }}</p>
-                            <h2 class="mt-1 text-base font-extrabold text-ink">{{ $environment->name }}</h2>
-                            @if (data_get($environment->metadata, 'branch'))
-                                <p class="mt-1 font-mono text-xs text-muted">{{ data_get($environment->metadata, 'branch') }}</p>
+    @if ($project->environments->isNotEmpty() || $canManageConnections)
+        <section id="environments" aria-labelledby="project-environments-heading" class="mb-8">
+            <div class="mb-4 flex flex-wrap items-end justify-between gap-3">
+                <div>
+                    <p class="ui-eyebrow">{{ __('Shared project context') }}</p>
+                    <h2 id="project-environments-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Project environments') }}</h2>
+                    <p class="mt-1 text-sm text-muted">{{ __('Link each app environment to its matching shared environment. Missing mappings never default to Production.') }}</p>
+                </div>
+                @if ($canManageConnections)
+                    <x-signal.ui.menu align="right" trigger-class="ui-btn ui-btn-secondary ui-btn-sm items-center" panel-class="w-[min(30rem,calc(100vw-2rem))] p-0" data-signal-menu>
+                        <x-slot:trigger>
+                            <svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#plus"></use></svg>
+                            {{ __('Add shared environment') }}
+                        </x-slot:trigger>
+                        <x-signal.ui.card class="p-4 sm:p-5">
+                            <form method="POST" action="{{ route('core.projects.environments.store', [$workspace, $project]) }}" class="grid gap-4">
+                                @csrf
+                                <x-signal.ui.field :label="__('Environment name')" name="name">
+                                    <x-signal.ui.input name="name" :value="old('name')" maxlength="80" required />
+                                </x-signal.ui.field>
+                                <x-signal.ui.field :label="__('Environment type')" name="environment_type" :hint="__('This labels the shared context; it does not connect an app environment automatically.')">
+                                    <x-signal.ui.select name="environment_type" required>
+                                        <option value="production" @selected(old('environment_type', 'production') === 'production')>{{ __('Production') }}</option>
+                                        <option value="staging" @selected(old('environment_type') === 'staging')>{{ __('Staging') }}</option>
+                                        <option value="preview" @selected(old('environment_type') === 'preview')>{{ __('Preview') }}</option>
+                                        <option value="development" @selected(old('environment_type') === 'development')>{{ __('Development') }}</option>
+                                        <option value="custom" @selected(old('environment_type') === 'custom')>{{ __('Custom') }}</option>
+                                    </x-signal.ui.select>
+                                </x-signal.ui.field>
+                                <x-signal.ui.button variant="primary" type="submit" class="justify-center">{{ __('Create environment') }}</x-signal.ui.button>
+                            </form>
+                        </x-signal.ui.card>
+                    </x-signal.ui.menu>
+                @endif
+            </div>
+
+            @if ($project->environments->isEmpty())
+                <x-signal.ui.empty-state
+                    :title="__('No shared environments yet')"
+                    :description="__('Create a shared environment, then map each Deployer or Monitor environment to it from the existing-resource form.')"
+                    icon="globe"
+                />
+            @else
+                <div class="grid gap-4 lg:grid-cols-2">
+                    @foreach ($project->environments as $environment)
+                        <x-signal.ui.card class="p-5" id="environment-{{ $environment->getKey() }}">
+                            <div class="flex flex-wrap items-start justify-between gap-3">
+                                <div>
+                                    <p class="ui-eyebrow">{{ str($environment->environment_type)->headline() }}</p>
+                                    <h3 class="mt-1 text-base font-extrabold text-ink">{{ $environment->name }}</h3>
+                                    @if (data_get($environment->metadata, 'branch'))
+                                        <p class="mt-1 font-mono text-xs text-muted">{{ data_get($environment->metadata, 'branch') }}</p>
+                                    @endif
+                                </div>
+                                <x-signal.ui.badge :tone="in_array($environment->status, ['ready', 'active', 'running'], true) ? 'success' : (in_array($environment->status, ['failed', 'error'], true) ? 'danger' : 'warning')">
+                                    {{ str($environment->status)->headline() }}
+                                </x-signal.ui.badge>
+                            </div>
+                            @if ($environment->resources->isNotEmpty())
+                                <ul class="mt-4 grid gap-2 border-t border-line pt-4" aria-label="{{ __('Mapped app environments for :environment', ['environment' => $environment->name]) }}">
+                                    @foreach ($environment->resources as $resource)
+                                        <li class="flex items-center justify-between gap-3 text-sm">
+                                            <span class="truncate font-bold text-ink">{{ $resource->name ?: str($resource->resource_type)->headline() }}</span>
+                                            <span class="shrink-0 text-xs text-muted">{{ $products[$resource->product] ?? str($resource->product)->headline() }}</span>
+                                        </li>
+                                    @endforeach
+                                </ul>
+                            @else
+                                <p class="mt-4 border-t border-line pt-4 text-sm text-muted">{{ __('No app environments are mapped here yet.') }}</p>
                             @endif
-                        </div>
-                        <x-signal.ui.badge :tone="in_array($environment->status, ['ready', 'active', 'running'], true) ? 'success' : (in_array($environment->status, ['failed', 'error'], true) ? 'danger' : 'warning')">
-                            {{ str($environment->status)->headline() }}
-                        </x-signal.ui.badge>
-                    </div>
-                    @if ($environment->resources->isNotEmpty())
-                        <ul class="mt-4 grid gap-2 border-t border-line pt-4">
-                            @foreach ($environment->resources as $resource)
-                                <li class="flex items-center justify-between gap-3 text-sm">
-                                    <span class="truncate font-bold text-ink">{{ $resource->name ?: str($resource->resource_type)->headline() }}</span>
-                                    <span class="shrink-0 text-xs text-muted">{{ $products[$resource->product] ?? str($resource->product)->headline() }}</span>
-                                </li>
-                            @endforeach
-                        </ul>
-                    @endif
-                </x-signal.ui.card>
-            @endforeach
+                        </x-signal.ui.card>
+                    @endforeach
+                </div>
+            @endif
         </section>
     @endif
 
@@ -205,10 +251,32 @@
                                 <x-signal.ui.select name="resource_id" required>
                                     <option value="">{{ __('Select a resource') }}</option>
                                     @foreach ($candidates as $candidate)
-                                        <option value="{{ $candidate->id }}" @selected(old('resource_id') === $candidate->id)>
-                                            {{ $candidate->name }}{{ $candidate->detail ? ' · '.$candidate->detail : '' }}
+                                        <option value="{{ $candidate->selectionKey() }}" @selected(old('resource_id') === $candidate->selectionKey())>
+                                            {{ str($candidate->resourceType)->headline() }} · {{ $candidate->name }}{{ $candidate->detail ? ' · '.$candidate->detail : '' }}
                                         </option>
                                     @endforeach
+                                </x-signal.ui.select>
+                            </x-signal.ui.field>
+                            <x-signal.ui.field
+                                :label="__('Map to project environment')"
+                                name="environment_id"
+                                :description="$project->environments->isEmpty()
+                                    ? __('App environments need a shared project environment first. Create one above; project-level resources can be linked without a mapping.')
+                                    : __('Required for individual app environments. Leave blank for a project-level resource.')"
+                            >
+                                <x-signal.ui.select name="environment_id" :disabled="$project->environments->isEmpty()">
+                                    @if ($project->environments->isEmpty())
+                                        <option value="">{{ __('No shared environments yet') }}</option>
+                                    @else
+                                        <option value="">{{ __('Project-level · no environment mapping') }}</option>
+                                        @foreach ($project->environments as $environment)
+                                            @if ($environment->status === 'active')
+                                                <option value="{{ $environment->getKey() }}" @selected((string) old('environment_id') === (string) $environment->getKey())>
+                                                    {{ $environment->name }}
+                                                </option>
+                                            @endif
+                                        @endforeach
+                                    @endif
                                 </x-signal.ui.select>
                             </x-signal.ui.field>
                             <x-signal.ui.button variant="primary" type="submit" class="justify-center">

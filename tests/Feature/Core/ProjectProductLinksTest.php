@@ -20,6 +20,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
+use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
 use App\Modules\Monitor\Models\Application as MonitorApplication;
 use App\Modules\Monitor\Models\User as MonitorUser;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
@@ -419,17 +420,111 @@ final class ProjectProductLinksTest extends TestCase
     {
         $this->addIdentity('monitor', '17');
         $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        DB::connection('monitor')->table('environments')->insert([
+            'id' => 42,
+            'application_id' => 31,
+            'name' => 'Production',
+            'slug' => 'production',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $provider = new MonitorResourceLinkProvider(app(LegacyIdentityResolver::class));
         $candidates = $provider->candidates($this->platformUser());
 
-        $this->assertCount(1, $candidates);
+        $this->assertCount(2, $candidates);
         $this->assertSame('31', $candidates[0]->id);
+        $this->assertSame('application:31', $candidates[0]->selectionKey());
         $this->assertSame('Monitor workspace', $candidates[0]->detail);
+        $this->assertSame('environment:42', $candidates[1]->selectionKey());
+        $this->assertSame('Production', $candidates[1]->name);
 
         $this->addProjectResource('monitor', 'application', '31');
 
-        $this->assertNull($provider->candidate($this->platformUser(), '31'));
+        $this->assertNull($provider->candidate($this->platformUser(), 'application:31'));
+        $this->assertNotNull($provider->candidate($this->platformUser(), 'environment:42'));
+    }
+
+    public function test_deployer_resource_candidates_include_authorized_projects_and_environments_without_type_collisions(): void
+    {
+        $this->addIdentity('deployer', '17');
+
+        $schema = Schema::connection('deployer');
+        $schema->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('current_organization_id')->nullable();
+        });
+        $schema->create('organizations', function (Blueprint $table): void {
+            $table->id();
+            $table->string('name');
+            $table->unsignedBigInteger('owner_id');
+        });
+        $schema->create('organization_user', function (Blueprint $table): void {
+            $table->unsignedBigInteger('organization_id');
+            $table->unsignedBigInteger('user_id');
+        });
+        $schema->create('projects', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('organization_id');
+            $table->string('name');
+        });
+        $schema->create('environments', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('project_id');
+            $table->string('name');
+        });
+
+        try {
+            DB::connection('deployer')->table('users')->insert([
+                'id' => 17,
+                'current_organization_id' => 50,
+            ]);
+            DB::connection('deployer')->table('organizations')->insert([
+                'id' => 50,
+                'name' => 'Deployer organization',
+                'owner_id' => 17,
+            ]);
+            DB::connection('deployer')->table('projects')->insert([
+                'id' => 31,
+                'organization_id' => 50,
+                'name' => 'Storefront',
+            ]);
+            DB::connection('deployer')->table('environments')->insert([
+                'id' => 42,
+                'project_id' => 31,
+                'name' => 'Production',
+            ]);
+
+            $provider = new DeployerResourceLinkProvider(app(LegacyIdentityResolver::class));
+            $candidates = $provider->candidates($this->platformUser());
+
+            $this->assertCount(2, $candidates);
+            $this->assertSame('project:31', $candidates[0]->selectionKey());
+            $this->assertSame('environment:42', $candidates[1]->selectionKey());
+            $this->assertSame('Storefront', $candidates[1]->detail);
+            $this->assertNotNull($provider->candidate($this->platformUser(), 'environment:42'));
+
+            $this->addProjectResource('deployer', 'project', '31');
+            $this->assertNull($provider->candidate($this->platformUser(), 'project:31'));
+            $this->assertNotNull($provider->candidate($this->platformUser(), 'environment:42'));
+
+            DB::connection('core')->table('project_resources')->insert([
+                'id' => '01J8AA00000000000000000012',
+                'project_id' => self::PROJECT_ID,
+                'product' => 'deployer',
+                'resource_type' => 'environment',
+                'resource_id' => '42',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            $this->assertNull($provider->candidate($this->platformUser(), 'environment:42'));
+        } finally {
+            foreach (['environments', 'projects', 'organization_user', 'organizations', 'users'] as $table) {
+                $schema->dropIfExists($table);
+            }
+        }
     }
 
     public function test_analytics_resource_candidates_require_mapped_workspace_membership_and_exclude_linked_sites(): void
@@ -446,7 +541,7 @@ final class ProjectProductLinksTest extends TestCase
 
         $this->addProjectResource('analytics', 'site', '71');
 
-        $this->assertNull($provider->candidate($this->platformUser(), '71'));
+        $this->assertNull($provider->candidate($this->platformUser(), 'site:71'));
     }
 
     public function test_deployer_setup_resumes_from_the_existing_project_list_when_not_yet_linked(): void

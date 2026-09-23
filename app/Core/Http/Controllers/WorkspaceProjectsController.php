@@ -259,9 +259,7 @@ final class WorkspaceProjectsController
             'products' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
                 : $query->whereIn('product', $visibleProducts),
-            'environments' => fn ($query) => $visibleProducts === []
-                ? $query->whereRaw('1 = 0')
-                : $query->whereHas('resources', fn ($resources) => $resources->whereIn('product', $visibleProducts)),
+            'environments' => fn ($query) => $query->where('status', 'active'),
             'environments.resources' => fn ($query) => $visibleProducts === []
                 ? $query->whereRaw('1 = 0')
                 : $query->whereIn('product', $visibleProducts),
@@ -359,7 +357,13 @@ final class WorkspaceProjectsController
         $product = $request->validated('product');
         abort_unless($access->canLinkProductResource($user, $project, $product), 404);
 
-        $resource = $resourceLinks->link($user, $project, $product, $request->validated('resource_id'));
+        $resource = $resourceLinks->link(
+            $user,
+            $project,
+            $product,
+            $request->validated('resource_id'),
+            $request->validated('environment_id'),
+        );
         abort_if($resource === null, 404);
 
         return redirect()

@@ -4,5 +4,5 @@ These screenshots render the current Core Blade pages inside the Signal Topbar S
 
 - [Workspace overview, desktop](unified-workspace-overview.png): shared projects, separate app subscriptions, personal/workspace saved views and pins, prioritized connection/deployment/health/setup actions, per-project deployment/health/traffic summaries, and app-to-app workflow entry points.
 - [Workspace overview, mobile](unified-workspace-overview-mobile.png): responsive product navigation and workspace switching with saved-view controls, prioritized actions, project pins, and stacked project summaries.
-- [Project detail, desktop](unified-project-detail.png): per-app activity, resumable setup, environments, existing resource linking, and connection controls.
-- [Project detail, mobile](unified-project-detail-mobile.png): responsive topbar and project context selectors.
+- [Project detail, desktop](unified-project-detail.png): per-app activity, resumable setup, shared Production/Staging/Preview environments, explicit Deployer/Monitor environment mapping, existing resource linking, and connection controls.
+- [Project detail, mobile](unified-project-detail-mobile.png): responsive Signal topbar, project context selectors, and stacked shared-environment/resource mapping controls.

@@ -43,10 +43,10 @@ final class AnalyticsResourceLinkProvider implements ProjectResourceLinkProvider
         ))->all();
     }
 
-    public function candidate(PlatformUser $user, string $resourceId): ?ProjectResourceCandidate
+    public function candidate(PlatformUser $user, string $selectionKey): ?ProjectResourceCandidate
     {
         return collect($this->candidates($user))->first(
-            fn (ProjectResourceCandidate $candidate): bool => $candidate->id === $resourceId,
+            fn (ProjectResourceCandidate $candidate): bool => $candidate->selectionKey() === $selectionKey,
         );
     }
 }

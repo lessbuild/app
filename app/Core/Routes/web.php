@@ -2,6 +2,7 @@
 
 use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
+use App\Core\Http\Controllers\ProjectEnvironmentsController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
@@ -52,6 +53,8 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::post('/projects/{project}/archive', 'archive')->name('archive');
             Route::post('/projects/{project}/restore', 'restore')->name('restore');
             Route::post('/projects/{project}/resources', 'storeResource')->name('resources.store');
+            Route::post('/projects/{project}/environments', [ProjectEnvironmentsController::class, 'store'])
+                ->name('environments.store');
             Route::post('/projects/{project}/connections', [ProjectConnectionsController::class, 'store'])
                 ->name('connections.store');
             Route::delete('/projects/{project}/connections/{connection}', [ProjectConnectionsController::class, 'destroy'])

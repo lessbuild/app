@@ -11,6 +11,7 @@ use App\Core\Services\ProjectResourceLinks;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 
 final class ProjectResourceLinksTest extends TestCase
@@ -32,9 +33,19 @@ final class ProjectResourceLinksTest extends TestCase
             $table->timestamps();
             $table->unique(['project_id', 'product']);
         });
+        Schema::connection('core')->create('project_environments', function (Blueprint $table): void {
+            $table->ulid('id')->primary();
+            $table->string('project_id', 26);
+            $table->string('name');
+            $table->string('slug');
+            $table->string('environment_type');
+            $table->string('status');
+            $table->timestamps();
+        });
         Schema::connection('core')->create('project_resources', function (Blueprint $table): void {
             $table->ulid('id')->primary();
             $table->string('project_id', 26);
+            $table->string('environment_id', 26)->nullable();
             $table->string('product', 24);
             $table->string('resource_type', 100);
             $table->string('resource_id', 191);
@@ -50,6 +61,7 @@ final class ProjectResourceLinksTest extends TestCase
     {
         Schema::connection('core')->dropIfExists('project_products');
         Schema::connection('core')->dropIfExists('project_resources');
+        Schema::connection('core')->dropIfExists('project_environments');
 
         parent::tearDown();
     }
@@ -66,7 +78,7 @@ final class ProjectResourceLinksTest extends TestCase
 
             public function candidate(PlatformUser $user, string $resourceId): ?ProjectResourceCandidate
             {
-                return $resourceId === '42'
+                return $resourceId === 'application:42'
                     ? new ProjectResourceCandidate('42', 'application', 'Status API', 'Acme workspace')
                     : null;
             }
@@ -77,7 +89,7 @@ final class ProjectResourceLinksTest extends TestCase
         $project = new Project;
         $project->setAttribute('id', '01J8AA00000000000000000001');
 
-        $resource = $links->link($user, $project, 'monitor', '42');
+        $resource = $links->link($user, $project, 'monitor', 'application:42');
 
         $this->assertNotNull($resource);
         $this->assertSame('application', $resource->resource_type);
@@ -90,8 +102,73 @@ final class ProjectResourceLinksTest extends TestCase
             'status' => 'active',
             'requested_by_user_id' => $user->getKey(),
         ], 'core');
-        $this->assertNull($links->link($user, $project, 'monitor', '42'));
+        $this->assertNull($links->link($user, $project, 'monitor', 'application:42'));
         $this->assertSame(1, DB::connection('core')->table('project_resources')->count());
+    }
+
+    public function test_linking_an_app_environment_requires_and_persists_an_explicit_canonical_mapping(): void
+    {
+        $registry = new ProjectResourceLinkRegistry;
+        $registry->register('monitor', new class implements ProjectResourceLinkProvider
+        {
+            public function candidates(PlatformUser $user): array
+            {
+                return [new ProjectResourceCandidate('42', 'environment', 'Production', 'Status API')];
+            }
+
+            public function candidate(PlatformUser $user, string $selectionKey): ?ProjectResourceCandidate
+            {
+                return $selectionKey === 'environment:42'
+                    ? new ProjectResourceCandidate('42', 'environment', 'Production', 'Status API')
+                    : null;
+            }
+        });
+
+        $links = new ProjectResourceLinks($registry);
+        $user = new PlatformUser;
+        $user->setAttribute('id', '01J8AA00000000000000000000');
+        $project = new Project;
+        $project->setAttribute('id', '01J8AA00000000000000000001');
+        $canonicalEnvironmentId = '01J8AA00000000000000000002';
+        DB::connection('core')->table('project_environments')->insert([
+            'id' => $canonicalEnvironmentId,
+            'project_id' => $project->getKey(),
+            'name' => 'Production',
+            'slug' => 'production',
+            'environment_type' => 'production',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            $links->link($user, $project, 'monitor', 'environment:42');
+            $this->fail('An app environment must not link without a canonical project environment.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('environment_id', $exception->errors());
+        }
+
+        $foreignProjectId = '01J8AA00000000000000000003';
+        $foreignEnvironmentId = '01J8AA00000000000000000004';
+        DB::connection('core')->table('project_environments')->insert([
+            'id' => $foreignEnvironmentId,
+            'project_id' => $foreignProjectId,
+            'name' => 'Production',
+            'slug' => 'production',
+            'environment_type' => 'production',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->assertNull($links->link($user, $project, 'monitor', 'environment:42', $foreignEnvironmentId));
+
+        $resource = $links->link($user, $project, 'monitor', 'environment:42', $canonicalEnvironmentId);
+
+        $this->assertNotNull($resource);
+        $this->assertSame('environment', $resource->resource_type);
+        $this->assertSame('42', $resource->resource_id);
+        $this->assertSame($canonicalEnvironmentId, $resource->environment_id);
+        $this->assertSame($project->getKey(), $resource->project_id);
     }
 
     public function test_candidates_are_only_loaded_for_the_requested_products(): void
@@ -110,7 +187,7 @@ final class ProjectResourceLinksTest extends TestCase
                     return [new ProjectResourceCandidate('7', 'site', 'Main site')];
                 }
 
-                public function candidate(PlatformUser $user, string $resourceId): ?ProjectResourceCandidate
+                public function candidate(PlatformUser $user, string $selectionKey): ?ProjectResourceCandidate
                 {
                     return null;
                 }

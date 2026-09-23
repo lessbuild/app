@@ -7,6 +7,7 @@ use App\Core\Data\Projects\ProjectResourceCandidate;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
+use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
@@ -56,32 +57,53 @@ final class DeployerResourceLinkProvider implements ProjectResourceLinkProvider
             return [];
         }
 
-        $linkedIds = ProjectResource::query()
+        $linkedProjectIds = ProjectResource::query()
             ->where('product', 'deployer')
             ->where('resource_type', 'project')
             ->pluck('resource_id')
             ->map(static fn ($id): string => (string) $id)
             ->all();
+        $linkedEnvironmentIds = ProjectResource::query()
+            ->where('product', 'deployer')
+            ->where('resource_type', 'environment')
+            ->pluck('resource_id')
+            ->map(static fn ($id): string => (string) $id)
+            ->all();
         $projects = Project::query()
             ->whereIn('organization_id', $visibleOrganizationIds)
-            ->when($linkedIds !== [], fn ($query) => $query->whereNotIn('id', $linkedIds))
+            ->when($linkedProjectIds !== [], fn ($query) => $query->whereNotIn('id', $linkedProjectIds))
             ->with('organization:id,name')
             ->orderBy('name')
             ->limit(100)
             ->get(['id', 'organization_id', 'name']);
+        $environments = Environment::query()
+            ->whereHas('project', fn ($query) => $query->whereIn('organization_id', $visibleOrganizationIds))
+            ->when($linkedEnvironmentIds !== [], fn ($query) => $query->whereNotIn('id', $linkedEnvironmentIds))
+            ->with('project:id,organization_id,name')
+            ->orderBy('name')
+            ->limit(100)
+            ->get(['id', 'project_id', 'name']);
 
-        return $projects->map(fn (Project $project): ProjectResourceCandidate => new ProjectResourceCandidate(
+        $projectCandidates = $projects->map(fn (Project $project): ProjectResourceCandidate => new ProjectResourceCandidate(
             id: (string) $project->getKey(),
             resourceType: 'project',
             name: $project->name,
             detail: $project->organization?->name,
-        ))->all();
+        ));
+        $environmentCandidates = $environments->map(fn (Environment $environment): ProjectResourceCandidate => new ProjectResourceCandidate(
+            id: (string) $environment->getKey(),
+            resourceType: 'environment',
+            name: $environment->name,
+            detail: $environment->project?->name,
+        ));
+
+        return $projectCandidates->concat($environmentCandidates)->values()->all();
     }
 
-    public function candidate(PlatformUser $user, string $resourceId): ?ProjectResourceCandidate
+    public function candidate(PlatformUser $user, string $selectionKey): ?ProjectResourceCandidate
     {
         return collect($this->candidates($user))->first(
-            fn (ProjectResourceCandidate $candidate): bool => $candidate->id === $resourceId,
+            fn (ProjectResourceCandidate $candidate): bool => $candidate->selectionKey() === $selectionKey,
         );
     }
 }

@@ -10,4 +10,9 @@ final readonly class ProjectResourceCandidate
         public string $name,
         public ?string $detail = null,
     ) {}
+
+    public function selectionKey(): string
+    {
+        return $this->resourceType.':'.$this->id;
+    }
 }
