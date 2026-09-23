@@ -61,6 +61,7 @@ class Overview extends Component
             'workspace' => $workspace,
             'sites' => $sites,
             'site' => $site,
+            'releaseAnnotations' => $site?->releaseAnnotations()->limit(5)->get() ?? collect(),
             'summary' => $site ? $report->for($site, $this->days, [
                 'path' => $this->pathFilter ?: null,
                 'source' => $this->sourceFilter ?: null,

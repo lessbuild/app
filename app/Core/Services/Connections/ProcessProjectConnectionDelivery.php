@@ -2,9 +2,11 @@
 
 namespace App\Core\Services\Connections;
 
+use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Exceptions\Connections\ProjectConnectionDeliveryBlocked;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
+use App\Modules\Analytics\Services\Connections\ConsumeDeployerReleaseAnnotation;
 use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -17,7 +19,10 @@ final class ProcessProjectConnectionDelivery
 {
     private const MAX_ATTEMPTS = 12;
 
-    public function __construct(private readonly ConsumeDeploymentSucceeded $monitorDeployments) {}
+    public function __construct(
+        private readonly ConsumeDeploymentSucceeded $monitorDeployments,
+        private readonly ConsumeDeployerReleaseAnnotation $analyticsReleases,
+    ) {}
 
     public function process(string $deliveryId): string
     {
@@ -51,15 +56,32 @@ final class ProcessProjectConnectionDelivery
                 throw new ProjectConnectionDeliveryBlocked('unsupported_event');
             }
 
-            if (! config('platform.products.monitor.enabled', false)) {
-                throw new ProjectConnectionDeliveryBlocked('target_product_disabled');
-            }
+            $connection = ProjectConnection::query()->findOrFail($delivery->project_connection_id);
+            $capabilities = (array) $connection->capabilities;
 
-            $this->monitorDeployments->handle(
-                deliveryId: (string) $delivery->getKey(),
-                connectionId: (string) $delivery->project_connection_id,
-                payload: (array) $delivery->payload,
-            );
+            if (in_array(ProjectConnectionCapability::DeploymentContext->value, $capabilities, true)) {
+                if (! config('platform.products.monitor.enabled', false)) {
+                    throw new ProjectConnectionDeliveryBlocked('target_product_disabled');
+                }
+
+                $this->monitorDeployments->handle(
+                    deliveryId: (string) $delivery->getKey(),
+                    connectionId: (string) $delivery->project_connection_id,
+                    payload: (array) $delivery->payload,
+                );
+            } elseif (in_array(ProjectConnectionCapability::ReleaseAnnotations->value, $capabilities, true)) {
+                if (! config('platform.products.analytics.enabled', false)) {
+                    throw new ProjectConnectionDeliveryBlocked('target_product_disabled');
+                }
+
+                $this->analyticsReleases->handle(
+                    deliveryId: (string) $delivery->getKey(),
+                    connectionId: (string) $delivery->project_connection_id,
+                    payload: (array) $delivery->payload,
+                );
+            } else {
+                throw new ProjectConnectionDeliveryBlocked('unsupported_capability');
+            }
 
             return $this->markDelivered($delivery);
         } catch (Throwable $exception) {

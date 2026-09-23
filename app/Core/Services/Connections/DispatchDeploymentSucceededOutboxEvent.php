@@ -63,14 +63,31 @@ final class DispatchDeploymentSucceededOutboxEvent
             $source = $connection->sourceResource;
             $target = $connection->targetResource;
 
-            if (! in_array(ProjectConnectionCapability::DeploymentContext->value, (array) $connection->capabilities, true)
-                || $source?->getKey() !== $sourceEnvironment->getKey()
+            if ($source?->getKey() !== $sourceEnvironment->getKey()
                 || $connection->source_environment_id !== $sourceEnvironment->environment_id
-                || $target?->product !== 'monitor'
-                || $target?->resource_type !== 'environment'
-                || $target->environment_id === null
-                || $connection->target_environment_id !== $target->environment_id
+                || $target === null
                 || $target->status !== 'active') {
+                continue;
+            }
+
+            $connectionCapabilities = (array) $connection->capabilities;
+            $targetPayload = null;
+
+            if (in_array(ProjectConnectionCapability::DeploymentContext->value, $connectionCapabilities, true)
+                && $target->product === 'monitor'
+                && $target->resource_type === 'environment'
+                && $target->environment_id !== null
+                && $connection->target_environment_id === $target->environment_id) {
+                $targetPayload = ['target_environment_id' => (string) $target->resource_id];
+            } elseif (in_array(ProjectConnectionCapability::ReleaseAnnotations->value, $connectionCapabilities, true)
+                && $target->product === 'analytics'
+                && $target->resource_type === 'site'
+                && $target->environment_id === null
+                && $connection->target_environment_id === null) {
+                $targetPayload = ['target_site_id' => (string) $target->resource_id];
+            }
+
+            if ($targetPayload === null) {
                 continue;
             }
 
@@ -89,7 +106,7 @@ final class DispatchDeploymentSucceededOutboxEvent
                         'source_build_id' => (string) $event->source_build_id,
                         'canonical_project_id' => (string) $sourceEnvironment->project_id,
                         'canonical_environment_id' => (string) $sourceEnvironment->environment_id,
-                        'target_environment_id' => (string) $target->resource_id,
+                        ...$targetPayload,
                     ],
                     'status' => 'pending',
                     'attempts' => 0,

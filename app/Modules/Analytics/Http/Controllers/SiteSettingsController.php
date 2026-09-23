@@ -74,6 +74,7 @@ class SiteSettingsController extends Controller
         DB::connection('analytics')->transaction(function () use ($site): void {
             $site->update(['collection_enabled' => false, 'collection_paused_at' => now()]);
             $site->events()->delete();
+            $site->releaseAnnotations()->delete();
             $site->visits()->delete();
             $site->goals()->delete();
             $site->ingestionBatches()->delete();

@@ -29,7 +29,8 @@ final class ProjectConnectionEntitlementPolicy
             ProjectConnectionCapability::DeploymentContext => $sourcePlan->allows('monitoring')
                 && $targetPlan->hasLimit('deployment_context_minutes')
                 && ($targetPlan->limit('deployment_context_minutes') === null || $targetPlan->limit('deployment_context_minutes') > 0),
-            ProjectConnectionCapability::ReleaseAnnotations => $sourcePlan->allows('releases'),
+            ProjectConnectionCapability::ReleaseAnnotations => $sourcePlan->allows('releases')
+                && $targetPlan->allows('release_annotations'),
             ProjectConnectionCapability::IncidentAnnotations,
             ProjectConnectionCapability::TrafficContext => true,
         };

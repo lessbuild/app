@@ -91,6 +91,6 @@ enum ProjectConnectionCapability: string
 
     public function hasDeliveryHandler(): bool
     {
-        return $this === self::DeploymentContext;
+        return in_array($this, [self::DeploymentContext, self::ReleaseAnnotations], true);
     }
 }

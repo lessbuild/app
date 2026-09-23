@@ -12,6 +12,8 @@ use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
 use App\Core\Services\Connections\RetryProjectConnectionDeliveries;
+use App\Modules\Analytics\Models\SiteReleaseAnnotation;
+use App\Modules\Analytics\Services\Connections\ConsumeDeployerReleaseAnnotation;
 use App\Modules\Deployer\Models\DeploymentSucceededOutboxEvent;
 use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\ProjectConnectionEventReceipt;
@@ -32,6 +34,8 @@ final class ProjectConnectionDeliveryTest extends TestCase
 
     private string $targetResourceId;
 
+    private string $analyticsResourceId;
+
     private string $sourceEnvironmentId;
 
     private string $targetEnvironmentId;
@@ -44,15 +48,21 @@ final class ProjectConnectionDeliveryTest extends TestCase
 
     private int $monitorEnvironmentId;
 
+    private int $analyticsSiteId;
+
     protected function setUp(): void
     {
         parent::setUp();
 
-        config(['platform.products.monitor.enabled' => true]);
+        config([
+            'platform.products.monitor.enabled' => true,
+            'platform.products.analytics.enabled' => true,
+        ]);
         $this->bindEntitledPlans();
         $this->createCoreTables();
         $this->createDeployerTables();
         $this->createMonitorTables();
+        $this->createAnalyticsTables();
         $this->seedConnectedResources();
     }
 
@@ -75,6 +85,9 @@ final class ProjectConnectionDeliveryTest extends TestCase
         ] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
+
+        Schema::connection('analytics')->dropIfExists('site_release_annotations');
+        Schema::connection('analytics')->dropIfExists('sites');
 
         parent::tearDown();
     }
@@ -124,6 +137,72 @@ final class ProjectConnectionDeliveryTest extends TestCase
 
         $this->assertSame(0, $created);
         $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+    }
+
+    public function test_deployer_deployments_annotate_analytics_sites_once_after_an_owner_retries_revoked_access(): void
+    {
+        $analyticsConnectionId = (string) Str::ulid();
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => $analyticsConnectionId,
+            'project_id' => $this->projectId,
+            'source_resource_id' => $this->sourceResourceId,
+            'target_resource_id' => $this->analyticsResourceId,
+            'source_environment_id' => $this->sourceEnvironmentId,
+            'target_environment_id' => null,
+            'capabilities' => json_encode(['release_annotations'], JSON_THROW_ON_ERROR),
+            'status' => 'pending',
+            'created_by_user_id' => null,
+            'last_succeeded_at' => null,
+            'last_error_code' => null,
+            'last_error_at' => null,
+            'disconnected_at' => null,
+            'metadata' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $event = $this->outboxEvent();
+
+        $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event));
+        $delivery = ProjectConnectionDelivery::query()
+            ->where('project_connection_id', $analyticsConnectionId)
+            ->sole();
+        $this->assertSame((string) $this->analyticsSiteId, $delivery->payload['target_site_id']);
+        $this->assertArrayNotHasKey('target_environment_id', $delivery->payload);
+
+        DB::connection('core')->table('workspace_product_access')->where('product', 'analytics')->update([
+            'status' => 'revoked',
+            'revoked_at' => now(),
+        ]);
+        $this->assertSame('blocked', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+        $this->assertSame(0, SiteReleaseAnnotation::query()->count());
+
+        DB::connection('core')->table('workspace_product_access')->where('product', 'analytics')->update([
+            'status' => 'active',
+            'revoked_at' => null,
+        ]);
+        $retried = app(RetryProjectConnectionDeliveries::class)->handle(
+            PlatformUser::query()->findOrFail($this->ownerUserId),
+            Project::query()->findOrFail($this->projectId),
+            ProjectConnection::query()->findOrFail($analyticsConnectionId),
+        );
+
+        $this->assertSame(1, $retried);
+        $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+        $annotation = SiteReleaseAnnotation::query()->sole();
+        $this->assertSame($this->analyticsSiteId, $annotation->site_id);
+        $this->assertSame($delivery->payload['deployment_id'], $annotation->deployment_id);
+        $this->assertSame(str_repeat('c', 40), $annotation->revision);
+        $this->assertSame(str_repeat('c', 40), $annotation->version);
+        $this->assertSame('delivered', $delivery->fresh()->status);
+
+        $replayed = app(ConsumeDeployerReleaseAnnotation::class)->handle(
+            deliveryId: (string) $delivery->getKey(),
+            connectionId: $analyticsConnectionId,
+            payload: $delivery->payload,
+        );
+
+        $this->assertSame($annotation->getKey(), $replayed->getKey());
+        $this->assertSame(1, SiteReleaseAnnotation::query()->count());
     }
 
     public function test_disconnected_connections_discard_queued_deliveries_without_writing_monitor_data(): void
@@ -234,6 +313,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $this->projectId = (string) Str::ulid();
         $this->sourceResourceId = (string) Str::ulid();
         $this->targetResourceId = (string) Str::ulid();
+        $this->analyticsResourceId = (string) Str::ulid();
         $this->sourceEnvironmentId = (string) Str::ulid();
         $this->targetEnvironmentId = (string) Str::ulid();
         $this->connectionId = (string) Str::ulid();
@@ -281,6 +361,23 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        $this->analyticsSiteId = DB::connection('analytics')->table('sites')->insertGetId([
+            'workspace_id' => 77,
+            'name' => 'Analytics site',
+            'slug' => 'analytics-site',
+            'public_id' => Str::lower(Str::random(24)),
+            'domains' => json_encode(['example.test'], JSON_THROW_ON_ERROR),
+            'timezone' => 'UTC',
+            'verification_token' => Str::random(48),
+            'verified_at' => now(),
+            'last_event_at' => null,
+            'last_processed_at' => null,
+            'collection_enabled' => true,
+            'collection_paused_at' => null,
+            'deleted_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         DB::connection('core')->table('workspaces')->insert([
             'id' => $this->workspaceId,
@@ -299,7 +396,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
-        foreach (['deployer', 'monitor'] as $product) {
+        foreach (['deployer', 'monitor', 'analytics'] as $product) {
             DB::connection('core')->table('workspace_product_access')->insert([
                 'id' => (string) Str::ulid(),
                 'membership_id' => $membershipId,
@@ -369,6 +466,18 @@ final class ProjectConnectionDeliveryTest extends TestCase
                 'updated_at' => now(),
             ],
             [
+                'id' => $this->analyticsResourceId,
+                'project_id' => $this->projectId,
+                'environment_id' => null,
+                'product' => 'analytics',
+                'resource_type' => 'site',
+                'resource_id' => (string) $this->analyticsSiteId,
+                'name' => 'Analytics site',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+            [
                 'id' => (string) Str::ulid(),
                 'project_id' => $this->projectId,
                 'environment_id' => null,
@@ -413,7 +522,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
                     available: true,
                     planKey: $product->value,
                     subscriptionStatus: 'active',
-                    entitlements: $product === ProductKey::Deployer ? ['monitoring'] : [],
+                    entitlements: $product === ProductKey::Deployer ? ['monitoring', 'releases'] : ['*'],
                     limits: $product === ProductKey::Monitor ? ['deployment_context_minutes' => 60] : [],
                 );
             }
@@ -635,6 +744,43 @@ final class ProjectConnectionDeliveryTest extends TestCase
             $table->timestamp('processed_at', 6);
             $table->timestamps(6);
             $table->unique(['delivery_id', 'handler']);
+        });
+    }
+
+    private function createAnalyticsTables(): void
+    {
+        Schema::connection('analytics')->create('sites', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('workspace_id');
+            $table->string('name');
+            $table->string('slug');
+            $table->string('public_id', 32);
+            $table->json('domains');
+            $table->string('timezone', 64)->default('UTC');
+            $table->string('verification_token', 64);
+            $table->timestamp('verified_at')->nullable();
+            $table->timestamp('last_event_at')->nullable();
+            $table->boolean('collection_enabled')->default(true);
+            $table->timestamp('collection_paused_at')->nullable();
+            $table->timestamp('last_processed_at')->nullable();
+            $table->timestamps();
+            $table->softDeletes();
+        });
+        Schema::connection('analytics')->create('site_release_annotations', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('site_id');
+            $table->string('delivery_id', 26);
+            $table->string('handler', 100);
+            $table->string('project_connection_id', 26);
+            $table->uuid('deployment_id');
+            $table->string('source_build_id', 64);
+            $table->string('version', 128);
+            $table->string('revision', 64)->nullable();
+            $table->timestamp('deployed_at', 6);
+            $table->char('payload_hash', 64);
+            $table->timestamps(6);
+            $table->unique(['delivery_id', 'handler']);
+            $table->unique(['site_id', 'deployment_id']);
         });
     }
 }

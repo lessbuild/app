@@ -35,6 +35,20 @@ final class DeliverProjectConnectionEventsCommand extends Command
             return self::FAILURE;
         }
 
+        if (config('platform.products.monitor.enabled', false)
+            && ! Schema::connection('monitor')->hasTable('project_connection_event_receipts')) {
+            $this->error('Run the Monitor module migration before enabling Monitor connection deliveries.');
+
+            return self::FAILURE;
+        }
+
+        if (config('platform.products.analytics.enabled', false)
+            && ! Schema::connection('analytics')->hasTable('site_release_annotations')) {
+            $this->error('Run the Analytics module migration before enabling Analytics connection deliveries.');
+
+            return self::FAILURE;
+        }
+
         if ($this->option('retry-failed')) {
             DeploymentSucceededOutboxEvent::query()
                 ->where('status', 'failed')

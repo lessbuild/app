@@ -76,6 +76,34 @@
             <details class="mt-5"><summary class="cursor-pointer text-xs font-bold text-muted">View chart data</summary><div class="mt-3 overflow-x-auto"><table class="w-full text-left text-xs"><thead><tr class="text-muted"><th class="pb-2 pr-4">Date</th><th class="pb-2">Pageviews</th></tr></thead><tbody>@foreach ($summary['series'] as $point)<tr class="table-row"><td class="py-2 pr-4">{{ $point['date'] }}</td><td class="py-2">{{ number_format($point['value']) }}</td></tr>@endforeach</tbody></table></div></details>
         </section>
 
+        <section aria-labelledby="release-annotations-heading">
+            <x-signal.ui.card class="overflow-hidden">
+            <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5">
+                <div>
+                    <p class="ui-eyebrow">Shared project activity</p>
+                    <h3 id="release-annotations-heading" class="mt-2 text-lg font-extrabold">Recent releases</h3>
+                    <p class="mt-1 text-xs text-muted">Deployer releases connected to this Analytics site.</p>
+                </div>
+                <x-signal.ui.badge tone="neutral">{{ trans_choice(':count recent annotation|:count recent annotations', $releaseAnnotations->count(), ['count' => $releaseAnnotations->count()]) }}</x-signal.ui.badge>
+            </div>
+            <div class="divide-y divide-line px-5">
+                @forelse ($releaseAnnotations as $release)
+                    <article class="flex flex-wrap items-center justify-between gap-3 py-4">
+                        <div class="min-w-0">
+                            <p class="truncate text-sm font-bold text-ink">{{ $release->version }}</p>
+                            @if ($release->revision)
+                                <p class="mt-1 font-mono text-xs text-muted">{{ substr($release->revision, 0, 12) }}</p>
+                            @endif
+                        </div>
+                        <time class="shrink-0 text-xs text-muted" datetime="{{ $release->deployed_at->toIso8601String() }}">{{ $release->deployed_at->diffForHumans() }}</time>
+                    </article>
+                @empty
+                    <p class="py-5 text-sm text-muted">No connected releases yet. Connect a Deployer environment from the shared project to add release context here.</p>
+                @endforelse
+            </div>
+            </x-signal.ui.card>
+        </section>
+
         <div class="grid gap-5 xl:grid-cols-5">
             @foreach ([['title' => 'Top pages', 'eyebrow' => 'Content', 'items' => $summary['pages'], 'empty' => 'Pageviews will appear after your first visit.'], ['title' => 'Entry pages', 'eyebrow' => 'Visits', 'items' => $summary['entryPages'], 'empty' => 'Entry paths appear after visits are processed.'], ['title' => 'Exit pages', 'eyebrow' => 'Visits', 'items' => $summary['exitPages'], 'empty' => 'Exit paths appear after visits are processed.'], ['title' => 'Top sources', 'eyebrow' => 'Acquisition', 'items' => $summary['sources'], 'empty' => 'Sources will appear after collection starts.'], ['title' => 'Campaigns', 'eyebrow' => 'Acquisition', 'items' => $summary['campaigns'], 'empty' => 'Campaign values will appear after tagged visits.']] as $section)
                 <section class="ui-panel p-5"><p class="ui-eyebrow">{{ $section['eyebrow'] }}</p><h3 class="mt-2 text-lg font-extrabold">{{ $section['title'] }}</h3><div class="mt-5 space-y-3">@forelse ($section['items'] as $item)<div class="flex items-center justify-between gap-4 text-sm">@if (in_array($section['title'], ['Top pages', 'Entry pages', 'Exit pages'], true))<a class="truncate text-muted underline decoration-line hover:text-ink" href="{{ route('analytics.dashboard', ['path' => $item['label']]) }}">{{ $item['label'] }}</a>@else<span class="truncate text-muted">{{ $item['label'] }}</span>@endif<strong class="text-ink">{{ number_format($item['value']) }}</strong></div>@empty<p class="text-sm text-muted">{{ $section['empty'] }}</p>@endforelse</div></section>

@@ -52,6 +52,12 @@ class Site extends AnalyticsModel
         return $this->hasMany(AnalyticsEvent::class);
     }
 
+    /** @return HasMany<SiteReleaseAnnotation, $this> */
+    public function releaseAnnotations(): HasMany
+    {
+        return $this->hasMany(SiteReleaseAnnotation::class)->orderByDesc('deployed_at');
+    }
+
     /** @return HasMany<Goal> */
     public function goals(): HasMany
     {
