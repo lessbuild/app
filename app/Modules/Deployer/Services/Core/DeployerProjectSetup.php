@@ -203,7 +203,9 @@ final class DeployerProjectSetup implements ProjectSetupProvider
                         ? __('No deployment has completed for this environment yet.')
                         : __('The latest deployment for this environment is :status.', ['status' => str($latestBuild->status)->headline()])),
                 state: $deploymentSucceeded ? ProjectSetupStepState::Complete : ProjectSetupStepState::NeedsAction,
-                url: $deploymentSucceeded ? null : $projectUrl.'#environment-'.$sourceEnvironment->getKey(),
+                url: $deploymentSucceeded || $projectUrl === null
+                    ? null
+                    : $projectUrl.'#environment-'.$sourceEnvironment->getKey(),
                 actionLabel: $deploymentSucceeded || $projectUrl === null ? null : __('Open environment'),
                 environmentName: $canonicalEnvironment->name,
             );
