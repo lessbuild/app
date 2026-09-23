@@ -4,25 +4,10 @@ namespace App\Modules\Deployer\Http\Controllers;
 
 use App\Modules\Deployer\Services\RegistrationAccess;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 final class PublicPageController extends Controller
 {
-    /**
-     * @param  Request  $request  The visitor's current authentication context.
-     * @return View|RedirectResponse The public landing page, or the signed-in dashboard redirect.
-     */
-    public function home(Request $request): View|RedirectResponse
-    {
-        if ($request->user()) {
-            return redirect()->route('dashboard');
-        }
-
-        return view('scenes.index');
-    }
-
     /**
      * @param  RegistrationAccess  $registration  Current registration availability.
      * @return View The configured plans and registration entry point.

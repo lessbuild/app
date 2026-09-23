@@ -4,7 +4,11 @@
 
 Caddy serves the same Laravel `public` directory on `buildpusher.com`,
 `auth.buildpusher.com`, `deployer.buildpusher.com`, `monitor.buildpusher.com`, and
-`analytics.buildpusher.com`. `www.buildpusher.com` redirects to the dashboard.
+`analytics.buildpusher.com`. `www.buildpusher.com` redirects to the apex domain.
+The apex root is a public product overview; `/deployer`, `/monitor`, and `/analytics`
+are the product descriptions. The three product subdomain roots enter their respective
+authenticated dashboards. Keep the Caddy site block passing `buildpusher.com/` to
+Laravel so the public overview can render instead of redirecting to sign-in.
 The active release is `/var/www/buildpusher-unified/current`; persistent environment
 and storage files live under `/var/www/buildpusher-unified/shared`. The PHP-FPM pool
 is `buildpusher-php-fpm.service` and exposes

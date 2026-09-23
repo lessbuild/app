@@ -1,9 +1,4 @@
 buildpusher.com, auth.buildpusher.com, deployer.buildpusher.com, monitor.buildpusher.com, analytics.buildpusher.com {
-	@dashboard_entry {
-		host buildpusher.com
-		path /
-	}
-	redir @dashboard_entry /workspaces 302
 	root * /var/www/buildpusher-unified/current/public
 	encode zstd gzip
 	php_fastcgi unix//run/buildpusher/php8.5-fpm.sock

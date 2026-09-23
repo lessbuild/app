@@ -106,7 +106,7 @@ Route::post('status/{slug}/subscribe', [StatusSubscriptionController::class, 'st
 Route::get('status/subscriptions/{subscription}/confirm/{token}', [StatusSubscriptionController::class, 'confirm'])->middleware('throttle:20,1')->name('status.subscriptions.confirm');
 Route::get('status/subscriptions/{subscription}/unsubscribe/{token}', [StatusSubscriptionController::class, 'unsubscribe'])->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
 
-Route::get('/', [PublicPageController::class, 'home']);
+Route::redirect('/', '/home')->name('entry');
 
 $deployerAuthentication = app(ProductAuthentication::class);
 

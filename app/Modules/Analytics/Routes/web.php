@@ -22,7 +22,7 @@ $logoutAction = $analyticsAuthentication->usesCoreAuthority('analytics')
     ? [PlatformSessionController::class, 'destroy']
     : [SessionController::class, 'destroy'];
 
-Route::view('/', 'analytics::marketing.home')->name('home');
+Route::redirect('/', '/dashboard')->name('home');
 Route::get('/ready', ReadinessController::class)->name('ready');
 Route::view('/verify-email', 'analytics::auth.verify-email')->middleware($authenticatedMiddleware)->name('verification.notice');
 

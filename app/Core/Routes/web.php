@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Http\Controllers\CoreHomeController;
+use App\Core\Http\Controllers\MarketingController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\ProjectEnvironmentsController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
@@ -10,7 +11,10 @@ use App\Core\Http\Controllers\WorkspaceSearchController;
 use App\Core\Http\Controllers\WorkspaceTeamController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/workspaces')->name('core.entry');
+Route::get('/', [MarketingController::class, 'home'])->name('core.entry');
+Route::get('/{product}', [MarketingController::class, 'showProduct'])
+    ->whereIn('product', ['deployer', 'monitor', 'analytics'])
+    ->name('core.marketing.product');
 
 Route::middleware('auth:platform')->group(function (): void {
     Route::get('/workspaces', CoreHomeController::class)->name('core.home');
