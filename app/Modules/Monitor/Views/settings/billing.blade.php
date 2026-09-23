@@ -12,16 +12,17 @@
             'scale' => ['border' => 'border-warning', 'icon' => 'bg-warning-soft text-warning'],
         ];
         $billingStatusLabel = match($billingStatus) {
-            'active' => 'Stripe active',
+            'active' => $corePlanAuthority ? 'Plan active' : 'Stripe active',
             'trialing' => 'Trialing',
             'past_due' => 'Payment due',
             'pending' => 'Awaiting confirmation',
             'canceled' => 'Canceled',
+            'unverified' => 'Plan unverified',
             default => 'Usage only',
         };
         $billingStatusTone = match($billingStatus) {
             'active', 'trialing' => 'green',
-            'past_due', 'pending' => 'amber',
+            'past_due', 'pending', 'unverified' => 'amber',
             'canceled' => 'red',
             default => 'slate',
         };
@@ -43,7 +44,7 @@
                     <div class="ui-card shadow-none shrink-0 bg-surface-muted px-5 py-4 sm:min-w-52">
                         <div class="flex items-end justify-between gap-4"><span class="text-xs font-semibold text-muted">Monthly signal usage</span><span class="text-lg font-bold">{{ $usagePercentage }}%</span></div>
                         <div class="ui-progress mt-3 bg-line"><span style="width: {{ $usagePercentage }}%"></span></div>
-                        <p class="mt-2 text-[11px] text-subtle">{{ number_format($eventsThisMonth) }} of {{ number_format($currentPlan['event_limit']) }} events</p>
+                        <p class="mt-2 text-[11px] text-subtle">{{ $usageState === 'unavailable' ? 'Usage paused until the plan is confirmed' : number_format($eventsThisMonth).' of '.(is_int($currentPlan['event_limit'] ?? null) ? number_format($currentPlan['event_limit']) : 'unlimited').' events' }}</p>
                         <p class="mt-3 max-w-xs text-[11px] leading-5 text-subtle">Accepted events count once. Retries do not add usage; deleting telemetry or archiving applications does not subtract it. Historical events received before metering was enabled are excluded.</p>
                     </div>
                 </div>
@@ -52,7 +53,9 @@
                 <div class="flex items-center justify-between gap-3"><span class="text-xs font-bold text-ink dark:text-ink">Billing contact</span><x-monitor::ui.badge :tone="$billingStatusTone">{{ $billingStatusLabel }}</x-monitor::ui.badge></div>
                 <p class="mt-4 text-sm font-bold text-ink dark:text-ink">{{ $billingOwner->name }}</p>
                 <p class="mt-1 text-xs text-muted dark:text-subtle">{{ $billingOwner->email }}</p>
-                @if($portalAvailable)
+                @if($corePlanAuthority)
+                    <div class="mt-5 border-t border-line pt-4 text-[11px] leading-5 text-muted dark:border-line dark:text-subtle">This workspace’s plan is read from Core. Billing changes are paused until Monitor’s Stripe events are connected to Core.</div>
+                @elseif($portalAvailable)
                     <form method="POST" action="{{ route('monitor.settings.billing.portal') }}" class="mt-5 border-t border-line pt-4 dark:border-line">
                         @csrf
                         <x-monitor::ui.button variant="quiet" size="sm">Manage billing in Stripe <x-monitor::icon name="external" class="h-3.5 w-3.5" /></x-monitor::ui.button>
@@ -69,6 +72,8 @@
             <section class="ui-alert ui-alert-warning block p-5 sm:p-6"><div class="flex gap-3"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-warning-soft text-warning"><x-monitor::icon name="alert" class="h-4 w-4" /></span><div><h2 class="text-sm font-bold text-warning dark:text-warning">Monthly event usage is at {{ $usagePercentage }}%</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-warning dark:text-warning">You have {{ number_format($remainingEvents) }} events remaining this month. Upgrade now to keep headroom for traffic spikes.</p></div></div></section>
         @elseif($planLimitReached)
             <section class="ui-alert ui-alert-danger block p-5 sm:p-6"><div class="flex gap-3"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-danger-soft text-danger"><x-monitor::icon name="alert" class="h-4 w-4" /></span><div><h2 class="text-sm font-bold text-danger dark:text-danger">Monthly event limit reached</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-danger dark:text-danger">New deliveries stay encrypted and retryable while the workspace is at its allowance. Upgrade the plan, then retry failed deliveries from ingestion diagnostics.</p></div></div></section>
+        @elseif($usageState === 'unavailable')
+            <section class="ui-alert border-info/30 bg-info-soft block p-5 sm:p-6"><div class="flex gap-3"><span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-info-soft text-info"><x-monitor::icon name="alert" class="h-4 w-4" /></span><div><h2 class="text-sm font-bold text-info dark:text-info">Monitor plan could not be verified</h2><p class="mt-1 max-w-2xl text-xs leading-5 text-info dark:text-info">Telemetry intake is paused until this workspace’s subscription and plan snapshot are reconciled in Core.</p></div></div></section>
         @endif
 
         <section>
@@ -85,6 +90,8 @@
                         <ul class="flex-1 space-y-3">@foreach($plan['features'] as $feature)<li class="flex gap-2 text-xs text-muted dark:text-muted"><x-monitor::icon name="check" class="mt-0.5 h-3.5 w-3.5 shrink-0 text-success" />{{ $feature }}</li>@endforeach</ul>
                         @if($key === $currentPlanKey)
                             <x-monitor::ui.button type="button" variant="secondary" disabled class="mt-6 w-full">Current plan</x-monitor::ui.button>
+                        @elseif($corePlanAuthority)
+                            <x-monitor::ui.button type="button" variant="secondary" disabled class="mt-6 w-full">Billing update paused</x-monitor::ui.button>
                         @elseif($key !== 'free' && in_array($key, $checkoutPlans, true) && ! $hasActiveSubscription)
                             <form method="POST" action="{{ route('monitor.settings.billing.checkout') }}" class="mt-6">
                                 @csrf

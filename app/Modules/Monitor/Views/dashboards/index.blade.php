@@ -7,7 +7,7 @@
         <x-slot:actions>@if($canManage && ! $capacity['at_limit'])<x-monitor::ui.button :href="route('monitor.dashboards.create')"><x-monitor::icon name="plus" class="h-4 w-4" />Create dashboard</x-monitor::ui.button>@endif</x-slot:actions>
     </x-monitor::ui.page-header>
     <div class="ui-alert border-primary/30 bg-primary-soft flex flex-wrap items-center justify-between gap-3 p-4 text-xs text-primary dark:text-primary">
-        <span>Saved dashboards on your plan: {{ number_format($capacity['used']) }}{{ $capacity['limit'] === null ? ' · unlimited' : ' / '.number_format($capacity['limit']) }}</span>
+        <span>{{ ! $capacity['plan_available'] || ! $capacity['limit_configured'] ? 'Saved dashboards: '.number_format($capacity['used']).' · plan allowance unverified' : 'Saved dashboards on your plan: '.number_format($capacity['used']).($capacity['limit'] === null ? ' · unlimited' : ' / '.number_format($capacity['limit'])) }}</span>
         @if($capacity['at_limit'])<a href="{{ route('monitor.settings.billing') }}" class="font-bold underline">Review plans</a>@endif
     </div>
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
@@ -22,7 +22,7 @@
             </article>
         @empty
             <x-monitor::ui.empty-state icon="grid" class="md:col-span-2 xl:col-span-3" title="Build a team view" description="Combine telemetry, incidents, monitors, SLOs and applications into a saved workspace view.">
-                <x-slot:action>@if($canManage)<a href="{{ route('monitor.dashboards.create') }}" class="mt-3 text-sm font-bold text-primary hover:underline dark:text-primary">Create your first dashboard →</a>@endif</x-slot:action>
+                <x-slot:action>@if($canManage && ! $capacity['at_limit'])<a href="{{ route('monitor.dashboards.create') }}" class="mt-3 text-sm font-bold text-primary hover:underline dark:text-primary">Create your first dashboard →</a>@endif</x-slot:action>
             </x-monitor::ui.empty-state>
         @endforelse
     </div>

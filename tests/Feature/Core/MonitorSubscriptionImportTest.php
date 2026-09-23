@@ -3,6 +3,8 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Services\Migration\ImportMonitorSubscriptionsIntoCore;
+use App\Modules\Monitor\Models\Workspace as MonitorWorkspace;
+use App\Modules\Monitor\Services\MonitorPlanAuthority;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -144,6 +146,61 @@ final class MonitorSubscriptionImportTest extends TestCase
         $this->assertSame('active', $currentSubscription->status);
         $this->assertNull($currentSubscription->provider_subscription_id);
         $this->assertSame(2, DB::connection('core')->table('product_subscriptions')->where('workspace_id', $workspaceId)->count());
+    }
+
+    public function test_monitor_import_normalizes_core_entitlements_and_limits_while_preserving_legacy_snapshot(): void
+    {
+        config(['monitor.beacon.plans' => [
+            'pro' => [
+                'name' => 'Pro',
+                'price' => 49,
+                'apps' => 'Unlimited',
+                'seats' => 5,
+                'dashboards' => 4,
+                'escalation_steps' => 3,
+                'deployment_context_minutes' => 60,
+                'event_limit' => 10_000_000,
+                'retention_days' => 30,
+                'telemetry_guardrails' => true,
+                'slo_burn_rate' => true,
+                'slo_burn_rate_alerts' => true,
+                'slo_reports' => false,
+                'anomaly_detection' => true,
+                'log_pattern_alerts' => true,
+                'audit_log' => true,
+                'issue_digest' => true,
+                'features' => ['Original Monitor catalog copy'],
+            ],
+        ]]);
+        config(['monitor.beacon.plan_authority' => 'core']);
+        $workspaceId = $this->addCoreWorkspaceForMonitor(40);
+        $this->addMonitorWorkspace(40, ['plan' => 'pro', 'billing_status' => 'active']);
+
+        $report = app(ImportMonitorSubscriptionsIntoCore::class)->run(apply: true);
+        $subscription = DB::connection('core')->table('product_subscriptions')
+            ->where('workspace_id', $workspaceId)->where('product', 'monitor')->first();
+        $metadata = json_decode($subscription->metadata, true, 512, JSON_THROW_ON_ERROR);
+        $snapshot = $metadata['plan_snapshot'];
+        $resolution = app(MonitorPlanAuthority::class)->resolve(MonitorWorkspace::query()->findOrFail(40));
+
+        $this->assertSame(1, $report['subscriptions_imported']);
+        $this->assertSame(['telemetry_guardrails', 'slo_burn_rate', 'slo_burn_rate_alerts', 'anomaly_detection', 'log_pattern_alerts', 'audit_log', 'issue_digest'], $snapshot['entitlements']);
+        $this->assertSame([
+            'applications' => null,
+            'seats' => 5,
+            'dashboards' => 4,
+            'escalation_steps' => 3,
+            'deployment_context_minutes' => 60,
+            'events_per_month' => 10_000_000,
+            'retention_days' => 30,
+        ], $snapshot['limits']);
+        $this->assertSame(['Original Monitor catalog copy'], $snapshot['features']);
+        $this->assertSame(10_000_000, $metadata['billing_state']['plan_snapshot']['event_limit']);
+        $this->assertTrue($resolution->available);
+        $this->assertTrue($resolution->allows('telemetry_guardrails'));
+        $this->assertFalse($resolution->allows('slo_reports'));
+        $this->assertNull($resolution->limit('applications'));
+        $this->assertSame(10_000_000, $resolution->limit('events_per_month'));
     }
 
     public function test_unknown_plan_is_held_for_review_then_retried_after_source_correction(): void

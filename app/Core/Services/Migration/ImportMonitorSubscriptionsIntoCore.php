@@ -276,7 +276,7 @@ final class ImportMonitorSubscriptionsIntoCore
             $reasonCodes[] = 'unknown_monitor_plan';
             $planSnapshot = [];
         } else {
-            $planSnapshot = $plans[$planKey];
+            $planSnapshot = $this->normalizedPlanSnapshot($plans[$planKey]);
         }
 
         $stripeSubscriptionIsCurrent = $stripeSubscriptionId !== null
@@ -299,7 +299,7 @@ final class ImportMonitorSubscriptionsIntoCore
                 'created_at' => isset($source->billing_event_created_at) ? (int) $source->billing_event_created_at : null,
                 'event_id' => $source->billing_event_id ?? null,
             ],
-            'plan_snapshot' => $planSnapshot,
+            'plan_snapshot' => is_array($plans[$planKey] ?? null) ? $plans[$planKey] : [],
         ];
 
         if (filled($source->stripe_checkout_session_id ?? null)) {
@@ -324,6 +324,62 @@ final class ImportMonitorSubscriptionsIntoCore
             'stripe_subscription_is_current' => $stripeSubscriptionIsCurrent,
             'reason_codes' => $reasonCodes,
             'billing_metadata' => $billingMetadata,
+        ];
+    }
+
+    /**
+     * Keep Monitor's catalog fields for display and migration review while adding
+     * a stable, product-neutral entitlement and quota contract for Core.
+     *
+     * @param  array<string, mixed>  $source
+     * @return array<string, mixed>
+     */
+    private function normalizedPlanSnapshot(array $source): array
+    {
+        $limitSources = [
+            'apps' => 'applications',
+            'seats' => 'seats',
+            'dashboards' => 'dashboards',
+            'escalation_steps' => 'escalation_steps',
+            'deployment_context_minutes' => 'deployment_context_minutes',
+            'event_limit' => 'events_per_month',
+            'retention_days' => 'retention_days',
+        ];
+        $limits = [];
+
+        foreach ($limitSources as $sourceKey => $limitKey) {
+            if (! array_key_exists($sourceKey, $source)) {
+                continue;
+            }
+
+            $value = $source[$sourceKey];
+            if (is_numeric($value) && (int) $value >= 0) {
+                $limits[$limitKey] = (int) $value;
+            } elseif (is_string($value) && mb_strtolower(trim($value)) === 'unlimited') {
+                $limits[$limitKey] = null;
+            }
+        }
+
+        $entitlements = [];
+        foreach ([
+            'telemetry_guardrails',
+            'slo_burn_rate',
+            'slo_burn_rate_alerts',
+            'slo_reports',
+            'anomaly_detection',
+            'log_pattern_alerts',
+            'audit_log',
+            'issue_digest',
+        ] as $entitlement) {
+            if (($source[$entitlement] ?? false) === true) {
+                $entitlements[] = $entitlement;
+            }
+        }
+
+        return [
+            ...$source,
+            'entitlements' => $entitlements,
+            'limits' => $limits,
         ];
     }
 
@@ -413,6 +469,7 @@ final class ImportMonitorSubscriptionsIntoCore
                         'migration_source' => 'monitor',
                         'source_workspace_id' => $sourceWorkspaceId,
                         'entitlement_snapshot' => true,
+                        'plan_snapshot' => $decision['plan_snapshot'],
                         'billing_state' => $decision['billing_metadata'],
                     ],
                 ]);

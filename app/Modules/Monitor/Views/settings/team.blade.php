@@ -19,7 +19,11 @@
             <h2 class="font-bold">Invite a teammate</h2>
             <p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">Admins manage applications and members. Members investigate issues. Viewers have read-only access. Only the owner manages billing.</p>
             @if($seatCapacity['at_limit'])
-                <p class="ui-alert ui-alert-warning block mt-5 p-4 text-xs leading-5 text-warning dark:text-warning">Your {{ config('monitor.beacon.plans.'.$workspace->plan.'.name', ucfirst($workspace->plan)) }} plan has reached its {{ $seatCapacity['limit'] }}-seat allowance. Upgrade the workspace plan or remove a teammate before inviting another.</p>
+                @if(! $seatCapacity['plan_available'] || ! $seatCapacity['limit_configured'])
+                    <p class="ui-alert border-info/30 bg-info-soft block mt-5 p-4 text-xs leading-5 text-info dark:text-info">Monitor could not verify this workspace’s seat allowance. Reconcile its Core subscription before inviting a teammate.</p>
+                @else
+                    <p class="ui-alert ui-alert-warning block mt-5 p-4 text-xs leading-5 text-warning dark:text-warning">Your {{ $workspacePlan['name'] }} plan has reached its {{ $seatCapacity['limit'] }}-seat allowance. Upgrade the workspace plan or remove a teammate before inviting another.</p>
+                @endif
             @else
                 <form method="POST" action="{{ route('monitor.invitations.store', $workspace) }}" class="mt-5 space-y-4">
                     @csrf
@@ -32,7 +36,7 @@
         @endcan
     </div>
     <section class="ui-panel overflow-hidden">
-        <div class="border-b border-line px-6 py-4 dark:border-line"><h2 class="font-bold">Members <span class="ml-2 text-xs text-subtle">{{ $members->count() }}{{ $seatCapacity['limit'] === null ? '' : ' / '.$seatCapacity['limit'] }} seats</span></h2></div>
+        <div class="border-b border-line px-6 py-4 dark:border-line"><h2 class="font-bold">Members <span class="ml-2 text-xs text-subtle">{{ $members->count() }}{{ ! $seatCapacity['plan_available'] || ! $seatCapacity['limit_configured'] ? ' · plan unverified' : ($seatCapacity['limit'] === null ? ' · unlimited' : ' / '.$seatCapacity['limit']) }} seats</span></h2></div>
         <div class="divide-y divide-line dark:divide-line">
             @foreach($members as $member)
                 <div class="flex flex-col justify-between gap-4 px-6 py-4 sm:flex-row sm:items-center">

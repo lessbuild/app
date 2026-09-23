@@ -7,7 +7,11 @@
         <x-slot:actions>@if($canCreate)<x-monitor::ui.button :href="route('monitor.applications.create')"><x-monitor::icon name="plus" class="h-4 w-4" />New application</x-monitor::ui.button>@endif</x-slot:actions>
     </x-monitor::ui.page-header>
     @if($canManage && $applicationCapacity['at_limit'])
-        <p class="ui-alert ui-alert-warning block p-4 text-xs leading-5 text-warning dark:text-warning">Your current plan has reached its {{ $applicationCapacity['limit'] }}-application allowance. Upgrade the workspace plan or archive an application before connecting another service.</p>
+        @if(! $applicationCapacity['plan_available'] || ! $applicationCapacity['limit_configured'])
+            <p class="ui-alert border-info/30 bg-info-soft block p-4 text-xs leading-5 text-info dark:text-info">Monitor could not verify this workspace’s application allowance. Reconcile its Core subscription before connecting another service.</p>
+        @else
+            <p class="ui-alert ui-alert-warning block p-4 text-xs leading-5 text-warning dark:text-warning">Your current plan has reached its {{ $applicationCapacity['limit'] }}-application allowance. Upgrade the workspace plan or archive an application before connecting another service.</p>
+        @endif
     @endif
     <nav class="flex gap-2" aria-label="Application status">
         <a href="{{ route('monitor.applications.index') }}" @class(['rounded-control px-4 py-2 text-xs font-bold', 'bg-emphasis text-emphasis-ink dark:bg-surface dark:text-emphasis-ink' => !$archived, 'text-muted hover:bg-line dark:hover:bg-surface-muted' => $archived])>Active</a>

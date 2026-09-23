@@ -39,9 +39,10 @@ Artisan::command('telemetry:prune {--dry-run : Report records without deleting t
     $summary = $pruner->prune($dryRun, workspaceId: $workspaceId === false ? null : $workspaceId);
     $verb = $dryRun ? 'would prune' : 'pruned';
     $this->info(sprintf(
-        'Retention: %s %d workspace(s), %d event(s), %d identity record(s), %d receipt(s), and %d payload(s).',
+        'Retention: %s %d workspace(s), skipped %d without a finite retention window, %d event(s), %d identity record(s), %d receipt(s), and %d payload(s).',
         $verb,
         $summary['workspaces'],
+        $summary['workspaces_skipped_without_retention_window'],
         $summary['events'],
         $summary['identities'],
         $summary['receipts'],

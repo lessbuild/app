@@ -1,6 +1,7 @@
 <?php
 
 return [
+    'plan_authority' => env('MONITOR_PLAN_AUTHORITY', 'legacy'),
     'monitors' => [
         'location' => env('MONITOR_LOCATION', 'This server'),
     ],

@@ -16,12 +16,21 @@ final class WorkspaceViewData
         private readonly Request $request,
         private readonly WorkspaceUsage $usage,
         private readonly WorkspaceNavigation $navigation,
+        private readonly MonitorPlanAuthority $planAuthority,
     ) {}
 
     public function compose(View $view): void
     {
         $workspace = $this->currentWorkspace->get();
         $plan = config('monitor.beacon.plans.'.$workspace->plan, config('monitor.beacon.plans.free'));
+
+        if ($this->planAuthority->usesCore()) {
+            $resolvedPlan = $this->planAuthority->resolve($workspace);
+            $plan = $resolvedPlan->available
+                ? array_replace($plan, $resolvedPlan->snapshot)
+                : ['name' => 'Plan unverified', 'description' => 'Monitor could not confirm this workspace’s Core plan.'];
+        }
+
         $usageSummary = $this->usage->summary($workspace);
         $application = $this->request->route('application');
         $environment = $this->request->route('environment');

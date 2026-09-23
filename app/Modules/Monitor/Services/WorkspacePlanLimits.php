@@ -2,30 +2,29 @@
 
 namespace App\Modules\Monitor\Services;
 
+use App\Core\Data\Billing\ProductPlanResolution;
 use App\Modules\Monitor\Models\Workspace;
 use Illuminate\Validation\ValidationException;
 
 final class WorkspacePlanLimits
 {
+    /** @var array<string, ProductPlanResolution> */
+    private array $resolvedPlans = [];
+
+    public function __construct(private readonly MonitorPlanAuthority $authority) {}
+
     /**
-     * @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool}
+     * @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool, plan_available: bool, limit_configured: bool}
      */
     public function applicationCapacity(Workspace $workspace): array
     {
-        $limit = $this->applicationLimit($workspace);
-        $used = $workspace->applications()->count();
-
-        return [
-            'used' => $used,
-            'limit' => $limit,
-            'remaining' => $limit === null ? null : max(0, $limit - $used),
-            'at_limit' => $limit !== null && $used >= $limit,
-        ];
+        return $this->capacity($workspace, 'applications', 'apps', $workspace->applications()->count());
     }
 
     public function assertApplicationCapacity(Workspace $workspace): void
     {
         $capacity = $this->applicationCapacity($workspace);
+        $this->assertPlanConfirmed($capacity);
 
         if (! $capacity['at_limit']) {
             return;
@@ -37,24 +36,17 @@ final class WorkspacePlanLimits
     }
 
     /**
-     * @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool}
+     * @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool, plan_available: bool, limit_configured: bool}
      */
     public function seatCapacity(Workspace $workspace): array
     {
-        $limit = $this->seatLimit($workspace);
-        $used = $workspace->members()->count();
-
-        return [
-            'used' => $used,
-            'limit' => $limit,
-            'remaining' => $limit === null ? null : max(0, $limit - $used),
-            'at_limit' => $limit !== null && $used >= $limit,
-        ];
+        return $this->capacity($workspace, 'seats', 'seats', $workspace->members()->count());
     }
 
     public function assertSeatCapacity(Workspace $workspace): void
     {
         $capacity = $this->seatCapacity($workspace);
+        $this->assertPlanConfirmed($capacity);
 
         if (! $capacity['at_limit']) {
             return;
@@ -66,24 +58,17 @@ final class WorkspacePlanLimits
     }
 
     /**
-     * @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool}
+     * @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool, plan_available: bool, limit_configured: bool}
      */
     public function dashboardCapacity(Workspace $workspace): array
     {
-        $limit = $this->dashboardLimit($workspace);
-        $used = $workspace->dashboards()->count();
-
-        return [
-            'used' => $used,
-            'limit' => $limit,
-            'remaining' => $limit === null ? null : max(0, $limit - $used),
-            'at_limit' => $limit !== null && $used >= $limit,
-        ];
+        return $this->capacity($workspace, 'dashboards', 'dashboards', $workspace->dashboards()->count());
     }
 
     public function assertDashboardCapacity(Workspace $workspace): void
     {
         $capacity = $this->dashboardCapacity($workspace);
+        $this->assertPlanConfirmed($capacity);
 
         if (! $capacity['at_limit']) {
             return;
@@ -96,7 +81,9 @@ final class WorkspacePlanLimits
 
     public function assertEscalationCapacity(Workspace $workspace, int $steps): void
     {
-        $limit = $this->escalationStepLimit($workspace);
+        $state = $this->limitState($workspace, 'escalation_steps', 'escalation_steps');
+        $this->assertPlanConfirmed($state);
+        $limit = $state['limit'];
 
         if ($limit === null || $steps <= $limit) {
             return;
@@ -109,81 +96,140 @@ final class WorkspacePlanLimits
 
     public function deploymentContextMinutes(Workspace $workspace): int
     {
-        $value = config('monitor.beacon.plans.'.$workspace->plan.'.deployment_context_minutes', 0);
+        $state = $this->limitState($workspace, 'deployment_context_minutes', 'deployment_context_minutes');
 
-        return is_numeric($value) ? max(0, (int) $value) : 0;
+        return $state['plan_available'] && $state['limit_configured']
+            ? max(0, (int) ($state['limit'] ?? 0))
+            : 0;
+    }
+
+    public function retentionDays(Workspace $workspace): ?int
+    {
+        $state = $this->limitState($workspace, 'retention_days', 'retention_days');
+
+        if (! $state['plan_available'] || ! $state['limit_configured']) {
+            return null;
+        }
+
+        return $state['limit'] === null ? null : max(1, $state['limit']);
     }
 
     public function telemetryGuardrailsEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.telemetry_guardrails', false);
+        return $this->featureEnabled($workspace, 'telemetry_guardrails');
     }
 
     public function sloBurnRateEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.slo_burn_rate', false);
+        return $this->featureEnabled($workspace, 'slo_burn_rate');
     }
 
     public function sloBurnRateAlertsEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.slo_burn_rate_alerts', false);
+        return $this->featureEnabled($workspace, 'slo_burn_rate_alerts');
     }
 
     public function sloReportsEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.slo_reports', false);
+        return $this->featureEnabled($workspace, 'slo_reports');
     }
 
     public function anomalyDetectionEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.anomaly_detection', false);
+        return $this->featureEnabled($workspace, 'anomaly_detection');
     }
 
     public function logPatternAlertsEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.log_pattern_alerts', false);
+        return $this->featureEnabled($workspace, 'log_pattern_alerts');
     }
 
     public function auditLogEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.audit_log', false);
+        return $this->featureEnabled($workspace, 'audit_log');
     }
 
     public function issueDigestEnabled(Workspace $workspace): bool
     {
-        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.issue_digest', false);
+        return $this->featureEnabled($workspace, 'issue_digest');
     }
 
-    private function applicationLimit(Workspace $workspace): ?int
+    /** @return array{used: int, limit: int|null, remaining: int|null, at_limit: bool, plan_available: bool, limit_configured: bool} */
+    private function capacity(Workspace $workspace, string $resource, string $legacyKey, int $used): array
     {
-        $value = config('monitor.beacon.plans.'.$workspace->plan.'.apps');
+        $state = $this->limitState($workspace, $resource, $legacyKey);
+        $known = $state['plan_available'] && $state['limit_configured'];
+        $limit = $state['limit'];
 
-        return is_numeric($value) ? max(0, (int) $value) : null;
+        return [
+            'used' => $used,
+            'limit' => $limit,
+            'remaining' => ! $known || $limit === null ? null : max(0, $limit - $used),
+            'at_limit' => ! $known || ($limit !== null && $used >= $limit),
+            'plan_available' => $state['plan_available'],
+            'limit_configured' => $state['limit_configured'],
+        ];
     }
 
-    private function seatLimit(Workspace $workspace): ?int
+    /** @return array{plan_available: bool, limit_configured: bool, limit: int|null} */
+    private function limitState(Workspace $workspace, string $resource, string $legacyKey): array
     {
-        $value = config('monitor.beacon.plans.'.$workspace->plan.'.seats');
+        if ($this->authority->usesCore()) {
+            $plan = $this->resolvedPlan($workspace);
 
-        return is_numeric($value) ? max(0, (int) $value) : null;
+            return [
+                'plan_available' => $plan->available,
+                'limit_configured' => $plan->hasLimit($resource),
+                'limit' => $plan->hasLimit($resource) ? $plan->limit($resource) : null,
+            ];
+        }
+
+        $fallback = $legacyKey === 'retention_days'
+            ? config('monitor.beacon.plans.free.retention_days', 7)
+            : null;
+        $value = config('monitor.beacon.plans.'.$workspace->plan.'.'.$legacyKey, $fallback);
+
+        return [
+            'plan_available' => true,
+            'limit_configured' => true,
+            'limit' => is_numeric($value) ? max(0, (int) $value) : null,
+        ];
     }
 
-    private function dashboardLimit(Workspace $workspace): ?int
+    private function featureEnabled(Workspace $workspace, string $feature): bool
     {
-        $value = config('monitor.beacon.plans.'.$workspace->plan.'.dashboards');
+        if ($this->authority->usesCore()) {
+            return $this->resolvedPlan($workspace)->allows($feature);
+        }
 
-        return is_numeric($value) ? max(0, (int) $value) : null;
+        return (bool) config('monitor.beacon.plans.'.$workspace->plan.'.'.$feature, false);
     }
 
-    public function escalationStepLimit(Workspace $workspace): ?int
+    private function resolvedPlan(Workspace $workspace): ProductPlanResolution
     {
-        $value = config('monitor.beacon.plans.'.$workspace->plan.'.escalation_steps');
+        $key = (string) $workspace->getKey();
 
-        return is_numeric($value) ? max(0, (int) $value) : null;
+        return $this->resolvedPlans[$key] ??= $this->authority->resolve($workspace);
+    }
+
+    /** @param array{plan_available: bool, limit_configured: bool} $state */
+    private function assertPlanConfirmed(array $state): void
+    {
+        if ($state['plan_available'] && $state['limit_configured']) {
+            return;
+        }
+
+        throw ValidationException::withMessages([
+            'plan' => 'We could not confirm this workspace’s Monitor plan. Reconcile its Core subscription before changing this resource.',
+        ]);
     }
 
     private function planName(Workspace $workspace): string
     {
+        if ($this->authority->usesCore()) {
+            return $this->resolvedPlan($workspace)->planName ?? 'Monitor';
+        }
+
         return (string) config('monitor.beacon.plans.'.$workspace->plan.'.name', ucfirst($workspace->plan));
     }
 }

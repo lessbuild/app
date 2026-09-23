@@ -17,14 +17,17 @@ use Illuminate\Support\Facades\DB;
 
 final class PruneTelemetryData
 {
+    public function __construct(private readonly WorkspacePlanLimits $limits) {}
+
     /**
-     * @return array{workspaces: int, events: int, identities: int, receipts: int, payloads: int, dry_run: bool}
+     * @return array{workspaces: int, workspaces_skipped_without_retention_window: int, events: int, identities: int, receipts: int, payloads: int, dry_run: bool}
      */
     public function prune(bool $dryRun = false, ?CarbonImmutable $now = null, ?int $workspaceId = null): array
     {
         $now ??= CarbonImmutable::now('UTC');
         $summary = [
             'workspaces' => 0,
+            'workspaces_skipped_without_retention_window' => 0,
             'events' => 0,
             'identities' => 0,
             'receipts' => 0,
@@ -36,7 +39,15 @@ final class PruneTelemetryData
             ->when($workspaceId !== null, fn (Builder $query): Builder => $query->whereKey($workspaceId))
             ->orderBy('id')
             ->eachById(function (Workspace $workspace) use (&$summary, $dryRun, $now): void {
-                $cutoff = $now->subDays($this->retentionDays($workspace));
+                $retentionDays = $this->limits->retentionDays($workspace);
+
+                if ($retentionDays === null) {
+                    $summary['workspaces_skipped_without_retention_window']++;
+
+                    return;
+                }
+
+                $cutoff = $now->subDays($retentionDays);
                 $events = $this->pruneEvents($workspace, $cutoff, $dryRun);
                 $receipts = $this->pruneReceipts($workspace, $cutoff, $dryRun);
 
@@ -125,12 +136,5 @@ final class PruneTelemetryData
             ->whereBelongsTo($workspace)
             ->where('status', IngestStatus::Completed)
             ->where('last_received_at', '<', $cutoff);
-    }
-
-    private function retentionDays(Workspace $workspace): int
-    {
-        $value = config('monitor.beacon.plans.'.$workspace->plan.'.retention_days', config('monitor.beacon.plans.free.retention_days', 7));
-
-        return is_numeric($value) ? max(1, (int) $value) : 7;
     }
 }
