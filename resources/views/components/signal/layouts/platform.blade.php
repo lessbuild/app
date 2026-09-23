@@ -18,7 +18,7 @@
         :navigation="$navigation"
         :title="$title"
         product-key="core"
-        :brand-url="route('core.projects.index', $currentWorkspace)"
+        :brand-url="route('core.workspace.dashboard', $currentWorkspace)"
         :projects-url="route('core.projects.index', $currentWorkspace)"
         :current-workspace="$currentWorkspace"
         :workspace-options="$workspaces"

@@ -203,7 +203,7 @@ final class WorkspaceProjectsController
         $user = $this->platformUser($request, $platformUsers);
         abort_if($access->activeMembership($user, $workspace) === null, 404);
 
-        return redirect()->route('core.projects.index', $workspace);
+        return redirect()->route('core.workspace.dashboard', $workspace);
     }
 
     private function platformUser(Request $request, ResolvePlatformUser $platformUsers): PlatformUser

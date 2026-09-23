@@ -73,6 +73,9 @@
                     </summary>
                     <div class="absolute left-0 top-full z-40 grid max-h-[min(75vh,38rem)] w-[min(22rem,calc(100vw-2rem))] gap-1 overflow-y-auto rounded-panel border border-line bg-surface p-2 shadow-panel">
                         <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Products') }}</p>
+                        @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
+                            <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" class="w-full justify-start" />
+                        @endif
                         <a class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink" href="{{ $projectsUrl }}">{{ __('Projects') }}</a>
                         @foreach (['deployer', 'monitor', 'analytics'] as $productKeyOption)
                             @php
@@ -149,6 +152,9 @@
             </a>
 
             <nav class="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto pl-2 lg:flex" aria-label="{{ __('Products') }}">
+                @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
+                    <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" />
+                @endif
                 <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" />
                 @foreach (['deployer' => ['label' => __('Deployer'), 'route' => 'dashboard', 'active' => ['dashboard', 'projects.show', 'projects.create', 'projects.configuration.*', 'servers.*', 'websites.*', 'builds.*', 'providers.*', 'repositories.*', 'environments.*']], 'monitor' => ['label' => __('Monitor'), 'route' => 'monitor.dashboard'], 'analytics' => ['label' => __('Analytics'), 'route' => 'analytics.dashboard']] as $key => $product)
                     @php

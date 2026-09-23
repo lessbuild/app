@@ -171,7 +171,11 @@ Core project creation and product provisioning are separate transactions: show `
 
 ## 7. Dashboard and Signal UI
 
-The dashboard includes workspace/project switchers, project directory, project overview, per-product activation/plan states, recent activity, connections, team access, account/security, and billing. A project overview shows latest deployment, monitoring health, and Analytics summaries with freshness timestamps. Use lightweight summaries/projections and bounded reads; show a product-specific unavailable state when one module fails instead of failing the whole dashboard. Raw telemetry/event tables are not dashboard join targets.
+The authenticated workspace landing now renders a Signal Topbar SaaS overview with the workspace/project switchers, Core-owned project and team counts, independently displayed Deployer/Monitor/Analytics subscription cards, authorized project activations, and recent app connections. It bounds project and connection reads, filters connection detail by product grants, and only shows billing terms to workspace owners and billing managers. It reads Core only, so an unavailable product database cannot break the workspace shell or produce a made-up health/traffic result. The project directory and project detail remain separate screens.
+
+Illustrative desktop and mobile renders use fictional sample data: [desktop](previews/unified-workspace-overview.png) and [mobile](previews/unified-workspace-overview-mobile.png).
+
+The planned project overview still needs latest deployment, Monitor health/incident, and Analytics traffic summaries with freshness timestamps. Add bounded product-owned summary contracts/projections and product-specific unavailable states; raw telemetry/event tables are not dashboard join targets. The shared dashboard also still needs actionable recent activity, billing management routes, account/security, saved priorities, and full setup guidance. Keep the existing Deployer, Monitor, and Analytics dashboards intact and preserve their full feature behavior as those summaries are composed.
 
 Use the selected Signal Topbar SaaS shell consistently across all authenticated application screens:
 

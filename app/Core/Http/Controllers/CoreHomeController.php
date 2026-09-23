@@ -25,7 +25,7 @@ final class CoreHomeController
             ->filter();
 
         if ($workspaces->count() === 1) {
-            return redirect()->route('core.projects.index', $workspaces->first());
+            return redirect()->route('core.workspace.dashboard', $workspaces->first());
         }
 
         return view('core::workspaces.index', [

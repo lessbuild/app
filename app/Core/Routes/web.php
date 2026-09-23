@@ -2,6 +2,7 @@
 
 use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
+use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
 use Illuminate\Support\Facades\Route;
 
@@ -10,6 +11,9 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::post('/workspaces/{workspace}/select', [WorkspaceProjectsController::class, 'selectWorkspace'])
         ->name('core.workspaces.select');
+
+    Route::get('/workspaces/{workspace}/overview', WorkspaceDashboardController::class)
+        ->name('core.workspace.dashboard');
 
     Route::prefix('workspaces/{workspace}')
         ->scopeBindings()

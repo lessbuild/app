@@ -37,8 +37,8 @@
                     <x-signal.ui.card tone="interactive" class="p-5">
                         <p class="ui-eyebrow">{{ __('Workspace') }}</p>
                         <h2 class="mt-2 text-lg font-extrabold text-ink">{{ $workspace->name }}</h2>
-                        <a href="{{ route('core.projects.index', $workspace) }}" class="mt-4 inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm font-extrabold text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
-                            {{ __('Open projects') }}
+                        <a href="{{ route('core.workspace.dashboard', $workspace) }}" class="mt-4 inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm font-extrabold text-primary hover:bg-primary-soft focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                            {{ __('Open workspace') }}
                             <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-right"></use></svg>
                         </a>
                     </x-signal.ui.card>
