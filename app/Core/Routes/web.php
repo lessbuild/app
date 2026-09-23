@@ -7,6 +7,7 @@ use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
 use App\Core\Http\Controllers\WorkspaceSearchController;
+use App\Core\Http\Controllers\WorkspaceTeamController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:platform')->group(function (): void {
@@ -38,6 +39,16 @@ Route::middleware('auth:platform')->group(function (): void {
     Route::get('/workspaces/{workspace}/search', WorkspaceSearchController::class)
         ->middleware('throttle:60,1')
         ->name('core.workspace.search');
+
+    Route::prefix('workspaces/{workspace}/team')
+        ->scopeBindings()
+        ->name('core.workspace.team.')
+        ->controller(WorkspaceTeamController::class)
+        ->group(function (): void {
+            Route::get('/', 'index')->name('index');
+            Route::post('/invitations', 'storeInvitation')->middleware('throttle:10,1')->name('invitations.store');
+            Route::delete('/invitations/{invitation}', 'revokeInvitation')->name('invitations.destroy');
+        });
 
     Route::prefix('workspaces/{workspace}')
         ->scopeBindings()

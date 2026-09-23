@@ -21,7 +21,9 @@ class AddSecurityHeaders
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
         $response->headers->set(
             'Referrer-Policy',
-            $request->is('__platform/sso/exchange') || is_string($request->attributes->get('platform.sso.form_origin'))
+            $request->is('__platform/sso/exchange')
+                || is_string($request->attributes->get('platform.sso.form_origin'))
+                || $response->headers->get('Referrer-Policy') === 'no-referrer'
                 ? 'no-referrer'
                 : 'strict-origin-when-cross-origin',
         );

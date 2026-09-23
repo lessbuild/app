@@ -4,6 +4,15 @@ use App\Core\Http\Controllers\Auth\PlatformEmailVerificationController;
 use App\Core\Http\Controllers\Auth\PlatformPasswordResetController;
 use App\Core\Http\Controllers\Auth\PlatformRegistrationController;
 use App\Core\Http\Controllers\Auth\PlatformSessionController;
+use App\Core\Http\Controllers\Auth\PlatformWorkspaceInvitationController;
+
+Route::get('/invitations/{token}', [PlatformWorkspaceInvitationController::class, 'show'])
+    ->where('token', '[a-f0-9]{64}')
+    ->name('workspace-invitations.show');
+Route::post('/invitations/{token}/accept', [PlatformWorkspaceInvitationController::class, 'accept'])
+    ->where('token', '[a-f0-9]{64}')
+    ->middleware('auth:platform')
+    ->name('workspace-invitations.accept');
 
 Route::get('/login', [PlatformSessionController::class, 'create'])->name('login');
 Route::post('/login', [PlatformSessionController::class, 'store'])

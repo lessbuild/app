@@ -8,6 +8,7 @@
     'workspaceOptions' => null,
     'workspaceSwitchRoute' => 'organizations.switch',
     'workspaceManageRoute' => 'organizations.index',
+    'workspaceManageParameters' => [],
     'accountUser' => null,
     'logoutRoute' => 'logout',
     'notificationsUrl' => null,
@@ -85,7 +86,7 @@
         ? route('projects.show', $currentProject).'#environment-'.data_get($environmentOptions, '0.id').'-heading'
         : $contextIndexUrl;
     $workspaceManageUrl = \Illuminate\Support\Facades\Route::has($workspaceManageRoute)
-        ? route($workspaceManageRoute)
+        ? route($workspaceManageRoute, $workspaceManageParameters)
         : null;
     $notificationsUrl ??= $navigation['notifications_url'] ?? (\Illuminate\Support\Facades\Route::has('notifications.index') ? route('notifications.index') : null);
     $logoutUrl = \Illuminate\Support\Facades\Route::has($logoutRoute) ? route($logoutRoute) : null;
