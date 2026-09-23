@@ -11,7 +11,9 @@
         "php": "^8.5",
         "guzzlehttp/guzzle": "^7.15.5",
         "laravel/cashier": "^16.8",
+        "laravel/fortify": "^1.39",
         "laravel/framework": "^13.30",
+        "laravel/horizon": "^5.49",
         "laravel/sanctum": "^4.3",
         "laravel/socialite": "^5.31",
         "laravel/telescope": "^5.23",
@@ -62,7 +64,11 @@
     },
     "extra": {
         "laravel": {
-            "dont-discover": []
+            "dont-discover": [
+                "laravel/fortify",
+                "laravel/horizon",
+                "laravel/passkeys"
+            ]
         }
     },
     "config": {
