@@ -51,10 +51,16 @@ class MigratePlatformModuleCommand extends Command
         $connection = $configuration['connection'];
         $migrator->setOutput($this->output);
 
-        $migrator->usingConnection($connection, fn () => $migrator->run([$path], [
-            'pretend' => (bool) $this->option('pretend'),
-            'step' => (bool) $this->option('step'),
-        ]));
+        $migrator->usingConnection($connection, function () use ($migrator, $path): void {
+            if (! $migrator->repositoryExists()) {
+                $migrator->getRepository()->createRepository();
+            }
+
+            $migrator->run([$path], [
+                'pretend' => (bool) $this->option('pretend'),
+                'step' => (bool) $this->option('step'),
+            ]);
+        });
 
         return self::SUCCESS;
     }
