@@ -72,7 +72,7 @@ return [
         ],
 
         'analytics' => [
-            'driver' => 'database',
+            'driver' => env('ANALYTICS_QUEUE_DRIVER', 'database'),
             'connection' => 'analytics',
             'table' => 'jobs',
             'queue' => 'analytics',

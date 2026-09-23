@@ -15,7 +15,7 @@ return [
     |
     */
 
-    'name' => env('HORIZON_NAME'),
+    'name' => env('ANALYTICS_HORIZON_NAME'),
 
     /*
     |--------------------------------------------------------------------------
@@ -41,7 +41,7 @@ return [
     |
     */
 
-    'path' => env('HORIZON_PATH', 'horizon'),
+    'path' => env('ANALYTICS_HORIZON_PATH', 'horizon'),
 
     /*
     |--------------------------------------------------------------------------
@@ -54,7 +54,7 @@ return [
     |
     */
 
-    'use' => 'default',
+    'use' => 'analytics',
 
     /*
     |--------------------------------------------------------------------------
@@ -68,8 +68,8 @@ return [
     */
 
     'prefix' => env(
-        'HORIZON_PREFIX',
-        Str::slug(env('APP_NAME', 'laravel'), '_').'_horizon:'
+        'ANALYTICS_HORIZON_PREFIX',
+        Str::slug(env('APP_NAME', 'laravel'), '_').'_analytics_horizon:'
     ),
 
     /*
@@ -97,7 +97,7 @@ return [
     */
 
     'waits' => [
-        'redis:default' => 60,
+        'analytics:analytics' => 60,
     ],
 
     /*
@@ -198,8 +198,8 @@ return [
 
     'defaults' => [
         'supervisor-1' => [
-            'connection' => 'redis',
-            'queue' => ['default'],
+            'connection' => 'analytics',
+            'queue' => ['analytics'],
             'balance' => 'auto',
             'autoScalingStrategy' => 'time',
             'maxProcesses' => 1,

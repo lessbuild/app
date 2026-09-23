@@ -227,6 +227,17 @@ return [
             'database' => env('REDIS_CACHE_DB', '1'),
         ],
 
+        // Analytics can use its own Redis queue and Horizon namespace while
+        // retaining the database queue as its default during migration.
+        'analytics' => [
+            'url' => env('ANALYTICS_REDIS_URL', env('REDIS_URL')),
+            'host' => env('ANALYTICS_REDIS_HOST', env('REDIS_HOST', '127.0.0.1')),
+            'username' => env('ANALYTICS_REDIS_USERNAME', env('REDIS_USERNAME')),
+            'password' => env('ANALYTICS_REDIS_PASSWORD', env('REDIS_PASSWORD')),
+            'port' => env('ANALYTICS_REDIS_PORT', env('REDIS_PORT', '6379')),
+            'database' => env('ANALYTICS_REDIS_DB', env('REDIS_DB', '0')),
+        ],
+
     ],
 
 ];

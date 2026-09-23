@@ -32,6 +32,26 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(app_path('Modules/Analytics/Config/Source/analytics.php'), 'analytics');
+        $this->mergeConfigFrom(app_path('Modules/Analytics/Config/Source/horizon.php'), 'horizon');
+
+        if (! config('platform.products.analytics.enabled', false)
+            || ! filled(config('platform.products.analytics.host'))
+            || ! config('analytics.horizon_enabled', false)) {
+            return;
+        }
+
+        if (config('queue.connections.analytics.driver') !== 'redis') {
+            throw new \RuntimeException('Analytics Horizon requires ANALYTICS_QUEUE_DRIVER=redis.');
+        }
+
+        config([
+            'horizon.domain' => config('platform.products.analytics.host'),
+            'horizon.use' => 'analytics',
+            'horizon.middleware' => ['web', 'auth:platform'],
+        ]);
+
+        $this->app->register(\Laravel\Horizon\HorizonServiceProvider::class);
+        $this->app->register(HorizonServiceProvider::class);
     }
 
     public function boot(): void
