@@ -76,4 +76,10 @@ class ProjectConnection extends CoreModel
     {
         return $this->hasMany(ProjectConnectionEvent::class)->orderBy('occurred_at');
     }
+
+    /** @return HasMany<ProjectConnectionDelivery, $this> */
+    public function deliveries(): HasMany
+    {
+        return $this->hasMany(ProjectConnectionDelivery::class)->latest('created_at');
+    }
 }

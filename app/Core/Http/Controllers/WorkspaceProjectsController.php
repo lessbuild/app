@@ -2,7 +2,6 @@
 
 namespace App\Core\Http\Controllers;
 
-use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Http\Requests\StoreWorkspaceProjectRequest;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\PlatformUser;
@@ -10,6 +9,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
@@ -119,6 +119,7 @@ final class WorkspaceProjectsController
         ResolvePlatformUser $platformUsers,
         ProjectProductLinks $productLinks,
         WorkspaceProjectAccess $access,
+        ProjectConnectionEntitlementPolicy $connectionEntitlements,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -164,6 +165,7 @@ final class WorkspaceProjectsController
             'connections.sourceResource',
             'connections.targetResource',
             'connections.events.actor',
+            'connections.deliveries',
         ]);
         $authorizedProductLinks = $productLinks->forProject($user, $project, $visibleProducts);
 
@@ -184,7 +186,7 @@ final class WorkspaceProjectsController
                 : collect(),
             'canManageBilling' => $canManageBilling,
             'canManageConnections' => $access->canManageWorkspace($user, $workspace),
-            'connectionCapabilities' => ProjectConnectionCapability::cases(),
+            'connectionCapabilities' => $connectionEntitlements->availableFor($project),
             'connectionResources' => $project->resources->sortBy([
                 ['product', 'asc'],
                 ['name', 'asc'],

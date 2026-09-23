@@ -10,6 +10,7 @@ use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionEvent;
 use App\Core\Models\ProjectEnvironment;
 use App\Core\Models\ProjectResource;
+use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
@@ -17,7 +18,10 @@ use Illuminate\Validation\ValidationException;
 
 final class CreateProjectConnection
 {
-    public function __construct(private readonly WorkspaceProjectAccess $access) {}
+    public function __construct(
+        private readonly WorkspaceProjectAccess $access,
+        private readonly ProjectConnectionEntitlementPolicy $entitlements,
+    ) {}
 
     /**
      * @param  list<string>  $capabilities
@@ -67,16 +71,30 @@ final class CreateProjectConnection
                 }
             }
 
-            $supported = array_map(
-                static fn (ProjectConnectionCapability $capability): string => $capability->value,
-                ProjectConnectionCapability::supportedBetween($source->product, $target->product),
-            );
             $selected = array_values(array_unique($capabilities));
+            $supported = array_values(array_filter(
+                ProjectConnectionCapability::supportedBetween($source->product, $target->product),
+                fn (ProjectConnectionCapability $capability): bool => $capability->hasDeliveryHandler()
+                    && $capability->supportsResources($source, $target),
+            ));
+            $supportedValues = array_map(
+                static fn (ProjectConnectionCapability $capability): string => $capability->value,
+                $supported,
+            );
 
-            if ($supported === [] || $selected === [] || array_diff($selected, $supported) !== []) {
+            if ($supportedValues === [] || $selected === [] || array_diff($selected, $supportedValues) !== []) {
                 throw ValidationException::withMessages([
                     'capabilities' => __('That behavior is not supported for the selected application direction.'),
                 ]);
+            }
+
+            foreach ($selected as $capabilityKey) {
+                $capability = ProjectConnectionCapability::tryFrom($capabilityKey);
+                if ($capability === null || ! $this->entitlements->allows($project, $capability)) {
+                    throw ValidationException::withMessages([
+                        'capabilities' => __('The current workspace plans do not include this application connection behavior.'),
+                    ]);
+                }
             }
 
             $existing = ProjectConnection::query()

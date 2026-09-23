@@ -2,6 +2,9 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Contracts\ProductPlanResolver;
+use App\Core\Data\Billing\ProductPlanResolution;
+use App\Core\Enums\ProductKey;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectConnection;
@@ -29,11 +32,16 @@ final class ProjectConnectionsTest extends TestCase
 
     private string $analyticsResourceId;
 
+    private string $deployerEnvironmentId;
+
+    private string $monitorEnvironmentId;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         $this->createTables();
+        $this->bindEntitledPlans();
         $this->seedProject();
     }
 
@@ -113,6 +121,34 @@ final class ProjectConnectionsTest extends TestCase
             ->update(['revoked_at' => now()]);
 
         $this->expectException(AuthorizationException::class);
+        app(CreateProjectConnection::class)->handle(
+            user: $this->user,
+            project: Project::query()->findOrFail($this->projectId),
+            sourceResourceId: $this->deployerResourceId,
+            targetResourceId: $this->monitorResourceId,
+            capabilities: ['deployment_context'],
+        );
+    }
+
+    public function test_deployment_context_requires_both_product_plan_entitlements(): void
+    {
+        app()->instance(ProductPlanResolver::class, new class implements ProductPlanResolver
+        {
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: $product->value,
+                    subscriptionStatus: 'active',
+                    entitlements: $product === ProductKey::Deployer ? ['monitoring'] : [],
+                    limits: $product === ProductKey::Monitor ? ['deployment_context_minutes' => 0] : [],
+                );
+            }
+        });
+
+        $this->expectException(ValidationException::class);
         app(CreateProjectConnection::class)->handle(
             user: $this->user,
             project: Project::query()->findOrFail($this->projectId),
@@ -276,6 +312,8 @@ final class ProjectConnectionsTest extends TestCase
         $this->deployerResourceId = (string) Str::ulid();
         $this->monitorResourceId = (string) Str::ulid();
         $this->analyticsResourceId = (string) Str::ulid();
+        $this->deployerEnvironmentId = (string) Str::ulid();
+        $this->monitorEnvironmentId = (string) Str::ulid();
 
         $this->user = (new PlatformUser)->forceFill([
             'id' => $userId,
@@ -342,15 +380,32 @@ final class ProjectConnectionsTest extends TestCase
         }
 
         foreach ([
-            [$this->deployerResourceId, 'deployer', 'application', 'Deployer application'],
-            [$this->monitorResourceId, 'monitor', 'application', 'Monitor application'],
-            [$this->analyticsResourceId, 'analytics', 'site', 'Analytics site'],
-        ] as [$id, $product, $type, $name]) {
+            [$this->deployerEnvironmentId, 'Production'],
+            [$this->monitorEnvironmentId, 'Production'],
+        ] as [$id, $name]) {
+            DB::connection('core')->table('project_environments')->insert([
+                'id' => $id,
+                'project_id' => $this->projectId,
+                'name' => $name,
+                'slug' => strtolower($name),
+                'environment_type' => 'production',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        foreach ([
+            [$this->deployerResourceId, $this->deployerEnvironmentId, 'deployer', 'Deployer environment'],
+            [$this->monitorResourceId, $this->monitorEnvironmentId, 'monitor', 'Monitor environment'],
+            [$this->analyticsResourceId, null, 'analytics', 'Analytics site'],
+        ] as [$id, $environmentId, $product, $name]) {
             DB::connection('core')->table('project_resources')->insert([
                 'id' => $id,
                 'project_id' => $this->projectId,
+                'environment_id' => $environmentId,
                 'product' => $product,
-                'resource_type' => $type,
+                'resource_type' => $product === 'analytics' ? 'site' : 'environment',
                 'resource_id' => Str::ulid(),
                 'name' => $name,
                 'status' => 'active',
@@ -358,5 +413,24 @@ final class ProjectConnectionsTest extends TestCase
                 'updated_at' => now(),
             ]);
         }
+    }
+
+    private function bindEntitledPlans(): void
+    {
+        app()->instance(ProductPlanResolver::class, new class implements ProductPlanResolver
+        {
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: $product->value,
+                    subscriptionStatus: 'active',
+                    entitlements: $product === ProductKey::Deployer ? ['monitoring', 'releases'] : ['*'],
+                    limits: $product === ProductKey::Monitor ? ['deployment_context_minutes' => 60] : [],
+                );
+            }
+        });
     }
 }

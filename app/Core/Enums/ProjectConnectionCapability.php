@@ -2,6 +2,8 @@
 
 namespace App\Core\Enums;
 
+use App\Core\Models\ProjectResource;
+
 enum ProjectConnectionCapability: string
 {
     case DeploymentContext = 'deployment_context';
@@ -18,6 +20,28 @@ enum ProjectConnectionCapability: string
             ['monitor', 'analytics'] => [self::IncidentAnnotations],
             ['analytics', 'monitor'] => [self::TrafficContext],
             default => [],
+        };
+    }
+
+    public function supportsResources(ProjectResource $source, ProjectResource $target): bool
+    {
+        return match ($this) {
+            self::DeploymentContext => $source->product === 'deployer'
+                && $source->resource_type === 'environment'
+                && $target->product === 'monitor'
+                && $target->resource_type === 'environment',
+            self::ReleaseAnnotations => $source->product === 'deployer'
+                && $source->resource_type === 'environment'
+                && $target->product === 'analytics'
+                && $target->resource_type === 'site',
+            self::IncidentAnnotations => $source->product === 'monitor'
+                && $source->resource_type === 'environment'
+                && $target->product === 'analytics'
+                && $target->resource_type === 'site',
+            self::TrafficContext => $source->product === 'analytics'
+                && $source->resource_type === 'site'
+                && $target->product === 'monitor'
+                && $target->resource_type === 'environment',
         };
     }
 
@@ -47,5 +71,26 @@ enum ProjectConnectionCapability: string
             self::ReleaseAnnotations, self::IncidentAnnotations => 'analytics',
             self::TrafficContext => 'monitor',
         };
+    }
+
+    public function sourceResourceType(): string
+    {
+        return match ($this) {
+            self::TrafficContext => 'site',
+            self::DeploymentContext, self::ReleaseAnnotations, self::IncidentAnnotations => 'environment',
+        };
+    }
+
+    public function targetResourceType(): string
+    {
+        return match ($this) {
+            self::ReleaseAnnotations, self::IncidentAnnotations => 'site',
+            self::DeploymentContext, self::TrafficContext => 'environment',
+        };
+    }
+
+    public function hasDeliveryHandler(): bool
+    {
+        return $this === self::DeploymentContext;
     }
 }

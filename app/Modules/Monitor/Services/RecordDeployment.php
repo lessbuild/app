@@ -2,6 +2,8 @@
 
 namespace App\Modules\Monitor\Services;
 
+use App\Core\Data\Connections\ProjectConnectionDeliveryAuthority;
+use App\Core\Services\Connections\ProjectConnectionDeliveryAuthorization;
 use App\Modules\Monitor\Data\Telemetry\ReleaseIdentity;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Deployment;
@@ -18,16 +20,25 @@ use LogicException;
 
 final class RecordDeployment
 {
-    public function __construct(private readonly RecordReleases $releases, private readonly TelemetryRedactor $redactor) {}
+    public function __construct(
+        private readonly RecordReleases $releases,
+        private readonly TelemetryRedactor $redactor,
+        private readonly ProjectConnectionDeliveryAuthorization $connectionAuthorization,
+    ) {}
 
     /** @param array{deployment_id: string, version: string, service?: string|null, service_namespace?: string|null, commit_sha?: string|null, note?: string|null, deployed_at?: string|null} $data */
-    public function record(Environment $environment, array $data, ?User $actor = null, ?IngestToken $token = null): Deployment
-    {
-        if (($actor === null) === ($token === null)) {
+    public function record(
+        Environment $environment,
+        array $data,
+        ?User $actor = null,
+        ?IngestToken $token = null,
+        ?ProjectConnectionDeliveryAuthority $integration = null,
+    ): Deployment {
+        if ((int) ($actor !== null) + (int) ($token !== null) + (int) ($integration !== null) !== 1) {
             throw new LogicException('Exactly one deployment authority is required.');
         }
 
-        return DB::connection('monitor')->transaction(function () use ($environment, $data, $actor, $token): Deployment {
+        return DB::connection('monitor')->transaction(function () use ($environment, $data, $actor, $token, $integration): Deployment {
             if ($actor !== null) {
                 $workspaceId = Application::query()->whereKey($environment->application_id)->value('workspace_id');
                 $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspaceId);
@@ -42,9 +53,12 @@ final class RecordDeployment
             if ($actor !== null) {
                 $application->setRelation('workspace', $workspace);
                 Gate::forUser($actor)->authorize('create', [Deployment::class, $environment]);
-            } else {
+            } elseif ($token !== null) {
                 $token = $environment->ingestTokens()->active()->lockForUpdate()->find($token->id);
                 abort_unless($token !== null && $environment->status === 'active', 401, 'The ingestion token is invalid or inactive.');
+            } else {
+                abort_unless($integration !== null, 403);
+                $this->connectionAuthorization->assertDeploymentContext($integration, (string) $environment->getKey());
             }
 
             $labels = $this->redactor->redact([
@@ -72,7 +86,9 @@ final class RecordDeployment
             $release = $this->releases->resolve($application->id, $identity);
             $deployment = $environment->deployments()->create([
                 'release_id' => $release->id, 'deployment_key' => $key, 'payload_hash' => $fingerprints[0],
-                'actor_id' => $actor?->id, 'ingest_token_id' => $token?->id, 'source' => $actor !== null ? 'manual' : 'api',
+                'actor_id' => $actor?->id,
+                'ingest_token_id' => $token?->id,
+                'source' => $actor !== null ? 'manual' : ($token !== null ? 'api' : 'integration'),
                 'commit_sha' => $commit, 'note' => $this->redactor->redact(['note' => $note])['note'],
                 'deployed_at' => $timestamp ?? CarbonImmutable::now('UTC'),
             ]);

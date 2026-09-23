@@ -185,6 +185,7 @@
                                             <option
                                                 value="{{ $resource->getKey() }}"
                                                 data-product="{{ $resource->product }}"
+                                                data-resource-type="{{ $resource->resource_type }}"
                                                 @selected(old('source_resource_id') === $resource->getKey())
                                             >{{ $products[$resource->product] ?? str($resource->product)->headline() }} · {{ $resource->name ?: str($resource->resource_type)->headline() }}{{ $resource->environment?->name ? ' · '.$resource->environment->name : '' }}</option>
                                         @endforeach
@@ -203,6 +204,7 @@
                                             <option
                                                 value="{{ $resource->getKey() }}"
                                                 data-product="{{ $resource->product }}"
+                                                data-resource-type="{{ $resource->resource_type }}"
                                                 @selected(old('target_resource_id') === $resource->getKey())
                                             >{{ $products[$resource->product] ?? str($resource->product)->headline() }} · {{ $resource->name ?: str($resource->resource_type)->headline() }}{{ $resource->environment?->name ? ' · '.$resource->environment->name : '' }}</option>
                                         @endforeach
@@ -218,6 +220,8 @@
                                         data-connection-capability
                                         data-source-product="{{ $capability->sourceProduct() }}"
                                         data-target-product="{{ $capability->targetProduct() }}"
+                                        data-source-resource-type="{{ $capability->sourceResourceType() }}"
+                                        data-target-resource-type="{{ $capability->targetResourceType() }}"
                                     >
                                         <x-signal.ui.checkbox
                                             :id="'project-connection-capability-'.$capability->value"
@@ -240,7 +244,7 @@
                             </fieldset>
 
                             <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
-                                <p class="max-w-xl text-xs leading-5 text-muted">{{ __('This saves an approved resource mapping. Workflow delivery is not active until the connection runner is enabled.') }}</p>
+                            <p class="max-w-xl text-xs leading-5 text-muted">{{ __('Deployment context is delivered to Monitor when a deployment succeeds. Product data and subscriptions remain separate.') }}</p>
                                 <x-signal.ui.button variant="primary" type="submit">
                                     {{ __('Save connection') }}
                                 </x-signal.ui.button>
@@ -275,7 +279,7 @@
                                             @if ($connection->last_succeeded_at)
                                                 · {{ __('Last synced :date', ['date' => $connection->last_succeeded_at->diffForHumans()]) }}
                                             @elseif ($connection->status === 'pending')
-                                                · {{ __('Waiting for workflow setup') }}
+                                                · {{ __('Waiting for the next deployment event') }}
                                             @endif
                                         </p>
                                         @if ($connection->last_error_code)
@@ -292,10 +296,28 @@
                                                 @endforeach
                                             </ul>
                                         @endif
+                                        @if ($connection->deliveries->isNotEmpty())
+                                            <ul class="mt-2 space-y-1 border-l-2 border-line pl-3" aria-label="{{ __('Recent delivery attempts') }}">
+                                                @foreach ($connection->deliveries->take(3) as $delivery)
+                                                    <li class="text-xs text-muted">
+                                                        {{ str($delivery->status)->headline() }}
+                                                        · {{ trans_choice(':count attempt|:count attempts', $delivery->attempts, ['count' => $delivery->attempts]) }}
+                                                        @if ($delivery->last_error_code) · {{ __('Error: :code', ['code' => $delivery->last_error_code]) }} @endif
+                                                        @if ($delivery->delivered_at) · {{ __('Delivered :date', ['date' => $delivery->delivered_at->diffForHumans()]) }} @endif
+                                                    </li>
+                                                @endforeach
+                                            </ul>
+                                        @endif
                                     </div>
                                     <div class="flex items-center gap-3">
                                         <x-signal.ui.badge :tone="in_array($connection->status, ['active', 'connected'], true) ? 'success' : (in_array($connection->status, ['failed', 'error'], true) ? 'danger' : 'warning')">{{ $connection->status === 'pending' ? __('Setup pending') : str($connection->status)->headline() }}</x-signal.ui.badge>
                                         @if ($canManageConnections)
+                                            @if ($connection->deliveries->contains(fn ($delivery) => in_array($delivery->status, ['failed', 'blocked'], true)))
+                                                <form method="POST" action="{{ route('core.projects.connections.retry', [$workspace, $project, $connection]) }}">
+                                                    @csrf
+                                                    <x-signal.ui.button type="submit" class="min-h-8 px-3 text-xs">{{ __('Retry failed deliveries') }}</x-signal.ui.button>
+                                                </form>
+                                            @endif
                                             <form
                                                 method="POST"
                                                 action="{{ route('core.projects.connections.destroy', [$workspace, $project, $connection]) }}"

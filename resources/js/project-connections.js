@@ -7,6 +7,8 @@ document.querySelectorAll('[data-project-connection-form]').forEach((form) => {
   const updateCapabilities = () => {
     const sourceProduct = source?.selectedOptions[0]?.dataset.product
     const targetProduct = target?.selectedOptions[0]?.dataset.product
+    const sourceType = source?.selectedOptions[0]?.dataset.resourceType
+    const targetType = target?.selectedOptions[0]?.dataset.resourceType
     let available = 0
 
     capabilities.forEach((row) => {
@@ -15,6 +17,8 @@ document.querySelectorAll('[data-project-connection-form]').forEach((form) => {
         && sourceProduct !== targetProduct
         && row.dataset.sourceProduct === sourceProduct
         && row.dataset.targetProduct === targetProduct
+        && row.dataset.sourceResourceType === sourceType
+        && row.dataset.targetResourceType === targetType
       const checkbox = row.querySelector('input[type="checkbox"]')
 
       row.hidden = !matches

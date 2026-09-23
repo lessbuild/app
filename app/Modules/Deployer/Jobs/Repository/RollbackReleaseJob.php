@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Jobs\Repository;
 
 use App\Modules\Deployer\Actions\Repository\SwitchReleaseAction;
 use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Services\Integration\RecordDeploymentSucceededOutboxEvent;
 use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -28,7 +29,7 @@ class RollbackReleaseJob implements ShouldQueue
      *
      * @param  SwitchReleaseAction  $releases  Action that validates and activates a retained release on the managed server.
      */
-    public function handle(SwitchReleaseAction $releases): void
+    public function handle(SwitchReleaseAction $releases, RecordDeploymentSucceededOutboxEvent $integrationEvents): void
     {
         $started = Build::query()
             ->whereKey($this->build->id)
@@ -59,6 +60,7 @@ class RollbackReleaseJob implements ShouldQueue
                 'built_at' => now(),
                 'finished_at' => now(),
             ]);
+            $integrationEvents->record($locked);
         });
     }
 

@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Actions\Repository;
 
 use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Services\Integration\RecordDeploymentSucceededOutboxEvent;
 use App\Modules\Deployer\Services\PreviewDeploymentLifecycle;
 use App\Modules\Deployer\Services\PreviewInitializationLifecycle;
 use App\Modules\Deployer\Services\PreviewStackReadiness;
@@ -17,6 +18,7 @@ class RecordBuildStatusAction
         private readonly PreviewStackReadiness $previewStack,
         private readonly PreviewInitializationLifecycle $previewInitialization,
         private readonly CreateDeploymentObservationAction $observations,
+        private readonly RecordDeploymentSucceededOutboxEvent $integrationEvents,
     ) {}
 
     /**
@@ -64,6 +66,9 @@ class RecordBuildStatusAction
                 ]);
             }
             $locked->update($attributes);
+            if ($locked->status === Build::STATUS_SUCCEEDED) {
+                $this->integrationEvents->record($locked);
+            }
             $this->previewStack->recordProgress($locked, $status);
             $this->previewInitialization->recordProgress($locked, $status);
         });

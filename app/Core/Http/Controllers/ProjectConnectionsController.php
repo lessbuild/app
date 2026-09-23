@@ -7,6 +7,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\Workspace;
+use App\Core\Services\Connections\RetryProjectConnectionDeliveries;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\Projects\CreateProjectConnection;
 use App\Core\Services\Projects\DisconnectProjectConnection;
@@ -52,6 +53,25 @@ final class ProjectConnectionsController
         return redirect()
             ->route('core.projects.show', [$workspace, $project])
             ->with('success', __('Connection disconnected. Existing product history was kept.'));
+    }
+
+    public function retry(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        ProjectConnection $connection,
+        ResolvePlatformUser $platformUsers,
+        RetryProjectConnectionDeliveries $retryDeliveries,
+    ): RedirectResponse {
+        abort_unless($project->workspace_id === $workspace->getKey(), 404);
+        $user = $this->platformUser($request, $platformUsers);
+        $retried = $retryDeliveries->handle($user, $project, $connection);
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project])
+            ->with($retried > 0 ? 'success' : 'info', $retried > 0
+                ? __(':count connection delivery attempt(s) queued for retry.', ['count' => $retried])
+                : __('There are no failed deliveries to retry.'));
     }
 
     private function platformUser(Request $request, ResolvePlatformUser $platformUsers): PlatformUser
