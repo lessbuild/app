@@ -10,6 +10,8 @@ use App\Core\Http\Controllers\WorkspaceSearchController;
 use App\Core\Http\Controllers\WorkspaceTeamController;
 use Illuminate\Support\Facades\Route;
 
+Route::redirect('/', '/workspaces')->name('core.entry');
+
 Route::middleware('auth:platform')->group(function (): void {
     Route::get('/workspaces', CoreHomeController::class)->name('core.home');
 

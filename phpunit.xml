@@ -38,6 +38,7 @@
     <env name="REGISTRATION_ENABLED" value="false"/>
     <env name="REGISTRATION_ALLOW_FIRST_USER" value="true"/>
     <env name="SESSION_DRIVER" value="array"/>
+    <env name="SESSION_CONNECTION" value="core"/>
     <env name="TELESCOPE_ENABLED" value="false"/>
   </php>
   <source>

@@ -20,6 +20,8 @@ final class CoreSchemaRuntimeTest extends TestCase
     {
         Artisan::call('platform:migrate', ['module' => 'core']);
 
+        $this->assertSame('core', config('session.connection'));
+        $this->assertTrue(Schema::connection('core')->hasTable('sessions'));
         $this->assertTrue(Schema::connection('core')->hasColumn('workspace_memberships', 'expires_at'));
         $this->assertTrue(Schema::connection('core')->hasColumn('workspace_memberships', 'revoked_at'));
 

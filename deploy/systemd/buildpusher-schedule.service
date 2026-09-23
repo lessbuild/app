@@ -1,0 +1,13 @@
+[Unit]
+Description=Run the Buildpusher Laravel scheduler
+After=network.target buildpusher-php-fpm.service
+
+[Service]
+Type=oneshot
+User=www-data
+Group=www-data
+WorkingDirectory=/var/www/buildpusher-unified/current
+ExecStart=/usr/bin/php8.5 /var/www/buildpusher-unified/current/artisan schedule:run
+UMask=0007
+NoNewPrivileges=true
+PrivateTmp=true

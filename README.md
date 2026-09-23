@@ -1,29 +1,37 @@
-# Deployer
+# Buildpusher unified platform
 
-## Production domain
+Buildpusher runs the shared platform and Deployer, Monitor, and Analytics as modules
+of one Laravel application. The apex domain is the project dashboard, the `auth`
+subdomain owns sign-in, and each product subdomain retains its product-specific
+routes and interface. Caddy serves all five application hosts from the same release;
+`www` redirects to the apex. The checked-in reference configuration is
+[`deploy/Caddyfile`](deploy/Caddyfile).
 
-The production application URL is `https://buildpusher.com`. Caddy terminates TLS,
-redirects `www.buildpusher.com` to the apex domain, compresses responses, and proxies
-to the supervised Laravel listener on `127.0.0.1:8003`. The checked-in reference
-configuration is [`deploy/Caddyfile`](deploy/Caddyfile); install it at
-`/etc/caddy/Caddyfile`, validate with `caddy validate --config /etc/caddy/Caddyfile`,
-and reload Caddy. Laravel trusts only the loopback reverse proxy and the exact apex
-and `www` hostnames. Production sessions are encrypted, domain-scoped, and Secure.
-Production diagnostics include `caddy.service` in the required systemd service set,
-so the control panel reports a failed public edge alongside application or worker failures.
+The modules keep separate SQLite databases and subscription catalogs while sharing
+Core accounts and workspace projects. Core owns authentication sessions. Browser
+sessions are host-only; sign-in uses the central auth host and a short-lived, signed
+handoff rather than sharing a cookie across subdomains. Product databases are
+initialized independently with `php artisan platform:migrate core`, `deployer`,
+`monitor`, and `analytics`.
+See [`docs/unified-deployment.md`](docs/unified-deployment.md) for the deployment,
+database, queue, and migration procedures.
 
-DNS must contain an `A` record for `@` pointing to `174.138.39.41` and a `CNAME`
-for `www` pointing to `buildpusher.com`. Remove Namecheap parking or URL-forward
-records for both names. Caddy obtains and renews the public certificate automatically
-as soon as those records resolve to this server.
+Production diagnostics include `caddy.service` and the unified PHP-FPM service in
+the required system service set, so the control panel reports a failed public edge
+or PHP runtime alongside application and worker failures.
+
+DNS must point the apex, `www`, `auth`, `deployer`, `monitor`, and `analytics` hosts
+to this server. Caddy obtains and renews public certificates automatically when the
+records resolve and ports 80 and 443 reach the server.
 
 ## Account registration
 
 Fresh installations allow one bootstrap owner account and then close public
-registration automatically. Existing password and linked social accounts can
-continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
-or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
-account will be inserted by another provisioning process.
+registration automatically. This deployment starts with an empty Core account
+database; previous account and product databases remain on disk for a later,
+explicit reconciliation or import. Set `REGISTRATION_ENABLED=true` to allow
+additional email or social accounts, or set
+`REGISTRATION_ALLOW_FIRST_USER=false` when another process provisions the first account.
 When registration is closed, public calls to action use `/request-access` instead
 of sending prospective customers into the sign-in screen. Requests are rate
 limited, honeypot protected, deduplicated by a normalized email hash, and store

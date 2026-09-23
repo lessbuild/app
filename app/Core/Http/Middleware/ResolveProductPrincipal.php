@@ -3,6 +3,8 @@
 namespace App\Core\Http\Middleware;
 
 use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\EnsurePlatformProductPrincipal;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use Closure;
 use Illuminate\Auth\SessionGuard;
@@ -12,13 +14,21 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class ResolveProductPrincipal
 {
-    public function __construct(private readonly ProductPrincipalRegistry $principals) {}
+    public function __construct(
+        private readonly ProductPrincipalRegistry $principals,
+        private readonly ProductAuthentication $authentication,
+        private readonly EnsurePlatformProductPrincipal $productPrincipals,
+    ) {}
 
     public function handle(Request $request, Closure $next, string $product): Response
     {
         $platformUser = Auth::guard('platform')->user();
 
         abort_unless($platformUser instanceof PlatformUser && $platformUser->status === 'active', 401);
+
+        if ($this->authentication->usesCoreAuthority($product)) {
+            $this->productPrincipals->handle($product, $platformUser);
+        }
 
         $principal = $this->principals->resolve($product, $platformUser);
 
