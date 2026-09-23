@@ -7,6 +7,10 @@
 
 @source "../views";
 @source "../js";
+@source "../../app/Core/Views/**/*.blade.php";
+@source "../../app/Modules/Deployer/Views/**/*.blade.php";
+@source "../../app/Modules/Monitor/Views/**/*.blade.php";
+@source "../../app/Modules/Analytics/Views/**/*.blade.php";
 @source inline("dark light");
 
 @plugin "@tailwindcss/forms";

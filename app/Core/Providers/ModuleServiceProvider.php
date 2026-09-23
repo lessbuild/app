@@ -16,6 +16,11 @@ abstract class ModuleServiceProvider extends ServiceProvider
 
     abstract protected function moduleKey(): string;
 
+    protected function routeNamePrefix(): string
+    {
+        return '';
+    }
+
     protected function bootModule(): void
     {
         $path = app_path($this->modulePath());
@@ -46,6 +51,12 @@ abstract class ModuleServiceProvider extends ServiceProvider
             $this->commands($commands);
         }
 
+        $consoleRoutes = $path.'/Routes/console.php';
+
+        if ($this->app->runningInConsole() && is_file($consoleRoutes)) {
+            require $consoleRoutes;
+        }
+
         if ($this->app->routesAreCached()) {
             return;
         }
@@ -59,8 +70,13 @@ abstract class ModuleServiceProvider extends ServiceProvider
                 continue;
             }
 
-            $registerRoutes = static function () use ($routeFile, $middleware): void {
+            $routeNamePrefix = $this->routeNamePrefix();
+            $registerRoutes = static function () use ($routeFile, $middleware, $routeNamePrefix): void {
                 $group = Route::middleware($middleware);
+
+                if (filled($routeNamePrefix)) {
+                    $group->as($routeNamePrefix);
+                }
 
                 if ($middleware === 'api') {
                     $group->prefix('api');

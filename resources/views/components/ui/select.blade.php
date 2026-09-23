@@ -3,12 +3,4 @@
     'name' => null,
 ])
 
-@php($id = $id ?: $name)
-
-<select
-    @if ($id) id="{{ $id }}" @endif
-    @if ($name) name="{{ $name }}" @endif
-    {{ $attributes->class(['ui-input']) }}
->
-    {{ $slot }}
-</select>
+<x-signal.ui.select :id="$id" :name="$name" {{ $attributes }}>{{ $slot }}</x-signal.ui.select>

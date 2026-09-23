@@ -39,7 +39,7 @@
     $repositoryCreateDialogData = $creationDialogData['repository'] ?? null;
 @endphp
 
-<x-layouts.core :title="$resolvedTitle" :description="$description">
+<x-signal.layouts.core :title="$resolvedTitle" :description="$description">
     <a href="#main-content" class="ui-skip-link">
         {{ __('Skip to main content') }}
     </a>
@@ -187,7 +187,7 @@
         @keydown.window.prevent.ctrl.k="openPalette()"
     >
 
-        <x-layouts.topbar :navigation="$navigation ?? []" :title="$resolvedTitle" />
+        <x-signal.layouts.topbar :navigation="$navigation ?? []" :title="$resolvedTitle" />
 
         <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="mx-auto w-full max-w-screen-2xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
             <x-alerts.flash />
@@ -387,4 +387,4 @@
         @endif
 
     </div>
-</x-layouts.core>
+</x-signal.layouts.core>

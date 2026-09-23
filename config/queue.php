@@ -42,6 +42,44 @@ return [
             'after_commit' => true,
         ],
 
+        // Monitor's outbox and durable jobs must share the same transaction
+        // and physical database as its telemetry and check records.
+        'telemetry' => [
+            'driver' => 'database',
+            'connection' => 'monitor',
+            'table' => 'jobs',
+            'queue' => 'telemetry',
+            'retry_after' => 180,
+            'after_commit' => false,
+        ],
+
+        'checks' => [
+            'driver' => 'database',
+            'connection' => 'monitor',
+            'table' => 'jobs',
+            'queue' => 'checks',
+            'retry_after' => 120,
+            'after_commit' => false,
+        ],
+
+        'alerts' => [
+            'driver' => 'database',
+            'connection' => 'monitor',
+            'table' => 'jobs',
+            'queue' => 'alerts',
+            'retry_after' => 120,
+            'after_commit' => false,
+        ],
+
+        'analytics' => [
+            'driver' => 'database',
+            'connection' => 'analytics',
+            'table' => 'jobs',
+            'queue' => 'analytics',
+            'retry_after' => 180,
+            'after_commit' => true,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => 'localhost',

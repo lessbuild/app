@@ -1,0 +1,5 @@
+@extends('analytics::layouts.app')
+
+@section('content')
+<div class="mx-auto max-w-xl space-y-8"><div><p class="ui-eyebrow">Report export</p><h2 class="mt-2 text-3xl font-extrabold tracking-tight">{{ ucfirst($export->status) }}</h2><p class="mt-2 text-sm leading-6 text-muted">{{ $export->site->name }} · requested {{ $export->created_at->diffForHumans() }}</p></div><section class="ui-panel p-6">@if (in_array($export->status, ['pending', 'processing'], true))<meta http-equiv="refresh" content="3"><p class="text-sm leading-6 text-muted">We are preparing your CSV. This page will refresh automatically.</p>@elseif ($export->status === 'completed')<p class="text-sm leading-6 text-muted">Your filtered report is ready. Downloads expire after {{ config('analytics.export_retention_hours') }} hours.</p><a class="ui-btn ui-btn-primary mt-5" href="{{ route('analytics.reports.exports.download', $token) }}">Download CSV</a>@else<p class="text-sm leading-6 text-danger">{{ $export->failure_message ?: 'The export could not be generated.' }}</p>@endif<a class="ui-btn ui-btn-secondary mt-5" href="{{ route('analytics.dashboard') }}">Back to overview</a></section></div>
+@endsection

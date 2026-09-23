@@ -1,0 +1,50 @@
+@import 'tailwindcss';
+@import './signal/theme.css';
+@import './signal/components.css';
+@import './signal/theme-presets.css';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../views/**/*.blade.php';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Monitor adapters. Signal source files are kept unmodified; see signal/source.json. */
+@layer base {
+    body {
+        min-height: 100vh;
+        text-rendering: optimizeLegibility;
+    }
+}
+
+@layer components {
+    html[data-corners='subtle'] :is(.ui-icon-btn, .app-sidebar-link, .ui-bottom-nav-link, .ui-kbd) {
+        border-radius: var(--radius-control-value);
+    }
+
+    .ui-input[aria-invalid='true'] {
+        border-color: var(--ui-danger);
+    }
+
+    .ui-input[aria-invalid='true']:focus {
+        box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-danger) 15%, transparent);
+    }
+
+    .ui-table th[scope='row'] {
+        background: inherit;
+        color: var(--ui-ink);
+        font-weight: inherit;
+        letter-spacing: normal;
+        text-transform: none;
+    }
+}
+
+@layer utilities {
+    .scrollbar-subtle {
+        scrollbar-width: thin;
+        scrollbar-color: var(--ui-line) transparent;
+    }
+
+    .wrap-anywhere {
+        overflow-wrap: anywhere;
+    }
+}

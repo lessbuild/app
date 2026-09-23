@@ -1,0 +1,35 @@
+{
+  "name": "signal-starter",
+  "version": "1.0.0",
+  "sourceProject": "2026-09-21/plan-can-you-create-a-tailwindcss",
+  "integration": "Unmodified upstream CSS and navigation assets imported by Monitor's Vite entries. Refresh these files together from Signal Starter, preserve their contents, update these hashes, and rebuild Monitor.",
+  "preset": {
+    "name": "modern",
+    "palette": "graphite",
+    "corners": "subtle",
+    "density": "comfortable",
+    "font": "system"
+  },
+  "files": {
+    "resources/css/signal/theme.css": {
+      "source": "src/styles/theme.css",
+      "sha256": "980e9be5120e1498103fbd5cf71cad93541a4d15908f6b3a0a746757ccb8713d"
+    },
+    "resources/css/signal/components.css": {
+      "source": "src/styles/components.css",
+      "sha256": "a5ebd67c16e9334b85ab4370279deb3ada0e485943aebbb636d511d66e56c384"
+    },
+    "resources/css/signal/theme-presets.css": {
+      "source": "dist/assets/theme-presets.css",
+      "sha256": "1296827bde321fb8801a6942891fa5b7dc1b6cce4e682a875cc8f100b494a11a"
+    },
+    "resources/js/signal/library.js": {
+      "source": "src/scripts/modules/library.js",
+      "sha256": "d0c24b7351f3c7f4e3698ff02a704d8ab417d5f10b9cae4d0ec17890ddb7eca2"
+    },
+    "resources/js/signal/navigation.js": {
+      "source": "src/scripts/modules/navigation.js",
+      "sha256": "17aa740aadd27b84e1c065ce470a01b59ed92332629895602542e7e559586452"
+    }
+  }
+}

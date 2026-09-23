@@ -1,0 +1,20 @@
+/*
+ * Signal Modern / graphite reference snapshot.
+ *
+ * Keep this file as a small, source-traceable reference. Runtime tokens are
+ * mapped in ../app.css so Tailwind utilities and dark mode share one source
+ * of truth.
+ */
+:root {
+    --signal-graphite-50: #fafafa;
+    --signal-graphite-100: #f4f4f5;
+    --signal-graphite-200: #e4e4e7;
+    --signal-graphite-300: #d4d4d8;
+    --signal-graphite-400: #a1a1aa;
+    --signal-graphite-500: #71717a;
+    --signal-graphite-600: #52525b;
+    --signal-graphite-700: #3f3f46;
+    --signal-graphite-800: #27272a;
+    --signal-graphite-900: #18181b;
+    --signal-graphite-950: #09090b;
+}

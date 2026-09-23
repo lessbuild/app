@@ -1,0 +1,32 @@
+<?php
+
+namespace App\Core\Services;
+
+use App\Core\Models\LegacyIdentityMap;
+use Illuminate\Contracts\Auth\Authenticatable;
+
+/**
+ * Resolves a Core account to reconciled IDs retained in a product database.
+ * A missing or pending mapping grants no access to legacy product records.
+ */
+final class LegacyIdentityResolver
+{
+    /** @return list<string> */
+    public function sourceIdsFor(Authenticatable|string $user, string $product, string $entity = 'user'): array
+    {
+        $canonicalId = $user instanceof Authenticatable
+            ? (string) $user->getAuthIdentifier()
+            : $user;
+
+        return LegacyIdentityMap::query()
+            ->where('source_product', $product)
+            ->where('source_entity', $entity)
+            ->where('canonical_entity', $entity)
+            ->where('canonical_id', $canonicalId)
+            ->where('status', 'reconciled')
+            ->orderBy('source_id')
+            ->pluck('source_id')
+            ->map(static fn ($sourceId): string => (string) $sourceId)
+            ->all();
+    }
+}

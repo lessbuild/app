@@ -1,4 +1,4 @@
-<x-layouts.core :title="$title">
+<x-signal.layouts.core :title="$title">
     <a href="#main-content" class="ui-skip-link">
         {{ __('Skip to main content') }}
     </a>
@@ -56,4 +56,4 @@
         <footer class="px-5 py-8 text-center text-xs text-subtle">{{ config('app.name') }} · {{ __('Your infrastructure. One focused control plane.') }}</footer>
     </div>
 
-</x-layouts.core>
+</x-signal.layouts.core>

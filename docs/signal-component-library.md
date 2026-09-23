@@ -1,0 +1,45 @@
+# Shared Signal component library
+
+Use `resources/views/components/signal/` as the source of truth for shared Blade UI and `resources/css/signal/` plus `resources/css/components/ui.css` for its semantic theme styles. New product pages use the `x-signal.*` namespace. Product and legacy templates can keep compatibility names while they are migrated; adapters forward props, attributes, slots, and Livewire attributes to the shared implementation.
+
+## Current shared APIs
+
+| Component | Purpose |
+| --- | --- |
+| `x-signal.layouts.topbar` | Signal Topbar SaaS application shell and its responsive navigation/context strips. |
+| `x-signal.layouts.core` | Shared HTML document, theme initialization, assets, Livewire/Alpine runtime, and page slot. |
+| `x-signal.layouts.navigation-link` | Active/inactive product and local navigation links. |
+| `x-signal.layouts.navigation-group` | Grouped and overflow navigation. |
+| `x-signal.layouts.command-palette` | Shared keyboard-search overlay and focus behavior. |
+| `x-signal.ui.alert` | Informational, success, warning, and danger feedback. |
+| `x-signal.ui.avatar` | Initial-based identity mark with forwarded size and layout attributes. |
+| `x-signal.ui.badge` | Neutral, accent, success, warning, and danger status labels. |
+| `x-signal.ui.button` | Link and button actions with primary, secondary, ghost, danger, and inverse variants. |
+| `x-signal.ui.card` | Shared panel/card surface with default, muted, and interactive tones. |
+| `x-signal.ui.empty-state` | Empty result state with title, description, icon, and action slot. |
+| `x-signal.ui.field` | Label, required marker, description, validation message, and input slot. |
+| `x-signal.ui.filter-panel` | Responsive filter disclosure and modal sheet. |
+| `x-signal.ui.icon-button` | Accessible icon-only link or button with a required label. |
+| `x-signal.ui.input`, `select`, `textarea` | Shared form controls with forwarded attributes and Livewire bindings. |
+| `x-signal.ui.insights` | Responsive expandable content surface. |
+| `x-signal.ui.local-nav` | Scrollable, labeled product navigation region. |
+| `x-signal.ui.menu` | Native disclosure menu with trigger slot and alignment options. |
+| `x-signal.ui.page-header` | Page title, eyebrow, description, icon, and actions slot. |
+| `x-signal.ui.stat` | Definition-list metric with label, value, and description. |
+| `x-signal.overlays.modal` | Accessible native dialog with title, description, content, and close behavior. |
+| `x-signal.overlays.delete-confirmation` | Reusable delete confirmation composition on the shared dialog and button primitives. |
+
+Use explicit component props for variants and named slots for page-specific content. Keep authorization, validation, queries, and domain behavior in their existing controllers, policies, requests, actions, and Livewire components.
+
+## Compatibility adapters
+
+- `x-ui.*` forwards to `x-signal.ui.*`. Existing Deployer screens retain their established component names during migration.
+- `x-dialogs.modal`, `x-dialogs.delete`, and `x-dialogs.dialog` forward to `x-signal.overlays.*`.
+- Existing layout adapters under `x-layouts.*` forward to `x-signal.layouts.*` where applicable.
+- `x-avatar` forwards to `x-signal.ui.avatar`.
+
+Adapters contain no independent visual styling. Fixes and theme changes belong in the `signal` implementation and shared tokens, not product-specific copies.
+
+## Extension and review
+
+Before adding a component, check this catalog and the Signal template source mapping in `docs/unified-application-plan.md`. Add a shared variant or composition when it is repeated; keep one-off content in the page. Extend the API and gallery with usage, responsive behavior, light/dark and interaction states, and keyboard/accessibility checks. Keep all visual choices in the Signal tokens and shared styles. The complete feature migration still needs a review that every source application UI either uses these components or is represented by a specific product composition built from them.

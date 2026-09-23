@@ -36,6 +36,12 @@ return [
             'throw' => false,
         ],
 
+        'analytics-local' => [
+            'driver' => 'local',
+            'root' => storage_path('app/analytics'),
+            'throw' => false,
+        ],
+
         'public' => [
             'driver' => 'local',
             'root' => storage_path('app/public'),
