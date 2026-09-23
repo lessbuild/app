@@ -3,8 +3,12 @@
 namespace App\Modules\Analytics\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalRegistry;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\WorkspaceViewData;
@@ -32,6 +36,10 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('analytics', app(AnalyticsProjectLink::class));
+        app(ProductPrincipalRegistry::class)->register(
+            'analytics',
+            new MappedProductPrincipalAdapter('analytics', User::class, app(LegacyIdentityResolver::class)),
+        );
 
         Gate::policy(Site::class, SitePolicy::class);
 

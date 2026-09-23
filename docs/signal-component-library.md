@@ -16,6 +16,7 @@ Use `resources/views/components/signal/` as the source of truth for shared Blade
 | `x-signal.ui.badge` | Neutral, accent, success, warning, and danger status labels. |
 | `x-signal.ui.button` | Link and button actions with primary, secondary, ghost, danger, and inverse variants. |
 | `x-signal.ui.card` | Shared panel/card surface with default, muted, and interactive tones. |
+| `x-signal.ui.checkbox` | Labeled checkbox input with the shared focus and theme treatment. |
 | `x-signal.ui.empty-state` | Empty result state with title, description, icon, and action slot. |
 | `x-signal.ui.field` | Label, required marker, description, validation message, and input slot. |
 | `x-signal.ui.filter-panel` | Responsive filter disclosure and modal sheet. |

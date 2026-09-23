@@ -1,7 +1,9 @@
 <?php
 
 use App\Core\Models\PlatformUser;
+use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Monitor\Models\User as MonitorUser;
 
 return [
 
@@ -48,6 +50,21 @@ return [
             'driver' => 'session',
             'provider' => 'platform_users',
         ],
+
+        'deployer' => [
+            'driver' => 'session',
+            'provider' => 'deployer_users',
+        ],
+
+        'monitor' => [
+            'driver' => 'session',
+            'provider' => 'monitor_users',
+        ],
+
+        'analytics' => [
+            'driver' => 'session',
+            'provider' => 'analytics_users',
+        ],
     ],
 
     /*
@@ -76,6 +93,21 @@ return [
         'platform_users' => [
             'driver' => 'core-platform',
             'model' => PlatformUser::class,
+        ],
+
+        'deployer_users' => [
+            'driver' => 'eloquent',
+            'model' => User::class,
+        ],
+
+        'monitor_users' => [
+            'driver' => 'eloquent',
+            'model' => MonitorUser::class,
+        ],
+
+        'analytics_users' => [
+            'driver' => 'eloquent',
+            'model' => AnalyticsUser::class,
         ],
 
         // 'users' => [

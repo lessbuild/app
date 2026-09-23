@@ -64,6 +64,7 @@ final class ImportWorkspacesAndProjectsIntoCore
             'invitations_imported' => 0,
             'environments_imported' => 0,
         ];
+        $eligibleOrganizationIds = [];
 
         foreach ($organizations as $organization) {
             $sourceId = (string) $organization->id;
@@ -84,6 +85,8 @@ final class ImportWorkspacesAndProjectsIntoCore
 
                 continue;
             }
+
+            $eligibleOrganizationIds[$sourceId] = true;
 
             $report['unmapped_members'] += $organizationMembers
                 ->get($sourceId, collect())
@@ -122,7 +125,12 @@ final class ImportWorkspacesAndProjectsIntoCore
             $workspaceMapping = $workspaceMaps->get((string) $sourceProject->organization_id);
 
             if ($workspaceMapping === null || $workspaceMapping->status !== 'reconciled') {
-                $report['projects_blocked']++;
+                if (! $apply && isset($eligibleOrganizationIds[(string) $sourceProject->organization_id])) {
+                    // In preview mode the parent workspace has not been written yet.
+                    $report['projects_ready']++;
+                } else {
+                    $report['projects_blocked']++;
+                }
 
                 continue;
             }
@@ -255,7 +263,6 @@ final class ImportWorkspacesAndProjectsIntoCore
             $sourceId,
             $creatorId,
             $workspaceMapping,
-            $sourceOrganizationMembers,
             $sourceEnvironments,
             &$report,
         ): bool {

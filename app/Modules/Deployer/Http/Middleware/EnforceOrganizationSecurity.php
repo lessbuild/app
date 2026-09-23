@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Middleware;
 
+use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Support\IpRangeMatcher;
 use Closure;
 use Illuminate\Http\Request;
@@ -20,8 +21,12 @@ class EnforceOrganizationSecurity
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();
-        $organization = $user?->currentOrganization;
-        if (! $user || ! $organization) {
+        if (! $user instanceof User) {
+            return $next($request);
+        }
+
+        $organization = $user->currentOrganization;
+        if (! $organization) {
             return $next($request);
         }
 

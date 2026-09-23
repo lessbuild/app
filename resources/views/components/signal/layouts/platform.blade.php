@@ -25,7 +25,7 @@
         workspace-switch-route="core.workspaces.select"
         workspace-manage-route="core.workspaces.settings"
         :account-user="$accountUser ?? auth()->user()"
-        logout-route="logout"
+        logout-route="platform.logout"
         :show-notifications="false"
         :current-context="$currentProject"
         :context-options="$contextProjects"

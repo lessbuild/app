@@ -75,7 +75,7 @@
             </div>
         </details>
 
-        <nav class="mt-5 flex-1" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
+        <nav id="signal-mobile-product-navigation" class="mt-5 flex-1" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
             @foreach ($navigation['mobile']['groups'] ?? [] as $group)
                 <section class="{{ $loop->first ? '' : 'mt-5' }}" aria-labelledby="mobile-navigation-group-{{ $loop->index }}">
                     <p id="mobile-navigation-group-{{ $loop->index }}" class="mb-3 px-3 text-[10px] font-extrabold uppercase tracking-[0.18em] text-subtle">
@@ -91,9 +91,11 @@
         </nav>
 
         <div class="mt-5 border-t border-line pt-4">
-            @foreach ([...($navigation['profile'] ?? []), ...($navigation['support'] ?? [])] as $item)
-                <x-layouts.partials.navigation-link :item="$item" />
-            @endforeach
+            <nav id="signal-mobile-profile-navigation" class="grid gap-1" aria-label="{{ __('Account and workspace') }}">
+                @foreach ([...($navigation['profile'] ?? []), ...($navigation['support'] ?? [])] as $item)
+                    <x-layouts.partials.navigation-link :item="$item" />
+                @endforeach
+            </nav>
             <div class="mt-3 flex min-w-0 items-center gap-3 rounded-xl bg-surface-muted p-3">
                 <x-avatar :name="auth()->user()->name" class="ui-avatar ui-avatar-sm" />
                 <div class="min-w-0"><p class="truncate text-xs font-bold text-ink">{{ auth()->user()->name }}</p><p class="truncate text-[11px] text-muted">{{ auth()->user()->email }}</p></div>

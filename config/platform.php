@@ -1,5 +1,7 @@
 <?php
 
+use App\Modules\Deployer\Console\DeployerSchedule;
+
 return [
     /*
     | Hostnames are deliberately optional during the transition. Existing
@@ -7,7 +9,9 @@ return [
     | has been confirmed and its module is ready to accept traffic.
     */
     'dashboard_host' => env('PLATFORM_DASHBOARD_HOST'),
+    'dashboard_url' => env('PLATFORM_DASHBOARD_URL', filled(env('PLATFORM_DASHBOARD_HOST')) ? 'https://'.env('PLATFORM_DASHBOARD_HOST') : null),
     'auth_host' => env('PLATFORM_AUTH_HOST'),
+    'auth_url' => env('PLATFORM_AUTH_URL', filled(env('PLATFORM_AUTH_HOST')) ? 'https://'.env('PLATFORM_AUTH_HOST') : null),
 
     'products' => [
         'deployer' => [
@@ -34,7 +38,7 @@ return [
     ],
 
     'schedulers' => [
-        'deployer' => App\Modules\Deployer\Console\DeployerSchedule::class,
+        'deployer' => DeployerSchedule::class,
     ],
 
     // Module migrations run only against their named database. The old

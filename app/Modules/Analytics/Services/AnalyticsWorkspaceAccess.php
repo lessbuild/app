@@ -7,6 +7,7 @@ use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Workspace;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 final class AnalyticsWorkspaceAccess
@@ -30,7 +31,7 @@ final class AnalyticsWorkspaceAccess
 
         return Workspace::query()
             ->whereHas('users', fn (Builder $query) => $query->whereIn('users.id', $productUserIds))
-            ->with(['sites' => fn (Builder $query) => $query->orderBy('name')])
+            ->with(['sites' => fn (HasMany $query) => $query->orderBy('name')])
             ->orderBy('name')
             ->get();
     }

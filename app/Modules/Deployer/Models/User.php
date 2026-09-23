@@ -3,8 +3,10 @@
 namespace App\Modules\Deployer\Models;
 
 use App\Modules\Deployer\Services\PersonalOrganization;
+use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail;
 use Illuminate\Contracts\Auth\MustVerifyEmail as MustVerifyEmailContract;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
@@ -21,6 +23,11 @@ class User extends Authenticatable implements MustVerifyEmailContract
     use Billable, HasApiTokens, HasFactory, MustVerifyEmail, Notifiable;
 
     protected $connection = 'deployer';
+
+    protected static function newFactory(): Factory
+    {
+        return UserFactory::new();
+    }
 
     public function getConnectionName(): ?string
     {

@@ -3,6 +3,9 @@
 namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalRegistry;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
 use App\Modules\Monitor\Contracts\DnsResolver;
@@ -14,6 +17,7 @@ use App\Modules\Monitor\Http\Middleware\AuthenticateIngestToken;
 use App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace;
 use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
+use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;
 use App\Modules\Monitor\Services\NativeDnsRecordResolver;
@@ -55,6 +59,10 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('monitor', app(MonitorProjectLink::class));
+        app(ProductPrincipalRegistry::class)->register(
+            'monitor',
+            new MappedProductPrincipalAdapter('monitor', User::class, app(LegacyIdentityResolver::class)),
+        );
 
         app('router')->aliasMiddleware('monitor.ingest.token', AuthenticateIngestToken::class);
         app('router')->aliasMiddleware('monitor.workspace', RequireWorkspace::class);

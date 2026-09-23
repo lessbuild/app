@@ -3,6 +3,9 @@
 namespace App\Modules\Deployer\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalRegistry;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
@@ -40,6 +43,10 @@ final class DeployerServiceProvider extends ModuleServiceProvider
 
         Cashier::useCustomerModel(User::class);
         app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
+        app(ProductPrincipalRegistry::class)->register(
+            'deployer',
+            new MappedProductPrincipalAdapter('deployer', User::class, app(LegacyIdentityResolver::class)),
+        );
 
         Livewire::component('build-deployment-status', BuildDeploymentStatus::class);
         Livewire::component('repository-deployment-timeline', RepositoryDeploymentTimeline::class);

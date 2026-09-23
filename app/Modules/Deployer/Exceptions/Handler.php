@@ -2,8 +2,10 @@
 
 namespace App\Modules\Deployer\Exceptions;
 
+use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
 use Psr\Log\LogLevel;
 use Symfony\Component\HttpFoundation\Response;
@@ -96,6 +98,17 @@ class Handler extends ExceptionHandler
         return response()->view('errors.500', [
             'incidentId' => $incidentId,
         ], 500, $headers);
+    }
+
+    protected function unauthenticated($request, AuthenticationException $exception)
+    {
+        if (! $this->shouldReturnJson($request, $exception)
+            && in_array('platform', $exception->guards(), true)
+            && Route::has('platform.login')) {
+            return redirect()->guest(route('platform.login'));
+        }
+
+        return parent::unauthenticated($request, $exception);
     }
 
     /**

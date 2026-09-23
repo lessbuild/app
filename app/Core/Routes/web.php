@@ -1,9 +1,12 @@
 <?php
 
+use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
 use Illuminate\Support\Facades\Route;
 
-Route::middleware('auth')->group(function (): void {
+Route::middleware('auth:platform')->group(function (): void {
+    Route::get('/workspaces', CoreHomeController::class)->name('core.home');
+
     Route::post('/workspaces/{workspace}/select', [WorkspaceProjectsController::class, 'selectWorkspace'])
         ->name('core.workspaces.select');
 

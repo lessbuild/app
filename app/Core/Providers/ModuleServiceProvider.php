@@ -2,8 +2,12 @@
 
 namespace App\Core\Providers;
 
+use FilesystemIterator;
+use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
+use RecursiveDirectoryIterator;
+use RecursiveIteratorIterator;
 
 abstract class ModuleServiceProvider extends ServiceProvider
 {
@@ -48,7 +52,11 @@ abstract class ModuleServiceProvider extends ServiceProvider
         $commands = $path.'/Console/Commands';
 
         if ($this->app->runningInConsole() && is_dir($commands)) {
-            $this->commands($commands);
+            $commandClasses = $this->commandClasses($commands);
+
+            if ($commandClasses !== []) {
+                $this->commands($commandClasses);
+            }
         }
 
         $consoleRoutes = $path.'/Routes/console.php';
@@ -98,5 +106,27 @@ abstract class ModuleServiceProvider extends ServiceProvider
     protected function routeHost(string $file): ?string
     {
         return config('platform.products.'.$this->moduleKey().'.host');
+    }
+
+    /** @return list<class-string<Command>> */
+    private function commandClasses(string $directory): array
+    {
+        $appPath = app_path().DIRECTORY_SEPARATOR;
+        $classes = [];
+
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory, FilesystemIterator::SKIP_DOTS)) as $file) {
+            if (! $file->isFile() || $file->getExtension() !== 'php') {
+                continue;
+            }
+
+            $relativePath = substr($file->getPathname(), strlen($appPath), -4);
+            $class = 'App\\'.str_replace(DIRECTORY_SEPARATOR, '\\', $relativePath);
+
+            if (class_exists($class) && is_subclass_of($class, Command::class)) {
+                $classes[] = $class;
+            }
+        }
+
+        return $classes;
     }
 }

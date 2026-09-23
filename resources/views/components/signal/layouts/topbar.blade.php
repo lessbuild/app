@@ -101,7 +101,9 @@
                             <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ $contextLabel }}</p>
                             <a href="{{ $contextIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ $contextIndexLabel }}</a>
                             @foreach ($contextOptions as $contextOption)
-                                @php($contextOptionHref = data_get($contextOption, 'href'))
+                                @php
+                                    $contextOptionHref = data_get($contextOption, 'href');
+                                @endphp
                                 @if ($contextOptionHref)<a href="{{ $contextOptionHref }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ data_get($contextOption, 'name') }}</a>@endif
                             @endforeach
                         @endif
@@ -109,7 +111,9 @@
                             <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Environment') }}</p>
                             <a href="{{ $environmentIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('All environments') }}</a>
                             @foreach ($environmentOptions as $environmentOption)
-                                @php($environmentOptionHref = data_get($environmentOption, 'href'))
+                                @php
+                                    $environmentOptionHref = data_get($environmentOption, 'href');
+                                @endphp
                                 @if ($environmentOptionHref)<a href="{{ $environmentOptionHref }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ data_get($environmentOption, 'name') }}</a>@endif
                             @endforeach
                         @endif
@@ -225,7 +229,7 @@
                     </x-signal.ui.icon-button>
                 @endif
                 @if ($showNotifications && $notificationsUrl)
-                    <x-signal.ui.icon-button label="{{ __('Notifications') }}" href="{{ $notificationsUrl }}" class="relative" @if(request()->routeIs('notifications.*', 'monitor.settings.notifications')) aria-current="page" @endif>
+                    <x-signal.ui.icon-button label="{{ __('Notifications') }}" href="{{ $notificationsUrl }}" class="relative" :aria-current="request()->routeIs('notifications.*', 'monitor.settings.notifications') ? 'page' : null">
                         <svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg>
                         @if (($navigation['unread_notifications'] ?? 0) > 0)
                             <span class="ui-status-dot absolute right-2 top-2" style="--ui-status-dot: var(--ui-danger)" aria-label="{{ __('Unread notifications') }}"></span>
@@ -246,9 +250,11 @@
                             <p class="truncate text-sm font-extrabold text-ink">{{ $user?->name }}</p>
                             <p class="truncate text-xs text-muted">{{ $user?->email }}</p>
                         </div>
-                        @foreach ($navigation['profile'] ?? [] as $item)
-                            <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                        @endforeach
+                        <nav id="signal-profile-navigation" class="grid gap-1" aria-label="{{ __('Account and workspace') }}">
+                            @foreach ($navigation['profile'] ?? [] as $item)
+                                <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
+                            @endforeach
+                        </nav>
                         @foreach ($navigation['support'] ?? [] as $item)
                             <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
                         @endforeach
@@ -318,7 +324,7 @@
             </details>
             @endif
             </div>
-            <nav class="hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-x-auto lg:flex" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
+            <nav id="signal-product-navigation" class="hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-x-auto lg:flex" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
                 @foreach ($navigation['groups'] ?? [] as $group)
                     <x-signal.layouts.navigation-group :group="$group" />
                 @endforeach

@@ -66,6 +66,7 @@ final class ProjectProductLinksTest extends TestCase
     {
         Route::get('/monitor/applications/{application}', static fn () => null)
             ->name('monitor.applications.show');
+        Route::getRoutes()->refreshNameLookups();
         $this->addIdentity('monitor', '17');
         $this->addProjectResource('monitor', 'application', '31');
         $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
@@ -82,6 +83,7 @@ final class ProjectProductLinksTest extends TestCase
     public function test_analytics_link_keeps_the_mapped_site_in_the_url_and_selects_its_workspace_per_request(): void
     {
         Route::get('/analytics/dashboard', static fn () => null)->name('analytics.dashboard');
+        Route::getRoutes()->refreshNameLookups();
         $this->addIdentity('analytics', '23');
         $this->addProjectResource('analytics', 'site', '71');
         $this->addAnalyticsWorkspacesAndSite(memberId: 23, firstWorkspaceId: 100, secondWorkspaceId: 200, siteId: 71);

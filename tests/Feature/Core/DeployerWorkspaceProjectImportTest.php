@@ -2,11 +2,11 @@
 
 namespace Tests\Feature\Core;
 
-use App\Modules\Deployer\Services\Migration\ImportWorkspacesAndProjectsIntoCore;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Services\Projects\CreateCanonicalProject;
+use App\Modules\Deployer\Services\Migration\ImportWorkspacesAndProjectsIntoCore;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -107,11 +107,11 @@ final class DeployerWorkspaceProjectImportTest extends TestCase
         $this->assertDatabaseHas('workspaces', [
             'name' => 'Less Build',
             'slug' => 'less-build-deployer-10',
-            'owner_user_id' => '00000000000000000000000064',
+            'owner_user_id' => $this->canonicalUserId(100),
             'created_at' => '2020-01-02 03:04:05',
         ], 'core');
         $this->assertDatabaseHas('workspace_memberships', [
-            'user_id' => '00000000000000000000000065',
+            'user_id' => $this->canonicalUserId(101),
             'role' => 'developer',
             'status' => 'active',
         ], 'core');
@@ -122,7 +122,7 @@ final class DeployerWorkspaceProjectImportTest extends TestCase
         ], 'core');
         $this->assertDatabaseHas('projects', [
             'name' => 'Platform',
-            'created_by_user_id' => '00000000000000000000000065',
+            'created_by_user_id' => $this->canonicalUserId(101),
             'created_at' => '2021-02-03 04:05:06',
         ], 'core');
         $this->assertDatabaseHas('project_resources', [

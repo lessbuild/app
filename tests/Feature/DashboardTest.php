@@ -50,13 +50,15 @@ class DashboardTest extends TestCase
     {
         $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
         $response->assertSuccessful()
-            ->assertSee('id="desktop-navigation"', false)
+            ->assertSee('data-topbar-shell', false)
+            ->assertSee('aria-label="Products"', false)
+            ->assertSee('id="signal-product-navigation"', false)
+            ->assertSee('aria-label="Deployer sections"', false)
             ->assertSee('id="app-mobile-nav"', false)
             ->assertSee('x-trap.inert.noscroll="menu"', false)
             ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
-            ->assertSee('class="relative flex h-full w-72 flex-col overflow-y-auto bg-surface', false)
+            ->assertSee('class="relative flex h-full w-[min(22rem,calc(100vw-2rem))] flex-col overflow-y-auto bg-surface', false)
             ->assertSee('Search or jump to…')
-            ->assertSee('A focused space for deployments, infrastructure, and recovery.')
             ->assertSee('Settings and support')
             ->assertSee('>Deployments<', false)
             ->assertSee('>Repositories<', false)
@@ -68,15 +70,15 @@ class DashboardTest extends TestCase
         $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Open navigation"'));
     }
 
-    public function test_navigation_has_a_signal_header_and_edge_to_edge_bottom_bar(): void
+    public function test_navigation_uses_the_signal_topbar_and_product_sections(): void
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('class="sticky top-0 z-30 flex h-[var(--header-height)] items-center justify-between', false)
-            ->assertSee('class="ui-bottom-nav lg:hidden"', false)
-            ->assertSee('class="ui-bottom-nav-link"', false)
-            ->assertSee('pb-24 sm:px-8 sm:py-10 lg:pb-10', false)
-            ->assertDontSee('fixed inset-x-3', false);
+            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur', false)
+            ->assertSee('id="signal-product-navigation"', false)
+            ->assertSee('aria-label="Products"', false)
+            ->assertDontSee('id="desktop-navigation"', false)
+            ->assertDontSee('ui-bottom-nav', false);
     }
 
     public function test_mobile_shell_uses_the_quick_navigation_space_without_a_legacy_footer(): void
@@ -86,9 +88,10 @@ class DashboardTest extends TestCase
             ->assertSee('data-mobile-shell', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
-            ->assertSee('data-mobile-quick-navigation', false)
+            ->assertSee('aria-controls="command-palette"', false)
             ->assertDontSee('data-mobile-footer', false)
             ->assertDontSee('app-footer', false)
+            ->assertDontSee('ui-bottom-nav', false)
             ->assertSee('data-mobile-keyboard-open', false)
             ->assertSee('visualViewport', false);
     }

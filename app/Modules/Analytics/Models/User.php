@@ -6,6 +6,7 @@ use App\Modules\Analytics\Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
@@ -16,8 +17,14 @@ use Illuminate\Notifications\Notifiable;
 class User extends Authenticatable implements MustVerifyEmail
 {
     protected $connection = 'analytics';
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, Notifiable;
+
+    protected static function newFactory(): Factory
+    {
+        return UserFactory::new();
+    }
 
     /** @return BelongsToMany<Workspace> */
     public function workspaces(): BelongsToMany

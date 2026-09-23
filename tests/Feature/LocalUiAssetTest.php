@@ -152,14 +152,14 @@ class LocalUiAssetTest extends TestCase
 
     public function test_mobile_dialog_and_filter_primitives_expose_native_sheet_hooks(): void
     {
-        $modal = File::get(resource_path('views/components/dialogs/modal.blade.php'));
-        $filter = File::get(resource_path('views/components/ui/filter-panel.blade.php'));
+        $modal = File::get(resource_path('views/components/signal/overlays/modal.blade.php'));
+        $filter = File::get(resource_path('views/components/signal/ui/filter-panel.blade.php'));
 
         $this->assertStringContainsString('data-modal-sheet', $modal);
         $this->assertStringContainsString('data-modal-panel', $modal);
         $this->assertStringContainsString('data-modal-header', $modal);
         $this->assertStringContainsString('data-modal-body', $modal);
-        $this->assertStringContainsString("['ui-dialog']", $modal);
+        $this->assertStringContainsString("class(['ui-dialog'])", $modal);
         $this->assertStringNotContainsString('ui-modal', $modal);
         $this->assertStringContainsString('data-filter-dialog', $filter);
         $this->assertStringContainsString('data-filter-dialog-trigger', $filter);
@@ -184,8 +184,8 @@ class LocalUiAssetTest extends TestCase
     public function test_shared_signal_controls_use_the_source_icon_and_radius_primitives(): void
     {
         foreach ([
-            resource_path('views/components/dialogs/modal.blade.php'),
-            resource_path('views/components/ui/filter-panel.blade.php'),
+            resource_path('views/components/signal/overlays/modal.blade.php'),
+            resource_path('views/components/signal/ui/filter-panel.blade.php'),
             resource_path('views/components/layouts/public-header.blade.php'),
             resource_path('views/components/layouts/mobile-navigation.blade.php'),
             resource_path('views/components/layouts/app.blade.php'),
@@ -197,7 +197,7 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('aria-hidden="true">×</span>', $source, $viewPath);
         }
 
-        $emptyState = File::get(resource_path('views/components/ui/empty-state.blade.php'));
+        $emptyState = File::get(resource_path('views/components/signal/ui/empty-state.blade.php'));
 
         $this->assertStringContainsString('rounded-card bg-primary-soft', $emptyState);
         $this->assertStringNotContainsString('rounded-2xl', $emptyState);
@@ -448,8 +448,8 @@ class LocalUiAssetTest extends TestCase
 
     public function test_shared_danger_indicators_use_signal_tokens(): void
     {
-        $deleteDialog = File::get(resource_path('views/components/dialogs/delete.blade.php'));
-        $applicationLayout = File::get(resource_path('views/components/layouts/app.blade.php'));
+        $deleteDialog = File::get(resource_path('views/components/signal/overlays/delete-confirmation.blade.php'));
+        $applicationLayout = File::get(resource_path('views/components/signal/layouts/topbar.blade.php'));
 
         $this->assertStringContainsString('var(--ui-danger)', $deleteDialog);
         $this->assertStringContainsString('ui-status-dot', $applicationLayout);
@@ -734,7 +734,7 @@ class LocalUiAssetTest extends TestCase
         $this->assertSame(6, substr_count($guestHtml, 'role="tabpanel"'));
 
         $homepage = File::get(resource_path('views/scenes/index.blade.php'));
-        $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
+        $coreLayout = File::get(resource_path('views/components/signal/layouts/core.blade.php'));
         $styles = File::get(resource_path('css/app.css'));
         $alpineEntry = File::get(resource_path('js/alpine.js'));
         $drawerScript = File::get(resource_path('js/signal-drawer.js'));
@@ -953,7 +953,7 @@ class LocalUiAssetTest extends TestCase
     public function test_livewire_server_command_uses_signal_dialog_composition(): void
     {
         $command = File::get(resource_path('views/livewire/scenes/servers/command.blade.php'));
-        $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
+        $coreLayout = File::get(resource_path('views/components/signal/layouts/core.blade.php'));
 
         foreach (['<dialog', 'class="ui-dialog ui-command-dialog"', 'data-modal-panel', 'data-modal-header', 'data-modal-body', 'data-modal-footer', 'data-livewire-dialog'] as $token) {
             $this->assertStringContainsString($token, $command, $token);
@@ -988,25 +988,28 @@ class LocalUiAssetTest extends TestCase
             ->assertSuccessful()
             ->assertSee('class="min-h-full"', false)
             ->assertSee('data-mobile-shell', false)
-            ->assertSee('class="hidden w-[var(--sidebar-width)] shrink-0 border-r border-line bg-surface lg:flex lg:flex-col', false)
-            ->assertSee('class="sticky top-0 z-30 flex h-[var(--header-height)]', false)
+            ->assertSee('data-topbar-shell', false)
+            ->assertSee('aria-label="Products"', false)
+            ->assertSee('id="signal-product-navigation"', false)
+            ->assertSee('id="signal-profile-navigation"', false)
+            ->assertSee('id="signal-mobile-product-navigation"', false)
+            ->assertSee('id="signal-mobile-profile-navigation"', false)
+            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur', false)
             ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
             ->assertSee('app-sidebar-link', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-header', false)
             ->assertSee('data-mobile-navigation', false)
-            ->assertSee('data-mobile-quick-navigation', false)
             ->assertDontSee('data-mobile-footer', false)
             ->assertSee('id="app-mobile-nav"', false)
             ->assertSee('aria-controls="app-mobile-nav"', false)
-            ->assertSee('aria-label="Primary navigation"', false)
+            ->assertSee('aria-label="Deployer sections"', false)
             ->assertSee('aria-label="Open navigation"', false)
             ->assertSee('aria-label="Close navigation"', false)
             ->assertSee('x-ref="navigationToggle"', false)
             ->assertSee('x-ref="closeNavigation"', false)
             ->assertSee('x-ref="mobilePaletteToggle"', false)
-            ->assertSee('x-ref="mobileQuickPaletteToggle"', false)
             ->assertSee('x-cloak', false)
             ->assertSee('restorePaletteFocus()', false)
             ->assertSee('data-mobile-keyboard-open', false)
@@ -1025,9 +1028,6 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('z-50', false)
             ->assertSee('ada@example.test')
             ->assertSee('action="'.route('logout').'" method="post"', false)
-            ->assertSee('ui-btn ui-btn-quiet w-full justify-start', false)
-            ->assertSee('@click="if ($event.target.closest(\'a\')) menu = false"', false)
-            ->assertSee('data-mobile-quick-action="create"', false)
             ->assertSee('New app')
             ->assertSee('data-modal-trigger="application-create-dialog"', false)
             ->assertSee('href="'.route('dashboard', ['dialog' => 'create-application']).'"', false)
@@ -1055,11 +1055,12 @@ class LocalUiAssetTest extends TestCase
         }
 
         $appShell = File::get(resource_path('views/components/layouts/app.blade.php'));
-        $coreLayout = File::get(resource_path('views/components/layouts/core.blade.php'));
+        $coreLayout = File::get(resource_path('views/components/signal/layouts/core.blade.php'));
         $this->assertStringContainsString('ui-skip-link', $appShell);
-        $this->assertStringContainsString('ui-bottom-nav', $appShell);
-        $this->assertStringContainsString('ui-bottom-nav-link', $appShell);
-        $this->assertStringContainsString('max-w-content', $appShell);
+        $this->assertStringContainsString('<x-signal.layouts.topbar', $appShell);
+        $this->assertStringNotContainsString('ui-bottom-nav', $appShell);
+        $this->assertStringNotContainsString('ui-bottom-nav-link', $appShell);
+        $this->assertStringContainsString('max-w-screen-2xl', $appShell);
         $this->assertStringNotContainsString('app-topbar', $appShell);
         $this->assertStringNotContainsString('app-footer', $appShell);
         $signalComponents = File::get(resource_path('css/signal/components.css'));
@@ -1387,12 +1388,12 @@ class LocalUiAssetTest extends TestCase
     public function test_shared_controls_emit_signal_only_rendering_hooks(): void
     {
         foreach ([
-            resource_path('views/components/ui/button.blade.php'),
-            resource_path('views/components/dialogs/modal.blade.php'),
-            resource_path('views/components/ui/filter-panel.blade.php'),
-            resource_path('views/components/dialogs/delete.blade.php'),
-            resource_path('views/components/ui/insights.blade.php'),
-            resource_path('views/components/ui/empty-state.blade.php'),
+            resource_path('views/components/signal/ui/button.blade.php'),
+            resource_path('views/components/signal/overlays/modal.blade.php'),
+            resource_path('views/components/signal/ui/filter-panel.blade.php'),
+            resource_path('views/components/signal/overlays/delete-confirmation.blade.php'),
+            resource_path('views/components/signal/ui/insights.blade.php'),
+            resource_path('views/components/signal/ui/empty-state.blade.php'),
             resource_path('views/components/lists/empty.blade.php'),
         ] as $viewPath) {
             $source = File::get($viewPath);
@@ -1405,10 +1406,10 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('border-primary', $source, $viewPath);
         }
 
-        $button = File::get(resource_path('views/components/ui/button.blade.php'));
+        $button = File::get(resource_path('views/components/signal/ui/button.blade.php'));
         $this->assertStringContainsString("'ui-btn ui-btn-'.\$signalVariant", $button);
 
-        $emptyState = File::get(resource_path('views/components/ui/empty-state.blade.php'));
+        $emptyState = File::get(resource_path('views/components/signal/ui/empty-state.blade.php'));
         $this->assertStringContainsString('ui-card', $emptyState);
         $this->assertStringContainsString('bg-primary-soft', $emptyState);
         $this->assertStringContainsString('text-[var(--ui-primary)]', $emptyState);
@@ -1495,7 +1496,7 @@ class LocalUiAssetTest extends TestCase
     public function test_navigation_merges_related_destinations_without_removing_their_routes(): void
     {
         $user = User::factory()->create();
-        $navigation = (new WorkspaceNavigation)->for($user);
+        $navigation = app(WorkspaceNavigation::class)->for($user);
         $items = collect($navigation['groups'])
             ->flatMap(fn (array $group): array => $group['items'])
             ->merge($navigation['profile']);
@@ -1524,7 +1525,7 @@ class LocalUiAssetTest extends TestCase
     public function test_mobile_navigation_retains_the_original_direct_destinations(): void
     {
         $user = User::factory()->create();
-        $navigation = (new WorkspaceNavigation)->for($user);
+        $navigation = app(WorkspaceNavigation::class)->for($user);
         $items = collect($navigation['mobile']['groups'])->flatten(1);
 
         $this->assertSame('builds.index', $items->firstWhere('label', 'Deployments')['route']);
@@ -1586,7 +1587,7 @@ class LocalUiAssetTest extends TestCase
         config(['lessbuild.diagnostics.systemd_timers' => false]);
 
         foreach ([
-            'desktop-navigation' => [
+            'signal-product-navigation' => [
                 'dashboard' => 'dashboard',
                 'system-health.index' => 'system-health.index',
                 'activity.index' => 'activity.index',
@@ -1599,11 +1600,13 @@ class LocalUiAssetTest extends TestCase
                 'providers.index' => 'providers.index',
                 'recipes.index' => 'recipes.index',
                 'gallery.index' => 'recipes.index',
+            ],
+            'signal-profile-navigation' => [
                 'account.index' => 'account.index',
                 'costs.index' => 'billing.index',
                 'billing.index' => 'billing.index',
             ],
-            'app-mobile-nav' => [
+            'signal-mobile-product-navigation' => [
                 'dashboard' => 'dashboard',
                 'system-health.index' => 'system-health.index',
                 'activity.index' => 'activity.index',
@@ -1616,8 +1619,10 @@ class LocalUiAssetTest extends TestCase
                 'providers.index' => 'providers.index',
                 'recipes.index' => 'recipes.index',
                 'gallery.index' => 'gallery.index',
+            ],
+            'signal-mobile-profile-navigation' => [
                 'account.index' => 'account.index',
-                'costs.index' => 'costs.index',
+                'costs.index' => 'billing.index',
                 'billing.index' => 'billing.index',
             ],
         ] as $navigation => $routes) {
@@ -1628,16 +1633,11 @@ class LocalUiAssetTest extends TestCase
                     ->assertSuccessful()
                     ->getContent();
 
-                $this->assertMatchesRegularExpression(
-                    '/<a href="'.preg_quote($navigationUrl, '/').'"[^>]*aria-current="page"[^>]*>/s',
-                    $html,
-                    "The {$routeName} route did not mark its {$navigationRouteName} navigation link as current.",
-                );
                 $dom = new \DOMDocument;
                 @$dom->loadHTML($html);
                 $xpath = new \DOMXPath($dom);
                 $current = $xpath->query('//*[@id="'.$navigation.'"]//a[@aria-current="page"]');
-                $this->assertCount(1, $current, "The {$navigation} menu must mark exactly one current destination.");
+                $this->assertCount(1, $current, "The {$navigation} menu must mark the {$navigationRouteName} destination as current while viewing {$routeName}.");
                 $this->assertSame($navigationUrl, $current->item(0)->getAttribute('href'));
             }
         }
@@ -1670,10 +1670,18 @@ class LocalUiAssetTest extends TestCase
             foreach ($buttons[0] as [$button, $offset]) {
                 $line = substr_count(substr($source, 0, $offset), "\n") + 1;
 
-                $this->assertMatchesRegularExpression(
+                $hasExplicitType = preg_match(
                     '/\btype\s*=\s*["\'](?:button|submit|reset)["\']/i',
                     $button,
-                    $file->getRelativePathname().":{$line} must declare an explicit button type.",
+                ) === 1;
+                $hasAllowlistedDynamicType = str_contains(
+                    $button,
+                    'type="{{ in_array($type, [\'button\', \'submit\', \'reset\'], true) ? $type : \'button\' }}"',
+                );
+
+                $this->assertTrue(
+                    $hasExplicitType || $hasAllowlistedDynamicType,
+                    $file->getRelativePathname().":{$line} must declare an explicit or allow-listed button type.",
                 );
             }
         }

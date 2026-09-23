@@ -2,6 +2,7 @@
 
 namespace App\Modules\Analytics\Models;
 
+use App\Modules\Analytics\Database\AnalyticsModel;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;

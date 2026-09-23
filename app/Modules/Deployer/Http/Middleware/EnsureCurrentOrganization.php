@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Middleware;
 
+use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\PersonalOrganization;
 use Closure;
 use Illuminate\Http\Request;
@@ -21,8 +22,10 @@ class EnsureCurrentOrganization
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if ($request->user()) {
-            $this->organizations->ensure($request->user());
+        $user = $request->user();
+
+        if ($user instanceof User) {
+            $this->organizations->ensure($user);
         }
 
         return $next($request);
