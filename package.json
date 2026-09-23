@@ -4,6 +4,7 @@
         "dev": "vite",
         "build": "vite build",
         "test:browser": "playwright test",
+        "test:analytics-tracker": "playwright test tests/Browser/analytics-tracker.spec.js",
         "test:assets": "npm run build && playwright test tests/Browser/asset-layout.spec.js"
     },
     "devDependencies": {

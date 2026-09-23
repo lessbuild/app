@@ -8,13 +8,52 @@
     var endpoint = new URL('/api/v1/collect/' + encodeURIComponent(site), script.src).toString();
     var queue = [];
     var lastPage = window.location.href;
+    var identities = {};
 
-    function id() {
+    function randomId() {
         if (window.crypto && typeof window.crypto.randomUUID === 'function') {
             return window.crypto.randomUUID();
         }
 
-        return 'bp-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+        if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+            var bytes = new Uint8Array(16);
+            window.crypto.getRandomValues(bytes);
+            bytes[6] = (bytes[6] & 15) | 64;
+            bytes[8] = (bytes[8] & 63) | 128;
+
+            var hex = '';
+            for (var index = 0; index < bytes.length; index++) {
+                hex += ('0' + bytes[index].toString(16)).slice(-2);
+            }
+
+            return hex.slice(0, 8) + '-' + hex.slice(8, 12) + '-' + hex.slice(12, 16) + '-' + hex.slice(16, 20) + '-' + hex.slice(20);
+        }
+
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (character) {
+            var value = Math.random() * 16 | 0;
+            return (character === 'x' ? value : (value & 3 | 8)).toString(16);
+        });
+    }
+
+    function anonymousId(type, storageName) {
+        if (identities[type]) return identities[type];
+
+        var key = 'buildpusher:v1:' + type + ':' + site;
+        try {
+            var storage = window[storageName];
+            var existing = storage.getItem(key);
+            if (existing && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(existing)) {
+                identities[type] = existing;
+                return existing;
+            }
+
+            identities[type] = randomId();
+            storage.setItem(key, identities[type]);
+            return identities[type];
+        } catch (_) {
+            identities[type] = randomId();
+            return identities[type];
+        }
     }
 
     function collectionAllowed() {
@@ -59,7 +98,7 @@
             referrerHost = document.referrer ? new URL(document.referrer).hostname : null;
         } catch (_) {}
         queue.push({
-            id: id(),
+            id: randomId(),
             type: type,
             occurred_at: new Date().toISOString(),
             path: url.pathname,
@@ -70,6 +109,8 @@
             device: device(),
             browser: browser(),
             os: operatingSystem(),
+            visitor: anonymousId('visitor', 'localStorage'),
+            session: anonymousId('session', 'sessionStorage'),
             properties: properties || null
         });
         flush();
@@ -102,7 +143,7 @@
     window.buildpusher = window.buildpusher || {};
     window.buildpusher.track = function (name, properties) {
         if (!name || typeof name !== 'string') return;
-        push('event', Object.assign({ name: name.slice(0, 80) }, properties || {}));
+        push('event', Object.assign({}, properties || {}, { name: name.slice(0, 80) }));
     };
     window.buildpusher.pageview = function () {
         push('pageview');

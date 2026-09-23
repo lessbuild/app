@@ -152,6 +152,37 @@ class AnalyticsCollectionTest extends TestCase
         $this->assertTrue(CarbonImmutable::parse($event->occurred_at)->greaterThan(now()->subMinute()));
     }
 
+    public function test_collector_hashes_the_site_scoped_visitor_and_preserves_the_anonymous_session_id(): void
+    {
+        config(['analytics.visitor_key' => 'analytics-test-visitor-key']);
+        $site = $this->makeSite();
+        $visitor = '17fc1c10-8460-43ef-8f5b-9ef3426d0171';
+        $session = 'd4709106-1fc8-46f1-9b86-7610118d159d';
+        $userAgent = 'Buildpusher browser test';
+        $eventId = (string) Str::uuid();
+
+        $this->withServerVariables(['REMOTE_ADDR' => '203.0.113.20'])
+            ->withHeader('User-Agent', $userAgent)
+            ->postJson("/api/v1/collect/{$site->public_id}", ['events' => [[
+                'id' => $eventId,
+                'type' => 'pageview',
+                'path' => '/',
+                'visitor' => $visitor,
+                'session' => $session,
+            ]]])
+            ->assertAccepted();
+
+        $event = AnalyticsEvent::query()->where('event_id', $eventId)->sole();
+        $localDate = CarbonImmutable::parse($event->received_at)->setTimezone($site->timezone)->toDateString();
+
+        $this->assertSame($session, $event->session_id);
+        $this->assertSame(
+            hash_hmac('sha256', $visitor.'|203.0.113.20|'.$userAgent.'|'.$localDate, 'analytics-test-visitor-key'),
+            $event->visitor_hash,
+        );
+        $this->assertNotSame($visitor, $event->visitor_hash);
+    }
+
     public function test_unverified_sites_and_unknown_origins_are_rejected(): void
     {
         $site = $this->makeSite(['verified_at' => null]);
