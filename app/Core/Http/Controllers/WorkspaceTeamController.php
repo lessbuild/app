@@ -6,6 +6,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceInvitation;
 use App\Core\Models\WorkspaceMembership;
+use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Notifications\WorkspaceInvitationNotification;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\WorkspaceProjectAccess;
@@ -53,6 +54,15 @@ final class WorkspaceTeamController
             ->get()
             ->pluck('workspace')
             ->filter();
+        $canManageMembers = $access->canManageWorkspace($user, $workspace);
+        $auditEvents = $canManageMembers
+            ? WorkspaceMembershipEvent::query()
+                ->where('workspace_id', $workspace->getKey())
+                ->with(['actor', 'subject'])
+                ->orderByDesc('created_at')
+                ->limit(30)
+                ->get()
+            : collect();
 
         return view('core::workspaces.team', [
             'user' => $user,
@@ -60,10 +70,11 @@ final class WorkspaceTeamController
             'workspaces' => $workspaces,
             'members' => $members,
             'invitations' => $invitations,
-            'canManageMembers' => $access->canManageWorkspace($user, $workspace),
+            'canManageMembers' => $canManageMembers,
             'canManageRoles' => $access->canManageWorkspace($user, $workspace),
             'canAssignAdminRole' => $access->activeMembership($user, $workspace)?->role === 'owner',
             'actorUserId' => (string) $user->getKey(),
+            'auditEvents' => $auditEvents,
         ]);
     }
 

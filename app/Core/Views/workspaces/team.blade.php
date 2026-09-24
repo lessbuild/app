@@ -69,6 +69,43 @@
                     <div class="border-t border-line p-4">{{ $members->links() }}</div>
                 @endif
             </x-signal.ui.card>
+
+            @if ($canManageMembers)
+                <section aria-labelledby="workspace-team-history-title" class="mt-6">
+                    <x-signal.ui.card class="p-5 sm:p-6">
+                        <div class="flex items-center justify-between gap-3">
+                            <div>
+                                <p class="ui-eyebrow">{{ __('Access history') }}</p>
+                                <h2 id="workspace-team-history-title" class="mt-1 text-base font-extrabold text-ink">{{ __('Recent team changes') }}</h2>
+                            </div>
+                            <x-signal.ui.badge tone="neutral">{{ $auditEvents->count() }}</x-signal.ui.badge>
+                        </div>
+
+                        @if ($auditEvents->isEmpty())
+                            <x-signal.ui.empty-state :title="__('No team changes recorded')" :description="__('Role and membership changes will appear here for workspace managers.')" icon="clock" class="mt-4" />
+                        @else
+                            <ol class="mt-4 divide-y divide-line">
+                                @foreach ($auditEvents as $event)
+                                    @php
+                                        $actorName = $event->actor?->name ?: $event->actor?->email ?: __('Deleted account');
+                                        $subjectName = $event->subject?->name ?: $event->subject?->email ?: __('Deleted account');
+                                    @endphp
+                                    <li class="py-3 first:pt-0 last:pb-0">
+                                        @if ($event->event === 'role_changed')
+                                            <p class="text-sm leading-6 text-ink">{{ __(':actor changed :subject’s workspace role from :previous to :current.', ['actor' => $actorName, 'subject' => $subjectName, 'previous' => str($event->previous_role)->headline(), 'current' => str($event->new_role)->headline()]) }}</p>
+                                        @elseif ($event->event === 'membership_revoked')
+                                            <p class="text-sm leading-6 text-ink">{{ __(':actor removed :subject from the workspace and revoked their Core product and project access.', ['actor' => $actorName, 'subject' => $subjectName]) }}</p>
+                                        @else
+                                            <p class="text-sm leading-6 text-ink">{{ __('A workspace membership changed.') }}</p>
+                                        @endif
+                                        <time class="mt-1 block text-xs text-muted" datetime="{{ $event->created_at?->toIso8601String() }}">{{ $event->created_at?->format('M j, Y g:i A') }}</time>
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @endif
+                    </x-signal.ui.card>
+                </section>
+            @endif
         </section>
 
         <div class="grid gap-6">

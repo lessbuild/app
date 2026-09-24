@@ -362,6 +362,11 @@ final class WorkspaceInvitationTest extends TestCase
             'role' => 'billing',
         ])->assertRedirect(route('core.workspace.team.index', $workspace));
 
+        $this->get(route('core.workspace.team.index', $workspace))
+            ->assertOk()
+            ->assertSeeText('Recent team changes')
+            ->assertSeeText('Workspace Owner changed Workspace Member’s workspace role from Member to Billing.');
+
         $this->assertSame('billing', $membership->fresh()->role);
         $event = WorkspaceMembershipEvent::query()->sole();
         $this->assertSame('role_changed', $event->event);
@@ -480,6 +485,11 @@ final class WorkspaceInvitationTest extends TestCase
         $this->actingAs($owner, 'platform')
             ->delete(route('core.workspace.team.memberships.destroy', [$workspace, $membership]))
             ->assertRedirect(route('core.workspace.team.index', $workspace));
+
+        $this->get(route('core.workspace.team.index', $workspace))
+            ->assertOk()
+            ->assertSeeText('Recent team changes')
+            ->assertSeeText('Workspace Owner removed Workspace Member from the workspace');
 
         $this->assertSame('revoked', $membership->fresh()->status);
         $this->assertNotNull($membership->fresh()->revoked_at);
