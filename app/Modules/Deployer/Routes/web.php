@@ -63,6 +63,7 @@ use App\Modules\Deployer\Http\Controllers\UsersController;
 use App\Modules\Deployer\Http\Controllers\WebsitesController;
 use App\Modules\Deployer\Http\Livewire\ServerShow;
 use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
+use App\Modules\Deployer\Http\Middleware\EnsureCoreProductWorkspaceAccess;
 use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
 use App\Modules\Deployer\Http\Middleware\ResolveDeployerOrganizationContext;
 use App\Modules\Deployer\Http\Middleware\VerifyCsrfToken;
@@ -116,6 +117,7 @@ Route::middleware([
     ...$deployerAuthentication->authenticatedMiddleware('deployer'),
     EnsureCurrentOrganization::class,
     ResolveDeployerOrganizationContext::class,
+    EnsureCoreProductWorkspaceAccess::class,
     EnforceOrganizationSecurity::class,
 ])->group(function () {
     Route::get('organization', [OrganizationController::class, 'index'])->name('organizations.index');

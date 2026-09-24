@@ -2,6 +2,9 @@
 
 namespace App\Modules\Analytics\Services;
 
+use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
@@ -13,7 +16,11 @@ use Illuminate\Support\Collection;
 
 final class AnalyticsWorkspaceAccess
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly ProductAuthentication $authentication,
+        private readonly ProductWorkspaceAccess $productWorkspaceAccess,
+    ) {}
 
     /** @return list<string> */
     public function productUserIds(Authenticatable $user): array
@@ -40,15 +47,29 @@ final class AnalyticsWorkspaceAccess
             ->whereHas('users', fn (Builder $query) => $query->whereIn('users.id', $productUserIds))
             ->with(['sites' => fn (HasMany $query) => $query->orderBy('name')])
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->filter(fn (Workspace $workspace): bool => $this->hasAccess($user, $workspace))
+            ->values();
     }
 
     public function hasAccess(Authenticatable $user, Workspace $workspace): bool
     {
         $productUserIds = $this->productUserIds($user);
 
-        return $productUserIds !== []
-            && $workspace->users()->whereIn('users.id', $productUserIds)->exists();
+        if ($productUserIds === [] || ! $workspace->users()->whereIn('users.id', $productUserIds)->exists()) {
+            return false;
+        }
+
+        if (! $this->authentication->usesCoreAuthority('analytics')) {
+            return true;
+        }
+
+        $platformUser = $user instanceof PlatformUser
+            ? $user
+            : PlatformUser::query()->find(data_get($user, 'platform_user_id'));
+
+        return $platformUser instanceof PlatformUser
+            && $this->productWorkspaceAccess->allows($platformUser, 'analytics', 'workspace', $workspace->getKey());
     }
 
     public function roleFor(Authenticatable $user, Workspace $workspace): ?WorkspaceRole

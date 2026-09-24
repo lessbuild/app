@@ -2,6 +2,9 @@
 
 namespace App\Modules\Monitor\Services;
 
+use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Workspace;
@@ -9,7 +12,11 @@ use Illuminate\Http\Request;
 
 final class CurrentWorkspace
 {
-    public function __construct(private readonly Request $request) {}
+    public function __construct(
+        private readonly Request $request,
+        private readonly ProductAuthentication $authentication,
+        private readonly ProductWorkspaceAccess $workspaceAccess,
+    ) {}
 
     public function get(): Workspace
     {
@@ -27,7 +34,7 @@ final class CurrentWorkspace
             $workspace = $user->workspaces()->whereKey($application->workspace_id)->first();
             abort_unless($workspace, 404);
 
-            return $workspace;
+            return $this->ensureProductAccess($workspace);
         }
 
         $routeWorkspace = $this->request->route('workspace');
@@ -37,7 +44,7 @@ final class CurrentWorkspace
             abort_unless($workspace, 404);
             $this->request->session()->put('workspace_id', $workspace->getKey());
 
-            return $workspace;
+            return $this->ensureProductAccess($workspace);
         }
 
         $requestedWorkspaceId = $this->request->query('workspace_id');
@@ -49,7 +56,7 @@ final class CurrentWorkspace
             abort_unless($workspace, 404);
             $this->request->session()->put('workspace_id', $workspace->getKey());
 
-            return $workspace;
+            return $this->ensureProductAccess($workspace);
         }
 
         $workspace = $user->workspaces()
@@ -62,6 +69,24 @@ final class CurrentWorkspace
 
         abort_unless($workspace, 403, 'Create a workspace to continue.');
         $this->request->session()->put('workspace_id', $workspace->id);
+
+        return $this->ensureProductAccess($workspace);
+    }
+
+    private function ensureProductAccess(Workspace $workspace): Workspace
+    {
+        if (! $this->authentication->usesCoreAuthority('monitor')) {
+            return $workspace;
+        }
+
+        $platformUser = $this->request->attributes->get('platform_user');
+
+        abort_unless(
+            $platformUser instanceof PlatformUser
+                && $this->workspaceAccess->allows($platformUser, 'monitor', 'workspace', $workspace->getKey()),
+            403,
+            'This Monitor workspace is not available to your Buildpusher account.',
+        );
 
         return $workspace;
     }

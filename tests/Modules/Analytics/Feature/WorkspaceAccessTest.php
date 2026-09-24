@@ -2,18 +2,109 @@
 
 namespace Tests\Modules\Analytics\Feature;
 
+use App\Core\Models\PlatformUser;
+use App\Core\Models\Workspace as CoreWorkspace;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Invitation;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Notifications\WorkspaceInvitation;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
 class WorkspaceAccessTest extends TestCase
 {
     use RefreshAnalyticsDatabase;
+
+    public function test_core_authority_requires_a_product_grant_for_a_mapped_analytics_workspace(): void
+    {
+        config(['platform.products.analytics.auth_authority' => 'core']);
+
+        $platformUser = PlatformUser::query()->forceCreate([
+            'id' => (string) Str::ulid(),
+            'name' => 'Core Analytics member',
+            'email' => 'core-analytics@example.test',
+            'email_normalized' => 'core-analytics@example.test',
+            'password' => 'hashed-password',
+            'status' => 'active',
+        ]);
+        $canonicalWorkspace = CoreWorkspace::query()->forceCreate([
+            'id' => (string) Str::ulid(),
+            'owner_user_id' => $platformUser->getKey(),
+            'name' => 'Core Analytics workspace',
+            'slug' => 'core-analytics-workspace',
+            'status' => 'active',
+        ]);
+        $membershipId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_memberships')->insert([
+            'id' => $membershipId,
+            'workspace_id' => $canonicalWorkspace->getKey(),
+            'user_id' => $platformUser->getKey(),
+            'role' => 'owner',
+            'status' => 'active',
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $grantId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_product_access')->insert([
+            'id' => $grantId,
+            'membership_id' => $membershipId,
+            'product' => 'analytics',
+            'role' => 'owner',
+            'status' => 'active',
+            'granted_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $productUserId = DB::connection('analytics')->table('users')->insertGetId([
+            'name' => 'Analytics member',
+            'email' => 'analytics-member@example.test',
+            'password' => 'hashed-password',
+            'platform_user_id' => $platformUser->getKey(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $analyticsWorkspace = Workspace::create(['name' => 'Analytics workspace']);
+        $analyticsWorkspace->users()->attach($productUserId, ['role' => WorkspaceRole::Owner->value]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'analytics',
+            'source_entity' => 'workspace',
+            'source_id' => (string) $analyticsWorkspace->getKey(),
+            'canonical_entity' => 'workspace',
+            'canonical_id' => $canonicalWorkspace->getKey(),
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $principal = User::query()->findOrFail($productUserId);
+        $access = new AnalyticsWorkspaceAccess(
+            app(LegacyIdentityResolver::class),
+            app(ProductAuthentication::class),
+            app(ProductWorkspaceAccess::class),
+        );
+
+        $this->assertTrue($access->hasAccess($principal, $analyticsWorkspace));
+        $this->assertCount(1, $access->workspacesFor($principal));
+
+        DB::connection('core')->table('workspace_product_access')->where('id', $grantId)->update([
+            'status' => 'revoked',
+            'revoked_at' => now(),
+        ]);
+
+        $this->assertFalse($access->hasAccess($principal, $analyticsWorkspace));
+        $this->assertCount(0, $access->workspacesFor($principal));
+    }
 
     public function test_owner_can_invite_and_recipient_can_join_workspace(): void
     {

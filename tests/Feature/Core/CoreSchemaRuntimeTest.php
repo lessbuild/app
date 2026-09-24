@@ -7,6 +7,7 @@ use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceDashboardSelection;
 use App\Core\Models\WorkspaceDashboardView;
 use App\Core\Models\WorkspaceProjectPin;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
@@ -91,6 +92,39 @@ final class CoreSchemaRuntimeTest extends TestCase
             ->get(route('core.workspace.dashboard', $workspace))
             ->assertOk()
             ->assertSeeText('Migration smoke workspace');
+
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'analytics',
+            'source_entity' => 'workspace',
+            'source_id' => '42',
+            'canonical_entity' => 'workspace',
+            'canonical_id' => $workspaceId,
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $grantId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_product_access')->insert([
+            'id' => $grantId,
+            'membership_id' => $membershipId,
+            'product' => 'analytics',
+            'role' => 'member',
+            'status' => 'active',
+            'granted_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $productWorkspaceAccess = app(ProductWorkspaceAccess::class);
+        $this->assertTrue($productWorkspaceAccess->allows($user, 'analytics', 'workspace', 42));
+
+        DB::connection('core')->table('workspace_product_access')->where('id', $grantId)->update([
+            'status' => 'revoked',
+            'revoked_at' => now(),
+        ]);
+        $this->assertFalse($productWorkspaceAccess->allows($user, 'analytics', 'workspace', 42));
+
         $this->assertTrue(Schema::connection('core')->hasTable('workspace_dashboard_views'));
         $this->assertTrue(Schema::connection('core')->hasTable('workspace_dashboard_selections'));
         $this->assertTrue(Schema::connection('core')->hasTable('workspace_project_pins'));

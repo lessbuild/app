@@ -73,15 +73,15 @@ Route::middleware([...$authenticatedMiddleware, 'auth.session'])->group(function
 
     Route::get('/workspaces/create', [WorkspaceController::class, 'create'])->name('workspaces.create');
     Route::post('/workspaces', [WorkspaceController::class, 'store'])->middleware('throttle:monitor.registration')->name('workspaces.store');
-    Route::post('/workspaces/{workspace}/switch', [WorkspaceController::class, 'switch'])->name('workspaces.switch');
+    Route::post('/workspaces/{workspace}/switch', [WorkspaceController::class, 'switch'])->middleware('monitor.workspace')->name('workspaces.switch');
 
     Route::middleware('verified')->group(function (): void {
         Route::get('/invitations/{token}', [WorkspaceInvitationController::class, 'show'])->where('token', '[a-zA-Z0-9]{64}')->name('invitations.show');
         Route::post('/invitations/{token}', [WorkspaceInvitationController::class, 'update'])->where('token', '[a-zA-Z0-9]{64}')->name('invitations.accept');
-        Route::post('/workspaces/{workspace}/invitations', [WorkspaceInvitationController::class, 'store'])->middleware('throttle:monitor.account-email')->name('invitations.store');
-        Route::delete('/workspaces/{workspace}/invitations/{invitation}', [WorkspaceInvitationController::class, 'destroy'])->name('invitations.destroy');
-        Route::patch('/workspaces/{workspace}/members/{member}', [WorkspaceMemberController::class, 'update'])->name('members.update');
-        Route::delete('/workspaces/{workspace}/members/{member}', [WorkspaceMemberController::class, 'destroy'])->name('members.destroy');
+        Route::post('/workspaces/{workspace}/invitations', [WorkspaceInvitationController::class, 'store'])->middleware(['monitor.workspace', 'throttle:monitor.account-email'])->name('invitations.store');
+        Route::delete('/workspaces/{workspace}/invitations/{invitation}', [WorkspaceInvitationController::class, 'destroy'])->middleware('monitor.workspace')->name('invitations.destroy');
+        Route::patch('/workspaces/{workspace}/members/{member}', [WorkspaceMemberController::class, 'update'])->middleware('monitor.workspace')->name('members.update');
+        Route::delete('/workspaces/{workspace}/members/{member}', [WorkspaceMemberController::class, 'destroy'])->middleware('monitor.workspace')->name('members.destroy');
     });
 
     Route::middleware('monitor.workspace')->group(function (): void {

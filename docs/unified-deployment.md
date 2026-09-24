@@ -27,10 +27,14 @@ php artisan platform:migrate analytics --force
 ```
 
 The deployer, monitor, and analytics plan authorities remain product-specific.
-Core authentication is enabled after all four schemas are current. New product
-accounts are provisioned from Core on first access; an existing local account is
-never linked by email alone. Existing legacy database files are retained separately
-for rollback and explicit account reconciliation.
+Core authentication is enabled after all four schemas are current. Core-authenticated
+workspace paths require an explicit source-to-Core workspace map, active Core
+membership, and an active grant for that product; a local membership alone does not
+restore access after a Core grant is revoked. Subscription entitlement remains under
+each product's separate plan authority. New product accounts are provisioned from
+Core on first access; an existing local account is never linked by email alone.
+Existing legacy database files are retained separately for rollback and explicit
+account reconciliation.
 
 Set `SESSION_CONNECTION=core` so central authentication sessions do not depend on
 the Deployer database. The Core migration creates the Laravel session table.

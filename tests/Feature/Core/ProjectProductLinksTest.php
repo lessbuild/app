@@ -10,6 +10,8 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectEnvironment;
 use App\Core\Models\ProjectResource;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductLinks;
@@ -296,7 +298,11 @@ final class ProjectProductLinksTest extends TestCase
         $route->setParameter('application', MonitorApplication::query()->findOrFail(31));
         $request->setRouteResolver(static fn () => $route);
 
-        $workspace = (new MonitorCurrentWorkspace($request))->get();
+        $workspace = (new MonitorCurrentWorkspace(
+            $request,
+            app(ProductAuthentication::class),
+            app(ProductWorkspaceAccess::class),
+        ))->get();
 
         $this->assertSame(200, $workspace->getKey());
         $this->assertSame(100, $request->session()->get('workspace_id'));
