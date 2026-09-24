@@ -1129,9 +1129,9 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('ui-console', $serverShow);
         $this->assertStringContainsString('ui-btn ui-btn-danger', $serverShow);
         $this->assertStringContainsString('ui-link text-xs', $serverShow);
-        $this->assertStringContainsString('ui-label', $serverEditDialog);
-        $this->assertStringContainsString('ui-input', $serverEditDialog);
-        $this->assertStringContainsString('ui-panel', $serverEditDialog);
+        $this->assertStringContainsString('x-signal.ui.input-field', $serverEditDialog);
+        $this->assertStringContainsString('x-signal.ui.card', $serverEditDialog);
+        $this->assertStringContainsString('x-signal.ui.button', $serverEditDialog);
         $this->assertStringContainsString('ui-input', File::get(resource_path('views/livewire/scenes/servers/command.blade.php')));
         $this->assertStringContainsString('ui-check', File::get(resource_path('views/scenes/servers/import-review.blade.php')));
     }

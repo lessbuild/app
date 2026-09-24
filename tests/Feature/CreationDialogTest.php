@@ -42,6 +42,11 @@ class CreationDialogTest extends TestCase
     public function test_the_servers_inventory_hosts_the_server_creation_dialog(): void
     {
         $user = User::factory()->create();
+        $recipe = $user->recipes()->create([
+            'name' => 'Install metrics agent',
+            'description' => 'Install the approved server metrics agent.',
+            'script' => 'echo install-metrics-agent',
+        ]);
         $dialogUrl = route('servers.index', ['dialog' => 'create-server']);
 
         $this->actingAs($user)
@@ -51,7 +56,10 @@ class CreationDialogTest extends TestCase
             ->assertSee('data-modal-trigger="server-create-dialog"', false)
             ->assertSee('action="'.route('servers.store', ['dialog' => 'create-server']).'"', false)
             ->assertSee('id="server-create-provider_id"', false)
-            ->assertSee('id="server-create-region"', false);
+            ->assertSee('id="server-create-region"', false)
+            ->assertSee('id="server-create-recipe-'.$recipe->id.'"', false)
+            ->assertSee('Provisioning recipes')
+            ->assertSee('ui-card', false);
     }
 
     public function test_server_creation_validation_returns_to_the_open_dialog(): void

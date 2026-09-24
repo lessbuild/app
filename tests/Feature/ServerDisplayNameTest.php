@@ -34,7 +34,10 @@ class ServerDisplayNameTest extends TestCase
             ->assertSuccessful()
             ->assertSee('data-modal-trigger="server-display-name-dialog"', false)
             ->assertSee('id="server-display-name-dialog"', false)
-            ->assertSee('data-modal-initial-open="true"', false);
+            ->assertSee('data-modal-initial-open="true"', false)
+            ->assertSee('for="server-display-name"', false)
+            ->assertSee('id="server-display-name"', false)
+            ->assertSee('ui-card', false);
 
         $this->patch(route('servers.update', $server), [
             'display_name' => "  Customer   Edge\nPrimary  ",

@@ -449,6 +449,39 @@ test('repository create and edit forms use Signal controls and path-filter field
     await expect(editDialog.locator('button.ui-btn-primary', { hasText: 'Save Repository' })).toBeVisible();
 });
 
+test('server creation and display-name dialogs use Signal controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/servers?dialog=create-server', { waitUntil: 'networkidle' });
+    const createDialog = page.getByRole('dialog', { name: 'Add server', exact: true });
+    await expect(createDialog).toBeVisible();
+
+    for (const field of ['provider_id', 'type', 'name', 'image', 'region', 'size']) {
+        const control = createDialog.locator(`#server-create-${field}`);
+        await expect(control).toBeVisible();
+        await expect(control).toHaveClass(/\bui-input\b/);
+        await expect(createDialog.locator(`label[for="server-create-${field}"]`)).toBeVisible();
+    }
+
+    const recipeChoices = createDialog.locator('input[name="recipes[]"]');
+    expect(await recipeChoices.count()).toBeGreaterThan(0);
+    for (const recipeChoice of await recipeChoices.all()) {
+        await expect(recipeChoice).toBeVisible();
+        await expect(recipeChoice.locator('xpath=ancestor::label')).toHaveClass(/\bui-choice\b/);
+    }
+    await expect(createDialog.locator('fieldset.ui-card')).toBeVisible();
+
+    await page.goto('http://buildpusher.test/servers/1?dialog=edit-display-name', { waitUntil: 'networkidle' });
+    const displayNameDialog = page.getByRole('dialog', { name: 'Edit server display name', exact: true });
+    const displayName = displayNameDialog.locator('#server-display-name');
+    await expect(displayName).toBeVisible();
+    await expect(displayName).toHaveClass(/\bui-input\b/);
+    await expect(displayNameDialog.locator('label[for="server-display-name"]')).toBeVisible();
+    await expect(displayNameDialog.locator('button.ui-btn-primary', { hasText: 'Save display name' })).toBeVisible();
+});
+
 test('dashboard creation actions open page-local dialogs without navigating to an inventory page', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

@@ -366,6 +366,11 @@ class AssetLayoutFixtureTest extends TestCase
         ]))->assertOk()->assertSee('<form', false)->getContent());
         $server = $dashboardServer;
         $website = $dashboardWebsite;
+        $owner->recipes()->create([
+            'name' => 'Install observability agent',
+            'description' => 'Install the approved observability agent.',
+            'script' => 'echo install-observability-agent',
+        ]);
         File::put($directory.'/servers.html', $this->renderPage(route('servers.index'))->assertOk()
             ->assertSee('data-modal-trigger="server-create-dialog"', false)->getContent());
         File::put($directory.'/servers-dialog.html', $this->renderPage(route('servers.index', ['dialog' => 'create-server']))

@@ -16,25 +16,21 @@
         @csrf
         @method('PATCH')
         <input type="hidden" name="_server_display_name_form" value="1">
-        <label class="block" for="server-display-name">
-            <span class="ui-label">{{ __('Display name') }}</span>
-            <input
-                class="ui-input mt-2"
-                id="server-display-name"
-                name="display_name"
-                type="text"
-                maxlength="80"
-                value="{{ old('display_name', $server->display_name) }}"
-                placeholder="{{ $server->name }}"
-                autofocus
-            >
-            <x-forms.errors name="display_name" />
-        </label>
-        <div class="ui-panel bg-surface-muted p-4 text-sm text-muted">
+        <x-signal.ui.input-field
+            id="server-display-name"
+            name="display_name"
+            :label="__('Display name')"
+            :value="$server->display_name"
+            maxlength="80"
+            :placeholder="$server->name"
+            autofocus
+            class="w-full"
+        />
+        <x-signal.ui.card tone="muted" class="bg-surface-muted p-4 text-sm text-muted" :shadow="false">
             <span class="font-semibold text-ink">{{ __('Cloud hostname:') }}</span>
             <code class="ml-1 break-all">{{ $server->name }}</code>
             <p class="mt-2">{{ __('Leave the display name empty to use this hostname throughout the control panel.') }}</p>
-        </div>
-        <x-ui.button type="submit" variant="primary">{{ __('Save display name') }}</x-ui.button>
+        </x-signal.ui.card>
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Save display name') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

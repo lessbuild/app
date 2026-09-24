@@ -26,7 +26,7 @@
 @if ($providers->isEmpty())
     <x-ui.alert tone="warning" class="m-5">
         <p class="font-semibold">{{ __('You must add a cloud provider before you can add a server.') }}</p>
-        <x-ui.button
+        <x-signal.ui.button
             :href="$providerCreateUrl"
             data-modal-trigger="provider-create-dialog"
             data-modal-content-url="{{ $providerCreateContentUrl }}"
@@ -34,7 +34,7 @@
             aria-expanded="false"
             variant="secondary"
             class="mt-3"
-        >{{ __('Add cloud provider') }}</x-ui.button>
+        >{{ __('Add cloud provider') }}</x-signal.ui.button>
     </x-ui.alert>
 @endif
 
@@ -45,7 +45,7 @@
 @elseif (! $planUsage['allowed'])
     <x-ui.alert tone="warning" class="m-5">
         <p class="font-semibold">{{ __('Your plan’s server limit has been reached.') }}</p>
-        <x-ui.button :href="route('billing.index')" variant="secondary" class="mt-3">{{ __('Upgrade plan') }}</x-ui.button>
+        <x-signal.ui.button :href="route('billing.index')" variant="secondary" class="mt-3">{{ __('Upgrade plan') }}</x-signal.ui.button>
     </x-ui.alert>
 @endif
 
@@ -70,9 +70,9 @@
     />
 
     <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
-        <x-ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
-        <x-ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || ! $planUsage['allowed']">
+        <x-signal.ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-signal.ui.button>
+        <x-signal.ui.button type="submit" variant="primary" :disabled="$providers->isEmpty() || ! $planUsage['allowed']">
             {{ __('Create server') }}
-        </x-ui.button>
+        </x-signal.ui.button>
     </div>
 </form>
