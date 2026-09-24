@@ -71,8 +71,14 @@ Evidence and release:
 - Blade view caching and the Vite production asset build passed. The Analytics
   view-architecture and identity/data preservation suite passed: **12 tests**,
   **134 assertions**. Pint and `git diff --check` passed.
-- Release and publication evidence will be recorded after this slice is
-  committed and deployed.
+- Commit `1325a39` was pushed to `origin/feature/unified-platform` and deployed
+  as `/var/www/buildpusher-unified/releases/1325a39`; `current` points to it.
+  The production CSS is `app-uzv_x7JM.css` and returns HTTP 200 with the new
+  `ui-code-block` rules. Buildpusher, the three product description pages, and
+  central login returned HTTP 200. Product roots retained their dashboard/auth
+  redirects, the Deployer health endpoint returned HTTP 200, and Caddy and
+  PHP-FPM are active. A guest request to Deployer ends at central login, which
+  loads the new fingerprinted Signal CSS. No database migrations ran.
 
 Next task: complete the cross-product theme-token demonstration and
 representative authenticated Deployer/Monitor/Analytics visual and accessibility
