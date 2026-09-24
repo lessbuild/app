@@ -8,9 +8,12 @@ use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectEnvironment;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\Connections\ProjectConnectionDiagnostics;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
@@ -29,6 +32,8 @@ use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
 use App\Modules\Monitor\Models\Application as MonitorApplication;
 use App\Modules\Monitor\Models\User as MonitorUser;
+use App\Modules\Monitor\Services\AlertObservation;
+use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
@@ -581,6 +586,103 @@ final class ProjectProductLinksTest extends TestCase
         $this->assertSame('0 open incidents · 1 checks up · 0 checks down · 0 unknown · 0 paused', $production?->detail);
     }
 
+    public function test_connection_diagnostic_reports_missing_monitor_telemetry_without_leaking_inaccessible_data(): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        DB::connection('monitor')->table('environments')->insert([
+            'id' => 41,
+            'application_id' => 31,
+            'name' => 'Production',
+            'slug' => 'production',
+            'status' => 'active',
+            'last_seen_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_resources')->insert([
+            'id' => '01J8AA00000000000000000012',
+            'project_id' => self::PROJECT_ID,
+            'product' => 'monitor',
+            'resource_type' => 'environment',
+            'resource_id' => '41',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $connection = $this->monitorDiagnosticConnection();
+        $diagnostic = $this->monitorConnectionDiagnostics()->forConnection($connection, $this->platformUser());
+
+        $this->assertSame('No telemetry', $diagnostic->status);
+        $this->assertStringContainsString('no incoming event', $diagnostic->detail);
+
+        DB::connection('monitor')->table('user_workspace')->delete();
+        $inaccessible = $this->monitorConnectionDiagnostics()->forConnection($connection, $this->platformUser());
+
+        $this->assertSame('Ready', $inaccessible->status);
+        $this->assertStringNotContainsString('Production', $inaccessible->detail);
+    }
+
+    public function test_connection_diagnostic_uses_monitor_freshness_rules_without_triggering_alerts(): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        DB::connection('monitor')->table('environments')->insert([
+            'id' => 41,
+            'application_id' => 31,
+            'name' => 'Production',
+            'slug' => 'production',
+            'status' => 'active',
+            'last_seen_at' => now()->subMinutes(10),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_resources')->insert([
+            'id' => '01J8AA00000000000000000012',
+            'project_id' => self::PROJECT_ID,
+            'product' => 'monitor',
+            'resource_type' => 'environment',
+            'resource_id' => '41',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('monitor')->table('alert_rules')->insert([
+            'id' => 61,
+            'environment_id' => 41,
+            'metric' => 'telemetry_freshness',
+            'threshold' => 300,
+            'window_minutes' => 5,
+            'minimum_samples' => 1,
+            'monitoring_since' => now()->subHours(2),
+            'enabled' => true,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('monitor')->table('telemetry_events')->insert([
+            'id' => 81,
+            'environment_id' => 41,
+            'type' => 'request',
+            'service' => 'api',
+            'occurred_at' => now()->subMinutes(10),
+            'created_at' => now()->subMinutes(10),
+            'updated_at' => now()->subMinutes(10),
+        ]);
+
+        $diagnostic = $this->monitorConnectionDiagnostics()->forConnection(
+            $this->monitorDiagnosticConnection(),
+            $this->platformUser(),
+        );
+
+        $this->assertSame('Telemetry stale', $diagnostic->status);
+        $this->assertStringContainsString('300 second freshness window', $diagnostic->detail);
+        $this->assertNotNull($diagnostic->lastObservedAt);
+        $this->assertSame(0, DB::connection('monitor')->table('incidents')->count());
+    }
+
     public function test_monitor_setup_progress_comes_from_authorized_application_data(): void
     {
         $this->addIdentity('monitor', '17');
@@ -1034,6 +1136,13 @@ final class ProjectProductLinksTest extends TestCase
         Schema::connection('monitor')->create('alert_rules', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('environment_id');
+            $table->string('metric')->nullable();
+            $table->string('service')->nullable();
+            $table->float('threshold')->nullable();
+            $table->unsignedInteger('window_minutes')->nullable();
+            $table->unsignedInteger('minimum_samples')->default(1);
+            $table->timestamp('monitoring_since')->nullable();
+            $table->boolean('enabled')->default(true);
             $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
@@ -1054,6 +1163,8 @@ final class ProjectProductLinksTest extends TestCase
             $table->id();
             $table->unsignedBigInteger('environment_id');
             $table->string('type');
+            $table->string('service')->nullable();
+            $table->timestamp('occurred_at')->nullable();
             $table->timestamps();
         });
     }
@@ -1095,6 +1206,30 @@ final class ProjectProductLinksTest extends TestCase
             $table->timestamps();
             $table->softDeletes();
         });
+    }
+
+    private function monitorDiagnosticConnection(): ProjectConnection
+    {
+        $connection = (new ProjectConnection)->forceFill([
+            'project_id' => self::PROJECT_ID,
+            'status' => 'active',
+        ]);
+        $connection->setRelation('deliveries', collect());
+        $connection->setRelation('targetResource', ProjectResource::query()->findOrFail('01J8AA00000000000000000012'));
+        $connection->setRelation('sourceResource', null);
+
+        return $connection;
+    }
+
+    private function monitorConnectionDiagnostics(): ProjectConnectionDiagnostics
+    {
+        $providers = new ProjectConnectionDiagnosticRegistry;
+        $providers->register('monitor', new MonitorProjectConnectionDiagnosticProvider(
+            app(MonitorProjectLink::class),
+            app(AlertObservation::class),
+        ));
+
+        return new ProjectConnectionDiagnostics($providers);
     }
 
     private function platformUser(): PlatformUser

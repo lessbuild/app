@@ -14,5 +14,6 @@ final readonly class ProjectConnectionDiagnostic
         public ?string $nextStep,
         public ?CarbonInterface $lastAttemptAt,
         public ?CarbonInterface $lastSucceededAt,
+        public ?CarbonInterface $lastObservedAt = null,
     ) {}
 }

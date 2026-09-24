@@ -332,7 +332,7 @@ final class WorkspaceProjectsController
             'environmentContext' => $environmentContext,
             'projectSetupSteps' => $projectSetupSteps,
             'resourceDestinations' => $resourceDestinationsForProject,
-            'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections),
+            'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections, $user),
             'projectConnections' => $projectConnections,
             'projectWorkflowRuns' => $projectWorkflowRuns,
             'hiddenConnectionCount' => $hiddenConnectionCount,

@@ -2,9 +2,14 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Contracts\ProjectConnectionDiagnosticProvider;
+use App\Core\Data\Connections\ProjectConnectionDiagnostic;
 use App\Core\Enums\ProjectConnectionCapability;
+use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
+use App\Core\Models\ProjectResource;
+use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnostics;
 use Illuminate\Support\Facades\Blade;
 use Tests\TestCase;
@@ -27,7 +32,7 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
         ]);
         $connection->setRelation('deliveries', collect([$delivery]));
 
-        $diagnostic = (new ProjectConnectionDiagnostics)->forConnection($connection);
+        $diagnostic = (new ProjectConnectionDiagnostics(new ProjectConnectionDiagnosticRegistry))->forConnection($connection);
         $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
             'diagnostic' => $diagnostic,
         ]);
@@ -49,7 +54,7 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
         ]);
         $connection->setRelation('deliveries', collect());
 
-        $diagnostic = (new ProjectConnectionDiagnostics)->forConnection($connection);
+        $diagnostic = (new ProjectConnectionDiagnostics(new ProjectConnectionDiagnosticRegistry))->forConnection($connection);
         $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
             'diagnostic' => $diagnostic,
         ]);
@@ -76,7 +81,7 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
             ]);
             $connection->setRelation('deliveries', collect());
 
-            $diagnostic = (new ProjectConnectionDiagnostics)->forConnection($connection);
+            $diagnostic = (new ProjectConnectionDiagnostics(new ProjectConnectionDiagnosticRegistry))->forConnection($connection);
             $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
                 'diagnostic' => $diagnostic,
             ]);
@@ -92,7 +97,7 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
         $connection = (new ProjectConnection)->forceFill(['status' => 'pending']);
         $connection->setRelation('deliveries', collect());
 
-        $diagnostic = (new ProjectConnectionDiagnostics)->forConnection($connection);
+        $diagnostic = (new ProjectConnectionDiagnostics(new ProjectConnectionDiagnosticRegistry))->forConnection($connection);
 
         $this->assertSame('info', $diagnostic->tone);
         $this->assertSame('Waiting', $diagnostic->status);
@@ -107,9 +112,92 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
         ]);
         $connection->setRelation('deliveries', collect());
 
-        $diagnostic = (new ProjectConnectionDiagnostics)->forConnection($connection);
+        $diagnostic = (new ProjectConnectionDiagnostics(new ProjectConnectionDiagnosticRegistry))->forConnection($connection);
 
         $this->assertSame('Available on demand', $diagnostic->status);
         $this->assertSame('Read-only traffic context is available for Monitor investigations.', $diagnostic->summary);
+    }
+
+    public function test_product_database_failure_is_redacted_in_connection_diagnostics(): void
+    {
+        $registry = new ProjectConnectionDiagnosticRegistry;
+        $registry->register('monitor', new class implements ProjectConnectionDiagnosticProvider
+        {
+            public function diagnose(PlatformUser $user, ProjectConnection $connection, ProjectResource $resource): ?ProjectConnectionDiagnostic
+            {
+                throw new \PDOException('private-database-host and token-secret');
+            }
+        });
+        $resource = (new ProjectResource)->forceFill([
+            'product' => 'monitor',
+            'resource_type' => 'environment',
+            'status' => 'active',
+        ]);
+        $connection = (new ProjectConnection)->forceFill(['status' => 'active']);
+        $connection->setRelation('deliveries', collect());
+        $connection->setRelation('targetResource', $resource);
+
+        $diagnostic = (new ProjectConnectionDiagnostics($registry))->forConnection($connection, new PlatformUser);
+        $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
+            'diagnostic' => $diagnostic,
+        ]);
+
+        $this->assertSame('App data unavailable', $diagnostic->status);
+        $this->assertStringContainsString('could not be checked', $html);
+        $this->assertStringNotContainsString('private-database-host', $html);
+        $this->assertStringNotContainsString('token-secret', $html);
+    }
+
+    public function test_product_diagnostic_cannot_hide_a_saved_delivery_error(): void
+    {
+        $registry = new ProjectConnectionDiagnosticRegistry;
+        $called = (object) ['value' => false];
+        $registry->register('monitor', new class($called) implements ProjectConnectionDiagnosticProvider
+        {
+            public function __construct(private object $called) {}
+
+            public function diagnose(PlatformUser $user, ProjectConnection $connection, ProjectResource $resource): ?ProjectConnectionDiagnostic
+            {
+                $this->called->value = true;
+
+                return null;
+            }
+        });
+        $resource = (new ProjectResource)->forceFill([
+            'product' => 'monitor',
+            'resource_type' => 'environment',
+            'status' => 'active',
+        ]);
+        $connection = (new ProjectConnection)->forceFill([
+            'status' => 'active',
+            'last_error_code' => 'target_delivery_failed',
+        ]);
+        $connection->setRelation('deliveries', collect());
+        $connection->setRelation('targetResource', $resource);
+
+        $diagnostic = (new ProjectConnectionDiagnostics($registry))->forConnection($connection, new PlatformUser);
+
+        $this->assertSame('Delivery failed', $diagnostic->status);
+        $this->assertFalse($called->value);
+    }
+
+    public function test_latest_product_activity_is_labeled_separately_from_delivery_attempts(): void
+    {
+        $diagnostic = new ProjectConnectionDiagnostic(
+            tone: 'info',
+            status: 'Telemetry received',
+            summary: 'Monitor has received telemetry for this environment.',
+            detail: 'The latest event arrived recently.',
+            nextStep: null,
+            lastAttemptAt: null,
+            lastSucceededAt: null,
+            lastObservedAt: now()->subMinute(),
+        );
+        $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
+            'diagnostic' => $diagnostic,
+        ]);
+
+        $this->assertStringContainsString('Latest telemetry', $html);
+        $this->assertStringNotContainsString('Last attempt', $html);
     }
 }

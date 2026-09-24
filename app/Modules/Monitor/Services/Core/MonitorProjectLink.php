@@ -8,6 +8,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Monitor\Models\Application;
+use App\Modules\Monitor\Models\Environment;
 use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -63,5 +64,37 @@ final class MonitorProjectLink implements ProjectProductLink
             ->with('workspace')
             ->get()
             ->values();
+    }
+
+    public function accessibleEnvironment(PlatformUser $user, ProjectResource $resource): ?Environment
+    {
+        if ($resource->product !== 'monitor'
+            || $resource->resource_type !== 'environment'
+            || $resource->status !== 'active') {
+            return null;
+        }
+
+        $currentMapping = ProjectResource::query()
+            ->whereKey($resource->getKey())
+            ->where('project_id', $resource->project_id)
+            ->where('product', 'monitor')
+            ->where('resource_type', 'environment')
+            ->where('status', 'active')
+            ->first(['id', 'project_id', 'resource_id']);
+
+        if ($currentMapping === null) {
+            return null;
+        }
+
+        $legacyUserIds = $this->identities->sourceIdsFor($user, 'monitor');
+        if ($legacyUserIds === []) {
+            return null;
+        }
+
+        return Environment::query()
+            ->whereKey($currentMapping->resource_id)
+            ->where('status', 'active')
+            ->whereHas('application.workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds))
+            ->first(['id', 'application_id', 'last_seen_at']);
     }
 }

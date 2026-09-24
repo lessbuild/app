@@ -4,26 +4,76 @@ namespace App\Core\Services\Connections;
 
 use App\Core\Data\Connections\ProjectConnectionDiagnostic;
 use App\Core\Enums\ProjectConnectionCapability;
+use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectConnection;
 use Carbon\CarbonInterface;
+use Illuminate\Database\LostConnectionException;
 use Illuminate\Support\Collection;
+use PDOException;
 
 final class ProjectConnectionDiagnostics
 {
+    public function __construct(private readonly ProjectConnectionDiagnosticRegistry $providers) {}
+
     /**
      * @param  Collection<int, ProjectConnection>  $connections
      * @return array<string, ProjectConnectionDiagnostic>
      */
-    public function forConnections(Collection $connections): array
+    public function forConnections(Collection $connections, ?PlatformUser $user = null): array
     {
         return $connections
             ->mapWithKeys(fn (ProjectConnection $connection): array => [
-                (string) $connection->getKey() => $this->forConnection($connection),
+                (string) $connection->getKey() => $this->forConnection($connection, $user),
             ])
             ->all();
     }
 
-    public function forConnection(ProjectConnection $connection): ProjectConnectionDiagnostic
+    public function forConnection(ProjectConnection $connection, ?PlatformUser $user = null): ProjectConnectionDiagnostic
+    {
+        $workflowDiagnostic = $this->workflowDiagnostic($connection);
+
+        if ($user === null || $connection->status !== 'active' || $this->hasDeliveryIssue($connection)) {
+            return $workflowDiagnostic;
+        }
+
+        foreach (['targetResource', 'sourceResource'] as $relation) {
+            if (! $connection->relationLoaded($relation)) {
+                continue;
+            }
+
+            $resource = $connection->getRelation($relation);
+            if ($resource === null) {
+                continue;
+            }
+
+            $provider = $this->providers->get((string) $resource->product);
+            if ($provider === null) {
+                continue;
+            }
+
+            try {
+                $diagnostic = $provider->diagnose($user, $connection, $resource);
+            } catch (LostConnectionException|PDOException) {
+                return new ProjectConnectionDiagnostic(
+                    tone: 'warning',
+                    status: __('App data unavailable'),
+                    summary: __('The connected app could not provide current diagnostic data.'),
+                    detail: __('The connection itself is still configured, but its app data could not be checked.'),
+                    nextStep: __('Try again later. If this continues, check the connected app’s availability.'),
+                    lastAttemptAt: null,
+                    lastSucceededAt: $connection->last_succeeded_at,
+                );
+            }
+
+            if ($diagnostic !== null) {
+                return $diagnostic;
+            }
+        }
+
+        return $workflowDiagnostic;
+    }
+
+    private function workflowDiagnostic(ProjectConnection $connection): ProjectConnectionDiagnostic
     {
         $latestDelivery = $connection->relationLoaded('deliveries')
             ? $connection->deliveries->first()
@@ -123,6 +173,18 @@ final class ProjectConnectionDiagnostics
             lastAttemptAt: $latestDelivery?->last_attempted_at,
             lastSucceededAt: null,
         );
+    }
+
+    private function hasDeliveryIssue(ProjectConnection $connection): bool
+    {
+        $latestDelivery = $connection->relationLoaded('deliveries')
+            ? $connection->deliveries->first()
+            : null;
+
+        return $connection->last_error_code !== null
+            || $latestDelivery?->last_error_code !== null
+            || $connection->automation_paused_at !== null
+            || in_array($latestDelivery?->status, ['pending', 'processing', 'blocked', 'failed'], true);
     }
 
     private function fromErrorCode(

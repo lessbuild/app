@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -26,6 +27,7 @@ use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
+use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
@@ -95,6 +97,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('monitor', app(MonitorProjectLink::class));
+        app(ProjectConnectionDiagnosticRegistry::class)->register('monitor', app(MonitorProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('monitor', app(MonitorResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));
         app(ProjectResourceLinkRegistry::class)->register('monitor', app(MonitorResourceLinkProvider::class));

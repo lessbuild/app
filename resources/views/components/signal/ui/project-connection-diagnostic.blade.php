@@ -21,6 +21,10 @@
                 <span>{{ __('Last attempt :time', ['time' => $diagnostic->lastAttemptAt->diffForHumans()]) }}</span>
                 <time class="sr-only" datetime="{{ $diagnostic->lastAttemptAt->toIso8601String() }}">{{ $diagnostic->lastAttemptAt->toIso8601String() }}</time>
             @endif
+            @if ($diagnostic->lastObservedAt)
+                <span>{{ __('Latest telemetry :time', ['time' => $diagnostic->lastObservedAt->diffForHumans()]) }}</span>
+                <time class="sr-only" datetime="{{ $diagnostic->lastObservedAt->toIso8601String() }}">{{ $diagnostic->lastObservedAt->toIso8601String() }}</time>
+            @endif
         </div>
     </div>
 </x-signal.ui.alert>
