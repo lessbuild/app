@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -28,6 +29,7 @@ use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
+use App\Modules\Deployer\Services\Core\DeployerProjectConnectionDiagnosticProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
@@ -60,6 +62,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
 
         Cashier::useCustomerModel(User::class);
         app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
+        app(ProjectConnectionDiagnosticRegistry::class)->register('deployer', app(DeployerProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(ProjectResourceLinkRegistry::class)->register('deployer', app(DeployerResourceLinkProvider::class));

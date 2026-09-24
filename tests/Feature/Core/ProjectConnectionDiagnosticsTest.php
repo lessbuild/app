@@ -192,6 +192,7 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
             lastAttemptAt: null,
             lastSucceededAt: null,
             lastObservedAt: now()->subMinute(),
+            lastObservedLabel: 'Latest telemetry',
         );
         $html = Blade::render('<x-signal.ui.project-connection-diagnostic :diagnostic="$diagnostic" />', [
             'diagnostic' => $diagnostic,
@@ -199,5 +200,51 @@ final class ProjectConnectionDiagnosticsTest extends TestCase
 
         $this->assertStringContainsString('Latest telemetry', $html);
         $this->assertStringNotContainsString('Last attempt', $html);
+    }
+
+    public function test_a_product_warning_takes_precedence_over_another_products_information_state(): void
+    {
+        $registry = new ProjectConnectionDiagnosticRegistry;
+        $registry->register('monitor', new class implements ProjectConnectionDiagnosticProvider
+        {
+            public function diagnose(PlatformUser $user, ProjectConnection $connection, ProjectResource $resource): ?ProjectConnectionDiagnostic
+            {
+                return new ProjectConnectionDiagnostic(
+                    tone: 'info',
+                    status: 'Telemetry received',
+                    summary: 'Monitor has received telemetry.',
+                    detail: 'Monitor is receiving events.',
+                    nextStep: null,
+                    lastAttemptAt: null,
+                    lastSucceededAt: null,
+                    priority: 100,
+                );
+            }
+        });
+        $registry->register('deployer', new class implements ProjectConnectionDiagnosticProvider
+        {
+            public function diagnose(PlatformUser $user, ProjectConnection $connection, ProjectResource $resource): ?ProjectConnectionDiagnostic
+            {
+                return new ProjectConnectionDiagnostic(
+                    tone: 'warning',
+                    status: 'Credential rejected',
+                    summary: 'A Deployer credential was rejected.',
+                    detail: 'A provider credential needs attention.',
+                    nextStep: 'Update the provider credential.',
+                    lastAttemptAt: null,
+                    lastSucceededAt: null,
+                    priority: 10,
+                );
+            }
+        });
+        $connection = (new ProjectConnection)->forceFill(['status' => 'active']);
+        $connection->setRelation('deliveries', collect());
+        $connection->setRelation('targetResource', (new ProjectResource)->forceFill(['product' => 'monitor']));
+        $connection->setRelation('sourceResource', (new ProjectResource)->forceFill(['product' => 'deployer']));
+
+        $diagnostic = (new ProjectConnectionDiagnostics($registry))->forConnection($connection, new PlatformUser);
+
+        $this->assertSame('Credential rejected', $diagnostic->status);
+        $this->assertSame('Update the provider credential.', $diagnostic->nextStep);
     }
 }

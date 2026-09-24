@@ -15,5 +15,8 @@ final readonly class ProjectConnectionDiagnostic
         public ?CarbonInterface $lastAttemptAt,
         public ?CarbonInterface $lastSucceededAt,
         public ?CarbonInterface $lastObservedAt = null,
+        public ?string $lastObservedLabel = null,
+        /** Lower values are preferred when several modules report on one connection. */
+        public int $priority = 50,
     ) {}
 }

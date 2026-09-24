@@ -72,6 +72,8 @@ final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnect
                 lastAttemptAt: null,
                 lastSucceededAt: null,
                 lastObservedAt: $environment->last_seen_at,
+                lastObservedLabel: __('Latest telemetry'),
+                priority: 20,
             );
         }
 
@@ -84,6 +86,8 @@ final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnect
             lastAttemptAt: null,
             lastSucceededAt: null,
             lastObservedAt: $environment->last_seen_at,
+            lastObservedLabel: __('Latest telemetry'),
+            priority: 100,
         );
     }
 }

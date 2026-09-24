@@ -36,6 +36,8 @@ final class ProjectConnectionDiagnostics
             return $workflowDiagnostic;
         }
 
+        $productDiagnostic = null;
+
         foreach (['targetResource', 'sourceResource'] as $relation) {
             if (! $connection->relationLoaded($relation)) {
                 continue;
@@ -54,7 +56,7 @@ final class ProjectConnectionDiagnostics
             try {
                 $diagnostic = $provider->diagnose($user, $connection, $resource);
             } catch (LostConnectionException|PDOException) {
-                return new ProjectConnectionDiagnostic(
+                $diagnostic = new ProjectConnectionDiagnostic(
                     tone: 'warning',
                     status: __('App data unavailable'),
                     summary: __('The connected app could not provide current diagnostic data.'),
@@ -62,15 +64,17 @@ final class ProjectConnectionDiagnostics
                     nextStep: __('Try again later. If this continues, check the connected app’s availability.'),
                     lastAttemptAt: null,
                     lastSucceededAt: $connection->last_succeeded_at,
+                    priority: 25,
                 );
             }
 
-            if ($diagnostic !== null) {
-                return $diagnostic;
+            if ($diagnostic !== null
+                && ($productDiagnostic === null || $diagnostic->priority < $productDiagnostic->priority)) {
+                $productDiagnostic = $diagnostic;
             }
         }
 
-        return $workflowDiagnostic;
+        return $productDiagnostic ?? $workflowDiagnostic;
     }
 
     private function workflowDiagnostic(ProjectConnection $connection): ProjectConnectionDiagnostic
