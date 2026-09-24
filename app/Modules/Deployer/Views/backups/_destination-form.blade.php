@@ -22,32 +22,22 @@
         @method('PATCH')
     @endif
     <div class="sm:col-span-2">
-        <label for="{{ $formId }}-storage_provider" class="ui-label">{{ __('Storage service') }}</label>
-        <select id="{{ $formId }}-storage_provider" name="storage_provider" class="ui-input">
+        <x-signal.ui.select-field :id="$formId.'-storage_provider'" name="storage_provider" :label="__('Storage service')" :description="__('Choose a preset for provider-specific endpoint guidance. The choice is used for setup only and is not stored as a credential.')">
             @foreach($destinationPresets as $preset)
                 <option value="{{ $preset->key }}" @selected($selectedProvider === $preset->key)>{{ $preset->name }}</option>
             @endforeach
-        </select>
-        <x-forms.errors name="storage_provider" />
-        <p class="ui-help">{{ __('Choose a preset for provider-specific endpoint guidance. The choice is used for setup only and is not stored as a credential.') }}</p>
+        </x-signal.ui.select-field>
         <p class="mt-1 text-sm text-ink">{{ $selectedPreset->description }}</p>
         <p class="ui-help">{{ __('Example endpoint: :endpoint · Region: :region', ['endpoint' => $selectedPreset->endpointHint, 'region' => $selectedPreset->regionHint]) }}</p>
     </div>
     <div>
-        <label for="{{ $formId }}-name" class="ui-label">{{ __('Name') }}</label>
-        <input id="{{ $formId }}-name" name="name" value="{{ old('name', $isEdit ? $destination->name : '') }}" placeholder="{{ __('Offsite backups') }}" class="ui-input" required>
-        <x-forms.errors name="name" />
+        <x-signal.ui.input-field :id="$formId.'-name'" name="name" :label="__('Name')" :value="$isEdit ? $destination->name : ''" :placeholder="__('Offsite backups')" required />
     </div>
     <div>
-        <label for="{{ $formId }}-region" class="ui-label">{{ __('Region') }}</label>
-        <input id="{{ $formId }}-region" name="region" value="{{ old('region', $isEdit ? $destination->region : '') }}" placeholder="{{ __('lon1') }}" class="ui-input" required>
-        <x-forms.errors name="region" />
-        <p class="ui-help">{{ __('For Spaces, use the region shown by DigitalOcean, such as lon1 or nyc3.') }}</p>
+        <x-signal.ui.input-field :id="$formId.'-region'" name="region" :label="__('Region')" :value="$isEdit ? $destination->region : ''" :placeholder="__('lon1')" :description="__('For Spaces, use the region shown by DigitalOcean, such as lon1 or nyc3.')" required />
     </div>
     <div class="sm:col-span-2">
-        <label for="{{ $formId }}-endpoint" class="ui-label">{{ __('S3 endpoint') }}</label>
-        <input id="{{ $formId }}-endpoint" type="url" name="endpoint" value="{{ old('endpoint', $isEdit ? $destination->endpoint : '') }}" placeholder="{{ $selectedPreset->endpointHint }}" class="ui-input">
-        <x-forms.errors name="endpoint" />
+        <x-signal.ui.input-field :id="$formId.'-endpoint'" name="endpoint" :label="__('S3 endpoint')" type="url" :value="$isEdit ? $destination->endpoint : ''" :placeholder="$selectedPreset->endpointHint" />
         @if(in_array($selectedProvider, [\App\Modules\Deployer\Services\BackupDestinationCatalog::DIGITALOCEAN_SPACES, \App\Modules\Deployer\Services\BackupDestinationCatalog::AMAZON_S3], true))
             <p class="ui-help">{{ __('Leave this blank and :app will derive the endpoint from the region. Do not paste a bucket URL or a control-plane API URL.', ['app' => config('app.name')]) }}</p>
         @else
@@ -55,26 +45,18 @@
         @endif
     </div>
     <div>
-        <label for="{{ $formId }}-bucket" class="ui-label">{{ __('Bucket name') }}</label>
-        <input id="{{ $formId }}-bucket" name="bucket" value="{{ old('bucket', $isEdit ? $destination->bucket : '') }}" placeholder="{{ __('buildpusher-backups') }}" class="ui-input" required>
-        <x-forms.errors name="bucket" />
+        <x-signal.ui.input-field :id="$formId.'-bucket'" name="bucket" :label="__('Bucket name')" :value="$isEdit ? $destination->bucket : ''" :placeholder="__('buildpusher-backups')" required />
     </div>
     <div>
-        <label for="{{ $formId }}-path_prefix" class="ui-label">{{ __('Folder prefix') }}</label>
-        <input id="{{ $formId }}-path_prefix" name="path_prefix" value="{{ old('path_prefix', $isEdit ? $destination->path_prefix : 'buildpusher') }}" placeholder="{{ __('buildpusher') }}" class="ui-input" required>
-        <x-forms.errors name="path_prefix" />
+        <x-signal.ui.input-field :id="$formId.'-path_prefix'" name="path_prefix" :label="__('Folder prefix')" :value="$isEdit ? $destination->path_prefix : 'buildpusher'" :placeholder="__('buildpusher')" required />
     </div>
     <div>
-        <label for="{{ $formId }}-access_key" class="ui-label">{{ __(':provider access key', ['provider' => $selectedPreset->name]) }}</label>
-        <input id="{{ $formId }}-access_key" name="access_key" value="" placeholder="{{ $isEdit ? __('Leave blank to keep current key') : __('Access key') }}" autocomplete="off" class="ui-input" @required(!$isEdit)>
-        <x-forms.errors name="access_key" />
+        <x-signal.ui.input-field :id="$formId.'-access_key'" name="access_key" :label="__(':provider access key', ['provider' => $selectedPreset->name])" value="" :placeholder="$isEdit ? __('Leave blank to keep current key') : __('Access key')" autocomplete="off" :restore="false" :required="! $isEdit" />
     </div>
     <div>
-        <label for="{{ $formId }}-secret_key" class="ui-label">{{ __(':provider secret key', ['provider' => $selectedPreset->name]) }}</label>
-        <input id="{{ $formId }}-secret_key" type="password" name="secret_key" value="" placeholder="{{ $isEdit ? __('Leave blank to keep current secret') : __('Secret key') }}" autocomplete="new-password" class="ui-input" @required(!$isEdit)>
-        <x-forms.errors name="secret_key" />
+        <x-signal.ui.input-field :id="$formId.'-secret_key'" name="secret_key" :label="__(':provider secret key', ['provider' => $selectedPreset->name])" type="password" value="" :placeholder="$isEdit ? __('Leave blank to keep current secret') : __('Secret key')" autocomplete="new-password" :restore="false" :required="! $isEdit" />
     </div>
-    <div class="ui-panel p-4 text-sm text-muted sm:col-span-2">
+    <x-signal.ui.card class="p-4 text-sm text-muted sm:col-span-2">
         <p class="font-bold text-ink">{{ __('Before you save') }}</p>
         <p class="mt-1">{{ __('Create a Spaces access key in DigitalOcean Spaces, not a regular DigitalOcean API token. After saving, verify this destination; :app writes, reads, and deletes a temporary object without needing an active website or server. The first real backup initializes the encrypted Restic repository.', ['app' => config('app.name')]) }}</p>
         @if($isEdit)
@@ -83,7 +65,7 @@
         @if($selectedPreset->documentationUrl)
             <a href="{{ $selectedPreset->documentationUrl }}" target="_blank" rel="noreferrer" class="ui-link mt-2 inline-block">{{ __('Open provider setup instructions') }}</a>
         @endif
-    </div>
+    </x-signal.ui.card>
     <div class="sm:col-span-2">
         @if ($cancelUrl)
             <x-ui.button :href="$cancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>

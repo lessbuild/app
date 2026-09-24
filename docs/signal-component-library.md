@@ -24,6 +24,7 @@ Use `resources/views/components/signal/` as the source of truth for shared Blade
 | `x-signal.ui.icon` | Shared inline Signal icon set with forwarded accessibility and size attributes. |
 | `x-signal.ui.icon-button` | Accessible icon-only link or button with a required label. |
 | `x-signal.ui.input`, `select`, `textarea` | Shared form controls with old-input control, sensitive-value handling, forwarded attributes, and Livewire bindings. |
+| `x-signal.ui.input-field`, `select-field`, `textarea-field` | Labeled Signal controls that compose the field, control, description, required state, validation message, and accessible error associations. |
 | `x-signal.ui.insights` | Responsive expandable content surface. |
 | `x-signal.ui.local-nav` | Scrollable, labeled product navigation region. |
 | `x-signal.ui.menu` | Native disclosure menu with trigger slot and alignment options. |
