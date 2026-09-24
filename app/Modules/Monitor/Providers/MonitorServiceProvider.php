@@ -37,6 +37,7 @@ use App\Modules\Monitor\Services\NativeTlsCertificateInspector;
 use App\Modules\Monitor\Services\Telemetry\OtlpPayloadMapper;
 use App\Modules\Monitor\Services\WorkspaceViewData;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Foundation\Events\DiagnosingHealth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
@@ -50,6 +51,27 @@ final class MonitorServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->mergeConfigFrom(app_path('Modules/Monitor/Config/beacon.php'), 'monitor.beacon');
+
+        Factory::guessFactoryNamesUsing(static function (string $model): string {
+            $monitorPrefix = 'App\\Modules\\Monitor\\Models\\';
+
+            if (str_starts_with($model, $monitorPrefix)) {
+                $factory = 'App\\Modules\\Monitor\\Database\\Factories\\'.substr($model, strlen($monitorPrefix)).'Factory';
+
+                if (class_exists($factory)) {
+                    $factory::guessModelNamesUsing(static fn (Factory $instance): string => $monitorPrefix.substr(class_basename($instance), 0, -strlen('Factory'))
+                    );
+
+                    return $factory;
+                }
+            }
+
+            $modelName = str_starts_with($model, 'App\\Models\\')
+                ? substr($model, strlen('App\\Models\\'))
+                : (str_starts_with($model, 'App\\') ? substr($model, strlen('App\\')) : $model);
+
+            return 'Database\\Factories\\'.$modelName.'Factory';
+        });
 
         $this->app->bind(TelemetryIngestor::class, DatabaseTelemetryIngestor::class);
         $this->app->bind(DnsResolver::class, NativeDnsResolver::class);
