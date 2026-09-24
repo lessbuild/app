@@ -1,5 +1,34 @@
 # Signal theme integration progress
 
+## Slice 139 — update Deployer to the latest Signal mobile shell — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `a87e553a6c499deaa86163469f018ceff9e2a6c4` (`Keep mobile topbar visible above More sidebar`). Deployer already uses the shared Signal document, Topbar SaaS layout, theme tokens, and `x-signal.ui.*` components; the shared product drawer still covered that shell's two-row header.
+- Adapted the latest topbar layering to the Laravel context-aware shell. The drawer now starts below the measured live header height, which keeps Deployer's workspace, project, and environment controls visible even when the topbar wraps at narrow widths. The shared drawer handles the other product shells the same way.
+- Added architecture and browser assertions for drawer placement across product layouts and mobile/desktop widths.
+
+Evidence:
+
+- `npm run build && npx playwright test tests/Browser/signal-theme-tokens.spec.js`: **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth documents at mobile and desktop sizes. The browser verifies the drawer starts at the live header's bottom edge.
+- `git diff --check`, JavaScript syntax checks, and scoped Pint passed.
+
+Next task: complete the authenticated product visual and accessibility acceptance against real Deployer, Monitor, and Analytics workspaces after release.
+
+## Slice 138 — verify HTTPS cross-host SSO browser handoffs — 2026-09-24
+
+Boundary and implementation:
+
+- Completed the local real-browser acceptance path through auth, Deployer, Monitor, Analytics, and workspace logout using isolated SQLite databases, exact local host origins, and a temporary HTTPS certificate.
+- Kept product sessions host-only and secure, tickets bound to exact issuer/audience origins and single use, and logout revocation shared across product hosts. The exchange accepts a validated origin or the origin-only referrer supplied by browser form navigation.
+- Added a same-host dashboard logout endpoint and allowed only exact configured platform origins in the form-action CSP. `upgrade-insecure-requests` is emitted only on HTTPS responses.
+
+Evidence:
+
+- `npm run test:platform-sso -- --timeout=180000`: **1 Chromium test passed**. It confirms four secure host-only cookies, all product handoffs, session revocation at logout, and a later product request returning to sign-in.
+- `php artisan test --compact tests/Feature/SecurityHeadersTest.php tests/Feature/Core/PlatformAuthenticationTest.php`: **15 tests, 162 assertions passed**. Scoped Pint and `git diff --check` passed.
+- Production authenticated smoke, provider/passkey compatibility, and ambiguous Monitor identity ownership remain release gates; this fixture makes no production database or account changes.
+
 ## Slice 137 — apply the latest Signal navigation drawer and responsive layout — 2026-09-24
 
 Boundary and implementation:

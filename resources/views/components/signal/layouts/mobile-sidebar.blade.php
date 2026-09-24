@@ -12,10 +12,12 @@
 
 <div
     id="{{ $id }}"
-    class="app-mobile-sidebar fixed inset-0 z-50 hidden lg:hidden"
+    class="app-mobile-sidebar fixed inset-x-0 bottom-0 z-50 hidden lg:hidden"
     data-mobile-drawer
     data-mobile-breakpoint="{{ $breakpoint }}"
     data-desktop-navigation="{{ $desktopNavigation }}"
+    data-mobile-header-selector="[data-mobile-header]"
+    style="top: var(--signal-mobile-header-height, var(--header-height))"
     role="dialog"
     aria-modal="true"
     aria-hidden="true"

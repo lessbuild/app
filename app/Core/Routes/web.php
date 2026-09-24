@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Http\Controllers\Auth\PlatformSessionController;
 use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\MarketingController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
@@ -19,6 +20,7 @@ Route::get('/{product}', [MarketingController::class, 'showProduct'])
 
 Route::middleware('auth:platform')->group(function (): void {
     Route::get('/workspaces', CoreHomeController::class)->name('core.home');
+    Route::post('/core/logout', [PlatformSessionController::class, 'destroy'])->name('core.logout');
 
     Route::post('/workspaces/{workspace}/select', [WorkspaceProjectsController::class, 'selectWorkspace'])
         ->name('core.workspaces.select');

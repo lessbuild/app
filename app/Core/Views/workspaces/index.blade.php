@@ -11,13 +11,13 @@
         workspace-switch-route="core.workspaces.select"
         workspace-manage-route="core.home"
         :account-user="$user"
-        logout-route="platform.logout"
+        logout-route="core.logout"
         :show-notifications="false"
         :show-project-context="false"
         :show-environment-context="false"
     />
 
-    <main id="main-content" tabindex="-1" class="mx-auto w-full max-w-screen-2xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+    <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto w-full max-w-screen-2xl py-7 sm:py-9">
         <x-alerts.flash />
         <x-signal.ui.page-header
             eyebrow="{{ __('Buildpusher') }}"

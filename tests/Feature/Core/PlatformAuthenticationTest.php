@@ -205,11 +205,11 @@ final class PlatformAuthenticationTest extends TestCase
         ]);
         $handoff->assertOk()
             ->assertSee('action="https://deployer.example.test/__platform/sso/exchange"', false)
-            ->assertSeeText('Connecting your session');
-        $this->assertStringContainsString(
-            "form-action 'self' https://deployer.example.test",
-            (string) $handoff->headers->get('Content-Security-Policy'),
-        );
+            ->assertSeeText('Connecting your session')
+            ->assertHeader('Referrer-Policy', 'strict-origin');
+        $contentSecurityPolicy = (string) $handoff->headers->get('Content-Security-Policy');
+        $this->assertStringContainsString("form-action 'self' http://localhost", $contentSecurityPolicy);
+        $this->assertStringContainsString('https://deployer.example.test', $contentSecurityPolicy);
         $this->assertDatabaseHas('platform_sso_tickets', [
             'audience_origin' => 'https://deployer.example.test',
             'return_url' => 'https://deployer.example.test/projects/01J8AA00000000000000000000',
@@ -259,12 +259,18 @@ final class PlatformAuthenticationTest extends TestCase
             ->assertForbidden();
         $this->assertNull(DB::connection('core')->table('platform_sso_tickets')->value('consumed_at'));
 
-        $this->withHeader('Origin', 'https://attacker.example.test')
+        $this->withHeaders([
+            'Origin' => 'null',
+            'Referer' => 'https://attacker.example.test/',
+        ])
             ->post('https://monitor.example.test/__platform/sso/exchange', ['code' => $plainTextTicket])
             ->assertForbidden();
         $this->assertNull(DB::connection('core')->table('platform_sso_tickets')->value('consumed_at'));
 
-        $exchange = $this->withHeader('Origin', 'http://localhost')
+        $exchange = $this->withHeaders([
+            'Origin' => 'null',
+            'Referer' => 'http://localhost/',
+        ])
             ->post('https://monitor.example.test/__platform/sso/exchange', ['code' => $plainTextTicket]);
         $exchange->assertRedirect($returnTo)
             ->assertHeader('Referrer-Policy', 'no-referrer');
@@ -303,6 +309,27 @@ final class PlatformAuthenticationTest extends TestCase
                 'return_to' => 'http://localhost/__platform/sso/issue?return_to=https%3A%2F%2Fmonitor.example.test%2F',
             ]));
 
+        $this->assertGuest('platform');
+    }
+
+    public function test_dashboard_logout_uses_a_same_host_route_and_revokes_the_shared_session(): void
+    {
+        $user = $this->createPlatformUser('dashboard-logout@example.test', 'correct horse battery staple');
+
+        $this->post(route('platform.login.store'), [
+            'email' => 'dashboard-logout@example.test',
+            'password' => 'correct horse battery staple',
+        ])->assertRedirect(route('core.home'));
+
+        $authSessionId = session('platform.auth.session_id');
+        $this->assertIsString($authSessionId);
+        $this->assertSame('/core/logout', route('core.logout', [], false));
+
+        $this->post(route('core.logout'))->assertRedirect(route('platform.login'));
+
+        $this->assertNotNull(DB::connection('core')->table('platform_auth_sessions')
+            ->where('id', $authSessionId)
+            ->value('revoked_at'));
         $this->assertGuest('platform');
     }
 

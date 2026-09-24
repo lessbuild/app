@@ -32,7 +32,7 @@ final class PlatformSsoController
         $data = $request->validate([
             'code' => ['required', 'string', 'size:64', 'regex:/\A[a-f0-9]{64}\z/'],
         ]);
-        $issuerOrigin = $this->normalizeOrigin((string) $request->header('Origin', ''));
+        $issuerOrigin = $this->issuerOrigin($request);
         $audienceOrigin = $this->normalizeOrigin($request->getSchemeAndHttpHost());
         $exchange = $tickets->consume($data['code'], $issuerOrigin, $audienceOrigin);
         abort_unless($exchange !== null, 403);
@@ -59,6 +59,22 @@ final class PlatformSsoController
         }
 
         return $this->normalizeOrigin($parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : ''));
+    }
+
+    private function issuerOrigin(Request $request): string
+    {
+        $origin = trim((string) $request->header('Origin', ''));
+        if ($origin !== '' && strtolower($origin) !== 'null') {
+            return $this->normalizeOrigin($origin);
+        }
+
+        $referer = (string) $request->header('Referer', '');
+        $parts = parse_url($referer);
+        abort_unless(is_array($parts) && isset($parts['scheme'], $parts['host']), 403);
+
+        return $this->normalizeOrigin(
+            $parts['scheme'].'://'.$parts['host'].(isset($parts['port']) ? ':'.$parts['port'] : ''),
+        );
     }
 
     private function normalizeOrigin(string $origin): string

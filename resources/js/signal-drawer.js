@@ -13,9 +13,25 @@ export function initSignalPublicDrawers() {
         const desktopNavigation = drawer.dataset.desktopNavigation
             ? document.querySelector(drawer.dataset.desktopNavigation)
             : drawer.parentElement?.querySelector('[data-desktop-navigation]');
+        const mobileHeader = drawer.dataset.mobileHeaderSelector
+            ? document.querySelector(drawer.dataset.mobileHeaderSelector)
+            : null;
         const breakpoint = Number.parseInt(drawer.dataset.mobileBreakpoint ?? '', 10) || 768;
         const desktopViewport = window.matchMedia(`(min-width: ${breakpoint}px)`);
         let lastTrigger = null;
+
+        const syncDrawerOffset = () => {
+            if (mobileHeader) {
+                drawer.style.setProperty('--signal-mobile-header-height', `${mobileHeader.getBoundingClientRect().height}px`);
+            }
+        };
+
+        syncDrawerOffset();
+        if (mobileHeader && 'ResizeObserver' in window) {
+            new ResizeObserver(syncDrawerOffset).observe(mobileHeader);
+        } else {
+            window.addEventListener('resize', syncDrawerOffset);
+        }
 
         const isOpen = () => !drawer.classList.contains('hidden');
         const close = (restoreFocus = true) => {
@@ -31,6 +47,7 @@ export function initSignalPublicDrawers() {
         };
         const open = trigger => {
             lastTrigger = trigger;
+            syncDrawerOffset();
             drawer.classList.remove('hidden');
             drawer.setAttribute('aria-hidden', 'false');
             drawer.setAttribute('aria-modal', 'true');

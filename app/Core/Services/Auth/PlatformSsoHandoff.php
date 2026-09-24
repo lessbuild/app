@@ -40,7 +40,7 @@ final class PlatformSsoHandoff
             'destination' => parse_url($audienceOrigin, PHP_URL_HOST) ?: __('your application'),
         ])->withHeaders([
             'Cache-Control' => 'private, no-store, max-age=0',
-            'Referrer-Policy' => 'no-referrer',
+            'Referrer-Policy' => 'strict-origin',
             'X-Robots-Tag' => 'noindex, nofollow, noarchive',
         ]);
     }

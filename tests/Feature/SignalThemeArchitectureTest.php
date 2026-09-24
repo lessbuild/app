@@ -55,6 +55,8 @@ final class SignalThemeArchitectureTest extends TestCase
         $this->assertStringContainsString('<x-signal.layouts.mobile-sidebar', $mobileNavigation);
         $this->assertStringContainsString('data-mobile-drawer', $mobileSidebar);
         $this->assertStringContainsString('data-mobile-breakpoint="{{ $breakpoint }}"', $mobileSidebar);
+        $this->assertStringContainsString('data-mobile-header-selector="[data-mobile-header]"', $mobileSidebar);
+        $this->assertStringContainsString('top: var(--signal-mobile-header-height, var(--header-height))', $mobileSidebar);
         $this->assertStringContainsString('class="ui-layout-gutter mx-auto w-full max-w-screen-2xl', $deployerLayout);
     }
 }

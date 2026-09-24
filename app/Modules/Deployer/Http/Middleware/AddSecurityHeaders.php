@@ -19,22 +19,17 @@ class AddSecurityHeaders
 
         $response->headers->set('X-Content-Type-Options', 'nosniff');
         $response->headers->set('X-Frame-Options', 'SAMEORIGIN');
-        $response->headers->set(
-            'Referrer-Policy',
-            $request->is('__platform/sso/exchange')
-                || is_string($request->attributes->get('platform.sso.form_origin'))
-                || $response->headers->get('Referrer-Policy') === 'no-referrer'
-                ? 'no-referrer'
-                : 'strict-origin-when-cross-origin',
-        );
+        $referrerPolicy = match (true) {
+            $request->is('__platform/sso/exchange'),
+            $response->headers->get('Referrer-Policy') === 'no-referrer' => 'no-referrer',
+            is_string($request->attributes->get('platform.sso.form_origin')) => 'strict-origin',
+            default => 'strict-origin-when-cross-origin',
+        };
+        $response->headers->set('Referrer-Policy', $referrerPolicy);
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
-        $platformSsoOrigin = $request->attributes->get('platform.sso.form_origin');
-        $formAction = is_string($platformSsoOrigin)
-            && preg_match('/\Ahttps?:\/\/[a-z0-9.-]+(?::[0-9]+)?\z/i', $platformSsoOrigin)
-            ? "form-action 'self' {$platformSsoOrigin}"
-            : "form-action 'self'";
+        $formAction = $this->formActionPolicy($request);
 
-        $response->headers->set('Content-Security-Policy', implode('; ', [
+        $contentSecurityPolicy = [
             "default-src 'self'",
             "base-uri 'self'",
             "frame-ancestors 'self'",
@@ -45,13 +40,67 @@ class AddSecurityHeaders
             "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
             "connect-src 'self'",
             "object-src 'none'",
-            'upgrade-insecure-requests',
-        ]));
+        ];
+
+        if ($request->isSecure()) {
+            $contentSecurityPolicy[] = 'upgrade-insecure-requests';
+        }
+
+        $response->headers->set('Content-Security-Policy', implode('; ', $contentSecurityPolicy));
 
         if ($request->isSecure()) {
             $response->headers->set('Strict-Transport-Security', 'max-age=31536000');
         }
 
         return $response;
+    }
+
+    private function formActionPolicy(Request $request): string
+    {
+        $origins = ["'self'"];
+        $configuredOrigins = [
+            $request->getSchemeAndHttpHost(),
+            config('app.url'),
+            config('platform.dashboard_url'),
+            config('platform.auth_url'),
+            $request->attributes->get('platform.sso.form_origin'),
+        ];
+
+        foreach (config('platform.products', []) as $product) {
+            $configuredOrigins[] = $product['url'] ?? null;
+        }
+
+        foreach ($configuredOrigins as $configuredOrigin) {
+            if (! is_string($configuredOrigin) || trim($configuredOrigin) === '') {
+                continue;
+            }
+
+            $value = trim($configuredOrigin);
+            if (! str_contains($value, '://')) {
+                $value = 'https://'.$value;
+            }
+
+            $parts = parse_url($value);
+            if (! is_array($parts) || ! isset($parts['scheme'], $parts['host'])
+                || isset($parts['user']) || isset($parts['pass'])
+                || ! preg_match('/\A[a-z0-9.-]+\z/i', (string) $parts['host'])) {
+                continue;
+            }
+
+            $scheme = strtolower((string) $parts['scheme']);
+            if (! in_array($scheme, ['http', 'https'], true)
+                || ($scheme === 'http' && (! in_array(app()->environment(), ['local', 'testing'], true) || $request->isSecure()))) {
+                continue;
+            }
+
+            $port = isset($parts['port']) ? (int) $parts['port'] : null;
+            if (($scheme === 'https' && $port === 443) || ($scheme === 'http' && $port === 80)) {
+                $port = null;
+            }
+
+            $origins[] = $scheme.'://'.strtolower((string) $parts['host']).($port === null ? '' : ':'.$port);
+        }
+
+        return 'form-action '.implode(' ', array_unique($origins));
     }
 }

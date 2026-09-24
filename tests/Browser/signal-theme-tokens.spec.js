@@ -155,6 +155,10 @@ test('one shared Signal token change reaches every product, public, and auth doc
                     await expect(trigger).toHaveAttribute('aria-expanded', 'true');
                     await expect(mobileMenu).toHaveAttribute('aria-hidden', 'false');
                     await expect(mobileMenu).toBeVisible();
+                    const headerBox = await shell.boundingBox();
+                    const drawerBox = await mobileMenu.boundingBox();
+                    expect(drawerBox.y).toBeCloseTo(headerBox.y + headerBox.height, 0);
+                    expect(drawerBox.height).toBeCloseTo(viewport.height - headerBox.y - headerBox.height, 0);
                     await expect(mobileMenu.locator('aside')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
                     const mobileNavigation = page.locator('#signal-mobile-product-navigation');
                     await expect(mobileNavigation).toBeVisible();
