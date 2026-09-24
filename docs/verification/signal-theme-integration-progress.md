@@ -1,5 +1,37 @@
 # Signal theme integration progress
 
+## Slice 126 — componentize Deployer environment settings — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated the environment settings dialog's runtime, branch, placement,
+  hibernation, post-deployment observation, and protection controls to shared
+  Signal input, select, checkbox, and button components.
+- Added layout-class support to shared input/select field wrappers and
+  validation descriptions/errors to the shared checkbox. Each repeated
+  environment dialog receives unique control IDs; array names and hidden
+  unchecked values keep their existing request contracts.
+- Retained the PATCH action, CSRF/method fields, environment context, old-input
+  behavior, and the existing feature-gated controls.
+
+Evidence and release:
+
+- Full Laravel suite: **1,975 passed**, **18,757 assertions**. Focused
+  Deployer/Core/Analytics UI tests: **80 passed**, **3,272 assertions**; the
+  mobile Playwright modal/focus journey passed. Pint and `git diff --check`
+  passed.
+- Commit `f8a0b86` was pushed to `origin/feature/unified-platform` and is live
+  at `/var/www/buildpusher-unified/releases/f8a0b86`. The previous `43a4b91`
+  release remains available for rollback. No database migrations or asset
+  build were needed; compiled views use this release's own cache directory.
+- Buildpusher's public overview, three product descriptions, and shared login
+  returned HTTP 200. Product roots returned their expected dashboard or auth
+  handoffs. PHP-FPM is active.
+
+Next task: componentize the deployment-controls dialog and continue the
+feature-specific Deployer form audit; full cross-product theme and accessibility
+acceptance remains open.
+
 ## Slice 125 — update Deployer's Signal navigation and fence connection deliveries — 2026-09-24
 
 Boundary and implementation:
