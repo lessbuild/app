@@ -9,6 +9,7 @@ use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
 use App\Core\Http\Controllers\WorkspaceSearchController;
 use App\Core\Http\Controllers\WorkspaceTeamController;
+use App\Core\Http\Controllers\WorkspaceWorkflowActivityController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [MarketingController::class, 'home'])->name('core.entry');
@@ -24,6 +25,9 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::get('/workspaces/{workspace}/overview', WorkspaceDashboardController::class)
         ->name('core.workspace.dashboard');
+
+    Route::get('/workspaces/{workspace}/workflows', WorkspaceWorkflowActivityController::class)
+        ->name('core.workspace.workflows');
 
     Route::post('/workspaces/{workspace}/dashboard/views', [WorkspaceDashboardPreferencesController::class, 'storeView'])
         ->name('core.workspace.views.store');

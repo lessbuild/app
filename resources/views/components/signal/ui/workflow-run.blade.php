@@ -5,6 +5,11 @@
         <div class="min-w-0">
             <p class="ui-eyebrow">{{ __('Workflow run') }}</p>
             <h3 class="mt-1 truncate text-base font-extrabold text-ink">{{ $run->title }}</h3>
+            @if ($run->projectUrl && $run->projectName)
+                <x-signal.ui.link :href="$run->projectUrl" size="inline" variant="muted" class="mt-1">
+                    {{ __('Project: :name', ['name' => $run->projectName]) }}
+                </x-signal.ui.link>
+            @endif
         </div>
         <time class="shrink-0 text-xs text-subtle" datetime="{{ $run->recordedAt->toIso8601String() }}">
             {{ __('Started :time', ['time' => $run->recordedAt->diffForHumans()]) }}

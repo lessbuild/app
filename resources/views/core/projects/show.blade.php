@@ -481,7 +481,12 @@
                                     <p class="ui-eyebrow">{{ __('Delivery progress') }}</p>
                                     <h3 id="project-workflow-runs-heading" class="mt-1 text-sm font-extrabold text-ink">{{ __('Recent workflow runs') }}</h3>
                                 </div>
-                                <p class="text-xs text-muted">{{ __('Source success stays recorded if a connected step needs attention.') }}</p>
+                                <div class="flex flex-wrap items-center gap-3">
+                                    <p class="text-xs text-muted">{{ __('Source success stays recorded if a connected step needs attention.') }}</p>
+                                    <x-signal.ui.link :href="route('core.workspace.workflows', $workspace)" size="sm">
+                                        {{ __('All workflow activity') }}
+                                    </x-signal.ui.link>
+                                </div>
                             </div>
                             <div class="grid gap-3">
                                 @foreach ($projectWorkflowRuns as $workflowRun)

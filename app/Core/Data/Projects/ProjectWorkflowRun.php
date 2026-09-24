@@ -12,5 +12,8 @@ final readonly class ProjectWorkflowRun
         public string $title,
         public CarbonImmutable $recordedAt,
         public array $steps,
+        public ?string $projectId = null,
+        public ?string $projectName = null,
+        public ?string $projectUrl = null,
     ) {}
 }

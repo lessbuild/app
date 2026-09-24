@@ -11,6 +11,7 @@ use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Models\Workspace;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Throwable;
 
@@ -28,19 +29,36 @@ final class ProjectWorkflowProgress
         Collection $connections,
         bool $canManageConnections,
     ): Collection {
+        return $this->forConnections($workspace, $connections, $canManageConnections, self::RECENT_RUNS, $project, false);
+    }
+
+    /**
+     * @param  Collection<int, ProjectConnection>  $connections  Connections whose endpoints were already authorized.
+     * @return Collection<int, ProjectWorkflowRun>
+     */
+    public function forConnections(
+        Workspace $workspace,
+        Collection $connections,
+        bool $canManageConnections,
+        int $limit = 30,
+        ?Project $contextProject = null,
+        bool $includeProjectLink = true,
+    ): Collection {
         $connectionIds = $connections->modelKeys();
 
         if ($connectionIds === []) {
             return collect();
         }
 
-        $recentEvents = ProjectConnectionDelivery::query()
-            ->whereIn('project_connection_id', $connectionIds)
-            ->select(['source_event_id', 'event_type'])
-            ->selectRaw('MAX(created_at) AS latest_created_at')
-            ->groupBy('source_event_id', 'event_type')
+        $limit = max(1, min(100, $limit));
+        $recentEvents = DB::connection('core')->table('project_connection_deliveries as deliveries')
+            ->join('project_connections as connections', 'connections.id', '=', 'deliveries.project_connection_id')
+            ->whereIn('deliveries.project_connection_id', $connectionIds)
+            ->select(['connections.project_id', 'deliveries.source_event_id', 'deliveries.event_type'])
+            ->selectRaw('MAX(deliveries.created_at) AS latest_created_at')
+            ->groupBy('connections.project_id', 'deliveries.source_event_id', 'deliveries.event_type')
             ->orderByDesc('latest_created_at')
-            ->limit(self::RECENT_RUNS)
+            ->limit($limit)
             ->get();
 
         if ($recentEvents->isEmpty()) {
@@ -49,22 +67,32 @@ final class ProjectWorkflowProgress
 
         $eventIds = $recentEvents->pluck('source_event_id')->unique()->values();
         $eventTypes = $recentEvents->pluck('event_type')->unique()->values();
-        $selectedKeys = $recentEvents->mapWithKeys(fn (ProjectConnectionDelivery $event): array => [
-            $this->eventKey((string) $event->event_type, (string) $event->source_event_id) => true,
+        $selectedKeys = $recentEvents->mapWithKeys(fn (object $event): array => [
+            $this->eventKey((string) $event->event_type, (string) $event->source_event_id, (string) $event->project_id) => true,
         ]);
         $connectionsById = $connections->keyBy(fn (ProjectConnection $connection): string => (string) $connection->getKey());
+        $connectionsById->loadMissing(['project', 'sourceResource', 'targetResource']);
         $deliveriesByEvent = ProjectConnectionDelivery::query()
             ->whereIn('project_connection_id', $connectionIds)
             ->whereIn('source_event_id', $eventIds)
             ->whereIn('event_type', $eventTypes)
             ->orderBy('created_at')
             ->get()
-            ->filter(fn (ProjectConnectionDelivery $delivery): bool => $selectedKeys->has($this->eventKey($delivery->event_type, $delivery->source_event_id)))
-            ->groupBy(fn (ProjectConnectionDelivery $delivery): string => $this->eventKey($delivery->event_type, $delivery->source_event_id));
+            ->filter(function (ProjectConnectionDelivery $delivery) use ($connectionsById, $selectedKeys): bool {
+                $connection = $connectionsById->get((string) $delivery->project_connection_id);
+
+                return $connection !== null
+                    && $selectedKeys->has($this->eventKey($delivery->event_type, $delivery->source_event_id, (string) $connection->project_id));
+            })
+            ->groupBy(function (ProjectConnectionDelivery $delivery) use ($connectionsById): string {
+                $connection = $connectionsById->get((string) $delivery->project_connection_id);
+
+                return $this->eventKey($delivery->event_type, $delivery->source_event_id, (string) $connection?->project_id);
+            });
 
         return $recentEvents
-            ->map(function (ProjectConnectionDelivery $event) use ($deliveriesByEvent, $connectionsById, $workspace, $project, $canManageConnections): ?ProjectWorkflowRun {
-                $eventKey = $this->eventKey((string) $event->event_type, (string) $event->source_event_id);
+            ->map(function (object $event) use ($deliveriesByEvent, $connectionsById, $workspace, $contextProject, $canManageConnections, $includeProjectLink): ?ProjectWorkflowRun {
+                $eventKey = $this->eventKey((string) $event->event_type, (string) $event->source_event_id, (string) $event->project_id);
                 $deliveries = $deliveriesByEvent->get($eventKey, collect());
                 $eligibleDeliveries = $deliveries->filter(fn (ProjectConnectionDelivery $delivery): bool => $connectionsById->has((string) $delivery->project_connection_id));
 
@@ -73,6 +101,8 @@ final class ProjectWorkflowProgress
                 }
 
                 $firstDelivery = $eligibleDeliveries->first();
+                $firstConnection = $connectionsById->get((string) $firstDelivery->project_connection_id);
+                $project = $contextProject ?? $firstConnection?->project;
                 $recordedAt = $this->sourceTimestamp($firstDelivery);
                 $sourceTitle = $this->sourceTitle($firstDelivery);
                 $steps = [new ProjectWorkflowStep(
@@ -90,10 +120,12 @@ final class ProjectWorkflowProgress
                 foreach ($eligibleDeliveries as $delivery) {
                     $connection = $connectionsById->get((string) $delivery->project_connection_id);
                     $target = $connection?->targetResource;
+                    $deliveryProject = $contextProject ?? $connection?->project;
                     $state = ProjectWorkflowStepState::tryFrom($delivery->status) ?? ProjectWorkflowStepState::Failed;
                     $isRetryable = in_array($delivery->status, ['failed', 'blocked'], true)
                         && $connection?->automation_paused_at === null
                         && $canManageConnections
+                        && $deliveryProject !== null
                         && Route::has('core.projects.connections.deliveries.retry');
 
                     $steps[] = new ProjectWorkflowStep(
@@ -108,7 +140,7 @@ final class ProjectWorkflowProgress
                         connectionId: (string) $delivery->project_connection_id,
                         deliveryId: (string) $delivery->getKey(),
                         retryUrl: $isRetryable
-                            ? route('core.projects.connections.deliveries.retry', [$workspace, $project, $connection, $delivery])
+                            ? route('core.projects.connections.deliveries.retry', [$workspace, $deliveryProject, $connection, $delivery])
                             : null,
                     );
                 }
@@ -118,15 +150,18 @@ final class ProjectWorkflowProgress
                     title: $sourceTitle,
                     recordedAt: $recordedAt,
                     steps: $steps,
+                    projectId: $project === null ? null : (string) $project->getKey(),
+                    projectName: $includeProjectLink ? $project?->name : null,
+                    projectUrl: ! $includeProjectLink || $project === null ? null : route('core.projects.show', [$workspace, $project]),
                 );
             })
             ->filter()
             ->values();
     }
 
-    private function eventKey(string $eventType, string $sourceEventId): string
+    private function eventKey(string $eventType, string $sourceEventId, string $projectId): string
     {
-        return $eventType.':'.$sourceEventId;
+        return $projectId.':'.$eventType.':'.$sourceEventId;
     }
 
     private function sourceProduct(string $eventType): string
