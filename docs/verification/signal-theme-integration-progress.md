@@ -1,5 +1,37 @@
 # Signal theme integration progress
 
+## Slice 130 — componentize Deployer server forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated server provider/type selectors, server name, provider image/region/
+  size catalog fields, and provisioning recipe choices to shared Signal select,
+  input, choice, and card components. The server display-name dialog now uses
+  Signal input, card, and button components.
+- Preserved provider-specific catalog URLs, asynchronously loaded options and
+  selected values, recipe IDs and selection order, old input, field prefixes,
+  validation associations, and existing request names. Provider catalog
+  loading and plan-limit handling remain unchanged.
+
+Evidence and release:
+
+- Focused creation-dialog, display-name, provider-catalog, and shared UI suites:
+  **97 passed**, **3,323 assertions**. A mobile Playwright check verified all
+  server creation fields, each recipe choice card, and the display-name dialog.
+  Pint, JavaScript syntax, and `git diff --check` passed.
+- Commit `13c205f` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/13c205f`; release `41bc412` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, three product pages, and shared login returned
+  HTTP 200. Deployer, Monitor, and Analytics roots retained their expected
+  redirects; PHP-FPM is active.
+
+Next task: continue componentizing the remaining Deployer feature forms and
+actions; provider import, provisioning, webhook, and callback regressions remain
+open.
+
 ## Slice 129 — componentize Deployer repository forms — 2026-09-24
 
 Boundary and implementation:
