@@ -4,6 +4,7 @@ namespace Tests;
 
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\TestCase as BaseTestCase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 
@@ -14,6 +15,10 @@ abstract class TestCase extends BaseTestCase
     protected function setUp(): void
     {
         parent::setUp();
+
+        // Symfony stores trusted host patterns statically across application instances.
+        // Clear that process state before the test client constructs its next request.
+        Request::setTrustedHosts([]);
 
         $this->withoutVite();
 

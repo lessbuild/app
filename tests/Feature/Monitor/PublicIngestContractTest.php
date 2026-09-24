@@ -48,8 +48,8 @@ final class PublicIngestContractTest extends TestCase
             'deployed_at' => '2026-09-21T12:00:00Z',
         ];
 
-        $this->postJson('https://monitor.example.test/api/v1/deployments', $payload)
-            ->assertUnauthorized();
+        $response = $this->postJson('https://monitor.example.test/api/v1/deployments', $payload);
+        $response->assertUnauthorized();
 
         $this->withToken('deployment-secret')
             ->postJson('https://monitor.example.test/api/v1/deployments', $payload)
