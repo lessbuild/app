@@ -10,6 +10,7 @@ use Illuminate\Encryption\Encrypter;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Tests\TestCase;
 
 final class DeployerIdentityImportTest extends TestCase
@@ -122,6 +123,83 @@ final class DeployerIdentityImportTest extends TestCase
             'status' => 'needs_review',
             'canonical_id' => null,
         ], 'core');
+    }
+
+    public function test_missing_social_identity_is_added_to_the_exact_already_mapped_core_user(): void
+    {
+        $coreUserId = $this->addMappedCoreUser('owner@example.test', '40');
+        $this->addDeployerUser(40, 'Legacy owner', 'owner@example.test', '$2y$legacy-hash', githubId: 'github-user-40');
+
+        $service = app(ImportAccountsIntoCore::class);
+        $preview = $service->run();
+
+        $this->assertSame(1, $preview['mapped_social_identities_seen']);
+        $this->assertSame(1, $preview['mapped_social_identities_ready']);
+        $this->assertSame(0, $preview['mapped_social_identities_imported']);
+        $this->assertDatabaseCount('user_identities', 0, 'core');
+
+        $firstRun = $service->run(apply: true);
+        $identity = DB::connection('core')->table('user_identities')->first();
+
+        $this->assertSame(1, $firstRun['mapped_social_identities_imported']);
+        $this->assertSame($coreUserId, $identity->user_id);
+        $this->assertDatabaseHas('legacy_identity_maps', [
+            'source_product' => 'deployer',
+            'source_entity' => 'social_identity',
+            'source_id' => 'github:github-user-40',
+            'canonical_entity' => 'user_identity',
+            'canonical_id' => $identity->id,
+            'status' => 'reconciled',
+        ], 'core');
+
+        $secondRun = $service->run(apply: true);
+
+        $this->assertSame(0, $secondRun['mapped_social_identities_imported']);
+        $this->assertSame(1, $secondRun['mapped_social_identities_present']);
+        $this->assertDatabaseCount('user_identities', 1, 'core');
+    }
+
+    public function test_social_identity_already_owned_by_another_core_user_is_held_without_changing_user_mapping(): void
+    {
+        $mappedCoreUserId = $this->addMappedCoreUser('owner@example.test', '41');
+        $otherCoreUserId = '01J8AA00000000000000000002';
+        DB::connection('core')->table('users')->insert([
+            'id' => $otherCoreUserId,
+            'name' => 'Other Core account',
+            'email' => 'other@example.test',
+            'email_normalized' => 'other@example.test',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('user_identities')->insert([
+            'id' => (string) Str::ulid(),
+            'user_id' => $otherCoreUserId,
+            'provider' => 'github',
+            'provider_user_id' => 'github-user-41',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->addDeployerUser(41, 'Legacy owner', 'owner@example.test', '$2y$legacy-hash', githubId: 'github-user-41');
+
+        $report = app(ImportAccountsIntoCore::class)->run(apply: true);
+
+        $this->assertSame(1, $report['mapped_social_identities_needs_review']);
+        $this->assertSame(1, $report['mapped_social_identity_review_records_created']);
+        $this->assertSame($mappedCoreUserId, DB::connection('core')->table('legacy_identity_maps')
+            ->where('source_product', 'deployer')->where('source_entity', 'user')->where('source_id', '41')
+            ->value('canonical_id'));
+        $this->assertDatabaseHas('legacy_identity_maps', [
+            'source_product' => 'deployer',
+            'source_entity' => 'social_identity',
+            'source_id' => 'github:github-user-41',
+            'canonical_id' => null,
+            'status' => 'needs_review',
+        ], 'core');
+        $this->assertSame($otherCoreUserId, DB::connection('core')->table('user_identities')
+            ->where('provider', 'github')->where('provider_user_id', 'github-user-41')->value('user_id'));
+        $this->assertDatabaseCount('user_identities', 1, 'core');
     }
 
     public function test_encrypted_deployer_two_factor_secret_is_reencrypted_with_the_core_key(): void
@@ -292,5 +370,33 @@ final class DeployerIdentityImportTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    private function addMappedCoreUser(string $email, string $sourceId): string
+    {
+        $coreUserId = '01J8AA00000000000000000001';
+        DB::connection('core')->table('users')->insert([
+            'id' => $coreUserId,
+            'name' => 'Existing Core account',
+            'email' => $email,
+            'email_normalized' => $email,
+            'email_verified_at' => now(),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'deployer',
+            'source_entity' => 'user',
+            'source_id' => $sourceId,
+            'canonical_entity' => 'user',
+            'canonical_id' => $coreUserId,
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $coreUserId;
     }
 }

@@ -23,7 +23,7 @@ final class ImportDeployerIdentities extends Command
         $report = $importer->run($apply);
 
         $this->table(
-            ['Measure', 'Accounts'],
+            ['Measure', 'Count'],
             [
                 ['Accounts seen', $report['accounts_seen']],
                 ['Ready for import', $report['ready']],
@@ -31,6 +31,12 @@ final class ImportDeployerIdentities extends Command
                 ['Needs manual review', $report['needs_review']],
                 ['Imported in this run', $report['imported']],
                 ['Review mappings created', $report['review_records_created']],
+                ['Already-mapped social identities', $report['mapped_social_identities_seen']],
+                ['Social identities ready for linking', $report['mapped_social_identities_ready']],
+                ['Social identities already linked', $report['mapped_social_identities_present']],
+                ['Social identities held for review', $report['mapped_social_identities_needs_review']],
+                ['Social identities linked in this run', $report['mapped_social_identities_imported']],
+                ['Social identity review mappings created', $report['mapped_social_identity_review_records_created']],
             ],
         );
 

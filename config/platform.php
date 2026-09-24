@@ -12,6 +12,7 @@ return [
     'dashboard_url' => env('PLATFORM_DASHBOARD_URL', filled(env('PLATFORM_DASHBOARD_HOST')) ? 'https://'.env('PLATFORM_DASHBOARD_HOST') : null),
     'auth_host' => env('PLATFORM_AUTH_HOST'),
     'auth_url' => env('PLATFORM_AUTH_URL', filled(env('PLATFORM_AUTH_HOST')) ? 'https://'.env('PLATFORM_AUTH_HOST') : null),
+    'migration_backup_directory' => env('PLATFORM_MIGRATION_BACKUP_DIRECTORY', storage_path('app/private/platform-migration-backups')),
 
     'billing' => [
         // These defaults intentionally exclude past-due and canceled plans.
