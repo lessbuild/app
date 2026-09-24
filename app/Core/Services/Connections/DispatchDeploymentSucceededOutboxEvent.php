@@ -13,11 +13,69 @@ final class DispatchDeploymentSucceededOutboxEvent
 {
     public function dispatch(DeploymentSucceededOutboxEvent $event): int
     {
+        $created = 0;
+
+        foreach ($this->deliveryCandidates($event) as [$connection, $targetPayload]) {
+            $delivery = ProjectConnectionDelivery::query()->firstOrCreate(
+                [
+                    'source_event_id' => $event->getKey(),
+                    'project_connection_id' => $connection->getKey(),
+                ],
+                [
+                    'event_type' => $event->event_type,
+                    'event_version' => $event->event_version,
+                    'payload' => [
+                        ...$event->payload,
+                        'source_project_id' => (string) $event->source_project_id,
+                        'source_environment_id' => (string) $event->source_environment_id,
+                        'source_build_id' => (string) $event->source_build_id,
+                        'canonical_project_id' => (string) $connection->sourceResource->project_id,
+                        'canonical_environment_id' => (string) $connection->sourceResource->environment_id,
+                        ...$targetPayload,
+                    ],
+                    'status' => 'pending',
+                    'attempts' => 0,
+                    'available_at' => now(),
+                ],
+            );
+
+            if ($delivery->wasRecentlyCreated) {
+                $created++;
+            }
+        }
+
+        return $created;
+    }
+
+    /** Count eligible connection deliveries which have not yet been recorded. */
+    public function missingDeliveryCount(DeploymentSucceededOutboxEvent $event): int
+    {
+        $candidates = $this->deliveryCandidates($event);
+
+        if ($candidates === []) {
+            return 0;
+        }
+
+        $connectionIds = collect($candidates)->map(fn (array $candidate): string => (string) $candidate[0]->getKey());
+        $existingConnectionIds = ProjectConnectionDelivery::query()
+            ->where('source_event_id', $event->getKey())
+            ->whereIn('project_connection_id', $connectionIds)
+            ->pluck('project_connection_id')
+            ->map(static fn ($id): string => (string) $id)
+            ->all();
+
+        return $connectionIds->diff($existingConnectionIds)->count();
+    }
+
+    /** @return list<array{0: ProjectConnection, 1: array{target_environment_id: string}|array{target_site_id: string}}> */
+    private function deliveryCandidates(DeploymentSucceededOutboxEvent $event): array
+    {
+        $payload = $event->payload;
+
         if ($event->event_type !== DeploymentSucceededOutboxEvent::EVENT_TYPE || $event->event_version !== 1) {
             throw new RuntimeException('The Deployer event type or version is unsupported.');
         }
 
-        $payload = $event->payload;
         if (! is_array($payload)
             || ! is_string($payload['deployment_id'] ?? null)
             || ! is_string($payload['version'] ?? null)
@@ -33,7 +91,7 @@ final class DispatchDeploymentSucceededOutboxEvent
             ->first();
 
         if ($sourceEnvironment === null || $sourceEnvironment->environment_id === null) {
-            return 0;
+            return [];
         }
 
         $sourceProject = ProjectResource::query()
@@ -44,7 +102,7 @@ final class DispatchDeploymentSucceededOutboxEvent
             ->first();
 
         if ($sourceProject === null) {
-            return 0;
+            return [];
         }
 
         if ($sourceProject->project_id !== $sourceEnvironment->project_id) {
@@ -53,11 +111,12 @@ final class DispatchDeploymentSucceededOutboxEvent
 
         $connections = ProjectConnection::query()
             ->where('project_id', $sourceEnvironment->project_id)
+            ->where('created_at', '<=', $event->created_at)
             ->whereIn('status', ['pending', 'active', 'failed'])
             ->whereNull('disconnected_at')
             ->with(['sourceResource', 'targetResource'])
             ->get();
-        $created = 0;
+        $candidates = [];
 
         foreach ($connections as $connection) {
             $source = $connection->sourceResource;
@@ -87,38 +146,11 @@ final class DispatchDeploymentSucceededOutboxEvent
                 $targetPayload = ['target_site_id' => (string) $target->resource_id];
             }
 
-            if ($targetPayload === null) {
-                continue;
-            }
-
-            $delivery = ProjectConnectionDelivery::query()->firstOrCreate(
-                [
-                    'source_event_id' => $event->getKey(),
-                    'project_connection_id' => $connection->getKey(),
-                ],
-                [
-                    'event_type' => $event->event_type,
-                    'event_version' => $event->event_version,
-                    'payload' => [
-                        ...$payload,
-                        'source_project_id' => (string) $event->source_project_id,
-                        'source_environment_id' => (string) $event->source_environment_id,
-                        'source_build_id' => (string) $event->source_build_id,
-                        'canonical_project_id' => (string) $sourceEnvironment->project_id,
-                        'canonical_environment_id' => (string) $sourceEnvironment->environment_id,
-                        ...$targetPayload,
-                    ],
-                    'status' => 'pending',
-                    'attempts' => 0,
-                    'available_at' => now(),
-                ],
-            );
-
-            if ($delivery->wasRecentlyCreated) {
-                $created++;
+            if ($targetPayload !== null) {
+                $candidates[] = [$connection, $targetPayload];
             }
         }
 
-        return $created;
+        return $candidates;
     }
 }

@@ -143,6 +143,53 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $this->assertSame(1, ProjectConnectionEventReceipt::query()->count());
     }
 
+    public function test_delivery_reconciliation_previews_then_repairs_only_a_missing_record_idempotently(): void
+    {
+        $event = $this->outboxEvent();
+        $dispatcher = app(DispatchDeploymentSucceededOutboxEvent::class);
+        $this->assertSame(1, $dispatcher->dispatch($event));
+        ProjectConnectionDelivery::query()->sole()->delete();
+        $event->forceFill(['status' => 'dispatched'])->save();
+        $this->assertSame('dispatched', $event->fresh()->status);
+        $this->assertSame(1, DeploymentSucceededOutboxEvent::query()
+            ->whereKey($event->getKey())
+            ->whereIn('status', ['dispatched', 'failed'])
+            ->count());
+
+        $arguments = ['--source' => 'deployer', '--event-id' => (string) $event->getKey()];
+        $this->artisan('project-connections:reconcile', $arguments)
+            ->expectsOutputToContain('1 missing')
+            ->assertExitCode(0);
+        $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+
+        $this->artisan('project-connections:reconcile', [...$arguments, '--apply' => true])
+            ->expectsOutputToContain('1 created')
+            ->assertExitCode(0);
+        $delivery = ProjectConnectionDelivery::query()->sole();
+        $this->assertSame('pending', $delivery->status);
+
+        $this->artisan('project-connections:reconcile', [...$arguments, '--apply' => true])
+            ->expectsOutputToContain('0 created')
+            ->assertExitCode(0);
+        $this->assertSame(1, ProjectConnectionDelivery::query()->count());
+    }
+
+    public function test_deployer_reconciliation_does_not_backfill_a_connection_created_after_the_event(): void
+    {
+        $event = $this->outboxEvent();
+        ProjectConnection::query()->whereKey($this->connectionId)->update([
+            'created_at' => $event->created_at->copy()->addSecond(),
+        ]);
+        $event->forceFill(['status' => 'dispatched'])->save();
+
+        $this->assertSame(0, app(DispatchDeploymentSucceededOutboxEvent::class)->missingDeliveryCount($event));
+        $this->artisan('project-connections:reconcile', [
+            '--source' => 'deployer',
+            '--event-id' => (string) $event->getKey(),
+        ])->expectsOutputToContain('0 missing')->assertExitCode(0);
+        $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+    }
+
     public function test_slow_delivery_worker_cannot_overwrite_a_recovered_claim(): void
     {
         $delivery = $this->makeDelivery();
@@ -389,6 +436,109 @@ final class ProjectConnectionDeliveryTest extends TestCase
 
         $this->assertSame($annotation->getKey(), $replayed->getKey());
         $this->assertSame(3, SiteIncidentAnnotation::query()->count());
+    }
+
+    public function test_monitor_incident_reconciliation_does_not_backfill_a_connection_created_after_the_event(): void
+    {
+        $event = ProjectConnectionIncidentOutboxEvent::query()->create([
+            'event_type' => ProjectConnectionIncidentOutboxEvent::OPENED,
+            'event_version' => 1,
+            'source_incident_id' => '44',
+            'source_environment_id' => (string) $this->monitorEnvironmentId,
+            'payload' => [
+                'incident_id' => '44',
+                'status' => 'open',
+                'occurred_at' => now()->utc()->toIso8601String(),
+            ],
+            'status' => 'dispatched',
+            'attempts' => 1,
+            'available_at' => null,
+        ]);
+        $connectionId = (string) Str::ulid();
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => $connectionId,
+            'project_id' => $this->projectId,
+            'source_resource_id' => $this->targetResourceId,
+            'target_resource_id' => $this->analyticsResourceId,
+            'source_environment_id' => $this->targetEnvironmentId,
+            'target_environment_id' => null,
+            'capabilities' => json_encode(['incident_annotations'], JSON_THROW_ON_ERROR),
+            'status' => 'active',
+            'created_by_user_id' => null,
+            'last_succeeded_at' => null,
+            'last_error_code' => null,
+            'last_error_at' => null,
+            'disconnected_at' => null,
+            'automation_paused_at' => null,
+            'metadata' => null,
+            'created_at' => $event->created_at->copy()->addSecond(),
+            'updated_at' => now(),
+        ]);
+
+        $this->assertSame(0, app(DispatchMonitorIncidentOutboxEvent::class)->missingDeliveryCount($event));
+        $this->artisan('project-connections:reconcile', [
+            '--source' => 'monitor',
+            '--event-id' => (string) $event->getKey(),
+        ])->expectsOutputToContain('0 missing')->assertExitCode(0);
+        $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+    }
+
+    public function test_monitor_reconciliation_previews_then_repairs_a_missing_record_idempotently(): void
+    {
+        $connectionId = (string) Str::ulid();
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => $connectionId,
+            'project_id' => $this->projectId,
+            'source_resource_id' => $this->targetResourceId,
+            'target_resource_id' => $this->analyticsResourceId,
+            'source_environment_id' => $this->targetEnvironmentId,
+            'target_environment_id' => null,
+            'capabilities' => json_encode(['incident_annotations'], JSON_THROW_ON_ERROR),
+            'status' => 'active',
+            'created_by_user_id' => null,
+            'last_succeeded_at' => null,
+            'last_error_code' => null,
+            'last_error_at' => null,
+            'disconnected_at' => null,
+            'automation_paused_at' => null,
+            'metadata' => null,
+            'created_at' => now()->subSecond(),
+            'updated_at' => now(),
+        ]);
+        $event = ProjectConnectionIncidentOutboxEvent::query()->create([
+            'event_type' => ProjectConnectionIncidentOutboxEvent::OPENED,
+            'event_version' => 1,
+            'source_incident_id' => '44',
+            'source_environment_id' => (string) $this->monitorEnvironmentId,
+            'payload' => [
+                'incident_id' => '44',
+                'status' => 'open',
+                'occurred_at' => now()->utc()->toIso8601String(),
+            ],
+            'status' => 'dispatched',
+            'attempts' => 1,
+            'available_at' => null,
+        ]);
+        $dispatcher = app(DispatchMonitorIncidentOutboxEvent::class);
+        $this->assertSame(1, $dispatcher->dispatch($event));
+        ProjectConnectionDelivery::query()->sole()->delete();
+
+        $arguments = ['--source' => 'monitor', '--event-id' => (string) $event->getKey()];
+        $this->artisan('project-connections:reconcile', $arguments)
+            ->expectsOutputToContain('1 missing')
+            ->assertExitCode(0);
+        $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+
+        $this->artisan('project-connections:reconcile', [...$arguments, '--apply' => true])
+            ->expectsOutputToContain('1 created')
+            ->assertExitCode(0);
+        $delivery = ProjectConnectionDelivery::query()->sole();
+        $this->assertSame('pending', $delivery->status);
+
+        $this->artisan('project-connections:reconcile', [...$arguments, '--apply' => true])
+            ->expectsOutputToContain('0 created')
+            ->assertExitCode(0);
+        $this->assertSame(1, ProjectConnectionDelivery::query()->count());
     }
 
     public function test_monitor_incident_outbox_records_once_inside_the_source_transaction(): void
