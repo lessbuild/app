@@ -28,25 +28,33 @@ final class WorkspaceUsage
         return $this->eventLimitState($workspace)['limit'];
     }
 
-    /** @return array{available: bool, limit: int} */
+    /** @return array{available: bool, limit: int, finite: bool} */
     private function eventLimitState(Workspace $workspace): array
     {
         if ($this->authority->usesCore()) {
             $plan = $this->resolvedPlan($workspace);
 
             if (! $plan->available || ! $plan->hasLimit('events_per_month')) {
-                return ['available' => false, 'limit' => 0];
+                return ['available' => false, 'limit' => 0, 'finite' => false];
             }
+
+            $limit = $plan->limit('events_per_month');
 
             return [
                 'available' => true,
-                'limit' => $plan->limit('events_per_month') ?? PHP_INT_MAX,
+                'limit' => $limit ?? PHP_INT_MAX,
+                'finite' => $limit !== null,
             ];
         }
 
         $plan = config('monitor.beacon.plans.'.$workspace->plan, config('monitor.beacon.plans.free'));
+        $configuredLimit = is_array($plan) ? ($plan['event_limit'] ?? null) : null;
 
-        return ['available' => true, 'limit' => max(0, (int) ($plan['event_limit'] ?? 0))];
+        return [
+            'available' => true,
+            'limit' => max(0, (int) ($configuredLimit ?? 0)),
+            'finite' => is_int($configuredLimit) || (is_string($configuredLimit) && ctype_digit($configuredLimit)),
+        ];
     }
 
     public function remainingEvents(Workspace $workspace): int
@@ -64,6 +72,7 @@ final class WorkspaceUsage
      *     percentage: int,
      *     state: 'healthy'|'warning'|'limit'|'unavailable',
      *     plan_available: bool,
+     *     event_limit_is_finite: bool,
      *     crossed_thresholds: list<int>
      * }
      */
@@ -77,7 +86,7 @@ final class WorkspaceUsage
         $planAvailable = $limitState['available'];
         $percentage = $eventLimit > 0 ? min(100, (int) round(($eventCount / $eventLimit) * 100)) : 0;
         $crossedThresholds = $eventLimit > 0
-            ? array_values(array_filter($this->alertThresholds(), fn (int $threshold): bool => $eventCount >= (int) ceil($eventLimit * $threshold / 100)))
+            ? array_values(array_filter($this->alertThresholds(), fn (int $threshold): bool => $eventCount >= $this->thresholdEventCount($eventLimit, $threshold)))
             : [];
         $state = ! $planAvailable
             ? 'unavailable'
@@ -94,6 +103,7 @@ final class WorkspaceUsage
             'percentage' => $percentage,
             'state' => $state,
             'plan_available' => $planAvailable,
+            'event_limit_is_finite' => $limitState['finite'],
             'crossed_thresholds' => $crossedThresholds,
         ];
     }
@@ -113,6 +123,14 @@ final class WorkspaceUsage
         sort($thresholds);
 
         return $thresholds === [] ? [self::WARNING_THRESHOLD, self::LIMIT_THRESHOLD] : $thresholds;
+    }
+
+    private function thresholdEventCount(int $eventLimit, int $threshold): int
+    {
+        $hundreds = intdiv($eventLimit, 100);
+        $remainder = $eventLimit % 100;
+
+        return ($hundreds * $threshold) + intdiv(($remainder * $threshold) + 99, 100);
     }
 
     public function canAccept(Workspace $workspace, int $eventCount, CarbonImmutable $receivedAt): bool

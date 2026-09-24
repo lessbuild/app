@@ -95,6 +95,7 @@ final class MonitorProjectLink implements ProjectProductLink
             ->whereKey($currentMapping->resource_id)
             ->where('status', 'active')
             ->whereHas('application.workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds))
+            ->with('application.workspace')
             ->first(['id', 'application_id', 'last_seen_at']);
     }
 }

@@ -1,5 +1,19 @@
 # Signal theme integration progress
 
+## Slice 144 — verify latest Signal sources and production theme drift — 2026-09-24
+
+Boundary and findings:
+
+- Fetched `lessbuild/template` `main` at `91d712626f3f50bddb54c16147e579ee4e5addaf` and compared it with the integrated `2235760c85e4251d52b4b81923cd68ffee799b37` source. Upstream has no intervening theme, component, component-catalog, or Topbar SaaS changes; its latest work is the template release-notes page and admin/browser tooling.
+- The current Deployer layout resolves through the shared Signal document and Topbar SaaS shell. Its product screens use the shared Signal controls and page headers. The branch includes the Signal-scoped storage migration from slice 143, which resets stale palette/token overrides while preserving the existing light/dark preference.
+- A live unauthenticated request to `deployer.buildpusher.com` handed off to Auth, whose current HTML still declares `data-storage-namespace="buildpusher"`. The branch declares `buildpusher-signal`; the deployed browser runtime therefore predates the stale-override fix and can continue displaying old saved theme choices. This is a release drift, not a missing Deployer view conversion.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/Core/ProjectProductLinksTest.php tests/Feature/Core/ProjectConnectionDiagnosticsTest.php tests/Feature/Core/DeployerConnectionDiagnosticTest.php tests/Feature/Monitor/CorePlanAuthorityTest.php`: **35 tests, 186 assertions passed**.
+- `vendor/bin/pint --test` on the touched Monitor files and tests, `git diff --check`, and `npm run test:signal-theme`: passed; the browser test confirmed the Signal theme behavior across Core, Deployer, Monitor, Analytics, public, and auth contexts.
+- Production release remains pending because this checkout has no private SSH deployment key. The unauthenticated host check cannot verify an authenticated Deployer dashboard visually.
+
 ## Slice 143 — reset stale browser overrides to the current Signal theme — 2026-09-24
 
 Boundary and implementation:

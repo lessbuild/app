@@ -10,6 +10,7 @@ use App\Core\Models\ProjectResource;
 use App\Modules\Monitor\Data\Telemetry\AlertMetric;
 use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Services\AlertObservation;
+use App\Modules\Monitor\Services\WorkspaceUsage;
 use Carbon\CarbonImmutable;
 
 final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnectionDiagnosticProvider
@@ -17,6 +18,7 @@ final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnect
     public function __construct(
         private readonly MonitorProjectLink $access,
         private readonly AlertObservation $observations,
+        private readonly WorkspaceUsage $usage,
     ) {}
 
     public function diagnose(
@@ -33,6 +35,18 @@ final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnect
             return null;
         }
 
+        $now = CarbonImmutable::now('UTC');
+        $workspace = $environment->application?->workspace;
+
+        if ($workspace !== null) {
+            $usage = $this->usage->summary($workspace, $now);
+            $quotaDiagnostic = $this->quotaDiagnostic($usage);
+
+            if ($quotaDiagnostic !== null) {
+                return $quotaDiagnostic;
+            }
+        }
+
         if ($environment->last_seen_at === null) {
             return new ProjectConnectionDiagnostic(
                 tone: 'warning',
@@ -45,7 +59,6 @@ final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnect
             );
         }
 
-        $now = CarbonImmutable::now('UTC');
         $freshnessRules = AlertRule::query()
             ->where('environment_id', $environment->getKey())
             ->where('metric', AlertMetric::TelemetryFreshness->value)
@@ -88,6 +101,40 @@ final class MonitorProjectConnectionDiagnosticProvider implements ProjectConnect
             lastObservedAt: $environment->last_seen_at,
             lastObservedLabel: __('Latest telemetry'),
             priority: 100,
+        );
+    }
+
+    /** @param array{event_count: int, event_limit: int, percentage: int, state: string, plan_available: bool, event_limit_is_finite: bool, period_start: CarbonImmutable} $usage */
+    private function quotaDiagnostic(array $usage): ?ProjectConnectionDiagnostic
+    {
+        if (! $usage['plan_available']
+            || ! $usage['event_limit_is_finite']
+            || ! in_array($usage['state'], ['warning', 'limit'], true)) {
+            return null;
+        }
+
+        $limitReached = $usage['state'] === 'limit';
+        $period = $usage['period_start']->translatedFormat('F Y');
+        $detail = __('Workspace Monitor usage for :period is :used of :limit events (:percentage%). This allowance is shared by the workspace’s Monitor applications.', [
+            'period' => $period,
+            'used' => number_format($usage['event_count']),
+            'limit' => number_format($usage['event_limit']),
+            'percentage' => $usage['percentage'],
+        ]);
+
+        return new ProjectConnectionDiagnostic(
+            tone: $limitReached ? 'danger' : 'warning',
+            status: $limitReached ? __('Usage limit reached') : __('Approaching usage limit'),
+            summary: $limitReached
+                ? __('This workspace reached its Monitor event allowance for the month.')
+                : __('This workspace is nearing its Monitor event allowance for the month.'),
+            detail: $detail,
+            nextStep: $limitReached
+                ? __('Review the Monitor plan or reduce telemetry volume across this workspace. The allowance resets at the start of the next UTC month.')
+                : __('Review the Monitor plan or reduce telemetry volume across this workspace before the allowance is reached.'),
+            lastAttemptAt: null,
+            lastSucceededAt: null,
+            priority: $limitReached ? 16 : 18,
         );
     }
 }

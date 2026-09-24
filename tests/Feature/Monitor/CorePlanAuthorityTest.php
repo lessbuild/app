@@ -27,6 +27,7 @@ final class CorePlanAuthorityTest extends TestCase
     protected function tearDown(): void
     {
         Schema::connection('monitor')->dropIfExists('applications');
+        Schema::connection('monitor')->dropIfExists('telemetry_usage_entries');
         Schema::connection('monitor')->dropIfExists('workspaces');
         Schema::connection('core')->dropIfExists('current_product_subscriptions');
         Schema::connection('core')->dropIfExists('product_subscriptions');
@@ -47,6 +48,7 @@ final class CorePlanAuthorityTest extends TestCase
         $this->assertTrue($capacity['at_limit']);
         $this->assertFalse(app(WorkspacePlanLimits::class)->issueDigestEnabled($workspace));
         $this->assertSame(0, app(WorkspaceUsage::class)->eventLimit($workspace));
+        $this->assertFalse(app(WorkspaceUsage::class)->summary($workspace)['event_limit_is_finite']);
 
         try {
             app(WorkspacePlanLimits::class)->assertApplicationCapacity($workspace);
@@ -95,6 +97,7 @@ final class CorePlanAuthorityTest extends TestCase
         $this->assertSame(60, $limits->deploymentContextMinutes($workspace));
         $this->assertSame(30, $limits->retentionDays($workspace));
         $this->assertSame(10_000_000, app(WorkspaceUsage::class)->eventLimit($workspace));
+        $this->assertTrue(app(WorkspaceUsage::class)->summary($workspace)['event_limit_is_finite']);
 
         try {
             $limits->assertApplicationCapacity($workspace);
@@ -102,6 +105,24 @@ final class CorePlanAuthorityTest extends TestCase
         } catch (ValidationException $exception) {
             $this->assertStringContainsString('Imported Pro plan allows 1 application', $exception->errors()['plan'][0]);
         }
+    }
+
+    public function test_explicitly_unlimited_monitor_event_allowance_is_not_finite(): void
+    {
+        $workspaceId = $this->addMonitorWorkspace();
+        $workspace = Workspace::query()->findOrFail($workspaceId);
+        $this->addCurrentMonitorPlan($workspaceId, (string) Str::ulid(), [
+            'name' => 'Unlimited Monitor',
+            'entitlements' => ['*'],
+            'limits' => ['events_per_month' => null],
+        ]);
+
+        $summary = app(WorkspaceUsage::class)->summary($workspace);
+
+        $this->assertTrue($summary['plan_available']);
+        $this->assertFalse($summary['event_limit_is_finite']);
+        $this->assertSame(PHP_INT_MAX, $summary['event_limit']);
+        $this->assertSame('healthy', $summary['state']);
     }
 
     private function createCoreTables(): void
@@ -147,6 +168,16 @@ final class CorePlanAuthorityTest extends TestCase
             $table->unsignedBigInteger('workspace_id');
             $table->string('name');
             $table->softDeletes();
+        });
+        Schema::connection('monitor')->create('telemetry_usage_entries', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('workspace_id');
+            $table->unsignedBigInteger('environment_id')->nullable();
+            $table->char('ingest_receipt_id', 26)->nullable();
+            $table->string('source', 32);
+            $table->unsignedInteger('event_count');
+            $table->timestamp('received_at', 6);
+            $table->timestamps(6);
         });
     }
 

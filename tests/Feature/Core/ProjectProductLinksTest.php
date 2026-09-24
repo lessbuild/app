@@ -40,6 +40,7 @@ use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\CurrentWorkspace as MonitorCurrentWorkspace;
+use App\Modules\Monitor\Services\WorkspaceUsage;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -70,7 +71,7 @@ final class ProjectProductLinksTest extends TestCase
             Schema::connection('analytics')->dropIfExists($table);
         }
 
-        foreach (['telemetry_events', 'monitor_checks', 'incidents', 'alert_rules', 'monitors', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
+        foreach (['telemetry_usage_entries', 'telemetry_events', 'monitor_checks', 'incidents', 'alert_rules', 'monitors', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
 
@@ -588,29 +589,7 @@ final class ProjectProductLinksTest extends TestCase
 
     public function test_connection_diagnostic_reports_missing_monitor_telemetry_without_leaking_inaccessible_data(): void
     {
-        $this->addIdentity('monitor', '17');
-        $this->addProjectResource('monitor', 'application', '31');
-        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
-        DB::connection('monitor')->table('environments')->insert([
-            'id' => 41,
-            'application_id' => 31,
-            'name' => 'Production',
-            'slug' => 'production',
-            'status' => 'active',
-            'last_seen_at' => null,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::connection('core')->table('project_resources')->insert([
-            'id' => '01J8AA00000000000000000012',
-            'project_id' => self::PROJECT_ID,
-            'product' => 'monitor',
-            'resource_type' => 'environment',
-            'resource_id' => '41',
-            'status' => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->addAuthorizedMonitorEnvironment(lastSeenAt: null);
 
         $connection = $this->monitorDiagnosticConnection();
         $diagnostic = $this->monitorConnectionDiagnostics()->forConnection($connection, $this->platformUser());
@@ -627,29 +606,7 @@ final class ProjectProductLinksTest extends TestCase
 
     public function test_connection_diagnostic_uses_monitor_freshness_rules_without_triggering_alerts(): void
     {
-        $this->addIdentity('monitor', '17');
-        $this->addProjectResource('monitor', 'application', '31');
-        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
-        DB::connection('monitor')->table('environments')->insert([
-            'id' => 41,
-            'application_id' => 31,
-            'name' => 'Production',
-            'slug' => 'production',
-            'status' => 'active',
-            'last_seen_at' => now()->subMinutes(10),
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-        DB::connection('core')->table('project_resources')->insert([
-            'id' => '01J8AA00000000000000000012',
-            'project_id' => self::PROJECT_ID,
-            'product' => 'monitor',
-            'resource_type' => 'environment',
-            'resource_id' => '41',
-            'status' => 'active',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
+        $this->addAuthorizedMonitorEnvironment(lastSeenAt: now()->subMinutes(10));
         DB::connection('monitor')->table('alert_rules')->insert([
             'id' => 61,
             'environment_id' => 41,
@@ -681,6 +638,67 @@ final class ProjectProductLinksTest extends TestCase
         $this->assertStringContainsString('300 second freshness window', $diagnostic->detail);
         $this->assertNotNull($diagnostic->lastObservedAt);
         $this->assertSame(0, DB::connection('monitor')->table('incidents')->count());
+    }
+
+    public function test_connection_diagnostic_reports_an_exhausted_finite_monitor_workspace_allowance(): void
+    {
+        config(['monitor.beacon.plans.free.event_limit' => 100]);
+        $this->addAuthorizedMonitorEnvironment(lastSeenAt: null);
+        $this->addMonitorUsage(50, 100);
+
+        $diagnostic = $this->monitorConnectionDiagnostics()->forConnection(
+            $this->monitorDiagnosticConnection(),
+            $this->platformUser(),
+        );
+
+        $this->assertSame('Usage limit reached', $diagnostic->status);
+        $this->assertSame('danger', $diagnostic->tone);
+        $this->assertStringContainsString('100 of 100 events', $diagnostic->detail);
+        $this->assertStringContainsString('shared by the workspace', $diagnostic->detail);
+        $this->assertStringContainsString('next UTC month', $diagnostic->nextStep);
+
+        DB::connection('monitor')->table('user_workspace')->delete();
+        $inaccessible = $this->monitorConnectionDiagnostics()->forConnection(
+            $this->monitorDiagnosticConnection(),
+            $this->platformUser(),
+        );
+
+        $this->assertSame('Ready', $inaccessible->status);
+        $this->assertStringNotContainsString('100 of 100', $inaccessible->detail);
+    }
+
+    public function test_connection_diagnostic_warns_before_a_finite_monitor_allowance_is_exhausted(): void
+    {
+        config(['monitor.beacon.plans.free.event_limit' => 100]);
+        $this->addAuthorizedMonitorEnvironment(lastSeenAt: now());
+        $this->addMonitorUsage(50, 80);
+
+        $diagnostic = $this->monitorConnectionDiagnostics()->forConnection(
+            $this->monitorDiagnosticConnection(),
+            $this->platformUser(),
+        );
+
+        $this->assertSame('Approaching usage limit', $diagnostic->status);
+        $this->assertSame('warning', $diagnostic->tone);
+        $this->assertStringContainsString('80 of 100 events (80%)', $diagnostic->detail);
+        $this->assertSame(18, $diagnostic->priority);
+    }
+
+    public function test_connection_diagnostic_does_not_infer_a_limit_from_missing_plan_configuration(): void
+    {
+        $freePlan = config('monitor.beacon.plans.free');
+        unset($freePlan['event_limit']);
+        config(['monitor.beacon.plans.free' => $freePlan]);
+        $this->addAuthorizedMonitorEnvironment(lastSeenAt: null);
+        $this->addMonitorUsage(50, 100);
+
+        $diagnostic = $this->monitorConnectionDiagnostics()->forConnection(
+            $this->monitorDiagnosticConnection(),
+            $this->platformUser(),
+        );
+
+        $this->assertSame('No telemetry', $diagnostic->status);
+        $this->assertStringNotContainsString('100 events', $diagnostic->detail);
     }
 
     public function test_monitor_setup_progress_comes_from_authorized_application_data(): void
@@ -1146,6 +1164,16 @@ final class ProjectProductLinksTest extends TestCase
             $table->timestamp('deleted_at')->nullable();
             $table->timestamps();
         });
+        Schema::connection('monitor')->create('telemetry_usage_entries', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('workspace_id');
+            $table->unsignedBigInteger('environment_id')->nullable();
+            $table->char('ingest_receipt_id', 26)->nullable();
+            $table->string('source', 32);
+            $table->unsignedInteger('event_count');
+            $table->timestamp('received_at', 6);
+            $table->timestamps(6);
+        });
         Schema::connection('monitor')->create('incidents', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('alert_rule_id')->nullable();
@@ -1208,6 +1236,33 @@ final class ProjectProductLinksTest extends TestCase
         });
     }
 
+    private function addAuthorizedMonitorEnvironment(?\DateTimeInterface $lastSeenAt): void
+    {
+        $this->addIdentity('monitor', '17');
+        $this->addProjectResource('monitor', 'application', '31');
+        $this->addMonitorWorkspaceAndApplication(memberId: 17, workspaceId: 50, applicationId: 31);
+        DB::connection('monitor')->table('environments')->insert([
+            'id' => 41,
+            'application_id' => 31,
+            'name' => 'Production',
+            'slug' => 'production',
+            'status' => 'active',
+            'last_seen_at' => $lastSeenAt,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_resources')->insert([
+            'id' => '01J8AA00000000000000000012',
+            'project_id' => self::PROJECT_ID,
+            'product' => 'monitor',
+            'resource_type' => 'environment',
+            'resource_id' => '41',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
     private function monitorDiagnosticConnection(): ProjectConnection
     {
         $connection = (new ProjectConnection)->forceFill([
@@ -1227,6 +1282,7 @@ final class ProjectProductLinksTest extends TestCase
         $providers->register('monitor', new MonitorProjectConnectionDiagnosticProvider(
             app(MonitorProjectLink::class),
             app(AlertObservation::class),
+            app(WorkspaceUsage::class),
         ));
 
         return new ProjectConnectionDiagnostics($providers);
@@ -1312,6 +1368,21 @@ final class ProjectProductLinksTest extends TestCase
             'framework' => 'Laravel',
             'created_at' => now(),
             'updated_at' => now(),
+        ]);
+    }
+
+    private function addMonitorUsage(int $workspaceId, int $eventCount): void
+    {
+        $receivedAt = now('UTC');
+
+        DB::connection('monitor')->table('telemetry_usage_entries')->insert([
+            'workspace_id' => $workspaceId,
+            'environment_id' => null,
+            'source' => 'sdk',
+            'event_count' => $eventCount,
+            'received_at' => $receivedAt,
+            'created_at' => $receivedAt,
+            'updated_at' => $receivedAt,
         ]);
     }
 
