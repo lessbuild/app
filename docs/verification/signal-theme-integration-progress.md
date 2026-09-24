@@ -1,5 +1,21 @@
 # Signal theme integration progress
 
+## Slice 142 — refresh Deployer with the latest Signal composition — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `e4a59ef9ad8913efc4b4383efebf893d5e3caa82`; its theme and component files match the preceding integration source. Updated the shared component stylesheet with Signal's current comparison-chart, command-palette, and Topbar SaaS navigation treatments, keeping Buildpusher's input-validation and code-block adaptations. Removed stale responsive popover rules that no longer belong to the current Signal implementation.
+- Applied Signal's current topbar link treatment to the cross-product navigation used by Deployer, Monitor, Analytics, and Core. Reworked the shared command palette to use Signal's current command list, section, row, item, and metadata composition; Deployer's server-backed search results and keyboard behavior remain intact.
+- Updated the Signal source record and regression coverage. The latest grouped activity inbox remains a reference pattern only; product activity continues to use authorized module data.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/LocalUiAssetTest.php`: **78 tests, 3,222 assertions passed**.
+- `npm run test:signal-theme`: production build and **1 browser test passed** across product, public, and auth contexts. `npx playwright test tests/Browser/signal-workspace-search.spec.js tests/Browser/asset-layout.spec.js -g "Signal workspace search renders|dashboard workspace search opens"`: **2 browser tests passed**, covering Deployer's live command palette and cross-product search.
+- Blade view cache, JavaScript syntax, and `git diff --check` passed.
+
+Next task: continue the plan's full product-parity and production visual/accessibility acceptance against the original application inventories.
+
 ## Slice 141 — adopt the latest Signal record-detail interactions in Deployer — 2026-09-24
 
 Boundary and implementation:

@@ -58,47 +58,67 @@
         @if ($searchActionUrl)
             </form>
         @endif
-        <nav data-signal-command-results class="mt-4 grid max-h-[min(28rem,55vh)] gap-1 overflow-y-auto" aria-label="Quick actions">
+        <nav data-signal-command-results class="ui-command-list mt-4 max-h-[min(28rem,55vh)] overflow-y-auto" aria-label="Quick actions">
             @if ($extraItems->isNotEmpty())
-                <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Quick actions') }}</p>
-                @foreach ($extraItems as $item)
-                    <a
-                        href="{{ $item['href'] }}"
-                        data-signal-command-item
-                        data-search="{{ strtolower(($item['label'] ?? '').' '.($item['keywords'] ?? '')) }}"
-                        @if ($modal = ($item['modal'] ?? null))
-                            data-modal-trigger="{{ $modal }}"
-                            aria-controls="{{ $modal }}"
-                            aria-expanded="{{ ($item['modalOpen'] ?? false) ? 'true' : 'false' }}"
-                            @if (filled($item['modalUrl'] ?? null)) data-modal-content-url="{{ $item['modalUrl'] }}" @endif
-                        @endif
-                        class="flex min-h-11 items-center justify-between gap-3 rounded-control px-3 py-2 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus"
-                    >
-                        <span>{{ $item['label'] }}</span>
-                        <span aria-hidden="true" class="text-subtle">↵</span>
-                    </a>
-                @endforeach
+                <section class="ui-command-section" data-signal-command-section>
+                    <p class="ui-command-heading">{{ __('Quick actions') }}</p>
+                    @foreach ($extraItems as $item)
+                        <div class="ui-command-row" data-signal-command-row>
+                            <a
+                                href="{{ $item['href'] }}"
+                                data-signal-command-item
+                                data-search="{{ strtolower(($item['label'] ?? '').' '.($item['keywords'] ?? '')) }}"
+                                @if ($modal = ($item['modal'] ?? null))
+                                    data-modal-trigger="{{ $modal }}"
+                                    aria-controls="{{ $modal }}"
+                                    aria-expanded="{{ ($item['modalOpen'] ?? false) ? 'true' : 'false' }}"
+                                    @if (filled($item['modalUrl'] ?? null)) data-modal-content-url="{{ $item['modalUrl'] }}" @endif
+                                @endif
+                                class="ui-command-item"
+                            >
+                                <span>{{ $item['label'] }}</span>
+                                <span class="ui-command-meta" aria-hidden="true">↵</span>
+                            </a>
+                        </div>
+                    @endforeach
+                </section>
             @endif
-            <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">Products</p>
-            @foreach ($productItems as $item)
-                <a href="{{ $item['href'] }}" data-signal-command-item data-search="{{ strtolower($item['label']) }}" class="flex min-h-11 items-center justify-between rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">
-                    <span>{{ $item['label'] }}</span>
-                    <svg class="h-4 w-4 stroke-2 text-subtle" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#arrow-up-right"></use></svg>
-                </a>
-            @endforeach
-            @foreach ($items as $item)
-                @php
-                    $href = $item['href'] ?? route($item['route']);
-                    $search = strtolower(($item['label'] ?? '').' '.($item['keywords'] ?? ''));
-                @endphp
-                <a href="{{ $href }}" data-signal-command-item data-search="{{ $search }}" class="flex min-h-11 items-center gap-2 rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">
-                    @if (! empty($item['icon']))
-                        <svg class="h-4 w-4 shrink-0 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $item['icon'] }}"></use></svg>
-                    @endif
-                    <span>{{ $item['label'] }}</span>
-                </a>
-            @endforeach
-            <div data-signal-command-dynamic-results class="grid gap-4" aria-label="Workspace resource results"></div>
+            @if ($productItems->isNotEmpty())
+                <section class="ui-command-section" data-signal-command-section>
+                    <p class="ui-command-heading">{{ __('Products') }}</p>
+                    @foreach ($productItems as $item)
+                        <div class="ui-command-row" data-signal-command-row>
+                            <a href="{{ $item['href'] }}" data-signal-command-item data-search="{{ strtolower($item['label']) }}" class="ui-command-item">
+                                <span>{{ $item['label'] }}</span>
+                                <span class="ui-command-meta">{{ __('Open') }}</span>
+                            </a>
+                        </div>
+                    @endforeach
+                </section>
+            @endif
+            @if ($items->isNotEmpty())
+                <section class="ui-command-section" data-signal-command-section>
+                    <p class="ui-command-heading">{{ __('Product sections') }}</p>
+                    @foreach ($items as $item)
+                        @php
+                            $href = $item['href'] ?? route($item['route']);
+                            $search = strtolower(($item['label'] ?? '').' '.($item['keywords'] ?? ''));
+                        @endphp
+                        <div class="ui-command-row" data-signal-command-row>
+                            <a href="{{ $href }}" data-signal-command-item data-search="{{ $search }}" class="ui-command-item">
+                                <span class="flex min-w-0 items-center gap-2">
+                                    @if (! empty($item['icon']))
+                                        <svg class="h-4 w-4 shrink-0 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#{{ $item['icon'] }}"></use></svg>
+                                    @endif
+                                    <span class="truncate">{{ $item['label'] }}</span>
+                                </span>
+                                <span class="ui-command-meta">{{ __('Open') }}</span>
+                            </a>
+                        </div>
+                    @endforeach
+                </section>
+            @endif
+            <div data-signal-command-dynamic-results class="contents" aria-label="Workspace resource results"></div>
         </nav>
         <p data-signal-command-empty hidden class="px-3 py-6 text-center text-sm text-muted">{{ __('No matching pages or actions.') }}</p>
         <p data-signal-command-status class="sr-only" role="status" aria-live="polite"></p>

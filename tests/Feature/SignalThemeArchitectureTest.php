@@ -52,11 +52,25 @@ final class SignalThemeArchitectureTest extends TestCase
         $deployerLayout = File::get(base_path('resources/views/components/layouts/app.blade.php'));
 
         $this->assertStringContainsString('<x-signal.layouts.mobile-navigation', $topbar);
+        $this->assertStringContainsString('class="topbar-nav-link"', $topbar);
         $this->assertStringContainsString('<x-signal.layouts.mobile-sidebar', $mobileNavigation);
         $this->assertStringContainsString('data-mobile-drawer', $mobileSidebar);
         $this->assertStringContainsString('data-mobile-breakpoint="{{ $breakpoint }}"', $mobileSidebar);
         $this->assertStringContainsString('data-mobile-header-selector="[data-mobile-header]"', $mobileSidebar);
         $this->assertStringContainsString('top: var(--signal-mobile-header-height, var(--header-height))', $mobileSidebar);
         $this->assertStringContainsString('class="ui-layout-gutter mx-auto w-full max-w-screen-2xl', $deployerLayout);
+    }
+
+    public function test_shared_command_palette_uses_the_current_signal_command_composition(): void
+    {
+        $palette = File::get(base_path('resources/views/components/signal/layouts/command-palette.blade.php'));
+        $styles = File::get(base_path('resources/css/signal/components.css'));
+
+        $this->assertStringContainsString('class="ui-command-list', $palette);
+        $this->assertStringContainsString('class="ui-command-section"', $palette);
+        $this->assertStringContainsString('class="ui-command-heading"', $palette);
+        $this->assertStringContainsString('.ui-command-row', $styles);
+        $this->assertStringContainsString('.ui-chart-bar-group', $styles);
+        $this->assertStringContainsString('.topbar-nav-link[aria-current="page"]', $styles);
     }
 }

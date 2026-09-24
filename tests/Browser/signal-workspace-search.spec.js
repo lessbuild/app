@@ -30,9 +30,14 @@ test('Signal workspace search renders safe cross-product results and restores ke
         <dialog id="signal-command-palette" data-signal-command-palette data-signal-command-search-url="https://signal.test/workspaces/12/search" aria-label="Search this workspace">
             <label for="signal-query">Search workspace resources</label>
             <input id="signal-query" type="search" data-signal-command-input>
-            <nav aria-label="Quick actions">
-                <a href="/dashboard" data-signal-command-item data-search="dashboard">Dashboard</a>
-                <div data-signal-command-dynamic-results></div>
+            <nav class="ui-command-list" aria-label="Quick actions">
+                <section class="ui-command-section" data-signal-command-section>
+                    <p class="ui-command-heading">Quick actions</p>
+                    <div class="ui-command-row" data-signal-command-row>
+                        <a href="/dashboard" class="ui-command-item" data-signal-command-item data-search="dashboard">Dashboard</a>
+                    </div>
+                </section>
+                <div data-signal-command-dynamic-results class="contents"></div>
             </nav>
             <p data-signal-command-empty hidden>No matching pages or actions.</p>
             <p data-signal-command-status role="status" aria-live="polite"></p>
@@ -50,6 +55,7 @@ test('Signal workspace search renders safe cross-product results and restores ke
 
     const result = page.getByRole('link', { name: /Storefront API latency/ });
     await expect(result).toBeVisible();
+    await expect(page.locator('[data-signal-command-section]')).toBeHidden();
     await expect(page.locator('[data-signal-command-unavailable]')).toContainText('Analytics');
     await expect(page.locator('[data-signal-command-status]')).toContainText('2 results across 1 section');
     await expect(page.locator('[data-signal-command-dynamic-item] img')).toHaveCount(0);
@@ -58,6 +64,11 @@ test('Signal workspace search renders safe cross-product results and restores ke
 
     await input.press('ArrowDown');
     await expect(result).toBeFocused();
+
+    await input.fill('d');
+    await expect(page.locator('[data-signal-command-section]')).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Dashboard' })).toBeVisible();
+    await expect(page.locator('[data-signal-command-dynamic-item]')).toHaveCount(0);
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
     await expect(trigger).toBeFocused();

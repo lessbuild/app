@@ -22,6 +22,7 @@ document.addEventListener('keydown', (event) => {
 const palette = document.querySelector('[data-signal-command-palette]');
 const paletteInput = palette?.querySelector('[data-signal-command-input]');
 const paletteItems = [...(palette?.querySelectorAll('[data-signal-command-item]') ?? [])];
+const staticSections = [...(palette?.querySelectorAll('[data-signal-command-section]') ?? [])];
 const emptyMessage = palette?.querySelector('[data-signal-command-empty]');
 const dynamicResults = palette?.querySelector('[data-signal-command-dynamic-results]');
 const searchStatus = palette?.querySelector('[data-signal-command-status]');
@@ -44,15 +45,25 @@ const updateEmptyState = () => {
   if (emptyMessage) emptyMessage.hidden = staticVisible || dynamicVisible || searching || unavailable;
 };
 
+const updateStaticSections = () => {
+  staticSections.forEach((section) => {
+    section.hidden = ![...section.querySelectorAll('[data-signal-command-item]')].some((item) => !item.hidden);
+  });
+};
+
 const filterStaticItems = (query) => {
   const normalizedQuery = query.trim().toLocaleLowerCase();
 
   paletteItems.forEach((item) => {
     item.hidden = normalizedQuery !== '' && !item.dataset.search.includes(normalizedQuery);
+    const row = item.closest('[data-signal-command-row]');
+    if (row) row.hidden = item.hidden;
   });
+
+  updateStaticSections();
 };
 
-const makeResultLink = (result, group) => {
+const makeResultRow = (result, group) => {
   if (!result || typeof result.title !== 'string' || typeof result.url !== 'string') return null;
 
   let target;
@@ -67,7 +78,7 @@ const makeResultLink = (result, group) => {
   const link = document.createElement('a');
   link.href = target.href;
   link.dataset.signalCommandDynamicItem = '';
-  link.className = 'flex min-h-11 items-center justify-between gap-3 rounded-control px-3 py-2 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus';
+  link.className = 'ui-command-item';
 
   const content = document.createElement('span');
   content.className = 'min-w-0';
@@ -84,12 +95,15 @@ const makeResultLink = (result, group) => {
   }
 
   const type = document.createElement('span');
-  type.className = 'shrink-0 rounded-full border border-line px-2 py-1 text-[10px] font-extrabold uppercase tracking-wide text-subtle';
+  type.className = 'ui-command-meta';
   type.textContent = typeof result.type === 'string' ? result.type : group.label;
+  const row = document.createElement('div');
+  row.className = 'ui-command-row';
+  row.append(link);
   link.append(content, type);
   link.addEventListener('click', closePalette);
 
-  return link;
+  return row;
 };
 
 const renderSearchResults = (payload) => {
@@ -103,16 +117,16 @@ const renderSearchResults = (payload) => {
     if (typeof group?.label !== 'string' || !Array.isArray(group.results) || group.results.length === 0) return;
 
     const section = document.createElement('section');
-    section.className = 'grid gap-1';
+    section.className = 'ui-command-section';
     const heading = document.createElement('p');
-    heading.className = 'px-3 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle';
+    heading.className = 'ui-command-heading';
     heading.textContent = group.label;
     section.append(heading);
 
     group.results.forEach((result) => {
-      const link = makeResultLink(result, group);
-      if (!link) return;
-      section.append(link);
+      const row = makeResultRow(result, group);
+      if (!row) return;
+      section.append(row);
       count += 1;
     });
 
@@ -228,7 +242,12 @@ document.addEventListener('click', (event) => {
   paletteInput.value = '';
   dynamicResults?.replaceChildren();
   palette.dataset.searching = 'false';
-  paletteItems.forEach((item) => { item.hidden = false; });
+  paletteItems.forEach((item) => {
+    item.hidden = false;
+    const row = item.closest('[data-signal-command-row]');
+    if (row) row.hidden = false;
+  });
+  updateStaticSections();
   if (searchStatus) searchStatus.textContent = '';
   if (emptyMessage) emptyMessage.hidden = true;
   palette.showModal();

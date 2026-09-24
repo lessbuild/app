@@ -121,9 +121,9 @@
 
             <nav class="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto pl-2 lg:flex" aria-label="{{ __('Products') }}">
                 @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
-                    <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" />
+                    <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" class="topbar-nav-link" />
                 @endif
-                <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" />
+                <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="topbar-nav-link" />
                 @foreach (['deployer' => ['label' => __('Deployer'), 'route' => 'dashboard', 'active' => ['dashboard', 'projects.show', 'projects.create', 'projects.configuration.*', 'servers.*', 'websites.*', 'builds.*', 'providers.*', 'repositories.*', 'environments.*']], 'monitor' => ['label' => __('Monitor'), 'route' => 'monitor.dashboard'], 'analytics' => ['label' => __('Analytics'), 'route' => 'analytics.dashboard']] as $key => $product)
                     @php
                         $label = $product['label'];
@@ -137,7 +137,7 @@
                         $productActive = $activeProduct === $key;
                     @endphp
                     @if ($productHref)
-                        <x-signal.layouts.navigation-link :item="['label' => $label, 'href' => $productHref, 'active' => $productActive]" />
+                        <x-signal.layouts.navigation-link :item="['label' => $label, 'href' => $productHref, 'active' => $productActive]" class="topbar-nav-link" />
                     @else
                         <span class="inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm font-bold text-subtle" aria-disabled="true" title="{{ __('This product is being connected.') }}">
                             {{ $label }}

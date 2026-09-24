@@ -185,7 +185,7 @@ class LocalUiAssetTest extends TestCase
     {
         foreach ([
             'css/signal/theme.css' => 'fa483deb8b7d06921f9b3fa975e82f5813ecbe240ea0cc3d0568340d2d8d31e3',
-            'css/signal/components.css' => 'e403ef10109308fd58c7093b61e5ff4559ecce70d7721ab5eca0a421d57caad6',
+            'css/signal/components.css' => '7532644a65d604724a85e85fbc50467f68c8612487400326b505626fb7c2cc51',
             'css/signal/themes.json' => 'abb484b2897b144830e45e7f51f34a420972ba0371b47676880d4664b74b6872',
         ] as $relativePath => $expectedHash) {
             $this->assertSame(
