@@ -40,7 +40,9 @@ class WebsiteReleaseRetentionTest extends TestCase
             ->assertSee('Keep between 2 and 20 releases')
             ->assertSee('value="5"', false)
             ->assertSee('class="ui-input w-full"', false)
-            ->assertSee('class="ui-panel bg-surface-muted p-5"', false);
+            ->assertSee('ui-card', false)
+            ->assertSee('bg-surface-muted p-5', false)
+            ->assertSee('shadow-none', false);
     }
 
     public function test_custom_retention_controls_remote_release_pruning(): void

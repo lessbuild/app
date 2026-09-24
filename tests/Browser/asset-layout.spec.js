@@ -394,6 +394,32 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
     }
 });
 
+test('website create and edit forms use Signal fields and joined URL controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/websites?dialog=create-website', { waitUntil: 'networkidle' });
+    const createDialog = page.getByRole('dialog', { name: 'Add website', exact: true });
+    const createUrl = createDialog.locator('#website-create-url');
+    await expect(createDialog).toBeVisible();
+    await expect(createUrl).toBeVisible();
+    await expect(createDialog.locator('label[for="website-create-url"]')).toBeVisible();
+    await expect(createUrl).toHaveClass(/\bui-input\b/);
+    await expect(createUrl).toHaveClass(/\brounded-l-none\b/);
+    await expect(createDialog.locator('fieldset.ui-card')).toBeVisible();
+    await expect(createDialog.locator('[aria-hidden="true"]').filter({ hasText: 'http://' }).first()).toBeVisible();
+    await expect(createDialog.locator('button.ui-btn-primary', { hasText: 'Create website' })).toBeVisible();
+
+    await page.goto('http://buildpusher.test/websites/1?dialog=edit-website', { waitUntil: 'networkidle' });
+    const editDialog = page.getByRole('dialog', { name: 'Edit website', exact: true });
+    const editUrl = editDialog.locator('#website-edit-url');
+    await expect(editUrl).toBeVisible();
+    await expect(editDialog.locator('label[for="website-edit-url"]')).toBeVisible();
+    await expect(editDialog.locator('#website-edit-environment')).toHaveClass(/\bui-input\b/);
+    await expect(editDialog.locator('button.ui-btn-primary', { hasText: 'Save Website' })).toBeVisible();
+});
+
 test('dashboard creation actions open page-local dialogs without navigating to an inventory page', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

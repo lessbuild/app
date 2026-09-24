@@ -64,9 +64,9 @@
     <x-scenes.websites._form :servers="$servers" :field-prefix="$fieldPrefix" />
 
     <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
-        <x-ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
-        <x-ui.button type="submit" variant="primary" :disabled="$servers->isEmpty() || ! $planUsage['allowed']">
+        <x-signal.ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-signal.ui.button>
+        <x-signal.ui.button type="submit" variant="primary" :disabled="$servers->isEmpty() || ! $planUsage['allowed']">
             {{ __('Create website') }}
-        </x-ui.button>
+        </x-signal.ui.button>
     </div>
 </form>

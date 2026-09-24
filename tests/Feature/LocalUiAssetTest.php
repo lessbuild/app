@@ -64,6 +64,39 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('aria-invalid="true"', $customCheckbox[0]);
     }
 
+    public function test_signal_input_addons_keep_validation_associations_and_joined_control_edges(): void
+    {
+        $this->withViewErrors(['url' => 'Enter a website URL.']);
+
+        $html = Blade::render(<<<'BLADE'
+            <x-signal.ui.input-field id="website-url" name="url" label="Website URL" value="example.test" description="The host for this website.">
+                <x-slot:prefix><x-signal.ui.input-addon>http://</x-signal.ui.input-addon></x-slot:prefix>
+            </x-signal.ui.input-field>
+            BLADE,
+        );
+
+        $this->assertStringContainsString('http://', $html);
+        $this->assertStringContainsString('aria-hidden="true"', $html);
+        $this->assertStringContainsString('rounded-control rounded-r-none border-r-0', $html);
+        $this->assertStringContainsString('rounded-l-none', $html);
+        $this->assertStringContainsString('value="example.test"', $html);
+        $this->assertStringContainsString('aria-describedby="website-url-help website-url-error"', $html);
+        $this->assertStringContainsString('Enter a website URL.', $html);
+
+        $suffixHtml = Blade::render(<<<'BLADE'
+            <x-signal.ui.input-field id="website-domain" name="domain" label="Domain" value="example" hide-label>
+                <x-slot:suffix><x-signal.ui.input-addon position="suffix">.test</x-signal.ui.input-addon></x-slot:suffix>
+            </x-signal.ui.input-field>
+            BLADE,
+        );
+
+        $this->assertStringContainsString('.test', $suffixHtml);
+        $this->assertStringContainsString('rounded-control rounded-l-none border-l-0', $suffixHtml);
+        $this->assertStringContainsString('rounded-r-none', $suffixHtml);
+        $this->assertStringContainsString('for="website-domain"', $suffixHtml);
+        $this->assertStringContainsString('sr-only', $suffixHtml);
+    }
+
     public function test_public_and_authenticated_layouts_render_without_remote_visual_assets(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);
