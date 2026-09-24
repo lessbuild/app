@@ -1,8 +1,11 @@
 # Deployer Signal topbar release verification
 
-The Deployer shell and shared Signal component updates from commit
-`7bad0f02684867d1ab90760a5f6ab67349634525` are live at
-`/var/www/buildpusher-unified/current`, which resolves to release `7bad0f0`.
+At this earlier topbar release verification, the Deployer shell and shared
+Signal component updates from commit
+`7bad0f02684867d1ab90760a5f6ab67349634525` were live at
+`/var/www/buildpusher-unified/current`, resolving to release `7bad0f0`. That
+release was superseded on 24 September by `b0741b4-signal`; see the current
+[Signal theme release log](signal-theme-integration-progress.md).
 The previous release `d3f6c5c` remains on disk for rollback. No database
 migrations were needed or run.
 

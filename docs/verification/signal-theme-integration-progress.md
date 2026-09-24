@@ -1,5 +1,19 @@
 # Signal theme integration progress
 
+## Slice 146 — publish the current Signal theme and Deployer shell — 2026-09-24
+
+Boundary and deployment:
+
+- Rechecked `lessbuild/template` `main` at `49c26b48dd44335901da95926963339e644eedae`. The Signal theme stylesheet matches upstream; the shared component stylesheet retains Buildpusher's Laravel validation and code-block additions. Deployer's app shell and product screens already compose the current Signal layout and UI components. The visible mismatch came from production still serving an older release.
+- Built and staged source commit `b0741b4` as `/var/www/buildpusher-unified/releases/b0741b4-signal`, retaining the shared `.env` and storage links. Atomically switched `current` from `0b0fef0` and reloaded PHP-FPM. The source delta contains no migration or Composer lock changes, so this release made no database changes; the previous release remains available for rollback.
+- Updated two stale regression assertions to match Signal's current translucent topbar and `max-w-content` layout.
+
+Evidence:
+
+- `npm run test:signal-theme`: Vite production build and **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth at mobile and desktop widths.
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/LocalUiAssetTest.php tests/Feature/DashboardTest.php`: **107 tests, 3,589 assertions passed**.
+- Live GET checks returned HTTP 200 for the Buildpusher homepage and Auth login. Deployer, Monitor, and Analytics roots handed off to Auth with the original return targets. All five hosts serve `data-storage-namespace="buildpusher-signal"` and the new theme runtime asset. A live browser check seeded the old rose palette and red token overrides: the page used Signal's graphite palette while preserving the existing dark appearance. The deployed dashboard itself was not checked with an authenticated browser session.
+
 ## Slice 145 — align product shells with the latest Signal width tokens — 2026-09-24
 
 Boundary and implementation:

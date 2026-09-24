@@ -104,7 +104,7 @@ class DashboardTest extends TestCase
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur', false)
+            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur', false)
             ->assertSee('id="signal-product-navigation"', false)
             ->assertSee('aria-label="Products"', false)
             ->assertDontSee('id="desktop-navigation"', false)

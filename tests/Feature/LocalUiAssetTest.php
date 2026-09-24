@@ -1117,7 +1117,7 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('id="signal-profile-navigation"', false)
             ->assertSee('id="signal-mobile-product-navigation"', false)
             ->assertSee('id="signal-mobile-profile-navigation"', false)
-            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur', false)
+            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-header', false)
@@ -1179,7 +1179,7 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('<x-signal.layouts.topbar', $appShell);
         $this->assertStringNotContainsString('ui-bottom-nav', $appShell);
         $this->assertStringNotContainsString('ui-bottom-nav-link', $appShell);
-        $this->assertStringContainsString('max-w-screen-2xl', $appShell);
+        $this->assertStringContainsString('max-w-content', $appShell);
         $this->assertStringNotContainsString('app-topbar', $appShell);
         $this->assertStringNotContainsString('app-footer', $appShell);
         $signalComponents = File::get(resource_path('css/signal/components.css'));

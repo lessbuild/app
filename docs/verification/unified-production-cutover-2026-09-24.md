@@ -1,10 +1,11 @@
 # Unified production route and scheduler cutover — 2026-09-24
 
-The active release is `d3f6c5c` at `/var/www/buildpusher-unified/current`.
+At this cutover verification, release `d3f6c5c` was active at `/var/www/buildpusher-unified/current`.
 Caddy serves the same unified Laravel public directory for the Buildpusher,
 Auth, Deployer, Monitor, and Analytics hosts. The apex remains the public
 product overview; `/deployer`, `/monitor`, and `/analytics` each return HTTP
-200 as product-description pages.
+200 as product-description pages. The current release is `b0741b4-signal`; see
+the [Signal theme release log](signal-theme-integration-progress.md).
 
 The release's Deployer provider-form migration uses shared Signal choice,
 input, textarea, and select controls. Its focused regression set passed **11
