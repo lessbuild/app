@@ -101,12 +101,17 @@ class RepositorySafetyTest extends TestCase
             'url' => 'pending.example.com',
             'provisioning_status' => Website::STATUS_PROVISIONING,
         ]);
-        $repository = $user->repositories()->create($this->payload($provider, $activeWebsite));
+        $repository = $user->repositories()->create([
+            ...$this->payload($provider, $activeWebsite),
+            'auto_deploy_include_paths' => ['apps/**', 'packages/shared/**'],
+            'auto_deploy_exclude_paths' => ['docs/**'],
+        ]);
 
         $this->actingAs($user)->get(route('repositories.create'))
             ->assertSuccessful()
             ->assertSee('ui-input', false)
-            ->assertSee('ui-panel bg-surface-muted', false)
+            ->assertSee('ui-card', false)
+            ->assertSee('bg-surface-muted', false)
             ->assertSee('Active Website')
             ->assertDontSee($inactiveWebsite->name);
 
@@ -118,8 +123,12 @@ class RepositorySafetyTest extends TestCase
         $this->actingAs($user)->get(route('repositories.edit', $repository))
             ->assertSuccessful()
             ->assertSee('ui-input', false)
-            ->assertSee('ui-panel bg-surface-muted', false)
+            ->assertSee('ui-card', false)
+            ->assertSee('bg-surface-muted', false)
             ->assertSeeInOrder(['value="'.$activeWebsite->id.'"', 'selected'], false)
+            ->assertSee('apps/**')
+            ->assertSee('packages/shared/**')
+            ->assertSee('docs/**')
             ->assertDontSee($inactiveWebsite->name);
     }
 

@@ -420,6 +420,35 @@ test('website create and edit forms use Signal fields and joined URL controls', 
     await expect(editDialog.locator('button.ui-btn-primary', { hasText: 'Save Website' })).toBeVisible();
 });
 
+test('repository create and edit forms use Signal controls and path-filter fields', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/repositories?dialog=create-repository', { waitUntil: 'networkidle' });
+    const createDialog = page.getByRole('dialog', { name: 'Add repository', exact: true });
+    const createUrl = createDialog.locator('#repository-create-url');
+    const createPaths = createDialog.locator('#repository-create-auto_deploy_include_paths');
+    await expect(createDialog).toBeVisible();
+    await expect(createUrl).toBeVisible();
+    await expect(createDialog.locator('label[for="repository-create-url"]')).toBeVisible();
+    await expect(createUrl).toHaveClass(/\bui-input\b/);
+    await expect(createUrl).toHaveClass(/\brounded-l-none\b/);
+    await expect(createDialog.locator('#repository-create-website_id')).toBeVisible();
+    await expect(createDialog.locator('#repository-create-provider_id')).toBeVisible();
+    await expect(createPaths).toHaveClass(/\bui-input\b/);
+    await expect(createDialog.locator('fieldset.ui-card')).toBeVisible();
+    await expect(createDialog.locator('button.ui-btn-primary', { hasText: 'Create Repository' })).toBeVisible();
+
+    await page.goto('http://buildpusher.test/repositories/1?dialog=edit-repository', { waitUntil: 'networkidle' });
+    const editDialog = page.getByRole('dialog', { name: 'Edit repository', exact: true });
+    const editPaths = editDialog.locator('#repository-edit-auto_deploy_include_paths');
+    await expect(editDialog.locator('#repository-edit-url')).toBeVisible();
+    await expect(editPaths).toHaveValue('apps/**');
+    await expect(editDialog.locator('#repository-edit-post_deployment_commands')).toHaveClass(/\bui-input\b/);
+    await expect(editDialog.locator('button.ui-btn-primary', { hasText: 'Save Repository' })).toBeVisible();
+});
+
 test('dashboard creation actions open page-local dialogs without navigating to an inventory page', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });

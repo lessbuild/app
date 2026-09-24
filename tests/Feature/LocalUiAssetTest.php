@@ -97,6 +97,21 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('sr-only', $suffixHtml);
     }
 
+    public function test_signal_textarea_fields_associate_indexed_validation_errors(): void
+    {
+        $this->withViewErrors(['paths.0' => 'Use a repository-relative path.']);
+
+        $html = Blade::render(<<<'BLADE'
+            <x-signal.ui.textarea-field id="repository-paths" name="paths" error-key="paths.*" label="Include paths" value="apps/**" description="One path per line." />
+            BLADE,
+        );
+
+        $this->assertStringContainsString('aria-invalid="true"', $html);
+        $this->assertStringContainsString('aria-describedby="repository-paths-help repository-paths-error"', $html);
+        $this->assertStringContainsString('id="repository-paths-error"', $html);
+        $this->assertStringContainsString('Use a repository-relative path.', $html);
+    }
+
     public function test_public_and_authenticated_layouts_render_without_remote_visual_assets(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);
