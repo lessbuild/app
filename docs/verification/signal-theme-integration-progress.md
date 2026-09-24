@@ -46,9 +46,17 @@ Evidence:
   action click, live result rendering, Escape, and keyboard focus restoration.
 - Production Vite build and Blade view cache: passed.
 - JavaScript syntax check and `git diff --check`: passed.
+- Commit `7bad0f02684867d1ab90760a5f6ab67349634525` was pushed to
+  `origin/feature/unified-platform` and deployed as
+  `/var/www/buildpusher-unified/releases/7bad0f0`; the prior release remains
+  available for rollback.
+- Live checks verified the new CSS/JavaScript asset hashes and all configured
+  host entry points. See
+  `docs/verification/deployer-signal-topbar-release-2026-09-24.md`.
 
-Next task: verify the browser palette interactions, then deploy and check the
-served Deployer assets against the new build.
+Next task: continue the Signal component coverage audit across Deployer's
+remaining feature-specific forms and actions, preserving their route and modal
+behavior.
 
 ## Slice 123 — verify active Signal defaults in the rendered page — 2026-09-22
 
