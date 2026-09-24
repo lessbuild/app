@@ -1,5 +1,39 @@
 # Signal theme integration progress
 
+## Slice 129 — componentize Deployer repository forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated the repository create/edit form's website and provider selects,
+  repository identity fields, URL, branch, service root, path filters, build
+  and post-deployment commands, and description to shared Signal controls.
+- The URL prefix and path-filter fieldset now use shared Signal addon and card
+  components. Indexed include/exclude validation errors are announced and
+  associated with their textarea. Empty-state cards and create/edit actions
+  use Signal card and button components directly.
+- Kept provider/website eligibility and selection, query-prefilled branch and
+  URL, repository paths as newline-delimited text, command hooks, warning copy,
+  and existing route/request contracts.
+
+Evidence and release:
+
+- Focused creation, repository safety, deployment-root, and shared UI tests:
+  **101 passed**, **3,386 assertions**; a post-update repository safety rerun:
+  **6 passed**, **68 assertions**. Mobile Playwright create/edit journeys
+  verified Signal controls, both selectors, URL edges, path-filter values, and
+  hook fields. Pint, JavaScript syntax, and `git diff --check` passed.
+- Commit `41bc412` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/41bc412`. Release `8b311d1` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, all three product pages, and shared login returned
+  HTTP 200. Product roots retained their expected dashboard/auth redirects;
+  PHP-FPM is active.
+
+Next task: continue componentizing Deployer's remaining feature forms and
+actions; the repository webhook and provider callback regressions remain open.
+
 ## Slice 128 — componentize Deployer website forms — 2026-09-24
 
 Boundary and implementation:
