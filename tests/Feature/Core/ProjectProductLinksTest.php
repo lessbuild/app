@@ -158,8 +158,32 @@ final class ProjectProductLinksTest extends TestCase
         $this->addProjectResource('analytics', 'site', '71');
         $this->addAnalyticsWorkspacesAndSite(memberId: 23, firstWorkspaceId: 100, secondWorkspaceId: 200, siteId: 71);
 
+        $workspaceId = (string) Str::ulid();
+        DB::connection('core')->table('workspaces')->insert([
+            'id' => $workspaceId,
+            'owner_user_id' => self::PLATFORM_USER_ID,
+            'name' => 'Analytics Core workspace',
+            'slug' => 'analytics-core-workspace',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'analytics',
+            'source_entity' => 'workspace',
+            'source_id' => '200',
+            'canonical_entity' => 'workspace',
+            'canonical_id' => $workspaceId,
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
         $platformUser = $this->platformUser();
-        $url = app(AnalyticsProjectLink::class)->resolve($platformUser, $this->project());
+        $project = $this->project();
+        $project->setAttribute('workspace_id', $workspaceId);
+        $url = app(AnalyticsProjectLink::class)->resolve($platformUser, $project);
 
         $this->assertSame('/analytics/dashboard', parse_url($url, PHP_URL_PATH));
         parse_str((string) parse_url($url, PHP_URL_QUERY), $query);

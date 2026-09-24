@@ -95,6 +95,7 @@ class WorkspaceAccessTest extends TestCase
         );
 
         $this->assertTrue($access->hasAccess($principal, $analyticsWorkspace));
+        $this->assertSame(WorkspaceRole::Owner, $access->roleFor($principal, $analyticsWorkspace));
         $this->assertCount(1, $access->workspacesFor($principal));
 
         DB::connection('core')->table('workspace_product_access')->where('id', $grantId)->update([
@@ -103,6 +104,7 @@ class WorkspaceAccessTest extends TestCase
         ]);
 
         $this->assertFalse($access->hasAccess($principal, $analyticsWorkspace));
+        $this->assertNull($access->roleFor($principal, $analyticsWorkspace));
         $this->assertCount(0, $access->workspacesFor($principal));
     }
 

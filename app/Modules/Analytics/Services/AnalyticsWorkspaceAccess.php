@@ -74,6 +74,10 @@ final class AnalyticsWorkspaceAccess
 
     public function roleFor(Authenticatable $user, Workspace $workspace): ?WorkspaceRole
     {
+        if (! $this->hasAccess($user, $workspace)) {
+            return null;
+        }
+
         $productUserIds = $this->productUserIds($user);
 
         if ($productUserIds === []) {

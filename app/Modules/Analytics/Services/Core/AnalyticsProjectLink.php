@@ -48,7 +48,18 @@ final class AnalyticsProjectLink implements ProjectProductLink
             ->limit(100)
             ->pluck('resource_id');
 
-        if ($resourceIds->isEmpty()) {
+        if ($resourceIds->isEmpty() || ! filled($project->workspace_id)) {
+            return collect();
+        }
+
+        $workspaceIds = $this->identities->sourceIdsForCanonical(
+            'analytics',
+            'workspace',
+            $project->workspace_id,
+            'workspace',
+        );
+
+        if ($workspaceIds === []) {
             return collect();
         }
 
@@ -59,6 +70,7 @@ final class AnalyticsProjectLink implements ProjectProductLink
 
         return Site::query()
             ->whereKey($resourceIds)
+            ->whereIn('workspace_id', $workspaceIds)
             ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $legacyUserIds))
             ->with('workspace')
             ->get()

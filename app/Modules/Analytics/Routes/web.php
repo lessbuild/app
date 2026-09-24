@@ -53,6 +53,11 @@ Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification
     Route::put('/sites/{site}/settings', [SiteSettingsController::class, 'update'])->name('sites.settings.update');
     Route::delete('/sites/{site}', [SiteSettingsController::class, 'destroy'])->middleware('password.confirm')->name('sites.destroy');
     Route::post('/sites/{site}/exports', [ReportExportController::class, 'store'])->name('reports.exports.store');
+    Route::get('/sites/{site}/exports/{export}/record', [ReportExportController::class, 'record'])->name('reports.exports.record');
+    Route::get('/sites/{site}/exports/{export}/download', [ReportExportController::class, 'downloadRecord'])->name('reports.exports.download-record');
+    Route::post('/sites/{site}/exports/{export}/retry', [ReportExportController::class, 'retry'])
+        ->middleware('throttle:10,1')
+        ->name('reports.exports.retry');
     Route::get('/sites/{site}/goals', [GoalController::class, 'index'])->name('goals.index');
     Route::get('/sites/{site}/goals/create', [GoalController::class, 'create'])->name('goals.create');
     Route::post('/sites/{site}/goals', [GoalController::class, 'store'])->name('goals.store');

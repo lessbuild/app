@@ -9,6 +9,7 @@ use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
@@ -45,11 +46,9 @@ class ReportExportController extends Controller
     public function download(Request $request, string $token): StreamedResponse
     {
         $export = ReportExport::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
-        abort_unless($export->status === 'completed' && CarbonImmutable::parse($export->expires_at)->isFuture() && $export->file_path, 410, 'This export is no longer available.');
         $this->authorize('view', $export->site);
-        abort_unless(Storage::disk('analytics-local')->exists($export->file_path), 404);
 
-        return Storage::disk('analytics-local')->download($export->file_path, 'buildpusher-analytics-'.$export->site->slug.'.csv');
+        return $this->downloadExport($export);
     }
 
     public function show(Request $request, string $token): View
@@ -57,6 +56,87 @@ class ReportExportController extends Controller
         $export = ReportExport::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
         $this->authorize('view', $export->site);
 
-        return view('analytics::exports.show', compact('export', 'token'));
+        return view('analytics::exports.show', [
+            'export' => $export,
+            'token' => $token,
+            'downloadAvailable' => $this->downloadAvailable($export),
+        ]);
+    }
+
+    public function record(Request $request, Site $site, ReportExport $export): View
+    {
+        $this->assertExportBelongsToSite($export, $site);
+        $this->authorize('view', $site);
+
+        return view('analytics::exports.record', [
+            'export' => $export,
+            'site' => $site,
+            'downloadAvailable' => $this->downloadAvailable($export),
+            'canRetry' => $request->user()?->can('manage', $site) ?? false,
+        ]);
+    }
+
+    public function downloadRecord(Request $request, Site $site, ReportExport $export): StreamedResponse
+    {
+        $this->assertExportBelongsToSite($export, $site);
+        $this->authorize('view', $site);
+
+        return $this->downloadExport($export);
+    }
+
+    public function retry(Site $site, ReportExport $export): RedirectResponse
+    {
+        $this->assertExportBelongsToSite($export, $site);
+        $this->authorize('manage', $site);
+
+        $updatedExport = DB::connection('analytics')->transaction(function () use ($site, $export): ReportExport {
+            $lockedExport = ReportExport::query()
+                ->whereKey($export->getKey())
+                ->where('site_id', $site->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            abort_unless($lockedExport->status === 'failed', 409, 'Only failed exports can be retried.');
+            abort_unless($lockedExport->expires_at !== null && CarbonImmutable::parse($lockedExport->expires_at)->isFuture(), 410, 'This export has expired.');
+
+            $lockedExport->update([
+                'status' => 'pending',
+                'failure_message' => null,
+                'file_path' => null,
+                'completed_at' => null,
+                'expires_at' => now()->addHours(config('analytics.export_retention_hours')),
+            ]);
+
+            return $lockedExport;
+        });
+
+        GenerateReportExport::dispatch($updatedExport->getKey())->afterCommit();
+
+        return back()->with('status', 'The CSV export has been queued again.');
+    }
+
+    private function assertExportBelongsToSite(ReportExport $export, Site $site): void
+    {
+        abort_unless((string) $export->site_id === (string) $site->getKey(), 404);
+        abort_unless((string) $export->workspace_id === (string) $site->workspace_id, 404);
+    }
+
+    private function downloadExport(ReportExport $export): StreamedResponse
+    {
+        abort_unless($this->downloadAvailable($export), 410, 'This export is no longer available.');
+
+        return Storage::disk('analytics-local')->download(
+            $export->file_path,
+            'buildpusher-analytics-'.$export->site->slug.'.csv',
+        );
+    }
+
+    private function downloadAvailable(ReportExport $export): bool
+    {
+        return $export->status === 'completed'
+            && $export->expires_at !== null
+            && CarbonImmutable::parse($export->expires_at)->isFuture()
+            && filled($export->file_path)
+            && Storage::disk('analytics-local')->exists($export->file_path);
     }
 }

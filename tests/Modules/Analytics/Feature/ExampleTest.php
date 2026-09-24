@@ -10,10 +10,16 @@ class ExampleTest extends TestCase
     /**
      * A basic test example.
      */
-    public function test_the_application_returns_a_successful_response(): void
+    public function test_the_analytics_host_root_opens_the_dashboard(): void
     {
         $response = $this->get('/');
 
-        $response->assertStatus(200);
+        if (config('platform.products.analytics.enabled') && filled(config('platform.products.analytics.host'))) {
+            $response->assertRedirect('/dashboard');
+
+            return;
+        }
+
+        $response->assertOk();
     }
 }

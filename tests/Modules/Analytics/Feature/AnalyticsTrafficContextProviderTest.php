@@ -65,6 +65,14 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
             'canonical_id' => $platformUser->getKey(),
             'status' => 'reconciled',
         ]);
+        LegacyIdentityMap::query()->create([
+            'source_product' => 'analytics',
+            'source_entity' => 'workspace',
+            'source_id' => (string) $analyticsWorkspace->getKey(),
+            'canonical_entity' => 'workspace',
+            'canonical_id' => $coreWorkspace->getKey(),
+            'status' => 'reconciled',
+        ]);
         $siteResource = ProjectResource::query()->create([
             'project_id' => $project->getKey(),
             'product' => 'analytics',

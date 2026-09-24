@@ -15,6 +15,7 @@ use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -251,6 +252,105 @@ class ReportingWorkflowTest extends TestCase
 
         $this->assertSame('failed', $export->fresh()->status);
         $this->assertNull($export->fresh()->file_path);
+    }
+
+    public function test_export_record_hides_private_failure_details_and_allows_manager_retry(): void
+    {
+        Queue::fake();
+        [$owner, $site] = $this->site();
+        $export = ReportExport::create([
+            'workspace_id' => $site->workspace_id,
+            'site_id' => $site->id,
+            'requested_by' => $owner->id,
+            'token_hash' => hash('sha256', 'failed-export-token'),
+            'status' => 'failed',
+            'filters' => ['days' => 30],
+            'failure_message' => 'private storage path /srv/private/analytics failed',
+            'expires_at' => now()->addHour(),
+        ]);
+
+        $this->actingAs($owner)
+            ->get(route('analytics.reports.exports.record', [$site, $export]))
+            ->assertOk()
+            ->assertSee('Retry export')
+            ->assertDontSee('private storage path');
+
+        $csrf = 'test-token';
+        $this->withSession(['_token' => $csrf])
+            ->actingAs($owner)
+            ->post(route('analytics.reports.exports.retry', [$site, $export]), ['_token' => $csrf])
+            ->assertRedirect();
+
+        $this->assertSame('pending', $export->fresh()->status);
+        $this->assertNull($export->fresh()->failure_message);
+        $this->assertNotNull($export->fresh()->expires_at);
+        Queue::assertPushed(GenerateReportExport::class, fn (GenerateReportExport $job): bool => $job->exportId === $export->id);
+    }
+
+    public function test_viewers_can_open_export_records_but_cannot_retry_them(): void
+    {
+        [$owner, $site] = $this->site();
+        $viewer = User::factory()->create();
+        $site->workspace->users()->attach($viewer, ['role' => WorkspaceRole::Viewer->value]);
+        $export = ReportExport::create([
+            'workspace_id' => $site->workspace_id,
+            'site_id' => $site->id,
+            'requested_by' => $owner->id,
+            'token_hash' => hash('sha256', 'viewer-export-token'),
+            'status' => 'failed',
+            'filters' => ['days' => 30],
+            'expires_at' => now()->addHour(),
+        ]);
+
+        $this->actingAs($viewer)
+            ->get(route('analytics.reports.exports.record', [$site, $export]))
+            ->assertOk()
+            ->assertDontSee('Retry export');
+
+        $csrf = 'test-token';
+        $this->withSession(['_token' => $csrf])
+            ->actingAs($viewer)
+            ->post(route('analytics.reports.exports.retry', [$site, $export]), ['_token' => $csrf])
+            ->assertForbidden();
+
+        $this->assertSame('failed', $export->fresh()->status);
+    }
+
+    public function test_id_download_is_site_scoped_and_expired_files_are_not_available(): void
+    {
+        Storage::fake('analytics-local');
+        [$owner, $site] = $this->site();
+        $otherSite = $site->workspace->sites()->create([
+            'name' => 'Another site',
+            'domains' => ['another.example'],
+            'timezone' => 'UTC',
+        ]);
+        $export = ReportExport::create([
+            'workspace_id' => $site->workspace_id,
+            'site_id' => $site->id,
+            'requested_by' => $owner->id,
+            'token_hash' => hash('sha256', 'id-download-token'),
+            'status' => 'completed',
+            'filters' => ['days' => 30],
+            'file_path' => 'exports/private.csv',
+            'expires_at' => now()->addHour(),
+            'completed_at' => now(),
+        ]);
+        Storage::disk('analytics-local')->put($export->file_path, "section,label,value\n");
+
+        $this->actingAs($owner)
+            ->get(route('analytics.reports.exports.download-record', [$site, $export]))
+            ->assertOk()
+            ->assertHeader('content-disposition');
+
+        $this->actingAs($owner)
+            ->get(route('analytics.reports.exports.record', [$otherSite, $export]))
+            ->assertNotFound();
+
+        $export->update(['expires_at' => now()->subMinute()]);
+        $this->actingAs($owner)
+            ->get(route('analytics.reports.exports.download-record', [$site, $export]))
+            ->assertStatus(410);
     }
 
     /** @return array{0: User, 1: Site} */
