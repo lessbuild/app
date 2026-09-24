@@ -1,5 +1,38 @@
 # Signal theme integration progress
 
+## Slice 131 — componentize Deployer recipe and server-import forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated recipe name/description/script/category fields, gallery-publish
+  checkbox, and settings card to shared Signal field, checkbox, select, and card
+  components for both create and edit dialogs.
+- Migrated existing-server inspection fields and the import-review approval
+  form to Signal components. SSH fingerprint and backup confirmations now expose
+  field-level validation; the typed server name remains required.
+- The SSH private key field no longer restores its contents after validation,
+  and `ssh_private_key` is excluded from Laravel's flashed old input. The key
+  remains encrypted when accepted and is still inspected before any import
+  assessment or server is created.
+
+Evidence and release:
+
+- Focused import, creation-dialog, shared UI, and recipe filter suites:
+  **104 passed**, **3,364 assertions**. Mobile Playwright verified the recipe
+  edit dialog alongside provider/repository/website/server edit dialogs. Pint,
+  JavaScript syntax, and `git diff --check` passed.
+- Commit `c39b8f1` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/c39b8f1`; release `13c205f` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, three product pages, and shared login returned
+  HTTP 200. Product roots retained their expected redirects, Deployer health
+  returned HTTP 200, and PHP-FPM is active.
+
+Next task: continue migrating remaining Deployer forms to Signal components and
+close provider/import/provisioning and recipe/gallery feature-parity evidence.
+
 ## Slice 130 — componentize Deployer server forms — 2026-09-24
 
 Boundary and implementation:
