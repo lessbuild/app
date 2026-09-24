@@ -1,5 +1,38 @@
 # Signal theme integration progress
 
+## Slice 125 — update Deployer's Signal navigation and fence connection deliveries — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `https://github.com/lessbuild/template` `main`; it still resolves to
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974`. The release retains the current
+  Signal stylesheet and product bundle from Slice 124; this change updates the
+  shared shell and Deployer navigation without changing built assets.
+- The Signal mobile menu now renders the grouped destinations supplied by
+  Deployer, including product pages, profile links, and System Health. Active
+  route state is kept on the current destination. The shared button component
+  accepts only `button`, `submit`, or `reset` types.
+- Connection delivery completion and failure updates now compare the active
+  claim generation. A worker whose lease expired cannot overwrite a newer
+  delivery attempt, and backoff uses the locked attempt count.
+
+Evidence and release:
+
+- Full Laravel suite: **1,974 passed**, **18,747 assertions**. Post-format
+  focused UI and delivery suites: **111 passed**, **3,615 assertions**.
+- Pint and `git diff --check` passed. No database migrations or asset build
+  were needed; compiled Blade views use this release's own cache directory.
+- Commit `43a4b91` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/43a4b91`. The prior `7bad0f0`
+  release remains available for rollback.
+- Public Buildpusher app pages and the auth login returned HTTP 200. The
+  Deployer and Analytics roots redirected to their dashboards; Monitor
+  redirected to central authentication. PHP-FPM and all five Buildpusher queue
+  workers were active after restart.
+
+Next task: continue auditing Deployer's remaining feature-specific forms and
+actions against Signal components while preserving route and modal behavior.
+
 ## Slice 124 — move Deployer onto Signal's current topbar SaaS shell — 2026-09-24
 
 Responsibility problem:
