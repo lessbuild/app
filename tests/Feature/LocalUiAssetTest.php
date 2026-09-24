@@ -27,6 +27,43 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('http', $html);
     }
 
+    public function test_signal_checkbox_keeps_unchecked_fallback_and_accessible_validation_feedback(): void
+    {
+        $this->withViewErrors([
+            'name' => 'Choose an environment name.',
+            'is_protected' => 'Choose whether this environment is protected.',
+        ]);
+
+        $html = Blade::render(<<<'BLADE'
+            <x-signal.ui.input-field id="environment-name" name="name" label="Name" field-class="sm:col-span-2" required />
+            <x-signal.ui.checkbox id="environment-is-protected" name="is_protected" :checked="true" :restore="false" unchecked-value="0" description="Stop unapproved production deploys.">
+                Protect production
+            </x-signal.ui.checkbox>
+            <x-signal.ui.checkbox id="custom-invalid-checkbox" name="custom_flag" :checked="true" :restore="false" :error-key="false" :show-errors="false" aria-invalid="true" aria-describedby="external-checkbox-help">
+                Custom invalid checkbox
+            </x-signal.ui.checkbox>
+            BLADE,
+        );
+
+        $this->assertStringContainsString('class="grid min-w-0 gap-2 sm:col-span-2"', $html);
+        $this->assertStringContainsString('aria-invalid="true"', $html);
+        $this->assertStringContainsString('environment-name-error', $html);
+        $this->assertStringContainsString('Choose an environment name.', $html);
+        $this->assertStringContainsString('<input type="hidden" name="is_protected" value="0">', $html);
+        $this->assertStringContainsString('id="environment-is-protected-help"', $html);
+        $this->assertStringContainsString('environment-is-protected-help environment-is-protected-error', $html);
+        $this->assertStringContainsString('id="environment-is-protected-error"', $html);
+        $this->assertStringContainsString('Choose whether this environment is protected.', $html);
+        $this->assertStringContainsString('aria-describedby="external-checkbox-help"', $html);
+        preg_match('/<input\b(?=[^>]*id="environment-is-protected")(?=[^>]*name="is_protected")(?=[^>]*type="checkbox")[^>]*>/', $html, $checkbox);
+        $this->assertArrayHasKey(0, $checkbox);
+        $this->assertStringContainsString('checked', $checkbox[0]);
+        $this->assertStringContainsString('aria-invalid="true"', $checkbox[0]);
+        preg_match('/<input\b(?=[^>]*id="custom-invalid-checkbox")(?=[^>]*name="custom_flag")(?=[^>]*type="checkbox")[^>]*>/', $html, $customCheckbox);
+        $this->assertArrayHasKey(0, $customCheckbox);
+        $this->assertStringContainsString('aria-invalid="true"', $customCheckbox[0]);
+    }
+
     public function test_public_and_authenticated_layouts_render_without_remote_visual_assets(): void
     {
         $user = User::factory()->create(['name' => 'Ada Lovelace', 'email' => 'ada@example.test']);

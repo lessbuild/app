@@ -125,6 +125,18 @@ class ProjectEnvironmentTest extends TestCase
             '/<dialog(?=[^>]*id="environment-settings-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
         );
+        $this->assertMatchesRegularExpression(
+            '/<input\b(?=[^>]*id="environment-settings-'.$environment->id.'-name")(?=[^>]*name="name")(?=[^>]*required="required")[^>]*>/',
+            $content,
+        );
+        $this->assertStringContainsString('for="environment-settings-'.$environment->id.'-name"', $content);
+        $this->assertStringContainsString('sm:col-span-2', $content);
+        $this->assertStringContainsString('<input type="hidden" name="is_protected" value="0">', $content);
+        $this->assertStringContainsString('<input type="hidden" name="requires_deployment_approval" value="0">', $content);
+        $this->assertStringContainsString('environment-settings-'.$environment->id.'-requires-deployment-approval', $content);
+        preg_match_all('/\bid="(environment-settings-[^"]+)"/', $content, $settingsIds);
+        $this->assertNotEmpty($settingsIds[1]);
+        $this->assertCount(count($settingsIds[1]), array_unique($settingsIds[1]));
         $this->assertDoesNotMatchRegularExpression(
             '/<dialog(?=[^>]*id="environment-deployment-controls-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
