@@ -22,4 +22,5 @@
     <x-signal.ui.input :id="$controlId" :name="$name" :type="$type" :value="$value" :restore="$restore" :required="$required"
         aria-invalid="{{ $hasError ? 'true' : 'false' }}" :aria-describedby="$describedBy !== '' ? $describedBy : null"
         {{ $attributes->except(['aria-describedby', 'aria-invalid', 'required']) }} />
+    {{ $slot }}
 </x-signal.ui.field>

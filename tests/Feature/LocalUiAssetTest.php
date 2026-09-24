@@ -320,7 +320,6 @@ class LocalUiAssetTest extends TestCase
     {
         $choices = [
             resource_path('views/components/scenes/observability/status-page-create-dialog.blade.php'),
-            resource_path('views/components/scenes/projects/deployment-controls-dialog.blade.php'),
         ];
 
         foreach ($choices as $viewPath) {
@@ -330,6 +329,12 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('rounded-lg', $source, $viewPath);
             $this->assertStringNotContainsString('rounded-xl', $source, $viewPath);
         }
+
+        $deploymentControls = File::get(resource_path('views/components/scenes/projects/deployment-controls-dialog.blade.php'));
+        $this->assertStringContainsString('<x-signal.ui.input-field', $deploymentControls);
+        $this->assertStringContainsString('<x-signal.ui.select-field', $deploymentControls);
+        $this->assertStringContainsString('<x-signal.ui.checkbox', $deploymentControls);
+        $this->assertStringContainsString('<x-signal.ui.button', $deploymentControls);
 
         $search = File::get(resource_path('views/search/_workspace-results.blade.php'));
         $billing = File::get(resource_path('views/scenes/billing/index.blade.php'));

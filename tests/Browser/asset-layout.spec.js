@@ -2387,6 +2387,21 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         await trigger.click();
         await expect(dialog).toBeVisible();
         await expect(page.locator(`${dialogSelector} [data-modal-close]`)).toBeFocused();
+        if (triggerName === 'Edit settings') {
+            const name = dialog.locator('[name="name"]');
+            await expect(name).toBeVisible();
+            const nameId = await name.getAttribute('id');
+            await expect(dialog.locator(`label[for="${nameId}"]`)).toContainText('Name');
+            await expect(dialog.locator('[name="build_command"]')).toBeVisible();
+            await expect(dialog.locator('[name="is_protected"][type="checkbox"]')).toBeVisible();
+        }
+        if (triggerName === 'Edit controls') {
+            await expect(dialog.locator('[name="deployment_locked"][type="checkbox"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_window_days[]"][value="1"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_window_start"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_window_timezone"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_strategy"]')).toBeVisible();
+        }
         const dialogKey = new URL(page.url()).searchParams.get('dialog');
         const expectedDialog = {
             'Add environment': /^add-environment$/,

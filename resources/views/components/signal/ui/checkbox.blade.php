@@ -9,6 +9,8 @@
     'required' => false,
     'restore' => true,
     'showErrors' => true,
+    'containerClass' => null,
+    'labelClass' => null,
 ])
 
 @php($id = $id ?: $name)
@@ -18,11 +20,11 @@
 @php($invalid = $hasError || $attributes->get('aria-invalid') === 'true')
 @php($describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$id.'-help' : '').($hasError ? ' '.$id.'-error' : '')))
 
-<div class="grid gap-2">
+<div @class([$containerClass ?: 'grid gap-2'])>
 @if ($uncheckedValue !== null)
     <input type="hidden" name="{{ $name }}" value="{{ $uncheckedValue }}">
 @endif
-<label class="inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold text-ink">
+<label @class(['inline-flex min-h-10 cursor-pointer items-center gap-2 text-sm font-semibold text-ink', $labelClass])>
     <input
         id="{{ $id }}"
         name="{{ $name }}"

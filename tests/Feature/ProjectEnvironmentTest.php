@@ -121,6 +121,16 @@ class ProjectEnvironmentTest extends TestCase
         $response->assertOk();
 
         $content = $response->getContent();
+        $this->assertStringContainsString('<input type="hidden" name="deployment_locked" value="0">', $content);
+        $this->assertStringContainsString('<input type="hidden" name="deployment_window_enabled" value="0">', $content);
+        $this->assertStringContainsString('<input type="hidden" name="automatic_rollback" value="0">', $content);
+        $this->assertStringContainsString('name="deployment_window_days[]"', $content);
+        $this->assertStringContainsString('list="deployment-timezones-'.$environment->id.'"', $content);
+        $this->assertStringContainsString('value="09:00"', $content);
+        $this->assertStringContainsString('value="17:00"', $content);
+        preg_match_all('/\bid="(environment-deployment-controls-[^"]+)"/', $content, $controlsIds);
+        $this->assertNotEmpty($controlsIds[1]);
+        $this->assertCount(count($controlsIds[1]), array_unique($controlsIds[1]));
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="environment-settings-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
