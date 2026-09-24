@@ -10,11 +10,15 @@ use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\Workspaces\ManageWorkspaceMembership;
 use App\Core\Services\Workspaces\ManageWorkspaceProductAccess;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceMembershipProjector;
 use App\Modules\Deployer\Models\User as DeployerUser;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
 use App\Modules\Monitor\Models\User as MonitorUser;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Auth;
@@ -46,6 +50,7 @@ final class WorkspaceProductAccessManagementTest extends TestCase
         parent::setUp();
         $this->withoutVite();
 
+        $this->registerWorkspaceMembershipProjectors();
         Artisan::call('platform:migrate', ['module' => 'core']);
         $this->createProductTables();
 
@@ -384,6 +389,21 @@ final class WorkspaceProductAccessManagementTest extends TestCase
             $table->timestamps();
             $table->primary(['user_id', 'workspace_id']);
         });
+    }
+
+    private function registerWorkspaceMembershipProjectors(): void
+    {
+        $registry = app(ProductWorkspaceMembershipProjectorRegistry::class);
+
+        foreach ([
+            'deployer' => DeployerWorkspaceMembershipProjector::class,
+            'monitor' => MonitorWorkspaceMembershipProjector::class,
+            'analytics' => AnalyticsWorkspaceMembershipProjector::class,
+        ] as $product => $projector) {
+            if ($registry->get($product) === null) {
+                $registry->register($product, app($projector));
+            }
+        }
     }
 
     private function createProductWorkspacesAndIdentities(): void

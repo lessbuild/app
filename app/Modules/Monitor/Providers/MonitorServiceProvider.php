@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Providers;
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
+use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
@@ -28,6 +29,7 @@ use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;
 use App\Modules\Monitor\Services\NativeDnsRecordResolver;
@@ -99,6 +101,10 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProductPrincipalRegistry::class)->register(
             'monitor',
             new MappedProductPrincipalAdapter('monitor', User::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
+            'monitor',
+            app(MonitorWorkspaceMembershipProjector::class),
         );
 
         app('router')->aliasMiddleware('monitor.ingest.token', AuthenticateIngestToken::class);

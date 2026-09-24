@@ -5,6 +5,7 @@ namespace App\Modules\Analytics\Providers;
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
+use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
@@ -22,6 +23,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsTrafficContextProvider;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceMembershipProjector;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceSearchProvider;
 use App\Modules\Analytics\Services\WorkspaceViewData;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -77,6 +79,10 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         app(ProductPrincipalRegistry::class)->register(
             'analytics',
             new MappedProductPrincipalAdapter('analytics', User::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
+            'analytics',
+            app(AnalyticsWorkspaceMembershipProjector::class),
         );
 
         Gate::policy(Site::class, SitePolicy::class);

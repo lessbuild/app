@@ -5,6 +5,7 @@ namespace App\Modules\Deployer\Providers;
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
+use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
@@ -30,6 +31,7 @@ use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
 use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\SshServerTroubleshootingTransport;
@@ -64,6 +66,10 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProductPrincipalRegistry::class)->register(
             'deployer',
             new MappedProductPrincipalAdapter('deployer', User::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
+            'deployer',
+            app(DeployerWorkspaceMembershipProjector::class),
         );
 
         Livewire::component('build-deployment-status', BuildDeploymentStatus::class);
