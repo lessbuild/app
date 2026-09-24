@@ -1,5 +1,34 @@
 # Signal theme integration progress
 
+## Slice 132 — componentize Deployer automation dialogs — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated deployment schedule, scheduled task, and personal access token
+  dialogs to shared Signal input, textarea, select, checkbox, card, and button
+  components.
+- Kept environment-specific dialog IDs, form names, the old-input dialog
+  sentinel, cron/timezone/timeout defaults, checkbox false values, token expiry
+  choices, and token ability defaults. Field help and validation now use the
+  shared accessible associations.
+
+Evidence and release:
+
+- The automation feature suite passed: **39 tests**, **239 assertions**.
+  Mobile Playwright passed both the token and schedule/task dialog checks.
+  Pint, JavaScript syntax, and `git diff --check` passed.
+- Commit `6c4a179` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/6c4a179`; release `c39b8f1` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, three product pages, and shared login returned
+  HTTP 200. Product roots retained their expected redirects, Deployer health
+  returned HTTP 200, and PHP-FPM is active.
+
+Next task: continue migrating Deployer's remaining security, inventory, and
+feature forms to Signal components while preserving the existing workflows.
+
 ## Slice 131 — componentize Deployer recipe and server-import forms — 2026-09-24
 
 Boundary and implementation:
