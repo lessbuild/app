@@ -1,5 +1,41 @@
 # Signal theme integration progress
 
+## Slice 128 — componentize Deployer website forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated the shared create/edit website form to Signal select, input,
+  textarea, checkbox, and card components. URL and health-check controls use a
+  reusable Signal input-addon component with joined borders, decorative
+  semantics, and prefix/suffix support in the shared input-field component.
+- Create and edit actions now use the Signal button directly. Preserved field
+  prefixes, old input, retention defaults, health-check/monitoring values,
+  descriptions, hidden false checkbox values, edit-environment plaintext
+  handling, routes, and request names.
+- Rechecked `lessbuild/template` main; it remains at
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974`, the already-pinned Signal
+  source.
+
+Evidence and release:
+
+- Focused website, encryption, health-monitoring, creation-dialog, and shared
+  UI suites: **75 passed**, **3,181 assertions**; the subsequent shared UI
+  rerun including suffix-addon coverage: **70 passed**, **3,139 assertions**.
+  Mobile Playwright verified create and edit forms, labels, joined controls,
+  and the Signal health-check card. Pint, JavaScript syntax, and
+  `git diff --check` passed.
+- Commit `8b311d1` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/8b311d1`. The previous `c00644c`
+  release remains available for rollback. Release-local config, route, and
+  view caches were rebuilt; cache snapshots remain root-only. No migrations,
+  assets, or queue workers changed.
+- The Buildpusher overview and all three product pages plus the shared login
+  returned HTTP 200. Deployer, Monitor, and Analytics roots kept their expected
+  302 dashboard/auth handoffs. PHP-FPM is active.
+
+Next task: continue componentizing Deployer's remaining feature forms and
+actions; cross-product theme and accessibility acceptance remains open.
+
 ## Slice 127 — componentize Deployer deployment controls — 2026-09-24
 
 Boundary and implementation:
