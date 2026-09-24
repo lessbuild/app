@@ -38,6 +38,7 @@ use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use RuntimeException;
 use Tests\TestCase;
 
 final class ProjectConnectionDeliveryTest extends TestCase
@@ -252,6 +253,65 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $this->assertSame(1, ProjectConnectionDelivery::query()
             ->where('source_event_id', $event->getKey())
             ->count());
+    }
+
+    public function test_target_outage_keeps_the_source_success_and_retries_only_the_pending_delivery(): void
+    {
+        $analyticsConnectionId = (string) Str::ulid();
+        DB::connection('core')->table('project_connections')->insert([
+            'id' => $analyticsConnectionId,
+            'project_id' => $this->projectId,
+            'source_resource_id' => $this->sourceResourceId,
+            'target_resource_id' => $this->analyticsResourceId,
+            'source_environment_id' => $this->sourceEnvironmentId,
+            'target_environment_id' => null,
+            'capabilities' => json_encode(['release_annotations'], JSON_THROW_ON_ERROR),
+            'status' => 'active',
+            'created_by_user_id' => null,
+            'last_succeeded_at' => null,
+            'last_error_code' => null,
+            'last_error_at' => null,
+            'disconnected_at' => null,
+            'automation_paused_at' => null,
+            'metadata' => null,
+            'created_at' => now()->subSecond(),
+            'updated_at' => now(),
+        ]);
+        $event = $this->outboxEvent();
+        $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event));
+        $event->forceFill(['status' => 'dispatched'])->save();
+        $delivery = ProjectConnectionDelivery::query()
+            ->where('project_connection_id', $analyticsConnectionId)
+            ->sole();
+        $failureInjected = false;
+        DB::listen(function (QueryExecuted $query) use (&$failureInjected): void {
+            if ($failureInjected || $query->connectionName !== 'analytics'
+                || ! str_contains(strtolower($query->sql), 'from "sites"')) {
+                return;
+            }
+
+            $failureInjected = true;
+            throw new RuntimeException('Simulated Analytics database outage');
+        });
+
+        $this->assertSame('pending', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+        $this->assertSame('succeeded', DB::table('builds')->where('id', $event->source_build_id)->value('status'));
+        $this->assertSame('dispatched', $event->fresh()->status);
+        $this->assertTrue($failureInjected);
+        $this->assertSame('pending', $delivery->fresh()->status);
+        $this->assertSame('target_delivery_failed', $delivery->fresh()->last_error_code);
+        $this->assertSame(1, $delivery->fresh()->attempts);
+        $this->assertNotNull($delivery->fresh()->available_at);
+        $this->assertSame(0, SiteReleaseAnnotation::query()->count());
+
+        $delivery->forceFill(['available_at' => now()->subMinute()])->save();
+        $this->assertSame('pending', $delivery->fresh()->status);
+        $this->assertTrue($delivery->fresh()->available_at->lte(now()));
+        $this->assertSame('delivered', app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey()));
+        $this->assertSame('succeeded', DB::table('builds')->where('id', $event->source_build_id)->value('status'));
+        $this->assertSame('dispatched', $event->fresh()->status);
+        $this->assertSame(2, $delivery->fresh()->attempts);
+        $this->assertSame(1, SiteReleaseAnnotation::query()->count());
     }
 
     public function test_deployments_without_an_active_core_mapping_are_consumed_without_retries(): void
