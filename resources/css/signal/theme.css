@@ -56,8 +56,8 @@
   --motion-base: 240ms;
   --shadow-soft: var(--shadow-soft-value);
   --shadow-panel: var(--shadow-panel-value);
-  --container-content: 78rem;
-  --container-reading: 48rem;
+  --container-content: var(--content-width);
+  --container-reading: var(--reading-width);
 }
 
 :root {
@@ -116,6 +116,7 @@
   --header-height: 4rem;
   --content-width: 78rem;
   --reading-width: 48rem;
+  --page-gutter: 1.25rem;
   --density-control-y: 0.7rem;
   --density-section-y: 6rem;
 }

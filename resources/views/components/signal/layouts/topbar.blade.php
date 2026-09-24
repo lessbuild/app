@@ -96,106 +96,16 @@
     <div class="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         <div class="flex min-h-16 items-center gap-3">
             @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
-                <details class="ui-topbar-menu group relative shrink-0 lg:hidden">
-                    <summary class="ui-icon-btn cursor-pointer list-none" aria-label="{{ __('Open application navigation') }}" aria-haspopup="true">
-                        <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
-                    </summary>
-                    <div class="ui-popover ui-popover-mobile absolute left-0 top-full z-40 grid max-h-[min(75vh,38rem)] w-[min(22rem,calc(100vw-2rem))] gap-1 overflow-y-auto rounded-panel border border-line bg-surface p-2 shadow-panel">
-                        <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Products') }}</p>
-                        @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
-                            <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" class="w-full justify-start" />
-                        @endif
-                        <a class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink" href="{{ $projectsUrl }}">{{ __('Projects') }}</a>
-                        @foreach (['deployer', 'monitor', 'analytics'] as $productKeyOption)
-                            @php
-                                $productConfig = $products[$productKeyOption] ?? [];
-                                $productRoute = $productKeyOption.'.dashboard';
-                                if ($productKeyOption === 'deployer') $productRoute = 'dashboard';
-                                $productHref = is_array($productUrlOverrides) && array_key_exists($productKeyOption, $productUrlOverrides)
-                                    ? $productUrlOverrides[$productKeyOption]
-                                    : (\Illuminate\Support\Facades\Route::has($productRoute)
-                                        ? route($productRoute)
-                                        : ($productConfig['url'] ?? null));
-                                $productHref = $platformSsoHref($productHref);
-                            @endphp
-                            @if ($productHref)
-                                <a class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink" href="{{ $productHref }}" @if($activeProduct === $productKeyOption) aria-current="page" @endif>{{ $productConfig['label'] ?? ucfirst($productKeyOption) }}</a>
-                            @endif
-                        @endforeach
-                        @if (count($workspaceOptions))
-                            <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Switch workspace') }}</p>
-                            @foreach ($workspaceOptions as $workspace)
-                                <form method="POST" action="{{ route($workspaceSwitchRoute, $workspace) }}">
-                                    @csrf
-                                    <button type="submit" class="flex min-h-10 w-full items-center rounded-control px-3 text-left text-sm font-bold {{ $currentWorkspace?->id === $workspace->id ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-muted hover:text-ink' }}" @if($currentWorkspace?->id === $workspace->id) aria-current="true" @endif>{{ $workspace->name }}</button>
-                                </form>
-                            @endforeach
-                            @if ($workspaceManageUrl)<a href="{{ $workspaceManageUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-primary hover:bg-surface-muted">{{ __('Manage workspace') }}</a>@endif
-                        @endif
-                        @if ($showProjectContext)
-                            <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ $contextLabel }}</p>
-                            <a href="{{ $contextIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ $contextIndexLabel }}</a>
-                            @foreach ($contextOptions as $contextOption)
-                                @php
-                                    $contextOptionHref = data_get($contextOption, 'href');
-                                @endphp
-                                @if ($contextOptionHref)<a href="{{ $contextOptionHref }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ data_get($contextOption, 'name') }}</a>@endif
-                            @endforeach
-                        @endif
-                        @if ($showEnvironmentContext && count($environmentOptions))
-                            <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Environment') }}</p>
-                            @if ($environmentContextUnavailable)
-                                <p class="px-3 py-2 text-xs font-bold text-warning" role="status">{{ __('Selected environment unavailable') }}</p>
-                            @endif
-                            <a href="{{ $environmentIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('All environments') }}</a>
-                            @foreach ($environmentOptions as $environmentOption)
-                                @php
-                                    $environmentOptionHref = data_get($environmentOption, 'href');
-                                @endphp
-                                @if ($environmentOptionHref)<a href="{{ $environmentOptionHref }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ data_get($environmentOption, 'name') }}</a>@endif
-                            @endforeach
-                        @endif
-                        <div class="my-1 border-t border-line"></div>
-                        @php
-                            $mobileGroups = data_get($navigation, 'mobile.groups');
-                        @endphp
-                        @if (is_array($mobileGroups))
-                            <nav id="signal-mobile-product-navigation" class="grid gap-1" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
-                                @foreach ($mobileGroups[0] ?? [] as $item)
-                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                                @endforeach
-                                @foreach ($mobileGroups[2] ?? [] as $item)
-                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                                @endforeach
-                            </nav>
-                            <nav id="signal-mobile-profile-navigation" class="mt-1 grid gap-1 border-t border-line pt-1" aria-label="{{ __('Account and support') }}">
-                                @foreach ($mobileGroups[1] ?? [] as $item)
-                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                                @endforeach
-                            </nav>
-                        @else
-                            <nav id="signal-mobile-product-navigation" class="grid gap-1" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
-                                @foreach ($navigation['groups'] ?? [] as $group)
-                                    <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ $group['label'] }}</p>
-                                    @foreach ($group['items'] ?? [] as $item)
-                                        <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                                    @endforeach
-                                @endforeach
-                            </nav>
-                            <nav id="signal-mobile-profile-navigation" class="mt-1 grid gap-1 border-t border-line pt-1" aria-label="{{ __('Account and support') }}">
-                                @foreach (array_merge($navigation['profile'] ?? [], $navigation['support'] ?? []) as $item)
-                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                                @endforeach
-                            </nav>
-                        @endif
-                        @if ($logoutUrl)
-                            <form action="{{ $logoutUrl }}" method="post" class="mt-1 border-t border-line pt-1">
-                                @csrf
-                                <button type="submit" class="flex min-h-10 w-full items-center rounded-control px-3 text-left text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Log out') }}</button>
-                            </form>
-                        @endif
-                    </div>
-                </details>
+                <button
+                    type="button"
+                    class="ui-icon-btn shrink-0 lg:hidden"
+                    data-mobile-toggle
+                    aria-label="{{ __('Open application navigation') }}"
+                    aria-controls="signal-mobile-product-navigation-drawer"
+                    aria-expanded="false"
+                >
+                    <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
+                </button>
             @else
                 <button type="button" x-ref="navigationToggle" class="ui-icon-btn shrink-0 lg:hidden" aria-label="{{ __('Open navigation') }}" aria-controls="app-mobile-nav" :aria-expanded="menu.toString()" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())">
                     <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
@@ -227,11 +137,7 @@
                         $productActive = $activeProduct === $key;
                     @endphp
                     @if ($productHref)
-                        <a href="{{ $productHref }}" @class([
-                            'inline-flex min-h-10 items-center rounded-control px-3 text-sm font-bold transition-colors',
-                            'bg-primary-soft text-primary' => $productActive,
-                            'text-muted hover:bg-surface-muted hover:text-ink' => ! $productActive,
-                        ]) @if($productActive) aria-current="page" @endif>{{ $label }}</a>
+                        <x-signal.layouts.navigation-link :item="['label' => $label, 'href' => $productHref, 'active' => $productActive]" />
                     @else
                         <span class="inline-flex min-h-10 items-center gap-2 rounded-control px-3 text-sm font-bold text-subtle" aria-disabled="true" title="{{ __('This product is being connected.') }}">
                             {{ $label }}
@@ -396,3 +302,31 @@
         </div>
     </div>
 </header>
+
+@if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
+    <x-signal.layouts.mobile-navigation
+        id="signal-mobile-product-navigation-drawer"
+        :active-product="$activeProduct"
+        :active-product-label="$activeProductLabel"
+        :brand-url="$brandUrl"
+        :platform-sso-href="$platformSsoHref"
+        :products="$products"
+        :projects-url="$projectsUrl"
+        :product-url-overrides="$productUrlOverrides"
+        :current-workspace="$currentWorkspace"
+        :workspace-options="$workspaceOptions"
+        :workspace-switch-route="$workspaceSwitchRoute"
+        :workspace-manage-url="$workspaceManageUrl"
+        :show-project-context="$showProjectContext"
+        :context-label="$contextLabel"
+        :context-index-label="$contextIndexLabel"
+        :context-index-url="$contextIndexUrl"
+        :context-options="$contextOptions"
+        :show-environment-context="$showEnvironmentContext"
+        :environment-options="$environmentOptions"
+        :environment-context-unavailable="$environmentContextUnavailable"
+        :environment-index-url="$environmentIndexUrl"
+        :navigation="$navigation"
+        :logout-url="$logoutUrl"
+    />
+@endif

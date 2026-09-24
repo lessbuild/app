@@ -47,7 +47,7 @@
         :show-environment-context="$showEnvironmentContext"
     />
 
-    <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="mx-auto w-full max-w-screen-2xl px-4 py-7 sm:px-6 sm:py-9 lg:px-8">
+    <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="ui-layout-gutter mx-auto w-full max-w-screen-2xl py-7 sm:py-9">
         <x-alerts.flash />
         {{ $slot }}
     </main>

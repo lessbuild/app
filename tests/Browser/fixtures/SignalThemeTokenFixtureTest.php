@@ -35,6 +35,11 @@ final class SignalThemeTokenFixtureTest extends TestCase
                 ]],
             ]],
         ];
+        $productUrlOverrides = [
+            'deployer' => '/theme-token-demo/deployer',
+            'monitor' => '/theme-token-demo/monitor',
+            'analytics' => '/theme-token-demo/analytics',
+        ];
 
         foreach ($products as $fixture => $productKey) {
             $html = Blade::render(<<<'BLADE'
@@ -48,12 +53,13 @@ final class SignalThemeTokenFixtureTest extends TestCase
                             :navigation="$navigation"
                             title="Signal theme token proof"
                             :product-key="$productKey"
+                            :product-url-overrides="$productUrlOverrides"
                             :show-notifications="false"
                             :show-project-context="false"
                             :show-environment-context="false"
                         />
                     @endif
-                    <main class="mx-auto max-w-3xl space-y-5 p-6">
+                    <main class="ui-layout-gutter mx-auto max-w-3xl space-y-5 py-6">
                         <x-signal.ui.panel as="section" class="space-y-5 p-6" data-theme-demo-panel>
                             <h1 class="text-2xl font-extrabold" data-theme-demo-heading>Shared theme proof</h1>
                             <x-signal.ui.card tone="muted" class="p-4" data-theme-demo-card>Muted card variant</x-signal.ui.card>
@@ -63,7 +69,7 @@ final class SignalThemeTokenFixtureTest extends TestCase
                     </main>
                 </x-signal.layouts.core>
                 BLADE,
-                ['navigation' => $navigation, 'productKey' => $productKey],
+                ['navigation' => $navigation, 'productKey' => $productKey, 'productUrlOverrides' => $productUrlOverrides],
             );
 
             File::put($directory."/{$fixture}.html", $html);

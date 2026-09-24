@@ -122,6 +122,7 @@ test('one shared Signal token change reaches every product, public, and auth doc
                     cardRadius: getComputedStyle(card).borderRadius,
                     buttonRadius: getComputedStyle(button).borderRadius,
                     inputPaddingTop: Number.parseFloat(getComputedStyle(input).paddingTop),
+                    layoutGutter: getComputedStyle(document.querySelector('main')).paddingLeft,
                     headingFont: getComputedStyle(heading).fontFamily,
                     documentWidth: document.documentElement.scrollWidth,
                     viewportWidth: document.documentElement.clientWidth,
@@ -136,6 +137,7 @@ test('one shared Signal token change reaches every product, public, and auth doc
             expect(tokenResult.cardRadius).toBe('19.2px');
             expect(tokenResult.buttonRadius).toBe('16px');
             expect(tokenResult.inputPaddingTop).toBeCloseTo(8.8, 1);
+            expect(tokenResult.layoutGutter).toBe(viewport.width < 640 ? '12px' : '20px');
             expect(tokenResult.headingFont).toContain('Georgia');
             expect(tokenResult.documentWidth).toBeLessThanOrEqual(tokenResult.viewportWidth + 2);
             expect(tokenResult.product).toBe(['public', 'auth'].includes(product) ? '' : product);
@@ -146,16 +148,31 @@ test('one shared Signal token change reaches every product, public, and auth doc
                 await expect(shell.locator('nav[aria-label="Products"]')).toHaveCount(1);
 
                 if (viewport.width < 1024) {
-                    const mobileMenu = shell.locator('details').first();
-                    await mobileMenu.locator('summary').click();
-                    await expect(mobileMenu).toHaveAttribute('open', '');
-                    const mobileNavigation = shell.locator('#signal-mobile-product-navigation');
+                    const mobileMenu = page.locator('#signal-mobile-product-navigation-drawer');
+                    const trigger = shell.getByRole('button', { name: 'Open application navigation' });
+                    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+                    await trigger.click();
+                    await expect(trigger).toHaveAttribute('aria-expanded', 'true');
+                    await expect(mobileMenu).toHaveAttribute('aria-hidden', 'false');
+                    await expect(mobileMenu).toBeVisible();
+                    await expect(mobileMenu.locator('aside')).toHaveCSS('background-color', 'rgb(255, 255, 255)');
+                    const mobileNavigation = page.locator('#signal-mobile-product-navigation');
                     await expect(mobileNavigation).toBeVisible();
                     await expect(mobileNavigation.getByRole('link', { name: 'Dashboard', exact: true })).toHaveAttribute('aria-current', 'page');
+                    await page.keyboard.press('Shift+Tab');
+                    expect(await mobileMenu.evaluate((drawer) => drawer.contains(document.activeElement))).toBe(true);
+                    await page.keyboard.press('Escape');
+                    await expect(mobileMenu).toHaveAttribute('aria-hidden', 'true');
+                    await expect(trigger).toHaveAttribute('aria-expanded', 'false');
+                    await expect(trigger).toBeFocused();
                 }
 
                 if (product === 'deployer') {
-                    await expect(shell.getByRole('link', { name: 'Deployer', exact: true })).toHaveAttribute('aria-current', 'page');
+                    if (viewport.width < 1024) {
+                        await expect(page.locator('#signal-mobile-product-navigation-drawer a[href="/theme-token-demo/deployer"]')).toHaveAttribute('aria-current', 'page');
+                    } else {
+                        await expect(shell.locator('a[href="/theme-token-demo/deployer"]')).toHaveAttribute('aria-current', 'page');
+                    }
                 }
             }
         }

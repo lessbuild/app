@@ -2,7 +2,7 @@
 
 Use `resources/views/components/signal/` as the source of truth for shared Blade UI and `resources/css/signal/` plus `resources/css/components/ui.css` for its semantic theme styles. New product pages use the `x-signal.*` namespace. Product and legacy templates can keep compatibility names while they are migrated; adapters forward props, attributes, slots, and Livewire attributes to the shared implementation.
 
-The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `0e8218d8bac1a945fea3cc78e342e9d56b631ca8` (`Plan topbar reliability and SaaS template improvements`, 2026-09-24). Since the integrated UI revision `cdb156bf4fe92f30f18b7763eaa313da5819d974`, this upstream commit changes only `PLAN.md`; no newer component or stylesheet files are available to merge. Laravel Blade and Tailwind implementations adapt the source templates to the shared product routes and accessibility contracts.
+The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `c7eba561808f9831530d1bfaeaec81399cafe45c` (`Add optional SEO metadata and sitemap generation`, 2026-09-24). The current source includes the later SaaS administration/template workflows and an animated mobile navigation drawer. Its drawer, spacing tokens, expanded-dialog, scrollable-table, and responsive popover patterns are adapted into the shared Laravel components. Sitemap generation and static-demo persistence stay in the template site; the application uses server-authoritative workspaces, navigation, and product access.
 
 ## Current shared APIs
 
@@ -12,6 +12,8 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 | `x-signal.layouts.core` | Shared HTML document, theme initialization, assets, Livewire/Alpine runtime, and page slot. |
 | `x-signal.layouts.navigation-link` | Active/inactive product and local navigation links. |
 | `x-signal.layouts.navigation-group` | Grouped and overflow navigation. |
+| `x-signal.layouts.mobile-sidebar` | Responsive Signal drawer surface with a backdrop, focus management, escape dismissal, focus return, and breakpoint-aware close behavior. |
+| `x-signal.layouts.mobile-navigation` | Server-rendered product navigation composed from product, workspace, project, environment, account, and support destinations. |
 | `x-signal.layouts.command-palette` | Shared keyboard-search overlay and focus behavior. |
 | `x-signal.ui.alert` | Informational, success, warning, and danger feedback. |
 | `x-signal.ui.avatar` | Initial-based identity mark with forwarded size and layout attributes. |
@@ -44,7 +46,7 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 
 Use explicit component props for variants and named slots for page-specific content. Cards also accept a constrained semantic element, spacing, and shadow options so a shared panel can remain a `form`, `section`, `article`, or `details` without copying its visual surface. Keep authorization, validation, queries, and domain behavior in their existing controllers, policies, requests, actions, and Livewire components.
 
-`x-signal.layouts.command-palette` accepts `searchUrl` for private asynchronous resource results, optional `searchActionUrl` for a normal GET results page on Enter, and `extraItems` for product-specific shortcuts. Deployer uses this shared palette while keeping its application/server/site/repository creation dialogs and operations links.
+`x-signal.layouts.command-palette` accepts `searchUrl` for private asynchronous resource results, optional `searchActionUrl` for a normal GET results page on Enter, and `extraItems` for product-specific shortcuts. Deployer uses this shared palette while keeping its application/server/site/repository creation dialogs and operations links. The latest Signal mobile drawer replaces the Deployer mobile popover while preserving product switching, workspace switching, project/environment context, product sections, support, and logout.
 
 ## Compatibility adapters
 

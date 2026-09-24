@@ -3,14 +3,18 @@ const focusableSelector = 'a[href], button:not([disabled]), input:not([disabled]
 const focusableIn = element => [...element.querySelectorAll(focusableSelector)];
 
 /**
- * Initialize Signal's public mobile drawer behavior without coupling it to
- * Livewire. Public pages do not load Livewire's Alpine focus plugin.
+ * Initialize Signal's public and product navigation drawers without coupling
+ * their focus and scroll behavior to Livewire.
  */
 export function initSignalPublicDrawers() {
     document.querySelectorAll('[data-mobile-drawer]').forEach(drawer => {
         const toggles = [...document.querySelectorAll('[data-mobile-toggle]')]
             .filter(toggle => toggle.getAttribute('aria-controls') === drawer.id || drawer.contains(toggle));
-        const desktopNavigation = drawer.parentElement?.querySelector('[data-desktop-navigation]');
+        const desktopNavigation = drawer.dataset.desktopNavigation
+            ? document.querySelector(drawer.dataset.desktopNavigation)
+            : drawer.parentElement?.querySelector('[data-desktop-navigation]');
+        const breakpoint = Number.parseInt(drawer.dataset.mobileBreakpoint ?? '', 10) || 768;
+        const desktopViewport = window.matchMedia(`(min-width: ${breakpoint}px)`);
         let lastTrigger = null;
 
         const isOpen = () => !drawer.classList.contains('hidden');
@@ -88,7 +92,7 @@ export function initSignalPublicDrawers() {
         });
 
         window.addEventListener('resize', () => {
-            if (window.matchMedia('(min-width: 768px)').matches && isOpen()) {
+            if (desktopViewport.matches && isOpen()) {
                 close(false);
                 desktopNavigation?.querySelector('a[href]')?.focus();
             }

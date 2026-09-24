@@ -43,4 +43,18 @@ final class SignalThemeArchitectureTest extends TestCase
         $this->assertStringContainsString("@vite('resources/js/signal-theme.js')", $source);
         $this->assertStringContainsString("@vite('resources/js/signal-drawer.js')", $source);
     }
+
+    public function test_product_topbar_uses_the_shared_signal_mobile_sidebar_and_latest_content_gutter(): void
+    {
+        $topbar = File::get(base_path('resources/views/components/signal/layouts/topbar.blade.php'));
+        $mobileNavigation = File::get(base_path('resources/views/components/signal/layouts/mobile-navigation.blade.php'));
+        $mobileSidebar = File::get(base_path('resources/views/components/signal/layouts/mobile-sidebar.blade.php'));
+        $deployerLayout = File::get(base_path('resources/views/components/layouts/app.blade.php'));
+
+        $this->assertStringContainsString('<x-signal.layouts.mobile-navigation', $topbar);
+        $this->assertStringContainsString('<x-signal.layouts.mobile-sidebar', $mobileNavigation);
+        $this->assertStringContainsString('data-mobile-drawer', $mobileSidebar);
+        $this->assertStringContainsString('data-mobile-breakpoint="{{ $breakpoint }}"', $mobileSidebar);
+        $this->assertStringContainsString('class="ui-layout-gutter mx-auto w-full max-w-screen-2xl', $deployerLayout);
+    }
 }

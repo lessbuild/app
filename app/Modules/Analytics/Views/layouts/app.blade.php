@@ -22,7 +22,7 @@
         :shared-context-unavailable="$sharedContextUnavailable ?? false"
     />
 
-    <main id="main-content" tabindex="-1" class="mx-auto max-w-screen-2xl space-y-6 px-5 py-8 pb-24 sm:px-8 sm:py-10 lg:pb-10">
+    <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto max-w-screen-2xl space-y-6 py-8 pb-24 sm:py-10 lg:pb-10">
         @yield('content'){{ $slot ?? '' }}
     </main>
 

@@ -1,5 +1,21 @@
 # Signal theme integration progress
 
+## Slice 137 — apply the latest Signal navigation drawer and responsive layout — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `c7eba561808f9831530d1bfaeaec81399cafe45c`. Adapted its latest mobile app-sidebar into shared Blade `mobile-sidebar` and `mobile-navigation` components. Replaced the product shells' earlier mobile popover with the Signal slide-in drawer while preserving product links, workspace switching, project/environment context, product sections, support, and logout.
+- Generalized the shared drawer runtime for an explicit breakpoint and desktop-navigation target. Escape dismissal, focus containment/return, scroll locking, and breakpoint close behavior continue to use the shared runtime; no demo/localStorage workspace state was imported.
+- Applied Signal's layout-gutter token to Core, Deployer, Monitor, and Analytics shells. Added the current Signal preview/dialog/table spacing patterns and reduced-motion drawer transitions to the one shared stylesheet.
+
+Evidence:
+
+- `SignalThemeArchitectureTest` and `PlatformAuthenticationTest`: **12 tests, 101 assertions**.
+- `npm run test:signal-theme`: **1 browser test passed** across six document contexts and mobile/desktop viewports. It verifies the shared palette/component tokens, gutters, Deployer active navigation, drawer appearance, product section state, Escape dismissal, focus containment/return, and no horizontal overflow.
+- Vite production build, scoped Pint, JavaScript syntax, and `git diff --check` passed. No database or production runtime changes have been made for this slice yet.
+
+Next task: compare authenticated Deployer, Monitor, and Analytics screens with the current Signal Topbar SaaS reference after release, including light/dark, mobile/desktop, keyboard, and accessibility states.
+
 ## Slice 136 — reconcile the live Deployer Signal shell with the current branch — 2026-09-24
 
 Boundary and implementation:
