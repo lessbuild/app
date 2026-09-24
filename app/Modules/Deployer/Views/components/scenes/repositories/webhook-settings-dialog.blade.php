@@ -16,26 +16,25 @@
             @if ($repository->provider->provider === \App\Modules\Deployer\Models\Provider::TYPE_GITLAB)
                 <label>
                     <span class="ui-label">{{ __('GitLab signing token') }}</span>
-                    <input
+                    <x-signal.ui.input
                         name="signing_token"
                         type="password"
                         required
                         autocomplete="off"
                         placeholder="whsec_…"
-                        class="ui-input mt-2 w-full"
-                    >
+                        class="ui-input mt-2 w-full" :restore="false" />
                     <x-forms.errors name="signing_token" />
                 </label>
             @endif
             @if ($repository->webhook_enabled)
-                <x-ui.button
+                <x-signal.ui.button
                     type="submit"
                     variant="primary"
                     class="ui-btn-sm"
                     onclick="return confirm({{ Illuminate\Support\Js::from(__('Rotate the webhook secret for :repository? The current secret will stop working immediately.', ['repository' => $repository->name])) }})"
-                >{{ __('Rotate webhook secret') }}</x-ui.button>
+                >{{ __('Rotate webhook secret') }}</x-signal.ui.button>
             @else
-                <x-ui.button type="submit" variant="primary" class="ui-btn-sm">{{ __('Enable webhook') }}</x-ui.button>
+                <x-signal.ui.button type="submit" variant="primary" class="ui-btn-sm">{{ __('Enable webhook') }}</x-signal.ui.button>
             @endif
         </form>
 
@@ -47,7 +46,7 @@
             >
                 @csrf
                 @method('DELETE')
-                <x-ui.button type="submit" variant="danger">{{ __('Disable webhook') }}</x-ui.button>
+                <x-signal.ui.button type="submit" variant="danger">{{ __('Disable webhook') }}</x-signal.ui.button>
             </form>
         @endif
     </div>

@@ -4,7 +4,7 @@
             <p class="ui-eyebrow text-[0.65rem]">{{ str($check->source)->title() }}</p>
             <p class="mt-1 text-sm font-bold text-ink">{{ $check->checked_at->diffForHumans() }}</p>
         </div>
-        <x-ui.badge :tone="$check->successful ? 'success' : 'danger'">{{ $check->successful ? __('Healthy') : __('Failed') }}</x-ui.badge>
+        <x-signal.ui.badge :tone="$check->successful ? 'success' : 'danger'">{{ $check->successful ? __('Healthy') : __('Failed') }}</x-signal.ui.badge>
     </div>
 
     @if ($check->error)

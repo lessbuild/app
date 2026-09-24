@@ -8,7 +8,7 @@
 >
     <form method="POST" action="{{ route('automation.tokens.store') }}" class="space-y-4">
         @csrf
-        <input type="hidden" name="_automation_token_form" value="1">
+        <x-signal.ui.input type="hidden" name="_automation_token_form" value="1" :restore="false" />
         <div class="grid gap-3 sm:grid-cols-[1fr_11rem]">
             <x-signal.ui.input-field
                 id="automation-token-name"

@@ -15,8 +15,8 @@
     <form method="POST" action="{{ route('environments.update', ['environment' => $environment, 'dialog' => 'edit-environment-settings-'.$environment->id]) }}" class="grid gap-4 sm:grid-cols-2">
         @csrf
         @method('PATCH')
-        <input type="hidden" name="_environment_id" value="{{ $environment->id }}">
-        <input type="hidden" name="_environment_panel" value="settings">
+        <x-signal.ui.input type="hidden" name="_environment_id" value="{{ $environment->id }}" :restore="false" />
+        <x-signal.ui.input type="hidden" name="_environment_panel" value="settings" :restore="false" />
         <x-signal.ui.input-field :id="'environment-settings-'.$environment->id.'-name'" name="name" :label="__('Name')" :value="$environment->name" required />
         <x-signal.ui.select-field :id="'environment-settings-'.$environment->id.'-type'" name="type" :label="__('Type')">
             @foreach (\App\Modules\Deployer\Models\Environment::TYPES as $type)

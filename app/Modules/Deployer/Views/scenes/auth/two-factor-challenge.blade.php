@@ -6,9 +6,9 @@
         @csrf
         <div>
             <label for="code" class="ui-label">{{ __('Authentication or recovery code') }}</label>
-            <input id="code" name="code" class="ui-input w-full font-mono" inputmode="text" autocomplete="one-time-code" autofocus required>
+            <x-signal.ui.input id="code" name="code" class="ui-input w-full font-mono" inputmode="text" autocomplete="one-time-code" autofocus required :restore="false" />
         </div>
         <x-forms.errors name="code" />
-        <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Verify and sign in') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary" class="w-full">{{ __('Verify and sign in') }}</x-signal.ui.button>
     </form>
 </x-layouts.auth>

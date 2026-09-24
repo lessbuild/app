@@ -12,7 +12,7 @@
 
         <div>
             <label for="password" class="ui-label">{{ __('Password') }}</label>
-            <input id="password" class="ui-input" type="password" name="password" autocomplete="current-password" required autofocus>
+            <x-signal.ui.input id="password" class="ui-input" type="password" name="password" autocomplete="current-password" required autofocus :restore="false" />
             <x-forms.errors name="password" />
         </div>
 
@@ -20,7 +20,7 @@
             <a href="{{ route('account.index') }}" class="ui-link text-sm">
                 {{ __('Cancel') }}
             </a>
-            <x-ui.button type="submit" variant="primary">{{ __('Confirm password') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Confirm password') }}</x-signal.ui.button>
         </div>
     </form>
 </x-layouts.auth>

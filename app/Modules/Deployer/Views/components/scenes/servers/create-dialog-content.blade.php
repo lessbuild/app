@@ -24,7 +24,7 @@
 @endphp
 
 @if ($providers->isEmpty())
-    <x-ui.alert tone="warning" class="m-5">
+    <x-signal.ui.alert tone="warning" class="m-5">
         <p class="font-semibold">{{ __('You must add a cloud provider before you can add a server.') }}</p>
         <x-signal.ui.button
             :href="$providerCreateUrl"
@@ -35,30 +35,30 @@
             variant="secondary"
             class="mt-3"
         >{{ __('Add cloud provider') }}</x-signal.ui.button>
-    </x-ui.alert>
+    </x-signal.ui.alert>
 @endif
 
 @if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
-    <x-ui.alert tone="warning" class="m-5">
+    <x-signal.ui.alert tone="warning" class="m-5">
         {{ __('We could not confirm this workspace’s Deployer plan and server allowance. Retry shortly or contact support.') }}
-    </x-ui.alert>
+    </x-signal.ui.alert>
 @elseif (! $planUsage['allowed'])
-    <x-ui.alert tone="warning" class="m-5">
+    <x-signal.ui.alert tone="warning" class="m-5">
         <p class="font-semibold">{{ __('Your plan’s server limit has been reached.') }}</p>
         <x-signal.ui.button :href="route('billing.index')" variant="secondary" class="mt-3">{{ __('Upgrade plan') }}</x-signal.ui.button>
-    </x-ui.alert>
+    </x-signal.ui.alert>
 @endif
 
 @error('plan')
-    <x-ui.alert tone="danger" class="m-5">
+    <x-signal.ui.alert tone="danger" class="m-5">
         {{ $message }}
         <a class="font-bold underline" href="{{ route('billing.index') }}">{{ __('View plans') }}</a>
-    </x-ui.alert>
+    </x-signal.ui.alert>
 @enderror
 
 <form action="{{ $serverStoreUrl }}" method="POST">
     @csrf
-    <input type="hidden" name="_server_form" value="1">
+    <x-signal.ui.input type="hidden" name="_server_form" value="1" :restore="false" />
     <x-scenes.servers._form
         :types="$types"
         :providers="$providers"

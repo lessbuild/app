@@ -17,8 +17,8 @@
     <form method="POST" action="{{ route('environments.deployment-controls.update', ['environment' => $environment, 'dialog' => 'edit-deployment-controls-'.$environment->id]) }}" class="space-y-4">
         @csrf
         @method('PATCH')
-        <input type="hidden" name="_environment_id" value="{{ $environment->id }}">
-        <input type="hidden" name="_environment_panel" value="deployment-controls">
+        <x-signal.ui.input type="hidden" name="_environment_id" value="{{ $environment->id }}" :restore="false" />
+        <x-signal.ui.input type="hidden" name="_environment_panel" value="deployment-controls" :restore="false" />
         <x-signal.ui.checkbox
             :id="'environment-deployment-controls-'.$environment->id.'-deployment-locked'"
             name="deployment_locked"

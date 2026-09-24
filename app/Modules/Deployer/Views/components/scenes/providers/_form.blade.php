@@ -39,21 +39,21 @@
     </fieldset>
 
     @if (! $isEditing && app(\App\Modules\Deployer\Services\GitHubApp::class)->configured())
-        <x-ui.alert tone="info" class="border-l-4 sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
+        <x-signal.ui.alert tone="info" class="border-l-4 sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
             <div class="min-w-0">
                 <p class="font-semibold text-ink">{{ __('Recommended for GitHub') }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('Install the GitHub App to discover repositories and receive push events without storing a long-lived personal token.') }}</p>
-                <x-ui.button :href="route('github-app.connect')" variant="secondary" class="mt-3">{{ __('Install GitHub App') }}</x-ui.button>
+                <x-signal.ui.button :href="route('github-app.connect')" variant="secondary" class="mt-3">{{ __('Install GitHub App') }}</x-signal.ui.button>
             </div>
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @elseif (! $isEditing && config('github-app.setup_enabled') && auth()->user()?->isPlatformAdmin() && ! app(\App\Modules\Deployer\Services\GitHubApp::class)->hasPrivateKey())
-        <x-ui.alert tone="warning" class="border-l-4 sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
+        <x-signal.ui.alert tone="warning" class="border-l-4 sm:col-span-2" x-cloak x-show="selectedProvider === 'github'">
             <div class="min-w-0">
                 <p class="font-semibold text-ink">{{ __('GitHub App setup is incomplete') }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('A platform administrator can upload the downloaded private key from a phone.') }}</p>
-                <x-ui.button :href="route('admin.github-app.setup')" variant="secondary" class="mt-3">{{ __('Set up GitHub App') }}</x-ui.button>
+                <x-signal.ui.button :href="route('admin.github-app.setup')" variant="secondary" class="mt-3">{{ __('Set up GitHub App') }}</x-signal.ui.button>
             </div>
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
     <x-signal.ui.input-field

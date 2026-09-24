@@ -1,6 +1,6 @@
 @php($attentionTotal = array_sum($attentionCounts))
 
-<section @class([
+<x-signal.ui.panel as="section" @class([
     'ui-panel mb-12 p-5',
     'ui-panel--danger' => $attentionTotal > 0,
     'ui-panel--success' => $attentionTotal === 0,
@@ -137,4 +137,4 @@
             </div>
         </div>
     @endif
-</section>
+</x-signal.ui.panel>

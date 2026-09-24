@@ -18,10 +18,10 @@
         :description="__('Manage infrastructure integrations and review their filtered connection state.')"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('providers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
+            <x-signal.ui.button :href="route('providers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </x-ui.button>
-            <x-ui.button
+            </x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$providerCreateUrl"
                 data-modal-trigger="provider-create-dialog"
                 aria-controls="provider-create-dialog"
@@ -32,18 +32,18 @@
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Provider') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav class="mt-6" :label="__('Provider sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Provider sections')">
         <a href="#providers-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
         <a href="#provider-inventory" class="ui-local-nav__link">{{ __('Inventory') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null)))
 
-    <x-ui.filter-panel
+    <x-signal.ui.filter-panel
         id="providers-filters"
         class="mt-8"
         :label="__('Filter providers')"
@@ -54,73 +54,72 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="ui-label">{{ __('Search') }}</label>
-                <input
+                <x-signal.ui.input
                     id="search"
                     name="search"
                     type="search"
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Name or description') }}"
-                    class="ui-input"
-                >
+                    class="ui-input" :restore="false" />
             </div>
             <div>
                 <label for="type" class="ui-label">{{ __('Type') }}</label>
-                <select id="type" name="type" class="ui-input">
+                <x-signal.ui.select id="type" name="type" class="ui-input">
                     <option value="">{{ __('All provider types') }}</option>
                     @foreach ($types as $type)
                         <option value="{{ $type }}" @selected($filters['type'] === $type)>
                             {{ str($type)->replace('_', ' ')->title() }}
                         </option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="usage" class="ui-label">{{ __('Usage') }}</label>
-                <select id="usage" name="usage" class="ui-input">
+                <x-signal.ui.select id="usage" name="usage" class="ui-input">
                     <option value="">{{ __('All usage states') }}</option>
                     @foreach ($usages as $usage)
                         <option value="{{ $usage }}" @selected($filters['usage'] === $usage)>
                             {{ str($usage)->replace('_', ' ')->title() }}
                         </option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="connection" class="ui-label">{{ __('Connection') }}</label>
-                <select id="connection" name="connection" class="ui-input">
+                <x-signal.ui.select id="connection" name="connection" class="ui-input">
                     <option value="">{{ __('All connection states') }}</option>
                     @foreach ($connectionStatuses as $status)
                         <option value="{{ $status }}" @selected($filters['connection'] === $status)>
                             {{ str($status)->title() }}
                         </option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-signal.ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <x-ui.button :href="route('providers.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
+                <x-signal.ui.button :href="route('providers.index')" variant="ghost">{{ __('Clear filters') }}</x-signal.ui.button>
             @endif
         </div>
         </form>
-    </x-ui.filter-panel>
+    </x-signal.ui.filter-panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="providers-insights"
         class="mt-6 scroll-mt-24"
         :summary="trans_choice(':count matching provider|:count matching providers', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            <x-ui.stat :label="__('Matching providers')" :value="$metrics['total']" :description="__('Providers in this filtered view.')" />
-            <x-ui.stat :label="__('In use')" :value="$metrics['in_use']" :description="__('Matching providers with attached resources.')" />
-            <x-ui.stat :label="__('Unused')" :value="$metrics['unused']" :description="__('Matching providers ready for a resource.')" />
-            <x-ui.stat :label="__('Healthy connections')" :value="$metrics['healthy']" :description="__('Latest credential check succeeded.')" />
-            <x-ui.stat :label="__('Failed connections')" :value="$metrics['failed']" :description="__('Latest credential check failed.')" />
-            <x-ui.stat :label="__('Unchecked connections')" :value="$metrics['unchecked']" :description="__('No credential result is recorded yet.')" />
+            <x-signal.ui.stat :label="__('Matching providers')" :value="$metrics['total']" :description="__('Providers in this filtered view.')" />
+            <x-signal.ui.stat :label="__('In use')" :value="$metrics['in_use']" :description="__('Matching providers with attached resources.')" />
+            <x-signal.ui.stat :label="__('Unused')" :value="$metrics['unused']" :description="__('Matching providers ready for a resource.')" />
+            <x-signal.ui.stat :label="__('Healthy connections')" :value="$metrics['healthy']" :description="__('Latest credential check succeeded.')" />
+            <x-signal.ui.stat :label="__('Failed connections')" :value="$metrics['failed']" :description="__('Latest credential check failed.')" />
+            <x-signal.ui.stat :label="__('Unchecked connections')" :value="$metrics['unchecked']" :description="__('No credential result is recorded yet.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <!--
      ! ------------------------------------------------------------
@@ -129,7 +128,7 @@
      !-->
     <div id="provider-inventory" data-provider-section="inventory" class="scroll-mt-24">
     @if(!$providers->isEmpty())
-        <div class="ui-panel mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Provider inventory') }}">
+        <x-signal.ui.panel class="ui-panel mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Provider inventory') }}">
             @foreach($providers as $provider)
                 @php($connectionHealth = $provider->connectionHealth())
                 <article data-provider-card class="group p-4 transition-colors hover:bg-surface-muted sm:p-5">
@@ -145,15 +144,15 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($connectionHealth === \App\Modules\Deployer\Models\Provider::CONNECTION_HEALTHY)
-                                <x-ui.badge tone="success">{{ str($connectionHealth)->title() }}</x-ui.badge>
+                                <x-signal.ui.badge tone="success">{{ str($connectionHealth)->title() }}</x-signal.ui.badge>
                             @elseif ($connectionHealth === \App\Modules\Deployer\Models\Provider::CONNECTION_FAILED)
-                                <x-ui.badge tone="danger">{{ str($connectionHealth)->title() }}</x-ui.badge>
+                                <x-signal.ui.badge tone="danger">{{ str($connectionHealth)->title() }}</x-signal.ui.badge>
                             @else
-                                <x-ui.badge>{{ str($connectionHealth)->title() }}</x-ui.badge>
+                                <x-signal.ui.badge>{{ str($connectionHealth)->title() }}</x-signal.ui.badge>
                             @endif
-                            <x-ui.button :href="route('providers.show', $provider)" variant="secondary">
+                            <x-signal.ui.button :href="route('providers.show', $provider)" variant="secondary">
                                 {{ __('View provider') }}
-                            </x-ui.button>
+                            </x-signal.ui.button>
                         </div>
                     </div>
 
@@ -201,7 +200,7 @@
                     </dl>
                 </article>
             @endforeach
-        </div>
+        </x-signal.ui.panel>
         <div class="py-4">
             {{ $providers->links() }}
         </div>
@@ -213,15 +212,15 @@
             >
                 <x-slot:button>
                     @if (array_filter($filters, fn ($value) => $value !== null))
-                        <x-ui.button :href="route('providers.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
+                        <x-signal.ui.button :href="route('providers.index')" variant="primary">{{ __('Clear filters') }}</x-signal.ui.button>
                     @else
-                        <x-ui.button
+                        <x-signal.ui.button
                             :href="$providerCreateUrl"
                             data-modal-trigger="provider-create-dialog"
                             aria-controls="provider-create-dialog"
                             aria-expanded="{{ $providerCreateOpen ? 'true' : 'false' }}"
                             variant="secondary"
-                        >{{ __('Add Provider') }}</x-ui.button>
+                        >{{ __('Add Provider') }}</x-signal.ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>

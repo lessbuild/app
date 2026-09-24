@@ -13,9 +13,9 @@
         @csrf
         <label class="block">
             <span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Filter name') }}</span>
-            <input name="name" value="{{ old('name') }}" maxlength="40" required class="ui-input" placeholder="{{ __('Website incidents') }}">
+            <x-signal.ui.input name="name" value="{{ old('name') }}" maxlength="40" required class="ui-input" placeholder="{{ __('Website incidents') }}" :restore="false" />
             <x-forms.errors name="name" />
         </label>
-        <x-ui.button type="submit" variant="primary">{{ __('Save current filter') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Save current filter') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

@@ -12,17 +12,17 @@
         <span class="text-xs text-muted">{{ trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']]) }}</span>
     </div>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="active-command-history-insights"
         class="mt-5"
         :summary="trans_choice(':count active command|:count active commands', $metrics['active'], ['count' => $metrics['active']])"
     >
         <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <x-ui.stat class="ui-card" :label="__('Active')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
-            <x-ui.stat class="ui-card" :label="__('Matching commands')" :value="$metrics['total']" :description="__('Owner-scoped commands in this view.')" />
-            <x-ui.stat class="ui-card" :label="__('Latest command')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching command recorded.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Active')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Matching commands')" :value="$metrics['total']" :description="__('Owner-scoped commands in this view.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Latest command')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching command recorded.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <div class="mt-5 space-y-3">
         @forelse ($executions as $execution)
@@ -33,8 +33,8 @@
                         <h3 class="mt-1 font-semibold text-ink">{{ $execution->server->label }}</h3>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <x-ui.badge tone="accent">{{ $execution->status }}</x-ui.badge>
-                        <x-ui.badge tone="{{ $execution->output_available ? 'success' : 'neutral' }}">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</x-ui.badge>
+                        <x-signal.ui.badge tone="accent">{{ $execution->status }}</x-signal.ui.badge>
+                        <x-signal.ui.badge tone="{{ $execution->output_available ? 'success' : 'neutral' }}">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</x-signal.ui.badge>
                     </div>
                 </div>
                 <dl class="mt-3 grid gap-3 text-xs sm:grid-cols-3">
@@ -52,11 +52,11 @@
                     </div>
                 </dl>
                 <div class="mt-3">
-                    <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="ghost">{{ __('Open server history') }}</x-ui.button>
+                    <x-signal.ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="ghost">{{ __('Open server history') }}</x-signal.ui.button>
                 </div>
             </article>
         @empty
-            <x-ui.empty-state
+            <x-signal.ui.empty-state
                 :title="__('No commands match these filters')"
                 :description="__('Refresh the Command Center for the latest command state.')"
             />
@@ -66,7 +66,7 @@
     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div class="text-sm">{{ $executions->links() }}</div>
         <div class="flex flex-wrap gap-3">
-            <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open Command Center') }}</x-ui.button>
+            <x-signal.ui.button :href="$historyUrl" variant="secondary">{{ __('Open Command Center') }}</x-signal.ui.button>
         </div>
     </div>
 </section>

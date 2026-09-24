@@ -1,5 +1,43 @@
 # Signal theme integration progress
 
+## Slice 133 — converge Deployer views on the latest Signal component library — 2026-09-24
+
+Boundary and implementation:
+
+- Checked upstream Signal `main`; the current revision is
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974` (`Clamp component popovers on
+  mobile`). Its shared popover clamping styles are present in the application
+  Signal stylesheet.
+- Replaced **1,874** legacy `x-ui.*` tag references across **136** Deployer Blade views
+  with direct `x-signal.ui.*` components. The shared page-heading partial now
+  also calls Signal directly; the old aliases remain available for compatibility.
+- Added a reusable semantic Signal panel component and converted the existing
+  Deployer panel wrappers to it. Server and website inventory filters now use
+  shared Signal field, select, checkbox, filter-panel, insights, stat, and
+  button components while retaining query names, selections, exports, clear
+  links, and mobile layouts.
+- Routed **all 362** Deployer view controls through Signal components: 229
+  inputs (including hidden transport fields), 96 selects, 27 textareas, and 10
+  buttons. Hidden fields retain their names and values without visible styling
+  or generated DOM IDs. The source-authored Deployer views now contain no raw
+  input, select, textarea, button, dialog, or panel wrapper markup.
+- Added shared `link` and `stateful` button variants and a reusable dialog shell
+  for the Livewire-owned server command interface. Existing form names, checked
+  and selected states, Alpine/Livewire bindings, modal IDs, and submission
+  behavior remain intact.
+
+Evidence and release:
+
+- `php artisan view:cache`, `InfrastructureListFilterTest` (**8 tests, 68
+  assertions**), the asset-layout fixture (**313 assertions**), and the shared
+  Signal regression suite passed. Mobile Playwright inventory checks, Pint,
+  JavaScript syntax, Vite build, and `git diff --check` passed.
+- The verified source changes are local and are not yet published to the
+  production Deployer host. No application data or database migrations changed.
+
+Next task: publish this slice, then complete the cross-product theme-token
+demonstration and representative Deployer visual/accessibility acceptance.
+
 ## Slice 132 — componentize Deployer automation dialogs — 2026-09-24
 
 Boundary and implementation:

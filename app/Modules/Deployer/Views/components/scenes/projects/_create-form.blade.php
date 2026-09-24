@@ -2,7 +2,7 @@
     <div>
         <label class="block" for="project-name">
             <span class="ui-label">{{ __('Name') }}</span>
-            <input id="project-name" required name="name" value="{{ old('name') }}" class="ui-input" autocomplete="organization" aria-describedby="project-name-help">
+            <x-signal.ui.input id="project-name" required name="name" value="{{ old('name') }}" class="ui-input" autocomplete="organization" aria-describedby="project-name-help" :restore="false" />
         </label>
         <p id="project-name-help" class="mt-1 text-xs text-muted">{{ __('Use a recognizable name for the application and its environments.') }}</p>
         <x-forms.errors name="name" />
@@ -11,7 +11,7 @@
     <div>
         <label class="block" for="project-description">
             <span class="ui-label">{{ __('Description') }}</span>
-            <textarea id="project-description" name="description" rows="4" class="ui-input min-h-28">{{ old('description') }}</textarea>
+            <x-signal.ui.textarea id="project-description" name="description" rows="4" class="ui-input min-h-28" :restore="false">{{ old('description') }}</x-signal.ui.textarea>
         </label>
         <x-forms.errors name="description" />
     </div>
@@ -22,7 +22,7 @@
         <div class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             @foreach($templates as $value => $template)
                 <label class="ui-choice group">
-                    <input type="radio" name="preset" value="{{ $value }}" class="ui-check mt-1" @checked(old('preset', 'laravel') === $value)>
+                    <x-signal.ui.input type="radio" name="preset" value="{{ $value }}" class="ui-check mt-1" @checked(old('preset', 'laravel') === $value) :restore="false" />
                     <span class="min-w-0">
                         <strong class="block text-ink">{{ $template->name }}</strong>
                         <span class="mt-1 block text-xs leading-5 text-muted">{{ $template->description }}</span>

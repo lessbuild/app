@@ -13,33 +13,33 @@
 >
     <form method="POST" action="{{ route('environments.resources.store', $environment) }}" class="grid gap-3 sm:grid-cols-2">
         @csrf
-        <input type="hidden" name="_environment_id" value="{{ $environment->id }}">
-        <input type="hidden" name="_environment_panel" value="resources">
+        <x-signal.ui.input type="hidden" name="_environment_id" value="{{ $environment->id }}" :restore="false" />
+        <x-signal.ui.input type="hidden" name="_environment_panel" value="resources" :restore="false" />
         <label>
             <span class="ui-label">{{ __('Name') }}</span>
-            <input name="name" value="{{ old('name') }}" placeholder="primary-database" class="ui-input" required>
+            <x-signal.ui.input name="name" value="{{ old('name') }}" placeholder="primary-database" class="ui-input" required :restore="false" />
             <x-forms.errors name="name" />
         </label>
         <label>
             <span class="ui-label">{{ __('Type') }}</span>
-            <select name="type" class="ui-input">
+            <x-signal.ui.select name="type" class="ui-input">
                 @foreach (\App\Modules\Deployer\Models\EnvironmentResource::TYPES as $type)
                     <option value="{{ $type }}" @selected(old('type', 'mysql') === $type)>{{ str($type)->replace('_', ' ')->title() }}</option>
                 @endforeach
-            </select>
+            </x-signal.ui.select>
             <x-forms.errors name="type" />
         </label>
         <label class="flex items-center gap-2 sm:col-span-2">
-            <input type="hidden" name="is_managed" value="0">
-            <input class="ui-check" type="checkbox" name="is_managed" value="1" @checked(old('is_managed') === '1')>
+            <x-signal.ui.input type="hidden" name="is_managed" value="0" :restore="false" />
+            <x-signal.ui.input class="ui-check" type="checkbox" name="is_managed" value="1" @checked(old('is_managed') === '1') :restore="false" />
             <span class="text-sm text-ink">{{ __('Manage on attached server') }}</span>
         </label>
         <label class="sm:col-span-2">
             <span class="ui-label">{{ __('Connection variables') }}</span>
-            <textarea name="variables" rows="4" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="ui-input font-mono">{{ old('variables') }}</textarea>
+            <x-signal.ui.textarea name="variables" rows="4" placeholder="REDIS_HOST=cache.example.com&#10;REDIS_PASSWORD=…" class="ui-input font-mono" :restore="false">{{ old('variables') }}</x-signal.ui.textarea>
             <x-forms.errors name="variables" />
             <span class="ui-help">{{ __('Values are encrypted and are not rendered after saving.') }}</span>
         </label>
-        <x-ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Attach resource') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Attach resource') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

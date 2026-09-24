@@ -13,7 +13,7 @@
     >
         @if ($canManage)
             <x-slot:buttons>
-                <x-ui.button
+                <x-signal.ui.button
                     href="{{ $loadBalancerCreateUrl }}"
                     data-modal-trigger="load-balancer-create"
                     aria-controls="load-balancer-create"
@@ -21,7 +21,7 @@
                     variant="primary"
                 >
                     {{ __('Create route') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </x-slot:buttons>
         @endif
     </x-layouts.partials.heading>
@@ -41,34 +41,34 @@
         $underprovisionedBalancerCount = $loadBalancers->filter(fn ($balancer) => $balancer->nodes->count() < 2)->count();
     @endphp
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="load-balancer-insights"
         class="mt-6"
         :summary="trans_choice(':count high-availability route|:count high-availability routes', $loadBalancers->count(), ['count' => $loadBalancers->count()])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Routes')"
                 :value="$loadBalancers->count()"
                 :description="__('High-availability routes in this workspace.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Healthy or ready')"
                 :value="$healthyBalancerCount"
                 :description="__('Routes currently able to apply traffic configuration.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Application nodes')"
                 :value="$nodeCount"
                 :description="__('Configured upstream nodes across routes.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Needs nodes')"
                 :value="$underprovisionedBalancerCount"
                 :description="__('Routes with fewer than two application nodes.')"
             />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     @if ($canManage)
         <x-scenes.load-balancers.create-dialog
@@ -88,11 +88,11 @@
                         <p class="mt-1 text-sm text-muted">{{ $balancer->server->label }}</p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-2">
-                        <x-ui.badge tone="{{ in_array($balancer->status, ['active', 'healthy', 'ready'], true) ? 'success' : (in_array($balancer->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ ucfirst($balancer->status) }}</x-ui.badge>
+                        <x-signal.ui.badge tone="{{ in_array($balancer->status, ['active', 'healthy', 'ready'], true) ? 'success' : (in_array($balancer->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ ucfirst($balancer->status) }}</x-signal.ui.badge>
                         @if ($canManage)
                             <form method="POST" action="{{ route('load-balancers.apply', $balancer) }}">
                                 @csrf
-                                <x-ui.button type="submit" variant="secondary">{{ __('Apply') }}</x-ui.button>
+                                <x-signal.ui.button type="submit" variant="secondary">{{ __('Apply') }}</x-signal.ui.button>
                             </form>
                         @endif
                     </div>
@@ -134,7 +134,7 @@
                                     <form method="POST" action="{{ route('load-balancers.nodes.destroy', $node) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <x-ui.button type="submit" variant="danger">{{ __('Remove') }}</x-ui.button>
+                                        <x-signal.ui.button type="submit" variant="danger">{{ __('Remove') }}</x-signal.ui.button>
                                     </form>
                                 @endif
                             </div>
@@ -142,7 +142,7 @@
 
                         @if ($canManage)
                             <div class="mt-5 border-t border-line pt-5">
-                                <x-ui.button
+                                <x-signal.ui.button
                                     href="{{ $nodeDialogUrl }}"
                                     data-modal-trigger="{{ $nodeDialogId }}"
                                     aria-controls="{{ $nodeDialogId }}"
@@ -150,7 +150,7 @@
                                     variant="secondary"
                                 >
                                     {{ __('Add application node') }}
-                                </x-ui.button>
+                                </x-signal.ui.button>
                             </div>
                         @endif
                     </div>
@@ -166,7 +166,7 @@
                 @endif
             </section>
         @empty
-            <x-ui.empty-state
+            <x-signal.ui.empty-state
                 class="xl:col-span-2"
                 :title="__('No high-availability routes yet')"
                 :description="__('Create a route to distribute traffic across application nodes.')"

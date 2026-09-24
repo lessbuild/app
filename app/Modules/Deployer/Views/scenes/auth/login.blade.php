@@ -14,16 +14,16 @@
 
         <div>
             <label for="email" class="ui-label">{{ __('Email') }}</label>
-            <input id="email" class="ui-input" type="email" name="email" value="{{ old('email') }}" placeholder="{{ __('Example: johndoe@mail.com') }}" autocomplete="email" required>
+            <x-signal.ui.input id="email" class="ui-input" type="email" name="email" value="{{ old('email') }}" placeholder="{{ __('Example: johndoe@mail.com') }}" autocomplete="email" required :restore="false" />
         </div>
 
         <div>
             <label for="password" class="ui-label">{{ __('Password') }}</label>
-            <input id="password" class="ui-input" type="password" name="password" autocomplete="current-password" required>
+            <x-signal.ui.input id="password" class="ui-input" type="password" name="password" autocomplete="current-password" required :restore="false" />
         </div>
 
         <label for="remember_me" class="inline-flex items-center gap-2 text-sm text-muted">
-            <input id="remember_me" type="checkbox" class="ui-check" name="remember">
+            <x-signal.ui.input id="remember_me" type="checkbox" class="ui-check" name="remember" :restore="false" />
             <span>{{ __('Remember me') }}</span>
         </label>
 
@@ -39,9 +39,9 @@
                 @endif
             </div>
 
-            <x-ui.button type="submit" variant="primary" class="shrink-0">
+            <x-signal.ui.button type="submit" variant="primary" class="shrink-0">
                 {{ __('Login') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </div>
     </form>
 

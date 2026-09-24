@@ -38,8 +38,8 @@
             :description="__('A bounded view of deployment, health, runtime-log and incident signals for :environment.', ['environment' => $environment->name])"
         />
         <div class="flex flex-wrap gap-2">
-            <x-ui.button :href="$shareUrl" variant="secondary" data-testid="share-environment-context">{{ __('Shareable link') }}</x-ui.button>
-            <x-ui.button
+            <x-signal.ui.button :href="$shareUrl" variant="secondary" data-testid="share-environment-context">{{ __('Shareable link') }}</x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$investigationDialogUrl"
                 data-modal-trigger="save-investigation-dialog"
                 aria-controls="save-investigation-dialog"
@@ -47,54 +47,54 @@
                 variant="primary"
             >
                 {{ __('Save investigation') }}
-            </x-ui.button>
-            <x-ui.button :href="route('observability.index')" variant="secondary">{{ __('Observability overview') }}</x-ui.button>
+            </x-signal.ui.button>
+            <x-signal.ui.button :href="route('observability.index')" variant="secondary">{{ __('Observability overview') }}</x-signal.ui.button>
         </div>
     </div>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="environment-context-insights"
         class="mt-6"
         :summary="trans_choice(':count deployment in evidence|:count deployments in evidence', $context->builds->count(), ['count' => $context->builds->count()])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Deployments')"
                 :value="$context->builds->count()"
                 :description="__('Bounded deployment records in the selected window.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Health checks')"
                 :value="$context->healthChecks->count()"
                 :description="__('Website observations retained for this context.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Log snapshots')"
                 :value="$context->runtimeLogs->count()"
                 :description="__('Metadata records; log bodies stay out of this view.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Incidents')"
                 :value="$context->incidents->count()"
                 :description="__('Explicitly related operational incidents.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Services')"
                 :value="$context->services->count()"
                 :description="__('Authorized deployment services for this website.')"
             />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
-    <x-ui.local-nav class="mt-5" :label="__('Environment evidence sections')">
+    <x-signal.ui.local-nav class="mt-5" :label="__('Environment evidence sections')">
         <a href="#environment-context-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
         <a href="#context-deployments" class="ui-local-nav__link">{{ __('Deployments') }}</a>
         <a href="#context-health" class="ui-local-nav__link">{{ __('Health') }}</a>
         <a href="#context-logs" class="ui-local-nav__link">{{ __('Logs') }}</a>
         <a href="#context-incidents" class="ui-local-nav__link">{{ __('Incidents') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
-    <section class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="environment-context-heading" data-observability-context-card>
+    <x-signal.ui.panel as="section" class="ui-panel mt-8 p-5 sm:p-6" aria-labelledby="environment-context-heading" data-observability-context-card>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="ui-eyebrow">{{ $environment->project->name }}</p>
@@ -102,9 +102,9 @@
                 <p class="mt-1 text-sm text-muted">{{ $environment->branch }} · {{ ucfirst((string) ($environment->runtime_type ?: 'php')) }} · {{ str((string) $environment->type)->headline() }}</p>
             </div>
             <div class="flex flex-wrap gap-2 text-xs">
-                <x-ui.badge tone="{{ in_array((string) $environment->status, ['active', 'running', 'ready'], true) ? 'success' : 'accent' }}">{{ str((string) $environment->status)->headline() }}</x-ui.badge>
+                <x-signal.ui.badge tone="{{ in_array((string) $environment->status, ['active', 'running', 'ready'], true) ? 'success' : 'accent' }}">{{ str((string) $environment->status)->headline() }}</x-signal.ui.badge>
                 @if($environment->is_protected)
-                    <x-ui.badge tone="warning">{{ __('Protected') }}</x-ui.badge>
+                    <x-signal.ui.badge tone="warning">{{ __('Protected') }}</x-signal.ui.badge>
                 @endif
             </div>
         </div>
@@ -127,12 +127,12 @@
             </div>
         </div>
 
-        <details id="environment-context-filters" class="ui-panel mt-5 bg-surface-muted p-4" @if ($contextFiltersAreActive || $errors->any()) open @endif>
+        <x-signal.ui.panel as="details" id="environment-context-filters" class="ui-panel mt-5 bg-surface-muted p-4" :open="$contextFiltersAreActive || $errors->any()">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Adjust evidence filters') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($contextFiltersAreActive)
-                        <x-ui.badge tone="accent">{{ __('Filtered') }}</x-ui.badge>
+                        <x-signal.ui.badge tone="accent">{{ __('Filtered') }}</x-signal.ui.badge>
                     @endif
                     <span class="text-muted" aria-hidden="true">⌄</span>
                 </span>
@@ -140,48 +140,48 @@
             <form method="GET" action="{{ route('observability.environments.context', $environment) }}" class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                 <label>
                     <span class="ui-label">{{ __('Evidence window') }}</span>
-                    <select name="window" class="ui-input">
+                    <x-signal.ui.select name="window" class="ui-input">
                         @foreach(\App\Modules\Deployer\Data\ObservabilityContextFilters::WINDOWS as $window => $hours)
                             <option value="{{ $window }}" @selected($context->window === $window)>{{ $window }}</option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </label>
                 <label>
                     <span class="ui-label">{{ __('Service') }}</span>
-                    <select name="service" class="ui-input">
+                    <x-signal.ui.select name="service" class="ui-input">
                         <option value="all" @selected($context->serviceId === null)>{{ __('All services') }}</option>
                         @foreach($context->services as $service)
                             <option value="{{ $service->id }}" @selected($context->serviceId === (int) $service->id)>{{ $service->name }}</option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </label>
                 <label>
                     <span class="ui-label">{{ __('Deployments') }}</span>
-                    <select name="deployment" class="ui-input">
+                    <x-signal.ui.select name="deployment" class="ui-input">
                         @foreach(['all' => __('All deployments'), 'active' => __('Active'), 'successful' => __('Successful'), 'unsuccessful' => __('Unsuccessful')] as $deployment => $label)
                             <option value="{{ $deployment }}" @selected($context->deployment === $deployment)>{{ $label }}</option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </label>
                 <label>
                     <span class="ui-label">{{ __('Incident severity') }}</span>
-                    <select name="severity" class="ui-input">
+                    <x-signal.ui.select name="severity" class="ui-input">
                         @foreach(\App\Modules\Deployer\Data\ObservabilityContextFilters::SEVERITIES as $severity)
                             <option value="{{ $severity }}" @selected($context->severity === $severity)>{{ str($severity)->headline() }}</option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </label>
-                <x-ui.button type="submit" variant="primary" class="sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</x-ui.button>
+                <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2 lg:col-span-4">{{ __('Refresh context') }}</x-signal.ui.button>
             </form>
             <p class="mt-3 text-xs text-muted">{{ __('Service filtering narrows deployment evidence to one repository target; health, runtime and shared infrastructure signals remain visible. Active deployments and unresolved incidents remain visible even when they began before this window. Adjacent signals are evidence to investigate, not proof of causation.') }}</p>
-        </details>
+        </x-signal.ui.panel>
 
-        <details id="save-investigation-view" class="ui-panel mt-5 bg-surface-muted p-4">
+        <x-signal.ui.panel as="details" id="save-investigation-view" class="ui-panel mt-5 bg-surface-muted p-4">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-3 rounded-control font-bold text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-focus">
                 <span>{{ __('Saved investigation views') }}</span>
                 <span class="flex items-center gap-2">
                     @if ($savedInvestigations->isNotEmpty())
-                        <x-ui.badge>{{ $savedInvestigations->count() }}</x-ui.badge>
+                        <x-signal.ui.badge>{{ $savedInvestigations->count() }}</x-signal.ui.badge>
                     @endif
                     <span class="text-muted" aria-hidden="true">⌄</span>
                 </span>
@@ -200,7 +200,7 @@
                                     <form method="POST" action="{{ route('observability.investigations.destroy', $saved) }}">
                                         @csrf
                                         @method('DELETE')
-                                        <x-ui.button type="submit" variant="danger" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</x-ui.button>
+                                        <x-signal.ui.button type="submit" variant="danger" aria-label="{{ __('Remove investigation :name', ['name' => $saved->name]) }}">{{ __('Remove') }}</x-signal.ui.button>
                                     </form>
                                 @endif
                             </div>
@@ -210,17 +210,17 @@
             @else
                 <p class="mt-4 text-sm text-muted">{{ __('No saved investigation views for this environment yet.') }}</p>
             @endif
-        </details>
+        </x-signal.ui.panel>
 
         <x-scenes.observability.investigation-dialog
             :environment="$environment"
             :context="$context"
             :open="$investigationDialogOpen"
         />
-    </section>
+    </x-signal.ui.panel>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-2">
-        <section id="context-deployments" class="ui-panel p-5 sm:p-6" aria-labelledby="context-deployments-heading" data-observability-context-section>
+        <x-signal.ui.panel as="section" id="context-deployments" class="ui-panel p-5 sm:p-6" aria-labelledby="context-deployments-heading" data-observability-context-section>
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Deployment evidence') }}</p>
@@ -254,7 +254,7 @@
                         <div class="-mt-1 rounded-b-xl border border-t-0 border-line bg-surface-muted px-3 pb-3 pt-2 text-xs" data-testid="deployment-observation-evidence-{{ $build->id }}">
                             <div class="flex flex-wrap items-center gap-2">
                                 <span class="font-bold text-ink">{{ __('Post-deployment verification') }}</span>
-                                <x-ui.badge :tone="$observationTone">{{ str($observation->status)->headline() }}</x-ui.badge>
+                                <x-signal.ui.badge :tone="$observationTone">{{ str($observation->status)->headline() }}</x-signal.ui.badge>
                             </div>
                             <p class="mt-1 text-muted">
                                 {{ __('Revision-linked · :count successful checks · :duration-minute window', ['count' => $observation->successfulChecks, 'duration' => $observation->durationMinutes]) }}
@@ -272,16 +272,16 @@
                 @endforelse
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('Open a deployment for its exact revision, plan-driven timeline, bounded log and failure guidance.') }}</p>
-        </section>
+        </x-signal.ui.panel>
 
-        <section id="context-health" class="ui-panel p-5 sm:p-6" aria-labelledby="context-health-heading" data-observability-context-section>
+        <x-signal.ui.panel as="section" id="context-health" class="ui-panel p-5 sm:p-6" aria-labelledby="context-health-heading" data-observability-context-section>
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Health evidence') }}</p>
                     <h2 id="context-health-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Website observations') }}</h2>
                 </div>
                 @if($website)
-                    <x-ui.button
+                    <x-signal.ui.button
                         :href="route('websites.health-checks.index', $website)"
                         data-modal-trigger="{{ $healthChecksDialogId }}"
                         data-modal-content-url="{{ $healthChecksContentUrl }}"
@@ -290,7 +290,7 @@
                         aria-expanded="{{ $healthChecksDialogOpen ? 'true' : 'false' }}"
                         variant="ghost"
                         class="text-xs"
-                    >{{ __('View health history') }}</x-ui.button>
+                    >{{ __('View health history') }}</x-signal.ui.button>
                 @endif
             </div>
             <div class="ui-inventory-list mt-4 space-y-2">
@@ -308,9 +308,9 @@
                 @endforelse
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('Health history is retained separately and does not represent an SLA calculation.') }}</p>
-        </section>
+        </x-signal.ui.panel>
 
-        <section id="context-logs" class="ui-panel p-5 sm:p-6" aria-labelledby="context-logs-heading" data-observability-context-section>
+        <x-signal.ui.panel as="section" id="context-logs" class="ui-panel p-5 sm:p-6" aria-labelledby="context-logs-heading" data-observability-context-section>
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Runtime evidence') }}</p>
@@ -335,9 +335,9 @@
                 @endif
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('The context never loads log bodies. The existing website route rechecks authorization and applies no-store response headers.') }}</p>
-        </section>
+        </x-signal.ui.panel>
 
-        <section id="context-incidents" class="ui-panel p-5 sm:p-6" aria-labelledby="context-incidents-heading" data-observability-context-section>
+        <x-signal.ui.panel as="section" id="context-incidents" class="ui-panel p-5 sm:p-6" aria-labelledby="context-incidents-heading" data-observability-context-section>
             <div class="flex flex-wrap items-end justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Response evidence') }}</p>
@@ -351,7 +351,7 @@
                     <div class="rounded-card border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-incident>
                         <a href="{{ route('observability.index') }}#operational-incidents" class="block">
                             <div class="flex flex-wrap items-center gap-2">
-                                <x-ui.badge tone="{{ $incident->status === \App\Modules\Deployer\Models\OperationalIncident::STATUS_RESOLVED ? 'success' : ($incident->severity === 'critical' ? 'danger' : 'warning') }}">{{ str((string) $incident->status)->headline() }}</x-ui.badge>
+                                <x-signal.ui.badge tone="{{ $incident->status === \App\Modules\Deployer\Models\OperationalIncident::STATUS_RESOLVED ? 'success' : ($incident->severity === 'critical' ? 'danger' : 'warning') }}">{{ str((string) $incident->status)->headline() }}</x-signal.ui.badge>
                                 <span class="text-xs text-muted">{{ str((string) $incident->severity)->headline() }} · {{ str((string) $incident->category)->headline() }} #{{ $incident->resource_id }}</span>
                             </div>
                             <p class="mt-2 font-bold text-ink">{{ $incident->title }}</p>
@@ -369,7 +369,7 @@
                 @endforelse
             </div>
             <p class="mt-4 text-xs text-muted">{{ __('Only concrete category/resource relationships are shown. Incident titles and status are context; the incident centre contains the authorized response timeline.') }}</p>
-        </section>
+        </x-signal.ui.panel>
     </div>
 
     @if($website)

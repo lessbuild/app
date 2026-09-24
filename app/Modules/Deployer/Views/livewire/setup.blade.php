@@ -19,22 +19,22 @@
                     {{ $heading ?? __('Setup Information') }}
                 </h2>
                 @if ($provisioningStatus)
-                    <x-ui.badge :tone="$statusTone">{{ str($provisioningStatus)->replace('_', ' ') }}</x-ui.badge>
+                    <x-signal.ui.badge :tone="$statusTone">{{ str($provisioningStatus)->replace('_', ' ') }}</x-signal.ui.badge>
                 @endif
             </div>
 
             @if ($provisioningFailed)
-                <x-ui.alert tone="danger" class="mt-4" role="alert">
+                <x-signal.ui.alert tone="danger" class="mt-4" role="alert">
                     <p class="font-semibold">{{ __('Provisioning failed') }}</p>
                     <p class="mt-1">{{ $model->provisioning_error ?: __('The remote provisioning process did not complete.') }}</p>
-                </x-ui.alert>
+                </x-signal.ui.alert>
             @endif
 
             @if ($provisioningCanceled)
-                <x-ui.alert tone="warning" class="mt-4" role="status">
+                <x-signal.ui.alert tone="warning" class="mt-4" role="status">
                     <p class="font-semibold">{{ __('Deployment canceled') }}</p>
                     <p class="mt-1">{{ __('The remote deployment process was stopped before it completed.') }}</p>
-                </x-ui.alert>
+                </x-signal.ui.alert>
             @endif
 
             <div class="mt-2 flex justify-between text-sm font-semibold text-muted">

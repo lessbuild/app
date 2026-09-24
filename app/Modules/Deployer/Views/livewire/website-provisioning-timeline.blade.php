@@ -4,15 +4,15 @@
 
 <div @if ($poll) wire:poll.5s @endif>
     @if ($provisioningFailed)
-        <aside class="ui-panel mb-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
+        <x-signal.ui.panel as="aside" class="ui-panel mb-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             <p class="font-semibold">{{ __('Provisioning failed') }}</p>
             <p class="mt-1 text-muted">{{ $model->provisioning_error ?: __('The remote provisioning process did not complete.') }}</p>
-        </aside>
+        </x-signal.ui.panel>
     @elseif ($provisioningCanceled)
-        <aside class="ui-panel mb-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
+        <x-signal.ui.panel as="aside" class="ui-panel mb-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
             <p class="font-semibold">{{ __('Provisioning canceled') }}</p>
             <p class="mt-1 text-muted">{{ __('The remote provisioning process was stopped before it completed.') }}</p>
-        </aside>
+        </x-signal.ui.panel>
     @endif
 
     @if (empty($deploymentTimeline))

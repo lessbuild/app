@@ -60,15 +60,15 @@
 
             <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                 @csrf
-                <x-ui.button type="submit" variant="primary" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">
+                <x-signal.ui.button type="submit" variant="primary" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">
                     <svg class="h-4 w-4" aria-hidden="true">
                         <use xlink:href="/assets/images/icons.svg#cloud-upload"></use>
                     </svg>
                     {{ ! $deploymentReady || $deploymentPlanBlocked ? __('Deployment unavailable') : ($deploymentInProgress ? __('Deployment in progress') : __('Deploy')) }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </form>
 
-            <x-ui.button
+            <x-signal.ui.button
                 :href="$repositoryEditUrl"
                 data-modal-trigger="repository-edit-dialog"
                 data-modal-content-url="{{ $repositoryEditContentUrl }}"
@@ -80,7 +80,7 @@
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
                 {{ __('Edit') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
             <x-dialogs.delete
                 id="delete-repository"
@@ -89,35 +89,35 @@
                 :description="__('Are you sure you want to delete this repository?')"
             ></x-dialogs.delete>
 
-            <x-ui.button type="button" variant="danger" data-modal-trigger="delete-repository" aria-controls="delete-repository" aria-expanded="false" class="ui-btn-sm">
+            <x-signal.ui.button type="button" variant="danger" data-modal-trigger="delete-repository" aria-controls="delete-repository" aria-expanded="false" class="ui-btn-sm">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav class="mt-6" :label="__('Repository sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Repository sections')">
         <a href="#repository-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>
         <a href="#deployment-webhook" class="ui-local-nav__link">{{ __('Automation') }}</a>
         <a href="#repository-setup" class="ui-local-nav__link">{{ __('Timeline') }}</a>
         <a href="#repository-deployment-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
         <a href="#repository-deployment-history" class="ui-local-nav__link">{{ __('History') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     @if (! $deploymentReady)
-        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
+        <x-signal.ui.panel as="aside" class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
             {{ __('The linked website and server must both be active before this repository can be deployed.') }}
-        </aside>
+        </x-signal.ui.panel>
     @endif
 
     @error('plan')
-        <aside class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
+        <x-signal.ui.panel as="aside" class="ui-panel my-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             {{ $message }}
             <a href="{{ route('billing.index') }}" class="ui-link font-bold">{{ __('View plans') }}</a>
-        </aside>
+        </x-signal.ui.panel>
     @enderror
 
     @php
@@ -135,7 +135,7 @@
     @endphp
 
     @if ($latestBuild)
-        <section id="repository-latest-deployment" class="ui-panel my-6 p-5 sm:p-6" aria-labelledby="repository-latest-deployment-title">
+        <x-signal.ui.panel as="section" id="repository-latest-deployment" class="ui-panel my-6 p-5 sm:p-6" aria-labelledby="repository-latest-deployment-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Overview') }}</p>
@@ -147,7 +147,7 @@
                         @endif
                     </p>
                 </div>
-                <x-ui.badge :tone="$latestBuildStatusTone">{{ str($latestBuild->status)->replace('_', ' ')->headline() }}</x-ui.badge>
+                <x-signal.ui.badge :tone="$latestBuildStatusTone">{{ str($latestBuild->status)->replace('_', ' ')->headline() }}</x-signal.ui.badge>
             </div>
             <dl class="mt-4 grid gap-4 sm:grid-cols-2">
                 <div>
@@ -176,14 +176,14 @@
                 </div>
             </dl>
             <div class="mt-4 flex flex-wrap gap-3">
-                <x-ui.button :href="route('builds.show', $latestBuild)" variant="primary">{{ __('View latest deployment') }}</x-ui.button>
-                <x-ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary" class="ui-btn-sm">{{ __('View all deployments') }}</x-ui.button>
+                <x-signal.ui.button :href="route('builds.show', $latestBuild)" variant="primary">{{ __('View latest deployment') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary" class="ui-btn-sm">{{ __('View all deployments') }}</x-signal.ui.button>
             </div>
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @if ($isFirstDeployment)
-        <section class="ui-panel my-6 p-5 sm:p-6" aria-labelledby="first-deployment-title">
+        <x-signal.ui.panel as="section" class="ui-panel my-6 p-5 sm:p-6" aria-labelledby="first-deployment-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('First deployment') }}</p>
@@ -191,11 +191,11 @@
                     <p class="mt-1 max-w-2xl text-sm text-muted">{{ __('Required checks must pass before launch. Recommended checks improve verification, recovery, and automatic delivery but can be completed later.') }}</p>
                 </div>
                 @if ($deploymentPreflight['level'] === 'ready')
-                    <x-ui.badge tone="success">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-ui.badge>
+                    <x-signal.ui.badge tone="success">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-signal.ui.badge>
                 @elseif ($deploymentPreflight['level'] === 'blocked')
-                    <x-ui.badge tone="danger">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-ui.badge>
+                    <x-signal.ui.badge tone="danger">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-signal.ui.badge>
                 @else
-                    <x-ui.badge tone="warning">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-ui.badge>
+                    <x-signal.ui.badge tone="warning">{{ str($deploymentPreflight['level'])->headline() }} · {{ $deploymentPreflight['score'] }}/100</x-signal.ui.badge>
                 @endif
             </div>
 
@@ -219,17 +219,17 @@
             <div class="mt-5 flex flex-wrap items-center gap-3">
                 <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                     @csrf
-                    <x-ui.button type="submit" variant="primary" class="ui-btn-sm" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">{{ __('Launch first deployment') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary" class="ui-btn-sm" :disabled="$deploymentInProgress || ! $deploymentReady || $deploymentPlanBlocked">{{ __('Launch first deployment') }}</x-signal.ui.button>
                 </form>
-                <x-ui.button
+                <x-signal.ui.button
                     :href="$repositoryEditUrl"
                     data-modal-trigger="repository-edit-dialog"
                     data-modal-content-url="{{ $repositoryEditContentUrl }}"
                     aria-controls="repository-edit-dialog"
                     aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}"
                     variant="secondary"
-                >{{ __('Review source settings') }}</x-ui.button>
-                <x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review website settings') }}</x-ui.button>
+                >{{ __('Review source settings') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review website settings') }}</x-signal.ui.button>
             </div>
 
             @if ($deploymentGuidance['steps'])
@@ -264,10 +264,10 @@
             @else
                 <p class="mt-5 border-t border-line pt-5 text-sm font-semibold" style="color: var(--ui-success)">{{ __('All first-deployment checks are confirmed. You can launch this revision.') }}</p>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
-    <section id="repository-overview" class="ui-panel my-6 scroll-mt-24 p-5 sm:p-6" data-repository-overview aria-labelledby="repository-layout-title">
+    <x-signal.ui.panel as="section" id="repository-overview" class="ui-panel my-6 scroll-mt-24 p-5 sm:p-6" data-repository-overview aria-labelledby="repository-layout-title">
         <p class="ui-eyebrow">{{ __('Source target') }}</p>
         <h2 id="repository-layout-title" class="mt-2 text-xl font-extrabold text-ink">{{ __('Deployment layout') }}</h2>
         <p class="mt-1 text-sm text-muted">
@@ -278,12 +278,12 @@
                 {{ __('Build and post-deployment hooks, runtime processes, PHP public files, application logs and restore maintenance commands are scoped to this service directory.') }}
             </p>
         @endif
-    </section>
+    </x-signal.ui.panel>
 
     @php
         $oneTimeWebhookSecret = session("repository:{$repository->id}:webhook_secret");
     @endphp
-    <section id="deployment-webhook" class="ui-panel my-6 scroll-mt-24 p-5 sm:p-6" data-repository-automation>
+    <x-signal.ui.panel as="section" id="deployment-webhook" class="ui-panel my-6 scroll-mt-24 p-5 sm:p-6" data-repository-automation>
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div>
                 <p class="ui-eyebrow">{{ __('Automation') }}</p>
@@ -293,33 +293,31 @@
                 </p>
             </div>
             @if ($repository->webhook_enabled)
-                <x-ui.badge tone="success">{{ __('Enabled') }}</x-ui.badge>
+                <x-signal.ui.badge tone="success">{{ __('Enabled') }}</x-signal.ui.badge>
             @else
-                <x-ui.badge>{{ __('Disabled') }}</x-ui.badge>
+                <x-signal.ui.badge>{{ __('Disabled') }}</x-signal.ui.badge>
             @endif
         </div>
 
         <div class="mt-4">
             <label for="webhook-url" class="ui-label">{{ __('Payload URL') }}</label>
-            <input
+            <x-signal.ui.input
                 id="webhook-url"
                 type="text"
                 readonly
                 value="{{ route('webhooks.repositories.receive', $repository) }}"
-                class="ui-input mt-2 w-full font-mono text-sm"
-            >
+                class="ui-input mt-2 w-full font-mono text-sm" :restore="false" />
         </div>
 
         @if ($oneTimeWebhookSecret)
-            <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="alert">
+            <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="alert">
                 <p class="font-semibold">{{ __('Copy this webhook secret now. It will not be shown again.') }}</p>
-                <input
+                <x-signal.ui.input
                     type="text"
                     readonly
                     value="{{ $oneTimeWebhookSecret }}"
-                    class="ui-input mt-2 w-full font-mono text-sm"
-                >
-            </aside>
+                    class="ui-input mt-2 w-full font-mono text-sm" :restore="false" />
+            </x-signal.ui.panel>
         @endif
 
         <div class="mt-4 text-sm text-muted">
@@ -345,7 +343,7 @@
 
         @if ($canUpdateRepository)
             <div class="mt-5">
-                <x-ui.button
+                <x-signal.ui.button
                     :href="$webhookDialogUrl"
                     data-modal-trigger="{{ $webhookDialogId }}"
                     aria-controls="{{ $webhookDialogId }}"
@@ -354,7 +352,7 @@
                     class="ui-btn-sm"
                 >
                     {{ $repository->webhook_enabled ? __('Manage webhook') : __('Enable webhook') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </div>
             <x-scenes.repositories.webhook-settings-dialog
                 :repository="$repository"
@@ -390,49 +388,47 @@
                 <form method="GET" action="{{ route('repositories.show', $repository) }}#webhook-deliveries" class="flex flex-wrap items-end gap-2">
                     <div>
                         <label for="delivery_status" class="ui-label">{{ __('Status') }}</label>
-                        <select id="delivery_status" name="delivery_status" class="ui-input mt-2">
+                        <x-signal.ui.select id="delivery_status" name="delivery_status" class="ui-input mt-2">
                             <option value="">{{ __('All statuses') }}</option>
                             @foreach ($deliveryStatuses as $status)
                                 <option value="{{ $status }}" @selected($deliveryFilters['delivery_status'] === $status)>{{ str($status)->replace('_', ' ')->title() }}</option>
                             @endforeach
-                        </select>
+                        </x-signal.ui.select>
                     </div>
                     <div>
                         <label for="delivery_date_from" class="ui-label">{{ __('Received from') }}</label>
-                        <input
+                        <x-signal.ui.input
                             id="delivery_date_from"
                             name="delivery_date_from"
                             type="date"
                             value="{{ $deliveryFilters['delivery_date_from'] }}"
-                            class="ui-input mt-2"
-                        >
+                            class="ui-input mt-2" :restore="false" />
                     </div>
                     <div>
                         <label for="delivery_date_to" class="ui-label">{{ __('Received through') }}</label>
-                        <input
+                        <x-signal.ui.input
                             id="delivery_date_to"
                             name="delivery_date_to"
                             type="date"
                             value="{{ $deliveryFilters['delivery_date_to'] }}"
-                            class="ui-input mt-2"
-                        >
+                            class="ui-input mt-2" :restore="false" />
                     </div>
-                    <x-ui.button type="submit" variant="primary" class="ui-btn-sm">{{ __('Apply') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary" class="ui-btn-sm">{{ __('Apply') }}</x-signal.ui.button>
                     @if (array_filter($deliveryFilters, fn ($value) => $value !== null))
-                        <x-ui.button :href="route('repositories.show', $repository).'#webhook-deliveries'" variant="ghost" class="ui-btn-sm">{{ __('Clear') }}</x-ui.button>
+                        <x-signal.ui.button :href="route('repositories.show', $repository).'#webhook-deliveries'" variant="ghost" class="ui-btn-sm">{{ __('Clear') }}</x-signal.ui.button>
                     @endif
-                    <x-ui.button :href="route('repositories.webhook-deliveries.export', [$repository, ...array_filter($deliveryFilters, fn ($value) => $value !== null)])" variant="secondary" class="ui-btn-sm">{{ __('Export CSV') }}</x-ui.button>
+                    <x-signal.ui.button :href="route('repositories.webhook-deliveries.export', [$repository, ...array_filter($deliveryFilters, fn ($value) => $value !== null)])" variant="secondary" class="ui-btn-sm">{{ __('Export CSV') }}</x-signal.ui.button>
                 </form>
             </div>
 
             <dl class="ui-insight-grid mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-7">
-                <x-ui.stat :label="__('Matching deliveries')" :value="$deliveryMetrics['total']" />
-                <x-ui.stat :label="__('Queued deliveries')" :value="$deliveryMetrics['queued']" />
-                <x-ui.stat :label="__('Pending deliveries')" :value="$deliveryMetrics['pending']" />
-                <x-ui.stat :label="__('Skipped deliveries')" :value="$deliveryMetrics['skipped']" />
-                <x-ui.stat :label="__('Unavailable deliveries')" :value="$deliveryMetrics['unavailable']" />
-                <x-ui.stat :label="__('Superseded deliveries')" :value="$deliveryMetrics['superseded']" />
-                <x-ui.stat :label="__('Received deliveries')" :value="$deliveryMetrics['received']" />
+                <x-signal.ui.stat :label="__('Matching deliveries')" :value="$deliveryMetrics['total']" />
+                <x-signal.ui.stat :label="__('Queued deliveries')" :value="$deliveryMetrics['queued']" />
+                <x-signal.ui.stat :label="__('Pending deliveries')" :value="$deliveryMetrics['pending']" />
+                <x-signal.ui.stat :label="__('Skipped deliveries')" :value="$deliveryMetrics['skipped']" />
+                <x-signal.ui.stat :label="__('Unavailable deliveries')" :value="$deliveryMetrics['unavailable']" />
+                <x-signal.ui.stat :label="__('Superseded deliveries')" :value="$deliveryMetrics['superseded']" />
+                <x-signal.ui.stat :label="__('Received deliveries')" :value="$deliveryMetrics['received']" />
             </dl>
 
             <div id="webhook-deliveries" class="mt-4">
@@ -441,7 +437,7 @@
                         {{ array_filter($deliveryFilters, fn ($value) => $value !== null) ? __('No webhook deliveries match these filters.') : __('No webhook deliveries have been accepted yet.') }}
                     </p>
                 @else
-                    <div class="ui-panel divide-y divide-line overflow-hidden" aria-label="{{ __('Webhook delivery history') }}">
+                    <x-signal.ui.panel class="ui-panel divide-y divide-line overflow-hidden" aria-label="{{ __('Webhook delivery history') }}">
                         @foreach ($webhookDeliveries as $delivery)
                             @php($deliveryTone = match ($delivery->status) {
                                 \App\Modules\Deployer\Models\RepositoryWebhookDelivery::STATUS_QUEUED => 'success',
@@ -458,7 +454,7 @@
                                             <p class="mt-1 max-w-2xl truncate text-sm text-muted" title="{{ $delivery->commit_message }}">{{ $delivery->commit_message }}</p>
                                         @endif
                                     </div>
-                                    <x-ui.badge :tone="$deliveryTone">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+                                    <x-signal.ui.badge :tone="$deliveryTone">{{ str($delivery->status)->replace('_', ' ') }}</x-signal.ui.badge>
                                 </div>
                                 <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-3">
                                     <div>
@@ -509,7 +505,7 @@
                                     'delivery_id' => $delivery->id,
                                 ]))
                                 <div class="mt-4 flex flex-wrap justify-start gap-2 sm:justify-end">
-                                    <x-ui.button
+                                    <x-signal.ui.button
                                         :href="$deliveryDialogUrl"
                                         data-modal-trigger="{{ $deliveryDialogId }}"
                                         data-modal-content-url="{{ $deliveryContentUrl }}"
@@ -518,17 +514,17 @@
                                         aria-expanded="{{ $selectedWebhookDelivery?->id === $delivery->id ? 'true' : 'false' }}"
                                         variant="primary"
                                         class="ui-btn-sm"
-                                    >{{ __('Inspect delivery') }}</x-ui.button>
+                                    >{{ __('Inspect delivery') }}</x-signal.ui.button>
                                 </div>
                             </article>
                         @endforeach
-                    </div>
+                    </x-signal.ui.panel>
                     <div class="mt-4">{{ $webhookDeliveries->links() }}</div>
                 @endif
             </div>
             </div>
         </details>
-    </section>
+    </x-signal.ui.panel>
 
     @if ($selectedWebhookDelivery && ! $webhookDeliveries->contains('id', $selectedWebhookDelivery->id))
         <a
@@ -559,7 +555,7 @@
      ! Repository information
      ! ------------------------------------------------------------
      !-->
-    <section id="repository-information" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" data-repository-information aria-labelledby="repository-information-heading">
+    <x-signal.ui.panel as="section" id="repository-information" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" data-repository-information aria-labelledby="repository-information-heading">
         <h2 id="repository-information-heading" class="sr-only">{{ __('Repository information') }}</h2>
         <div class="grid gap-4 text-sm sm:grid-cols-2 xl:grid-cols-4">
         <div class="flex items-start gap-3 text-muted">
@@ -597,12 +593,12 @@
             </div>
         @endif
         </div>
-    </section>
+    </x-signal.ui.panel>
 
-    <details
+    <x-signal.ui.panel as="details"
         id="repository-setup"
         class="ui-responsive-details group ui-panel mt-6 scroll-mt-24 overflow-hidden"
-        @if ($repositorySetupNeedsAttention) open @endif
+        :open="$repositorySetupNeedsAttention"
         data-responsive-details
         data-responsive-details-mobile-expanded="{{ $repositorySetupNeedsAttention ? 'true' : 'false' }}"
     >
@@ -619,12 +615,12 @@
         <div class="ui-responsive-details__content border-t border-line p-5">
             <livewire:repository-deployment-timeline :model="$repository"></livewire:repository-deployment-timeline>
         </div>
-    </details>
+    </x-signal.ui.panel>
 
-    <details
+    <x-signal.ui.panel as="details"
         id="repository-deployment-insights"
         class="ui-responsive-details group ui-panel mt-10 scroll-mt-24 overflow-hidden"
-        @if ($deploymentInsightsNeedAttention) open @endif
+        :open="$deploymentInsightsNeedAttention"
         data-responsive-details
         data-responsive-details-mobile-expanded="{{ $deploymentInsightsNeedAttention ? 'true' : 'false' }}"
     >
@@ -679,12 +675,12 @@
             </div>
             </dl>
         </section>
-    </details>
+    </x-signal.ui.panel>
 
-    <details
+    <x-signal.ui.panel as="details"
         id="repository-deployment-history"
         class="group ui-panel mt-10 scroll-mt-24 overflow-hidden"
-        @if ($latestBuild?->statusEnum()?->isActive() === true) open @endif
+        :open="$latestBuild?->statusEnum()?->isActive() === true"
     >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
@@ -697,9 +693,9 @@
         <div class="border-t border-line p-5 pt-4">
             <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
                 <h2 id="deployment-history-title" class="sr-only">{{ __('Deployment history') }}</h2>
-                <x-ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary" class="ui-btn-sm ml-auto">
+                <x-signal.ui.button :href="route('builds.index', ['repository_id' => $repository->id])" variant="secondary" class="ui-btn-sm ml-auto">
                     {{ __('View all deployments') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </div>
             @forelse ($builds as $build)
                 <div class="ui-card mb-3 flex items-center justify-between gap-4 p-4">
@@ -727,25 +723,25 @@
                         </p>
                     </div>
                     @if ($build->status === \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED)
-                        <x-ui.badge tone="success">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                        <x-signal.ui.badge tone="success">{{ str($build->status)->replace('_', ' ') }}</x-signal.ui.badge>
                     @elseif ($build->status === \App\Modules\Deployer\Models\Build::STATUS_FAILED)
-                        <x-ui.badge tone="danger">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                        <x-signal.ui.badge tone="danger">{{ str($build->status)->replace('_', ' ') }}</x-signal.ui.badge>
                     @elseif (in_array($build->status, [\App\Modules\Deployer\Models\Build::STATUS_CANCELED, \App\Modules\Deployer\Models\Build::STATUS_TIMING_OUT], true))
-                        <x-ui.badge tone="warning">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                        <x-signal.ui.badge tone="warning">{{ str($build->status)->replace('_', ' ') }}</x-signal.ui.badge>
                     @elseif (in_array($build->status, [\App\Modules\Deployer\Models\Build::STATUS_DEPLOYING, \App\Modules\Deployer\Models\Build::STATUS_RUNNING], true))
-                        <x-ui.badge tone="accent">{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                        <x-signal.ui.badge tone="accent">{{ str($build->status)->replace('_', ' ') }}</x-signal.ui.badge>
                     @else
-                        <x-ui.badge>{{ str($build->status)->replace('_', ' ') }}</x-ui.badge>
+                        <x-signal.ui.badge>{{ str($build->status)->replace('_', ' ') }}</x-signal.ui.badge>
                     @endif
                 </div>
             @empty
-                <x-ui.empty-state
+                <x-signal.ui.empty-state
                     :title="__('No deployments yet')"
                     :description="__('Deploy this repository to create its first build.')"
                 />
             @endforelse
         </div>
-    </details>
+    </x-signal.ui.panel>
 
     <x-scenes.repositories.edit-dialog
         :repository="$repository"

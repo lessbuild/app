@@ -1,16 +1,14 @@
 <div @if ($shouldPoll) wire:poll.2s @endif>
     @if ($open)
-        <dialog
+        <x-signal.overlays.dialog-shell
             id="server-command-dialog"
-            class="ui-dialog ui-command-dialog"
-            data-modal-sheet
+            :open="true"
+            class="ui-command-dialog"
             data-livewire-dialog
-            open
             role="dialog"
             aria-modal="true"
             aria-labelledby="server-command-dialog-title"
         >
-            <div data-modal-panel>
                 <form wire:submit.prevent="run">
                     <header data-modal-header class="flex items-start justify-between gap-4 border-b border-line p-5 sm:p-6">
                         <div class="min-w-0">
@@ -18,28 +16,27 @@
                             <h2 id="server-command-dialog-title" tabindex="-1" class="mt-2 text-xl font-extrabold text-ink">{{ __('Run command on :server', ['server' => $model->name]) }}</h2>
                             <p class="mt-2 text-sm text-muted">{{ __('The command runs as root and stops after the configured SSH timeout.') }}</p>
                         </div>
-                        <button type="button" wire:click="close" data-livewire-dialog-close class="ui-icon-btn text-xl leading-none" aria-label="{{ __('Close command dialog') }}">
+                        <x-signal.ui.icon-button :label="__('Close command dialog')" type="button" wire:click="close" data-livewire-dialog-close class="ui-icon-btn text-xl leading-none">
                             <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#close"></use></svg>
-                        </button>
+                        </x-signal.ui.icon-button>
                     </header>
 
                     <div data-modal-body class="px-5 py-5 sm:px-6">
 
                         <label for="server-command-input" class="sr-only">{{ __('Command') }}</label>
-                        <input
+                        <x-signal.ui.input
                             id="server-command-input"
                             wire:model.defer="command"
                             type="text"
                             class="ui-input font-mono"
                             placeholder="{{ __('Example: uptime') }}"
                             autocomplete="off"
-                            autofocus
-                        >
+                            autofocus :restore="false" />
                         @error('command')
-                            <x-ui.alert tone="danger" class="mt-3">{{ $message }}</x-ui.alert>
+                            <x-signal.ui.alert tone="danger" class="mt-3">{{ $message }}</x-signal.ui.alert>
                         @enderror
                         @error('cancel')
-                            <x-ui.alert tone="danger" class="mt-3">{{ $message }}</x-ui.alert>
+                            <x-signal.ui.alert tone="danger" class="mt-3">{{ $message }}</x-signal.ui.alert>
                         @enderror
 
                         <div class="mt-6 flex flex-wrap items-end justify-between gap-3">
@@ -47,9 +44,9 @@
                                 <p class="ui-eyebrow">{{ __('Recent commands') }}</p>
                                 <p class="mt-1 text-sm text-muted">{{ __('Output is retained only for the configured history window.') }}</p>
                             </div>
-                            <x-ui.button :href="route('servers.commands.index', $model)" variant="ghost" class="px-0">
+                            <x-signal.ui.button :href="route('servers.commands.index', $model)" variant="ghost" class="px-0">
                                 {{ __('View full history') }}
-                            </x-ui.button>
+                            </x-signal.ui.button>
                         </div>
 
                         <div class="mt-3 max-h-96 space-y-3 overflow-y-auto pr-1">
@@ -63,7 +60,7 @@
                                 <article class="ui-card ui-card--muted p-4" wire:key="server-command-{{ $execution->id }}">
                                     <div class="flex flex-wrap items-start justify-between gap-3">
                                         <code class="min-w-0 flex-1 break-all text-xs text-ink">{{ $execution->command }}</code>
-                                        <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
+                                        <x-signal.ui.badge :tone="$statusTone">{{ $execution->status }}</x-signal.ui.badge>
                                     </div>
                                     @if ($execution->rerun_from_execution_id)
                                         <p class="mt-2 text-xs text-muted">{{ __('Rerun of command #:id', ['id' => $execution->rerun_from_execution_id]) }}</p>
@@ -82,12 +79,12 @@
                                         </p>
                                         <div class="flex flex-wrap items-center gap-2">
                                             @if ($execution->output !== null)
-                                                <x-ui.button :href="route('servers.commands.output', ['server' => $model, 'execution' => $execution])" variant="ghost" class="px-2 py-1 text-xs">
+                                                <x-signal.ui.button :href="route('servers.commands.output', ['server' => $model, 'execution' => $execution])" variant="ghost" class="px-2 py-1 text-xs">
                                                     {{ __('Download') }}
-                                                </x-ui.button>
+                                                </x-signal.ui.button>
                                             @endif
                                             @if ($execution->status === \App\Modules\Deployer\Models\ServerCommandExecution::STATUS_QUEUED)
-                                                <x-ui.button
+                                                <x-signal.ui.button
                                                     type="button"
                                                     variant="danger"
                                                     wire:click="cancel({{ $execution->id }})"
@@ -96,11 +93,11 @@
                                                     class="px-2 py-1 text-xs"
                                                 >
                                                     {{ __('Cancel') }}
-                                                </x-ui.button>
+                                                </x-signal.ui.button>
                                             @endif
                                             @if ($model->provisioning_status === \App\Modules\Deployer\Models\Server::STATUS_ACTIVE
                                                 && in_array($execution->status, \App\Modules\Deployer\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
-                                                <x-ui.button
+                                                <x-signal.ui.button
                                                     type="button"
                                                     variant="secondary"
                                                     wire:click="rerun({{ $execution->id }})"
@@ -109,26 +106,25 @@
                                                     class="px-2 py-1 text-xs"
                                                 >
                                                     {{ __('Run again') }}
-                                                </x-ui.button>
+                                                </x-signal.ui.button>
                                             @endif
                                         </div>
                                     </div>
                                 </article>
                             @empty
-                                <x-ui.empty-state :title="__('No commands have been run on this server yet.')" />
+                                <x-signal.ui.empty-state :title="__('No commands have been run on this server yet.')" />
                             @endforelse
                         </div>
                     </div>
 
                     <footer data-modal-footer class="flex flex-wrap-reverse justify-end gap-2 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
-                        <x-ui.button type="button" variant="ghost" wire:click="close">{{ __('Close') }}</x-ui.button>
-                        <x-ui.button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="run">
+                        <x-signal.ui.button type="button" variant="ghost" wire:click="close">{{ __('Close') }}</x-signal.ui.button>
+                        <x-signal.ui.button type="submit" variant="primary" wire:loading.attr="disabled" wire:target="run">
                             <span wire:loading.remove wire:target="run">{{ __('Run command') }}</span>
                             <span wire:loading wire:target="run">{{ __('Running…') }}</span>
-                        </x-ui.button>
+                        </x-signal.ui.button>
                     </footer>
                 </form>
-            </div>
-        </dialog>
+        </x-signal.overlays.dialog-shell>
     @endif
 </div>

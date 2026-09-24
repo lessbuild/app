@@ -37,12 +37,12 @@
     />
 
     @if ($filters['execution'])
-        <x-ui.alert tone="info" class="mb-6">
+        <x-signal.ui.alert tone="info" class="mb-6">
             {{ __('Focused on execution #:id.', ['id' => $filters['execution']]) }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
-    <section class="ui-panel mb-6 p-4 sm:p-5" aria-labelledby="server-command-filters-heading">
+    <x-signal.ui.panel as="section" class="ui-panel mb-6 p-4 sm:p-5" aria-labelledby="server-command-filters-heading">
         <div class="mb-4">
             <p class="ui-eyebrow">{{ __('Find an operation') }}</p>
             <h2 id="server-command-filters-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Filter command history') }}</h2>
@@ -50,53 +50,53 @@
         </div>
         <form method="GET" action="{{ route('servers.commands.index', $server) }}">
             @error('command')
-                <x-ui.alert tone="danger" class="mb-4">{{ $message }}</x-ui.alert>
+                <x-signal.ui.alert tone="danger" class="mb-4">{{ $message }}</x-signal.ui.alert>
             @enderror
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                     <label for="status" class="ui-label">{{ __('Status') }}</label>
-                    <select id="status" name="status" class="ui-input">
+                    <x-signal.ui.select id="status" name="status" class="ui-input">
                         <option value="">{{ __('All statuses') }}</option>
                         @foreach ($statuses as $option)
                             <option value="{{ $option }}" @selected($filters['status'] === $option)>
                                 {{ str($option)->title() }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </div>
                 <div>
                     <label for="output" class="ui-label">{{ __('Output') }}</label>
-                    <select id="output" name="output" class="ui-input">
+                    <x-signal.ui.select id="output" name="output" class="ui-input">
                         <option value="">{{ __('Any output state') }}</option>
                         <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                         <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
-                    </select>
+                    </x-signal.ui.select>
                 </div>
                 <div>
                     <label for="date_from" class="ui-label">{{ __('Queued from') }}</label>
-                    <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
+                    <x-signal.ui.input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input" :restore="false" />
                 </div>
                 <div>
                     <label for="date_to" class="ui-label">{{ __('Queued through') }}</label>
-                    <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
+                    <x-signal.ui.input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input" :restore="false" />
                 </div>
             </div>
             <div class="mt-5 flex flex-wrap gap-2">
-                <x-ui.button type="submit" variant="primary">{{ __('Apply filter') }}</x-ui.button>
+                <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filter') }}</x-signal.ui.button>
                 @if ($metrics['active'] > 0)
-                    <x-ui.button
+                    <x-signal.ui.button
                         :href="route('servers.commands.index', ['server' => $server, ...array_filter($filters, fn ($value) => $value !== null), 'page' => $executions->currentPage()])"
                         variant="secondary"
                         aria-describedby="server-command-refresh-help"
                     >
                         {{ __('Refresh status') }}
-                    </x-ui.button>
+                    </x-signal.ui.button>
                 @endif
-                <x-ui.button :href="route('servers.commands.export', [$server, ...array_filter($filters, fn ($value) => $value !== null)])" variant="secondary">
+                <x-signal.ui.button :href="route('servers.commands.export', [$server, ...array_filter($filters, fn ($value) => $value !== null)])" variant="secondary">
                     {{ __('Export CSV') }}
-                </x-ui.button>
+                </x-signal.ui.button>
                 @if (array_filter($filters, fn ($value) => $value !== null))
-                    <x-ui.button :href="route('servers.commands.index', $server)" variant="ghost">{{ __('Clear filter') }}</x-ui.button>
+                    <x-signal.ui.button :href="route('servers.commands.index', $server)" variant="ghost">{{ __('Clear filter') }}</x-signal.ui.button>
                 @endif
             </div>
             @if ($metrics['active'] > 0)
@@ -105,24 +105,24 @@
                 </p>
             @endif
         </form>
-    </section>
+    </x-signal.ui.panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="server-commands-insights"
         class="mb-6"
         :summary="trans_choice(':count matching command|:count matching commands', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            <x-ui.stat class="ui-card" :label="__('Matching commands')" :value="$metrics['total']" :description="__('Commands in this filtered view.')" />
-            <x-ui.stat class="ui-card" :label="__('Active commands')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
-            <x-ui.stat class="ui-card" :label="__('Succeeded')" :value="$metrics['succeeded']" :description="__('Matching successful commands.')" />
-            <x-ui.stat class="ui-card" :label="__('Failed')" :value="$metrics['failed']" :description="__('Matching failed commands.')" />
-            <x-ui.stat class="ui-card" :label="__('Canceled')" :value="$metrics['canceled']" :description="__('Matching canceled commands.')" />
-            <x-ui.stat class="ui-card" :label="__('Output retained')" :value="$metrics['output']" :description="__('Matching commands with downloadable output.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Matching commands')" :value="$metrics['total']" :description="__('Commands in this filtered view.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Active commands')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Succeeded')" :value="$metrics['succeeded']" :description="__('Matching successful commands.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Failed')" :value="$metrics['failed']" :description="__('Matching failed commands.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Canceled')" :value="$metrics['canceled']" :description="__('Matching canceled commands.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Output retained')" :value="$metrics['output']" :description="__('Matching commands with downloadable output.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
-    <div class="ui-panel ui-inventory-list overflow-hidden">
+    <x-signal.ui.panel class="ui-panel ui-inventory-list overflow-hidden">
         <div class="divide-y divide-line" aria-label="{{ __('Server command history') }}">
             @forelse ($executions as $execution)
                 @php($statusTone = match ($execution->status) {
@@ -145,7 +145,7 @@
                                 @endif
                             </div>
                         </div>
-                        <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
+                        <x-signal.ui.badge :tone="$statusTone">{{ $execution->status }}</x-signal.ui.badge>
                     </div>
 
                     <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
@@ -183,7 +183,7 @@
                                 'execution' => $execution,
                                 'fragment' => 'server-command-output',
                             ]))
-                            <x-ui.button
+                            <x-signal.ui.button
                                 :href="$outputDialogUrl"
                                 data-modal-trigger="{{ $outputDialogId }}"
                                 data-modal-content-url="{{ $outputContentUrl }}"
@@ -194,54 +194,54 @@
                                 class="ui-btn-sm whitespace-nowrap"
                             >
                                 {{ __('View output') }}
-                            </x-ui.button>
-                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm whitespace-nowrap">
+                            </x-signal.ui.button>
+                            <x-signal.ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm whitespace-nowrap">
                                 {{ __('Download output') }}
-                            </x-ui.button>
+                            </x-signal.ui.button>
                         @endif
                         @if ($execution->status === \App\Modules\Deployer\Models\ServerCommandExecution::STATUS_QUEUED)
                             <form method="POST" action="{{ route('servers.commands.cancel', ['server' => $server, 'execution' => $execution]) }}">
                                 @csrf
-                                <x-ui.button type="submit" variant="danger" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
+                                <x-signal.ui.button type="submit" variant="danger" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Cancel this queued command?')) }})">
                                     {{ __('Cancel') }}
-                                </x-ui.button>
+                                </x-signal.ui.button>
                             </form>
                         @endif
                         @if ($server->provisioning_status === \App\Modules\Deployer\Models\Server::STATUS_ACTIVE
                             && in_array($execution->status, \App\Modules\Deployer\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
                             <form method="POST" action="{{ route('servers.commands.rerun', ['server' => $server, 'execution' => $execution]) }}">
                                 @csrf
-                                <x-ui.button type="submit" variant="primary" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
+                                <x-signal.ui.button type="submit" variant="primary" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Run this command again as root?')) }})">
                                     {{ __('Run again') }}
-                                </x-ui.button>
+                                </x-signal.ui.button>
                             </form>
                         @endif
                         @if (in_array($execution->status, \App\Modules\Deployer\Models\ServerCommandExecution::TERMINAL_STATUSES, true))
                             <form method="POST" action="{{ route('servers.commands.destroy', ['server' => $server, 'execution' => $execution]) }}">
                                 @csrf
                                 @method('DELETE')
-                                <x-ui.button type="submit" variant="danger" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
+                                <x-signal.ui.button type="submit" variant="danger" class="ui-btn-sm whitespace-nowrap" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete this command and its retained output?')) }})">
                                     {{ __('Delete') }}
-                                </x-ui.button>
+                                </x-signal.ui.button>
                             </form>
                         @endif
                     </div>
                 </article>
             @empty
                 <div class="p-4">
-                    <x-ui.empty-state
+                    <x-signal.ui.empty-state
                         :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run on this server yet')"
                     >
                         @if (array_filter($filters, fn ($value) => $value !== null))
                             <x-slot:action>
-                                <x-ui.button :href="route('servers.commands.index', $server)" variant="ghost">{{ __('Clear filter') }}</x-ui.button>
+                                <x-signal.ui.button :href="route('servers.commands.index', $server)" variant="ghost">{{ __('Clear filter') }}</x-signal.ui.button>
                             </x-slot:action>
                         @endif
-                    </x-ui.empty-state>
+                    </x-signal.ui.empty-state>
                 </div>
             @endforelse
         </div>
-    </div>
+    </x-signal.ui.panel>
 
     <div class="mt-6">
         {{ $executions->links() }}

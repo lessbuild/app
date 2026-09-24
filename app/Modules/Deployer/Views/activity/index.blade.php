@@ -10,7 +10,7 @@
         $activityFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
     @endphp
 
-    <x-ui.filter-panel
+    <x-signal.ui.filter-panel
         id="activity-filters"
         class="mb-6 mt-8"
         :open="$activityFilterCount > 0"
@@ -20,53 +20,52 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <div>
                 <label for="search" class="ui-label">{{ __('Search') }}</label>
-                <input
+                <x-signal.ui.input
                     id="search"
                     name="search"
                     type="search"
                     maxlength="100"
                     value="{{ $filters['search'] }}"
                     placeholder="{{ __('Activity message') }}"
-                    class="ui-input"
-                >
+                    class="ui-input" :restore="false" />
             </div>
             <div>
                 <label for="category" class="ui-label">{{ __('Category') }}</label>
-                <select id="category" name="category" class="ui-input">
+                <x-signal.ui.select id="category" name="category" class="ui-input">
                     <option value="">{{ __('All categories') }}</option>
                     @foreach ($categories as $category)
                         <option value="{{ $category }}" @selected($filters['category'] === $category)>
                             {{ str($category)->title() }}
                         </option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="date_from" class="ui-label">{{ __('From') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
+                <x-signal.ui.input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input" :restore="false" />
             </div>
             <div>
                 <label for="date_to" class="ui-label">{{ __('To') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
+                <x-signal.ui.input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input" :restore="false" />
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-signal.ui.button>
             @if ($auditAvailable)
-                <x-ui.button :href="route('activity.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
+                <x-signal.ui.button :href="route('activity.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                     {{ __('Export CSV') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             @else
-                <x-ui.button :href="route('billing.index')" variant="secondary">{{ __('Unlock CSV export') }}</x-ui.button>
+                <x-signal.ui.button :href="route('billing.index')" variant="secondary">{{ __('Unlock CSV export') }}</x-signal.ui.button>
             @endif
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <x-ui.button :href="route('activity.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
+                <x-signal.ui.button :href="route('activity.index')" variant="ghost">{{ __('Clear filters') }}</x-signal.ui.button>
             @endif
         </div>
         </form>
-    </x-ui.filter-panel>
+    </x-signal.ui.filter-panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="activity-insights"
         class="mb-6"
         :open="$metrics['total'] === 0 && $activityFilterCount > 0"
@@ -74,15 +73,15 @@
         :summary="trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-7">
-            <x-ui.stat :label="__('Matching events')" :value="$metrics['total']" :description="__('Audit events in this filtered view.')" />
-            <x-ui.stat :label="__('Deployments')" :value="$metrics['deployments']" :description="__('Matching deployment events.')" />
-            <x-ui.stat :label="__('Infrastructure')" :value="$metrics['infrastructure']" :description="__('Website, server, and provider events.')" />
-            <x-ui.stat :label="__('Server commands')" :value="$metrics['commands']" :description="__('Matching command lifecycle events.')" />
-            <x-ui.stat :label="__('Recipes')" :value="$metrics['recipes']" :description="__('Matching recipe and gallery events.')" />
-            <x-ui.stat :label="__('Account security')" :value="$metrics['account']" :description="__('Matching account security events.')" />
-            <x-ui.stat :label="__('Latest matching event')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
+            <x-signal.ui.stat :label="__('Matching events')" :value="$metrics['total']" :description="__('Audit events in this filtered view.')" />
+            <x-signal.ui.stat :label="__('Deployments')" :value="$metrics['deployments']" :description="__('Matching deployment events.')" />
+            <x-signal.ui.stat :label="__('Infrastructure')" :value="$metrics['infrastructure']" :description="__('Website, server, and provider events.')" />
+            <x-signal.ui.stat :label="__('Server commands')" :value="$metrics['commands']" :description="__('Matching command lifecycle events.')" />
+            <x-signal.ui.stat :label="__('Recipes')" :value="$metrics['recipes']" :description="__('Matching recipe and gallery events.')" />
+            <x-signal.ui.stat :label="__('Account security')" :value="$metrics['account']" :description="__('Matching account security events.')" />
+            <x-signal.ui.stat :label="__('Latest matching event')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <x-activity-feed
         :events="$events"

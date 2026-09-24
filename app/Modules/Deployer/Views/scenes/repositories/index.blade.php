@@ -21,7 +21,7 @@
         :description="__('Manage source targets and review their latest filtered deployment state.')"
     >
         <x-slot:buttons>
-            <x-ui.button
+            <x-signal.ui.button
                 :href="$impactPreviewDialogUrl"
                 data-modal-trigger="repository-impact-preview-dialog"
                 data-modal-content-url="{{ $impactPreviewContentUrl }}"
@@ -31,8 +31,8 @@
                 variant="secondary"
             >
                 {{ __('Preview push impact') }}
-            </x-ui.button>
-            <x-ui.button
+            </x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$repositoryCreateUrl"
                 data-modal-trigger="repository-create-dialog"
                 aria-controls="repository-create-dialog"
@@ -43,13 +43,13 @@
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Repository') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null && $value !== '')))
 
-    <x-ui.filter-panel
+    <x-signal.ui.filter-panel
         id="repositories-filters"
         class="mt-8"
         :label="__('Filter repositories')"
@@ -60,76 +60,75 @@
             <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
                 <div>
                     <label for="search" class="ui-label">{{ __('Search') }}</label>
-                    <input
+                    <x-signal.ui.input
                         id="search"
                         name="search"
                         type="search"
                         maxlength="100"
                         value="{{ $filters['search'] }}"
                         placeholder="{{ __('Name, URL, or description') }}"
-                        class="ui-input mt-1 w-full"
-                    >
+                        class="ui-input mt-1 w-full" :restore="false" />
                 </div>
                 <div>
                     <label for="provider_id" class="ui-label">{{ __('Provider') }}</label>
-                    <select id="provider_id" name="provider_id" class="ui-input mt-1 w-full">
+                    <x-signal.ui.select id="provider_id" name="provider_id" class="ui-input mt-1 w-full">
                         <option value="">{{ __('All providers') }}</option>
                         @foreach ($providers as $provider)
                             <option value="{{ $provider->id }}" @selected((int) $filters['provider_id'] === $provider->id)>
                                 {{ $provider->name }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </div>
                 <div>
                     <label for="website_id" class="ui-label">{{ __('Website') }}</label>
-                    <select id="website_id" name="website_id" class="ui-input mt-1 w-full">
+                    <x-signal.ui.select id="website_id" name="website_id" class="ui-input mt-1 w-full">
                         <option value="">{{ __('All websites') }}</option>
                         @foreach ($websites as $website)
                             <option value="{{ $website->id }}" @selected((int) $filters['website_id'] === $website->id)>
                                 {{ $website->name }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </div>
                 <div>
                     <label for="status" class="ui-label">{{ __('Latest deployment') }}</label>
-                    <select id="status" name="status" class="ui-input mt-1 w-full">
+                    <x-signal.ui.select id="status" name="status" class="ui-input mt-1 w-full">
                         <option value="">{{ __('All deployment states') }}</option>
                         @foreach ($statuses as $status)
                             <option value="{{ $status }}" @selected($filters['status'] === $status)>
                                 {{ $status === 'none' ? __('Never deployed') : str($status)->replace('_', ' ')->title() }}
                             </option>
                         @endforeach
-                    </select>
+                    </x-signal.ui.select>
                 </div>
             </div>
             <div class="mt-4 flex flex-wrap gap-3">
-                <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
-                <x-ui.button :href="route('repositories.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
+                <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('repositories.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                     {{ __('Export CSV') }}
-                </x-ui.button>
+                </x-signal.ui.button>
                 @if (array_filter($filters, fn ($value) => $value !== null))
-                    <x-ui.button :href="route('repositories.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
+                    <x-signal.ui.button :href="route('repositories.index')" variant="ghost">{{ __('Clear filters') }}</x-signal.ui.button>
                 @endif
             </div>
         </form>
-    </x-ui.filter-panel>
+    </x-signal.ui.filter-panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="repositories-insights"
         class="mt-6"
         :summary="trans_choice(':count matching repository|:count matching repositories', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            <x-ui.stat :label="__('Matching repositories')" :value="$metrics['total']" :description="__('Repositories in this filtered view.')" />
-            <x-ui.stat :label="__('Never deployed')" :value="$metrics['never_deployed']" :description="__('Matching repositories without a build.')" />
-            <x-ui.stat :label="__('Active deployments')" :value="$metrics['active']" :description="__('Latest deployment is still active.')" />
-            <x-ui.stat :label="__('Latest succeeded')" :value="$metrics['succeeded']" :description="__('Latest deployment completed successfully.')" />
-            <x-ui.stat :label="__('Latest failed')" :value="$metrics['failed']" :description="__('Latest deployment failed.')" />
-            <x-ui.stat :label="__('Push webhooks')" :value="$metrics['webhooks']" :description="__('Matching repositories with webhooks enabled.')" />
+            <x-signal.ui.stat :label="__('Matching repositories')" :value="$metrics['total']" :description="__('Repositories in this filtered view.')" />
+            <x-signal.ui.stat :label="__('Never deployed')" :value="$metrics['never_deployed']" :description="__('Matching repositories without a build.')" />
+            <x-signal.ui.stat :label="__('Active deployments')" :value="$metrics['active']" :description="__('Latest deployment is still active.')" />
+            <x-signal.ui.stat :label="__('Latest succeeded')" :value="$metrics['succeeded']" :description="__('Latest deployment completed successfully.')" />
+            <x-signal.ui.stat :label="__('Latest failed')" :value="$metrics['failed']" :description="__('Latest deployment failed.')" />
+            <x-signal.ui.stat :label="__('Push webhooks')" :value="$metrics['webhooks']" :description="__('Matching repositories with webhooks enabled.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <!--
      ! ------------------------------------------------------------
@@ -148,7 +147,7 @@
                                 <p class="truncate text-sm text-muted">{{ $repository->url }}</p>
                             </div>
                         </div>
-                        <x-ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View repository') }}</x-ui.button>
+                        <x-signal.ui.button :href="route('repositories.show', $repository)" variant="secondary">{{ __('View repository') }}</x-signal.ui.button>
                     </div>
 
                     @if ($repository->description)
@@ -199,15 +198,15 @@
         </div>
     @else
         <div class="max-w-3xl mx-auto">
-            <x-ui.empty-state
+            <x-signal.ui.empty-state
                 :title="array_filter($filters, fn ($value) => $value !== null) ? __('No repositories match these filters') : __('You have no repositories')"
                 :description="array_filter($filters, fn ($value) => $value !== null) ? __('Try changing or clearing the selected filters.') : __('You have no repositories. Click the button below to add one.')"
             >
                 <x-slot:action>
                     @if (array_filter($filters, fn ($value) => $value !== null))
-                        <x-ui.button :href="route('repositories.index')" variant="secondary">{{ __('Clear filters') }}</x-ui.button>
+                        <x-signal.ui.button :href="route('repositories.index')" variant="secondary">{{ __('Clear filters') }}</x-signal.ui.button>
                     @else
-                        <x-ui.button
+                        <x-signal.ui.button
                             :href="$repositoryCreateUrl"
                             data-modal-trigger="repository-create-dialog"
                             aria-controls="repository-create-dialog"
@@ -215,10 +214,10 @@
                             variant="primary"
                         >
                             {{ __('Add Repository') }}
-                        </x-ui.button>
+                        </x-signal.ui.button>
                     @endif
                 </x-slot:action>
-            </x-ui.empty-state>
+            </x-signal.ui.empty-state>
         </div>
     @endif
 

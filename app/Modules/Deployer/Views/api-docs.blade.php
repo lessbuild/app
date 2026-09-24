@@ -18,15 +18,15 @@
                     <h1 class="mt-2 text-4xl font-extrabold tracking-tight">{{ __('Control plane API') }}</h1>
                     <p class="mt-3 max-w-2xl leading-7 text-muted">{{ __('Automate projects, deployments, runtime state, scaling, and workflow configuration with scoped Bearer tokens.') }}</p>
                 </div>
-                <x-ui.button href="/openapi.json" variant="primary" download>{{ __('Download OpenAPI specification') }}</x-ui.button>
+                <x-signal.ui.button href="/openapi.json" variant="primary" download>{{ __('Download OpenAPI specification') }}</x-signal.ui.button>
             </header>
 
-            <x-ui.card class="mt-8 p-6 sm:p-7">
+            <x-signal.ui.card class="mt-8 p-6 sm:p-7">
                 <h2 class="text-xl font-extrabold">{{ __('Authentication') }}</h2>
                 <pre class="library-code mt-4"><code>Authorization: Bearer YOUR_TOKEN
 Accept: application/json</code></pre>
                 <p class="mt-3 text-sm leading-6 text-muted">{{ __('Create named read, deploy, or manage tokens from Automation. Tokens are shown once and can be rotated or revoked.') }}</p>
-            </x-ui.card>
+            </x-signal.ui.card>
 
             @php
                 $apiOperations = [
@@ -50,37 +50,37 @@ Accept: application/json</code></pre>
                 <nav class="grid gap-2 border-t border-line p-4 sm:grid-cols-2" aria-label="{{ __('API operations') }}">
                     @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
                         <a href="#api-operation-{{ $anchor }}" class="ui-card ui-card--interactive block px-4 py-3">
-                            <x-ui.badge tone="accent" class="font-mono">{{ $method }}</x-ui.badge>
+                            <x-signal.ui.badge tone="accent" class="font-mono">{{ $method }}</x-signal.ui.badge>
                             <code class="mt-1 block break-all text-sm text-ink">{{ $path }}</code>
                         </a>
                     @endforeach
                 </nav>
             </details>
 
-            <x-ui.card class="mt-6 overflow-hidden">
+            <x-signal.ui.card class="mt-6 overflow-hidden">
                 <div class="border-b border-line p-5 sm:p-6">
                     <p class="ui-eyebrow">{{ __('Available operations') }}</p>
                     <h2 class="mt-1 text-xl font-extrabold">{{ __('Endpoints') }}</h2>
                 </div>
                 @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
                     <article id="api-operation-{{ $anchor }}" class="scroll-mt-6 grid gap-3 border-b border-line p-5 last:border-0 sm:grid-cols-[5rem_1fr_8rem] sm:items-center">
-                        <x-ui.badge tone="neutral" class="w-fit font-mono">{{ $method }}</x-ui.badge>
+                        <x-signal.ui.badge tone="neutral" class="w-fit font-mono">{{ $method }}</x-signal.ui.badge>
                         <div>
                             <code id="api-path-{{ $anchor }}" class="break-all text-sm text-ink">{{ $path }}</code>
                             <p class="mt-1 text-xs text-muted">{{ __($description) }}</p>
                         </div>
-                        <x-ui.badge tone="accent" class="w-fit sm:justify-self-end">{{ $scope }}</x-ui.badge>
+                        <x-signal.ui.badge tone="accent" class="w-fit sm:justify-self-end">{{ $scope }}</x-signal.ui.badge>
                     </article>
                 @endforeach
-            </x-ui.card>
+            </x-signal.ui.card>
 
-            <x-ui.card class="mt-6 p-6 sm:p-7">
+            <x-signal.ui.card class="mt-6 p-6 sm:p-7">
                 <h2 class="text-xl font-extrabold">{{ __('Request example') }}</h2>
                 <pre class="library-code mt-4"><code>curl -X POST \
   -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   -H "Accept: application/json" \
   {{ url('/api/v1/environments/1/deploy') }}</code></pre>
-            </x-ui.card>
+            </x-signal.ui.card>
         </div>
     </main>
 </x-layouts.core>

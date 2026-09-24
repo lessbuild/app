@@ -16,7 +16,7 @@
         :description="__('Report a bug, share an idea, or tell us where the product became confusing.')"
     >
         <x-slot:buttons>
-            <x-ui.button
+            <x-signal.ui.button
                 href="{{ $feedbackDialogUrl }}"
                 data-modal-trigger="feedback-compose"
                 aria-controls="feedback-compose"
@@ -24,40 +24,40 @@
                 variant="primary"
             >
                 {{ __('Send feedback') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="feedback-insights"
         class="mt-6"
         :summary="trans_choice(':count matching submission|:count matching submissions', $feedback->total(), ['count' => $feedback->total()])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Matching')"
                 :value="$feedback->total()"
                 :description="__('Submissions in the current filtered view.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('This page')"
                 :value="$feedback->count()"
                 :description="__('Submissions loaded in this page of results.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Status filter')"
                 :value="$status ? str($status)->headline() : __('All statuses')"
                 :description="__('Use the filter to focus review work.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Access scope')"
                 :value="$canReview ? __('Workspace') : __('Your submissions')"
                 :description="__('Visibility is controlled by workspace permissions.')"
             />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
-    <x-ui.local-nav :label="__('Feedback sections')">
+    <x-signal.ui.local-nav :label="__('Feedback sections')">
         <a
             href="{{ $feedbackDialogUrl }}"
             class="ui-local-nav__link"
@@ -66,7 +66,7 @@
             aria-expanded="{{ $feedbackDialogOpen ? 'true' : 'false' }}"
         >{{ __('Send feedback') }}</a>
         <a href="#feedback-list" class="ui-local-nav__link">{{ __('Workspace feedback') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     <div class="mt-8">
         <x-scenes.feedback.compose-dialog :open="$feedbackDialogOpen" />
@@ -76,12 +76,12 @@
                 <h2 id="feedback-list-heading" class="text-lg font-extrabold text-ink">{{ __('Workspace feedback') }}</h2>
                 <form method="GET" class="flex flex-wrap gap-2">
                     <label class="sr-only" for="feedback-status">{{ __('Status') }}</label>
-                    <select id="feedback-status" name="status" class="ui-input"><option value="">{{ __('Every status') }}</option>@foreach (\App\Modules\Deployer\Models\ProductFeedback::STATUSES as $value)<option value="{{ $value }}" @selected($status === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
+                    <x-signal.ui.select id="feedback-status" name="status" class="ui-input"><option value="">{{ __('Every status') }}</option>@foreach (\App\Modules\Deployer\Models\ProductFeedback::STATUSES as $value)<option value="{{ $value }}" @selected($status === $value)>{{ str($value)->headline() }}</option>@endforeach</x-signal.ui.select>
                     <label class="sr-only" for="feedback-filter-category">{{ __('Type') }}</label>
-                    <select id="feedback-filter-category" name="category" class="ui-input"><option value="">{{ __('Every type') }}</option>@foreach (\App\Modules\Deployer\Models\ProductFeedback::CATEGORIES as $value)<option value="{{ $value }}" @selected($category === $value)>{{ str($value)->headline() }}</option>@endforeach</select>
-                    <x-ui.button type="submit" variant="secondary">{{ __('Filter') }}</x-ui.button>
+                    <x-signal.ui.select id="feedback-filter-category" name="category" class="ui-input"><option value="">{{ __('Every type') }}</option>@foreach (\App\Modules\Deployer\Models\ProductFeedback::CATEGORIES as $value)<option value="{{ $value }}" @selected($category === $value)>{{ str($value)->headline() }}</option>@endforeach</x-signal.ui.select>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Filter') }}</x-signal.ui.button>
                     @if ($status || $category)
-                        <x-ui.button href="{{ route('feedback.index') }}" variant="ghost">{{ __('Clear') }}</x-ui.button>
+                        <x-signal.ui.button href="{{ route('feedback.index') }}" variant="ghost">{{ __('Clear') }}</x-signal.ui.button>
                     @endif
                 </form>
             </div>
@@ -100,20 +100,20 @@
                             'page' => $feedback->currentPage() > 1 ? $feedback->currentPage() : null,
                         ], static fn ($value): bool => filled($value)));
                     @endphp
-                    <article class="ui-panel p-5 sm:p-6" data-feedback-card>
+                    <x-signal.ui.panel as="article" class="ui-panel p-5 sm:p-6" data-feedback-card>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div class="min-w-0">
                                 <div class="flex flex-wrap gap-2">
-                                    <x-ui.badge tone="neutral">{{ str($item->category)->headline() }}</x-ui.badge>
-                                    <x-ui.badge :tone="$item->severity === 'critical' ? 'danger' : ($item->severity === 'high' ? 'warning' : 'neutral')">{{ str($item->severity)->headline() }}</x-ui.badge>
-                                    <x-ui.badge :tone="$item->status === 'resolved' ? 'success' : ($item->status === 'in_progress' ? 'accent' : 'neutral')">{{ str($item->status)->headline() }}</x-ui.badge>
+                                    <x-signal.ui.badge tone="neutral">{{ str($item->category)->headline() }}</x-signal.ui.badge>
+                                    <x-signal.ui.badge :tone="$item->severity === 'critical' ? 'danger' : ($item->severity === 'high' ? 'warning' : 'neutral')">{{ str($item->severity)->headline() }}</x-signal.ui.badge>
+                                    <x-signal.ui.badge :tone="$item->status === 'resolved' ? 'success' : ($item->status === 'in_progress' ? 'accent' : 'neutral')">{{ str($item->status)->headline() }}</x-signal.ui.badge>
                                 </div>
                                 <h3 class="mt-3 text-lg font-extrabold text-ink">{{ $item->title }}</h3>
                                 <p class="mt-1 text-xs text-muted">{{ __('Submitted by :name :time', ['name' => $item->submitter->name, 'time' => $item->created_at->diffForHumans()]) }}@if ($item->page) <span aria-hidden="true">·</span> <code>{{ $item->page }}</code>@endif</p>
                             </div>
                             <div class="flex flex-wrap justify-end gap-2">
                                 @if ($canReview)
-                                    <x-ui.button
+                                    <x-signal.ui.button
                                         :href="$feedbackReviewDialogUrl"
                                         data-modal-trigger="{{ $feedbackReviewDialogId }}"
                                         aria-controls="{{ $feedbackReviewDialogId }}"
@@ -121,12 +121,12 @@
                                         variant="secondary"
                                     >
                                         {{ __('Review') }}
-                                    </x-ui.button>
+                                    </x-signal.ui.button>
                                 @endif
                                 <form method="POST" action="{{ route('feedback.destroy', $item) }}">
                                     @csrf
                                     @method('DELETE')
-                                    <x-ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Remove this feedback permanently?')) }})">{{ __('Delete') }}</x-ui.button>
+                                    <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Remove this feedback permanently?')) }})">{{ __('Delete') }}</x-signal.ui.button>
                                 </form>
                             </div>
                         </div>
@@ -139,10 +139,10 @@
                             </details>
                         @endif
                         @if ($item->review_response)
-                            <div class="ui-panel mt-4 bg-surface-muted p-4">
+                            <x-signal.ui.panel class="ui-panel mt-4 bg-surface-muted p-4">
                                 <p class="ui-eyebrow text-[0.65rem]">{{ __('Workspace response') }}</p>
                                 <p class="mt-2 whitespace-pre-wrap text-sm text-ink">{{ $item->review_response }}</p>
-                            </div>
+                            </x-signal.ui.panel>
                         @endif
                         @if ($canReview)
                             <x-scenes.feedback.review-dialog
@@ -151,9 +151,9 @@
                                 :open="$feedbackReviewDialogOpen"
                             />
                         @endif
-                    </article>
+                    </x-signal.ui.panel>
                 @empty
-                    <x-ui.empty-state
+                    <x-signal.ui.empty-state
                         :title="__('No matching feedback')"
                         :description="__('Submitted feedback will appear here without exposing its content in notifications or exports.')"
                     />

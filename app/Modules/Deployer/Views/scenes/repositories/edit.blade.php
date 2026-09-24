@@ -22,10 +22,10 @@
      !-->
     @if($providers->isEmpty())
         <div class="my-4">
-            <x-ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
+            <x-signal.ui.alert tone="info" class="flex flex-wrap items-center justify-between gap-3">
                 <p>{{ __('You must add a provider before you can add a repository') }}</p>
-                <x-ui.button :href="$providerCreateUrl" data-modal-trigger="provider-create-dialog" data-modal-content-url="{{ $providerCreateContentUrl }}" aria-controls="provider-create-dialog" aria-expanded="false" variant="secondary">{{ __('Add Provider') }}</x-ui.button>
-            </x-ui.alert>
+                <x-signal.ui.button :href="$providerCreateUrl" data-modal-trigger="provider-create-dialog" data-modal-content-url="{{ $providerCreateContentUrl }}" aria-controls="provider-create-dialog" aria-expanded="false" variant="secondary">{{ __('Add Provider') }}</x-signal.ui.button>
+            </x-signal.ui.alert>
         </div>
     @endif
 

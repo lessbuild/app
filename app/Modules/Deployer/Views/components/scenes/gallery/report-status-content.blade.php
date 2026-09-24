@@ -5,15 +5,15 @@
             <h3 class="mt-1 text-xl font-extrabold text-ink">{{ $report->recipe->name }}</h3>
             <p class="mt-1 text-sm text-muted">{{ str($report->recipe->category)->headline() }}</p>
         </div>
-        <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">
+        <x-signal.ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">
             {{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}
-        </x-ui.badge>
+        </x-signal.ui.badge>
     </div>
 
     <dl class="grid gap-3 sm:grid-cols-3">
-        <x-ui.stat class="ui-card" :label="__('Issue type')" :value="str($report->reason)->headline()" :description="__('The category selected when the report was submitted.')" />
-        <x-ui.stat class="ui-card" :label="__('Reported')" :value="$report->created_at->diffForHumans()" :description="$report->created_at->toDayDateTimeString()" />
-        <x-ui.stat class="ui-card" :label="__('Last updated')" :value="$report->updated_at->diffForHumans()" :description="$report->updated_at->toDayDateTimeString()" />
+        <x-signal.ui.stat class="ui-card" :label="__('Issue type')" :value="str($report->reason)->headline()" :description="__('The category selected when the report was submitted.')" />
+        <x-signal.ui.stat class="ui-card" :label="__('Reported')" :value="$report->created_at->diffForHumans()" :description="$report->created_at->toDayDateTimeString()" />
+        <x-signal.ui.stat class="ui-card" :label="__('Last updated')" :value="$report->updated_at->diffForHumans()" :description="$report->updated_at->toDayDateTimeString()" />
     </dl>
 
     <div>
@@ -29,9 +29,9 @@
     @endif
 
     <div class="flex flex-wrap gap-2">
-        <x-ui.button :href="route('gallery.report.status', $report)" variant="secondary">{{ __('Open full report status') }}</x-ui.button>
+        <x-signal.ui.button :href="route('gallery.report.status', $report)" variant="secondary">{{ __('Open full report status') }}</x-signal.ui.button>
         @if ($report->recipe->is_published && $report->recipe->published_at)
-            <x-ui.button :href="route('gallery.show', $report->recipe).'#gallery-report-heading'" variant="ghost">{{ __('View recipe') }}</x-ui.button>
+            <x-signal.ui.button :href="route('gallery.show', $report->recipe).'#gallery-report-heading'" variant="ghost">{{ __('View recipe') }}</x-signal.ui.button>
         @endif
     </div>
 </div>

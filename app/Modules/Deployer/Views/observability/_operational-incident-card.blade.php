@@ -18,11 +18,11 @@
     ]);
 @endphp
 
-<article class="ui-panel bg-surface p-4" data-observability-incident>
+<x-signal.ui.panel as="article" class="ui-panel bg-surface p-4" data-observability-incident>
     <div class="flex flex-wrap items-start gap-3">
         <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
-                <x-ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-ui.badge>
+                <x-signal.ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-signal.ui.badge>
                 <span class="text-xs text-muted">{{ str($incident->severity)->headline() }} · {{ str($incident->category)->headline() }} #{{ $incident->resource_id }} · {{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }}</span>
             </div>
             <h3 class="mt-2 font-extrabold text-ink">{{ $incident->title }}</h3>
@@ -31,13 +31,13 @@
         @if ($canOperate && $incident->status !== \App\Modules\Deployer\Models\OperationalIncident::STATUS_RESOLVED)
             <form method="POST" action="{{ route('observability.operational-incidents.acknowledge', $incident) }}" class="shrink-0">
                 @csrf
-                <x-ui.button type="submit" variant="secondary">{{ __('Acknowledge') }}</x-ui.button>
+                <x-signal.ui.button type="submit" variant="secondary">{{ __('Acknowledge') }}</x-signal.ui.button>
             </form>
         @endif
     </div>
 
     <div class="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
-        <x-ui.button
+        <x-signal.ui.button
             :href="$timelineDialogUrl"
             data-modal-trigger="{{ $timelineDialogId }}"
             data-modal-content-url="{{ $timelineContentUrl }}"
@@ -47,7 +47,7 @@
             variant="secondary"
         >
             {{ __('Timeline and response') }}
-        </x-ui.button>
+        </x-signal.ui.button>
     </div>
 
     @if ($canOperate && $incident->status !== \App\Modules\Deployer\Models\OperationalIncident::STATUS_RESOLVED)
@@ -60,17 +60,17 @@
                     @method('PATCH')
                     <label class="min-w-0 flex-1">
                         <span class="sr-only">{{ __('Assignee') }}</span>
-                        <select name="assigned_to" class="ui-input">
+                        <x-signal.ui.select name="assigned_to" class="ui-input">
                             <option value="">{{ __('Unassigned') }}</option>
                             @foreach ($incidentResponders as $responder)
                                 <option value="{{ $responder->id }}" @selected($incident->assigned_to === $responder->id)>{{ $responder->name }}</option>
                             @endforeach
-                        </select>
+                        </x-signal.ui.select>
                     </label>
-                    <x-ui.button type="submit" variant="secondary">{{ __('Assign') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Assign') }}</x-signal.ui.button>
                 </form>
                 <div>
-                    <x-ui.button
+                    <x-signal.ui.button
                         :href="$noteDialogUrl"
                         data-modal-trigger="{{ $noteDialogId }}"
                         aria-controls="{{ $noteDialogId }}"
@@ -78,19 +78,19 @@
                         variant="secondary"
                     >
                         {{ __('Add investigation note') }}
-                    </x-ui.button>
+                    </x-signal.ui.button>
                     <x-scenes.observability.incident-note-dialog :incident="$incident" :open="$noteDialogOpen" />
                 </div>
                 <form method="POST" action="{{ route('observability.operational-incidents.resolve', $incident) }}" class="flex items-end gap-2">
                     @csrf
                     <label class="min-w-0 flex-1">
                         <span class="sr-only">{{ __('Resolution and evidence') }}</span>
-                        <input name="resolution" maxlength="5000" required class="ui-input" placeholder="{{ __('Resolution and evidence') }}">
+                        <x-signal.ui.input name="resolution" maxlength="5000" required class="ui-input" placeholder="{{ __('Resolution and evidence') }}" :restore="false" />
                     </label>
-                    <x-ui.button type="submit" variant="primary">{{ __('Resolve') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Resolve') }}</x-signal.ui.button>
                 </form>
             </div>
             </div>
         </details>
     @endif
-</article>
+</x-signal.ui.panel>

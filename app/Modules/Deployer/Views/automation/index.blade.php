@@ -15,7 +15,7 @@
     >
         @if ($features['api'] && $canManage)
             <x-slot:buttons>
-                <x-ui.button
+                <x-signal.ui.button
                     href="{{ $tokenDialogUrl }}"
                     data-modal-trigger="automation-token-dialog"
                     aria-controls="automation-token-dialog"
@@ -23,26 +23,26 @@
                     variant="primary"
                 >
                     {{ __('Create token') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </x-slot:buttons>
         @endif
     </x-layouts.partials.heading>
 
     @if (session('success'))
-        <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-success)" role="status">{{ session('success') }}</div>
+        <x-signal.ui.panel class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-success)" role="status">{{ session('success') }}</x-signal.ui.panel>
     @endif
 
     @if (session('plainTextToken'))
-        <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
+        <x-signal.ui.panel class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
             <p class="font-bold text-ink">{{ __('Copy this token now') }}</p>
             <code class="ui-console ui-console-output mt-2 block break-all p-3 text-sm">{{ session('plainTextToken') }}</code>
-        </div>
+        </x-signal.ui.panel>
     @endif
 
     @if ($errors->any())
-        <div class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
+        <x-signal.ui.panel class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
             <ul class="space-y-1">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>
-        </div>
+        </x-signal.ui.panel>
     @endif
 
     @php
@@ -72,7 +72,7 @@
             && $scheduledTaskRunDialogKey === 'scheduled-task-run-'.$scheduledTaskRun->id;
     @endphp
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="automation-overview"
         class="mt-6 scroll-mt-24"
         data-automation-overview
@@ -85,7 +85,7 @@
                 <h2 id="automation-overview-title" class="mt-1 text-xl font-extrabold text-ink">{{ __('Automate routine release work') }}</h2>
                 <p class="mt-1 max-w-3xl text-sm leading-6 text-muted">{{ __('Start with API access or open an application workflow to manage deploys, capacity, runtime state and scheduled tasks.') }}</p>
             </div>
-            <x-ui.badge tone="{{ $features['api'] ? 'success' : 'warning' }}">{{ $features['api'] ? __('API enabled') : __('Business feature') }}</x-ui.badge>
+            <x-signal.ui.badge tone="{{ $features['api'] ? 'success' : 'warning' }}">{{ $features['api'] ? __('API enabled') : __('Business feature') }}</x-signal.ui.badge>
         </div>
 
         <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -111,20 +111,20 @@
             </a>
         </div>
 
-        <x-ui.local-nav class="mt-5" :label="__('Automation sections')">
+        <x-signal.ui.local-nav class="mt-5" :label="__('Automation sections')">
             <a href="#automation-tokens" class="ui-local-nav__link">{{ __('API tokens') }}</a>
             <a href="#automation-quick-start" class="ui-local-nav__link">{{ __('Quick start') }}</a>
             <a href="#automation-workflows" class="ui-local-nav__link">{{ __('Application workflows') }}</a>
-        </x-ui.local-nav>
-    </x-ui.insights>
+        </x-signal.ui.local-nav>
+    </x-signal.ui.insights>
 
     <div class="mt-8 grid gap-5 lg:grid-cols-2">
-        <details id="automation-tokens" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}" data-automation-tokens>
+        <x-signal.ui.panel as="details" id="automation-tokens" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="{{ $tokenPanelOpen ? 'true' : 'false' }}" data-automation-tokens>
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                 <span>
                     <span class="flex flex-wrap items-center gap-2">
                         <span class="font-extrabold text-ink">{{ __('Personal access tokens') }}</span>
-                        <x-ui.badge>{{ $tokens->count() }}</x-ui.badge>
+                        <x-signal.ui.badge>{{ $tokens->count() }}</x-signal.ui.badge>
                     </span>
                     <span class="mt-1 block text-sm text-muted">{{ __('Create least-privilege Bearer tokens with an explicit expiry.') }}</span>
                 </span>
@@ -142,18 +142,18 @@
                     </p>
                 </div>
                 @unless ($features['api'])
-                    <x-ui.badge tone="warning">{{ __('Business feature') }}</x-ui.badge>
+                    <x-signal.ui.badge tone="warning">{{ __('Business feature') }}</x-signal.ui.badge>
                 @endunless
             </div>
 
             <div class="mt-6 space-y-2">
                 @forelse ($tokens as $token)
-                    <div class="ui-panel flex flex-wrap items-center justify-between gap-3 bg-surface-muted p-3" data-automation-token>
+                    <x-signal.ui.panel class="ui-panel flex flex-wrap items-center justify-between gap-3 bg-surface-muted p-3" data-automation-token>
                         <div class="min-w-0">
                             <p class="font-bold text-ink">{{ $token->name }}</p>
                             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
                                 @foreach ($token->abilities as $ability)
-                                    <x-ui.badge>{{ ucfirst($ability) }}</x-ui.badge>
+                                    <x-signal.ui.badge>{{ ucfirst($ability) }}</x-signal.ui.badge>
                                 @endforeach
                                 <span>{{ $token->last_used_at ? __('used :time', ['time' => $token->last_used_at->diffForHumans()]) : __('never used') }}</span>
                                 <span>·</span>
@@ -164,28 +164,28 @@
                             @if ($canManage)
                                 <form method="POST" action="{{ route('automation.tokens.rotate', $token->id) }}">
                                     @csrf
-                                    <x-ui.button type="submit" variant="secondary">{{ __('Rotate') }}</x-ui.button>
+                                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Rotate') }}</x-signal.ui.button>
                                 </form>
                             @endif
                             <form method="POST" action="{{ route('automation.tokens.destroy', $token->id) }}">
                                 @csrf
                                 @method('DELETE')
-                                <x-ui.button type="submit" variant="danger">{{ __('Revoke') }}</x-ui.button>
+                                <x-signal.ui.button type="submit" variant="danger">{{ __('Revoke') }}</x-signal.ui.button>
                             </form>
                         </div>
-                    </div>
+                    </x-signal.ui.panel>
                 @empty
-                    <x-ui.empty-state :title="__('No API tokens')" :description="__('Create a token when an integration or local workflow needs API access.')" icon="key" />
+                    <x-signal.ui.empty-state :title="__('No API tokens')" :description="__('Create a token when an integration or local workflow needs API access.')" icon="key" />
                 @endforelse
             </div>
             </div>
-        </details>
+        </x-signal.ui.panel>
 
         @if ($features['api'] && $canManage)
             <x-scenes.automation.token-dialog :open="$tokenDialogOpen" />
         @endif
 
-        <details id="automation-quick-start" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" data-automation-quick-start>
+        <x-signal.ui.panel as="details" id="automation-quick-start" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" data-automation-quick-start>
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden">
                 <span>
                     <span class="block font-extrabold text-ink">{{ __('CLI-friendly API') }}</span>
@@ -205,7 +205,7 @@ curl -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
 curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   {{ url('/api/v1/environments/1/deploy') }}</code></pre>
             </div>
-        </details>
+        </x-signal.ui.panel>
     </div>
 
     <section id="automation-workflows" class="mt-8 scroll-mt-24" aria-labelledby="automation-workflows-title">
@@ -235,29 +235,29 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                             @csrf
                             @method('PUT')
                             <label class="ui-label" for="workflow-{{ $project->id }}">buildpusher.yaml</label>
-                            <textarea id="workflow-{{ $project->id }}" name="workflow" rows="12" class="ui-input mt-2 w-full font-mono text-xs" spellcheck="false">{{ old('workflow', $project->workflow_yaml ?: "version: 1\nenvironments:\n  production:\n    deployment:\n      cron: '0 3 * * 1-5'\n      timezone: UTC\n    scale:\n      minimum: 1\n      maximum: 3\n      desired: 2\n      hibernate_after_minutes: 60") }}</textarea>
+                            <x-signal.ui.textarea id="workflow-{{ $project->id }}" name="workflow" rows="12" class="ui-input mt-2 w-full font-mono text-xs" spellcheck="false" :restore="false">{{ old('workflow', $project->workflow_yaml ?: "version: 1\nenvironments:\n  production:\n    deployment:\n      cron: '0 3 * * 1-5'\n      timezone: UTC\n    scale:\n      minimum: 1\n      maximum: 3\n      desired: 2\n      hibernate_after_minutes: 60") }}</x-signal.ui.textarea>
                             <div class="mt-3 flex flex-wrap items-center justify-between gap-3">
                                 <p class="text-xs text-muted">{{ __('Applying YAML validates every setting before saving any of them.') }}</p>
-                                <x-ui.button type="submit" variant="primary" :disabled="! $canManage">{{ __('Validate & apply') }}</x-ui.button>
+                                <x-signal.ui.button type="submit" variant="primary" :disabled="! $canManage">{{ __('Validate & apply') }}</x-signal.ui.button>
                             </div>
                         </form>
 
                         <div class="mt-6 grid gap-4 xl:grid-cols-2">
                             @foreach ($project->environments as $environment)
-                                <article class="ui-panel bg-surface-muted p-4" data-automation-environment>
+                                <x-signal.ui.panel as="article" class="ui-panel bg-surface-muted p-4" data-automation-environment>
                                     <div class="flex items-start justify-between gap-3">
                                         <div class="min-w-0">
                                             <h3 class="truncate font-extrabold text-ink">{{ $environment->name }}</h3>
                                             <p class="text-xs text-muted">{{ $environment->branch }}</p>
                                         </div>
-                                        <x-ui.badge tone="{{ $environment->hibernated_at ? 'warning' : 'success' }}">{{ $environment->hibernated_at ? __('Hibernated') : __('Running') }}</x-ui.badge>
+                                        <x-signal.ui.badge tone="{{ $environment->hibernated_at ? 'warning' : 'success' }}">{{ $environment->hibernated_at ? __('Hibernated') : __('Running') }}</x-signal.ui.badge>
                                     </div>
                                     @if ($features['hibernation'])
                                         <form method="POST" action="{{ route('automation.runtime', $environment) }}" class="mt-3">
                                             @csrf
                                             @method('PATCH')
-                                            <input type="hidden" name="state" value="{{ $environment->hibernated_at ? 'running' : 'hibernated' }}">
-                                            <x-ui.button type="submit" variant="secondary">{{ $environment->hibernated_at ? __('Resume') : __('Hibernate') }}</x-ui.button>
+                                            <x-signal.ui.input type="hidden" name="state" value="{{ $environment->hibernated_at ? 'running' : 'hibernated' }}" :restore="false" />
+                                            <x-signal.ui.button type="submit" variant="secondary">{{ $environment->hibernated_at ? __('Resume') : __('Hibernate') }}</x-signal.ui.button>
                                         </form>
                                     @endif
 
@@ -265,11 +265,11 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                         <form method="POST" action="{{ route('automation.scale', $environment) }}" class="mt-5 grid grid-cols-3 gap-2 border-t border-line pt-4">
                                             @csrf
                                             @method('PATCH')
-                                            <label class="block"><span class="sr-only">{{ __('Minimum replicas') }}</span><input class="ui-input w-full" type="number" min="1" max="20" name="minimum_replicas" value="{{ $environment->minimum_replicas }}" aria-label="{{ __('Minimum replicas') }}"></label>
-                                            <label class="block"><span class="sr-only">{{ __('Maximum replicas') }}</span><input class="ui-input w-full" type="number" min="1" max="20" name="maximum_replicas" value="{{ min(20, $environment->maximum_replicas) }}" aria-label="{{ __('Maximum replicas') }}"></label>
-                                            <label class="block"><span class="sr-only">{{ __('Desired replicas') }}</span><input class="ui-input w-full" type="number" min="1" max="20" name="desired_replicas" value="{{ $environment->desired_replicas }}" aria-label="{{ __('Desired replicas') }}"></label>
-                                            <input type="hidden" name="hibernate_after_minutes" value="{{ $environment->hibernate_after_minutes }}">
-                                            <x-ui.button type="submit" variant="primary" class="col-span-3">{{ __('Apply capacity') }}</x-ui.button>
+                                            <label class="block"><span class="sr-only">{{ __('Minimum replicas') }}</span><x-signal.ui.input class="ui-input w-full" type="number" min="1" max="20" name="minimum_replicas" value="{{ $environment->minimum_replicas }}" aria-label="{{ __('Minimum replicas') }}" :restore="false" /></label>
+                                            <label class="block"><span class="sr-only">{{ __('Maximum replicas') }}</span><x-signal.ui.input class="ui-input w-full" type="number" min="1" max="20" name="maximum_replicas" value="{{ min(20, $environment->maximum_replicas) }}" aria-label="{{ __('Maximum replicas') }}" :restore="false" /></label>
+                                            <label class="block"><span class="sr-only">{{ __('Desired replicas') }}</span><x-signal.ui.input class="ui-input w-full" type="number" min="1" max="20" name="desired_replicas" value="{{ $environment->desired_replicas }}" aria-label="{{ __('Desired replicas') }}" :restore="false" /></label>
+                                            <x-signal.ui.input type="hidden" name="hibernate_after_minutes" value="{{ $environment->hibernate_after_minutes }}" :restore="false" />
+                                            <x-signal.ui.button type="submit" variant="primary" class="col-span-3">{{ __('Apply capacity') }}</x-signal.ui.button>
                                         </form>
                                     @else
                                         <p class="mt-4 text-sm text-muted"><a class="ui-link" href="{{ route('billing.index') }}">{{ __('Upgrade to Business') }}</a> {{ __('for scheduled scaling.') }}</p>
@@ -283,7 +283,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                 <form method="POST" action="{{ route('automation.deployment-schedules.destroy', $schedule) }}">
                                                     @csrf
                                                     @method('DELETE')
-                                                    <x-ui.button type="submit" variant="danger" aria-label="{{ __('Delete :name', ['name' => $schedule->name]) }}">×</x-ui.button>
+                                                    <x-signal.ui.button type="submit" variant="danger" aria-label="{{ __('Delete :name', ['name' => $schedule->name]) }}">×</x-signal.ui.button>
                                                 </form>
                                             </div>
                                         @endforeach
@@ -295,7 +295,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                 $scheduleDialogOpen = request()->query('dialog') === $scheduleDialogKey
                                                     || old('_automation_dialog') === $scheduleDialogKey;
                                             @endphp
-                                            <x-ui.button
+                                            <x-signal.ui.button
                                                 href="{{ route('automation.index', ['dialog' => $scheduleDialogKey]) }}"
                                                 data-modal-trigger="{{ $scheduleDialogId }}"
                                                 aria-controls="{{ $scheduleDialogId }}"
@@ -304,7 +304,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                 class="mt-4"
                                             >
                                                 {{ __('Add schedule') }}
-                                            </x-ui.button>
+                                            </x-signal.ui.button>
 
                                             <x-scenes.automation.schedule-dialog
                                                 :environment="$environment"
@@ -317,11 +317,11 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                     <div class="mt-5 border-t border-line pt-4" data-automation-tasks>
                                         <div class="flex items-center justify-between gap-3">
                                             <p class="ui-eyebrow">{{ __('Application tasks') }}</p>
-                                            <x-ui.badge>{{ __('Encrypted commands') }}</x-ui.badge>
+                                            <x-signal.ui.badge>{{ __('Encrypted commands') }}</x-signal.ui.badge>
                                         </div>
                                         <div class="mt-3 space-y-2">
                                             @foreach ($environment->scheduledTasks as $task)
-                                                <div class="ui-panel bg-surface p-3" data-automation-task>
+                                                <x-signal.ui.panel class="ui-panel bg-surface p-3" data-automation-task>
                                                     <div class="flex flex-wrap items-center gap-2">
                                                         <div class="min-w-0 flex-1">
                                                             <p class="font-bold text-ink">{{ $task->name }}</p>
@@ -329,12 +329,12 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                         </div>
                                                         <form method="POST" action="{{ route('automation.tasks.run', $task) }}">
                                                             @csrf
-                                                            <x-ui.button type="submit" variant="secondary">{{ __('Run') }}</x-ui.button>
+                                                            <x-signal.ui.button type="submit" variant="secondary">{{ __('Run') }}</x-signal.ui.button>
                                                         </form>
                                                         <form method="POST" action="{{ route('automation.tasks.destroy', $task) }}">
                                                             @csrf
                                                             @method('DELETE')
-                                                            <x-ui.button type="submit" variant="danger">{{ __('Delete') }}</x-ui.button>
+                                                            <x-signal.ui.button type="submit" variant="danger">{{ __('Delete') }}</x-signal.ui.button>
                                                         </form>
                                                     </div>
                                                             @if ($task->runs->isNotEmpty())
@@ -356,7 +356,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                                             @endforeach
                                                         </div>
                                                     @endif
-                                                </div>
+                                                </x-signal.ui.panel>
                                             @endforeach
                                         </div>
 
@@ -366,7 +366,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                             $taskDialogOpen = request()->query('dialog') === $taskDialogKey
                                                 || old('_automation_dialog') === $taskDialogKey;
                                         @endphp
-                                        <x-ui.button
+                                        <x-signal.ui.button
                                             href="{{ route('automation.index', ['dialog' => $taskDialogKey]) }}"
                                             data-modal-trigger="{{ $taskDialogId }}"
                                             aria-controls="{{ $taskDialogId }}"
@@ -375,7 +375,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                             class="mt-4"
                                         >
                                             {{ __('Add task') }}
-                                        </x-ui.button>
+                                        </x-signal.ui.button>
 
                                         <x-scenes.automation.task-dialog
                                             :environment="$environment"
@@ -383,13 +383,13 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                                             :open="$taskDialogOpen"
                                         />
                                     </div>
-                                </article>
+                                </x-signal.ui.panel>
                             @endforeach
                         </div>
                     </div>
                 </details>
             @empty
-                <x-ui.empty-state
+                <x-signal.ui.empty-state
                     :title="__('No applications')"
                     :description="__('Create an application to configure automation.')"
                     icon="terminal"

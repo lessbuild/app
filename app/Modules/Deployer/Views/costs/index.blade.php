@@ -12,7 +12,7 @@
         :description="__('Provider-catalog estimates, measured utilization signals, and budget awareness. Your provider invoice remains authoritative.')"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('billing.index')" variant="secondary">{{ __('Manage billing') }}</x-ui.button>
+            <x-signal.ui.button :href="route('billing.index')" variant="secondary">{{ __('Manage billing') }}</x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
@@ -28,7 +28,7 @@
         $costSummaryOpen = $idleCount > 0 || $unknownCount > 0;
     @endphp
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="cost-summary"
         class="mt-8"
         :open="$costSummaryOpen"
@@ -42,10 +42,10 @@
                 [__('Needs attention'), $idleCount],
                 [__('Unknown prices'), $unknownCount],
             ] as [$label, $value])
-                <x-ui.stat :label="$label" :value="$value" />
+                <x-signal.ui.stat :label="$label" :value="$value" />
             @endforeach
         </div>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
         <section class="ui-card overflow-hidden">
@@ -100,12 +100,12 @@
                                 <span class="block text-xs text-warning">{{ __('Price source unavailable') }}</span>
                             @endif
                             @if($row->idle)
-                                <x-ui.badge tone="warning">{{ __('Review or hibernate') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="warning">{{ __('Review or hibernate') }}</x-signal.ui.badge>
                             @endif
                         </div>
                     </article>
                 @empty
-                    <x-ui.empty-state :title="__('No resource estimates')" :description="__('Provision or import a server to begin tracking estimates.')" icon="server" />
+                    <x-signal.ui.empty-state :title="__('No resource estimates')" :description="__('Provision or import a server to begin tracking estimates.')" icon="server" />
                 @endforelse
             </div>
         </section>
@@ -115,7 +115,7 @@
                 <div class="flex items-start justify-between gap-3">
                     <h2 class="font-extrabold text-ink">{{ __('Monthly budget') }}</h2>
                     @if($canManage)
-                        <x-ui.button
+                        <x-signal.ui.button
                             :href="$budgetDialogUrl"
                             data-modal-trigger="cost-budget-dialog"
                             aria-controls="cost-budget-dialog"
@@ -124,7 +124,7 @@
                             class="-mr-2 -mt-2"
                         >
                             {{ __('Edit') }}
-                        </x-ui.button>
+                        </x-signal.ui.button>
                     @endif
                 </div>
                 @if($budget)

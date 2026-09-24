@@ -49,7 +49,7 @@
 
 <form action="{{ route('repositories.store', ['dialog' => 'create-repository']) }}" method="POST">
     @csrf
-    <input type="hidden" name="_repository_form" value="1">
+    <x-signal.ui.input type="hidden" name="_repository_form" value="1" :restore="false" />
     <x-scenes.repositories._form
         :providers="$providers"
         :websites="$websites"

@@ -8,9 +8,9 @@
     </x-slot>
 
     @if (session('status') === 'verification-link-sent')
-        <x-ui.alert tone="success" role="status">
+        <x-signal.ui.alert tone="success" role="status">
             {{ __('A new verification link has been sent.') }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
     <div class="mt-6 flex flex-col gap-3 border-t border-line pt-5 sm:flex-row sm:items-center sm:justify-end">
@@ -19,11 +19,11 @@
         </a>
         <form method="POST" action="{{ route('verification.send') }}">
             @csrf
-            <x-ui.button type="submit" variant="primary">{{ __('Resend email') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Resend email') }}</x-signal.ui.button>
         </form>
         <form method="POST" action="{{ route('logout') }}">
             @csrf
-            <x-ui.button type="submit" variant="secondary">{{ __('Logout') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="secondary">{{ __('Logout') }}</x-signal.ui.button>
         </form>
     </div>
 </x-layouts.auth>

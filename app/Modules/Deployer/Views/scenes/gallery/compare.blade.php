@@ -16,29 +16,29 @@
         :description="$recipe->name"
     >
         <x-slot:buttons>
-            <x-ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit My Copy') }}</x-ui.button>
+            <x-signal.ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit My Copy') }}</x-signal.ui.button>
             @if ($copy->hasGalleryUpdate() && ! $copy->is_published)
                 <form method="POST" action="{{ route('recipes.gallery.refresh', $copy) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $copy->name])) }})">
                     @csrf
-                    <x-ui.button type="submit" variant="primary">{{ __('Update Private Copy') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Update Private Copy') }}</x-signal.ui.button>
                 </form>
             @endif
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.alert class="mt-6 p-4" tone="warning">
+    <x-signal.ui.alert class="mt-6 p-4" tone="warning">
         <p class="font-semibold">{{ __('Review every changed command') }}</p>
         <p class="mt-1">{{ __('The left side is your encrypted private snapshot. The right side is the contributor’s current gallery version. No script is executed from this page.') }}</p>
-    </x-ui.alert>
+    </x-signal.ui.alert>
 
-    <x-ui.insights id="recipe-comparison-insights" class="mt-6" :summary="__('Change summary')">
+    <x-signal.ui.insights id="recipe-comparison-insights" class="mt-6" :summary="__('Change summary')">
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat class="ui-card" :label="__('Script')" :value="$comparison['script_changed'] ? __('Changed') : __('Unchanged')" />
-            <x-ui.stat class="ui-card" :label="__('Name')" :value="$comparison['name_changed'] ? __('Changed') : __('Unchanged')" />
-            <x-ui.stat class="ui-card" :label="__('Description')" :value="$comparison['description_changed'] ? __('Changed') : __('Unchanged')" />
-            <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
+            <x-signal.ui.stat class="ui-card" :label="__('Script')" :value="$comparison['script_changed'] ? __('Changed') : __('Unchanged')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Name')" :value="$comparison['name_changed'] ? __('Changed') : __('Unchanged')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Description')" :value="$comparison['description_changed'] ? __('Changed') : __('Unchanged')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <div class="ui-card mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Gallery comparison metadata') }}">
         @foreach ([
@@ -64,20 +64,20 @@
     </div>
 
     <div class="mt-6 grid gap-4 xl:grid-cols-2">
-        <x-ui.card class="min-w-0 p-5" aria-labelledby="private-script-heading">
+        <x-signal.ui.card class="min-w-0 p-5" aria-labelledby="private-script-heading">
             <div class="flex items-center justify-between gap-3">
                 <h2 id="private-script-heading" class="text-lg font-bold text-ink">{{ __('My private copy') }}</h2>
                 <span class="text-xs text-muted">{{ trans_choice(':count line|:count lines', $comparison['current_lines'], ['count' => $comparison['current_lines']]) }}</span>
             </div>
             <pre class="ui-console mt-3 overflow-x-auto p-4 text-sm leading-6"><code>{{ $copy->script }}</code></pre>
-        </x-ui.card>
-        <x-ui.card class="min-w-0 p-5" aria-labelledby="gallery-script-heading">
+        </x-signal.ui.card>
+        <x-signal.ui.card class="min-w-0 p-5" aria-labelledby="gallery-script-heading">
             <div class="flex items-center justify-between gap-3">
                 <h2 id="gallery-script-heading" class="text-lg font-bold text-ink">{{ __('Current gallery version') }}</h2>
                 <span class="text-xs text-muted">{{ trans_choice(':count line|:count lines', $comparison['gallery_lines'], ['count' => $comparison['gallery_lines']]) }}</span>
             </div>
             <pre class="ui-console mt-3 overflow-x-auto p-4 text-sm leading-6"><code>{{ $recipe->script }}</code></pre>
-        </x-ui.card>
+        </x-signal.ui.card>
     </div>
 
     <x-scenes.recipes.edit-dialog

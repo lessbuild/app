@@ -13,7 +13,7 @@
 @endphp
 
 @if (in_array('setup', $dashboardWidgets, true) && $onboardingCompleted < count($onboardingSteps))
-    <section
+    <x-signal.ui.panel as="section"
         class="ui-panel mb-12 overflow-hidden border-line"
         aria-labelledby="setup-progress-title"
         x-data="{
@@ -46,15 +46,15 @@
                 <div class="flex min-w-max gap-2">
                     @foreach ($onboardingSteps as $key => $step)
                         @php($complete = $onboarding[$key])
-                        <button
+                        <x-signal.ui.button variant="secondary"
                             id="setup-tab-{{ $key }}"
                             type="button"
                             role="tab"
                             class="ui-btn ui-btn-secondary ui-btn-sm dashboard-setup-tab min-h-[44px] gap-2 text-left text-xs"
                             aria-controls="setup-panel-{{ $key }}"
                             aria-selected="{{ $key === $defaultOnboardingStep ? 'true' : 'false' }}"
-                            :aria-selected="(activeSetupStep === '{{ $key }}').toString()"
-                            :tabindex="activeSetupStep === '{{ $key }}' ? '0' : '-1'"
+                            x-bind:aria-selected="(activeSetupStep === '{{ $key }}').toString()"
+                            x-bind:tabindex="activeSetupStep === '{{ $key }}' ? '0' : '-1'"
                             @click="activeSetupStep = '{{ $key }}'"
                             @keydown.right.prevent="moveSetupStep(1)"
                             @keydown.left.prevent="moveSetupStep(-1)"
@@ -63,7 +63,7 @@
                         >
                             <span class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-soft text-[10px] font-extrabold text-ink" aria-hidden="true">{{ $complete ? '✓' : $loop->iteration }}</span>
                             <span>{{ $step['title'] }}</span>
-                        </button>
+                        </x-signal.ui.button>
                     @endforeach
                 </div>
             </div>
@@ -96,16 +96,16 @@
                         <a href="{{ $step['reviewUrl'] }}" class="ui-link mt-3 inline-flex text-sm sm:mt-4">{{ __('Review') }}</a>
                     @elseif ($current)
                         @if ($step['modalId'])
-                            <x-ui.button
+                            <x-signal.ui.button
                                 :href="$step['createUrl']"
                                 data-modal-trigger="{{ $step['modalId'] }}"
                                 aria-controls="{{ $step['modalId'] }}"
                                 aria-expanded="{{ ($dashboardModalOpen[$key] ?? false) ? 'true' : 'false' }}"
                                 variant="primary"
                                 class="mt-3 w-full sm:mt-4"
-                            >{{ __('Continue setup') }}</x-ui.button>
+                            >{{ __('Continue setup') }}</x-signal.ui.button>
                         @else
-                            <x-ui.button :href="$step['createUrl']" variant="primary" class="mt-3 w-full sm:mt-4">{{ __('Deploy repository') }}</x-ui.button>
+                            <x-signal.ui.button :href="$step['createUrl']" variant="primary" class="mt-3 w-full sm:mt-4">{{ __('Deploy repository') }}</x-signal.ui.button>
                         @endif
                     @else
                         <span class="mt-3 text-xs font-medium text-muted sm:mt-4">{{ __('Available after the previous step') }}</span>
@@ -113,5 +113,5 @@
                 </li>
             @endforeach
         </ol>
-    </section>
+    </x-signal.ui.panel>
 @endif

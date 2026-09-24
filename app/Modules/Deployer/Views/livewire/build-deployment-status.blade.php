@@ -32,13 +32,13 @@
             default => 'neutral',
         };
     @endphp
-    <x-ui.local-nav class="mt-6" :label="__('Deployment sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Deployment sections')">
         <a href="#build-summary" class="ui-local-nav__link">{{ __('Summary') }}</a>
         <a href="#deployment-evidence" class="ui-local-nav__link">{{ __('Evidence') }}</a>
         <a href="#deployment-timeline" class="ui-local-nav__link">{{ __('Timeline') }}</a>
         <a href="#deployment-log" class="ui-local-nav__link">{{ __('Logs') }}</a>
-    </x-ui.local-nav>
-    <x-ui.insights
+    </x-signal.ui.local-nav>
+    <x-signal.ui.insights
         id="build-summary"
         class="mt-6 scroll-mt-24"
         data-build-summary
@@ -48,7 +48,7 @@
     <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7">
         <div>
             <dt class="ui-stat__label">{{ __('Status') }}</dt>
-            <dd class="mt-2"><x-ui.badge :tone="$statusTone">{{ str($build->status)->replace('_', ' ')->title() }}</x-ui.badge></dd>
+            <dd class="mt-2"><x-signal.ui.badge :tone="$statusTone">{{ str($build->status)->replace('_', ' ')->title() }}</x-signal.ui.badge></dd>
         </div>
         <div>
             <dt class="ui-stat__label">{{ __('Triggered by') }}</dt>
@@ -81,14 +81,14 @@
             <dd class="mt-1 text-ink">{{ $build->last_heartbeat_at?->format('Y-m-d H:i:s T') ?? __('Not received') }}</dd>
         </div>
     </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     @if ($build->status === \App\Modules\Deployer\Models\Build::STATUS_FAILED && $build->failure_message)
-        <aside class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-danger)" role="alert">
+        <x-signal.ui.panel as="aside" class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-danger)" role="alert">
             <strong class="text-ink">{{ __('Deployment failed:') }}</strong> <span class="text-muted">{{ $build->failure_message }}</span>
-        </aside>
+        </x-signal.ui.panel>
         @if ($failureGuidance)
-            <section class="ui-panel mt-4 border-l-4 p-5" aria-labelledby="recovery-guidance-title">
+            <x-signal.ui.panel as="section" class="ui-panel mt-4 border-l-4 p-5" aria-labelledby="recovery-guidance-title">
                 <p class="ui-eyebrow">{{ __('Recovery guidance') }}</p>
                 <h2 id="recovery-guidance-title" class="mt-2 text-lg font-extrabold text-ink">{{ $failureGuidance['title'] }}</h2>
                 <p class="mt-2 text-sm text-muted">{{ $failureGuidance['summary'] }}</p>
@@ -96,24 +96,24 @@
                     <div class="rounded-card border border-line bg-surface-muted p-3"><dt class="ui-eyebrow text-[0.65rem]">{{ __('Last completed step') }}</dt><dd class="mt-1 font-medium text-ink">{{ $failureGuidance['last_completed'] ?? __('None recorded') }}</dd></div>
                     <div class="rounded-card border border-line bg-surface-muted p-3"><dt class="ui-eyebrow text-[0.65rem]">{{ __('Step to investigate') }}</dt><dd class="mt-1 font-medium text-ink">{{ $failureGuidance['failed_step'] ?? __('Finalization') }}</dd></div>
                 </dl>
-                <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-ui.button><x-ui.button :href="$repositoryEditUrl" data-modal-trigger="repository-edit-dialog" data-modal-content-url="{{ $repositoryEditContentUrl }}" aria-controls="repository-edit-dialog" aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review deployment settings') }}</x-ui.button><x-ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-ui.button></div>
-            </section>
+                <div class="mt-4 flex flex-wrap gap-3"><x-signal.ui.button href="#deployment-log" variant="primary">{{ __('Inspect deployment log') }}</x-signal.ui.button><x-signal.ui.button :href="$repositoryEditUrl" data-modal-trigger="repository-edit-dialog" data-modal-content-url="{{ $repositoryEditContentUrl }}" aria-controls="repository-edit-dialog" aria-expanded="{{ $repositoryEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Review deployment settings') }}</x-signal.ui.button><x-signal.ui.button :href="route('websites.show', $build->repository->website)" variant="secondary">{{ __('Inspect website health') }}</x-signal.ui.button></div>
+            </x-signal.ui.panel>
         @endif
         @if ($rollbackCandidate)
             @can('rollback', $rollbackCandidate)
-                <section class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
+                <x-signal.ui.panel as="section" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
                     <h2 class="font-extrabold text-ink">{{ __('Restore the last known-good release') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Build #:id succeeded :time and its retained artifact can be switched live without rebuilding.', ['id' => $rollbackCandidate->id, 'time' => $rollbackCandidate->finished_at?->diffForHumans() ?? __('previously')]) }}</p>
                     <form method="POST" action="{{ route('builds.rollback', $rollbackCandidate) }}" class="mt-4">
                         @csrf
-                        <x-ui.button type="submit" variant="primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately restore the last known-good release?')) }})">{{ __('Restore build #:id', ['id' => $rollbackCandidate->id]) }}</x-ui.button>
+                        <x-signal.ui.button type="submit" variant="primary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately restore the last known-good release?')) }})">{{ __('Restore build #:id', ['id' => $rollbackCandidate->id]) }}</x-signal.ui.button>
                     </form>
-                </section>
+                </x-signal.ui.panel>
             @endcan
         @endif
     @endif
 
-    <details
+    <x-signal.ui.panel as="details"
         id="deployment-evidence"
         class="ui-responsive-details group ui-panel mt-4 scroll-mt-24 overflow-hidden"
         open
@@ -183,14 +183,14 @@
             @endif
         </dl>
         </div>
-    </details>
+    </x-signal.ui.panel>
 
     @php
         $deploymentTimelineNeedsAttention = $build->statusEnum()?->isActive() === true
             || $build->status === \App\Modules\Deployer\Models\Build::STATUS_FAILED;
         $deploymentStatusLabel = str($build->status)->replace('_', ' ')->headline();
     @endphp
-    <details
+    <x-signal.ui.panel as="details"
         id="deployment-timeline"
         class="ui-responsive-details group ui-panel mt-4 scroll-mt-24 overflow-hidden"
         open
@@ -212,13 +212,13 @@
         <div class="ui-responsive-details__content border-t border-line p-5">
         <x-deployment-timeline :entries="$deploymentTimeline" />
         </div>
-    </details>
+    </x-signal.ui.panel>
 
     @if($build->promotedFrom)
-        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-primary)" role="status"><p class="font-bold text-ink">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-muted">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="ui-link font-bold">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-muted">{{ $build->promotion_note }}</p>@endif</aside>
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-primary)" role="status"><p class="font-bold text-ink">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-muted">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="ui-link font-bold">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-muted">{{ $build->promotion_note }}</p>@endif</x-signal.ui.panel>
     @endif
     @if($build->promotions->isNotEmpty())
-        <aside class="ui-panel mt-4 p-4"><p class="font-bold text-ink">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="ui-card ui-card--interactive px-3 py-2 text-sm text-ink">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></aside>
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 p-4"><p class="font-bold text-ink">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="ui-card ui-card--interactive px-3 py-2 text-sm text-ink">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></x-signal.ui.panel>
     @endif
 
     <nav class="mt-4 grid gap-3 sm:grid-cols-2" aria-label="{{ __('Deployment history') }}">
@@ -267,7 +267,7 @@
 
     @if ($previousBuild)
         <div class="mt-3 flex justify-end">
-            <x-ui.button
+            <x-signal.ui.button
                 :href="$comparisonDialogUrl"
                 data-modal-trigger="{{ $comparisonDialogId }}"
                 data-modal-content-url="{{ $comparisonContentUrl }}"
@@ -277,17 +277,17 @@
                 variant="secondary"
             >
                 {{ __('Compare with previous') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </div>
     @endif
 
     @if ($build->status === \App\Modules\Deployer\Models\Build::STATUS_TIMING_OUT)
-        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-warning)" role="status">
             <p>{{ __('This deployment stopped reporting progress. :app is safely stopping its remote process before allowing another deployment.', ['app' => config('app.name')]) }}</p>
             @if ($build->failure_message)
                 <p class="mt-1 text-sm">{{ $build->failure_message }}</p>
             @endif
-        </aside>
+        </x-signal.ui.panel>
     @endif
 
     @if ($build->redeployed_from_build_id)
@@ -309,35 +309,35 @@
     @endif
 
     @if ($build->release_name)
-        <div class="ui-panel mt-4 p-4">
+        <x-signal.ui.panel class="ui-panel mt-4 p-4">
             <p class="ui-eyebrow">{{ __('Release artifact') }}</p>
             <p class="mt-2 break-all font-mono text-sm text-ink">{{ $build->release_name }}</p>
             @if ($build->activated_at)
                 <p class="mt-1 text-xs text-muted">{{ __('Activated :time', ['time' => $build->activated_at->diffForHumans()]) }}</p>
             @endif
-        </div>
+        </x-signal.ui.panel>
     @endif
 
     @if ($build->commit_message)
-        <div class="ui-panel mt-4 p-4">
+        <x-signal.ui.panel class="ui-panel mt-4 p-4">
             <p class="ui-eyebrow">{{ __('Commit message') }}</p>
             <p class="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{{ $build->commit_message }}</p>
-        </div>
+        </x-signal.ui.panel>
     @endif
 
     @if ($build->risk_assessment)
-        <section class="ui-panel mt-4 p-4">
-            <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Deployment preflight') }}</p><h2 class="mt-2 font-extrabold text-ink">{{ __('Risk: :level', ['level' => str($build->risk_assessment['level'] ?? 'unknown')->headline()]) }}</h2></div><x-ui.badge tone="accent">{{ $build->risk_assessment['score'] ?? 0 }}/100</x-ui.badge></div>
+        <x-signal.ui.panel as="section" class="ui-panel mt-4 p-4">
+            <div class="flex flex-wrap items-center justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Deployment preflight') }}</p><h2 class="mt-2 font-extrabold text-ink">{{ __('Risk: :level', ['level' => str($build->risk_assessment['level'] ?? 'unknown')->headline()]) }}</h2></div><x-signal.ui.badge tone="accent">{{ $build->risk_assessment['score'] ?? 0 }}/100</x-signal.ui.badge></div>
             <ul class="mt-4 grid gap-2 sm:grid-cols-2">@foreach($build->risk_assessment['checks'] ?? [] as $check)<li class="flex gap-2 rounded-card border border-line bg-surface-muted p-3 text-sm"><span class="font-extrabold {{ match ($check['status']) { 'passed' => 'text-success', 'warning' => 'text-warning', default => 'text-danger' } }}">{{ $check['status'] === 'passed' ? '✓' : '!' }}</span><span><strong class="block text-ink">{{ $check['name'] }}</strong><span class="text-xs text-muted">{{ $check['detail'] }}</span></span></li>@endforeach</ul>
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @if ($build->automatic_rollback_build_id)
-        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-warning)" role="status">{{ __('Automatic recovery was queued as') }} <a class="ui-link font-bold" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</aside>
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-warning)" role="status">{{ __('Automatic recovery was queued as') }} <a class="ui-link font-bold" href="{{ route('builds.show', $build->automatic_rollback_build_id) }}">{{ __('build #:id', ['id' => $build->automatic_rollback_build_id]) }}</a>.</x-signal.ui.panel>
     @endif
 
     @if ($build->status === \App\Modules\Deployer\Models\Build::STATUS_AWAITING_APPROVAL)
-        <section class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
+        <x-signal.ui.panel as="section" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-warning)" role="status">
             <h2 class="font-semibold text-ink">{{ __('Production approval required') }}</h2>
             <p class="mt-1 text-sm text-muted">{{ __('This protected environment will not receive traffic until an owner or administrator approves the deployment.') }}</p>
             @can('approve', $build)
@@ -345,30 +345,30 @@
                     @csrf
                     <label class="ui-label block text-sm font-medium">
                         {{ __('Decision note (optional)') }}
-                        <textarea name="approval_note" rows="3" maxlength="2000" class="ui-input mt-2 min-h-24 w-full" placeholder="{{ __('Change ticket, reviewer context, or rejection reason') }}">{{ old('approval_note') }}</textarea>
+                        <x-signal.ui.textarea name="approval_note" rows="3" maxlength="2000" class="ui-input mt-2 min-h-24 w-full" placeholder="{{ __('Change ticket, reviewer context, or rejection reason') }}" :restore="false">{{ old('approval_note') }}</x-signal.ui.textarea>
                     </label>
                     <x-forms.errors name="approval_note" bag="approval" />
                     <div class="mt-3 flex flex-wrap gap-3">
-                        <x-ui.button type="submit" variant="primary" formaction="{{ route('builds.approve', $build) }}">{{ __('Approve and deploy') }}</x-ui.button>
-                        <x-ui.button type="submit" variant="secondary" formaction="{{ route('builds.reject', $build) }}" onclick="return confirm({{ Illuminate\Support\Js::from(__('Reject this deployment request?')) }})">{{ __('Reject') }}</x-ui.button>
+                        <x-signal.ui.button type="submit" variant="primary" formaction="{{ route('builds.approve', $build) }}">{{ __('Approve and deploy') }}</x-signal.ui.button>
+                        <x-signal.ui.button type="submit" variant="secondary" formaction="{{ route('builds.reject', $build) }}" onclick="return confirm({{ Illuminate\Support\Js::from(__('Reject this deployment request?')) }})">{{ __('Reject') }}</x-signal.ui.button>
                     </div>
                 </form>
             @endcan
-        </section>
+        </x-signal.ui.panel>
     @elseif ($build->status === \App\Modules\Deployer\Models\Build::STATUS_REJECTED)
-        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-danger)" role="alert">
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-danger)" role="alert">
             <strong class="text-ink">{{ __('Deployment rejected.') }}</strong>
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
             @endif
-        </aside>
+        </x-signal.ui.panel>
     @elseif ($build->approved_at)
-        <aside class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-success)" role="status">
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-success)" role="status">
             {{ __('Approved :time.', ['time' => $build->approved_at->diffForHumans()]) }}
             @if ($build->approval_note)
                 <span>{{ $build->approval_note }}</span>
             @endif
-        </aside>
+        </x-signal.ui.panel>
     @endif
 
     @php
@@ -377,7 +377,7 @@
             || $errors->getBag('buildNote')->any();
         $noteDialogUrl = route('builds.show', ['build' => $build, 'dialog' => 'operator-note']);
     @endphp
-    <section class="ui-panel mt-4 p-4 sm:p-5">
+    <x-signal.ui.panel as="section" class="ui-panel mt-4 p-4 sm:p-5">
         <div class="flex flex-wrap items-start justify-between gap-4">
             <div class="min-w-0">
                 <p class="ui-eyebrow">{{ __('Operator context') }}</p>
@@ -386,7 +386,7 @@
                     {{ __('Record an incident ticket, rollback reason, approval, or handoff context. Notes are searchable and included in build exports, so do not store secrets.') }}
                 </p>
             </div>
-            <x-ui.button
+            <x-signal.ui.button
                 href="{{ $noteDialogUrl }}"
                 data-modal-trigger="{{ $noteDialogId }}"
                 aria-controls="{{ $noteDialogId }}"
@@ -394,7 +394,7 @@
                 variant="secondary"
             >
                 {{ $build->operator_note ? __('Edit operator note') : __('Add operator note') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </div>
 
         @if ($build->operator_note)
@@ -409,12 +409,12 @@
             :build="$build"
             :open="$noteDialogOpen"
         />
-    </section>
+    </x-signal.ui.panel>
 
     @if (in_array($build->status, [\App\Modules\Deployer\Models\Build::STATUS_QUEUED, \App\Modules\Deployer\Models\Build::STATUS_AWAITING_APPROVAL], true) || ($build->status === \App\Modules\Deployer\Models\Build::STATUS_RUNNING && $build->remote_process_id && $build->remote_process_path))
         <form method="POST" action="{{ route('builds.cancel', $build) }}" class="mt-4">
             @csrf
-            <x-ui.button
+            <x-signal.ui.button
                 type="submit"
                 variant="primary"
                 onclick="return confirm({{ Illuminate\Support\Js::from($build->status === \App\Modules\Deployer\Models\Build::STATUS_QUEUED
@@ -422,14 +422,14 @@
                     : __('Stop this deployment on the remote server?')) }})"
             >
                 {{ $build->status === \App\Modules\Deployer\Models\Build::STATUS_QUEUED ? __('Cancel queued deployment') : ($build->status === \App\Modules\Deployer\Models\Build::STATUS_AWAITING_APPROVAL ? __('Cancel deployment request') : __('Cancel deployment')) }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </form>
     @endif
 
     @if (in_array($build->status, \App\Modules\Deployer\Models\Build::TERMINAL_STATUSES, true))
         <form method="POST" action="{{ route('builds.redeploy', $build) }}" class="mt-4">
             @csrf
-            <x-ui.button
+            <x-signal.ui.button
                 type="submit"
                 variant="primary"
                 onclick="return confirm({{ Illuminate\Support\Js::from($build->revision
@@ -437,7 +437,7 @@
                     : __('Redeploy the repository branch?')) }})"
             >
                 {{ $build->revision ? __('Redeploy this revision') : __('Retry deployment') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </form>
     @endif
 
@@ -445,29 +445,29 @@
         @can('rollback', $build)
             <form method="POST" action="{{ route('builds.rollback', $build) }}" class="mt-4">
                 @csrf
-                <x-ui.button type="submit" variant="secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately switch traffic back to this retained release?')) }})">
+                <x-signal.ui.button type="submit" variant="secondary" onclick="return confirm({{ Illuminate\Support\Js::from(__('Immediately switch traffic back to this retained release?')) }})">
                     {{ __('Instant rollback to this release') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </form>
         @endcan
     @endif
 
     @if ($build->status === \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED)
         @if ($deploymentObservation)
-            <section class="ui-panel mt-4 p-5" aria-labelledby="deployment-observation-title">
+            <x-signal.ui.panel as="section" class="ui-panel mt-4 p-5" aria-labelledby="deployment-observation-title">
                 <div class="flex flex-wrap items-start justify-between gap-4">
                     <div>
                         <p class="ui-eyebrow">{{ __('Post-deployment observation') }}</p>
                         <h2 id="deployment-observation-title" class="mt-2 text-lg font-extrabold text-ink">{{ __('Revision-linked verification') }}</h2>
                         <p class="mt-1 text-sm text-muted">{{ __(':app checks this deployment’s captured health target during a bounded window. This result is separate from continuous website health monitoring.', ['app' => config('app.name')]) }}</p>
                     </div>
-                    <x-ui.badge :tone="match ($deploymentObservation->statusEnum()?->value) {
+                    <x-signal.ui.badge :tone="match ($deploymentObservation->statusEnum()?->value) {
                         'healthy' => 'success',
                         'failed' => 'danger',
                         'pending', 'observing' => 'accent',
                         'expired', 'superseded' => 'warning',
                         default => 'neutral',
-                    }">{{ str($deploymentObservation->status)->replace('_', ' ')->headline() }}</x-ui.badge>
+                    }">{{ str($deploymentObservation->status)->replace('_', ' ')->headline() }}</x-signal.ui.badge>
                 </div>
                 <dl class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                     <div>
@@ -511,26 +511,26 @@
                             {{ __('This observation uses a legacy state that is not displayed in detail.') }}
                     @endswitch
                 </p>
-            </section>
+            </x-signal.ui.panel>
         @endif
-        <section class="ui-panel mt-4 p-5" aria-labelledby="deployment-health-title">
-            <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="ui-eyebrow">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-2 text-lg font-extrabold text-ink">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-muted">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><x-ui.badge :tone="$website->health_status === 'healthy' ? 'success' : ($website->health_status === 'unhealthy' ? 'danger' : 'neutral')">{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</x-ui.badge></div>
-            <div class="mt-4 flex flex-wrap gap-3"><x-ui.button href="https://{{ $website->url }}" variant="primary" class="ui-btn-sm" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-ui.button><x-ui.button :href="route('websites.show', $website).'#health-history-heading'" data-modal-trigger="{{ $healthChecksDialogId }}" data-modal-content-url="{{ $healthChecksContentUrl }}" data-modal-history-url="{{ $healthChecksDialogUrl }}" aria-controls="{{ $healthChecksDialogId }}" aria-expanded="{{ $healthChecksDialogOpen ? 'true' : 'false' }}" variant="secondary" class="ui-btn-sm">{{ __('View health history') }}</x-ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-ui.button type="submit" variant="secondary" class="ui-btn-sm">{{ __('Run health check now') }}</x-ui.button></form>@else<x-ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary" class="ui-btn-sm">{{ __('Enable health monitoring') }}</x-ui.button>@endif</div>
-        </section>
+        <x-signal.ui.panel as="section" class="ui-panel mt-4 p-5" aria-labelledby="deployment-health-title">
+            <div class="flex flex-wrap items-start justify-between gap-4"><div><p class="ui-eyebrow">{{ __('Post-deployment verification') }}</p><h2 id="deployment-health-title" class="mt-2 text-lg font-extrabold text-ink">{{ __('Application health') }}</h2><p class="mt-1 text-sm text-muted">{{ $website->health_check_enabled ? __('The deployment health path is :path. Current monitor state: :state.', ['path' => $website->health_check_path, 'state' => str($website->health_status)->headline()]) : __('Continuous health monitoring is disabled. Enable it to detect regressions after deployment.') }}</p></div><x-signal.ui.badge :tone="$website->health_status === 'healthy' ? 'success' : ($website->health_status === 'unhealthy' ? 'danger' : 'neutral')">{{ $website->health_check_enabled ? str($website->health_status)->headline() : __('Disabled') }}</x-signal.ui.badge></div>
+            <div class="mt-4 flex flex-wrap gap-3"><x-signal.ui.button href="https://{{ $website->url }}" variant="primary" class="ui-btn-sm" target="_blank" rel="noopener noreferrer">{{ __('Open live website') }}</x-signal.ui.button><x-signal.ui.button :href="route('websites.show', $website).'#health-history-heading'" data-modal-trigger="{{ $healthChecksDialogId }}" data-modal-content-url="{{ $healthChecksContentUrl }}" data-modal-history-url="{{ $healthChecksDialogUrl }}" aria-controls="{{ $healthChecksDialogId }}" aria-expanded="{{ $healthChecksDialogOpen ? 'true' : 'false' }}" variant="secondary" class="ui-btn-sm">{{ __('View health history') }}</x-signal.ui.button>@if($website->health_check_enabled)<form method="POST" action="{{ route('websites.health.check', $website) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" class="ui-btn-sm">{{ __('Run health check now') }}</x-signal.ui.button></form>@else<x-signal.ui.button :href="$websiteEditUrl" data-modal-trigger="website-edit-dialog" data-modal-content-url="{{ $websiteEditContentUrl }}" aria-controls="website-edit-dialog" aria-expanded="{{ $websiteEditOpen ? 'true' : 'false' }}" variant="secondary" class="ui-btn-sm">{{ __('Enable health monitoring') }}</x-signal.ui.button>@endif</div>
+        </x-signal.ui.panel>
     @endif
 
     @if ($build->status === \App\Modules\Deployer\Models\Build::STATUS_CANCELED)
-        <aside class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-warning)" role="status">
+        <x-signal.ui.panel as="aside" class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm" style="border-left-color: var(--ui-warning)" role="status">
             {{ __('This deployment was canceled before it completed.') }}
-        </aside>
+        </x-signal.ui.panel>
     @endif
 
     @php($deploymentLogNeedsAttention = $build->statusEnum()?->isActive() === true)
-    <details
+    <x-signal.ui.panel as="details"
         id="deployment-log"
         class="group ui-panel mt-8 scroll-mt-24 overflow-hidden"
         data-build-section="logs"
-        @if ($deploymentLogNeedsAttention) open @endif
+        :open="$deploymentLogNeedsAttention"
     >
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
@@ -574,7 +574,7 @@
                 />
             @endif
         </section>
-    </details>
+    </x-signal.ui.panel>
 
     <x-scenes.repositories.edit-dialog
         :repository="$build->repository"

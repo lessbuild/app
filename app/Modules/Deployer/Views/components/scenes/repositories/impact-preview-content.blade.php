@@ -5,7 +5,7 @@
 @endphp
 
 <div data-repository-impact-preview-content class="space-y-6">
-    <x-ui.card class="p-5" aria-labelledby="impact-preview-form-heading">
+    <x-signal.ui.card class="p-5" aria-labelledby="impact-preview-form-heading">
         <h2 id="impact-preview-form-heading" class="font-bold text-ink">{{ __('Preview changed paths') }}</h2>
         <p class="mt-2 text-sm text-muted">
             {{ __('This is a read-only preview. It does not create builds, dispatch jobs, contact providers or change repository settings. Paths are relative to the repository root; each enabled repository is one automatic deployment target.') }}
@@ -22,32 +22,30 @@
         >
             <div>
                 <label for="changed_paths" class="ui-label">{{ __('Changed repository paths') }}</label>
-                <textarea
+                <x-signal.ui.textarea
                     id="changed_paths"
                     name="changed_paths"
                     rows="8"
                     maxlength="{{ \App\Modules\Deployer\Http\Requests\RepositoryImpactPreviewRequest::MAX_INPUT_BYTES }}"
                     class="ui-input mt-2 min-h-[12rem] w-full font-mono"
                     placeholder="apps/storefront/resources/views/home.blade.php&#10;packages/shared/src/Client.php"
-                    @disabled($pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN))
-                >{{ old('changed_paths', $changedPathsInput) }}</textarea>
+                    :disabled="$pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN)" :restore="false">{{ old('changed_paths', $changedPathsInput) }}</x-signal.ui.textarea>
                 <p class="mt-2 text-xs text-muted">{{ __('Enter one safe relative path per line. At most :count paths are evaluated.', ['count' => \App\Modules\Deployer\Support\RepositoryPath::MAX_CHANGED_PATHS]) }}</p>
                 <x-forms.errors name="changed_paths" />
             </div>
             <label class="flex items-start gap-2 text-sm text-muted">
-                <input type="hidden" name="changed_paths_unavailable" value="0">
-                <input
+                <x-signal.ui.input type="hidden" name="changed_paths_unavailable" value="0" :restore="false" />
+                <x-signal.ui.input
                     type="checkbox"
                     name="changed_paths_unavailable"
                     value="1"
-                    @checked($pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN))
-                >
+                    @checked($pathsUnavailable || filter_var(old('changed_paths_unavailable'), FILTER_VALIDATE_BOOLEAN)) :restore="false" />
                 <span>{{ __('Changed paths are unavailable from the provider; show the conservative result.') }}</span>
             </label>
             <x-forms.errors name="changed_paths_unavailable" />
-            <x-ui.button type="submit" variant="primary">{{ __('Preview deployment impact') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Preview deployment impact') }}</x-signal.ui.button>
         </form>
-    </x-ui.card>
+    </x-signal.ui.card>
 
     @if ($preview)
         <section aria-labelledby="impact-preview-results-heading">
@@ -63,43 +61,43 @@
                     </p>
                 </div>
                 <div class="flex flex-wrap gap-2 text-xs font-semibold">
-                    <x-ui.badge tone="success">{{ __('Affected: :count', ['count' => $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::AFFECTED]]) }}</x-ui.badge>
-                    <x-ui.badge tone="accent">{{ __('Unaffected: :count', ['count' => $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::UNAFFECTED]]) }}</x-ui.badge>
-                    <x-ui.badge tone="warning">{{ __('Unknown: :count', ['count' => $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::UNKNOWN]]) }}</x-ui.badge>
+                    <x-signal.ui.badge tone="success">{{ __('Affected: :count', ['count' => $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::AFFECTED]]) }}</x-signal.ui.badge>
+                    <x-signal.ui.badge tone="accent">{{ __('Unaffected: :count', ['count' => $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::UNAFFECTED]]) }}</x-signal.ui.badge>
+                    <x-signal.ui.badge tone="warning">{{ __('Unknown: :count', ['count' => $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::UNKNOWN]]) }}</x-signal.ui.badge>
                 </div>
             </div>
 
-            <x-ui.insights
+            <x-signal.ui.insights
                 id="repository-impact-insights"
                 class="mt-5"
                 :summary="$preview->changedPaths === null ? __('Conservative result because changed paths are unavailable') : __('Read-only path impact summary')"
             >
                 <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                    <x-ui.stat
+                    <x-signal.ui.stat
                         :label="__('Targets evaluated')"
                         :value="count($preview->targets)"
                         :description="__('Enabled automatic deployment targets in this workspace.')"
                     />
-                    <x-ui.stat
+                    <x-signal.ui.stat
                         :label="__('Affected')"
                         :value="$preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::AFFECTED]"
                         :description="__('A configured path changed and deployment remains conservative.')"
                     />
-                    <x-ui.stat
+                    <x-signal.ui.stat
                         :label="__('Unaffected')"
                         :value="$preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::UNAFFECTED]"
                         :description="__('No configured path matched the supplied changes.')"
                     />
-                    <x-ui.stat
+                    <x-signal.ui.stat
                         :label="__('Conservative targets')"
                         :value="$preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::AFFECTED] + $preview->counts[\App\Modules\Deployer\Data\RepositoryChangeImpact::UNKNOWN]"
                         :description="__('Affected or unknown targets that should not be skipped automatically.')"
                     />
                 </dl>
-            </x-ui.insights>
+            </x-signal.ui.insights>
 
             @if ($preview->isEmpty())
-                <x-ui.empty-state
+                <x-signal.ui.empty-state
                     class="mt-4"
                     icon="information-circle"
                     :title="__('No repositories with enabled push webhooks are available in this workspace.')"
@@ -134,7 +132,7 @@
                                     <a href="{{ route('repositories.show', $repository) }}" class="ui-link font-semibold">{{ $repository->name }}</a>
                                     <p class="mt-1 text-xs text-muted">{{ $repository->website?->name ?? __('Website unavailable') }} · {{ $repository->branch }}</p>
                                 </div>
-                                <x-ui.badge :tone="$impactTone">{{ $impactLabel }}</x-ui.badge>
+                                <x-signal.ui.badge :tone="$impactTone">{{ $impactLabel }}</x-signal.ui.badge>
                             </div>
                             <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                                 <div>

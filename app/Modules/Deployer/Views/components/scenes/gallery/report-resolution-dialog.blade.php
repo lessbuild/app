@@ -19,7 +19,7 @@
     $noteValue = $resolved ? old('resolution_note', $report->resolution_note) : old('resolution_note');
 @endphp
 
-<x-ui.button
+<x-signal.ui.button
     href="{{ $dialogUrl }}"
     data-modal-trigger="{{ $dialogId }}"
     aria-controls="{{ $dialogId }}"
@@ -27,7 +27,7 @@
     variant="secondary"
 >
     {{ $triggerLabel }}
-</x-ui.button>
+</x-signal.ui.button>
 
 <x-dialogs.modal
     :id="$dialogId"
@@ -38,22 +38,21 @@
     <form method="POST" action="{{ $formAction }}" class="space-y-3">
         @csrf
         @method('PATCH')
-        <input type="hidden" name="_gallery_resolution_report_id" value="{{ $report->id }}">
+        <x-signal.ui.input type="hidden" name="_gallery_resolution_report_id" value="{{ $report->id }}" :restore="false" />
         <label for="{{ $dialogId }}-resolution-note" class="ui-label">
             {{ $resolved ? __('Resolution note') : __('Resolution note (optional)') }}
         </label>
-        <textarea
+        <x-signal.ui.textarea
             id="{{ $dialogId }}-resolution-note"
             name="resolution_note"
             rows="4"
             maxlength="1000"
             class="ui-input w-full"
-            placeholder="{{ __('Briefly explain what was addressed.') }}"
-        >{{ $noteValue }}</textarea>
+            placeholder="{{ __('Briefly explain what was addressed.') }}" :restore="false">{{ $noteValue }}</x-signal.ui.textarea>
         @if ($resolved)
             <p class="text-xs text-muted">{{ __('Leave empty to clear the note without reopening the report.') }}</p>
         @endif
         <x-forms.errors name="resolution_note" />
-        <x-ui.button type="submit" variant="primary">{{ $submitLabel }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ $submitLabel }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

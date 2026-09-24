@@ -19,11 +19,11 @@
      !-->
     @if(session()->has('root_password') || session()->has('mysql_password'))
         <div class="my-4">
-            <x-ui.alert tone="warning">
+            <x-signal.ui.alert tone="warning">
                 {{ __('The root password is:') }} <b class="font-bold">{{ session()->get('root_password') }}</b> <br>
                 {{ __('The root MYSQL password is:') }} <b class="font-bold">{{ session()->get('mysql_password') }}</b> <br>
                 {{ __('This will only be shown once, so please save these passwords somewhere safe.') }}
-            </x-ui.alert>
+            </x-signal.ui.alert>
         </div>
     @endif
 
@@ -50,11 +50,11 @@
     >
         <x-slot:buttons>
 
-            <x-ui.button :href="route('builds.index', ['server_id' => $server->id])" variant="secondary">
+            <x-signal.ui.button :href="route('builds.index', ['server_id' => $server->id])" variant="secondary">
                 {{ __('Deployment History') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
-            <x-ui.button
+            <x-signal.ui.button
                 :href="$displayNameDialogUrl"
                 data-modal-trigger="server-display-name-dialog"
                 aria-controls="server-display-name-dialog"
@@ -65,9 +65,9 @@
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
                 {{ __('Edit Display Name') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
-            <x-ui.button
+            <x-signal.ui.button
                 :href="route('servers.commands.index', $server)"
                 data-modal-trigger="server-command-history-dialog"
                 data-modal-content-url="{{ $commandHistoryContentUrl }}"
@@ -80,9 +80,9 @@
                     <use xlink:href="/assets/images/icons.svg#clock"></use>
                 </svg>
                 {{ __('Command History') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
-            <x-ui.button
+            <x-signal.ui.button
                 type="button"
                 variant="primary"
                 wire:click="$dispatch('open-server-command')"
@@ -92,7 +92,7 @@
                     <use xlink:href="/assets/images/icons.svg#terminal"></use>
                 </svg>
                 {{ __('Run Command') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
             <x-dialogs.delete
                 id="delete-server"
@@ -101,21 +101,21 @@
                 :description="__('Are you sure you want to delete this server?')"
             ></x-dialogs.delete>
 
-            <button type="button" class="ui-btn ui-btn-danger" data-modal-trigger="delete-server" aria-controls="delete-server" aria-expanded="false">
+            <x-signal.ui.button variant="danger" type="button" class="ui-btn ui-btn-danger" data-modal-trigger="delete-server" aria-controls="delete-server" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Server') }}
-            </button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav class="mt-6" :label="__('Server sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Server sections')">
         <a href="#server-information" class="ui-local-nav__link">{{ __('Overview') }}</a>
         <a href="#server-metrics" class="ui-local-nav__link">{{ __('Metrics') }}</a>
         <a href="#server-diagnostics" class="ui-local-nav__link">{{ __('Diagnostics') }}</a>
         <a href="#server-operations" class="ui-local-nav__link">{{ __('Logs') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     <x-scenes.servers.edit-dialog :server="$server" :open="$displayNameDialogOpen" />
 
@@ -133,7 +133,7 @@
     </x-dialogs.modal>
 
     @if ($server->provisioning_status === \App\Modules\Deployer\Models\Server::STATUS_FAILED)
-        <x-ui.alert tone="danger" class="my-4">
+        <x-signal.ui.alert tone="danger" class="my-4">
             <p class="font-semibold">{{ __('Server provisioning failed') }}</p>
             <p class="text-sm">{{ $server->provisioning_error }}</p>
             @error('retry')
@@ -142,15 +142,15 @@
             @if ($server->provisioning_failure_phase === \App\Modules\Deployer\Models\Server::FAILURE_INITIALIZATION)
                 <form method="POST" action="{{ route('servers.initialization.retry', $server) }}" class="mt-3">
                     @csrf
-                    <x-ui.button type="submit" variant="primary">{{ __('Retry initialization') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Retry initialization') }}</x-signal.ui.button>
                 </form>
             @elseif ($server->provisioning_failure_phase === \App\Modules\Deployer\Models\Server::FAILURE_REMOTE)
                 <form method="POST" action="{{ route('servers.provisioning.retry', $server) }}" class="mt-3">
                     @csrf
-                    <x-ui.button type="submit" variant="primary">{{ __('Resume provisioning') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Resume provisioning') }}</x-signal.ui.button>
                 </form>
             @endif
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
     <!--
@@ -158,7 +158,7 @@
      ! Server information
      ! ------------------------------------------------------------
      !-->
-    <section id="server-information" class="ui-panel mt-6 p-5" data-server-overview>
+    <x-signal.ui.panel as="section" id="server-information" class="ui-panel mt-6 p-5" data-server-overview>
         <dl class="grid gap-5 text-sm sm:grid-cols-2 xl:grid-cols-4">
             @if (filled($server->display_name))
                 <div>
@@ -191,9 +191,9 @@
                 <dd class="mt-1 font-mono text-xs text-muted">{{ $server->identifier }}</dd>
             </div>
         </dl>
-    </section>
+    </x-signal.ui.panel>
 
-    <details id="server-metrics" class="group ui-panel mt-8 overflow-hidden" @if ($latestMetric === null) open @endif data-server-section="metrics">
+    <x-signal.ui.panel as="details" id="server-metrics" class="group ui-panel mt-8 overflow-hidden" :open="$latestMetric === null" data-server-section="metrics">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="ui-eyebrow block">{{ __('Last 24 hours') }}</span>
@@ -210,11 +210,11 @@
                     <h2 id="server-metrics-heading" class="text-xl font-extrabold text-ink">{{ __('Server metrics') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Load, memory, disk, and uptime collected directly from this host.') }}</p>
                 </div>
-                <x-ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Modules\Deployer\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-ui.button>
+                <x-signal.ui.button type="button" variant="primary" wire:click="refreshMetrics" :disabled="$server->provisioning_status !== \App\Modules\Deployer\Models\Server::STATUS_ACTIVE">{{ __('Collect now') }}</x-signal.ui.button>
             </div>
             <dl class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                 @foreach ([['Load 1m', $latestMetric?->load_1m], ['Load 5m', $latestMetric?->load_5m], ['Memory', $latestMetric ? $latestMetric->memory_percent.'%' : null], ['Disk', $latestMetric ? $latestMetric->disk_percent.'%' : null], ['Uptime', $latestMetric ? \App\Modules\Deployer\Models\Build::formatDuration($latestMetric->uptime_seconds) : null]] as [$label, $value])
-                    <x-ui.stat :label="__($label)" :value="$value ?? '—'" />
+                    <x-signal.ui.stat :label="__($label)" :value="$value ?? '—'" />
                 @endforeach
             </dl>
             @if ($metricHistory->isNotEmpty())
@@ -224,10 +224,10 @@
                     @endforeach
                 </div>
             @else
-                <x-ui.empty-state class="mt-4" :title="__('No metric samples yet.')" :description="__('Collection runs automatically every five minutes.')" />
+                <x-signal.ui.empty-state class="mt-4" :title="__('No metric samples yet.')" :description="__('Collection runs automatically every five minutes.')" />
             @endif
         </section>
-    </details>
+    </x-signal.ui.panel>
 
     @php
         $diagnosticsNeedAttention = $errors->has('diagnostics')
@@ -236,7 +236,7 @@
             || ($diagnosticReport !== null && ! $diagnosticReport->passed());
         $diagnosticsOpen = $diagnosticSnapshot === null || $diagnosticsNeedAttention;
     @endphp
-    <details id="server-diagnostics" class="group ui-panel mt-6 overflow-hidden" @if ($diagnosticsOpen) open @endif data-server-section="diagnostics">
+    <x-signal.ui.panel as="details" id="server-diagnostics" class="group ui-panel mt-6 overflow-hidden" :open="$diagnosticsOpen" data-server-section="diagnostics">
         <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="ui-eyebrow block">{{ __('Troubleshooting') }}</span>
@@ -264,7 +264,7 @@
                 <p class="mt-1 max-w-2xl text-sm text-muted">{{ __('Run a bounded, read-only host check using the pinned SSH identity. The probe never reads application secrets or accepts a shell command.') }}</p>
             </div>
             @can('diagnose', $server)
-                <x-ui.button
+                <x-signal.ui.button
                     type="button"
                     variant="primary"
                     wire:click="runDiagnostics"
@@ -274,42 +274,42 @@
                 >
                     <span wire:loading.remove wire:target="runDiagnostics">{{ __('Run diagnostics') }}</span>
                     <span wire:loading wire:target="runDiagnostics">{{ __('Queueing…') }}</span>
-                </x-ui.button>
+                </x-signal.ui.button>
             @endcan
         </div>
 
         @if ($errors->has('diagnostics'))
-            <x-ui.alert tone="danger" class="mt-4">{{ $errors->first('diagnostics') }}</x-ui.alert>
+            <x-signal.ui.alert tone="danger" class="mt-4">{{ $errors->first('diagnostics') }}</x-signal.ui.alert>
         @endif
 
         @if ($diagnosticSnapshot === null)
-            <x-ui.empty-state class="mt-4" :title="__('No server diagnostic has been collected yet.')" />
+            <x-signal.ui.empty-state class="mt-4" :title="__('No server diagnostic has been collected yet.')" />
         @elseif ($diagnosticSnapshot->status === \App\Modules\Deployer\Models\ServerDiagnosticSnapshot::STATUS_QUEUED)
-            <x-ui.alert tone="info" class="mt-4">{{ __('Server diagnostics are queued.') }}</x-ui.alert>
+            <x-signal.ui.alert tone="info" class="mt-4">{{ __('Server diagnostics are queued.') }}</x-signal.ui.alert>
         @elseif ($diagnosticSnapshot->status === \App\Modules\Deployer\Models\ServerDiagnosticSnapshot::STATUS_RUNNING)
-            <x-ui.alert tone="info" class="mt-4">{{ __('Server diagnostics are running.') }}</x-ui.alert>
+            <x-signal.ui.alert tone="info" class="mt-4">{{ __('Server diagnostics are running.') }}</x-signal.ui.alert>
         @elseif ($diagnosticSnapshot->status === \App\Modules\Deployer\Models\ServerDiagnosticSnapshot::STATUS_FAILED)
-            <x-ui.alert tone="danger" class="mt-4">
+            <x-signal.ui.alert tone="danger" class="mt-4">
                 <p class="font-semibold">{{ __('Unable to complete server diagnostics.') }}</p>
                 <p class="mt-1">{{ $diagnosticSnapshot->error ?: __('The diagnostic connection or response was unavailable.') }}</p>
                 @if ($diagnosticSnapshot->finished_at)
                     <p class="mt-1 text-xs">{{ __('Last attempted :time', ['time' => $diagnosticSnapshot->finished_at->diffForHumans()]) }}</p>
                 @endif
-            </x-ui.alert>
+            </x-signal.ui.alert>
         @elseif ($diagnosticReport !== null)
             <div class="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
                 @foreach ($diagnosticReport->checks as $check)
-                    <article class="ui-panel bg-surface-muted p-4">
+                    <x-signal.ui.panel as="article" class="ui-panel bg-surface-muted p-4">
                         <div class="flex items-start justify-between gap-3">
                             <p class="text-sm font-semibold text-ink">{{ $check->name }}</p>
                             @if ($check->passed)
-                                <x-ui.badge tone="success">{{ __('Passed') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="success">{{ __('Passed') }}</x-signal.ui.badge>
                             @else
-                                <x-ui.badge tone="danger">{{ __('Attention') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="danger">{{ __('Attention') }}</x-signal.ui.badge>
                             @endif
                         </div>
                         <p class="mt-2 text-sm text-muted">{{ $check->detail }}</p>
-                    </article>
+                    </x-signal.ui.panel>
                 @endforeach
             </div>
             @if ($diagnosticSnapshot->finished_at)
@@ -317,11 +317,11 @@
             @endif
         @endif
         </section>
-    </details>
+    </x-signal.ui.panel>
 
     <!-- Quick Actions -->
     <div class="mt-8 grid gap-6 lg:grid-cols-2" data-server-supporting-surfaces>
-        <section class="ui-panel self-start p-5" data-server-websites>
+        <x-signal.ui.panel as="section" class="ui-panel self-start p-5" data-server-websites>
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <p class="ui-eyebrow">{{ __('Deployments') }}</p>
@@ -337,7 +337,7 @@
                                 <span class="ui-link block truncate text-sm">{{ $website->name }}</span>
                                 <span class="block truncate text-sm text-muted">{{ $website->url }}</span>
                             </span>
-                            <x-ui.badge tone="success">{{ __('Deployed') }}</x-ui.badge>
+                            <x-signal.ui.badge tone="success">{{ __('Deployed') }}</x-signal.ui.badge>
                         </a>
                     </li>
                 @empty
@@ -346,10 +346,10 @@
                     </li>
                 @endforelse
             </ul>
-        </section>
+        </x-signal.ui.panel>
 
         @if ($recipes->isNotEmpty())
-            <section class="ui-panel self-start p-5" data-server-recipes>
+            <x-signal.ui.panel as="section" class="ui-panel self-start p-5" data-server-recipes>
                 <p class="ui-eyebrow">{{ __('Provisioning') }}</p>
                 <h2 class="mt-1 text-lg font-bold text-ink">{{ __('Provisioning Recipes') }}</h2>
                 <ul class="mt-4 divide-y divide-line">
@@ -362,14 +362,14 @@
                         </li>
                     @endforeach
                 </ul>
-            </section>
+            </x-signal.ui.panel>
         @endif
 
-        <details
+        <x-signal.ui.panel as="details"
             id="server-operations"
             class="group ui-panel lg:col-span-2 overflow-hidden"
             data-server-section="operations"
-            @if ($server->provisioning_status !== \App\Modules\Deployer\Models\Server::STATUS_ACTIVE || $logSnapshot?->status === \App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_FAILED) open @endif
+            :open="$server->provisioning_status !== \App\Modules\Deployer\Models\Server::STATUS_ACTIVE || $logSnapshot?->status === \App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_FAILED"
         >
             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5 font-bold text-ink [&::-webkit-details-marker]:hidden">
                 <span>
@@ -389,12 +389,12 @@
                         <p class="mt-1 text-sm text-muted">{{ __('Current state across the five supported server log types.') }}</p>
                     </div>
                     <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 lg:grid-cols-3 2xl:grid-cols-6">
-                        <x-ui.stat :label="__('Ready snapshots')" :value="$logMetrics['ready']" />
-                        <x-ui.stat :label="__('Queued snapshots')" :value="$logMetrics['queued']" />
-                        <x-ui.stat :label="__('Refreshing snapshots')" :value="$logMetrics['refreshing']" />
-                        <x-ui.stat :label="__('Failed snapshots')" :value="$logMetrics['failed']" />
-                        <x-ui.stat :label="__('Not collected')" :value="$logMetrics['missing']" />
-                        <x-ui.stat :label="__('Latest refresh')" :value="$logMetrics['latest_at']?->diffForHumans() ?? __('Not available')" />
+                        <x-signal.ui.stat :label="__('Ready snapshots')" :value="$logMetrics['ready']" />
+                        <x-signal.ui.stat :label="__('Queued snapshots')" :value="$logMetrics['queued']" />
+                        <x-signal.ui.stat :label="__('Refreshing snapshots')" :value="$logMetrics['refreshing']" />
+                        <x-signal.ui.stat :label="__('Failed snapshots')" :value="$logMetrics['failed']" />
+                        <x-signal.ui.stat :label="__('Not collected')" :value="$logMetrics['missing']" />
+                        <x-signal.ui.stat :label="__('Latest refresh')" :value="$logMetrics['latest_at']?->diffForHumans() ?? __('Not available')" />
                     </dl>
                 </section>
 
@@ -429,16 +429,16 @@
                     @if ($logSnapshot?->log !== null)
                         <a href="{{ route('servers.logs.download', ['server' => $server, 'type' => $log]) }}" class="ui-link text-xs">{{ __('Download log') }}</a>
                     @endif
-                    <button
+                    <x-signal.ui.button variant="primary"
                         type="button"
                         class="ui-btn ui-btn-primary"
                         wire:click="refreshLogs"
                         wire:loading.attr="disabled"
                         wire:target="refreshLogs"
-                        @disabled($server->provisioning_status !== \App\Modules\Deployer\Models\Server::STATUS_ACTIVE || in_array($logSnapshot?->status, [\App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_REFRESHING], true))
+                        :disabled="$server->provisioning_status !== \App\Modules\Deployer\Models\Server::STATUS_ACTIVE || in_array($logSnapshot?->status, [\App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_QUEUED, \App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_REFRESHING], true)"
                     >
                         {{ __('Refresh logs') }}
-                    </button>
+                    </x-signal.ui.button>
                 </div>
             </div>
             <div class="mt-4 max-h-96 overflow-y-auto font-mono leading-5">
@@ -446,7 +446,7 @@
                     <p class="text-emphasis-muted">{{ __('Select Provisioning to view logs while setup is running.') }}</p>
                 @else
                     @if ($errors->has('logs'))
-                        <x-ui.alert tone="danger" class="mb-2">{{ $errors->first('logs') }}</x-ui.alert>
+                        <x-signal.ui.alert tone="danger" class="mb-2">{{ $errors->first('logs') }}</x-signal.ui.alert>
                     @elseif ($logSnapshot?->status === \App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_QUEUED)
                         <p class="mb-2 text-emphasis-muted">{{ __('Log refresh queued.') }}</p>
                     @elseif ($logSnapshot?->status === \App\Modules\Deployer\Models\ServerLogSnapshot::STATUS_REFRESHING)
@@ -479,7 +479,7 @@
         </section>
 
             </div>
-        </details>
+        </x-signal.ui.panel>
     </div>
 
     <div id="server-command">

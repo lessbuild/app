@@ -16,30 +16,30 @@
     <form method="POST" action="{{ route('register') }}" class="space-y-5">
         @csrf
         @if ($invitationToken ?? null)
-            <input type="hidden" name="invite" value="{{ $invitationToken }}">
+            <x-signal.ui.input type="hidden" name="invite" value="{{ $invitationToken }}" :restore="false" />
         @endif
 
         <div>
             <label for="name" class="ui-label">{{ __('Name') }}</label>
-            <input id="name" type="text" class="ui-input" value="{{ old('name', $invitation?->name) }}" name="name" autocomplete="name" placeholder="{{ __('Ex: John Doe') }}">
+            <x-signal.ui.input id="name" type="text" class="ui-input" value="{{ old('name', $invitation?->name) }}" name="name" autocomplete="name" placeholder="{{ __('Ex: John Doe') }}" :restore="false" />
             <x-forms.errors name="name" />
         </div>
 
         <div>
             <label for="email" class="ui-label">{{ __('Email') }}</label>
-            <input id="email" type="email" class="ui-input" value="{{ old('email', $invitation?->email) }}" name="email" autocomplete="email" @readonly($invitation ?? false) placeholder="{{ __('Ex: johndoe@mail.com') }}">
+            <x-signal.ui.input id="email" type="email" class="ui-input" value="{{ old('email', $invitation?->email) }}" name="email" autocomplete="email" @readonly($invitation ?? false) placeholder="{{ __('Ex: johndoe@mail.com') }}" :restore="false" />
             <x-forms.errors name="email" />
         </div>
 
         <div>
             <label for="password" class="ui-label">{{ __('Password') }}</label>
-            <input id="password" type="password" class="ui-input" name="password" autocomplete="new-password" required>
+            <x-signal.ui.input id="password" type="password" class="ui-input" name="password" autocomplete="new-password" required :restore="false" />
             <x-forms.errors name="password" />
         </div>
 
         <div>
             <label for="password_confirmation" class="ui-label">{{ __('Password Confirmation') }}</label>
-            <input id="password_confirmation" type="password" class="ui-input" name="password_confirmation" autocomplete="new-password" required>
+            <x-signal.ui.input id="password_confirmation" type="password" class="ui-input" name="password_confirmation" autocomplete="new-password" required :restore="false" />
             <x-forms.errors name="password_confirmation" />
         </div>
 
@@ -48,9 +48,9 @@
                 {{ __('Already registered?') }}
             </a>
 
-            <x-ui.button type="submit" variant="primary">
+            <x-signal.ui.button type="submit" variant="primary">
                 {{ __('Register') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </div>
     </form>
 

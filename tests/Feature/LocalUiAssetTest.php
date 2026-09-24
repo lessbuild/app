@@ -64,6 +64,37 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('aria-invalid="true"', $customCheckbox[0]);
     }
 
+    public function test_signal_controls_cover_transport_inputs_dynamic_buttons_and_livewire_dialog_shells(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-signal.ui.input id="deployment-mode" name="deployment_mode" type="radio" value="manual" checked :restore="false" />
+            <x-signal.ui.input name="operation_token" type="hidden" value="signed-token" :restore="false" />
+            <x-signal.ui.button type="button" variant="stateful" size="sm" x-bind:class="selected ? 'ui-btn-primary' : 'ui-btn-quiet'">Monthly</x-signal.ui.button>
+            <x-signal.ui.button type="submit" variant="link">Remove</x-signal.ui.button>
+            <x-signal.overlays.dialog-shell id="server-command-dialog" :open="true" class="ui-command-dialog" data-livewire-dialog aria-labelledby="server-command-dialog-title">
+                <h2 id="server-command-dialog-title">Run command</h2>
+            </x-signal.overlays.dialog-shell>
+            BLADE,
+        );
+
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*\bid="deployment-mode")(?=[^>]*\bname="deployment_mode")(?=[^>]*\btype="radio")(?=[^>]*\bvalue="manual")(?=[^>]*\bchecked)[^>]*class="[^"]*ui-check[^\"]*"[^>]*>/s',
+            $html,
+        );
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*\bname="operation_token")(?=[^>]*\btype="hidden")(?=[^>]*\bvalue="signed-token")[^>]*>/s',
+            $html,
+        );
+        $this->assertStringNotContainsString('id="operation_token"', $html);
+        $this->assertStringContainsString('x-bind:class="selected ?', $html);
+        $this->assertMatchesRegularExpression('/<button type="button"[^>]*class="ui-btn ui-btn-sm"[^>]*x-bind:class=/s', $html);
+        $this->assertStringContainsString('class="ui-link"', $html);
+        $this->assertMatchesRegularExpression('/<dialog\s+id="server-command-dialog"/s', $html);
+        $this->assertStringContainsString('data-modal-initial-open="true"', $html);
+        $this->assertStringContainsString('data-livewire-dialog', $html);
+        $this->assertStringContainsString('aria-labelledby="server-command-dialog-title"', $html);
+    }
+
     public function test_signal_input_addons_keep_validation_associations_and_joined_control_edges(): void
     {
         $this->withViewErrors(['url' => 'Enter a website URL.']);
@@ -455,7 +486,7 @@ class LocalUiAssetTest extends TestCase
         ] as $view => $anchors) {
             $source = File::get(resource_path('views/'.$view));
 
-            $this->assertStringContainsString('x-ui.local-nav', $source, $view);
+            $this->assertStringContainsString('x-signal.ui.local-nav', $source, $view);
             foreach ($anchors as $anchor) {
                 $this->assertStringContainsString('href="'.$anchor.'"', $source, $view);
             }
@@ -701,7 +732,7 @@ class LocalUiAssetTest extends TestCase
             $this->assertStringNotContainsString('input secondary', $source);
         }
 
-        $this->assertStringContainsString('x-ui.badge', $apiDocumentation);
+        $this->assertStringContainsString('x-signal.ui.badge', $apiDocumentation);
     }
 
     public function test_auth_pages_have_page_specific_browser_titles_and_valid_description_structure(): void
@@ -977,10 +1008,12 @@ class LocalUiAssetTest extends TestCase
     {
         $command = File::get(resource_path('views/livewire/scenes/servers/command.blade.php'));
         $coreLayout = File::get(resource_path('views/components/signal/layouts/core.blade.php'));
+        $dialogShell = File::get(resource_path('views/components/signal/overlays/dialog-shell.blade.php'));
 
-        foreach (['<dialog', 'class="ui-dialog ui-command-dialog"', 'data-modal-panel', 'data-modal-header', 'data-modal-body', 'data-modal-footer', 'data-livewire-dialog'] as $token) {
+        foreach (['<x-signal.overlays.dialog-shell', 'class="ui-command-dialog"', 'data-modal-header', 'data-modal-body', 'data-modal-footer', 'data-livewire-dialog'] as $token) {
             $this->assertStringContainsString($token, $command, $token);
         }
+        $this->assertStringContainsString('data-modal-panel', $dialogShell);
 
         foreach (['fixed inset-0 bg-emphasis/70', 'fixed inset-0 z-10 overflow-y-auto', 'shadow-xl'] as $legacyToken) {
             $this->assertStringNotContainsString($legacyToken, $command, $legacyToken);
@@ -1178,7 +1211,7 @@ class LocalUiAssetTest extends TestCase
         }
 
         $setup = File::get(resource_path('views/livewire/setup.blade.php'));
-        $this->assertStringContainsString('x-ui.badge', $setup);
+        $this->assertStringContainsString('x-signal.ui.badge', $setup);
         $this->assertStringContainsString('bg-success-soft', $setup);
         $this->assertStringContainsString('bg-surface-muted', $setup);
         $this->assertStringContainsString('Setup Information', $setup);
@@ -1200,7 +1233,7 @@ class LocalUiAssetTest extends TestCase
         $billing = File::get(resource_path('views/scenes/billing/index.blade.php'));
         $pricing = File::get(resource_path('views/scenes/pricing.blade.php'));
 
-        $this->assertStringContainsString('x-ui.button', $billing);
+        $this->assertStringContainsString('x-signal.ui.button', $billing);
         $this->assertStringContainsString('ui-btn-primary', $pricing);
         $this->assertStringContainsString('data-pricing-plan', $pricing);
     }
@@ -1687,7 +1720,7 @@ class LocalUiAssetTest extends TestCase
             $source = File::get($view);
 
             $this->assertMatchesRegularExpression(
-                '/<(?:button|x-ui\.button)\b(?=[^>]*\btype="button")(?=[^>]*\bdata-modal-trigger="delete-[^"]+")[^>]*>/s',
+                '/<(?:button|x-ui\.button|x-signal\.ui\.button)\b(?=[^>]*\btype="button")(?=[^>]*\bdata-modal-trigger="delete-[^"]+")[^>]*>/s',
                 $source,
                 basename($view).' must use the shared modal trigger component without submitting an enclosing form.',
             );

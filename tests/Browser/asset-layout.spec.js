@@ -2070,7 +2070,9 @@ test('website inventory keeps Signal filters and mobile resource cards scannable
 
     const filters = page.locator('#websites-filters');
     await expect(filters.locator('.ui-input')).toHaveCount(3);
-    await expect(filters.locator('label.ui-choice')).toHaveCount(2);
+    await expect(filters.locator('label:has(input[type="checkbox"])')).toHaveCount(2);
+    await expect(filters.locator('input[type="checkbox"]')).toHaveCount(2);
+    await expect(filters.locator('label[for="search"]')).toHaveText('Search');
 
     const inventory = page.locator('[aria-label="Website inventory"]');
     await expect(inventory).toBeVisible();
@@ -2240,6 +2242,7 @@ test('server inventory keeps capacity and provisioning rows scannable on mobile'
     await expect(page.locator('#servers-insights .ui-stat')).toHaveCount(6);
     await expect(page.locator('#servers-filters')).toHaveClass(/\bui-filter-dialog\b/);
     await expect(page.locator('#servers-filters .ui-input')).toHaveCount(2);
+    await expect(page.locator('#servers-filters label:has(input[type="checkbox"])')).toHaveCount(1);
     await expect(page.locator('[data-server-card]')).toHaveCount(2);
     await expect(page.locator('[data-server-card]').first().locator('.ui-link')).toBeVisible();
     await expect(page.locator('[data-server-card]').first().locator('.ui-eyebrow')).toHaveCount(4);

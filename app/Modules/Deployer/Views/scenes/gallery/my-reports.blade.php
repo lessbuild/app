@@ -9,19 +9,19 @@
             <x-slot:buttons>
                 <form method="POST" action="{{ route('gallery.reports.mine.review-updates') }}">
                     @csrf
-                    <x-ui.button type="submit" variant="primary">
+                    <x-signal.ui.button type="submit" variant="primary">
                         {{ trans_choice('Review :count update|Review all :count updates', $metrics['unread_updates'], ['count' => $metrics['unread_updates']]) }}
-                    </x-ui.button>
+                    </x-signal.ui.button>
                 </form>
             </x-slot:buttons>
         @endif
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav class="mt-6" :label="__('Report history sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Report history sections')">
         <a href="#gallery-report-history-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>
         <a href="#gallery-report-history-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
         <a href="#gallery-report-history" class="ui-local-nav__link">{{ __('Reports') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     @php
         $reportHistoryFilterCount = collect($filters)->filter(fn ($value, $key) => filled($value)
@@ -40,7 +40,7 @@
             && $reportStatusDialogQuery === 'report-status-'.$reportStatusDialogReport->id;
     @endphp
 
-    <x-ui.filter-panel
+    <x-signal.ui.filter-panel
         id="gallery-report-history-filters"
         class="mt-6 scroll-mt-24"
         :open="$reportHistoryFilterCount > 0"
@@ -50,61 +50,61 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-6">
             <div>
                 <label for="search" class="ui-label">{{ __('Recipe') }}</label>
-                <input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="ui-input">
+                <x-signal.ui.input id="search" name="search" type="search" maxlength="100" value="{{ $filters['search'] }}" placeholder="{{ __('Recipe name') }}" class="ui-input" :restore="false" />
             </div>
             <div>
                 <label for="status" class="ui-label">{{ __('Report status') }}</label>
-                <select id="status" name="status" class="ui-input">
+                <x-signal.ui.select id="status" name="status" class="ui-input">
                     <option value="all" @selected($filters['status'] === 'all')>{{ __('All statuses') }}</option>
                     <option value="open" @selected($filters['status'] === 'open')>{{ __('Needs contributor review') }}</option>
                     <option value="resolved" @selected($filters['status'] === 'resolved')>{{ __('Resolved by contributor') }}</option>
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="availability" class="ui-label">{{ __('Recipe availability') }}</label>
-                <select id="availability" name="availability" class="ui-input">
+                <x-signal.ui.select id="availability" name="availability" class="ui-input">
                     <option value="all" @selected($filters['availability'] === 'all')>{{ __('Published and unpublished') }}</option>
                     <option value="published" @selected($filters['availability'] === 'published')>{{ __('Published') }}</option>
                     <option value="unpublished" @selected($filters['availability'] === 'unpublished')>{{ __('No longer published') }}</option>
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="updates" class="ui-label">{{ __('Contributor updates') }}</label>
-                <select id="updates" name="updates" class="ui-input">
+                <x-signal.ui.select id="updates" name="updates" class="ui-input">
                     <option value="all" @selected($filters['updates'] === 'all')>{{ __('Reviewed and unread') }}</option>
                     <option value="unread" @selected($filters['updates'] === 'unread')>{{ __('Unread updates') }}</option>
                     <option value="reviewed" @selected($filters['updates'] === 'reviewed')>{{ __('No unread update') }}</option>
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="reason" class="ui-label">{{ __('Issue type') }}</label>
-                <select id="reason" name="reason" class="ui-input">
+                <x-signal.ui.select id="reason" name="reason" class="ui-input">
                     <option value="">{{ __('All issue types') }}</option>
                     @foreach (\App\Modules\Deployer\Models\RecipeReport::REASONS as $reason)
                         <option value="{{ $reason }}" @selected($filters['reason'] === $reason)>{{ str($reason)->headline() }}</option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="sort" class="ui-label">{{ __('Sort') }}</label>
-                <select id="sort" name="sort" class="ui-input">
+                <x-signal.ui.select id="sort" name="sort" class="ui-input">
                     <option value="newest" @selected($filters['sort'] === 'newest')>{{ __('Newest reports') }}</option>
                     <option value="oldest" @selected($filters['sort'] === 'oldest')>{{ __('Oldest reports') }}</option>
                     <option value="updated" @selected($filters['sort'] === 'updated')>{{ __('Recently updated') }}</option>
-                </select>
+                </x-signal.ui.select>
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
-            <x-ui.button href="{{ route('gallery.reports.mine.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-signal.ui.button>
+            <x-signal.ui.button href="{{ route('gallery.reports.mine.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">{{ __('Export CSV') }}</x-signal.ui.button>
             @if ($filters['search'] || $filters['status'] !== 'all' || $filters['availability'] !== 'all' || $filters['updates'] !== 'all' || $filters['reason'] || $filters['sort'] !== 'newest')
-                <x-ui.button href="{{ route('gallery.reports.mine') }}" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
+                <x-signal.ui.button href="{{ route('gallery.reports.mine') }}" variant="ghost">{{ __('Clear filters') }}</x-signal.ui.button>
             @endif
         </div>
         </form>
-    </x-ui.filter-panel>
+    </x-signal.ui.filter-panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="gallery-report-history-insights"
         class="mt-6 scroll-mt-24"
         :open="false"
@@ -118,10 +118,10 @@
                 ['label' => __('No longer published'), 'value' => $metrics['unpublished']],
                 ['label' => __('Unread updates'), 'value' => $metrics['unread_updates']],
             ] as $metric)
-                <x-ui.stat class="ui-card" :label="$metric['label']" :value="$metric['value']" />
+                <x-signal.ui.stat class="ui-card" :label="$metric['label']" :value="$metric['value']" />
             @endforeach
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     @if ($reports->isEmpty())
         <div class="mx-auto mt-6 max-w-3xl">
@@ -145,7 +145,7 @@
                     ], fn ($value) => $value !== null));
                     $reportStatusIsOpen = $reportStatusDialogOpen && $reportStatusDialogReport->id === $report->id;
                 @endphp
-                <x-ui.card @class([
+                <x-signal.ui.card @class([
                     'p-5',
                     'ui-card--unread' => $unreadUpdate,
                     'border-line' => ! $unreadUpdate,
@@ -153,13 +153,13 @@
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <x-ui.badge tone="accent">{{ str($report->reason)->headline() }}</x-ui.badge>
-                                <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="accent">{{ str($report->reason)->headline() }}</x-signal.ui.badge>
+                                <x-signal.ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs contributor review') : __('Resolved by contributor') }}</x-signal.ui.badge>
                                 @if (! $report->recipe->is_published || $report->recipe->published_at === null)
-                                    <x-ui.badge tone="warning">{{ __('No longer published') }}</x-ui.badge>
+                                    <x-signal.ui.badge tone="warning">{{ __('No longer published') }}</x-signal.ui.badge>
                                 @endif
                                 @if ($unreadUpdate)
-                                    <x-ui.badge tone="accent">{{ __('New update') }}</x-ui.badge>
+                                    <x-signal.ui.badge tone="accent">{{ __('New update') }}</x-signal.ui.badge>
                                 @endif
                             </div>
                             <h2 class="mt-3 text-lg font-bold text-ink">
@@ -184,10 +184,10 @@
                         @if ($unreadUpdate)
                             <form method="POST" action="{{ route('notifications.read', $unreadUpdate) }}">
                                 @csrf
-                                <x-ui.button type="submit" variant="primary">{{ __('Review new update') }}</x-ui.button>
+                                <x-signal.ui.button type="submit" variant="primary">{{ __('Review new update') }}</x-signal.ui.button>
                             </form>
                         @else
-                            <x-ui.button
+                            <x-signal.ui.button
                                 :href="$reportStatusUrl"
                                 data-modal-trigger="gallery-report-status-dialog"
                                 data-modal-content-url="{{ $reportStatusContentUrl }}"
@@ -195,10 +195,10 @@
                                 aria-controls="gallery-report-status-dialog"
                                 aria-expanded="{{ $reportStatusIsOpen ? 'true' : 'false' }}"
                                 variant="secondary"
-                            >{{ __('View report status') }}</x-ui.button>
+                            >{{ __('View report status') }}</x-signal.ui.button>
                         @endif
                     </div>
-                </x-ui.card>
+                </x-signal.ui.card>
             @endforeach
         </div>
 

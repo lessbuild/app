@@ -12,22 +12,22 @@
 >
     <form method="POST" action="{{ route('gallery.report.store', $recipe) }}" class="space-y-4">
         @csrf
-        <input type="hidden" name="_gallery_report_form" value="1">
+        <x-signal.ui.input type="hidden" name="_gallery_report_form" value="1" :restore="false" />
         <div>
             <label for="reason" class="ui-label">{{ __('Issue type') }}</label>
-            <select id="reason" name="reason" class="ui-input mt-2 w-full" required>
+            <x-signal.ui.select id="reason" name="reason" class="ui-input mt-2 w-full" required>
                 <option value="">{{ __('Choose an issue') }}</option>
                 @foreach (\App\Modules\Deployer\Models\RecipeReport::REASONS as $reason)
                     <option value="{{ $reason }}" @selected(old('reason', $currentReport?->reason) === $reason)>{{ str($reason)->headline() }}</option>
                 @endforeach
-            </select>
+            </x-signal.ui.select>
             <x-forms.errors name="reason" />
         </div>
         <div>
             <label for="details" class="ui-label">{{ __('Details (optional)') }}</label>
-            <textarea id="details" name="details" rows="4" maxlength="1000" class="ui-input mt-2 w-full" placeholder="{{ __('Explain what the contributor should review.') }}">{{ old('details', $currentReport?->details) }}</textarea>
+            <x-signal.ui.textarea id="details" name="details" rows="4" maxlength="1000" class="ui-input mt-2 w-full" placeholder="{{ __('Explain what the contributor should review.') }}" :restore="false">{{ old('details', $currentReport?->details) }}</x-signal.ui.textarea>
             <x-forms.errors name="details" />
         </div>
-        <x-ui.button type="submit" variant="primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

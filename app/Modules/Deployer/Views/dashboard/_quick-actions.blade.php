@@ -1,4 +1,4 @@
-<section class="ui-panel mb-6 p-4 sm:p-5" aria-labelledby="dashboard-quick-actions-title" data-dashboard-quick-actions>
+<x-signal.ui.panel as="section" class="ui-panel mb-6 p-4 sm:p-5" aria-labelledby="dashboard-quick-actions-title" data-dashboard-quick-actions>
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div>
             <p class="ui-eyebrow">{{ __('Next actions') }}</p>
@@ -39,4 +39,4 @@
             </a>
         @endforeach
     </div>
-</section>
+</x-signal.ui.panel>

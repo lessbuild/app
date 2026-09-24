@@ -15,12 +15,12 @@
 >
     <form method="POST" action="{{ route('projects.store', ['dialog' => 'create-application']) }}">
         @csrf
-        <input type="hidden" name="_project_form" value="1">
+        <x-signal.ui.input type="hidden" name="_project_form" value="1" :restore="false" />
         <x-scenes.projects._create-form :templates="$templates" />
 
         <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">
-            <x-ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
-            <x-ui.button type="submit" variant="primary">{{ __('Create application') }}</x-ui.button>
+            <x-signal.ui.button :href="$dialogCancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-signal.ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Create application') }}</x-signal.ui.button>
         </div>
     </form>
 </x-dialogs.modal>

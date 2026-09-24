@@ -7,11 +7,11 @@
     />
 
     @unless ($featureAvailable)
-        <x-ui.alert tone="warning" class="mt-6">
+        <x-signal.ui.alert tone="warning" class="mt-6">
             <p class="font-semibold">{{ __('Pro feature') }}</p>
             <p class="mt-1">{{ __('Upgrade to inspect databases, issue credentials, and run safe clones.') }}</p>
-            <x-ui.button :href="route('pricing')" variant="secondary" class="mt-3">{{ __('Compare plans') }}</x-ui.button>
-        </x-ui.alert>
+            <x-signal.ui.button :href="route('pricing')" variant="secondary" class="mt-3">{{ __('Compare plans') }}</x-signal.ui.button>
+        </x-signal.ui.alert>
     @endunless
 
     @if (session('databasePassword'))
@@ -26,34 +26,34 @@
         $credentialCount = $resources->sum(fn ($resource) => $resource->databaseUsers->count());
     @endphp
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="database-insights"
         class="mt-6"
         :summary="trans_choice(':count managed database resource|:count managed database resources', $resources->count(), ['count' => $resources->count()])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Managed resources')"
                 :value="$resources->count()"
                 :description="__('MySQL and PostgreSQL resources in this workspace.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Ready')"
                 :value="$readyResourceCount"
                 :description="__('Resources with a usable inspection state.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Active credentials')"
                 :value="$credentialCount"
                 :description="__('Issued database credentials across resources.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Recent clones')"
                 :value="$clones->count()"
                 :description="__('Retained clone operations shown below.')"
             />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <div class="mt-8 grid gap-5 xl:grid-cols-2">
         @forelse ($resources as $resource)
@@ -74,17 +74,17 @@
             <section class="ui-card p-5">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
-                        <x-ui.badge tone="accent">{{ strtoupper($resource->type) }}</x-ui.badge>
+                        <x-signal.ui.badge tone="accent">{{ strtoupper($resource->type) }}</x-signal.ui.badge>
                         <h2 class="mt-2 break-words text-lg font-extrabold text-ink">{{ $resource->name }}</h2>
                         <p class="text-sm text-muted">{{ $resource->environment->project->name }} · {{ $resource->environment->name }}</p>
                     </div>
                     <div class="flex shrink-0 flex-wrap justify-end gap-2">
                         <form method="POST" action="{{ route('databases.inspect', $resource) }}">
                             @csrf
-                            <x-ui.button type="submit" variant="secondary">{{ __('Inspect') }}</x-ui.button>
+                            <x-signal.ui.button type="submit" variant="secondary">{{ __('Inspect') }}</x-signal.ui.button>
                         </form>
                         @if ($canManage)
-                            <x-ui.button
+                            <x-signal.ui.button
                                 href="{{ $databaseCredentialDialogUrl }}"
                                 data-modal-trigger="{{ $databaseCredentialDialogId }}"
                                 aria-controls="{{ $databaseCredentialDialogId }}"
@@ -92,7 +92,7 @@
                                 variant="primary"
                             >
                                 {{ __('Issue credential') }}
-                            </x-ui.button>
+                            </x-signal.ui.button>
                         @endif
                     </div>
                 </div>
@@ -152,7 +152,7 @@
                                 <form method="POST" action="{{ route('databases.users.destroy', $databaseUser) }}" class="shrink-0">
                                     @csrf
                                     @method('DELETE')
-                                    <x-ui.button type="submit" variant="danger">{{ __('Revoke') }}</x-ui.button>
+                                    <x-signal.ui.button type="submit" variant="danger">{{ __('Revoke') }}</x-signal.ui.button>
                                 </form>
                             </div>
                         @endforeach
@@ -166,18 +166,18 @@
                         </div>
                         <label class="block">
                             <span class="ui-label">{{ __('Target environment') }}</span>
-                            <select name="target_resource_id" class="ui-input w-full" required>
+                            <x-signal.ui.select name="target_resource_id" class="ui-input w-full" required>
                                 <option value="">{{ __('Clone into…') }}</option>
                                 @foreach ($resources->where('type', $resource->type)->where('id', '!=', $resource->id)->filter(fn ($target) => $target->environment->type !== 'production') as $target)
                                     <option value="{{ $target->id }}">{{ $target->environment->project->name }} / {{ $target->environment->name }} / {{ $target->name }}</option>
                                 @endforeach
-                            </select>
+                            </x-signal.ui.select>
                         </label>
                         <label class="block">
                             <span class="ui-label">{{ __('Confirmation') }}</span>
-                            <input name="confirmation" class="ui-input w-full" placeholder="{{ __('Type the target resource name to confirm') }}" required>
+                            <x-signal.ui.input name="confirmation" class="ui-input w-full" placeholder="{{ __('Type the target resource name to confirm') }}" required :restore="false" />
                         </label>
-                        <x-ui.button type="submit" variant="danger">{{ __('Queue destructive clone') }}</x-ui.button>
+                        <x-signal.ui.button type="submit" variant="danger">{{ __('Queue destructive clone') }}</x-signal.ui.button>
                     </form>
                         </div>
                     </details>
@@ -189,7 +189,7 @@
                 @endif
             </section>
         @empty
-            <x-ui.empty-state
+            <x-signal.ui.empty-state
                 class="xl:col-span-2"
                 :title="__('No managed databases')"
                 :description="__('Attach a MySQL or PostgreSQL resource to use database operations.')"
@@ -205,13 +205,13 @@
                     <h2 class="font-extrabold text-ink">{{ __('Clone history') }}</h2>
                     <p class="mt-1 text-sm text-muted">{{ __('Review recent database copy operations and their outcomes.') }}</p>
                 </div>
-                <x-ui.badge>{{ $clones->count() }}</x-ui.badge>
+                <x-signal.ui.badge>{{ $clones->count() }}</x-signal.ui.badge>
             </div>
             <div class="mt-4 space-y-2">
                 @foreach ($clones as $clone)
                     <div class="ui-card ui-card--muted flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
                         <span class="text-ink">{{ $clone->source->name }} → {{ $clone->target->name }}</span>
-                        <x-ui.badge tone="{{ in_array($clone->status, ['completed', 'succeeded'], true) ? 'success' : 'neutral' }}">{{ ucfirst($clone->status) }}</x-ui.badge>
+                        <x-signal.ui.badge tone="{{ in_array($clone->status, ['completed', 'succeeded'], true) ? 'success' : 'neutral' }}">{{ ucfirst($clone->status) }}</x-signal.ui.badge>
                     </div>
                 @endforeach
             </div>

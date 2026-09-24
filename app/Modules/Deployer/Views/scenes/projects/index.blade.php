@@ -6,13 +6,13 @@
 
     <x-layouts.partials.heading eyebrow="{{ __('Application workspace') }}" icon="view-grid" :title="__('Applications')" :description="__('Organize infrastructure into isolated production, staging, development, and preview environments.')">
         <x-slot:buttons>
-            <x-ui.button :href="route('builds.index')" variant="secondary">
+            <x-signal.ui.button :href="route('builds.index')" variant="secondary">
                 {{ __('Deployment history') }}
-            </x-ui.button>
-            <x-ui.button :href="route('repositories.index')" variant="secondary">
+            </x-signal.ui.button>
+            <x-signal.ui.button :href="route('repositories.index')" variant="secondary">
                 {{ __('Repositories') }}
-            </x-ui.button>
-            <x-ui.button
+            </x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$applicationCreateUrl"
                 data-modal-trigger="application-create-dialog"
                 aria-controls="application-create-dialog"
@@ -20,7 +20,7 @@
                 variant="primary"
             >
                 {{ __('New application') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
@@ -30,34 +30,34 @@
         $setupProjectCount = $projects->where('environments_count', 0)->count();
     @endphp
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="projects-insights"
         class="mt-6"
         :summary="trans_choice(':count application|:count applications', $projects->count(), ['count' => $projects->count()])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Applications')"
                 :value="$projects->count()"
                 :description="__('Applications in the current workspace.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Environments')"
                 :value="$environmentCount"
                 :description="__('Production, staging, development, and preview targets.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Preview-enabled')"
                 :value="$previewProjectCount"
                 :description="__('Applications ready for preview environments.')"
             />
-            <x-ui.stat
+            <x-signal.ui.stat
                 :label="__('Needs setup')"
                 :value="$setupProjectCount"
                 :description="__('Applications without an environment yet.')"
             />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
         <p class="text-sm text-muted">
@@ -77,9 +77,9 @@
                         </div>
                         <p class="mt-4 line-clamp-2 text-sm leading-6 text-muted">{{ $project->description ?: __('No description') }}</p>
                     </div>
-                    <x-ui.badge data-project-environment-count class="shrink-0" tone="neutral">
+                    <x-signal.ui.badge data-project-environment-count class="shrink-0" tone="neutral">
                         {{ trans_choice(':count environment|:count environments', $project->environments_count, ['count' => $project->environments_count]) }}
-                    </x-ui.badge>
+                    </x-signal.ui.badge>
                 </div>
                 <div class="mt-6 flex items-center justify-between gap-3 border-t border-line pt-4">
                     <p class="truncate font-mono text-xs text-muted">{{ $project->slug }}</p>
@@ -90,7 +90,7 @@
             <div class="md:col-span-2 xl:col-span-3">
                 <x-lists.empty :title="__('No applications yet')" :description="__('Create an application to group environments and deployment settings.')">
                     <x-slot:button>
-                        <x-ui.button
+                        <x-signal.ui.button
                             :href="$applicationCreateUrl"
                             data-modal-trigger="application-create-dialog"
                             aria-controls="application-create-dialog"
@@ -98,7 +98,7 @@
                             variant="primary"
                         >
                             {{ __('Create application') }}
-                        </x-ui.button>
+                        </x-signal.ui.button>
                     </x-slot:button>
                 </x-lists.empty>
             </div>

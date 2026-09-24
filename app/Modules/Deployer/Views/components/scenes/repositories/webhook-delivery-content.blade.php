@@ -23,10 +23,10 @@
             <h3 class="mt-2 break-all font-mono text-xl font-extrabold text-ink">{{ $delivery->delivery_id }}</h3>
             <p class="mt-1 text-sm text-muted">{{ __('Review the accepted delivery record without exposing the source-control payload or webhook secret.') }}</p>
         </div>
-        <x-ui.badge :tone="$statusTone">{{ str($delivery->status)->replace('_', ' ') }}</x-ui.badge>
+        <x-signal.ui.badge :tone="$statusTone">{{ str($delivery->status)->replace('_', ' ') }}</x-signal.ui.badge>
     </div>
 
-    <aside class="ui-panel border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">{{ $outcome }}</aside>
+    <x-signal.ui.panel as="aside" class="ui-panel border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">{{ $outcome }}</x-signal.ui.panel>
 
     <dl class="grid gap-4 text-sm sm:grid-cols-2">
         <div>

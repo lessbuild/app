@@ -16,7 +16,7 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 | `x-signal.ui.alert` | Informational, success, warning, and danger feedback. |
 | `x-signal.ui.avatar` | Initial-based identity mark with forwarded size and layout attributes. |
 | `x-signal.ui.badge` | Neutral, accent, informational, success, warning, and danger status labels. |
-| `x-signal.ui.button` | Link and button actions with primary, secondary, ghost, quiet, outline, soft, danger, and inverse variants; small/default/large sizes and disabled-link semantics. |
+| `x-signal.ui.button` | Link and button actions with primary, secondary, ghost, quiet, outline, soft, danger, inverse, link, and stateful variants; small/default/large sizes and disabled-link semantics. |
 | `x-signal.ui.card` | Shared panel/card surface with default, muted, and interactive tones. |
 | `x-signal.ui.checkbox` | Labeled checkbox input with the shared focus and theme treatment, optional unchecked value, and old-input restoration control. |
 | `x-signal.ui.choice` | Labeled checkbox or radio choice with optional card treatment, descriptions, validation state, unchecked values, old-input control, and forwarded Livewire attributes. |
@@ -30,6 +30,7 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 | `x-signal.ui.insights` | Responsive expandable content surface. |
 | `x-signal.ui.local-nav` | Scrollable, labeled product navigation region. |
 | `x-signal.ui.menu` | Native disclosure menu with trigger slot and alignment options. |
+| `x-signal.ui.panel` | Shared semantic panel surface for `div`, `section`, `article`, `aside`, `form`, `fieldset`, and `details` compositions. |
 | `x-signal.ui.page-header` | Page title, eyebrow and icon, description, leading and metadata slots, and actions. |
 | `x-signal.ui.stat` | Definition-list metric with label, value, description, icon, and change badge. |
 | `x-signal.ui.table` | Captioned, keyboard-scrollable data table with optional header slot and shared framing. |
@@ -37,6 +38,7 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 | `x-signal.ui.workspace-view-form` | Reusable Core form for personal/workspace visibility, product, pinned-only, project-name-contains, and authorized mapped-environment dashboard filters. |
 | `x-signal.ui.workspace-project-pin` | Authorized personal/workspace project pin controls built from shared forms and buttons. |
 | `x-signal.overlays.modal` | Accessible native dialog with title, description, content, and close behavior. |
+| `x-signal.overlays.dialog-shell` | Shared native dialog and panel shell for product-specific content and Livewire-owned actions. |
 | `x-signal.overlays.delete-confirmation` | Reusable delete confirmation composition on the shared dialog and button primitives. |
 
 Use explicit component props for variants and named slots for page-specific content. Cards also accept a constrained semantic element, spacing, and shadow options so a shared panel can remain a `form`, `section`, `article`, or `details` without copying its visual surface. Keep authorization, validation, queries, and domain behavior in their existing controllers, policies, requests, actions, and Livewire components.
@@ -45,7 +47,7 @@ Use explicit component props for variants and named slots for page-specific cont
 
 ## Compatibility adapters
 
-- `x-ui.*` forwards to `x-signal.ui.*`. Existing Deployer screens retain their established component names during migration.
+- Deployer views now call `x-signal.ui.*` directly. The `x-ui.*` adapters remain available for compatibility with any unmigrated consumers.
 - `x-dialogs.modal`, `x-dialogs.delete`, and `x-dialogs.dialog` forward to `x-signal.overlays.*`.
 - Existing layout adapters under `x-layouts.*` forward to `x-signal.layouts.*` where applicable.
 - `x-avatar` forwards to `x-signal.ui.avatar`.

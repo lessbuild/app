@@ -6,17 +6,17 @@
         :description="__('Review command activity across every server without exposing command text or retained output.')"
     />
 
-    <x-ui.local-nav :label="__('Command center sections')">
+    <x-signal.ui.local-nav :label="__('Command center sections')">
         <a href="#command-filters" class="ui-local-nav__link">{{ __('Filters') }}</a>
         <a href="#command-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
         <a href="#command-history" class="ui-local-nav__link">{{ __('History') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     @php
         $commandFilterCount = collect($filters)->filter(fn ($value) => filled($value))->count();
     @endphp
 
-    <x-ui.filter-panel
+    <x-signal.ui.filter-panel
         id="command-filters"
         class="mt-8"
         :open="$commandFilterCount > 0"
@@ -31,59 +31,59 @@
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
             <div>
                 <label for="server_id" class="ui-label">{{ __('Server') }}</label>
-                <select id="server_id" name="server_id" class="ui-input">
+                <x-signal.ui.select id="server_id" name="server_id" class="ui-input">
                     <option value="">{{ __('All servers') }}</option>
                     @foreach ($servers as $server)
                         <option value="{{ $server->id }}" @selected((int) $filters['server_id'] === $server->id)>{{ $server->label }}</option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="status" class="ui-label">{{ __('Status') }}</label>
-                <select id="status" name="status" class="ui-input">
+                <x-signal.ui.select id="status" name="status" class="ui-input">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>{{ str($status)->title() }}</option>
                     @endforeach
-                </select>
+                </x-signal.ui.select>
             </div>
             <div>
                 <label for="output" class="ui-label">{{ __('Output') }}</label>
-                <select id="output" name="output" class="ui-input">
+                <x-signal.ui.select id="output" name="output" class="ui-input">
                     <option value="">{{ __('Any output state') }}</option>
                     <option value="available" @selected($filters['output'] === 'available')>{{ __('Output retained') }}</option>
                     <option value="missing" @selected($filters['output'] === 'missing')>{{ __('No output retained') }}</option>
-                </select>
+                </x-signal.ui.select>
             </div>
             <div class="flex items-end">
                 <label class="ui-choice min-h-11 w-full items-center">
-                    <input type="checkbox" name="active" value="1" @checked($filters['active']) class="ui-check">
+                    <x-signal.ui.input type="checkbox" name="active" value="1" @checked($filters['active']) class="ui-check" :restore="false" />
                     {{ __('Active commands only') }}
                 </label>
             </div>
             <div>
                 <label for="date_from" class="ui-label">{{ __('Queued from') }}</label>
-                <input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input">
+                <x-signal.ui.input id="date_from" name="date_from" type="date" value="{{ $filters['date_from'] }}" class="ui-input" :restore="false" />
             </div>
             <div>
                 <label for="date_to" class="ui-label">{{ __('Queued through') }}</label>
-                <input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input">
+                <x-signal.ui.input id="date_to" name="date_to" type="date" value="{{ $filters['date_to'] }}" class="ui-input" :restore="false" />
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-signal.ui.button>
             @if ($metrics['active'] > 0)
-                <x-ui.button
+                <x-signal.ui.button
                     :href="route('commands.index', [...array_filter($filters, fn ($value) => $value !== null), 'page' => $executions->currentPage()])"
                     variant="secondary"
                     aria-describedby="command-refresh-help"
                 >
                     {{ __('Refresh status') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             @endif
-            <x-ui.button :href="route('commands.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">{{ __('Export CSV') }}</x-ui.button>
+            <x-signal.ui.button :href="route('commands.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">{{ __('Export CSV') }}</x-signal.ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <x-ui.button :href="route('commands.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
+                <x-signal.ui.button :href="route('commands.index')" variant="ghost">{{ __('Clear filters') }}</x-signal.ui.button>
             @endif
         </div>
         @if ($metrics['active'] > 0)
@@ -92,9 +92,9 @@
             </p>
         @endif
         </form>
-    </x-ui.filter-panel>
+    </x-signal.ui.filter-panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="command-insights"
         class="mt-6"
         :open="$metrics['active'] > 0"
@@ -109,13 +109,13 @@
                 ['label' => __('Failed'), 'value' => $metrics['failed']],
                 ['label' => __('Canceled'), 'value' => $metrics['canceled']],
             ] as $metric)
-                <x-ui.stat :label="$metric['label']" :value="$metric['value']" />
+                <x-signal.ui.stat :label="$metric['label']" :value="$metric['value']" />
             @endforeach
-            <x-ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
+            <x-signal.ui.stat :label="__('Latest matching')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
-    <div id="command-history" class="ui-panel ui-inventory-list mt-6 scroll-mt-24 overflow-hidden">
+    <x-signal.ui.panel id="command-history" class="ui-panel ui-inventory-list mt-6 scroll-mt-24 overflow-hidden">
         <div class="divide-y divide-line" aria-label="{{ __('Command activity across all servers') }}">
             @forelse ($executions as $execution)
                 <article data-command-execution class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
@@ -125,8 +125,8 @@
                             <h2 class="mt-1 text-base font-semibold text-ink">{{ $execution->server->label }}</h2>
                         </div>
                         <div class="flex flex-wrap gap-2">
-                            <x-ui.badge tone="{{ in_array($execution->status, ['succeeded', 'completed'], true) ? 'success' : (in_array($execution->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ $execution->status }}</x-ui.badge>
-                            <x-ui.badge tone="{{ $execution->output_available ? 'success' : 'neutral' }}">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</x-ui.badge>
+                            <x-signal.ui.badge tone="{{ in_array($execution->status, ['succeeded', 'completed'], true) ? 'success' : (in_array($execution->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ $execution->status }}</x-signal.ui.badge>
+                            <x-signal.ui.badge tone="{{ $execution->output_available ? 'success' : 'neutral' }}">{{ $execution->output_available ? __('Retained') : __('Not retained') }}</x-signal.ui.badge>
                         </div>
                     </div>
 
@@ -154,21 +154,21 @@
                     </dl>
 
                     <div class="mt-4 flex justify-start sm:justify-end">
-                        <x-ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary" class="ui-btn-sm">
+                        <x-signal.ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="secondary" class="ui-btn-sm">
                             {{ __('Open server history') }}
-                        </x-ui.button>
+                        </x-signal.ui.button>
                     </div>
                 </article>
             @empty
                 <div class="p-6 text-center">
-                    <x-ui.empty-state
+                    <x-signal.ui.empty-state
                         :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run yet')"
                         :description="__('Run a command from an active server to see its lifecycle here.')"
                     />
                 </div>
             @endforelse
         </div>
-    </div>
+    </x-signal.ui.panel>
 
     <div class="mt-6">{{ $executions->links() }}</div>
 </x-layouts.app>

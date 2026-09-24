@@ -13,10 +13,10 @@
 <form method="POST" action="{{ $action }}" class="mt-5 grid gap-4 sm:grid-cols-2">
     @csrf
     @if (filled($formMarker))
-        <input type="hidden" name="_backup_destination_form" value="{{ $formMarker }}">
+        <x-signal.ui.input type="hidden" name="_backup_destination_form" value="{{ $formMarker }}" :restore="false" />
     @endif
     @if (filled($destinationId))
-        <input type="hidden" name="_backup_destination_id" value="{{ $destinationId }}">
+        <x-signal.ui.input type="hidden" name="_backup_destination_id" value="{{ $destinationId }}" :restore="false" />
     @endif
     @if($isEdit)
         @method('PATCH')
@@ -68,8 +68,8 @@
     </x-signal.ui.card>
     <div class="sm:col-span-2">
         @if ($cancelUrl)
-            <x-ui.button :href="$cancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-ui.button>
+            <x-signal.ui.button :href="$cancelUrl" variant="ghost" data-modal-cancel>{{ __('Cancel') }}</x-signal.ui.button>
         @endif
-        <x-ui.button type="submit" variant="primary">{{ $submitLabel }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ $submitLabel }}</x-signal.ui.button>
     </div>
 </form>

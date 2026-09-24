@@ -18,8 +18,8 @@
         :description="__('Manage cloud capacity and review filtered provisioning state.')"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('servers.import.create')" variant="secondary">{{ __('Import existing') }}</x-ui.button>
-            <x-ui.button
+            <x-signal.ui.button :href="route('servers.import.create')" variant="secondary">{{ __('Import existing') }}</x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$serverCreateUrl"
                 data-modal-trigger="server-create-dialog"
                 aria-controls="server-create-dialog"
@@ -30,13 +30,13 @@
                     <use xlink:href="/assets/images/icons.svg#plus-circle"></use>
                 </svg>
                 {{ __('Add Server') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null)))
 
-    <x-ui.filter-panel
+    <x-signal.ui.filter-panel
         id="servers-filters"
         class="mt-8"
         :label="__('Filter servers')"
@@ -46,61 +46,59 @@
         <form method="GET" action="{{ route('servers.index') }}">
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
             <div>
-                <label for="search" class="ui-label">{{ __('Search') }}</label>
-                <input
+                <x-signal.ui.input-field
                     id="search"
                     name="search"
+                    :label="__('Search')"
                     type="search"
                     maxlength="100"
-                    value="{{ $filters['search'] }}"
-                    placeholder="{{ __('Name, identifier, or IP address') }}"
-                    class="ui-input"
-                >
+                    :value="$filters['search']"
+                    :placeholder="__('Name, identifier, or IP address')"
+                    :error-key="false"
+                />
             </div>
             <div>
-                <label for="status" class="ui-label">{{ __('Status') }}</label>
-                <select id="status" name="status" class="ui-input">
+                <x-signal.ui.select-field id="status" name="status" :label="__('Status')" :error-key="false">
                     <option value="">{{ __('All statuses') }}</option>
                     @foreach ($statuses as $status)
                         <option value="{{ $status }}" @selected($filters['status'] === $status)>
                             {{ str($status)->replace('_', ' ')->title() }}
                         </option>
                     @endforeach
-                </select>
+                </x-signal.ui.select-field>
             </div>
             <div class="flex items-end">
-                <label class="ui-choice h-full">
-                    <input type="checkbox" name="provisioning" value="1" @checked($filters['provisioning']) class="ui-check mt-0.5">
-                    <span class="text-sm text-ink">{{ __('Provisioning only') }}</span>
-                </label>
+                <x-signal.ui.checkbox id="provisioning" name="provisioning" :value="1" :checked="$filters['provisioning']" :restore="false" :error-key="false" container-class="h-full content-end">
+                    {{ __('Provisioning only') }}
+                </x-signal.ui.checkbox>
             </div>
         </div>
         <div class="mt-4 flex flex-wrap gap-3">
-            <x-ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-ui.button>
-            <x-ui.button :href="route('servers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Apply filters') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('servers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
-            </x-ui.button>
+            </x-signal.ui.button>
             @if (array_filter($filters, fn ($value) => $value !== null))
-                <x-ui.button :href="route('servers.index')" variant="ghost">{{ __('Clear filters') }}</x-ui.button>
+                <x-signal.ui.button :href="route('servers.index')" variant="ghost">{{ __('Clear filters') }}</x-signal.ui.button>
             @endif
         </div>
         </form>
-    </x-ui.filter-panel>
+    </x-signal.ui.filter-panel>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="servers-insights"
         class="mt-6"
         :summary="trans_choice(':count matching server|:count matching servers', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
-            <x-ui.stat :label="__('Matching servers')" :value="$metrics['total']" :description="__('Servers in this filtered view.')" />
-            <x-ui.stat :label="__('Ready servers')" :value="$metrics['ready']" :description="__('Active servers ready for workloads.')" />
-            <x-ui.stat :label="__('Provisioning')" :value="$metrics['provisioning']" :description="__('Queued, awaiting an IP, or provisioning.')" />
-            <x-ui.stat :label="__('Failed servers')" :value="$metrics['failed']" :description="__('Matching provisioning failures.')" />
-            <x-ui.stat :label="__('Hosted websites')" :value="$metrics['websites']" :description="__('Websites attached to matching servers.')" />
-            <x-ui.stat :label="__('Latest matching server')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching server recorded.')" />
+            <x-signal.ui.stat :label="__('Matching servers')" :value="$metrics['total']" :description="__('Servers in this filtered view.')" />
+            <x-signal.ui.stat :label="__('Ready servers')" :value="$metrics['ready']" :description="__('Active servers ready for workloads.')" />
+            <x-signal.ui.stat :label="__('Provisioning')" :value="$metrics['provisioning']" :description="__('Queued, awaiting an IP, or provisioning.')" />
+            <x-signal.ui.stat :label="__('Failed servers')" :value="$metrics['failed']" :description="__('Matching provisioning failures.')" />
+            <x-signal.ui.stat :label="__('Hosted websites')" :value="$metrics['websites']" :description="__('Websites attached to matching servers.')" />
+            <x-signal.ui.stat :label="__('Latest matching server')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching server recorded.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <!--
      ! ------------------------------------------------------------
@@ -108,7 +106,7 @@
      ! ------------------------------------------------------------
      !-->
     @if(!$servers->isEmpty())
-        <div class="ui-panel ui-inventory-list mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Server inventory') }}">
+        <x-signal.ui.panel class="ui-inventory-list mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Server inventory') }}">
             @foreach($servers as $server)
                 <article data-server-card class="p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
@@ -126,13 +124,13 @@
                         </div>
                         <div class="flex flex-wrap items-center gap-2">
                             @if ($server->provisioning_status === \App\Modules\Deployer\Models\Server::STATUS_ACTIVE)
-                                <x-ui.badge tone="success">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="success">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-signal.ui.badge>
                             @elseif ($server->provisioning_status === \App\Modules\Deployer\Models\Server::STATUS_FAILED)
-                                <x-ui.badge tone="danger">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="danger">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-signal.ui.badge>
                             @else
-                                <x-ui.badge tone="accent">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-ui.badge>
+                                <x-signal.ui.badge tone="accent">{{ str($server->provisioning_status)->replace('_', ' ') }}</x-signal.ui.badge>
                             @endif
-                            <x-ui.button :href="route('servers.show', $server)" variant="secondary">{{ __('View server') }}</x-ui.button>
+                            <x-signal.ui.button :href="route('servers.show', $server)" variant="secondary">{{ __('View server') }}</x-signal.ui.button>
                         </div>
                     </div>
 
@@ -160,7 +158,7 @@
                     </dl>
                 </article>
             @endforeach
-        </div>
+        </x-signal.ui.panel>
         <div class="py-4">
             {{ $servers->links() }}
         </div>
@@ -172,15 +170,15 @@
             >
                 <x-slot:button>
                     @if (array_filter($filters, fn ($value) => $value !== null))
-                        <x-ui.button :href="route('servers.index')" variant="primary">{{ __('Clear filters') }}</x-ui.button>
+                        <x-signal.ui.button :href="route('servers.index')" variant="primary">{{ __('Clear filters') }}</x-signal.ui.button>
                     @else
-                        <x-ui.button
+                        <x-signal.ui.button
                             :href="$serverCreateUrl"
                             data-modal-trigger="server-create-dialog"
                             aria-controls="server-create-dialog"
                             aria-expanded="{{ $serverCreateOpen ? 'true' : 'false' }}"
                             variant="secondary"
-                        >{{ __('Add Server') }}</x-ui.button>
+                        >{{ __('Add Server') }}</x-signal.ui.button>
                     @endif
                 </x-slot:button>
             </x-lists.empty>

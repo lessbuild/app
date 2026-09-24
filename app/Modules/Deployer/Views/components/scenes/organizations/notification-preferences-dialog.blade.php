@@ -26,7 +26,7 @@
             <div class="mt-3 grid gap-3 sm:grid-cols-2">
                 @foreach (['website' => __('Websites'), 'server' => __('Servers'), 'deployment' => __('Deployments'), 'provider' => __('Providers'), 'security' => __('Security'), 'recipe' => __('Recipes')] as $value => $label)
                     <label class="flex items-center gap-3 text-sm text-ink">
-                        <input type="checkbox" name="categories[]" value="{{ $value }}" class="ui-check" @checked(in_array($value, $selectedCategories, true))>
+                        <x-signal.ui.input type="checkbox" name="categories[]" value="{{ $value }}" class="ui-check" @checked(in_array($value, $selectedCategories, true)) :restore="false" />
                         <span>{{ $label }}</span>
                     </label>
                 @endforeach
@@ -35,9 +35,9 @@
             <x-forms.errors name="categories.*" />
         </fieldset>
 
-        <input type="hidden" name="recoveries" value="0">
+        <x-signal.ui.input type="hidden" name="recoveries" value="0" :restore="false" />
         <label class="flex items-start gap-3 text-sm text-ink">
-            <input type="checkbox" name="recoveries" value="1" class="ui-check" @checked((bool) $recoveriesEnabled)>
+            <x-signal.ui.input type="checkbox" name="recoveries" value="1" class="ui-check" @checked((bool) $recoveriesEnabled) :restore="false" />
             <span><strong class="block text-ink">{{ __('Recovery notifications') }}</strong>{{ __('Notify when a failed resource becomes healthy again.') }}</span>
         </label>
         <x-forms.errors name="recoveries" />
@@ -46,6 +46,6 @@
             {{ __('Alert destinations are configured separately in Observability.') }}
         </p>
 
-        <x-ui.button type="submit" variant="primary">{{ __('Save preferences') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Save preferences') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

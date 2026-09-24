@@ -9,7 +9,7 @@
                 {{ trans_choice(':count resource is being prepared|:count resources are being prepared', $provisioningTotal, ['count' => $provisioningTotal]) }}
             </p>
         </div>
-        <x-ui.badge tone="warning">{{ __('Live workspace snapshot') }}</x-ui.badge>
+        <x-signal.ui.badge tone="warning">{{ __('Live workspace snapshot') }}</x-signal.ui.badge>
     </div>
 
     <div class="mt-5 grid grid-cols-2 gap-3">

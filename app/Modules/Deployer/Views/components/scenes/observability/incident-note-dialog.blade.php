@@ -13,11 +13,11 @@
 >
     <form method="POST" action="{{ route('observability.operational-incidents.notes.store', $incident) }}" class="space-y-3">
         @csrf
-        <input type="hidden" name="_operational_incident_form" value="note">
-        <input type="hidden" name="_operational_incident_id" value="{{ $incident->id }}">
+        <x-signal.ui.input type="hidden" name="_operational_incident_form" value="note" :restore="false" />
+        <x-signal.ui.input type="hidden" name="_operational_incident_id" value="{{ $incident->id }}" :restore="false" />
         <label for="{{ $dialogId }}-message" class="ui-label">{{ __('Investigation note') }}</label>
-        <textarea id="{{ $dialogId }}-message" name="message" rows="5" maxlength="5000" required class="ui-input" placeholder="{{ __('Investigation note') }}">{{ old('message') }}</textarea>
+        <x-signal.ui.textarea id="{{ $dialogId }}-message" name="message" rows="5" maxlength="5000" required class="ui-input" placeholder="{{ __('Investigation note') }}" :restore="false">{{ old('message') }}</x-signal.ui.textarea>
         <x-forms.errors name="message" />
-        <x-ui.button type="submit" variant="primary">{{ __('Add note') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Add note') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

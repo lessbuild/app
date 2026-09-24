@@ -9,7 +9,7 @@
         $analyticsSummaryOpen = $totals['pending_access_requests'] > 0 || $totals['denials_30d'] > 0;
     @endphp
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="admin-analytics-summary"
         class="mt-8"
         :open="$analyticsSummaryOpen"
@@ -28,10 +28,10 @@
                 __('Limit blocks') => number_format($totals['denials_30d']),
                 __('Access requests') => number_format($totals['pending_access_requests']),
             ] as $label => $value)
-                <x-ui.stat :label="$label" :value="$value" class="ui-card" />
+                <x-signal.ui.stat :label="$label" :value="$value" class="ui-card" />
             @endforeach
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     @php
         $signupMax = max(1, $trend->max('signups'));
@@ -40,7 +40,7 @@
     @endphp
 
     <div class="mt-6 grid gap-4 xl:grid-cols-[1fr_1fr_.8fr]">
-        <x-ui.card class="p-5 sm:p-6" aria-labelledby="signup-trend-title">
+        <x-signal.ui.card class="p-5 sm:p-6" aria-labelledby="signup-trend-title">
             <h2 id="signup-trend-title" class="font-extrabold text-ink">{{ __('New users · 30 days') }}</h2>
             <div class="mt-5 flex h-32 items-end gap-1" role="img" aria-label="{{ __('Daily new user registrations') }}">
                 @foreach ($trend as $day)
@@ -50,9 +50,9 @@
                 @endforeach
             </div>
             <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-muted"><span>{{ $trend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
-        </x-ui.card>
+        </x-signal.ui.card>
 
-        <x-ui.card class="p-5 sm:p-6" aria-labelledby="deployment-trend-title">
+        <x-signal.ui.card class="p-5 sm:p-6" aria-labelledby="deployment-trend-title">
             <div class="flex items-start justify-between gap-3">
                 <h2 id="deployment-trend-title" class="font-extrabold text-ink">{{ __('Deployments · 30 days') }}</h2>
                 <strong class="text-ink">{{ number_format($totals['deployments_30d']) }}</strong>
@@ -65,9 +65,9 @@
                 @endforeach
             </div>
             <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-muted"><span>{{ $trend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
-        </x-ui.card>
+        </x-signal.ui.card>
 
-        <x-ui.card class="p-5 sm:p-6" aria-labelledby="plans-title">
+        <x-signal.ui.card class="p-5 sm:p-6" aria-labelledby="plans-title">
             <h2 id="plans-title" class="font-extrabold text-ink">{{ __('Plan distribution') }}</h2>
             <div class="mt-5 space-y-3">
                 @foreach ($plans as $plan => $count)
@@ -77,8 +77,8 @@
                     </div>
                 @endforeach
             </div>
-        </x-ui.card>
+        </x-signal.ui.card>
     </div>
 
-    <x-ui.alert class="mt-4" tone="info">{{ __('MRR is an estimate from active base-plan prices and excludes taxes, refunds, discounts, and metered adjustments. Limit-block telemetry begins from this release.') }}</x-ui.alert>
+    <x-signal.ui.alert class="mt-4" tone="info">{{ __('MRR is an estimate from active base-plan prices and excludes taxes, refunds, discounts, and metered adjustments. Limit-block telemetry begins from this release.') }}</x-signal.ui.alert>
 </x-layouts.app>

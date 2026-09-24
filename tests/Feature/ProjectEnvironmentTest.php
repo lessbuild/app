@@ -121,9 +121,9 @@ class ProjectEnvironmentTest extends TestCase
         $response->assertOk();
 
         $content = $response->getContent();
-        $this->assertStringContainsString('<input type="hidden" name="deployment_locked" value="0">', $content);
-        $this->assertStringContainsString('<input type="hidden" name="deployment_window_enabled" value="0">', $content);
-        $this->assertStringContainsString('<input type="hidden" name="automatic_rollback" value="0">', $content);
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*\\btype="hidden")(?=[^>]*\\bname="deployment_locked")(?=[^>]*\\bvalue="0")[^>]*>/', $content);
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*\\btype="hidden")(?=[^>]*\\bname="deployment_window_enabled")(?=[^>]*\\bvalue="0")[^>]*>/', $content);
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*\\btype="hidden")(?=[^>]*\\bname="automatic_rollback")(?=[^>]*\\bvalue="0")[^>]*>/', $content);
         $this->assertStringContainsString('name="deployment_window_days[]"', $content);
         $this->assertStringContainsString('list="deployment-timezones-'.$environment->id.'"', $content);
         $this->assertStringContainsString('value="09:00"', $content);

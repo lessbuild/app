@@ -9,9 +9,9 @@
         :description="$build->repository->name"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('builds.compare', ['build' => $baseline, 'baseline' => $build])" variant="secondary">
+            <x-signal.ui.button :href="route('builds.compare', ['build' => $baseline, 'baseline' => $build])" variant="secondary">
                 {{ __('Swap comparison') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 

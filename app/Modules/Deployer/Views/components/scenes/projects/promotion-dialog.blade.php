@@ -14,22 +14,22 @@
 >
     <form method="POST" action="{{ route('builds.promote', $build) }}" class="space-y-4">
         @csrf
-        <input type="hidden" name="_promotion_build_id" value="{{ $build->id }}">
+        <x-signal.ui.input type="hidden" name="_promotion_build_id" value="{{ $build->id }}" :restore="false" />
         <label class="block">
             <span class="ui-label">{{ __('Target environment') }}</span>
-            <select name="target_environment_id" required class="ui-input">
+            <x-signal.ui.select name="target_environment_id" required class="ui-input">
                 <option value="">{{ __('Choose target') }}</option>
                 @foreach($targets as $target)
                     <option value="{{ $target->id }}" @selected((string) old('target_environment_id') === (string) $target->id)>{{ $target->name }}</option>
                 @endforeach
-            </select>
+            </x-signal.ui.select>
             <x-forms.errors name="target_environment_id" />
         </label>
         <label class="block">
             <span class="ui-label">{{ __('Change ticket or release note') }}</span>
-            <input name="promotion_note" value="{{ old('promotion_note') }}" maxlength="2000" class="ui-input" placeholder="{{ __('Optional release note') }}">
+            <x-signal.ui.input name="promotion_note" value="{{ old('promotion_note') }}" maxlength="2000" class="ui-input" placeholder="{{ __('Optional release note') }}" :restore="false" />
             <x-forms.errors name="promotion_note" />
         </label>
-        <x-ui.button type="submit" variant="primary">{{ __('Promote') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Promote') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

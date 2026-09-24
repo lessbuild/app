@@ -13,7 +13,7 @@
                 {{ str($incident->severity)->headline() }} · {{ str($incident->category)->headline() }} #{{ $incident->resource_id }} · {{ trans_choice(':count occurrence|:count occurrences', $incident->occurrences, ['count' => $incident->occurrences]) }}
             </p>
         </div>
-        <x-ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-ui.badge>
+        <x-signal.ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-signal.ui.badge>
     </div>
 
     <p class="ui-panel bg-surface-muted p-4 text-sm leading-6 text-ink">{{ $incident->summary }}</p>
@@ -33,9 +33,9 @@
     </section>
 
     @if ($incident->resolution)
-        <section class="ui-panel bg-surface-muted p-4" aria-labelledby="operational-incident-resolution-heading">
+        <x-signal.ui.panel as="section" class="ui-panel bg-surface-muted p-4" aria-labelledby="operational-incident-resolution-heading">
             <h4 id="operational-incident-resolution-heading" class="ui-eyebrow">{{ __('Resolution') }}</h4>
             <p class="mt-2 whitespace-pre-wrap break-words text-sm text-ink">{{ $incident->resolution }}</p>
-        </section>
+        </x-signal.ui.panel>
     @endif
 </div>

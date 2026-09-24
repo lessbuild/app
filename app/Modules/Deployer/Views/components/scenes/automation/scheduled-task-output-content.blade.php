@@ -14,13 +14,13 @@
             <h3 class="mt-1 text-xl font-extrabold text-ink">{{ $task->name }}</h3>
             <p class="mt-1 text-sm text-muted">{{ $task->environment->project->name }} · {{ $task->environment->name }}</p>
         </div>
-        <x-ui.badge :tone="$statusTone">{{ $run->status }}</x-ui.badge>
+        <x-signal.ui.badge :tone="$statusTone">{{ $run->status }}</x-signal.ui.badge>
     </div>
 
     <dl class="grid gap-3 sm:grid-cols-3">
-        <x-ui.stat class="ui-panel" :label="__('Queued')" :value="$run->created_at?->diffForHumans() ?? __('Not recorded')" :description="__('When this run was queued.')" />
-        <x-ui.stat class="ui-panel" :label="__('Finished')" :value="$run->finished_at?->diffForHumans() ?? __('Not finished')" :description="__('When the remote command completed.')" />
-        <x-ui.stat class="ui-panel" :label="__('Duration')" :value="$run->duration_ms !== null ? number_format($run->duration_ms).' ms' : __('Not recorded')" :description="__('Recorded remote execution time.')" />
+        <x-signal.ui.stat class="ui-panel" :label="__('Queued')" :value="$run->created_at?->diffForHumans() ?? __('Not recorded')" :description="__('When this run was queued.')" />
+        <x-signal.ui.stat class="ui-panel" :label="__('Finished')" :value="$run->finished_at?->diffForHumans() ?? __('Not finished')" :description="__('When the remote command completed.')" />
+        <x-signal.ui.stat class="ui-panel" :label="__('Duration')" :value="$run->duration_ms !== null ? number_format($run->duration_ms).' ms' : __('Not recorded')" :description="__('Recorded remote execution time.')" />
     </dl>
 
     <div>
@@ -29,7 +29,7 @@
                 <h4 class="font-bold text-ink">{{ __('Retained output') }}</h4>
                 <p class="mt-1 text-xs text-muted">{{ __('Output is encrypted at rest and shown only to authorized workspace members.') }}</p>
             </div>
-            <x-ui.button :href="route('automation.task-runs.output', $run)" variant="secondary">{{ __('Open raw output') }}</x-ui.button>
+            <x-signal.ui.button :href="route('automation.task-runs.output', $run)" variant="secondary">{{ __('Open raw output') }}</x-signal.ui.button>
         </div>
         @if ($run->output !== null && $run->output !== '')
             <pre class="ui-console ui-console-output mt-3 max-h-[28rem] overflow-auto whitespace-pre-wrap break-words p-4" data-task-run-output-text>{{ $run->output }}</pre>

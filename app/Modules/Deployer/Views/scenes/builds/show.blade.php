@@ -9,9 +9,9 @@
         :description="$build->repository->name"
     >
         <x-slot:buttons>
-            <x-ui.button :href="route('repositories.show', $build->repository)" variant="primary">
+            <x-signal.ui.button :href="route('repositories.show', $build->repository)" variant="primary">
                 {{ __('View repository') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </x-slot:buttons>
     </x-layouts.partials.heading>
 

@@ -18,39 +18,36 @@
 
         <label class="block">
             <span class="ui-label">{{ __('Name') }}</span>
-            <input
+            <x-signal.ui.input
                 class="ui-input"
                 name="name"
                 type="text"
                 autocomplete="name"
                 value="{{ old('name', auth()->user()->name) }}"
-                required
-            >
+                required :restore="false" />
         </label>
         <x-forms.errors name="name" bag="profile" />
 
         <label class="block">
             <span class="ui-label">{{ __('Email') }}</span>
-            <input
+            <x-signal.ui.input
                 class="ui-input"
                 name="email"
                 type="email"
                 autocomplete="email"
                 value="{{ old('email', auth()->user()->email) }}"
-                required
-            >
+                required :restore="false" />
         </label>
         <x-forms.errors name="email" bag="profile" />
 
         @if (auth()->user()->hasLocalPassword())
             <label class="block">
                 <span class="ui-label">{{ __('Current password') }}</span>
-                <input
+                <x-signal.ui.input
                     class="ui-input"
                     name="current_password"
                     type="password"
-                    autocomplete="current-password"
-                >
+                    autocomplete="current-password" :restore="false" />
             </label>
             <p class="text-sm text-muted">
                 {{ __('Required only when changing your email address. Other browser sessions will be logged out after the change.') }}
@@ -58,6 +55,6 @@
             <x-forms.errors name="current_password" bag="profile" />
         @endif
 
-        <x-ui.button type="submit" variant="primary">{{ __('Save profile') }}</x-ui.button>
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Save profile') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>

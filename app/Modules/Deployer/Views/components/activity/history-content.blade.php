@@ -13,17 +13,17 @@
         <span class="text-xs text-muted">{{ trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']]) }}</span>
     </div>
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="workspace-activity-insights"
         class="mt-5"
         :summary="trans_choice(':count matching event|:count matching events', $metrics['total'], ['count' => $metrics['total']])"
     >
         <dl class="ui-insight-grid grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-            <x-ui.stat class="ui-card" :label="__('Events')" :value="$metrics['total']" :description="__('Owner-scoped events in this workspace.')" />
-            <x-ui.stat class="ui-card" :label="__('Deployments')" :value="$metrics['deployments']" :description="__('Matching deployment events.')" />
-            <x-ui.stat class="ui-card" :label="__('Latest event')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Events')" :value="$metrics['total']" :description="__('Owner-scoped events in this workspace.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Deployments')" :value="$metrics['deployments']" :description="__('Matching deployment events.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Latest event')" :value="$metrics['latest_at']?->diffForHumans() ?? __('Not available')" :description="$metrics['latest_at']?->toDayDateTimeString() ?? __('No matching event recorded.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     <div class="mt-5">
         <x-activity-feed
@@ -36,9 +36,9 @@
     <div class="mt-4 flex flex-wrap items-center justify-between gap-3">
         <div class="text-sm">{{ $events->links() }}</div>
         <div class="flex flex-wrap gap-3">
-            <x-ui.button :href="$fullPageUrl" variant="secondary">{{ __('Open full activity') }}</x-ui.button>
+            <x-signal.ui.button :href="$fullPageUrl" variant="secondary">{{ __('Open full activity') }}</x-signal.ui.button>
             @if ($auditAvailable)
-                <x-ui.button :href="$exportUrl" variant="ghost">{{ __('Export CSV') }}</x-ui.button>
+                <x-signal.ui.button :href="$exportUrl" variant="ghost">{{ __('Export CSV') }}</x-signal.ui.button>
             @endif
         </div>
     </div>

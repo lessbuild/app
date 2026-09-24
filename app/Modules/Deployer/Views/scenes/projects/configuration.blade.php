@@ -6,76 +6,76 @@
             $recordedDependencyCount = $environmentOverview->sum(fn ($environment) => count($environment->dependencies));
             $maskedSecretCount = $environmentOverview->sum(fn ($environment) => $environment->secretCount);
         @endphp
-        <x-ui.insights
+        <x-signal.ui.insights
             id="configuration-insights"
             class="mt-6"
             :summary="__('Recorded local state for :count environments', ['count' => $environmentOverview->count()])"
         >
             <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Environments')"
                     :value="$environmentOverview->count()"
                     :description="__('Environment records in this application.')"
                 />
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Dependencies')"
                     :value="$recordedDependencyCount"
                     :description="__('Recorded processes, resources and deployments.')"
                 />
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Masked secrets')"
                     :value="$maskedSecretCount"
                     :description="__('Secret values remain hidden from this overview.')"
                 />
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Recent receipts')"
                     :value="$recentApplications->count()"
                     :description="__('Recent local configuration applications available for recovery.')"
                 />
             </dl>
-        </x-ui.insights>
+        </x-signal.ui.insights>
     @endif
     @if($errors->any())
-        <x-ui.alert tone="danger" class="mt-4" role="alert">
+        <x-signal.ui.alert tone="danger" class="mt-4" role="alert">
             <ul class="list-disc space-y-1 pl-5">
                 @foreach($errors->all() as $error)
                     <li>{{ $error }}</li>
                 @endforeach
             </ul>
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
     @if(isset($reviewError))
-        <x-ui.alert tone="danger" class="mt-6" role="alert">
+        <x-signal.ui.alert tone="danger" class="mt-6" role="alert">
             <h2 class="font-bold text-ink">{{ __('This review cannot be applied') }}</h2>
             <p class="mt-3 text-muted">{{ $reviewError }}</p>
             <p class="mt-3 text-muted">{{ __('No changes were applied. Start a new review using the current configuration.') }}</p>
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @elseif($application)
-        <x-ui.card class="mt-6 p-5 sm:p-6">
+        <x-signal.ui.card class="mt-6 p-5 sm:p-6">
             <h2 class="font-bold text-ink">{{ __('Application receipt') }} #{{ $application->id }}</h2>
             <p class="mt-3 text-muted">{{ $application->status }}</p>
             <p class="mt-3 text-muted">{{ __('Local configuration is saved. Only a succeeded deployment confirms remote completion.') }}</p>
             @foreach($application->relatedOperations()->with(['retry', 'build'])->orderBy('id')->get() as $operation)
                 <div class="mt-4 border-t border-line pt-3">
-                    <p class="flex flex-wrap items-center gap-2 text-muted"><span>{{ $operation->environment_slug }}</span><x-ui.badge>{{ $operation->status }}</x-ui.badge>@if($operation->failure_code)<span>· {{ $operation->failure_code }}</span>@endif</p>
+                    <p class="flex flex-wrap items-center gap-2 text-muted"><span>{{ $operation->environment_slug }}</span><x-signal.ui.badge>{{ $operation->status }}</x-signal.ui.badge>@if($operation->failure_code)<span>· {{ $operation->failure_code }}</span>@endif</p>
                     @if($operation->retry)<p class="mt-2 text-sm text-muted">{{ __('Retried by operation') }} #{{ $operation->retry->id }}</p>
                     @elseif((int) $operation->application->review->requested_by === (int) auth()->id() && (($operation->status === 'failed' && $operation->build_id) || $operation->status === 'canceled'))
                         <p class="mt-2 text-sm text-muted">{{ __('Retry creates one replacement deployment using the exact failed configuration and secret snapshot. Current repository, configuration, access and deployment gates are checked again. Required approval must be granted again.') }}</p>
-                        <form method="POST" action="{{ route('projects.configuration.retry', [$project, $review, $operation]) }}" class="mt-3">@csrf<x-ui.button type="submit" variant="primary">{{ $operation->status === 'canceled' ? __('Retry canceled deployment') : __('Retry failed deployment') }}</x-ui.button></form>
+                        <form method="POST" action="{{ route('projects.configuration.retry', [$project, $review, $operation]) }}" class="mt-3">@csrf<x-signal.ui.button type="submit" variant="primary">{{ $operation->status === 'canceled' ? __('Retry canceled deployment') : __('Retry failed deployment') }}</x-signal.ui.button></form>
                     @endif
                     @if(! $operation->retry && ! in_array($operation->status, ['succeeded', 'failed', 'canceled'], true) && (! $operation->build_id || in_array($operation->build?->status, ['queued', 'awaiting_approval'], true)))
                         <p class="mt-2 text-sm text-muted">{{ __('Cancel stops this pending deployment intent. Saved local configuration and remote services are preserved.') }}</p>
-                        <form method="POST" action="{{ route('projects.configuration.cancel', [$project, $review, $operation]) }}" class="mt-3">@csrf<x-ui.button type="submit" variant="secondary">{{ __('Cancel pending deployment') }}</x-ui.button></form>
+                        <form method="POST" action="{{ route('projects.configuration.cancel', [$project, $review, $operation]) }}" class="mt-3">@csrf<x-signal.ui.button type="submit" variant="secondary">{{ __('Cancel pending deployment') }}</x-signal.ui.button></form>
                     @endif
                 </div>
             @endforeach
-        </x-ui.card>
+        </x-signal.ui.card>
     @elseif($review)
-        <x-ui.card class="mt-6 p-5 sm:p-6">
+        <x-signal.ui.card class="mt-6 p-5 sm:p-6">
             <h2 class="font-bold text-ink">{{ __('Review changes') }}</h2>
             <p class="mt-2 text-muted">{{ __('Omitted objects are preserved. Resource detachment does not delete remote data.') }}</p>
             @if(collect($plan['changes'])->contains(fn ($change) => $change['kind'] === 'environment' && $change['action'] === 'remove'))
-                <x-ui.alert tone="warning" class="mt-3" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</x-ui.alert>
+                <x-signal.ui.alert tone="warning" class="mt-3" role="note">{{ __('Environment removal deletes the listed local configuration and secret-version history only. Websites, servers, running services and remote data remain untouched; this does not stop workloads or reduce provider charges.') }}</x-signal.ui.alert>
             @endif
             <div class="mt-4 divide-y divide-line rounded-card border border-line" aria-label="{{ __('Reviewed configuration changes') }}">
                 @foreach($plan['changes'] as $change)
@@ -85,7 +85,7 @@
                                 <h3 class="font-semibold text-ink">{{ $change['name'] }}</h3>
                                 <p class="mt-1 text-xs text-muted">{{ $change['environment'] }} / {{ $change['kind'] }}</p>
                             </div>
-                            <x-ui.badge>{{ ucfirst(str_replace('_', ' ', $change['action'])) }}</x-ui.badge>
+                            <x-signal.ui.badge>{{ ucfirst(str_replace('_', ' ', $change['action'])) }}</x-signal.ui.badge>
                         </div>
                         @if($change['kind'] === 'deployment')<p class="mt-3 text-xs text-muted">{{ ($change['requires_approval'] ?? false) ? __('Approval required before deployment') : __('Queued after local apply; not immediate remote success') }}</p>@endif
                         @if($change['action'] === 'detach')<p class="mt-3 text-xs text-muted">{{ __('Remote data preserved') }}</p>@endif
@@ -95,11 +95,11 @@
             </div>
             <p class="mt-3 text-xs text-muted">{{ __('Command and credential values are hidden. Fields identify the settings under review, not a plaintext diff.') }}</p>
             <p class="mt-4 text-muted">{{ __('Expires') }}: {{ $review->expires_at->toIso8601String() }}</p>
-            @if($plan['apply_available'])<form method="POST" action="{{ route('projects.configuration.apply', [$project, $review]) }}" class="mt-4">@csrf<x-ui.button type="submit" variant="primary">{{ __('Apply reviewed configuration') }}</x-ui.button></form>@else<p class="mt-4 text-muted">{{ __('Explicit adoption is required. Submit an updated document for a new review.') }}</p>@endif
-        </x-ui.card>
+            @if($plan['apply_available'])<form method="POST" action="{{ route('projects.configuration.apply', [$project, $review]) }}" class="mt-4">@csrf<x-signal.ui.button type="submit" variant="primary">{{ __('Apply reviewed configuration') }}</x-signal.ui.button></form>@else<p class="mt-4 text-muted">{{ __('Explicit adoption is required. Submit an updated document for a new review.') }}</p>@endif
+        </x-signal.ui.card>
     @else
         @if($recentApplications->isNotEmpty())
-            <x-ui.card class="mt-6 p-5">
+            <x-signal.ui.card class="mt-6 p-5">
                 <h2 class="font-bold text-ink">{{ __('Recent application receipts') }}</h2>
                 <p class="mt-2 text-muted">{{ __('Open a receipt to refresh deployment status and recover a pending or failed operation.') }}</p>
                 <ul class="mt-3 space-y-2">
@@ -107,15 +107,15 @@
                         <li><a class="text-ink underline" href="{{ route('projects.configuration.review', [$project, $receipt->configuration_review_id]) }}">{{ __('Application receipt') }} #{{ $receipt->id }} · {{ $receipt->status }}</a></li>
                     @endforeach
                 </ul>
-            </x-ui.card>
+            </x-signal.ui.card>
         @endif
-        <x-ui.card class="mt-6 p-5" aria-labelledby="environment-overview-heading">
+        <x-signal.ui.card class="mt-6 p-5" aria-labelledby="environment-overview-heading">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2 id="environment-overview-heading" class="font-bold text-ink">{{ __('Current environment overview') }}</h2>
                     <p class="mt-2 text-sm text-muted">{{ __('Recorded local state for this application. It does not query or claim to represent remote provider drift.') }}</p>
                 </div>
-                <x-ui.badge>{{ trans_choice(':count environment|:count environments', $environmentOverview->count(), ['count' => $environmentOverview->count()]) }}</x-ui.badge>
+                <x-signal.ui.badge>{{ trans_choice(':count environment|:count environments', $environmentOverview->count(), ['count' => $environmentOverview->count()]) }}</x-signal.ui.badge>
             </div>
             @if($environmentOverview->isNotEmpty())
                 <div class="mt-4 space-y-3" aria-label="{{ __('Recorded environment dependencies') }}">
@@ -123,10 +123,10 @@
                         <article data-configuration-environment class="rounded-card border border-line bg-surface-muted p-4">
                             <div class="flex flex-wrap items-start justify-between gap-3">
                                 <div>
-                                    <h3 class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ $environment->name }} @if($environment->isProtected)<x-ui.badge tone="accent">{{ __('Protected') }}</x-ui.badge>@endif</h3>
+                                    <h3 class="flex flex-wrap items-center gap-2 font-bold text-ink">{{ $environment->name }} @if($environment->isProtected)<x-signal.ui.badge tone="accent">{{ __('Protected') }}</x-signal.ui.badge>@endif</h3>
                                     <p class="mt-1 text-xs text-muted">{{ ucfirst($environment->type) }} · {{ $environment->branch }} · {{ $environment->status }}</p>
                                 </div>
-                                <form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><input type="hidden" name="environment_id" value="{{ $environment->id }}"><x-ui.button type="submit" variant="secondary">{{ __('Observe provider') }}</x-ui.button></form>
+                                <form method="GET" action="{{ route('projects.configuration.observe', $project) }}"><x-signal.ui.input type="hidden" name="environment_id" value="{{ $environment->id }}" :restore="false" /><x-signal.ui.button type="submit" variant="secondary">{{ __('Observe provider') }}</x-signal.ui.button></form>
                             </div>
                             <dl class="mt-4 grid gap-3 text-sm sm:grid-cols-2 xl:grid-cols-4">
                                 <div><dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Runtime') }}</dt><dd class="mt-1 text-ink">{{ ucfirst($environment->runtimeType) }}</dd></div>
@@ -143,14 +143,14 @@
                 @php($fromEnvironmentId = isset($comparison) ? $comparison->from->id : (int) request()->query('from_environment_id'))
                 @php($toEnvironmentId = isset($comparison) ? $comparison->to->id : (int) request()->query('to_environment_id'))
                 <form method="GET" action="{{ route('projects.configuration.compare', $project) }}" class="mt-5 grid gap-3 border-t border-line pt-4 sm:grid-cols-[1fr_1fr_auto] sm:items-end">
-                    <label><span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Compare from') }}</span><select name="from_environment_id" class="ui-input w-full" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($fromEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
-                    <label><span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Compare to') }}</span><select name="to_environment_id" class="ui-input w-full" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($toEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</select></label>
-                    <x-ui.button type="submit" variant="secondary">{{ __('Compare recorded state') }}</x-ui.button>
+                    <label><span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Compare from') }}</span><x-signal.ui.select name="from_environment_id" class="ui-input w-full" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($fromEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</x-signal.ui.select></label>
+                    <label><span class="mb-1 block text-xs font-bold uppercase text-muted">{{ __('Compare to') }}</span><x-signal.ui.select name="to_environment_id" class="ui-input w-full" required>@foreach($environmentOverview as $environment)<option value="{{ $environment->id }}" @selected($toEnvironmentId === $environment->id)>{{ $environment->name }}</option>@endforeach</x-signal.ui.select></label>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Compare recorded state') }}</x-signal.ui.button>
                 </form>
             @endif
-        </x-ui.card>
+        </x-signal.ui.card>
         @isset($observation)
-            <x-ui.card class="mt-6 p-5" aria-labelledby="environment-observation-heading">
+            <x-signal.ui.card class="mt-6 p-5" aria-labelledby="environment-observation-heading">
                 <h2 id="environment-observation-heading" class="font-bold text-ink">{{ __('Observed provider state') }}</h2>
                 <p class="mt-2 text-sm text-muted">{{ __('One-time read for :environment through :provider. This is observed remote state, separate from desired configuration and :app’s recorded local state.', ['environment' => $observation->environmentName, 'provider' => $observation->providerName, 'app' => config('app.name')]) }}</p>
                 <p class="mt-3 text-sm text-muted">{{ $observation->message }}</p>
@@ -162,7 +162,7 @@
                             <article data-configuration-observation-field class="p-4">
                                 <div class="flex flex-wrap items-start justify-between gap-3">
                                     <h3 class="font-semibold text-ink">{{ $field['field'] }}</h3>
-                                    <x-ui.badge :tone="$field['status'] === 'match' ? 'success' : 'warning'">{{ $field['status'] === 'match' ? __('Matches') : __('Different') }}</x-ui.badge>
+                                    <x-signal.ui.badge :tone="$field['status'] === 'match' ? 'success' : 'warning'">{{ $field['status'] === 'match' ? __('Matches') : __('Different') }}</x-signal.ui.badge>
                                 </div>
                                 <dl class="mt-3 grid gap-3 text-sm sm:grid-cols-2"><div><dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Recorded locally') }}</dt><dd class="mt-1 text-muted">{{ $field['recorded'] }}</dd></div><div><dt class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Observed at provider') }}</dt><dd class="mt-1 text-muted">{{ $field['observed'] }}</dd></div></dl>
                             </article>
@@ -170,10 +170,10 @@
                     </div>
                     @if($observation->hasDifferences())<p class="mt-3 text-xs text-muted">{{ __('A difference is informational only. Corrective changes must go through the existing configuration review and apply workflow.') }}</p>@endif
                 @endif
-            </x-ui.card>
+            </x-signal.ui.card>
         @endisset
         @isset($comparison)
-            <x-ui.card class="mt-6 p-5" aria-labelledby="environment-comparison-heading">
+            <x-signal.ui.card class="mt-6 p-5" aria-labelledby="environment-comparison-heading">
                 <h2 id="environment-comparison-heading" class="font-bold text-ink">{{ __('Recorded environment comparison') }}</h2>
                 <p class="mt-2 text-sm text-muted">{{ __('This compares :app’s recorded local metadata only. It does not query provider state or prove remote drift. Desired configuration changes still require a review and apply.', ['app' => config('app.name')]) }}</p>
                 <p class="mt-3 text-sm font-bold text-ink">{{ $comparison->from->name }} <span class="font-normal text-muted">→</span> {{ $comparison->to->name }}</p>
@@ -190,7 +190,7 @@
                     </div>
                     <p class="mt-3 text-xs text-muted">{{ __('Only non-secret metadata is shown. Executable commands, variable keys and values, and encrypted resource configuration are excluded.') }}</p>
                 @endif
-            </x-ui.card>
+            </x-signal.ui.card>
         @endisset
         <details class="ui-card mt-6 p-5">
             <summary class="cursor-pointer font-bold text-ink">{{ __('Version 2 authoring guide') }}</summary>
@@ -221,10 +221,10 @@
             </div>
         </details>
         <form method="POST" action="{{ route('projects.configuration.store', $project) }}" class="mt-6 space-y-5">@csrf
-            <label class="block"><span class="ui-label">{{ __('Version 2 YAML document') }}</span><textarea required name="document" rows="16" class="ui-input font-mono" spellcheck="false"></textarea></label>
-            <label class="block"><span class="ui-label">{{ __('Workspace bindings (JSON)') }}</span><textarea required name="bindings" rows="5" class="ui-input font-mono" spellcheck="false" placeholder='{"placements":{"site":1},"secrets":{},"repositories":{}}'></textarea></label>
+            <label class="block"><span class="ui-label">{{ __('Version 2 YAML document') }}</span><x-signal.ui.textarea required name="document" rows="16" class="ui-input font-mono" spellcheck="false" :restore="false"></x-signal.ui.textarea></label>
+            <label class="block"><span class="ui-label">{{ __('Workspace bindings (JSON)') }}</span><x-signal.ui.textarea required name="bindings" rows="5" class="ui-input font-mono" spellcheck="false" placeholder='{"placements":{"site":1},"secrets":{},"repositories":{}}' :restore="false"></x-signal.ui.textarea></label>
             <p class="text-muted">{{ __('Use existing website, secret-variable and repository IDs from this workspace. Do not paste secret values. Inputs are not retained after a validation error.') }}</p>
-            <x-ui.button type="submit" variant="primary">{{ __('Create review') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Create review') }}</x-signal.ui.button>
         </form>
     @endif
     <a class="mt-6 inline-block text-muted" href="{{ route('projects.configuration.create', $project) }}">{{ __('Start a new review') }}</a>

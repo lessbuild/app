@@ -9,19 +9,19 @@
             <h3 class="mt-1 text-xl font-extrabold text-ink">{{ __('Recent command history') }}</h3>
             <p class="mt-1 text-sm text-muted">{{ __('Review execution state and retained output without leaving this server.') }}</p>
         </div>
-        <x-ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-ui.button>
+        <x-signal.ui.button :href="$historyUrl" variant="secondary">{{ __('Open full history') }}</x-signal.ui.button>
     </div>
 
-    <x-ui.insights id="server-command-history-dialog-insights" :summary="trans_choice(':count matching command|:count matching commands', $metrics['total'], ['count' => $metrics['total']])">
+    <x-signal.ui.insights id="server-command-history-dialog-insights" :summary="trans_choice(':count matching command|:count matching commands', $metrics['total'], ['count' => $metrics['total']])">
         <dl class="ui-insight-grid grid gap-3 sm:grid-cols-3">
-            <x-ui.stat class="ui-card" :label="__('Commands')" :value="$metrics['total']" :description="__('Matching server history.')" />
-            <x-ui.stat class="ui-card" :label="__('Active')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
-            <x-ui.stat class="ui-card" :label="__('Output retained')" :value="$metrics['output']" :description="__('Output available to download.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Commands')" :value="$metrics['total']" :description="__('Matching server history.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Active')" :value="$metrics['active']" :description="__('Queued or running commands.')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Output retained')" :value="$metrics['output']" :description="__('Output available to download.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     @if ($executions->isEmpty())
-        <x-ui.empty-state :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run on this server yet')" />
+        <x-signal.ui.empty-state :title="array_filter($filters, fn ($value) => $value !== null) ? __('No commands match these filters') : __('No commands have been run on this server yet')" />
     @else
         <div class="space-y-3" aria-label="{{ __('Server command history') }}">
             @foreach ($executions as $execution)
@@ -37,7 +37,7 @@
                             <p class="ui-eyebrow text-[0.65rem]">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
                             <code class="mt-2 block max-h-24 overflow-auto break-all rounded-card border border-line bg-surface-muted px-3 py-2 font-mono text-xs text-ink">{{ $execution->command }}</code>
                         </div>
-                        <x-ui.badge :tone="$statusTone">{{ $execution->status }}</x-ui.badge>
+                        <x-signal.ui.badge :tone="$statusTone">{{ $execution->status }}</x-signal.ui.badge>
                     </div>
                     <div class="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
                         <span>{{ __('Queued :time', ['time' => $execution->created_at->diffForHumans()]) }}</span>
@@ -48,7 +48,7 @@
                     </div>
                     @if ($execution->output !== null)
                         <div class="mt-3">
-                            <x-ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm">{{ __('Download output') }}</x-ui.button>
+                            <x-signal.ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm">{{ __('Download output') }}</x-signal.ui.button>
                         </div>
                     @endif
                 </article>

@@ -2,9 +2,9 @@
     <x-layouts.partials.breadcrumbs :route="route('recipes.index')" :title="__('Back to recipes')" />
 
     @if (session('status'))
-        <x-ui.alert tone="success" class="my-4">
+        <x-signal.ui.alert tone="success" class="my-4">
             {{ session('status') }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
     @if ($recipe->source)
@@ -19,11 +19,11 @@
             @if ($recipe->hasGalleryUpdate())
                 <p class="mt-1">{{ __('A newer gallery revision is available. Inspect it before replacing your private snapshot.') }}</p>
                 <div class="mt-3 flex flex-wrap gap-3">
-                    <x-ui.button href="{{ route('gallery.compare', ['recipe' => $recipe->source, 'copy' => $recipe]) }}" variant="secondary">{{ __('Review Changes') }}</x-ui.button>
+                    <x-signal.ui.button href="{{ route('gallery.compare', ['recipe' => $recipe->source, 'copy' => $recipe]) }}" variant="secondary">{{ __('Review Changes') }}</x-signal.ui.button>
                     @if (! $recipe->is_published)
                         <form method="POST" action="{{ route('recipes.gallery.refresh', $recipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with the reviewed gallery version?', ['recipe' => $recipe->name])) }})">
                             @csrf
-                            <x-ui.button type="submit" variant="primary">{{ __('Update Private Copy') }}</x-ui.button>
+                            <x-signal.ui.button type="submit" variant="primary">{{ __('Update Private Copy') }}</x-signal.ui.button>
                         </form>
                     @else
                         <span class="text-xs">{{ __('Unpublish this copy before refreshing it.') }}</span>

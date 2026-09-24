@@ -17,7 +17,7 @@
 @php($serverCreateContentUrl ??= route('dialogs.create', ['resource' => 'server', 'return_to' => $dialogReturnUrl]))
 
 @if ($servers->isEmpty())
-    <aside class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">
+    <x-signal.ui.panel as="aside" class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-primary)" role="status">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p>{{ __('You need an active application server with MySQL before you can add a website.') }}</p>
             <a
@@ -33,15 +33,15 @@
                 <span aria-hidden="true">→</span>
             </a>
         </div>
-    </aside>
+    </x-signal.ui.panel>
 @endif
 
 @if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
-    <x-ui.alert tone="warning" class="m-5">
+    <x-signal.ui.alert tone="warning" class="m-5">
         {{ __('We could not confirm this workspace’s Deployer plan and website allowance. Retry shortly or contact support.') }}
-    </x-ui.alert>
+    </x-signal.ui.alert>
 @elseif (! $planUsage['allowed'])
-    <aside class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
+    <x-signal.ui.panel as="aside" class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-warning)" role="status">
         <div class="flex flex-wrap items-center justify-between gap-3">
             <p>{{ __('Your plan’s website limit has been reached.') }}</p>
             <a data-turbo="false" href="{{ route('billing.index') }}" class="ui-link shrink-0 font-semibold">
@@ -49,18 +49,18 @@
                 <span aria-hidden="true">→</span>
             </a>
         </div>
-    </aside>
+    </x-signal.ui.panel>
 @endif
 
 @error('plan')
-    <aside class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
+    <x-signal.ui.panel as="aside" class="ui-panel m-5 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-danger)" role="alert">
         {{ $message }} <a class="ui-link font-bold" href="{{ route('billing.index') }}">{{ __('View plans') }}</a>
-    </aside>
+    </x-signal.ui.panel>
 @enderror
 
 <form action="{{ $websiteStoreUrl }}" method="POST">
     @csrf
-    <input type="hidden" name="_website_form" value="1">
+    <x-signal.ui.input type="hidden" name="_website_form" value="1" :restore="false" />
     <x-scenes.websites._form :servers="$servers" :field-prefix="$fieldPrefix" />
 
     <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-6">

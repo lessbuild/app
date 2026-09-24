@@ -76,7 +76,7 @@
             </p>
         </div>
         <nav class="flex shrink-0 flex-wrap items-center gap-3 sm:justify-end" aria-label="{{ __('Dashboard quick actions') }}">
-            <x-ui.button
+            <x-signal.ui.button
                 :href="$dashboardServerCreateUrl"
                 data-modal-trigger="server-create-dialog"
                 aria-controls="server-create-dialog"
@@ -84,8 +84,8 @@
                 variant="secondary"
             >
                 {{ __('Create server') }}
-            </x-ui.button>
-            <x-ui.button
+            </x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$dashboardWebsiteCreateUrl"
                 data-modal-trigger="website-create-dialog"
                 aria-controls="website-create-dialog"
@@ -93,8 +93,8 @@
                 variant="primary"
             >
                 {{ __('Add website') }}
-            </x-ui.button>
-            <x-ui.button
+            </x-signal.ui.button>
+            <x-signal.ui.button
                 :href="$dashboardPreferencesDialogUrl"
                 data-modal-trigger="dashboard-preferences-dialog"
                 aria-controls="dashboard-preferences-dialog"
@@ -102,7 +102,7 @@
                 variant="ghost"
             >
                 {{ __('Customize') }}
-            </x-ui.button>
+            </x-signal.ui.button>
         </nav>
     </header>
 
@@ -119,7 +119,7 @@
 
     @include('dashboard._quick-actions')
 
-    <details
+    <x-signal.ui.panel as="details"
         id="dashboard-operational-overview"
         class="ui-responsive-details group ui-panel mb-12 overflow-hidden"
         open
@@ -183,11 +183,11 @@
             </article>
         </div>
         </div>
-    </details>
+    </x-signal.ui.panel>
 
     @php($healthOperational = $canManageSystemHealth ? $systemHealth['passed'] : $platformStatus['operational'])
     @if(in_array('status', $dashboardWidgets, true))
-    <section @class([
+    <x-signal.ui.panel as="section" @class([
         'ui-panel mb-12 p-5',
         'ui-panel--success' => $healthOperational,
         'ui-panel--danger' => ! $healthOperational,
@@ -227,11 +227,11 @@
                 <a href="{{ route('platform-status.show') }}" class="ui-link text-sm">{{ __('View public status') }}</a>
             @endif
         </div>
-    </section>
+    </x-signal.ui.panel>
     @endif
 
     @if(in_array('providers', $dashboardWidgets, true))
-    <section class="ui-panel mb-12 p-5">
+    <x-signal.ui.panel as="section" class="ui-panel mb-12 p-5">
         <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div>
                 <p class="ui-eyebrow">{{ __('Integrations') }}</p>
@@ -248,16 +248,16 @@
             ] as $health)
                 <a href="{{ route('providers.index', ['connection' => $health['status']]) }}" class="ui-card ui-card--interactive flex items-center justify-between gap-3 p-4">
                     <span class="text-2xl font-extrabold tracking-tight text-ink">{{ $health['count'] }}</span>
-                    <x-ui.badge :tone="$health['tone']">{{ $health['label'] }}</x-ui.badge>
+                    <x-signal.ui.badge :tone="$health['tone']">{{ $health['label'] }}</x-signal.ui.badge>
                 </a>
             @endforeach
         </div>
-    </section>
+    </x-signal.ui.panel>
     @endif
 
     @php($provisioningTotal = array_sum($provisioningCounts))
     @if ($provisioningTotal > 0)
-        <section class="ui-panel ui-panel--warning mb-12 p-5">
+        <x-signal.ui.panel as="section" class="ui-panel ui-panel--warning mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Resource lifecycle') }}</p>
@@ -321,12 +321,12 @@
                     {{ trans_choice(':count more resource is provisioning|:count more resources are provisioning', $provisioningTotal - $provisioningResources->count(), ['count' => $provisioningTotal - $provisioningResources->count()]) }}
                 </p>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @php($activeDeploymentTotal = array_sum($activeDeploymentCounts))
     @if ($activeDeploymentTotal > 0)
-        <section class="ui-panel mb-12 p-5" aria-labelledby="dashboard-deployment-timeline-title">
+        <x-signal.ui.panel as="section" class="ui-panel mb-12 p-5" aria-labelledby="dashboard-deployment-timeline-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Deployment timeline') }}</p>
@@ -393,12 +393,12 @@
                     {{ trans_choice(':count more active deployment|:count more active deployments', $activeDeploymentTotal - $activeDeployments->count(), ['count' => $activeDeploymentTotal - $activeDeployments->count()]) }}
                 </a>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @php($webhookDeliveryTotal = array_sum($webhookDeliveryCounts))
     @if ($webhookDeliveryTotal > 0)
-        <section class="ui-panel mb-12 p-5" aria-labelledby="dashboard-webhook-deliveries-title">
+        <x-signal.ui.panel as="section" class="ui-panel mb-12 p-5" aria-labelledby="dashboard-webhook-deliveries-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Repository activity') }}</p>
@@ -459,12 +459,12 @@
                     {{ trans_choice(':count more delivery is available in repository history|:count more deliveries are available in repository history', $webhookDeliveryTotal - $recentWebhookDeliveries->count(), ['count' => $webhookDeliveryTotal - $recentWebhookDeliveries->count()]) }}
                 </p>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @php($activeCommandTotal = array_sum($activeCommandCounts))
     @if ($activeCommandTotal > 0)
-        <section class="ui-panel mb-12 p-5" aria-labelledby="dashboard-active-commands-title">
+        <x-signal.ui.panel as="section" class="ui-panel mb-12 p-5" aria-labelledby="dashboard-active-commands-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Operations') }}</p>
@@ -529,11 +529,11 @@
                     {{ trans_choice(':count more active command is available in server history|:count more active commands are available in server history', $activeCommandTotal - $activeCommands->count(), ['count' => $activeCommandTotal - $activeCommands->count()]) }}
                 </a>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @if ($communityReportCount > 0)
-        <section class="ui-panel ui-panel--danger mb-12 p-5">
+        <x-signal.ui.panel as="section" class="ui-panel ui-panel--danger mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Community safety') }}</p>
@@ -583,11 +583,11 @@
                     {{ trans_choice(':count more reported recipe|:count more reported recipes', $reportedGalleryRecipeCount - $reportedGalleryRecipes->count(), ['count' => $reportedGalleryRecipeCount - $reportedGalleryRecipes->count()]) }}
                 </a>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     @if ($recipeUpdateCount > 0)
-        <section class="ui-panel ui-panel--warning mb-12 p-5">
+        <x-signal.ui.panel as="section" class="ui-panel ui-panel--warning mb-12 p-5">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div>
                     <p class="ui-eyebrow">{{ __('Maintenance') }}</p>
@@ -651,7 +651,7 @@
                     {{ trans_choice(':count more recipe update|:count more recipe updates', $recipeUpdateCount - $recipeUpdates->count(), ['count' => $recipeUpdateCount - $recipeUpdates->count()]) }}
                 </a>
             @endif
-        </section>
+        </x-signal.ui.panel>
     @endif
 
     <div class="grid grid-cols-1 gap-5 lg:grid-cols-2">
@@ -675,13 +675,13 @@
                     :description="__('Create a website to begin configuring deployments.')"
                 >
                     <x-slot:button>
-                        <x-ui.button
+                        <x-signal.ui.button
                             :href="$dashboardWebsiteCreateUrl"
                             data-modal-trigger="website-create-dialog"
                             aria-controls="website-create-dialog"
                             aria-expanded="{{ $dashboardWebsiteCreateOpen ? 'true' : 'false' }}"
                             variant="primary"
-                        >{{ __('Add website') }}</x-ui.button>
+                        >{{ __('Add website') }}</x-signal.ui.button>
                     </x-slot:button>
                 </x-lists.empty>
             @endforelse

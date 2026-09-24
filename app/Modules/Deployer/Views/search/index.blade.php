@@ -4,7 +4,7 @@
         :description="__('Find infrastructure, source control, recipes, and deployments across your account.')"
     />
 
-    <x-ui.card class="mt-8 p-4 sm:p-5" aria-labelledby="search-form-heading">
+    <x-signal.ui.card class="mt-8 p-4 sm:p-5" aria-labelledby="search-form-heading">
         <div class="mb-4">
             <p class="ui-eyebrow">{{ __('Workspace search') }}</p>
             <h2 id="search-form-heading" class="mt-1 text-lg font-bold text-ink">{{ __('Search account') }}</h2>
@@ -12,7 +12,7 @@
         <form method="GET" action="{{ route('search.index') }}">
             <label for="search-query" class="sr-only">{{ __('Search account') }}</label>
         <div class="mt-2 flex flex-wrap gap-3">
-            <input
+            <x-signal.ui.input
                 id="search-query"
                 name="q"
                 type="search"
@@ -20,12 +20,11 @@
                 value="{{ $query }}"
                 placeholder="{{ __('Name, URL, IP address, revision, or description') }}"
                 class="ui-input min-w-0 flex-1"
-                autofocus
-            >
-            <x-ui.button type="submit" variant="primary">{{ __('Search') }}</x-ui.button>
+                autofocus :restore="false" />
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Search') }}</x-signal.ui.button>
         </div>
         </form>
-    </x-ui.card>
+    </x-signal.ui.card>
 
     @if (($unavailable ?? []) !== [])
         <x-signal.ui.alert tone="warning" class="mt-6 text-sm leading-6">
@@ -47,35 +46,35 @@
             $moreResultCount = collect($groups)->filter(fn ($group) => $group['has_more'])->count();
         @endphp
 
-        <x-ui.insights
+        <x-signal.ui.insights
             id="search-insights"
             class="mt-6"
             :summary="trans_choice(':count result shown|:count results shown', $resultCount, ['count' => $resultCount])"
             :mobile-open="true"
         >
             <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Results')"
                     :value="$resultCount"
                     :description="__('Matching resources across the account.')"
                 />
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Categories')"
                     :value="$matchingGroupCount"
                     :description="__('Resource groups with a matching result.')"
                 />
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('More available')"
                     :value="$moreResultCount"
                     :description="__('Categories with additional matches.')"
                 />
-                <x-ui.stat
+                <x-signal.ui.stat
                     :label="__('Search term')"
                     :value="$query"
                     :description="__('Search stays scoped to your account.')"
                 />
             </dl>
-        </x-ui.insights>
+        </x-signal.ui.insights>
 
         @if ($resultCount === 0)
             <div class="mt-8">
@@ -93,7 +92,7 @@
                     @if ($group['results']->isNotEmpty())
                         <a href="#search-group-{{ $key }}" class="ui-filter-chip shrink-0">
                             <span>{{ $group['label'] }}</span>
-                            <x-ui.badge tone="neutral">{{ $group['results']->count() }}@if ($group['has_more'])+@endif</x-ui.badge>
+                            <x-signal.ui.badge tone="neutral">{{ $group['results']->count() }}@if ($group['has_more'])+@endif</x-signal.ui.badge>
                         </a>
                     @endif
                 @endforeach
@@ -101,10 +100,10 @@
             <div class="mt-6 grid gap-6 lg:grid-cols-2">
                 @foreach ($groups as $key => $group)
                     @if ($group['results']->isNotEmpty())
-                        <x-ui.card id="search-group-{{ $key }}" class="scroll-mt-6 p-5" aria-labelledby="search-group-heading-{{ $key }}">
+                        <x-signal.ui.card id="search-group-{{ $key }}" class="scroll-mt-6 p-5" aria-labelledby="search-group-heading-{{ $key }}">
                             <div class="mb-4 flex items-center justify-between gap-3">
                                 <h2 id="search-group-heading-{{ $key }}" class="text-lg font-semibold text-ink">{{ $group['label'] }}</h2>
-                                <x-ui.badge tone="neutral">{{ $group['results']->count() }}@if ($group['has_more'])+@endif</x-ui.badge>
+                                <x-signal.ui.badge tone="neutral">{{ $group['results']->count() }}@if ($group['has_more'])+@endif</x-signal.ui.badge>
                                 @if ($group['has_more'])
                                     <a href="{{ $group['more_url'] }}" class="ui-link text-sm">
                                         {{ __('View more') }}
@@ -121,7 +120,7 @@
                                     </a>
                                 @endforeach
                             </div>
-                        </x-ui.card>
+                        </x-signal.ui.card>
                     @endif
                 @endforeach
             </div>

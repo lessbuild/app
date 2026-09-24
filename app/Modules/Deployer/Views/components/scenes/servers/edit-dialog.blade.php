@@ -15,7 +15,7 @@
     <form action="{{ route('servers.update', $server) }}" method="POST" class="space-y-5">
         @csrf
         @method('PATCH')
-        <input type="hidden" name="_server_display_name_form" value="1">
+        <x-signal.ui.input type="hidden" name="_server_display_name_form" value="1" :restore="false" />
         <x-signal.ui.input-field
             id="server-display-name"
             name="display_name"

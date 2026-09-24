@@ -17,7 +17,7 @@
     >
         <x-slot:buttons>
             @if ((int) $recipe->user_id !== (int) auth()->id())
-                <x-ui.button
+                <x-signal.ui.button
                     href="{{ $reportDialogUrl }}"
                     data-modal-trigger="gallery-report-dialog"
                     aria-controls="gallery-report-dialog"
@@ -25,57 +25,57 @@
                     variant="secondary"
                 >
                     {{ __('Report issue') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             @endif
             @if ($currentFavorite)
                 <form method="POST" action="{{ route('gallery.favorite.destroy', $recipe) }}">
                     @csrf
                     @method('DELETE')
-                    <x-ui.button type="submit" variant="secondary">{{ __('Remove Saved') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Remove Saved') }}</x-signal.ui.button>
                 </form>
             @else
                 <form method="POST" action="{{ route('gallery.favorite.store', $recipe) }}">
                     @csrf
-                    <x-ui.button type="submit" variant="secondary">{{ __('Save Recipe') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Save Recipe') }}</x-signal.ui.button>
                 </form>
             @endif
             @if ($installedRecipe)
-                <x-ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('View My Copy') }}</x-ui.button>
-                <x-ui.button href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" variant="secondary">{{ __('Compare Scripts') }}</x-ui.button>
+                <x-signal.ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('View My Copy') }}</x-signal.ui.button>
+                <x-signal.ui.button href="{{ route('gallery.compare', ['recipe' => $recipe, 'copy' => $installedRecipe]) }}" variant="secondary">{{ __('Compare Scripts') }}</x-signal.ui.button>
                 @if ($installedRecipe->hasGalleryUpdate() && ! $installedRecipe->is_published)
                     <form method="POST" action="{{ route('recipes.gallery.refresh', $installedRecipe) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $installedRecipe->name])) }})">
                         @csrf
-                        <x-ui.button type="submit" variant="primary">{{ __('Update My Copy') }}</x-ui.button>
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Update My Copy') }}</x-signal.ui.button>
                     </form>
                 @endif
             @else
                 <form method="POST" action="{{ route('gallery.install', $recipe) }}">
                     @csrf
-                    <x-ui.button type="submit" variant="primary">{{ __('Add to My Recipes') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Add to My Recipes') }}</x-signal.ui.button>
                 </form>
             @endif
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav class="mt-6" :label="__('Recipe sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Recipe sections')">
         <a href="#recipe-details-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>
         <a href="#gallery-rating" class="ui-local-nav__link">{{ __('Rating') }}</a>
         <a href="#gallery-feedback" class="ui-local-nav__link">{{ __('Feedback') }}</a>
         <a href="#gallery-script" class="ui-local-nav__link">{{ __('Script') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     @if (session('status'))
-        <x-ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-ui.alert>
+        <x-signal.ui.alert class="my-4" tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>
     @endif
 
-    <x-ui.insights id="recipe-details-insights" class="mt-6 scroll-mt-24" :summary="__('Recipe details')">
+    <x-signal.ui.insights id="recipe-details-insights" class="mt-6 scroll-mt-24" :summary="__('Recipe details')">
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat class="ui-card" :label="__('Category')" :value="str($recipe->category)->title()" />
-            <x-ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
-            <x-ui.stat class="ui-card" :label="__('Installs')" :value="$recipe->install_count" />
-            <x-ui.stat class="ui-card" :label="__('Verified rating')" :value="$recipe->ratings_count ? __(':score / 5 from :count', ['score' => number_format((float) $recipe->ratings_avg_rating, 1), 'count' => trans_choice(':count rating|:count ratings', $recipe->ratings_count, ['count' => $recipe->ratings_count])]) : __('Not rated yet')" />
+            <x-signal.ui.stat class="ui-card" :label="__('Category')" :value="str($recipe->category)->title()" />
+            <x-signal.ui.stat class="ui-card" :label="__('Contributor')" :value="$recipe->user->name" />
+            <x-signal.ui.stat class="ui-card" :label="__('Installs')" :value="$recipe->install_count" />
+            <x-signal.ui.stat class="ui-card" :label="__('Verified rating')" :value="$recipe->ratings_count ? __(':score / 5 from :count', ['score' => number_format((float) $recipe->ratings_avg_rating, 1), 'count' => trans_choice(':count rating|:count ratings', $recipe->ratings_count, ['count' => $recipe->ratings_count])]) : __('Not rated yet')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
     @if ($installedRecipe)
         <div @class([
@@ -97,7 +97,7 @@
         </div>
     @endif
 
-    <section id="gallery-rating" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-rating-heading">
+    <x-signal.ui.panel as="section" id="gallery-rating" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-rating-heading">
         <h2 id="gallery-rating-heading" class="text-lg font-bold text-ink">{{ __('Rate this recipe') }}</h2>
         @if ($canRate)
             <p class="mt-1 text-sm text-muted">{{ __('Ratings are limited to people who installed the recipe. You can change or remove yours at any time.') }}</p>
@@ -106,23 +106,23 @@
                     @csrf
                     <div>
                         <label for="rating" class="ui-label">{{ __('Your rating') }}</label>
-                        <select id="rating" name="rating" class="ui-input" required>
+                        <x-signal.ui.select id="rating" name="rating" class="ui-input" required>
                             <option value="">{{ __('Choose a score') }}</option>
                             @foreach ([5, 4, 3, 2, 1] as $score)
                                 <option value="{{ $score }}" @selected((int) old('rating', $currentRating?->rating) === $score)>
                                     {{ trans_choice(':count star|:count stars', $score, ['count' => $score]) }}
                                 </option>
                             @endforeach
-                        </select>
+                        </x-signal.ui.select>
                         <x-forms.errors name="rating" />
                     </div>
-                    <x-ui.button type="submit" variant="primary">{{ $currentRating ? __('Update Rating') : __('Save Rating') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="primary">{{ $currentRating ? __('Update Rating') : __('Save Rating') }}</x-signal.ui.button>
                 </form>
                 @if ($currentRating)
                     <form method="POST" action="{{ route('gallery.rating.destroy', $recipe) }}">
                         @csrf
                         @method('DELETE')
-                        <x-ui.button type="submit" variant="secondary">{{ __('Remove Rating') }}</x-ui.button>
+                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Remove Rating') }}</x-signal.ui.button>
                     </form>
                 @endif
             </div>
@@ -131,9 +131,9 @@
         @else
             <p class="mt-1 text-sm text-muted">{{ __('Add this recipe to your account before rating it.') }}</p>
         @endif
-    </section>
+    </x-signal.ui.panel>
 
-    <section id="gallery-feedback" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-report-heading">
+    <x-signal.ui.panel as="section" id="gallery-feedback" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-report-heading">
         @if ((int) $recipe->user_id === (int) auth()->id())
             @php
                 $reportTotal = $reportCounts->sum();
@@ -149,9 +149,9 @@
                     <div class="mt-4 flex flex-wrap gap-2">
                         @foreach (\App\Modules\Deployer\Models\RecipeReport::REASONS as $reason)
                             @if ($reportCounts->has($reason))
-                                <x-ui.badge tone="danger">
+                                <x-signal.ui.badge tone="danger">
                                     {{ str($reason)->headline() }}: {{ $reportCounts->get($reason) }}
-                                </x-ui.badge>
+                                </x-signal.ui.badge>
                             @endif
                         @endforeach
                     </div>
@@ -164,7 +164,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-sm font-semibold text-ink">{{ str($report->reason)->headline() }}</span>
-                                    <x-ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-ui.badge>
+                                    <x-signal.ui.badge :tone="$report->resolved_at === null ? 'danger' : 'success'">{{ $report->resolved_at === null ? __('Needs review') : __('Resolved') }}</x-signal.ui.badge>
                                 </div>
                                 <span class="text-xs text-muted">{{ $report->created_at->diffForHumans() }}</span>
                             </div>
@@ -203,7 +203,7 @@
                                 <form method="POST" action="{{ route('gallery.reports.reopen', [$recipe, $report]) }}" class="mt-3">
                                     @csrf
                                     @method('PATCH')
-                                    <x-ui.button type="submit" variant="secondary">{{ __('Reopen Report') }}</x-ui.button>
+                                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Reopen Report') }}</x-signal.ui.button>
                                 </form>
                             @endif
                         </article>
@@ -234,7 +234,7 @@
                     </div>
                 @endif
             @endif
-            <x-ui.button
+            <x-signal.ui.button
                 href="{{ $reportDialogUrl }}"
                 data-modal-trigger="gallery-report-dialog"
                 aria-controls="gallery-report-dialog"
@@ -243,7 +243,7 @@
                 class="mt-4"
             >
                 {{ $currentReport ? __('Update Report') : __('Open report form') }}
-            </x-ui.button>
+            </x-signal.ui.button>
             <x-scenes.gallery.report-dialog
                 :current-report="$currentReport"
                 :open="$reportDialogOpen"
@@ -258,19 +258,19 @@
                 >
                     @csrf
                     @method('DELETE')
-                    <x-ui.button type="submit" variant="danger">{{ __('Withdraw Report') }}</x-ui.button>
+                    <x-signal.ui.button type="submit" variant="danger">{{ __('Withdraw Report') }}</x-signal.ui.button>
                 </form>
             @endif
         @endif
-    </section>
+    </x-signal.ui.panel>
 
-    <section id="gallery-script" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-script-heading">
-        <x-ui.alert tone="warning" class="p-3">
+    <x-signal.ui.panel as="section" id="gallery-script" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-script-heading">
+        <x-signal.ui.alert tone="warning" class="p-3">
             {{ __('This community script runs as root. Read every command and verify package sources, downloads, and destructive operations before using it.') }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
         <h2 id="gallery-script-heading" class="mt-5 text-lg font-bold text-ink">{{ __('Bash script') }}</h2>
         <pre class="ui-console mt-3 overflow-x-auto p-4 text-sm leading-6"><code>{{ $recipe->script }}</code></pre>
-    </section>
+    </x-signal.ui.panel>
 
     <p class="mt-4 text-xs text-muted">
         {{ __('Published :date. Adding this recipe creates a private snapshot you can review and edit independently.', ['date' => $recipe->published_at->diffForHumans()]) }}

@@ -43,19 +43,19 @@
     >
         <x-slot:buttons>
             @if ($provider->isSourceControl())
-                <x-ui.button :href="route('builds.index', ['provider_id' => $provider->id])" variant="secondary">
+                <x-signal.ui.button :href="route('builds.index', ['provider_id' => $provider->id])" variant="secondary">
                     {{ __('Deployment history') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             @endif
 
             <form method="POST" action="{{ route('providers.connection.test', $provider) }}" aria-label="{{ __('Provider connection actions') }}">
                 @csrf
-                <x-ui.button type="submit" variant="secondary">
+                <x-signal.ui.button type="submit" variant="secondary">
                     {{ __('Test connection') }}
-                </x-ui.button>
+                </x-signal.ui.button>
             </form>
 
-            <x-ui.button
+            <x-signal.ui.button
                 :href="$providerEditUrl"
                 data-modal-trigger="provider-edit-dialog"
                 data-modal-content-url="{{ $providerEditContentUrl }}"
@@ -67,7 +67,7 @@
                     <use xlink:href="/assets/images/icons.svg#pencil-alt"></use>
                 </svg>
                 {{ __('Edit Provider') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
             <x-dialogs.delete
                 id="delete-provider"
@@ -76,30 +76,30 @@
                 :description="__('Are you sure you want to delete this provider?')"
             ></x-dialogs.delete>
 
-            <x-ui.button type="button" variant="danger" data-modal-trigger="delete-provider" aria-controls="delete-provider" aria-expanded="false">
+            <x-signal.ui.button type="button" variant="danger" data-modal-trigger="delete-provider" aria-controls="delete-provider" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
                     <use xlink:href="/assets/images/icons.svg#trash"></use>
                 </svg>
                 {{ __('Delete Provider') }}
-            </x-ui.button>
+            </x-signal.ui.button>
 
         </x-slot:buttons>
     </x-layouts.partials.heading>
 
-    <x-ui.local-nav class="mt-6" :label="__('Provider sections')">
+    <x-signal.ui.local-nav class="mt-6" :label="__('Provider sections')">
         <a href="#provider-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>
         <a href="#provider-connection-evidence" class="ui-local-nav__link">{{ __('Checks') }}</a>
         <a href="#provider-resources" class="ui-local-nav__link">{{ __('Resources') }}</a>
-    </x-ui.local-nav>
+    </x-signal.ui.local-nav>
 
     @if (session('provider_connection'))
         @php($connection = session('provider_connection'))
-        <x-ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="ui-panel my-6 border-l-4">
+        <x-signal.ui.alert :tone="$connection['successful'] ? 'success' : 'danger'" class="ui-panel my-6 border-l-4">
             {{ $connection['message'] }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
-    <section
+    <x-signal.ui.panel as="section"
         id="provider-overview"
         data-provider-section="overview"
         class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6"
@@ -116,11 +116,11 @@
                 </p>
             </div>
             @if ($connectionHealth === \App\Modules\Deployer\Models\Provider::CONNECTION_HEALTHY)
-                <x-ui.badge tone="success">{{ str($connectionHealth)->title() }}</x-ui.badge>
+                <x-signal.ui.badge tone="success">{{ str($connectionHealth)->title() }}</x-signal.ui.badge>
             @elseif ($connectionHealth === \App\Modules\Deployer\Models\Provider::CONNECTION_FAILED)
-                <x-ui.badge tone="danger">{{ str($connectionHealth)->title() }}</x-ui.badge>
+                <x-signal.ui.badge tone="danger">{{ str($connectionHealth)->title() }}</x-signal.ui.badge>
             @else
-                <x-ui.badge>{{ str($connectionHealth)->title() }}</x-ui.badge>
+                <x-signal.ui.badge>{{ str($connectionHealth)->title() }}</x-signal.ui.badge>
             @endif
         </div>
 
@@ -168,28 +168,28 @@
                 <p class="mt-1 text-xs text-muted">{{ __('Secrets are excluded from retained check evidence.') }}</p>
             </div>
         </div>
-    </section>
+    </x-signal.ui.panel>
 
     @if ($errors->has('provider'))
-        <x-ui.alert tone="danger" class="ui-panel my-4 border-l-4">
+        <x-signal.ui.alert tone="danger" class="ui-panel my-4 border-l-4">
             {{ $errors->first('provider') }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
-    <x-ui.insights
+    <x-signal.ui.insights
         id="provider-overview-insights"
         class="mt-6"
         :summary="__('Credential and attached-resource coverage')"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <x-ui.stat :label="__('Provider type')" :value="str($provider->provider)->replace('_', ' ')->title()" :description="__('The external service backing this connection.')" />
-            <x-ui.stat :label="__('Attached repositories')" :value="$repositories->total()" :description="__('Source-control resources using this provider.')" />
-            <x-ui.stat :label="__('Attached servers')" :value="$servers->total()" :description="__('Infrastructure resources using this provider.')" />
-            <x-ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Recent credential observations kept for this provider.')" />
+            <x-signal.ui.stat :label="__('Provider type')" :value="str($provider->provider)->replace('_', ' ')->title()" :description="__('The external service backing this connection.')" />
+            <x-signal.ui.stat :label="__('Attached repositories')" :value="$repositories->total()" :description="__('Source-control resources using this provider.')" />
+            <x-signal.ui.stat :label="__('Attached servers')" :value="$servers->total()" :description="__('Infrastructure resources using this provider.')" />
+            <x-signal.ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Recent credential observations kept for this provider.')" />
         </dl>
-    </x-ui.insights>
+    </x-signal.ui.insights>
 
-    <section
+    <x-signal.ui.panel as="section"
         id="provider-connection-evidence"
         data-provider-section="connection-checks"
         class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6"
@@ -204,7 +204,7 @@
                 </p>
             </div>
             <div class="flex flex-wrap gap-3">
-                <x-ui.button
+                <x-signal.ui.button
                     :href="route('providers.connection-checks.index', $provider)"
                     data-modal-trigger="provider-connection-checks-dialog"
                     data-modal-content-url="{{ $providerConnectionChecksContentUrl }}"
@@ -212,31 +212,31 @@
                     aria-controls="provider-connection-checks-dialog"
                     aria-expanded="{{ $providerConnectionChecksOpen ? 'true' : 'false' }}"
                     variant="secondary"
-                >{{ __('View all connection checks') }}</x-ui.button>
+                >{{ __('View all connection checks') }}</x-signal.ui.button>
                 @if ($connectionChecks->isNotEmpty())
-                    <x-ui.button :href="route('providers.connection-checks.export', $provider)" variant="secondary">{{ __('Export connection history') }}</x-ui.button>
+                    <x-signal.ui.button :href="route('providers.connection-checks.export', $provider)" variant="secondary">{{ __('Export connection history') }}</x-signal.ui.button>
                 @endif
             </div>
         </div>
 
-        <x-ui.insights
+        <x-signal.ui.insights
             id="provider-health-insights"
             class="mt-4"
             :summary="trans_choice(':count retained check|:count retained checks', $connectionMetrics['total'], ['count' => $connectionMetrics['total']])"
         >
             <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <x-ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Newest :limit maximum', ['limit' => \App\Modules\Deployer\Models\ProviderConnectionCheck::MAX_PER_PROVIDER])" />
-                <x-ui.stat :label="__('Observed connection success')" :value="$connectionMetrics['success_rate'] !== null ? $connectionMetrics['success_rate'].'%' : __('Not available')" :description="trans_choice(':count successful check|:count successful checks', $connectionMetrics['successful'], ['count' => $connectionMetrics['successful']])" />
-                <x-ui.stat :label="__('Median successful response')" :value="$connectionMetrics['median_successful_duration_ms'] !== null ? $connectionMetrics['median_successful_duration_ms'].' ms' : __('Not recorded')" :description="__('Failed timings are excluded.')" />
-                <x-ui.stat :label="__('Current failure streak')" :value="$connectionMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $connectionMetrics['failure_streak'], ['count' => $connectionMetrics['failure_streak']])" />
+                <x-signal.ui.stat :label="__('Retained checks')" :value="$connectionMetrics['total']" :description="__('Newest :limit maximum', ['limit' => \App\Modules\Deployer\Models\ProviderConnectionCheck::MAX_PER_PROVIDER])" />
+                <x-signal.ui.stat :label="__('Observed connection success')" :value="$connectionMetrics['success_rate'] !== null ? $connectionMetrics['success_rate'].'%' : __('Not available')" :description="trans_choice(':count successful check|:count successful checks', $connectionMetrics['successful'], ['count' => $connectionMetrics['successful']])" />
+                <x-signal.ui.stat :label="__('Median successful response')" :value="$connectionMetrics['median_successful_duration_ms'] !== null ? $connectionMetrics['median_successful_duration_ms'].' ms' : __('Not recorded')" :description="__('Failed timings are excluded.')" />
+                <x-signal.ui.stat :label="__('Current failure streak')" :value="$connectionMetrics['failure_streak']" :description="trans_choice(':count consecutive failed check|:count consecutive failed checks', $connectionMetrics['failure_streak'], ['count' => $connectionMetrics['failure_streak']])" />
             </dl>
-        </x-ui.insights>
+        </x-signal.ui.insights>
         <p class="mt-3 text-xs text-muted">
             {{ __('These figures summarize retained observations and are not an SLA or a guarantee that the credential is currently valid.') }}
         </p>
 
         @if ($connectionChecks->isEmpty())
-            <x-ui.empty-state class="mt-4" :title="__('No connection checks have been recorded yet.')" />
+            <x-signal.ui.empty-state class="mt-4" :title="__('No connection checks have been recorded yet.')" />
         @else
             <details id="provider-connection-history" class="group ui-card mt-4 overflow-hidden" @if ($connectionMetrics['failure_streak'] > 0) open @endif>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
@@ -252,14 +252,14 @@
                 </div>
             </details>
         @endif
-    </section>
+    </x-signal.ui.panel>
 
     <!--
      ! ------------------------------------------------------------
      ! List attached servers or repos for this token
      ! ------------------------------------------------------------
      !-->
-    <section
+    <x-signal.ui.panel as="section"
         id="provider-resources"
         data-provider-section="resources"
         class="ui-panel mt-8 scroll-mt-24 p-5 sm:p-6"
@@ -280,9 +280,9 @@
                 <div class="flex min-w-0 items-center justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-2">
                         <h3 class="truncate font-extrabold text-ink">{{ __('Repositories') }}</h3>
-                        <x-ui.badge data-provider-resource-count="repositories">{{ $repositories->total() }}</x-ui.badge>
+                        <x-signal.ui.badge data-provider-resource-count="repositories">{{ $repositories->total() }}</x-signal.ui.badge>
                     </div>
-                    <x-ui.button
+                    <x-signal.ui.button
                         :href="$repositoryCreateUrl"
                         data-modal-trigger="repository-create-dialog"
                         data-modal-content-url="{{ $repositoryCreateContentUrl }}"
@@ -290,7 +290,7 @@
                         aria-expanded="{{ $repositoryCreateOpen ? 'true' : 'false' }}"
                         variant="ghost"
                         class="ui-btn-sm shrink-0"
-                    >{{ __('Add Repository') }}</x-ui.button>
+                    >{{ __('Add Repository') }}</x-signal.ui.button>
                 </div>
                 <ul role="list" class="mt-4 grid gap-3">
                     @forelse($repositories as $repository)
@@ -306,7 +306,7 @@
                         </li>
                     @empty
                         <li class="pt-3">
-                            <x-ui.alert tone="info" role="status" class="border-l-4">{{ __('No Repositories using this provider') }}</x-ui.alert>
+                            <x-signal.ui.alert tone="info" role="status" class="border-l-4">{{ __('No Repositories using this provider') }}</x-signal.ui.alert>
                         </li>
                     @endforelse
                 </ul>
@@ -321,9 +321,9 @@
                 <div class="flex min-w-0 items-center justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-2">
                         <h3 class="truncate font-extrabold text-ink">{{ __('Servers') }}</h3>
-                        <x-ui.badge data-provider-resource-count="servers">{{ $servers->total() }}</x-ui.badge>
+                        <x-signal.ui.badge data-provider-resource-count="servers">{{ $servers->total() }}</x-signal.ui.badge>
                     </div>
-                    <x-ui.button
+                    <x-signal.ui.button
                         :href="$serverCreateUrl"
                         data-modal-trigger="server-create-dialog"
                         data-modal-content-url="{{ $serverCreateContentUrl }}"
@@ -331,7 +331,7 @@
                         aria-expanded="{{ $serverCreateOpen ? 'true' : 'false' }}"
                         variant="ghost"
                         class="ui-btn-sm shrink-0"
-                    >{{ __('Add Server') }}</x-ui.button>
+                    >{{ __('Add Server') }}</x-signal.ui.button>
                 </div>
                 <ul role="list" class="mt-4 grid gap-3">
                     @forelse($servers as $server)
@@ -347,7 +347,7 @@
                         </li>
                     @empty
                         <li class="pt-3">
-                            <x-ui.alert tone="info" role="status" class="border-l-4">{{ __('No Servers using this provider') }}</x-ui.alert>
+                            <x-signal.ui.alert tone="info" role="status" class="border-l-4">{{ __('No Servers using this provider') }}</x-signal.ui.alert>
                         </li>
                     @endforelse
                 </ul>
@@ -358,7 +358,7 @@
         @endif
 
         </div>
-    </section>
+    </x-signal.ui.panel>
 
     <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
 

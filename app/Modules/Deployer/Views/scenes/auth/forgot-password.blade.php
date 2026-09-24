@@ -8,9 +8,9 @@
     </x-slot>
 
     @if (session('status'))
-        <x-ui.alert class="mb-5" tone="success" role="status">
+        <x-signal.ui.alert class="mb-5" tone="success" role="status">
             {{ session('status') }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @endif
 
     <form method="POST" action="{{ route('password.email') }}" class="space-y-5">
@@ -18,7 +18,7 @@
 
         <div>
             <label for="email" class="ui-label">{{ __('Email') }}</label>
-            <input id="email" class="ui-input" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus>
+            <x-signal.ui.input id="email" class="ui-input" type="email" name="email" value="{{ old('email') }}" autocomplete="email" required autofocus :restore="false" />
         </div>
         <x-forms.errors name="email" />
 
@@ -26,7 +26,7 @@
             <a href="{{ route('login') }}" class="ui-link text-sm">
                 {{ __('Back to sign in') }}
             </a>
-            <x-ui.button type="submit" variant="primary">{{ __('Send reset link') }}</x-ui.button>
+            <x-signal.ui.button type="submit" variant="primary">{{ __('Send reset link') }}</x-signal.ui.button>
         </div>
     </form>
 </x-layouts.auth>

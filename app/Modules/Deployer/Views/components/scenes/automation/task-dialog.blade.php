@@ -17,7 +17,7 @@
 >
     <form method="POST" action="{{ route('automation.tasks.store', $environment) }}" class="space-y-4">
         @csrf
-        <input type="hidden" name="_automation_dialog" value="{{ $dialogKey }}">
+        <x-signal.ui.input type="hidden" name="_automation_dialog" value="{{ $dialogKey }}" :restore="false" />
         <x-signal.ui.input-field
             :id="$dialogId.'-name'"
             name="name"
