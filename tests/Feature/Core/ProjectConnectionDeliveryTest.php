@@ -314,6 +314,119 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $this->assertSame(1, SiteReleaseAnnotation::query()->count());
     }
 
+    public function test_failed_source_retry_requeues_and_delivers_only_the_selected_event(): void
+    {
+        $selectedEvent = $this->outboxEvent();
+        $selectedEvent->forceFill([
+            'status' => 'failed',
+            'attempts' => 12,
+            'available_at' => null,
+            'last_error_code' => 'core_dispatch_failed',
+            'last_error_at' => now(),
+        ])->save();
+
+        $unrelatedDeployerEvent = $this->outboxEvent();
+        $unrelatedDeployerEvent->forceFill([
+            'status' => 'failed',
+            'attempts' => 12,
+            'available_at' => null,
+            'last_error_code' => 'core_dispatch_failed',
+            'last_error_at' => now(),
+        ])->save();
+
+        $unrelatedMonitorEvent = ProjectConnectionIncidentOutboxEvent::query()->create([
+            'event_type' => ProjectConnectionIncidentOutboxEvent::OPENED,
+            'event_version' => 1,
+            'source_incident_id' => '44',
+            'source_environment_id' => (string) $this->monitorEnvironmentId,
+            'payload' => [
+                'incident_id' => '44',
+                'status' => 'open',
+                'occurred_at' => now()->utc()->toIso8601String(),
+            ],
+            'status' => 'failed',
+            'attempts' => 12,
+            'available_at' => null,
+            'last_error_code' => 'core_dispatch_failed',
+            'last_error_at' => now(),
+        ]);
+
+        $this->artisan('project-connections:deliver', [
+            '--retry-failed' => true,
+            '--source' => 'deployer',
+            '--event-id' => strtoupper((string) $selectedEvent->getKey()),
+        ])
+            ->expectsOutputToContain('Dispatched 1 source event(s)')
+            ->assertExitCode(0);
+
+        $this->assertSame('dispatched', $selectedEvent->fresh()->status);
+        $this->assertSame(1, $selectedEvent->fresh()->attempts);
+        $this->assertSame('failed', $unrelatedDeployerEvent->fresh()->status);
+        $this->assertSame(12, $unrelatedDeployerEvent->fresh()->attempts);
+        $this->assertSame('failed', $unrelatedMonitorEvent->fresh()->status);
+        $this->assertSame(12, $unrelatedMonitorEvent->fresh()->attempts);
+        $this->assertSame(1, ProjectConnectionDelivery::query()->count());
+        $delivery = ProjectConnectionDelivery::query()->sole();
+        $this->assertSame((string) $selectedEvent->getKey(), $delivery->source_event_id);
+        $this->assertSame('delivered', $delivery->status);
+    }
+
+    public function test_failed_source_retry_requires_an_explicit_source_event(): void
+    {
+        $event = $this->outboxEvent();
+        $event->forceFill(['status' => 'failed', 'attempts' => 12, 'available_at' => null])->save();
+
+        $this->artisan('project-connections:deliver', ['--retry-failed' => true])
+            ->expectsOutputToContain('--retry-failed requires a valid --source')
+            ->assertExitCode(2);
+
+        $this->assertSame('failed', $event->fresh()->status);
+        $this->assertSame(12, $event->fresh()->attempts);
+        $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+    }
+
+    public function test_monitor_source_retry_leaves_failed_deployer_events_untouched(): void
+    {
+        $unrelatedDeployerEvent = $this->outboxEvent();
+        $unrelatedDeployerEvent->forceFill([
+            'status' => 'failed',
+            'attempts' => 12,
+            'available_at' => null,
+            'last_error_code' => 'core_dispatch_failed',
+            'last_error_at' => now(),
+        ])->save();
+        $monitorEvent = ProjectConnectionIncidentOutboxEvent::query()->create([
+            'event_type' => ProjectConnectionIncidentOutboxEvent::OPENED,
+            'event_version' => 1,
+            'source_incident_id' => '44',
+            'source_environment_id' => (string) $this->monitorEnvironmentId,
+            'payload' => [
+                'incident_id' => '44',
+                'status' => 'open',
+                'occurred_at' => now()->utc()->toIso8601String(),
+            ],
+            'status' => 'failed',
+            'attempts' => 12,
+            'available_at' => null,
+            'last_error_code' => 'core_dispatch_failed',
+            'last_error_at' => now(),
+        ]);
+
+        $this->artisan('project-connections:deliver', [
+            '--retry-failed' => true,
+            '--source' => 'monitor',
+            '--event-id' => (string) $monitorEvent->getKey(),
+        ])
+            ->expectsOutputToContain('Dispatched 1 source event(s)')
+            ->assertExitCode(0);
+
+        $this->assertSame('dispatched', $monitorEvent->fresh()->status);
+        $this->assertSame(1, $monitorEvent->fresh()->attempts);
+        $this->assertSame('failed', $unrelatedDeployerEvent->fresh()->status);
+        $this->assertSame(12, $unrelatedDeployerEvent->fresh()->attempts);
+        $this->assertSame(0, ProjectConnectionDelivery::query()->count());
+    }
+
     public function test_deployments_without_an_active_core_mapping_are_consumed_without_retries(): void
     {
         $event = $this->outboxEvent();

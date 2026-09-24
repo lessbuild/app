@@ -15,7 +15,11 @@ use Throwable;
 
 final class DeliverProjectConnectionEventsCommand extends Command
 {
-    protected $signature = 'project-connections:deliver {--limit=100 : Maximum source and target events to process (1-1000)} {--retry-failed : Requeue source events that exhausted automatic delivery attempts}';
+    protected $signature = 'project-connections:deliver
+        {--limit=100 : Maximum source and target events to process (1-1000)}
+        {--retry-failed : Requeue one failed source event; requires --source and --event-id}
+        {--source= : Failed source product: deployer or monitor}
+        {--event-id= : Failed source outbox event ULID; requires --retry-failed and --source}';
 
     protected $description = 'Dispatch durable project connection events and deliver due integrations';
 
@@ -29,6 +33,37 @@ final class DeliverProjectConnectionEventsCommand extends Command
             $this->error('The limit must be an integer between 1 and 1000.');
 
             return self::INVALID;
+        }
+
+        $source = $this->option('source');
+        $source = is_string($source) && trim($source) !== '' ? strtolower(trim($source)) : null;
+        $eventId = $this->option('event-id');
+        $eventId = is_string($eventId) && trim($eventId) !== '' ? strtolower(trim($eventId)) : null;
+        $retryFailed = (bool) $this->option('retry-failed');
+
+        if ($source !== null && ! in_array($source, ['deployer', 'monitor'], true)) {
+            $this->error('The source must be deployer or monitor.');
+
+            return self::INVALID;
+        }
+
+        if ($retryFailed && ($source === null || $eventId === null
+            || ! preg_match('/\A[0-9A-HJKMNP-TV-Z]{26}\z/i', $eventId))) {
+            $this->error('--retry-failed requires a valid --source and 26-character --event-id ULID.');
+
+            return self::INVALID;
+        }
+
+        if (! $retryFailed && ($source !== null || $eventId !== null)) {
+            $this->error('--source and --event-id can only be used with --retry-failed.');
+
+            return self::INVALID;
+        }
+
+        if ($retryFailed && $source === 'monitor' && ! config('platform.products.monitor.enabled', false)) {
+            $this->error('Enable the Monitor module before retrying Monitor incident events.');
+
+            return self::FAILURE;
         }
 
         if (! Schema::connection('core')->hasTable('project_connection_deliveries')
@@ -54,38 +89,29 @@ final class DeliverProjectConnectionEventsCommand extends Command
             return self::FAILURE;
         }
 
-        if ($this->option('retry-failed')) {
-            DeploymentSucceededOutboxEvent::query()
-                ->where('status', 'failed')
-                ->update([
-                    'status' => 'pending',
-                    'attempts' => 0,
-                    'available_at' => now(),
-                    'last_error_code' => null,
-                    'last_error_at' => null,
-                    'updated_at' => now(),
-                ]);
+        if ($retryFailed && ! $this->requeueFailedSourceEvent($source, $eventId)) {
+            $this->error("The {$source} source event {$eventId} was not found in a failed state.");
 
-            if (config('platform.products.monitor.enabled', false)) {
-                ProjectConnectionIncidentOutboxEvent::query()
-                    ->where('status', 'failed')
-                    ->update([
-                        'status' => 'pending',
-                        'attempts' => 0,
-                        'available_at' => now(),
-                        'last_error_code' => null,
-                        'last_error_at' => null,
-                        'updated_at' => now(),
-                    ]);
-            }
+            return self::FAILURE;
         }
 
-        $this->recoverExpiredClaims();
-        $dispatched = $this->dispatchDue($dispatch, $limit);
-        if (config('platform.products.monitor.enabled', false)) {
-            $dispatched += $this->dispatchMonitorDue($monitorDispatch, $limit);
+        $this->recoverExpiredClaims($retryFailed ? $source : null, $retryFailed ? $eventId : null);
+        $dispatched = 0;
+
+        if (! $retryFailed || $source === 'deployer') {
+            $dispatched += $this->dispatchDue($dispatch, $limit, $retryFailed ? $eventId : null);
         }
-        $deliveryResults = $this->deliverDue($deliveries, $limit);
+
+        if (config('platform.products.monitor.enabled', false) && (! $retryFailed || $source === 'monitor')) {
+            $dispatched += $this->dispatchMonitorDue($monitorDispatch, $limit, $retryFailed ? $eventId : null);
+        }
+
+        $deliveryResults = $this->deliverDue(
+            $deliveries,
+            $limit,
+            $retryFailed ? $source : null,
+            $retryFailed ? $eventId : null,
+        );
 
         $this->info(sprintf(
             'Dispatched %d source event(s); target deliveries: %d delivered, %d pending, %d blocked, %d failed, %d discarded.',
@@ -100,25 +126,46 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return self::SUCCESS;
     }
 
-    private function dispatchDue(DispatchDeploymentSucceededOutboxEvent $dispatcher, int $limit): int
+    private function requeueFailedSourceEvent(string $source, string $eventId): bool
+    {
+        $query = $source === 'deployer'
+            ? DeploymentSucceededOutboxEvent::query()
+            : ProjectConnectionIncidentOutboxEvent::query();
+
+        return $query
+            ->where('id', $eventId)
+            ->where('status', 'failed')
+            ->update([
+                'status' => 'pending',
+                'attempts' => 0,
+                'available_at' => now(),
+                'last_error_code' => null,
+                'last_error_at' => null,
+                'updated_at' => now(),
+            ]) === 1;
+    }
+
+    private function dispatchDue(DispatchDeploymentSucceededOutboxEvent $dispatcher, int $limit, ?string $eventId = null): int
     {
         $dispatched = 0;
-        $eventIds = DeploymentSucceededOutboxEvent::query()
+        $query = DeploymentSucceededOutboxEvent::query()
             ->where('status', 'pending')
-            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
-            ->orderBy('created_at')
-            ->limit($limit)
-            ->pluck('id');
+            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
+
+        if ($eventId !== null) {
+            $query->where('id', $eventId);
+        }
+
+        $eventIds = $query->orderBy('created_at')->limit($limit)->pluck('id');
 
         foreach ($eventIds as $eventId) {
             $event = DB::connection((new DeploymentSucceededOutboxEvent)->getConnectionName())
                 ->transaction(function () use ($eventId): ?DeploymentSucceededOutboxEvent {
-                    $event = DeploymentSucceededOutboxEvent::query()
-                        ->whereKey($eventId)
+                    $query = DeploymentSucceededOutboxEvent::query()
                         ->where('status', 'pending')
-                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
-                        ->lockForUpdate()
-                        ->first();
+                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
+
+                    $event = $query->where('id', $eventId)->lockForUpdate()->first();
 
                     if ($event === null) {
                         return null;
@@ -165,25 +212,27 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return $dispatched;
     }
 
-    private function dispatchMonitorDue(DispatchMonitorIncidentOutboxEvent $dispatcher, int $limit): int
+    private function dispatchMonitorDue(DispatchMonitorIncidentOutboxEvent $dispatcher, int $limit, ?string $eventId = null): int
     {
         $dispatched = 0;
-        $eventIds = ProjectConnectionIncidentOutboxEvent::query()
+        $query = ProjectConnectionIncidentOutboxEvent::query()
             ->where('status', 'pending')
-            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
-            ->orderBy('created_at')
-            ->limit($limit)
-            ->pluck('id');
+            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
+
+        if ($eventId !== null) {
+            $query->where('id', $eventId);
+        }
+
+        $eventIds = $query->orderBy('created_at')->limit($limit)->pluck('id');
 
         foreach ($eventIds as $eventId) {
             $event = DB::connection((new ProjectConnectionIncidentOutboxEvent)->getConnectionName())
                 ->transaction(function () use ($eventId): ?ProjectConnectionIncidentOutboxEvent {
-                    $event = ProjectConnectionIncidentOutboxEvent::query()
-                        ->whereKey($eventId)
+                    $query = ProjectConnectionIncidentOutboxEvent::query()
                         ->where('status', 'pending')
-                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
-                        ->lockForUpdate()
-                        ->first();
+                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
+
+                    $event = $query->where('id', $eventId)->lockForUpdate()->first();
 
                     if ($event === null) {
                         return null;
@@ -231,15 +280,22 @@ final class DeliverProjectConnectionEventsCommand extends Command
     }
 
     /** @return array{delivered: int, pending: int, blocked: int, failed: int, discarded: int} */
-    private function deliverDue(ProcessProjectConnectionDelivery $processor, int $limit): array
-    {
+    private function deliverDue(
+        ProcessProjectConnectionDelivery $processor,
+        int $limit,
+        ?string $source = null,
+        ?string $eventId = null,
+    ): array {
         $results = ['delivered' => 0, 'pending' => 0, 'blocked' => 0, 'failed' => 0, 'discarded' => 0];
-        $deliveryIds = ProjectConnectionDelivery::query()
+        $query = ProjectConnectionDelivery::query()
             ->where('status', 'pending')
-            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
-            ->orderBy('created_at')
-            ->limit($limit)
-            ->pluck('id');
+            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
+
+        if ($source !== null && $eventId !== null) {
+            $query->where('source_event_id', $eventId)->whereIn('event_type', $this->eventTypes($source));
+        }
+
+        $deliveryIds = $query->orderBy('created_at')->limit($limit)->pluck('id');
 
         foreach ($deliveryIds as $deliveryId) {
             $status = $processor->process((string) $deliveryId);
@@ -251,43 +307,73 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return $results;
     }
 
-    private function recoverExpiredClaims(): void
+    private function recoverExpiredClaims(?string $source = null, ?string $eventId = null): void
     {
-        DeploymentSucceededOutboxEvent::query()
-            ->where('status', 'processing')
-            ->where('updated_at', '<', now()->subMinutes(10))
-            ->update([
+        if ($source === null || $source === 'deployer') {
+            $query = DeploymentSucceededOutboxEvent::query()
+                ->where('status', 'processing')
+                ->where('updated_at', '<', now()->subMinutes(10));
+
+            if ($eventId !== null) {
+                $query->where('id', $eventId);
+            }
+
+            $query->update([
                 'status' => 'pending',
                 'available_at' => now(),
                 'last_error_code' => 'dispatch_lease_expired',
                 'last_error_at' => now(),
                 'updated_at' => now(),
             ]);
-
-        if (config('platform.products.monitor.enabled', false)
-            && Schema::connection('monitor')->hasTable('project_connection_incident_outbox_events')) {
-            ProjectConnectionIncidentOutboxEvent::query()
-                ->where('status', 'processing')
-                ->where('updated_at', '<', now()->subMinutes(10))
-                ->update([
-                    'status' => 'pending',
-                    'available_at' => now(),
-                    'last_error_code' => 'dispatch_lease_expired',
-                    'last_error_at' => now(),
-                    'updated_at' => now(),
-                ]);
         }
 
-        ProjectConnectionDelivery::query()
-            ->where('status', 'processing')
-            ->where('last_attempted_at', '<', now()->subMinutes(10))
-            ->update([
+        if (config('platform.products.monitor.enabled', false)
+            && ($source === null || $source === 'monitor')
+            && Schema::connection('monitor')->hasTable('project_connection_incident_outbox_events')) {
+            $query = ProjectConnectionIncidentOutboxEvent::query()
+                ->where('status', 'processing')
+                ->where('updated_at', '<', now()->subMinutes(10));
+
+            if ($eventId !== null) {
+                $query->where('id', $eventId);
+            }
+
+            $query->update([
                 'status' => 'pending',
                 'available_at' => now(),
-                'last_error_code' => 'delivery_lease_expired',
+                'last_error_code' => 'dispatch_lease_expired',
                 'last_error_at' => now(),
                 'updated_at' => now(),
             ]);
+        }
+
+        $query = ProjectConnectionDelivery::query()
+            ->where('status', 'processing')
+            ->where('last_attempted_at', '<', now()->subMinutes(10));
+
+        if ($source !== null && $eventId !== null) {
+            $query->where('source_event_id', $eventId)->whereIn('event_type', $this->eventTypes($source));
+        }
+
+        $query->update([
+            'status' => 'pending',
+            'available_at' => now(),
+            'last_error_code' => 'delivery_lease_expired',
+            'last_error_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    /** @return list<string> */
+    private function eventTypes(string $source): array
+    {
+        return $source === 'deployer'
+            ? [DeploymentSucceededOutboxEvent::EVENT_TYPE]
+            : [
+                ProjectConnectionIncidentOutboxEvent::OPENED,
+                ProjectConnectionIncidentOutboxEvent::ACKNOWLEDGED,
+                ProjectConnectionIncidentOutboxEvent::RESOLVED,
+            ];
     }
 
     /**
