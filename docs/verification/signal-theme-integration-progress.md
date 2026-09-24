@@ -1,5 +1,39 @@
 # Signal theme integration progress
 
+## Slice 127 — componentize Deployer deployment controls — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated deployment lock, weekly window, day selection, start/end times,
+  timezone, release strategy, rolling pause, and automatic rollback controls to
+  shared Signal checkbox, input, select, and button components.
+- Kept the named `deployment_window_days[]` values, current/old selected days,
+  default 09:00–17:00 times, timezone datalist, selected rollout settings, and
+  hidden false values. Day checkboxes share one field-level validation message
+  with valid `aria-describedby` references.
+- Extended the input-field slot for the timezone datalist and the checkbox
+  layout props for compact grouped controls; these are reusable component
+  capabilities, not page-specific styling.
+
+Evidence and release:
+
+- Deployer environment feature suite and shared UI tests: **77 passed**,
+  **3,234 assertions**. Mobile Playwright verified the settings and deployment
+  controls in their dialogs; open/dismiss/focus-return and named form controls
+  passed. Pint and `git diff --check` passed.
+- Commit `c00644c` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/c00644c`. The previous `f8a0b86`
+  release remains available for rollback. No migrations or asset build were
+  needed; this release uses its own compiled-view cache.
+- The public overview, product descriptions, and auth login returned HTTP 200;
+  the product dashboard roots retained their expected 302 handoffs. PHP-FPM is
+  active.
+
+Next task: continue migrating Deployer's remaining feature-specific forms and
+actions to shared Signal components, then extend this audit to Monitor and
+Analytics. Full feature, theme, accessibility, and visual acceptance remains
+open.
+
 ## Slice 126 — componentize Deployer environment settings — 2026-09-24
 
 Boundary and implementation:
