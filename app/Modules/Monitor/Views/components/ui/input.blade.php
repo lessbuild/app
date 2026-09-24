@@ -1,15 +1,15 @@
 @props(['name', 'label', 'type' => 'text', 'value' => null, 'errorKey' => null, 'description' => null, 'hideLabel' => false])
 @php
-    $validationKey = $errorKey ?? $name;
-    $inputValue = old($validationKey, $value);
+    $validationKey = $errorKey === false ? null : ($errorKey ?? $name);
+    $inputValue = old($validationKey ?? $name, $value);
+    $inputValue = $type === 'password' ? null : $inputValue;
     $inputValue = is_scalar($inputValue) ? $inputValue : null;
     $controlId = $attributes->get('id', $name);
-    $describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$controlId.'-help' : '').($errors->has($validationKey) ? ' '.$controlId.'-error' : ''));
+    $hasError = $validationKey !== null && $errors->has($validationKey);
+    $describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$controlId.'-help' : '').($hasError ? ' '.$controlId.'-error' : ''));
 @endphp
-<x-monitor::ui.field :id="$controlId" :label="$label" :error-key="$validationKey" :description="$description" :hide-label="$hideLabel">
-    <input id="{{ $controlId }}" name="{{ $name }}" type="{{ $type }}"
-        @if($type !== 'password') value="{{ $inputValue }}" @endif
-        aria-invalid="{{ $errors->has($validationKey) ? 'true' : 'false' }}"
-        @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-        {{ $attributes->except(['id', 'aria-describedby', 'aria-invalid'])->class(['ui-input']) }}>
-</x-monitor::ui.field>
+<x-signal.ui.field :id="$controlId" :name="$name" :label="$label" :error-key="$validationKey" :required="$attributes->has('required')" :description="$description" :hide-label="$hideLabel" :show-errors="$validationKey !== null">
+    <x-signal.ui.input id="{{ $controlId }}" name="{{ $name }}" type="{{ $type }}" :value="$inputValue" :restore="false"
+        aria-invalid="{{ $hasError ? 'true' : 'false' }}" :aria-describedby="$describedBy !== '' ? $describedBy : null"
+        {{ $attributes->except(['id', 'aria-describedby', 'aria-invalid']) }} />
+</x-signal.ui.field>

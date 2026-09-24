@@ -1,6 +1,6 @@
 @props(['title', 'open' => false])
 
-<details @if($open) open @endif {{ $attributes->class(['ui-card bg-surface-muted p-4 shadow-none']) }}>
+<x-signal.ui.card as="details" tone="muted" padding="p-4" :shadow="false" :open="$open" {{ $attributes }}>
     <summary class="cursor-pointer text-xs font-extrabold text-ink">{{ $title }}</summary>
     <div class="mt-4 space-y-4">{{ $slot }}</div>
-</details>
+</x-signal.ui.card>

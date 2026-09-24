@@ -1,5 +1,3 @@
 @props(['padding' => 'p-5', 'shadow' => true])
 
-<div {{ $attributes->class(['ui-card', $padding, 'shadow-none' => ! $shadow]) }}>
-    {{ $slot }}
-</div>
+<x-signal.ui.card :padding="$padding" :shadow="$shadow" {{ $attributes }}>{{ $slot }}</x-signal.ui.card>

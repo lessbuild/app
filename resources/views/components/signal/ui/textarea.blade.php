@@ -2,10 +2,11 @@
     'id' => null,
     'name' => null,
     'value' => null,
+    'restore' => true,
 ])
 
 @php($id = $id ?: $name)
-@php($value = $name ? old($name, $value) : $value)
+@php($value = $restore && $name ? old($name, $value) : $value)
 
 <textarea
     @if ($id) id="{{ $id }}" @endif

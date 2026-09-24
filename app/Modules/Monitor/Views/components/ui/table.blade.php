@@ -1,9 +1,8 @@
 @props(['caption', 'tableClass' => null, 'framed' => true])
 
-<div role="region" aria-label="{{ $caption }}" tabindex="0" {{ $attributes->class(['ui-table-wrap', 'rounded-none border-0' => ! $framed]) }}>
-    <table @class(['ui-table', $tableClass])>
-        <caption class="sr-only">{{ $caption }}</caption>
-        <thead>{{ $head }}</thead>
-        <tbody>{{ $slot }}</tbody>
-    </table>
-</div>
+<x-signal.ui.table :caption="$caption" :table-class="$tableClass" :framed="$framed" {{ $attributes }}>
+    @isset($head)
+        <x-slot:head>{{ $head }}</x-slot:head>
+    @endisset
+    {{ $slot }}
+</x-signal.ui.table>

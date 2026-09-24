@@ -42,6 +42,8 @@
   .ui-input::placeholder { color: var(--ui-subtle); }
   .ui-input:hover { border-color: color-mix(in srgb, var(--ui-primary) 35%, var(--ui-line)); }
   .ui-input:focus { border-color: var(--ui-primary); box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-primary) 15%, transparent); outline: 0; }
+  .ui-input[aria-invalid='true'] { border-color: var(--ui-danger); }
+  .ui-input[aria-invalid='true']:focus { box-shadow: 0 0 0 4px color-mix(in srgb, var(--ui-danger) 15%, transparent); }
   .ui-label { display: block; margin-bottom: 0.45rem; color: var(--ui-ink); font-size: 0.76rem; font-weight: 750; }
   .ui-help { margin-top: 0.45rem; color: var(--ui-muted); font-size: 0.75rem; line-height: 1.5; }
   .ui-chip { display: inline-flex; align-items: center; border: 1px solid var(--ui-line); border-radius: var(--radius-control-value); background: var(--ui-surface-muted); color: var(--ui-muted); padding: 0.38rem 0.58rem; font-size: 0.72rem; font-weight: 700; line-height: 1.2; }

@@ -295,7 +295,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
     });
 }
 
-test('public Signal navigation loads its standalone drawer behavior', async ({ page }) => {
+test('public Signal navigation exposes its mobile product menu', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
 
@@ -303,17 +303,15 @@ test('public Signal navigation loads its standalone drawer behavior', async ({ p
     await page.goto('http://buildpusher.test/landing', { waitUntil: 'networkidle' });
     expect((await drawerAsset).status()).toBe(200);
 
-    const toggle = page.locator('#navbarToggler');
-    const drawer = page.locator('#navbarCollapse');
+    const toggle = page.locator('summary[aria-label="Open product navigation"]');
+    const navigation = page.getByRole('navigation', { name: 'Mobile product navigation' });
+    await expect(toggle).toBeVisible();
+    await expect(navigation).toBeHidden();
     await toggle.click();
-    await expect(drawer).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(true);
-
-    await page.keyboard.press('Escape');
-    await expect(drawer).toBeHidden();
-    await expect(toggle).toBeFocused();
-    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(false);
+    await expect(navigation).toBeVisible();
+    await expect(navigation.getByRole('link', { name: 'Monitor', exact: true })).toBeVisible();
+    await toggle.click();
+    await expect(navigation).toBeHidden();
 });
 
 test('operational incident timeline opens as a contextual evidence dialog', async ({ page }) => {

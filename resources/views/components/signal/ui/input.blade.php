@@ -3,10 +3,11 @@
     'name' => null,
     'type' => 'text',
     'value' => null,
+    'restore' => true,
 ])
 
 @php($id = $id ?: $name)
-@php($value = $name ? old($name, $value) : $value)
+@php($value = $restore && $name && $type !== 'password' ? old($name, $value) : $value)
 
 <input
     @if ($id) id="{{ $id }}" @endif

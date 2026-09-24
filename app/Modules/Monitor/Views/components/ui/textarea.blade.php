@@ -1,13 +1,13 @@
 @props(['name', 'label', 'value' => null, 'errorKey' => null, 'description' => null, 'hideLabel' => false, 'sensitive' => false])
 @php
-    $validationKey = $errorKey ?? $name;
+    $validationKey = $errorKey === false ? null : ($errorKey ?? $name);
     $controlId = $attributes->get('id', $name);
-    $inputValue = $sensitive ? null : old($validationKey, $value);
+    $inputValue = $sensitive ? null : old($validationKey ?? $name, $value);
     $inputValue = is_scalar($inputValue) ? $inputValue : null;
-    $describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$controlId.'-help' : '').($errors->has($validationKey) ? ' '.$controlId.'-error' : ''));
+    $hasError = $validationKey !== null && $errors->has($validationKey);
+    $describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$controlId.'-help' : '').($hasError ? ' '.$controlId.'-error' : ''));
 @endphp
-<x-monitor::ui.field :id="$controlId" :label="$label" :error-key="$validationKey" :description="$description" :hide-label="$hideLabel">
-    <textarea id="{{ $controlId }}" name="{{ $name }}" aria-invalid="{{ $errors->has($validationKey) ? 'true' : 'false' }}"
-        @if($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif
-        {{ $attributes->except(['id', 'aria-describedby', 'aria-invalid'])->class(['ui-input'])->merge(['rows' => 3]) }}>{{ $inputValue }}</textarea>
-</x-monitor::ui.field>
+<x-signal.ui.field :id="$controlId" :name="$name" :label="$label" :error-key="$validationKey" :required="$attributes->has('required')" :description="$description" :hide-label="$hideLabel" :show-errors="$validationKey !== null">
+    <x-signal.ui.textarea id="{{ $controlId }}" name="{{ $name }}" :value="$inputValue" :restore="false" aria-invalid="{{ $hasError ? 'true' : 'false' }}" :aria-describedby="$describedBy !== '' ? $describedBy : null"
+        {{ $attributes->except(['id', 'aria-describedby', 'aria-invalid'])->merge(['rows' => 3]) }} />
+</x-signal.ui.field>
