@@ -663,10 +663,14 @@ class AutomationTest extends TestCase
         );
 
         $dialogUrl = route('automation.index', ['dialog' => 'create-token']);
+        $tokenDialog = $this->actingAs($user)->get($dialogUrl)->assertSuccessful();
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="automation-token-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
-            $this->actingAs($user)->get($dialogUrl)->assertSuccessful()->getContent(),
+            $tokenDialog->getContent(),
         );
+        $tokenDialog->assertSee('id="automation-token-name"', false)
+            ->assertSee('id="automation-token-expires-in-days"', false)
+            ->assertSee('id="automation-token-ability-read"', false);
 
         $response = $this->actingAs($user)
             ->from($dialogUrl)
@@ -721,6 +725,10 @@ class AutomationTest extends TestCase
         );
 
         $scheduleUrl = route('automation.index', ['dialog' => $scheduleDialogKey]);
+        $this->actingAs($user)->get($scheduleUrl)
+            ->assertSee('id="'.$scheduleDialogId.'-name"', false)
+            ->assertSee('id="'.$scheduleDialogId.'-cron-expression"', false)
+            ->assertSee('id="'.$scheduleDialogId.'-timezone"', false);
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="'.preg_quote($scheduleDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $this->actingAs($user)->get($scheduleUrl)->assertSuccessful()->getContent(),
@@ -742,9 +750,16 @@ class AutomationTest extends TestCase
             $invalidSchedule->getContent(),
         );
         $invalidSchedule->assertSee('The name field is required.');
+        $invalidSchedule->assertSee('value="not cron"', false)
+            ->assertSee('value="Not/AZone"', false);
         $this->assertDatabaseCount('deployment_schedules', 0);
 
         $taskUrl = route('automation.index', ['dialog' => $taskDialogKey]);
+        $this->actingAs($user)->get($taskUrl)
+            ->assertSee('id="'.$taskDialogId.'-name"', false)
+            ->assertSee('id="'.$taskDialogId.'-command"', false)
+            ->assertSee('id="'.$taskDialogId.'-without-overlapping"', false)
+            ->assertSee('id="'.$taskDialogId.'-alert-on-failure"', false);
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="'.preg_quote($taskDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $this->actingAs($user)->get($taskUrl)->assertSuccessful()->getContent(),

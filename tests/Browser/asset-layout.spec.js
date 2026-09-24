@@ -2349,6 +2349,9 @@ test('credential workflows use compact accessible dialogs', async ({ page }) => 
     const tokenDialog = page.getByRole('dialog', { name: 'Create personal access token', exact: true });
     await tokenTrigger.click();
     await expect(tokenDialog).toBeVisible();
+    await expect(tokenDialog.getByLabel('Token name')).toBeVisible();
+    await expect(tokenDialog.getByLabel('Expires')).toBeVisible();
+    await expect(tokenDialog.getByRole('checkbox', { name: 'Read', exact: true })).toBeVisible();
     await expect(page.locator('#automation-token-dialog [data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-token');
     await page.keyboard.press('Escape');
@@ -2372,6 +2375,9 @@ test('automation schedule and task composers use compact accessible dialogs', as
     const scheduleDialog = page.getByRole('dialog', { name: 'Add deployment schedule', exact: true }).first();
     await scheduleTrigger.click();
     await expect(scheduleDialog).toBeVisible();
+    await expect(scheduleDialog.getByLabel('Schedule name')).toBeVisible();
+    await expect(scheduleDialog.getByLabel('Cron expression')).toBeVisible();
+    await expect(scheduleDialog.getByLabel('Timezone')).toBeVisible();
     await expect(scheduleDialog.locator('[data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^deployment-schedule-/);
     await page.keyboard.press('Escape');
@@ -2382,6 +2388,11 @@ test('automation schedule and task composers use compact accessible dialogs', as
     const taskDialog = page.getByRole('dialog', { name: 'Add scheduled task', exact: true }).first();
     await taskTrigger.click();
     await expect(taskDialog).toBeVisible();
+    for (const label of ['Task name', 'Cron expression', 'Timezone', 'Command', 'Timeout seconds']) {
+        await expect(taskDialog.getByLabel(label)).toBeVisible();
+    }
+    await expect(taskDialog.getByRole('checkbox', { name: 'Prevent overlap', exact: true })).toBeVisible();
+    await expect(taskDialog.getByRole('checkbox', { name: 'Alert on failure', exact: true })).toBeVisible();
     await expect(taskDialog.locator('[data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^scheduled-task-/);
     await page.locator('[id^="automation-task-dialog-"] [data-modal-close]').click();

@@ -18,21 +18,34 @@
     <form method="POST" action="{{ route('automation.deployment-schedules.store', $environment) }}" class="space-y-4">
         @csrf
         <input type="hidden" name="_automation_dialog" value="{{ $dialogKey }}">
-        <label class="block">
-            <span class="ui-label">{{ __('Schedule name') }}</span>
-            <input required name="name" maxlength="100" class="ui-input" placeholder="Nightly" value="{{ $formOld ? old('name') : '' }}">
-            <x-forms.errors name="name" />
-        </label>
-        <label class="block">
-            <span class="ui-label">{{ __('Cron expression') }}</span>
-            <input required name="cron_expression" maxlength="100" class="ui-input font-mono" value="{{ $formOld ? old('cron_expression', '0 3 * * *') : '0 3 * * *' }}">
-            <x-forms.errors name="cron_expression" />
-        </label>
-        <label class="block">
-            <span class="ui-label">{{ __('Timezone') }}</span>
-            <input required name="timezone" class="ui-input" value="{{ $formOld ? old('timezone', 'UTC') : 'UTC' }}">
-            <x-forms.errors name="timezone" />
-        </label>
-        <x-ui.button type="submit" variant="primary">{{ __('Add deployment schedule') }}</x-ui.button>
+        <x-signal.ui.input-field
+            :id="$dialogId.'-name'"
+            name="name"
+            :label="__('Schedule name')"
+            :value="$formOld ? old('name') : ''"
+            maxlength="100"
+            required
+            placeholder="Nightly"
+            :restore="false"
+        />
+        <x-signal.ui.input-field
+            :id="$dialogId.'-cron-expression'"
+            name="cron_expression"
+            :label="__('Cron expression')"
+            :value="$formOld ? old('cron_expression', '0 3 * * *') : '0 3 * * *'"
+            maxlength="100"
+            required
+            :restore="false"
+            class="font-mono"
+        />
+        <x-signal.ui.input-field
+            :id="$dialogId.'-timezone'"
+            name="timezone"
+            :label="__('Timezone')"
+            :value="$formOld ? old('timezone', 'UTC') : 'UTC'"
+            required
+            :restore="false"
+        />
+        <x-signal.ui.button type="submit" variant="primary">{{ __('Add deployment schedule') }}</x-signal.ui.button>
     </form>
 </x-dialogs.modal>
