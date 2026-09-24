@@ -11,11 +11,11 @@
         :title="__('Back to gallery recipe')"
     />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Review gallery changes')"
         :description="$recipe->name"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button href="{{ $recipeEditUrl }}" data-modal-trigger="{{ $recipeEditDialogId }}" aria-controls="{{ $recipeEditDialogId }}" aria-expanded="{{ $recipeEditOpen ? 'true' : 'false' }}" variant="secondary">{{ __('Edit My Copy') }}</x-signal.ui.button>
             @if ($copy->hasGalleryUpdate() && ! $copy->is_published)
                 <form method="POST" action="{{ route('recipes.gallery.refresh', $copy) }}" onsubmit="return confirm({{ Illuminate\Support\Js::from(__('Replace :recipe with this reviewed gallery version?', ['recipe' => $copy->name])) }})">
@@ -23,8 +23,8 @@
                     <x-signal.ui.button type="submit" variant="primary">{{ __('Update Private Copy') }}</x-signal.ui.button>
                 </form>
             @endif
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.alert class="mt-6 p-4" tone="warning">
         <p class="font-semibold">{{ __('Review every changed command') }}</p>

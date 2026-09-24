@@ -1,7 +1,7 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('gallery.reports.mine')" :title="__('Back to my reports')" />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('My Report Status')"
         :description="__('Review the current state of your private community report and any response from the contributor.')"
     />

@@ -181,17 +181,17 @@ class LocalUiAssetTest extends TestCase
             ->assertDontSee('ui-avatars.com', false);
     }
 
-    public function test_signal_public_blocks_are_pinned_to_the_requested_theme_source(): void
+    public function test_signal_public_theme_source_and_application_component_adaptations_are_pinned(): void
     {
         foreach ([
-            'css/signal/theme.css' => '980e9be5120e1498103fbd5cf71cad93541a4d15908f6b3a0a746757ccb8713d',
-            'css/signal/components.css' => '2e1ed170519457bc07431356e9fcfb588173069e9a33709cbe0de39e44253cbb',
+            'css/signal/theme.css' => 'fa483deb8b7d06921f9b3fa975e82f5813ecbe240ea0cc3d0568340d2d8d31e3',
+            'css/signal/components.css' => 'e403ef10109308fd58c7093b61e5ff4559ecce70d7721ab5eca0a421d57caad6',
             'css/signal/themes.json' => 'abb484b2897b144830e45e7f51f34a420972ba0371b47676880d4664b74b6872',
         ] as $relativePath => $expectedHash) {
             $this->assertSame(
                 $expectedHash,
                 hash_file('sha256', resource_path($relativePath)),
-                $relativePath.' must match the source commit recorded in the Signal integration ledger.',
+                $relativePath.' must match its reviewed upstream source or application adaptation.',
             );
         }
 
@@ -263,6 +263,44 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('aria-label="Server sections"', $html);
         $this->assertStringContainsString('ui-local-nav__scroll', $html);
         $this->assertStringContainsString('href="#inventory"', $html);
+    }
+
+    public function test_latest_signal_page_header_supports_breadcrumbs_and_deployer_uses_it_directly(): void
+    {
+        $html = Blade::render(
+            <<<'BLADE'
+            <x-signal.ui.page-header
+                id="servers-page-header"
+                title-id="servers-title"
+                eyebrow="Infrastructure"
+                title="Servers"
+                description="Manage capacity."
+                :breadcrumbs="[['label' => 'Deployer', 'href' => '/'], ['label' => 'Infrastructure', 'href' => '/infrastructure']]"
+            >
+                <x-slot:actions><x-signal.ui.button href="/servers/create" variant="primary">Add server</x-signal.ui.button></x-slot:actions>
+            </x-signal.ui.page-header>
+            BLADE,
+        );
+
+        $this->assertStringContainsString('id="servers-page-header"', $html);
+        $this->assertStringContainsString('id="servers-title"', $html);
+        $this->assertStringContainsString('data-page-header', $html);
+        $this->assertStringContainsString('aria-label="Breadcrumb"', $html);
+        $this->assertStringContainsString('aria-current="page"', $html);
+        $this->assertStringContainsString('border-b border-line pb-6', $html);
+        $this->assertStringContainsString('data-page-actions', $html);
+        $this->assertStringContainsString('Add server', $html);
+
+        $deployerViews = collect(File::allFiles(app_path('Modules/Deployer/Views')))
+            ->map(fn ($file) => File::get($file->getPathname()))
+            ->implode("\n");
+        $this->assertStringNotContainsString('x-layouts.partials.heading', $deployerViews);
+        $this->assertGreaterThan(45, substr_count($deployerViews, '<x-signal.ui.page-header'));
+
+        $dashboard = File::get(app_path('Modules/Deployer/Views/dashboard.blade.php'));
+        $this->assertStringContainsString('<x-signal.ui.page-header', $dashboard);
+        $this->assertStringContainsString('<x-slot:actions>', $dashboard);
+        $this->assertStringNotContainsString('<h1 id="dashboard-title"', $dashboard);
     }
 
     public function test_mobile_dialog_and_filter_primitives_expose_native_sheet_hooks(): void
@@ -1060,7 +1098,7 @@ class LocalUiAssetTest extends TestCase
             ->assertDontSee('aria-controls="app-mobile-nav"', false)
             ->assertSee('aria-label="Deployer sections"', false)
             ->assertSee('aria-label="Open application navigation"', false)
-            ->assertSee('aria-haspopup="true"', false)
+            ->assertSee('aria-haspopup="dialog"', false)
             ->assertSee('aria-controls="signal-command-palette"', false)
             ->assertSee('id="signal-command-palette"', false)
             ->assertSee('data-signal-command-search-url=', false)
@@ -1075,7 +1113,9 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('data-signal-command-input', false)
             ->assertSee('data-signal-command-results', false)
             ->assertSee('overflow-y-auto', false)
-            ->assertSee('ui-popover-mobile', false)
+            ->assertSee('data-mobile-drawer', false)
+            ->assertSee('app-mobile-sidebar-panel', false)
+            ->assertDontSee('ui-popover-mobile', false)
             ->assertSee('ada@example.test')
             ->assertSee('action="'.route('logout').'" method="post"', false)
             ->assertSee('New app')
@@ -1482,7 +1522,7 @@ class LocalUiAssetTest extends TestCase
 
         $uiStyles = File::get(resource_path('css/components/ui.css'));
         $this->assertStringContainsString('.ui-page-header__actions > .ui-btn', $uiStyles);
-        $this->assertStringContainsString('[data-dashboard-hero] > nav > .ui-btn', $uiStyles);
+        $this->assertStringContainsString('[data-dashboard-hero] .ui-page-header__actions > nav > .ui-btn', $uiStyles);
     }
 
     public function test_account_and_workspace_preference_surfaces_use_signal_form_primitives(): void

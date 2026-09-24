@@ -8,14 +8,14 @@
         $temporaryDomainOpen = $domainDialog === 'temporary-domain';
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Delivery targets') }}"
         icon="link"
         :title="__('Domains & TLS')"
         :description="__('Manage aliases, redirects, Cloudflare DNS, temporary domains, and certificate health.')"
     >
         @if ($canManage)
-            <x-slot:buttons>
+            <x-slot:actions>
                 <div data-domain-actions class="flex flex-wrap gap-2">
                     <x-signal.ui.button
                         :href="route('domains.index', ['dialog' => 'add-domain'])"
@@ -32,9 +32,9 @@
                         variant="secondary"
                     >{{ __('Issue temporary domain') }}</x-signal.ui.button>
                 </div>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav :label="__('Domain sections')">
         <a href="#domain-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>

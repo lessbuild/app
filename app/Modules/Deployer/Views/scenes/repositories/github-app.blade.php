@@ -22,7 +22,7 @@
         $repositoryCreateOpen = request()->query('dialog') === 'create-repository';
     @endphp
     <x-layouts.partials.breadcrumbs :route="route('repositories.index')" :title="__('Back to repositories')" />
-    <x-layouts.partials.heading icon="github" :title="__('GitHub repositories')" :description="__('Repositories accessible to :provider. Access is refreshed with a short-lived installation token.', ['provider' => $provider->name])" />
+    <x-signal.ui.page-header icon="github" :title="__('GitHub repositories')" :description="__('Repositories accessible to :provider. Access is refreshed with a short-lived installation token.', ['provider' => $provider->name])" />
     <div class="mt-8 grid gap-3 md:grid-cols-2">
         @forelse($repositories as $repository)
             <x-signal.ui.card tone="interactive" class="flex items-center gap-4 p-4">

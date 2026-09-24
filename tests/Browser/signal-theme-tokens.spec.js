@@ -86,6 +86,8 @@ test('one shared Signal token change reaches every product, public, and auth doc
             await expect(rootElement).toHaveAttribute('data-density', 'compact');
             await expect(rootElement).toHaveAttribute('data-font', 'editorial');
             await expect(page.getByRole('heading', { name: 'Shared theme proof' })).toBeVisible();
+            await expect(page.locator('[data-theme-demo-page-header]')).toHaveAttribute('data-page-header', '');
+            await expect(page.locator('[data-theme-demo-page-header]')).toHaveCSS('border-bottom-style', 'solid');
             await expect(page.getByRole('button', { name: 'Shared primary action' })).toBeVisible();
             await expect(page.getByLabel('Email address')).toBeVisible();
 
@@ -108,7 +110,7 @@ test('one shared Signal token change reaches every product, public, and auth doc
                 const card = document.querySelector('[data-theme-demo-card]');
                 const button = document.querySelector('[data-theme-demo-button]');
                 const input = document.querySelector('[data-theme-demo-input]');
-                const heading = document.querySelector('[data-theme-demo-heading]');
+                const heading = document.querySelector('[data-theme-demo-page-header] h1');
 
                 return {
                     product: root.dataset.product,

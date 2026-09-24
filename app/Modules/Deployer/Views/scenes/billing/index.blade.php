@@ -1,13 +1,13 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="cog"
         :title="__('Billing')"
         :description="__('Plans and payments for :workspace.', ['workspace' => auth()->user()->currentOrganization->name])"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button :href="route('costs.index')" variant="secondary">{{ __('Cost visibility') }}</x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Billing sections')">
         <a href="#billing-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>

@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="chip"
         :title="__('GitHub App setup')"
         :description="__('Install the downloaded GitHub App private key without using a terminal. This one-time page is available only to platform administrators on the isolated development runtime.')"

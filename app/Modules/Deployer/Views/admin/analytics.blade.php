@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="chart-bar"
         :title="__('Business analytics')"
         :description="__('Private platform-wide growth, usage, revenue, and monetization signals.')"

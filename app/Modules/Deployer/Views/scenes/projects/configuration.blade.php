@@ -1,6 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('projects.show', $project)" :title="__('Back to application')" />
-    <x-layouts.partials.heading icon="view-grid" :title="__('Application configuration')" :description="__('Review portable configuration before applying changes.')" />
+    <x-signal.ui.page-header icon="view-grid" :title="__('Application configuration')" :description="__('Review portable configuration before applying changes.')" />
     @if(isset($environmentOverview))
         @php
             $recordedDependencyCount = $environmentOverview->sum(fn ($environment) => count($environment->dependencies));

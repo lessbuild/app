@@ -5,16 +5,16 @@
         $budgetDialogUrl = route('costs.index', ['dialog' => 'edit-budget']);
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Workspace economics') }}"
         icon="chip"
         :title="__('Cost visibility')"
         :description="__('Provider-catalog estimates, measured utilization signals, and budget awareness. Your provider invoice remains authoritative.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button :href="route('billing.index')" variant="secondary">{{ __('Manage billing') }}</x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     @unless($featureAvailable)
         <div class="ui-alert ui-alert--info mt-6" role="status">

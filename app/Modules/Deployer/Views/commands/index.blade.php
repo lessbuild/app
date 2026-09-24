@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Server operations') }}"
         icon="terminal"
         :title="__('Command Center')"

@@ -2,7 +2,7 @@
 
 Use `resources/views/components/signal/` as the source of truth for shared Blade UI and `resources/css/signal/` plus `resources/css/components/ui.css` for its semantic theme styles. New product pages use the `x-signal.*` namespace. Product and legacy templates can keep compatibility names while they are migrated; adapters forward props, attributes, slots, and Livewire attributes to the shared implementation.
 
-The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `a87e553a6c499deaa86163469f018ceff9e2a6c4` (`Keep mobile topbar visible above More sidebar`, 2026-09-24). The current source includes the later SaaS administration/template workflows and an animated mobile navigation drawer. Its drawer, spacing tokens, expanded-dialog, scrollable-table, and responsive popover patterns are adapted into the shared Laravel components. The product drawer begins below the live topbar height so Deployer’s workspace and project context remains visible; its height follows the responsive topbar as content wraps. Sitemap generation and static-demo persistence stay in the template site; the application uses server-authoritative workspaces, navigation, and product access.
+The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `988fefc475a8646049c91cda4ff96def1fa9c27e` (`Add responsive browser checks and page headers`, 2026-09-24). Its current source adds a reusable responsive page-header composition with breadcrumbs, page-title anchors, and a clear divider. The Laravel page-header component follows that pattern and retains application-specific icon, metadata, and action slots. The app theme tokens match the current upstream theme file; the component stylesheet also retains Laravel-specific accessibility and code-block adaptations. The current source includes the SaaS administration/template workflows and an animated mobile navigation drawer. Its drawer, spacing tokens, expanded-dialog, scrollable-table, and responsive popover patterns are adapted into shared Laravel components. The product drawer begins below the live topbar height so Deployer’s workspace and project context remains visible; its height follows the responsive topbar as content wraps. Sitemap generation and static-demo persistence stay in the template site; the application uses server-authoritative workspaces, navigation, and product access.
 
 ## Current shared APIs
 
@@ -34,7 +34,7 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 | `x-signal.ui.local-nav` | Scrollable, labeled product navigation region. |
 | `x-signal.ui.menu` | Native disclosure menu with trigger slot and alignment options. |
 | `x-signal.ui.panel` | Shared semantic panel surface for `div`, `section`, `article`, `aside`, `form`, `fieldset`, and `details` compositions. |
-| `x-signal.ui.page-header` | Page title, eyebrow and icon, description, leading and metadata slots, and actions. |
+| `x-signal.ui.page-header` | Responsive page title, optional breadcrumbs and title anchor, eyebrow and icon, description, leading and metadata slots, and actions. |
 | `x-signal.ui.stat` | Definition-list metric with label, value, description, icon, and change badge. |
 | `x-signal.ui.table` | Captioned, keyboard-scrollable data table with optional header slot and shared framing. |
 | `x-signal.ui.workflow-run` | Correlated source/delivery step timeline with states, timestamps, and an optional retry action. |
@@ -50,7 +50,7 @@ Use explicit component props for variants and named slots for page-specific cont
 
 ## Compatibility adapters
 
-- Deployer views now call `x-signal.ui.*` directly. The `x-ui.*` adapters remain available for compatibility with any unmigrated consumers.
+- Deployer views now call `x-signal.ui.*` directly, including the shared page-header on its application screens and dashboard. The `x-ui.*` and `x-layouts.partials.heading` adapters remain available for compatibility with any unmigrated consumers.
 - `x-dialogs.modal`, `x-dialogs.delete`, and `x-dialogs.dialog` forward to `x-signal.overlays.*`.
 - Existing layout adapters under `x-layouts.*` forward to `x-signal.layouts.*` where applicable.
 - `x-avatar` forwards to `x-signal.ui.avatar`.

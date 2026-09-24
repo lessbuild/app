@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Account security') }}"
         icon="user-circle"
         :title="__('Account')"

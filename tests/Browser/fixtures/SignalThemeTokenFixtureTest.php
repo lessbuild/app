@@ -60,8 +60,14 @@ final class SignalThemeTokenFixtureTest extends TestCase
                         />
                     @endif
                     <main class="ui-layout-gutter mx-auto max-w-3xl space-y-5 py-6">
+                        <x-signal.ui.page-header
+                            eyebrow="Workspace overview"
+                            title="Shared theme proof"
+                            description="Page titles and actions follow the same Signal theme as the rest of the workspace."
+                            :breadcrumbs="$productKey === 'deployer' ? [['label' => 'Workspace', 'href' => '/theme-token-demo/deployer']] : []"
+                            data-theme-demo-page-header
+                        />
                         <x-signal.ui.panel as="section" class="space-y-5 p-6" data-theme-demo-panel>
-                            <h1 class="text-2xl font-extrabold" data-theme-demo-heading>Shared theme proof</h1>
                             <x-signal.ui.card tone="muted" class="p-4" data-theme-demo-card>Muted card variant</x-signal.ui.card>
                             <x-signal.ui.button variant="primary" data-theme-demo-button>Shared primary action</x-signal.ui.button>
                             <x-signal.ui.input-field name="email" label="Email address" type="email" data-theme-demo-input />

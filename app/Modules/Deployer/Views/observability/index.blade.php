@@ -36,14 +36,14 @@
             : null;
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Operations') }}"
         icon="chip"
         :title="__('Observability')"
         :description="__('Metrics, runtime logs, alert integrations, and public service health in one place.')"
     >
         @if ($canManage)
-            <x-slot:buttons>
+            <x-slot:actions>
                 <x-signal.ui.button
                     href="{{ $metricRuleDialogUrl }}"
                     data-modal-trigger="metric-rule-dialog"
@@ -53,9 +53,9 @@
                 >
                     {{ __('Create alert rule') }}
                 </x-signal.ui.button>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     @php
         $activeOperationalIncidentCount = $operationalIncidents

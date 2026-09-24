@@ -8,11 +8,11 @@
         $recipeCreateUrl = route('recipes.index', [...$recipeIndexQuery, 'dialog' => 'create-recipe']);
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Provisioning Recipes')"
         :description="__('Create reusable Bash scripts for new servers.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button href="{{ route('gallery.index') }}" variant="secondary">{{ __('Browse Gallery') }}</x-signal.ui.button>
             <x-signal.ui.button href="{{ route('recipes.export', array_filter($filters, fn ($value) => $value !== null)) }}" variant="secondary">{{ __('Export CSV') }}</x-signal.ui.button>
             <x-signal.ui.button
@@ -25,8 +25,8 @@
                 <svg class="h-4 w-4" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#plus-circle"></use></svg>
                 {{ __('Add Recipe') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Recipe sections')">
         <a href="#recipe-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>

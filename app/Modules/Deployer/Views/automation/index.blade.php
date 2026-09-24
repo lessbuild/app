@@ -7,14 +7,14 @@
         $tokenDialogUrl = route('automation.index', ['dialog' => 'create-token']);
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Release automation') }}"
         icon="terminal"
         :title="__('Automation')"
         :description="__('API access, deploy schedules, scaling and versioned workflow configuration.')"
     >
         @if ($features['api'] && $canManage)
-            <x-slot:buttons>
+            <x-slot:actions>
                 <x-signal.ui.button
                     href="{{ $tokenDialogUrl }}"
                     data-modal-trigger="automation-token-dialog"
@@ -24,9 +24,9 @@
                 >
                     {{ __('Create token') }}
                 </x-signal.ui.button>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     @if (session('success'))
         <x-signal.ui.panel class="ui-panel mt-6 border-l-4 border-line bg-surface-muted p-4 text-sm text-ink" style="border-left-color: var(--ui-success)" role="status">{{ session('success') }}</x-signal.ui.panel>

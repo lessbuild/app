@@ -4,7 +4,7 @@
         :route="route('websites.show', $website)"
     />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Health check history')"
         :description="__('Review the retained health evidence for :website.', ['website' => $website->name])"
     />

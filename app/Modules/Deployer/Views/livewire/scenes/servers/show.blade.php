@@ -43,12 +43,12 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="digital-ocean"
         :title="$server->label"
         :description="__('Easily manage :name', ['name' => $server->label])"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
 
             <x-signal.ui.button :href="route('builds.index', ['server_id' => $server->id])" variant="secondary">
                 {{ __('Deployment History') }}
@@ -107,8 +107,8 @@
                 </svg>
                 {{ __('Delete Server') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Server sections')">
         <a href="#server-information" class="ui-local-nav__link">{{ __('Overview') }}</a>

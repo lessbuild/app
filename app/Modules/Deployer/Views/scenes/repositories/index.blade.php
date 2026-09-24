@@ -14,13 +14,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Source control') }}"
         icon="code"
         :title="__('Repositories')"
         :description="__('Manage source targets and review their latest filtered deployment state.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button
                 :href="$impactPreviewDialogUrl"
                 data-modal-trigger="repository-impact-preview-dialog"
@@ -44,8 +44,8 @@
                 </svg>
                 {{ __('Add Repository') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null && $value !== '')))
 

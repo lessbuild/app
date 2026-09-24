@@ -35,13 +35,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Provider integration') }}"
         icon="cloud"
         :title="$provider->name"
         :description="$provider->description"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             @if ($provider->isSourceControl())
                 <x-signal.ui.button :href="route('builds.index', ['provider_id' => $provider->id])" variant="secondary">
                     {{ __('Deployment history') }}
@@ -83,8 +83,8 @@
                 {{ __('Delete Provider') }}
             </x-signal.ui.button>
 
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Provider sections')">
         <a href="#provider-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>

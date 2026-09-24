@@ -9,13 +9,13 @@
         ], static fn ($value): bool => filled($value)));
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Product loop') }}"
         icon="information-circle"
         :title="__('Product feedback')"
         :description="__('Report a bug, share an idea, or tell us where the product became confusing.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button
                 href="{{ $feedbackDialogUrl }}"
                 data-modal-trigger="feedback-compose"
@@ -25,8 +25,8 @@
             >
                 {{ __('Send feedback') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.insights
         id="feedback-insights"

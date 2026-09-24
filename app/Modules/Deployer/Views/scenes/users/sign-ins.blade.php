@@ -4,7 +4,7 @@
         :route="route('account.index')"
     />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Sign-in history')"
         :description="__('Review successful password and social sign-ins retained for account security.')"
     />

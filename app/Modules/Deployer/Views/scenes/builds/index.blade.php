@@ -5,13 +5,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Release operations') }}"
         icon="cloud-upload"
         :title="__('Deployment history')"
         :description="__('Review filtered deployment outcomes, activity, and retained release details.')"
     >
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null && $value !== '')))
 

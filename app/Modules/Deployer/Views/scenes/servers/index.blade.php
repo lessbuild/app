@@ -11,13 +11,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Infrastructure') }}"
         icon="server"
         :title="__('Servers')"
         :description="__('Manage cloud capacity and review filtered provisioning state.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button :href="route('servers.import.create')" variant="secondary">{{ __('Import existing') }}</x-signal.ui.button>
             <x-signal.ui.button
                 :href="$serverCreateUrl"
@@ -31,8 +31,8 @@
                 </svg>
                 {{ __('Add Server') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null)))
 

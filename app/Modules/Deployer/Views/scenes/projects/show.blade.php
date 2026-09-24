@@ -21,8 +21,8 @@
 
     <x-layouts.partials.breadcrumbs :route="route('projects.index')" :title="__('Back to applications')" />
 
-    <x-layouts.partials.heading icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')">
-        <x-slot:buttons>
+    <x-signal.ui.page-header icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')">
+        <x-slot:actions>
             @if($canManage)
                 <x-signal.ui.button
                     :href="$configurationDialogUrl"
@@ -38,8 +38,8 @@
                     <x-signal.ui.button type="submit" variant="danger">{{ __('Delete application') }}</x-signal.ui.button>
                 </form>
             @endif
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.insights
         id="project-insights"

@@ -1,12 +1,12 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Workspace administration') }}"
         icon="user-circle"
         :title="__('Workspace')"
         :description="__('Manage members, roles, and workspace access.')"
     >
         @if ($canManage)
-            <x-slot:buttons>
+            <x-slot:actions>
                 <x-signal.ui.button
                     href="{{ route('organizations.index', ['dialog' => 'invite-member']) }}"
                     data-modal-trigger="organization-invite"
@@ -16,9 +16,9 @@
                 >
                     {{ __('Invite member') }}
                 </x-signal.ui.button>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     @php
         $organizationDefaultErrorKeys = array_keys($errors->getBag('default')->getMessages());

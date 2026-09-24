@@ -55,13 +55,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Delivery target') }}"
         icon="external-link"
         :title="$website->name"
         :description="$website->description"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button
                 :href="route('builds.index', ['website_id' => $website->id])"
                 data-modal-trigger="website-deployment-history-dialog"
@@ -113,8 +113,8 @@
                 {{ __('Delete Website') }}
             </x-signal.ui.button>
 
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Website sections')">
         <a href="#website-information" class="ui-local-nav__link">{{ __('Overview') }}</a>

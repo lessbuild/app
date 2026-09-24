@@ -456,13 +456,17 @@
             font-size: 1.875rem;
         }
 
-        [data-dashboard-hero] > nav {
+        [data-dashboard-hero] .ui-page-header__actions {
+            display: block;
+        }
+
+        [data-dashboard-hero] .ui-page-header__actions > nav {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
             width: 100%;
         }
 
-        [data-dashboard-hero] > nav > .ui-btn {
+        [data-dashboard-hero] .ui-page-header__actions > nav > .ui-btn {
             width: 100%;
             min-width: 0;
         }

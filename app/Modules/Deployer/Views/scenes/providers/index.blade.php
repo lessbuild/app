@@ -11,13 +11,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Integrations') }}"
         icon="cloud"
         :title="__('Providers')"
         :description="__('Manage infrastructure integrations and review their filtered connection state.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button :href="route('providers.export', array_filter($filters, fn ($value) => $value !== null))" variant="secondary">
                 {{ __('Export CSV') }}
             </x-signal.ui.button>
@@ -33,8 +33,8 @@
                 </svg>
                 {{ __('Add Provider') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Provider sections')">
         <a href="#providers-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>

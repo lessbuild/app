@@ -4,11 +4,11 @@
         :route="route('repositories.index')"
     ></x-layouts.partials.breadcrumbs>
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="code"
         :title="__('Deployment impact preview')"
         :description="__('See which enabled repository targets are affected by a changed-file set before any automatic push deployment.')"
-    ></x-layouts.partials.heading>
+    ></x-signal.ui.page-header>
 
     <div class="mt-8">
         @include('components.scenes.repositories.impact-preview-content', ['fragment' => false])

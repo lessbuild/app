@@ -6,13 +6,13 @@
         $loadBalancerCreateUrl = route('load-balancers.index', ['dialog' => 'create-route']);
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="cloud"
         :title="__('High availability')"
         :description="__('Route traffic across application nodes with active health checks, weighted capacity, and automatic failover.')"
     >
         @if ($canManage)
-            <x-slot:buttons>
+            <x-slot:actions>
                 <x-signal.ui.button
                     href="{{ $loadBalancerCreateUrl }}"
                     data-modal-trigger="load-balancer-create"
@@ -22,9 +22,9 @@
                 >
                     {{ __('Create route') }}
                 </x-signal.ui.button>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     @unless ($featureAvailable)
         <div class="ui-alert ui-alert--info mt-6" role="status">

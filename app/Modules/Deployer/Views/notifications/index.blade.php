@@ -1,12 +1,12 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Health signals') }}"
         icon="bell"
         :title="__('Notifications')"
         :description="__('Review account security, deployment, infrastructure, and community feedback alerts.')"
     >
         @if ($hasUnreadNotifications || $hasReadNotifications)
-            <x-slot:buttons>
+            <x-slot:actions>
                 @if ($hasUnreadNotifications)
                     <form method="POST" action="{{ route('notifications.read-all') }}">
                         @csrf
@@ -19,9 +19,9 @@
                         <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Delete all read notifications? Unread notifications will be kept.')) }})">{{ __('Clear read') }}</x-signal.ui.button>
                     </form>
                 @endif
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav :label="__('Notification sections')">
         <a href="#notifications-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>

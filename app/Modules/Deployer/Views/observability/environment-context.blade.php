@@ -32,7 +32,7 @@
     />
 
     <div class="mt-6 flex flex-wrap items-end justify-between gap-4">
-        <x-layouts.partials.heading
+        <x-signal.ui.page-header
             icon="chip"
             :title="__('Environment evidence')"
             :description="__('A bounded view of deployment, health, runtime-log and incident signals for :environment.', ['environment' => $environment->name])"

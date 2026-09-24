@@ -24,14 +24,14 @@
                     && $destinationHasErrors));
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Recovery') }}"
         icon="database"
         :title="__('Managed backups')"
         :description="__('Encrypted, offsite restic snapshots of site databases, persistent storage, and environment configuration.')"
     >
         @if ($canManage && $destinations->isNotEmpty() && $websites->isNotEmpty())
-            <x-slot:buttons>
+            <x-slot:actions>
                 <x-signal.ui.button
                     href="{{ $scheduleDialogUrl }}"
                     data-modal-trigger="backup-schedule-dialog"
@@ -41,9 +41,9 @@
                 >
                     {{ __('Add schedule') }}
                 </x-signal.ui.button>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav :label="__('Backup sections')">
         <a href="#backup-readiness" class="ui-local-nav__link">{{ __('Overview') }}</a>

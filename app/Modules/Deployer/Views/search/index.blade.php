@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Search')"
         :description="__('Find infrastructure, source control, recipes, and deployments across your account.')"
     />

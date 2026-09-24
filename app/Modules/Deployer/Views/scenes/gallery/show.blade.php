@@ -11,11 +11,11 @@
 
     <x-layouts.partials.breadcrumbs :route="route('gallery.index')" :title="__('Back to gallery')" />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="$recipe->name"
         :description="$recipe->description"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             @if ((int) $recipe->user_id !== (int) auth()->id())
                 <x-signal.ui.button
                     href="{{ $reportDialogUrl }}"
@@ -54,8 +54,8 @@
                     <x-signal.ui.button type="submit" variant="primary">{{ __('Add to My Recipes') }}</x-signal.ui.button>
                 </form>
             @endif
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Recipe sections')">
         <a href="#recipe-details-insights" class="ui-local-nav__link">{{ __('Overview') }}</a>

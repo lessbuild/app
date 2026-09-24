@@ -6,11 +6,11 @@
 
     <x-layouts.partials.breadcrumbs :route="route('recipes.index')" :title="__('Back to recipes')" />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="$recipe->name"
         :description="$recipe->description ?: __('No description')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             @if ($recipe->is_published)
                 <x-signal.ui.button :href="route('gallery.show', $recipe)" variant="secondary">{{ __('View in Gallery') }}</x-signal.ui.button>
             @endif
@@ -30,8 +30,8 @@
                 </svg>
                 {{ __('Edit Recipe') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Recipe sections')">
         <a href="#recipe-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>

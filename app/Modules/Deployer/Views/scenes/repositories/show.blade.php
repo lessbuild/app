@@ -52,11 +52,11 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="$repository->name"
         :description="$repository->description"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
 
             <form method="POST" action="{{ route('repositories.deploy', $repository) }}">
                 @csrf
@@ -96,8 +96,8 @@
                 {{ __('Delete') }}
             </x-signal.ui.button>
 
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Repository sections')">
         <a href="#repository-overview" class="ui-local-nav__link">{{ __('Overview') }}</a>

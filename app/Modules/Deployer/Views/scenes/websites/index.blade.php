@@ -12,13 +12,13 @@
      ! Heading
      ! ------------------------------------------------------------
      !-->
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Delivery targets') }}"
         icon="globe-alt"
         :title="__('Websites')"
         :description="__('Manage deployment targets and review filtered provisioning and health state.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button :href="route('websites.import.create')" variant="secondary">{{ __('Import existing') }}</x-signal.ui.button>
             <x-signal.ui.button
                 :href="$websiteCreateUrl"
@@ -32,8 +32,8 @@
                 </svg>
                 {{ __('Add Website') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     @php($activeFilterCount = count(array_filter($filters, fn ($value) => $value !== null)))
 

@@ -1,5 +1,22 @@
 # Signal theme integration progress
 
+## Slice 140 — refresh Deployer page headers from the current Signal component — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `988fefc475a8646049c91cda4ff96def1fa9c27e` (`Add responsive browser checks and page headers`). Updated the shared Signal page-header to follow its responsive spacing, title anchor, breadcrumb, divider, and action layout while retaining Laravel's icon and metadata slots.
+- Migrated 50 Deployer screens from the legacy heading adapter to direct `x-signal.ui.page-header` use. The main Deployer dashboard's custom greeting header now uses the same component; its quick actions and create-dialog routes remain in place.
+- Updated the theme browser fixture to exercise the real shared page-header in Deployer and each other document context. Refreshed stale Signal source fingerprints and old drawer/dialog assertions so tests check the current theme and navigation behavior.
+
+Evidence:
+
+- `php artisan view:clear && php artisan view:cache`: passed.
+- `php artisan test --compact tests/Feature/LocalUiAssetTest.php tests/Feature/SignalThemeArchitectureTest.php`: **76 tests, 3,181 assertions passed**.
+- `npm run test:signal-theme`: production Vite build passed; **1 browser test passed** across six document contexts at mobile and desktop widths, including page-header visibility, shared tokens, Deployer navigation, drawer placement, and overflow.
+- Scoped Pint and `git diff --check` passed.
+
+Next task: complete authenticated-screen visual and accessibility acceptance with real Deployer, Monitor, and Analytics workspace data after the release path is available.
+
 ## Slice 139 — update Deployer to the latest Signal mobile shell — 2026-09-24
 
 Boundary and implementation:

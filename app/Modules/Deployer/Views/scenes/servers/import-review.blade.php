@@ -1,6 +1,6 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('servers.import.create')" :title="__('Back to server inspection')" />
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="server"
         :title="__('Review import changes')"
         :description="__('No changes have been made to this server. Confirm its identity and the planned takeover before provisioning begins.')"

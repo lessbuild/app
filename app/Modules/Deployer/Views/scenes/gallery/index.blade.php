@@ -9,11 +9,11 @@
         $galleryIndexUrl = route('gallery.index', $galleryQuery);
     @endphp
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Community Recipe Gallery')"
         :description="__('Discover reusable provisioning scripts shared by other operators.')"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button href="{{ route('recipes.index') }}" variant="secondary">{{ __('My recipes') }}</x-signal.ui.button>
             <x-signal.ui.button href="{{ route('gallery.reports.mine') }}" variant="secondary">{{ __('My Reports') }}</x-signal.ui.button>
             <x-signal.ui.button href="{{ route('gallery.reports.index') }}" variant="secondary">{{ __('Feedback Inbox') }}</x-signal.ui.button>
@@ -26,8 +26,8 @@
             >
                 {{ __('Publish a Recipe') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Gallery sections')">
         <a href="#gallery-safety" class="ui-local-nav__link">{{ __('Safety') }}</a>

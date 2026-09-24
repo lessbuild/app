@@ -65,17 +65,16 @@
         ];
     @endphp
 
-    <header class="flex flex-col justify-between gap-5 sm:flex-row sm:items-end" aria-labelledby="dashboard-title" data-dashboard-hero>
-        <div class="min-w-0">
-            <p class="ui-eyebrow">{{ __('Workspace overview') }}</p>
-            <h1 id="dashboard-title" class="mt-2 break-words text-3xl font-extrabold tracking-[-0.035em] text-ink">{{ __('Good morning, :name.', ['name' => auth()->user()->name]) }}</h1>
-            <p class="mt-2 text-sm leading-6 text-muted">
-                {{ auth()->user()->currentOrganization?->name ?: __('Your workspace') }}
-                &middot;
-                {{ __('Your infrastructure. Your next deployment. One clear view.') }}
-            </p>
-        </div>
-        <nav class="flex shrink-0 flex-wrap items-center gap-3 sm:justify-end" aria-label="{{ __('Dashboard quick actions') }}">
+    <x-signal.ui.page-header
+        eyebrow="{{ __('Workspace overview') }}"
+        :title="__('Good morning, :name.', ['name' => auth()->user()->name])"
+        :description="(auth()->user()->currentOrganization?->name ?: __('Your workspace')).' · '.__('Your infrastructure. Your next deployment. One clear view.')"
+        title-id="dashboard-title"
+        aria-labelledby="dashboard-title"
+        data-dashboard-hero
+    >
+        <x-slot:actions>
+            <nav class="flex shrink-0 flex-wrap items-center gap-3 sm:justify-end" aria-label="{{ __('Dashboard quick actions') }}">
             <x-signal.ui.button
                 :href="$dashboardServerCreateUrl"
                 data-modal-trigger="server-create-dialog"
@@ -103,8 +102,9 @@
             >
                 {{ __('Customize') }}
             </x-signal.ui.button>
-        </nav>
-    </header>
+            </nav>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     @include('dashboard._metrics')
 

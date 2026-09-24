@@ -1,21 +1,21 @@
 <x-layouts.app>
     <x-layouts.partials.breadcrumbs :route="route('gallery.index')" :title="__('Back to gallery')" />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('My Community Reports')"
         :description="__('Review every report you submitted, including reports for recipes that are no longer published.')"
     >
         @if ($metrics['unread_updates'] > 0)
-            <x-slot:buttons>
+            <x-slot:actions>
                 <form method="POST" action="{{ route('gallery.reports.mine.review-updates') }}">
                     @csrf
                     <x-signal.ui.button type="submit" variant="primary">
                         {{ trans_choice('Review :count update|Review all :count updates', $metrics['unread_updates'], ['count' => $metrics['unread_updates']]) }}
                     </x-signal.ui.button>
                 </form>
-            </x-slot:buttons>
+            </x-slot:actions>
         @endif
-    </x-layouts.partials.heading>
+    </x-signal.ui.page-header>
 
     <x-signal.ui.local-nav class="mt-6" :label="__('Report history sections')">
         <a href="#gallery-report-history-insights" class="ui-local-nav__link">{{ __('Insights') }}</a>

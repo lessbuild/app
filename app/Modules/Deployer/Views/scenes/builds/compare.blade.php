@@ -4,16 +4,16 @@
         :route="route('builds.show', $build)"
     />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Compare deployments')"
         :description="$build->repository->name"
     >
-        <x-slot:buttons>
+        <x-slot:actions>
             <x-signal.ui.button :href="route('builds.compare', ['build' => $baseline, 'baseline' => $build])" variant="secondary">
                 {{ __('Swap comparison') }}
             </x-signal.ui.button>
-        </x-slot:buttons>
-    </x-layouts.partials.heading>
+        </x-slot:actions>
+    </x-signal.ui.page-header>
 
     <div class="mt-6">
         @include('components.scenes.builds.comparison-content', ['fragment' => false])

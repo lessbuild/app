@@ -30,7 +30,7 @@
         :title="__('Back to :server', ['server' => $server->label])"
     />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="terminal"
         :title="__('Command history')"
         :description="__('Review commands queued for :server and download their retained output.', ['server' => $server->label])"

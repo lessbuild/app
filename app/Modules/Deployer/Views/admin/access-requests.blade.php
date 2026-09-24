@@ -1,5 +1,5 @@
 <x-layouts.app>
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         icon="user-add"
         :title="__('Access requests')"
         :description="__('Review private-beta demand without exposing applicant details outside platform administration.')"

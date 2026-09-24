@@ -4,7 +4,7 @@
         :route="route('providers.show', $provider)"
     />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Provider operations') }}"
         icon="activity"
         :title="__('Connection check history')"

@@ -1,5 +1,5 @@
 <x-layouts.app title="{{ __('Databases') }}">
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         eyebrow="{{ __('Data operations') }}"
         icon="database"
         :title="__('Database operations')"

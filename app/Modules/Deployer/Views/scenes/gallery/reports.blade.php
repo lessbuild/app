@@ -7,7 +7,7 @@
 
     <x-layouts.partials.breadcrumbs :route="route('gallery.index')" :title="__('Back to gallery')" />
 
-    <x-layouts.partials.heading
+    <x-signal.ui.page-header
         :title="__('Community Feedback Inbox')"
         :description="__('Review anonymous reports across recipes you have published. Reporter identities are never shown.')"
     />
