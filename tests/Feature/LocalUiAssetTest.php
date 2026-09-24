@@ -1198,10 +1198,13 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString("@vite('resources/js/alpine.js')", $coreLayout);
         $this->assertStringContainsString("@vite('resources/js/signal-theme-init.js')", $coreLayout);
         $this->assertStringContainsString("@vite('resources/js/signal-theme.js')", $coreLayout);
+        $this->assertStringContainsString('data-storage-namespace="buildpusher-signal"', $coreLayout);
 
         $signalThemeInit = File::get(resource_path('js/signal-theme-init.js'));
-        $this->assertStringContainsString("const defaults = { preset: 'modern'", $signalThemeInit);
+        $this->assertStringContainsString("preset: 'modern'", $signalThemeInit);
         $this->assertStringContainsString('root.dataset.preset = read(\'preset\')', $signalThemeInit);
+        $this->assertStringContainsString("const legacyNamespace = 'buildpusher'", $signalThemeInit);
+        $this->assertStringContainsString('localStorage.getItem(`${legacyNamespace}-appearance`)', $signalThemeInit);
     }
 
     public function test_server_safety_and_operation_surfaces_use_signal_primitives(): void

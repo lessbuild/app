@@ -16,7 +16,7 @@
     lang="{{ str_replace('_', '-', app()->getLocale()) }}"
     class="min-h-full"
     style="--vh:8px;"
-    data-storage-namespace="buildpusher"
+    data-storage-namespace="buildpusher-signal"
     data-default-preset="modern"
     data-default-appearance="{{ $defaultAppearance }}"
     data-default-palette="graphite"
@@ -57,6 +57,7 @@
             (() => {
                 const root = document.documentElement;
                 const namespace = root.dataset.storageNamespace || 'signal-starter';
+                const legacyNamespace = 'buildpusher';
                 const allowed = {
                     preset: ['modern', 'editorial', 'compact', 'noir', 'ocean', 'forest', 'sunset'],
                     appearance: ['system', 'light', 'dark'],
@@ -79,19 +80,31 @@
                 };
                 const fallback = (name) => root.dataset[`default${name[0].toUpperCase()}${name.slice(1)}`] || defaults[name];
                 const read = (name) => {
+                    const shared = new URLSearchParams(window.location.search).get(`theme_${name}`);
+
+                    if (allowed[name]?.includes(shared)) {
+                        return shared;
+                    }
+
                     try {
-                        const shared = new URLSearchParams(window.location.search).get(`theme_${name}`);
-
-                        if (allowed[name]?.includes(shared)) {
-                            return shared;
-                        }
-
                         const stored = localStorage.getItem(`${namespace}-${name}`);
 
-                        return allowed[name]?.includes(stored) ? stored : fallback(name);
+                        if (allowed[name]?.includes(stored)) {
+                            return stored;
+                        }
+
+                        if (name === 'appearance') {
+                            const legacyAppearance = localStorage.getItem(`${legacyNamespace}-appearance`);
+
+                            if (allowed.appearance.includes(legacyAppearance)) {
+                                return legacyAppearance;
+                            }
+                        }
                     } catch (_) {
                         return fallback(name);
                     }
+
+                    return fallback(name);
                 };
                 const appearance = read('appearance');
                 const dark = appearance === 'dark'

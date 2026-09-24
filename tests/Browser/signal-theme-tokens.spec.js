@@ -66,6 +66,39 @@ test('one shared Signal token change reaches every product, public, and auth doc
     });
 
     const stylesheetPaths = new Set();
+
+    await page.addInitScript(() => {
+        localStorage.setItem('buildpusher-appearance', 'dark');
+        localStorage.setItem('buildpusher-preset', 'ocean');
+        localStorage.setItem('buildpusher-palette', 'blue');
+        localStorage.setItem('buildpusher-density', 'compact');
+        localStorage.setItem('buildpusher-corners', 'rounded');
+        localStorage.setItem('buildpusher-font', 'editorial');
+        localStorage.setItem('buildpusher-token-ui-primary', '#0ea5e9');
+    });
+
+    await page.goto('http://signal-theme.test/theme-token-demo/deployer', { waitUntil: 'load' });
+
+    const migratedTheme = await page.evaluate(() => ({
+        namespace: document.documentElement.dataset.storageNamespace,
+        appearance: document.documentElement.dataset.appearance,
+        palette: document.documentElement.dataset.palette,
+        density: document.documentElement.dataset.density,
+        corners: document.documentElement.dataset.corners,
+        preset: document.documentElement.dataset.preset,
+        font: document.documentElement.dataset.font,
+        legacyPrimaryOverride: document.documentElement.style.getPropertyValue('--ui-primary'),
+    }));
+
+    expect(migratedTheme.namespace).toBe('buildpusher-signal');
+    expect(migratedTheme.appearance).toBe('dark');
+    expect(migratedTheme.palette).toBe('graphite');
+    expect(migratedTheme.density).toBe('comfortable');
+    expect(migratedTheme.corners).toBe('subtle');
+    expect(migratedTheme.preset).toBe('modern');
+    expect(migratedTheme.font).toBe('system');
+    expect(migratedTheme.legacyPrimaryOverride).toBe('');
+
     const theme = new URLSearchParams({
         theme_appearance: 'light',
         theme_palette: 'rose',

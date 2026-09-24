@@ -1,5 +1,19 @@
 # Signal theme integration progress
 
+## Slice 143 — reset stale browser overrides to the current Signal theme — 2026-09-24
+
+Boundary and implementation:
+
+- Checked upstream `lessbuild/template` `main` at `2235760c85e4251d52b4b81923cd68ffee799b37`. Since the integrated `1dfa5aa` revision, upstream has added a browser-only feedback/roadmap example and admin interactions, but no shared theme, component, component-catalog, or Topbar SaaS source changes. Deployer's real feedback page remains database-backed and does not import the example's static roadmap records.
+- The shared document previously read its `buildpusher-*` local-storage keys on every host, so a stale Deployer palette or raw token override could supersede Signal's current defaults. Versioned the shared keyspace to `buildpusher-signal`; old light/dark appearance is carried forward, while stale palette, density, corner, font, preset, and raw token overrides are ignored. New Signal-scoped values continue to work.
+- Updated the source mapping and added browser regression coverage for the storage migration across the shared Deployer shell.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/LocalUiAssetTest.php`: **78 tests, 3,225 assertions passed**.
+- `npm run test:signal-theme`: production Vite build passed; **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth at mobile and desktop widths. The test confirms old Deployer style overrides no longer win while dark mode is preserved.
+- The anonymous Deployer route still redirects into the shared sign-in flow. This environment has no production SSH key or authenticated browser session, so the new versioned theme runtime has not been released or visually checked on an authenticated production dashboard.
+
 ## Slice 142 — refresh Deployer with the latest Signal composition — 2026-09-24
 
 Boundary and implementation:
