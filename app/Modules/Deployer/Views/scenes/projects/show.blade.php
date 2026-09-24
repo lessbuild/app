@@ -23,6 +23,11 @@
 
     <x-signal.ui.page-header icon="view-grid" :title="$project->name" :description="$project->description ?: __('Application environments and resources.')">
         <x-slot:actions>
+            @if($project->environments->isNotEmpty())
+                <x-signal.overlays.side-sheet-trigger sheet="project-environment-navigation" size="sm">
+                    {{ __('Browse environments') }}
+                </x-signal.overlays.side-sheet-trigger>
+            @endif
             @if($canManage)
                 <x-signal.ui.button
                     :href="$configurationDialogUrl"
@@ -40,6 +45,33 @@
             @endif
         </x-slot:actions>
     </x-signal.ui.page-header>
+
+    @if($project->environments->isNotEmpty())
+        <x-signal.overlays.side-sheet
+            id="project-environment-navigation"
+            :eyebrow="$project->name"
+            :title="__('Environments')"
+            :description="__('Jump to an environment and continue managing its deployment, configuration, and runtime.')"
+        >
+            <nav class="grid gap-2" aria-label="{{ __('Project environments') }}">
+                @foreach($project->environments as $environment)
+                    <a
+                        href="#environment-{{ $environment->id }}-heading"
+                        class="ui-card flex min-w-0 items-center justify-between gap-4 p-4 transition hover:border-primary/50"
+                        data-sheet-close
+                    >
+                        <span class="min-w-0">
+                            <strong class="block truncate text-sm text-ink">{{ $environment->name }}</strong>
+                            <span class="mt-1 block truncate text-xs text-muted">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</span>
+                        </span>
+                        <x-signal.ui.badge :tone="$environment->hibernated_at ? 'neutral' : 'success'">
+                            {{ $environment->hibernated_at ? __('Hibernated') : __('Available') }}
+                        </x-signal.ui.badge>
+                    </a>
+                @endforeach
+            </nav>
+        </x-signal.overlays.side-sheet>
+    @endif
 
     <x-signal.ui.insights
         id="project-insights"
@@ -143,7 +175,7 @@
             @endphp
             <x-signal.ui.panel as="section" class="ui-panel overflow-hidden" aria-labelledby="environment-{{ $environment->id }}-heading" data-project-environment>
                 <div class="flex flex-wrap items-center gap-4 border-b border-line px-5 py-4">
-                    <x-avatar :name="$environment->name" class="ui-avatar-md shrink-0" />
+                    <x-signal.ui.avatar :name="$environment->name" class="ui-avatar-md shrink-0" />
                     <div class="min-w-0 flex-1"><div class="flex flex-wrap items-center gap-2"><h2 id="environment-{{ $environment->id }}-heading" class="text-lg font-extrabold text-ink">{{ $environment->name }}</h2>@if($environment->is_protected)<x-signal.ui.badge tone="accent">{{ __('Protected') }}</x-signal.ui.badge>@endif @if($environment->hibernated_at)<x-signal.ui.badge tone="neutral">{{ __('Hibernated') }}</x-signal.ui.badge>@endif</div><p class="mt-0.5 truncate font-mono text-xs text-muted">{{ $environment->branch }} · {{ ucfirst($environment->type) }}</p></div>
                     <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-control border border-line bg-surface-muted px-3 py-2 font-bold text-muted">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-signal.ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-signal.ui.button></div>
                 </div>
@@ -395,7 +427,7 @@
         @endif
     </div>
     @if($canManage)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="application-configuration-dialog"
             :title="__('Configuration as code')"
             :description="__('Author, review and apply portable application configuration in context.')"
@@ -407,6 +439,6 @@
             <div data-modal-content>
                 <p class="p-5 text-sm text-muted">{{ __('Loading configuration workflow…') }}</p>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 </x-layouts.app>

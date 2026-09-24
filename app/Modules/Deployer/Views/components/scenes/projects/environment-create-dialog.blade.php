@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="add-environment-dialog"
     :title="__('Add environment')"
     :description="__('Create a separate runtime for a branch, then attach infrastructure and source control.')"
@@ -35,4 +35,4 @@
         <x-signal.ui.input type="hidden" name="requires_deployment_approval" value="0" :restore="false" />
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Create environment') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

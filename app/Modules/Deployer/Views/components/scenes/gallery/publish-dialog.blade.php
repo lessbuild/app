@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="gallery-publish-recipe-dialog"
     :title="__('Publish a recipe')"
     :description="__('Share a reviewed provisioning script with the community gallery.')"
@@ -19,4 +19,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Publish Recipe') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

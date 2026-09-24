@@ -5,7 +5,7 @@
 
 @php($dialogId = 'environment-resource-dialog-'.$environment->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Attach resource')"
     :description="__('Attach a managed or external service to this environment. Secret variables are encrypted before they are stored.')"
@@ -42,4 +42,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Attach resource') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

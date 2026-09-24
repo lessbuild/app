@@ -21,7 +21,7 @@
     $dialogReturnUrl = $returnUrl ?? request()->fullUrlWithoutQuery('dialog');
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="server-create-dialog"
     :title="__('Add server')"
     :description="__('Choose a provider and infrastructure profile, then start server provisioning.')"
@@ -43,4 +43,4 @@
         :provider-create-content-url="$providerCreateContentUrl"
         :field-prefix="$fieldPrefix"
     />
-</x-dialogs.modal>
+</x-signal.overlays.modal>

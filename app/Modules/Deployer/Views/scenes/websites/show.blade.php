@@ -99,12 +99,12 @@
                 {{ __('Edit Website') }}
             </x-signal.ui.button>
 
-            <x-dialogs.delete
+            <x-signal.overlays.delete-confirmation
                 id="delete-website"
                 :route="route('websites.destroy', $website)"
                 :title="__('Delete')"
                 :description="__('Are you sure you want to delete this website?')"
-            ></x-dialogs.delete>
+            ></x-signal.overlays.delete-confirmation>
 
             <x-signal.ui.button type="button" variant="danger" data-modal-trigger="delete-website" aria-controls="delete-website" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
@@ -400,7 +400,7 @@
         />
     @endif
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="website-health-checks-dialog"
         :title="__('Health check history')"
         :description="__('Review retained health evidence without leaving this website.')"
@@ -410,9 +410,9 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading health check history…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="website-deployment-history-dialog"
         :title="__('Deployment history')"
         :description="__('Review recent deployments without leaving this website.')"
@@ -422,7 +422,7 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading deployment history…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
     <!--
      ! ------------------------------------------------------------
@@ -450,7 +450,7 @@
                 @forelse($repositories as $repository)
                     <li>
                         <a href="{{ route('repositories.show', $repository) }}" class="ui-link flex min-w-0 items-center gap-4 py-3 hover:bg-surface-muted">
-                            <x-avatar :name="$repository->name" class="ui-avatar-sm shrink-0 text-xs" />
+                            <x-signal.ui.avatar :name="$repository->name" class="ui-avatar-sm shrink-0 text-xs" />
                             <span class="min-w-0 flex-1">
                                 <span class="block truncate text-sm font-semibold text-ink">{{ $repository->name }}</span>
                                 <span class="block truncate text-sm text-muted">{{ $repository->url }}</span>

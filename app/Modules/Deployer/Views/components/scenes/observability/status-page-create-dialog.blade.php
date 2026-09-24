@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="status-page-create-dialog"
     :title="__('Create status page')"
     :description="__('Publish live component health and rolling 30-day uptime without exposing infrastructure details.')"
@@ -43,4 +43,4 @@
         <x-signal.ui.input type="hidden" name="is_published" value="1" :restore="false" />
         <x-signal.ui.button type="submit" variant="primary">{{ __('Publish status page') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -5,7 +5,7 @@
 
 @php($dialogId = 'operational-incident-note-'.$incident->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Add investigation note')"
     :description="__('Record bounded evidence in the incident timeline without changing its status.')"
@@ -20,4 +20,4 @@
         <x-forms.errors name="message" />
         <x-signal.ui.button type="submit" variant="primary">{{ __('Add note') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

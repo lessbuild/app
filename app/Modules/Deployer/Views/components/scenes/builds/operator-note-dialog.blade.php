@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="build-note-dialog"
     :title="$build->operator_note ? __('Edit operator note') : __('Add operator note')"
     :description="__('Keep incident, approval and handoff context here. Do not store secrets.')"
@@ -28,4 +28,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Save note') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

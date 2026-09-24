@@ -4,7 +4,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="domain-add-dialog"
     :title="__('Add domain')"
     :description="__('Attach an alias or redirect to an existing website.')"
@@ -54,4 +54,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Add domain') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

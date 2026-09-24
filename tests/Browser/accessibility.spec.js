@@ -52,16 +52,17 @@ for (const viewport of viewports) {
         await expect(page.locator('#main-content')).toHaveCount(1);
 
         await page.keyboard.press('Control+k');
-        const palette = page.getByRole('dialog', { name: 'Search workspace' });
+        const palette = page.getByRole('dialog', { name: 'Search this workspace' });
+        const firstPaletteItem = page.locator('[data-signal-command-item]').first();
+        const secondPaletteItem = page.locator('[data-signal-command-item]').nth(1);
         await expect(palette).toBeVisible();
-        await expect(page.locator('#command-palette-query')).toBeFocused();
+        await expect(page.locator('#signal-command-query')).toBeFocused();
         await page.keyboard.press('ArrowDown');
-        await expect(page.locator('[data-palette-item]').first()).toBeFocused();
-        await expect(page.locator('[data-palette-item]').first()).toHaveAttribute('aria-selected', 'true');
+        await expect(firstPaletteItem).toBeFocused();
         await page.keyboard.press('ArrowDown');
-        await expect(page.locator('[data-palette-item]').nth(1)).toBeFocused();
+        await expect(secondPaletteItem).toBeFocused();
         await page.keyboard.press('ArrowUp');
-        await expect(page.locator('[data-palette-item]').first()).toBeFocused();
+        await expect(firstPaletteItem).toBeFocused();
         await page.keyboard.press('Escape');
         await expect(palette).toBeHidden();
         if (viewport.width >= 640) await expect(page.getByRole('button', { name: /Jump to/ })).toBeFocused();

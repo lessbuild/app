@@ -6,7 +6,7 @@
 
 @php($dialogTitle = $title ?? __('Edit server display name'))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="server-display-name-dialog"
     :title="$dialogTitle"
     :description="__('Change the label shown in :app without renaming the cloud server or its hostname.', ['app' => config('app.name')])"
@@ -33,4 +33,4 @@
         </x-signal.ui.card>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save display name') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

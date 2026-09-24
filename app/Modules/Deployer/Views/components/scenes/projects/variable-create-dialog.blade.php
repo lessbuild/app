@@ -5,7 +5,7 @@
 
 @php($dialogId = 'environment-variable-dialog-'.$environment->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Add encrypted variable')"
     :description="__('Save a new version without exposing the value in page content or URLs.')"
@@ -47,4 +47,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save new version') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

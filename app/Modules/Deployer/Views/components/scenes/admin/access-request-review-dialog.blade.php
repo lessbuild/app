@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="review-access-request-{{ $accessRequest->id }}"
     :title="__('Review access request')"
     :description="__('Update the private review status and invitation for :name.', ['name' => $accessRequest->name])"
@@ -51,4 +51,4 @@
             </div>
         </form>
     @endif
-</x-dialogs.modal>
+</x-signal.overlays.modal>

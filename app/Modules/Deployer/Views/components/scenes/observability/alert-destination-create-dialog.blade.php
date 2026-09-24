@@ -1,6 +1,6 @@
 @props(['open' => false])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="alert-destination-create-dialog"
     :title="__('Add alert destination')"
     :description="__('Send signed failure and recovery events to a supported alert channel.')"
@@ -43,4 +43,4 @@
         </fieldset>
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Add destination') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

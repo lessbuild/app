@@ -8,8 +8,10 @@
         <a
             href="{{ route('search.index') }}"
             data-workspace-search-trigger
+            data-signal-command-open
+            aria-controls="signal-command-palette"
+            aria-haspopup="dialog"
             class="ui-link text-sm"
-            @click.prevent="openPalette($event.currentTarget)"
         >{{ __('Search workspace') }}</a>
     </div>
 

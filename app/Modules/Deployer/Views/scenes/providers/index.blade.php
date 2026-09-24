@@ -134,7 +134,7 @@
                 <article data-provider-card class="group p-4 transition-colors hover:bg-surface-muted sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
-                            <x-avatar :name="$provider->name" class="ui-avatar-md shrink-0" />
+                            <x-signal.ui.avatar :name="$provider->name" class="ui-avatar-md shrink-0" />
                             <div class="min-w-0">
                                 <a href="{{ route('providers.show', $provider) }}" class="ui-link break-words">
                                     {{ $provider->name }}

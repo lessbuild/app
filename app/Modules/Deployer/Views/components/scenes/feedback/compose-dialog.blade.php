@@ -2,7 +2,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="feedback-compose"
     :title="__('Send private feedback')"
     :description="__('Visible only to you and workspace administrators. Never include passwords, tokens, private keys, or environment values.')"
@@ -52,4 +52,4 @@
         <x-forms.errors name="page" />
         <x-signal.ui.button type="submit" variant="primary" class="w-full">{{ __('Submit feedback') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

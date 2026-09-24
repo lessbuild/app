@@ -184,5 +184,25 @@ test('one shared Signal token change reaches every product, public, and auth doc
         }
     }
 
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto(`http://signal-theme.test/theme-token-demo/deployer?${theme}`, { waitUntil: 'load' });
+
+    const sheetTrigger = page.getByRole('button', { name: 'Related environments', exact: true });
+    const sheet = page.getByRole('dialog', { name: 'Related environments', exact: true });
+    await sheetTrigger.click();
+    await expect(sheet).toBeVisible();
+    await expect(sheet).toHaveAttribute('aria-hidden', 'false');
+    await expect(page.locator('body')).toHaveClass(/overflow-hidden/);
+    await expect(sheet.getByRole('button', { name: 'Close Related environments' })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(sheet.getByRole('link', { name: 'Production', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(sheet.getByRole('button', { name: 'Close Related environments' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toBeHidden();
+    await expect(sheetTrigger).toHaveAttribute('aria-expanded', 'false');
+    await expect(sheetTrigger).toBeFocused();
+    await expect(page.locator('body')).not.toHaveClass(/overflow-hidden/);
+
     expect([...stylesheetPaths]).toHaveLength(1);
 });

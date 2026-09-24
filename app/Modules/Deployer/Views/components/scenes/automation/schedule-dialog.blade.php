@@ -9,7 +9,7 @@
     $formOld = old('_automation_dialog') === $dialogKey;
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="{{ $dialogId }}"
     :title="__('Add deployment schedule')"
     :description="__('Choose when this environment should receive an automatic deployment.')"
@@ -48,4 +48,4 @@
         />
         <x-signal.ui.button type="submit" variant="primary">{{ __('Add deployment schedule') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

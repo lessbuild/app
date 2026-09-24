@@ -259,7 +259,7 @@
         >{{ __('Open retained output') }}</a>
     @endif
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="{{ $outputDialogId }}"
         :title="__('Command output')"
         :description="__('Inspect retained output without leaving command history.')"
@@ -269,5 +269,5 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading retained output…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 </x-layouts.app>

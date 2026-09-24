@@ -771,7 +771,7 @@
         :cancel-url="$dashboardUrl"
     />
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="dashboard-activity-dialog"
         :title="__('Workspace activity')"
         :description="__('Review recent workspace events without leaving the dashboard.')"
@@ -781,10 +781,10 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading workspace activity…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
     @if ($dashboardHasActiveDeployments)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="dashboard-active-deployments-dialog"
             :title="__('Active deployments')"
             :description="__('Review active deployment progress without leaving the dashboard.')"
@@ -794,11 +794,11 @@
             <div data-modal-content>
                 <p class="p-5 text-sm text-muted">{{ __('Loading active deployments…') }}</p>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 
     @if ($dashboardHasActiveCommands)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="dashboard-active-commands-dialog"
             :title="__('Active server commands')"
             :description="__('Review active command status without leaving the dashboard.')"
@@ -808,11 +808,11 @@
             <div data-modal-content>
                 <p class="p-5 text-sm text-muted">{{ __('Loading active command history…') }}</p>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 
     @if ($dashboardHasWebhookDeliveries)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="dashboard-webhook-activity-dialog"
             :title="__('Deployment activity')"
             :description="__('Review webhook-related deployment events without leaving the dashboard.')"
@@ -822,11 +822,11 @@
             <div data-modal-content>
                 <p class="p-5 text-sm text-muted">{{ __('Loading deployment activity…') }}</p>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 
     @if ($dashboardHasProvisioning)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="dashboard-provisioning-dialog"
             :title="__('Infrastructure provisioning')"
             :description="__('Review resources being prepared without leaving the dashboard.')"
@@ -836,11 +836,11 @@
             <div class="p-5">
                 @include('dashboard._provisioning-dialog-content')
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 
     @if ($canManageSystemHealth)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="dashboard-system-health-dialog"
             :title="__('System health')"
             :description="__('Review a fresh sanitized diagnostic snapshot without leaving the dashboard.')"
@@ -850,7 +850,7 @@
             <div data-modal-content>
                 <p class="p-5 text-sm text-muted">{{ __('Loading system health…') }}</p>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 
 </x-layouts.app>

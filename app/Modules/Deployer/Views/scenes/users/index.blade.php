@@ -588,7 +588,7 @@
         </x-forms.section>
     </div>
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="{{ $signInHistoryDialogId }}"
         :title="__('Sign-in history')"
         :description="__('Review successful sign-ins without leaving account security settings.')"
@@ -598,11 +598,11 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading sign-in history…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
     <x-scenes.users.profile-dialog :open="$profileDialogOpen" />
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="{{ $accountAuditDialogId }}"
         :title="__('Account audit')"
         :description="__('Review security activity without leaving account settings.')"
@@ -612,5 +612,5 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading account audit…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 </x-layouts.app>

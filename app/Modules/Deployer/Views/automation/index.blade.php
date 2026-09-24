@@ -399,7 +399,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
     </section>
 
     @if ($scheduledTaskRuns->isNotEmpty())
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="automation-task-run-dialog"
             :title="__('Scheduled task run output')"
             :description="__('Review the retained output and timing for this run without leaving Automation.')"
@@ -408,6 +408,6 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
             <div data-modal-content>
                 <div class="space-y-3 text-sm text-muted">{{ __('Loading task-run details…') }}</div>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 </x-layouts.app>

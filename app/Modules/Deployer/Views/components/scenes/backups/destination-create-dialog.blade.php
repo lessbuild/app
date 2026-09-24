@@ -4,7 +4,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="backup-destination-create-dialog"
     :title="__('Add backup destination')"
     :description="__('Connect encrypted offsite storage for website backups and recovery verification.')"
@@ -20,4 +20,4 @@
         'destinationCatalog' => $destinationCatalog,
         'destinationPresets' => $destinationPresets,
     ])
-</x-dialogs.modal>
+</x-signal.overlays.modal>

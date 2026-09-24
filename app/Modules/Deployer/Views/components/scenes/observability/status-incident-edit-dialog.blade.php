@@ -5,7 +5,7 @@
 
 @php($dialogId = 'status-incident-edit-dialog-'.$incident->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Update or complete review')"
     :description="__('Publish the latest incident or maintenance status and notify subscribers when appropriate.')"
@@ -72,4 +72,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Publish update') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

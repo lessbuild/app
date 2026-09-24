@@ -4,7 +4,7 @@
     'recipe',
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="gallery-report-dialog"
     :title="$currentReport ? __('Update your private report') : __('Report a recipe issue')"
     :description="__('Your identity is not shown to the recipe contributor.')"
@@ -30,4 +30,4 @@
         </div>
         <x-signal.ui.button type="submit" variant="primary">{{ $currentReport ? __('Update Report') : __('Submit Report') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

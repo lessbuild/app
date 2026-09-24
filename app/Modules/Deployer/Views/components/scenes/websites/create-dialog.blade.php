@@ -14,7 +14,7 @@
 @php($dialogCancelUrl = $cancelUrl ?? route('websites.index', $websiteIndexQuery))
 @php($dialogReturnUrl = $returnUrl ?? request()->fullUrlWithoutQuery('dialog'))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="website-create-dialog"
     :title="__('Add website')"
     :description="__('Choose a server, configure deployment health checks, and create a new deployment target.')"
@@ -32,4 +32,4 @@
         :server-create-content-url="$serverCreateContentUrl"
         :field-prefix="$fieldPrefix"
     />
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -8,7 +8,7 @@
     $windowDays = is_array($windowDays) ? $windowDays : [];
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="environment-deployment-controls-dialog-{{ $environment->id }}"
     :title="__('Deployment controls')"
     :description="__('Set deployment locks, maintenance windows and rollout safeguards for this environment.')"
@@ -124,4 +124,4 @@
         >{{ __('Automatic rollback') }}</x-signal.ui.checkbox>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save deployment controls') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -5,7 +5,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="temporary-domain-dialog"
     :title="__('Issue temporary domain')"
     :description="$temporaryBaseDomain ? __('Issue a shareable :domain address.', ['domain' => '*.' . $temporaryBaseDomain]) : __('Set TEMPORARY_APP_DOMAIN to enable this feature.')"
@@ -37,4 +37,4 @@
             <x-signal.ui.button type="submit" variant="primary" :disabled="! $temporaryBaseDomain">{{ __('Issue domain') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -8,7 +8,7 @@
 
 @php($dialogContentUrl = $contentUrl ?? route('providers.edit', ['provider' => $provider, 'dialog' => 'edit-provider', 'fragment' => 1]))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="provider-edit-dialog"
     :title="__('Edit provider')"
     :description="__('Update the credential label, token, and connection monitoring settings.')"
@@ -28,4 +28,4 @@
             <p class="p-5 text-sm text-muted">{{ __('Loading provider form…') }}</p>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

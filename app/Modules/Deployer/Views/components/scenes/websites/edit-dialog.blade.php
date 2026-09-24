@@ -9,7 +9,7 @@
 
 @php($dialogContentUrl = $contentUrl ?? route('websites.edit', ['website' => $website, 'dialog' => 'edit-website', 'fragment' => 1]))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="website-edit-dialog"
     :title="__('Edit website')"
     :description="__('Update placement, environment, retention, and health monitoring settings.')"
@@ -30,4 +30,4 @@
             <p class="p-5 text-sm text-muted">{{ __('Loading website form…') }}</p>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -1,6 +1,6 @@
 @props(['open' => false])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="account-profile-dialog"
     :title="__('Profile information')"
     :description="__('Update the name and email address associated with your account.')"
@@ -57,4 +57,4 @@
 
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save profile') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

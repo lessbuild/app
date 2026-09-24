@@ -373,7 +373,7 @@
     </div>
 
     @if($website)
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="{{ $healthChecksDialogId }}"
             :title="__('Health check history')"
             :description="__('Review retained website observations without leaving this evidence context.')"
@@ -383,6 +383,6 @@
             <div data-modal-content>
                 <p class="p-5 text-sm text-muted">{{ __('Loading health history…') }}</p>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 </x-layouts.app>

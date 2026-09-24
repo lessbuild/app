@@ -12,7 +12,7 @@
     $dialogContentUrl = $contentUrl ?? route('backups.destinations.edit', ['destination' => $destination, 'return_to' => request()->fullUrlWithoutQuery('dialog')]);
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Edit backup destination')"
     :description="__('Update the connection or rotate credentials. Leave credential fields blank to retain the encrypted values.')"
@@ -33,4 +33,4 @@
             <p class="p-5 text-sm text-muted">{{ __('Loading backup destination form…') }}</p>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

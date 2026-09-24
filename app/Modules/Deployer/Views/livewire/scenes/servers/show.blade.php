@@ -94,12 +94,12 @@
                 {{ __('Run Command') }}
             </x-signal.ui.button>
 
-            <x-dialogs.delete
+            <x-signal.overlays.delete-confirmation
                 id="delete-server"
                 :route="route('servers.destroy', $server)"
                 :title="__('Delete')"
                 :description="__('Are you sure you want to delete this server?')"
-            ></x-dialogs.delete>
+            ></x-signal.overlays.delete-confirmation>
 
             <x-signal.ui.button variant="danger" type="button" class="ui-btn ui-btn-danger" data-modal-trigger="delete-server" aria-controls="delete-server" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
@@ -119,7 +119,7 @@
 
     <x-scenes.servers.edit-dialog :server="$server" :open="$displayNameDialogOpen" />
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="server-command-history-dialog"
         :title="__('Command history')"
         :description="__('Review recent server commands without leaving this server.')"
@@ -130,7 +130,7 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading command history…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
     @if ($server->provisioning_status === \App\Modules\Deployer\Models\Server::STATUS_FAILED)
         <x-signal.ui.alert tone="danger" class="my-4">
@@ -332,7 +332,7 @@
                 @forelse ($websites as $website)
                     <li>
                         <a href="{{ route('websites.show', $website) }}" class="flex items-center gap-4 py-3 transition hover:bg-surface-muted">
-                            <x-avatar :name="$website->name" class="ui-avatar-sm shrink-0 text-xs" />
+                            <x-signal.ui.avatar :name="$website->name" class="ui-avatar-sm shrink-0 text-xs" />
                             <span class="min-w-0 flex-1">
                                 <span class="ui-link block truncate text-sm">{{ $website->name }}</span>
                                 <span class="block truncate text-sm text-muted">{{ $website->url }}</span>

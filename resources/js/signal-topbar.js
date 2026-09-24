@@ -270,6 +270,12 @@ palette?.addEventListener('close', () => {
 });
 
 document.addEventListener('keydown', (event) => {
+  if (event.key === 'Escape' && palette?.open && !event.defaultPrevented) {
+    event.preventDefault();
+    closePalette();
+    return;
+  }
+
   if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k' && palette) {
     event.preventDefault();
     if (palette.open) {

@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="metric-rule-dialog"
     :title="__('Create an alert rule')"
     :description="__('Trigger a notification after a sustained metric threshold breach.')"
@@ -69,4 +69,4 @@
         </div>
         <x-signal.ui.button type="submit" variant="primary" class="w-full">{{ __('Create alert') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

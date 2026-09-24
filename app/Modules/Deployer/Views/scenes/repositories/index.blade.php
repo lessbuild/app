@@ -141,7 +141,7 @@
                 <article data-repository-card class="p-4 sm:p-5">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
-                            <x-avatar :name="$repository->name" class="ui-avatar-md shrink-0" />
+                            <x-signal.ui.avatar :name="$repository->name" class="ui-avatar-md shrink-0" />
                             <div class="min-w-0">
                                 <a href="{{ route('repositories.show', $repository) }}" class="ui-link font-semibold">{{ $repository->name }}</a>
                                 <p class="truncate text-sm text-muted">{{ $repository->url }}</p>
@@ -221,7 +221,7 @@
         </div>
     @endif
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="repository-impact-preview-dialog"
         :title="__('Deployment impact preview')"
         :description="__('See which enabled repository targets are affected by a changed-file set before any automatic push deployment.')"
@@ -230,7 +230,7 @@
         <div data-modal-content>
             <div class="space-y-3 text-sm text-muted">{{ __('Loading deployment impact preview…') }}</div>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
     <x-scenes.repositories.create-dialog
         :providers="$providers"

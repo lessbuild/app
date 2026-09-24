@@ -3,7 +3,7 @@
     'widgets',
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="dashboard-preferences-dialog"
     :title="__('Customize dashboard')"
     :description="__('Choose which overview sections appear on your dashboard.')"
@@ -25,4 +25,4 @@
         <x-forms.errors name="widgets.0" />
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save layout') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="status-incident-create-dialog"
     :title="__('Publish a status update')"
     :description="__('Publish an incident or maintenance update and notify confirmed subscribers.')"
@@ -73,4 +73,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Publish status update') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

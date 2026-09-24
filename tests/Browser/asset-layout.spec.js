@@ -26,8 +26,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
     const stylesheet = `/build/${manifest['resources/css/app.css'].file}`;
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
     const signalDrawer = `/build/${manifest['resources/js/signal-drawer.js'].file}`;
+    const signalOverlays = `/build/${manifest['resources/js/signal-overlays.js'].file}`;
     const signalThemeInit = `/build/${manifest['resources/js/signal-theme-init.js'].file}`;
     const signalTheme = `/build/${manifest['resources/js/signal-theme.js'].file}`;
+    const app = `/build/${manifest['resources/js/app.js'].file}`;
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
         if (delays[pathname]) {
@@ -281,6 +283,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                 `<script type="module" src="${signalThemeInit}"></script>`,
                 `<script type="module" src="${signalTheme}"></script>`,
                 `<script type="module" src="${signalDrawer}"></script>`,
+                `<script type="module" src="${signalOverlays}"></script>`,
+                `<script type="module" src="${app}"></script>`,
             ].join('');
             html = html.replace('</head>', `${signalAssets}${script}</head>`);
             return route.fulfill({ contentType: 'text/html', body: html });
@@ -537,9 +541,9 @@ test('mobile New app stays on the current page while opening the application dia
     expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
 
     await page.keyboard.press('Control+k');
-    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeVisible();
-    await page.locator('#command-palette-result-1').click();
-    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeHidden();
+    await expect(page.getByRole('dialog', { name: 'Search this workspace' })).toBeVisible();
+    await page.locator('#signal-command-palette [data-modal-trigger="application-create-dialog"]').click();
+    await expect(page.getByRole('dialog', { name: 'Search this workspace' })).toBeHidden();
     await expect(dialog).toBeVisible();
     expect(new URL(page.url()).pathname).toBe(initialUrl.pathname);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-application');
@@ -554,10 +558,19 @@ test('dashboard workspace search opens in place and renders debounced results', 
     await page.route('**/search*', async (route) => {
         const url = new URL(route.request().url());
 
-        if (url.pathname === '/search' && url.searchParams.get('fragment') === 'workspace') {
+        if (url.pathname === '/search' && url.searchParams.get('q') === 'demo') {
             return route.fulfill({
-                contentType: 'text/html',
-                body: '<a href="/projects/1" data-palette-item role="option" class="block p-3">Demo result</a>',
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    query: 'demo',
+                    groups: [{
+                        product: 'deployer',
+                        label: 'Deployer · Applications',
+                        count: 1,
+                        results: [{ type: 'Application', title: 'Demo result', subtitle: '1 environment', url: '/projects/1' }],
+                    }],
+                    unavailable: [],
+                }),
             });
         }
 
@@ -569,13 +582,13 @@ test('dashboard workspace search opens in place and renders debounced results', 
     const initialPath = new URL(page.url()).pathname;
     await trigger.click();
 
-    const dialog = page.getByRole('dialog', { name: 'Search workspace', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Search this workspace', exact: true });
     await expect(dialog).toBeVisible();
-    await expect(page.locator('#command-palette-query')).toBeFocused();
+    await expect(page.locator('#signal-command-query')).toBeFocused();
     expect(new URL(page.url()).pathname).toBe(initialPath);
 
-    await page.locator('#command-palette-query').fill('demo');
-    await expect(dialog.getByRole('option', { name: 'Demo result', exact: true })).toBeVisible();
+    await page.locator('#signal-command-query').fill('demo');
+    await expect(dialog.getByRole('link', { name: /Demo result/ })).toBeVisible();
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
@@ -1711,8 +1724,8 @@ for (const colorScheme of ['light', 'dark']) {
                         await expect(toggle).toBeHidden();
                     }
                     await page.keyboard.press('Control+k');
-                    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeVisible();
-                    await expect(page.locator('#command-palette-query')).toBeFocused();
+                    await expect(page.getByRole('dialog', { name: 'Search this workspace' })).toBeVisible();
+                    await expect(page.locator('#signal-command-query')).toBeFocused();
                     await page.keyboard.press('Escape');
                     const quickAction = page.locator('[data-mobile-quick-action="create"]');
                     await expect(quickAction).toHaveText('New app');
@@ -2470,6 +2483,23 @@ test('application detail composers use compact accessible dialogs', async ({ pag
     await expect(page.locator('[data-project-add-environment]')).toBeVisible();
     await expect(page.locator('[data-project-previews]')).toBeVisible();
     await expect(page.locator('.ui-local-nav__link', { hasText: 'Environments' })).toBeVisible();
+
+    const environmentTrigger = page.getByRole('button', { name: 'Browse environments', exact: true });
+    const environmentSheet = page.getByRole('dialog', { name: 'Environments', exact: true });
+    await environmentTrigger.click();
+    await expect(environmentSheet).toBeVisible();
+    await expect(environmentSheet.getByRole('button', { name: 'Close Environments' })).toBeFocused();
+    await expect(environmentSheet.getByRole('link').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(environmentSheet).toBeHidden();
+    await expect(environmentTrigger).toBeFocused();
+
+    await environmentTrigger.click();
+    const environmentDestination = environmentSheet.getByRole('link').first();
+    const environmentHash = await environmentDestination.getAttribute('href');
+    await environmentDestination.click();
+    await expect(environmentSheet).toBeHidden();
+    expect(new URL(page.url()).hash).toBe(environmentHash);
 
     const workflows = [
         ['Add environment', 'Add environment', '#add-environment-dialog'],

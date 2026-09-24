@@ -5,7 +5,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$id"
     :title="__('Edit member role')"
     :description="__('Choose the workspace access level for :name.', ['name' => $member->name])"
@@ -32,4 +32,4 @@
 
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save role') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

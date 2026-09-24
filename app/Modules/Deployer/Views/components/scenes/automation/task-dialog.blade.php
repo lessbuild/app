@@ -9,7 +9,7 @@
     $formOld = old('_automation_dialog') === $dialogKey;
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="{{ $dialogId }}"
     :title="__('Add scheduled task')"
     :description="__('Run a bounded command on a recurring schedule for this environment.')"
@@ -94,4 +94,4 @@
         </div>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Add scheduled task') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

@@ -3,7 +3,7 @@
     'fieldPrefix' => 'recipe-create-',
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="recipe-create-dialog"
     :title="__('Add recipe')"
     :description="__('Define a reusable provisioning script for your servers.')"
@@ -19,4 +19,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Create Recipe') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

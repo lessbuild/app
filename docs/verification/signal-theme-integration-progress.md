@@ -1,5 +1,24 @@
 # Signal theme integration progress
 
+## Slice 141 — adopt the latest Signal record-detail interactions in Deployer — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `594c17b511533339bb80a2d17b7b2314c0496602` (`Record dashboard release verification`), including the latest component and dashboard sources. The upstream theme tokens and component APIs are unchanged since `cade4159eb13b8609e69c1b7728a69d67c04f22c`; the newer dashboard example adds keyboard-accessible widget ordering and saved date/segment filters. Replaced Deployer's remaining `x-dialogs.*` and `x-avatar` calls with direct `x-signal.overlays.*` and `x-signal.ui.avatar` calls; compatibility adapters remain available to other consumers.
+- Added shared Signal side-sheet and trigger components, with backdrop dismissal, Escape handling, focus containment/return, and scroll-lock preservation. Deployer project details now provide a Signal environment navigator that uses only the already-authorized project environments.
+- Connected Deployer's dashboard search shortcut to the current Signal command-palette runtime, made Escape consistently dismiss its search dialog, and restore URL-backed modal focus after browser history finishes changing. The dashboard's existing widget visibility remains stored server-side per user.
+- The latest custom-popover runtime has no current Laravel consumer; application menus remain native disclosures. The record-detail sample's static customer data was not copied into product screens.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/LocalUiAssetTest.php tests/Feature/ProjectEnvironmentTest.php tests/Feature/SignalThemeArchitectureTest.php`: **85 tests, 3,321 assertions passed**.
+- `npx playwright test tests/Browser/signal-theme-tokens.spec.js`: **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth contexts, at mobile and desktop sizes; also verified the Deployer side-sheet focus loop, Escape dismissal, focus return, and scroll lock.
+- `npx playwright test tests/Browser/asset-layout.spec.js -g "mobile New app|dashboard workspace search|application detail composers"`: **3 browser tests passed**. `-g "every rendered link and modal hook"`: **1 browser test passed** across the rendered route inventory.
+- `npx playwright test tests/Browser/signal-workspace-search.spec.js`: **1 browser test passed**, including keyboard search and focus restoration.
+- Vite production build, Blade view cache, Pint, JavaScript syntax, and `git diff --check` passed.
+
+Next task: continue the plan's full product-parity and production visual/accessibility acceptance against the original application inventories.
+
 ## Slice 140 — refresh Deployer page headers from the current Signal component — 2026-09-24
 
 Boundary and implementation:

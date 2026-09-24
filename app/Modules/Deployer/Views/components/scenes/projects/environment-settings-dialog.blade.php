@@ -6,7 +6,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="environment-settings-dialog-{{ $environment->id }}"
     :title="__('Environment settings')"
     :description="__('Update runtime, source, placement and deployment protection for this environment.')"
@@ -66,4 +66,4 @@
         <x-signal.ui.checkbox :id="'environment-settings-'.$environment->id.'-requires-deployment-approval'" name="requires_deployment_approval" :checked="(bool) old('requires_deployment_approval', $environment->requires_deployment_approval)" unchecked-value="0">{{ __('Require approval') }}</x-signal.ui.checkbox>
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save settings') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

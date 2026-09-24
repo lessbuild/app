@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="cost-budget-dialog"
     :title="__('Edit monthly budget')"
     :description="__('This is a planning threshold for workspace infrastructure estimates, not a provider spending cap.')"
@@ -19,4 +19,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save budget') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

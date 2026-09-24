@@ -10,7 +10,7 @@
 
 @php($dialogContentUrl = $contentUrl ?? route('repositories.edit', ['repository' => $repository, 'dialog' => 'edit-repository', 'fragment' => 1]))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="repository-edit-dialog"
     :title="__('Edit repository')"
     :description="__('Update the deployment target, source settings, and deployment hooks.')"
@@ -32,4 +32,4 @@
             <p class="p-5 text-sm text-muted">{{ __('Loading repository form…') }}</p>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

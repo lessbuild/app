@@ -5,7 +5,7 @@
 
 @php($dialogId = 'environment-process-dialog-'.$environment->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Add worker or scheduler')"
     :description="__('Define an encrypted process command for the next deployment.')"
@@ -55,4 +55,4 @@
         <x-signal.ui.input type="hidden" name="is_enabled" value="1" :restore="false" />
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save process') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

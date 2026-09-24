@@ -1,6 +1,6 @@
 @props(['open' => false])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="automation-token-dialog"
     :title="__('Create personal access token')"
     :description="__('Use the smallest set of abilities and an explicit expiry for each integration.')"
@@ -59,4 +59,4 @@
         </x-signal.ui.card>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Create token') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

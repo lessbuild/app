@@ -72,6 +72,14 @@ final class SignalThemeTokenFixtureTest extends TestCase
                             <x-signal.ui.button variant="primary" data-theme-demo-button>Shared primary action</x-signal.ui.button>
                             <x-signal.ui.input-field name="email" label="Email address" type="email" data-theme-demo-input />
                         </x-signal.ui.panel>
+                        @if ($productKey === 'deployer')
+                            <x-signal.overlays.side-sheet-trigger sheet="theme-demo-related-sheet" data-theme-demo-sheet-trigger>
+                                Related environments
+                            </x-signal.overlays.side-sheet-trigger>
+                            <x-signal.overlays.side-sheet id="theme-demo-related-sheet" title="Related environments" description="Jump between project environments.">
+                                <nav aria-label="Related environments"><a class="ui-card block p-4" href="#production" data-sheet-close>Production</a></nav>
+                            </x-signal.overlays.side-sheet>
+                        @endif
                     </main>
                 </x-signal.layouts.core>
                 BLADE,

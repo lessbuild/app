@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="notification-save-filter-dialog"
     :title="__('Save notification filter')"
     :description="__('Give this filtered notification view a short name so you can return to it later.')"
@@ -18,4 +18,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save current filter') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

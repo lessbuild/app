@@ -82,12 +82,12 @@
                 {{ __('Edit') }}
             </x-signal.ui.button>
 
-            <x-dialogs.delete
+            <x-signal.overlays.delete-confirmation
                 id="delete-repository"
                 :route="route('repositories.destroy', $repository)"
                 :title="__('Delete')"
                 :description="__('Are you sure you want to delete this repository?')"
-            ></x-dialogs.delete>
+            ></x-signal.overlays.delete-confirmation>
 
             <x-signal.ui.button type="button" variant="danger" data-modal-trigger="delete-repository" aria-controls="delete-repository" aria-expanded="false" class="ui-btn-sm">
                 <svg class="h-4 w-4" aria-hidden="true">
@@ -538,7 +538,7 @@
         >{{ __('Open webhook delivery') }}</a>
     @endif
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="{{ $deliveryDialogId }}"
         :title="__('Webhook delivery')"
         :description="__('Inspect accepted delivery evidence without leaving this repository.')"
@@ -548,7 +548,7 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading delivery evidence…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 
     <!--
      ! ------------------------------------------------------------

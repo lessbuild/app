@@ -113,6 +113,7 @@
         @vite('resources/js/signal-theme-init.js')
         @vite('resources/js/signal-theme.js')
         @vite('resources/js/signal-drawer.js')
+        @vite('resources/js/signal-overlays.js')
         @if($productKey)
             @vite('resources/js/app.js')
         @endif
@@ -669,13 +670,15 @@
                             if (dialog.dataset.modalHistory === 'pushed'
                                 && window.history.state?.modal === dialog.id) {
                                 dialog.dataset.modalHistory = 'backing';
+                                window.addEventListener('popstate', () => {
+                                    window.requestAnimationFrame(() => trigger.focus());
+                                }, { once: true });
                                 window.history.back();
                             } else {
                                 cleanModalUrl();
                                 delete dialog.dataset.modalHistory;
+                                window.requestAnimationFrame(() => trigger.focus());
                             }
-
-                            window.requestAnimationFrame(() => trigger.focus());
                         });
 
                         trigger.addEventListener('click', (event) => {

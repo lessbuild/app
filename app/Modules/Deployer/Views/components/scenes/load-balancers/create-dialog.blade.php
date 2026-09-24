@@ -4,7 +4,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="load-balancer-create"
     :title="__('Create a high-availability route')"
     :description="__('Choose the environment and dedicated edge server before adding application nodes.')"
@@ -47,4 +47,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Create load balancer') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

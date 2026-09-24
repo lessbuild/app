@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="repository-webhook-settings-dialog"
     :title="__('Webhook settings')"
     :description="__('Enable, rotate or disable authenticated push deployments for this repository.')"
@@ -50,4 +50,4 @@
             </form>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

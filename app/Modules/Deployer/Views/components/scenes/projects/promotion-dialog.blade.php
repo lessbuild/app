@@ -6,7 +6,7 @@
 
 @php($dialogId = 'promotion-dialog-'.$build->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Promote tested release')"
     :description="__('Rebuild exact revision :revision with the target environment configuration.', ['revision' => $build->shortRevision()])"
@@ -32,4 +32,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Promote') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

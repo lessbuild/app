@@ -6,7 +6,7 @@
 
 @php($dialogCancelUrl = $cancelUrl ?? route('providers.index'))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="provider-create-dialog"
     :title="__('Add provider')"
     :description="__('Connect an infrastructure or source-control credential to this workspace.')"
@@ -17,4 +17,4 @@
         :cancel-url="$dialogCancelUrl"
         :field-prefix="$fieldPrefix"
     />
-</x-dialogs.modal>
+</x-signal.overlays.modal>

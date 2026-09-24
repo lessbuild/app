@@ -11,7 +11,7 @@
     $recoveriesEnabled = old('recoveries', $organization->notification_preferences['recoveries'] ?? true);
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="organization-notification-preferences-dialog"
     :title="__('Notification preferences')"
     :description="__('Choose which events create inbox notifications for this workspace.')"
@@ -48,4 +48,4 @@
 
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save preferences') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

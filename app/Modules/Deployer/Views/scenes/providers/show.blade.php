@@ -69,12 +69,12 @@
                 {{ __('Edit Provider') }}
             </x-signal.ui.button>
 
-            <x-dialogs.delete
+            <x-signal.overlays.delete-confirmation
                 id="delete-provider"
                 :route="route('providers.destroy', $provider)"
                 :title="__('Delete')"
                 :description="__('Are you sure you want to delete this provider?')"
-            ></x-dialogs.delete>
+            ></x-signal.overlays.delete-confirmation>
 
             <x-signal.ui.button type="button" variant="danger" data-modal-trigger="delete-provider" aria-controls="delete-provider" aria-expanded="false">
                 <svg class="h-4 w-4" aria-hidden="true">
@@ -296,7 +296,7 @@
                     @forelse($repositories as $repository)
                         <li>
                             <a href="{{ route('repositories.show', $repository) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
-                                <x-avatar :name="$repository->name" class="ui-avatar-md text-xs" />
+                                <x-signal.ui.avatar :name="$repository->name" class="ui-avatar-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $repository->name }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">{{ $repository->url }}</span>
@@ -337,7 +337,7 @@
                     @forelse($servers as $server)
                         <li>
                             <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
-                                <x-avatar :name="$server->label" class="ui-avatar-md text-xs" />
+                                <x-signal.ui.avatar :name="$server->label" class="ui-avatar-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $server->label }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">#{{ $server->identifier }}</span>
@@ -362,7 +362,7 @@
 
     <x-scenes.providers.edit-dialog :provider="$provider" :open="$providerEditOpen" />
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="provider-connection-checks-dialog"
         :title="__('Connection check history')"
         :description="__('Review retained credential-check evidence without leaving this provider.')"
@@ -372,5 +372,5 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading connection check history…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 </x-layouts.app>

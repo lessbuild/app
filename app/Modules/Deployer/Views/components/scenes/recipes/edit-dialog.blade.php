@@ -11,7 +11,7 @@
 @php($dialogCancelUrl = $cancelUrl ?? route('recipes.show', $recipe))
 @php($dialogContentUrl = $contentUrl ?? route('recipes.edit', ['recipe' => $recipe, 'dialog' => $dialogKey, 'fragment' => 1]))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$id"
     :title="__('Edit recipe')"
     :description="__('Changes apply when this recipe is used for a new server.')"
@@ -32,4 +32,4 @@
             <p class="p-5 text-sm text-muted">{{ __('Loading recipe form…') }}</p>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

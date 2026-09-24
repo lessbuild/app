@@ -6,7 +6,7 @@
 
 @php($dialogId = 'gallery-inspect-script-'.$recipe->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Inspect :recipe', ['recipe' => $recipe->name])"
     :description="__('Review the commands before using this recipe on a server.')"
@@ -20,4 +20,4 @@
             <p class="text-sm text-muted">{{ __('Loading script preview…') }}</p>
         @endif
     </div>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

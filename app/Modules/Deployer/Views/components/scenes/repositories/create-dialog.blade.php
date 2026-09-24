@@ -14,7 +14,7 @@
 
 @php($dialogCancelUrl = $cancelUrl ?? route('repositories.index', $indexQuery))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="repository-create-dialog"
     :title="__('Add repository')"
     :description="__('Connect a source repository to an active website and deployment branch.')"
@@ -33,4 +33,4 @@
         :website-create-content-url="$websiteCreateContentUrl"
         :field-prefix="$fieldPrefix"
     />
-</x-dialogs.modal>
+</x-signal.overlays.modal>

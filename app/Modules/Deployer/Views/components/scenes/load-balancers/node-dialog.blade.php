@@ -10,7 +10,7 @@
     $nodeFormActive = old('_load_balancer_id') == $balancer->id;
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Add application node')"
     :description="__('Choose a distinct application server and configure its upstream capacity.')"
@@ -49,4 +49,4 @@
             <x-signal.ui.button type="submit" variant="primary" class="w-full">{{ __('Add') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

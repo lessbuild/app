@@ -6,7 +6,7 @@
 
 @php($dialogCancelUrl = $cancelUrl ?? route('projects.index'))
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="application-create-dialog"
     :title="__('New application')"
     :description="__('Start from a production-ready template, then customize every runtime setting.')"
@@ -23,4 +23,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Create application') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

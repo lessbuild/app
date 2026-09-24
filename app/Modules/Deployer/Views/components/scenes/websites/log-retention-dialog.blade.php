@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="website-log-retention-dialog"
     :title="__('Log retention settings')"
     :description="__('Choose how many lines future application and access log snapshots retain.')"
@@ -25,4 +25,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save retention') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

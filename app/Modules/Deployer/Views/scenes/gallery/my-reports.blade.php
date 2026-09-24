@@ -206,7 +206,7 @@
             {{ $reports->links() }}
         </div>
 
-        <x-dialogs.modal
+        <x-signal.overlays.modal
             id="gallery-report-status-dialog"
             :title="__('Report status')"
             :description="__('Review the current report state without leaving your filtered report history.')"
@@ -215,6 +215,6 @@
             <div data-modal-content>
                 <div class="space-y-3 text-sm text-muted">{{ __('Loading report status…') }}</div>
             </div>
-        </x-dialogs.modal>
+        </x-signal.overlays.modal>
     @endif
 </x-layouts.app>

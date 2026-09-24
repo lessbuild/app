@@ -296,6 +296,9 @@ class LocalUiAssetTest extends TestCase
             ->implode("\n");
         $this->assertStringNotContainsString('x-layouts.partials.heading', $deployerViews);
         $this->assertGreaterThan(45, substr_count($deployerViews, '<x-signal.ui.page-header'));
+        $this->assertStringNotContainsString('<x-dialogs.', $deployerViews);
+        $this->assertStringNotContainsString('<x-avatar ', $deployerViews);
+        $this->assertGreaterThan(70, substr_count($deployerViews, '<x-signal.overlays.modal'));
 
         $dashboard = File::get(app_path('Modules/Deployer/Views/dashboard.blade.php'));
         $this->assertStringContainsString('<x-signal.ui.page-header', $dashboard);
@@ -303,12 +306,38 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('<h1 id="dashboard-title"', $dashboard);
     }
 
+    public function test_latest_signal_side_sheet_is_a_shared_component_and_trigger(): void
+    {
+        $html = Blade::render(<<<'BLADE'
+            <x-signal.overlays.side-sheet-trigger sheet="environment-sheet">Browse environments</x-signal.overlays.side-sheet-trigger>
+            <x-signal.overlays.side-sheet id="environment-sheet" eyebrow="Storefront" title="Environments" description="Jump to a deployment target.">
+                <nav aria-label="Project environments"><a href="#production" data-sheet-close>Production</a></nav>
+            </x-signal.overlays.side-sheet>
+            BLADE,
+        );
+
+        $this->assertStringContainsString('data-sheet-open="environment-sheet"', $html);
+        $this->assertStringContainsString('aria-controls="environment-sheet"', $html);
+        $this->assertStringContainsString('aria-expanded="false"', $html);
+        $this->assertStringContainsString('id="environment-sheet"', $html);
+        $this->assertStringContainsString('role="dialog"', $html);
+        $this->assertStringContainsString('aria-modal="true"', $html);
+        $this->assertStringContainsString('aria-describedby="environment-sheet-description"', $html);
+        $this->assertStringContainsString('data-sheet-close', $html);
+        $this->assertStringContainsString('class="ui-sheet hidden', $html);
+
+        $coreLayout = File::get(resource_path('views/components/signal/layouts/core.blade.php'));
+        $this->assertStringContainsString("@vite('resources/js/signal-overlays.js')", $coreLayout);
+    }
+
     public function test_mobile_dialog_and_filter_primitives_expose_native_sheet_hooks(): void
     {
         $modal = File::get(resource_path('views/components/signal/overlays/modal.blade.php'));
         $filter = File::get(resource_path('views/components/signal/ui/filter-panel.blade.php'));
+        $commandPalette = File::get(resource_path('views/components/signal/layouts/command-palette.blade.php'));
 
         $this->assertStringContainsString('data-modal-sheet', $modal);
+        $this->assertStringContainsString('data-modal-sheet', $commandPalette);
         $this->assertStringContainsString('data-modal-panel', $modal);
         $this->assertStringContainsString('data-modal-header', $modal);
         $this->assertStringContainsString('data-modal-body', $modal);

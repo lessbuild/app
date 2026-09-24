@@ -8,7 +8,7 @@
     $fieldPrefix = $dialogId.'-';
 @endphp
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Issue a database credential')"
     :description="__('Credentials can be limited by privilege and expiration.')"
@@ -44,4 +44,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Create credential') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

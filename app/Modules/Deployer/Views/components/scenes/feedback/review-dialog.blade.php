@@ -6,7 +6,7 @@
 
 @php($dialogId = 'feedback-review-'.$feedback->id)
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="__('Review feedback')"
     :description="__('Update the workspace status and record a response without leaving the feedback list.')"
@@ -32,4 +32,4 @@
         </div>
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save review') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

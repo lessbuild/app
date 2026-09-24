@@ -27,7 +27,7 @@
         ->values();
 @endphp
 
-<dialog id="signal-command-palette" data-signal-command-palette @if($searchUrl) data-signal-command-search-url="{{ $searchUrl }}" @endif class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" aria-labelledby="signal-command-title" aria-modal="true">
+<dialog id="signal-command-palette" data-signal-command-palette data-modal-sheet @if($searchUrl) data-signal-command-search-url="{{ $searchUrl }}" @endif class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" aria-labelledby="signal-command-title" aria-modal="true">
     <div class="p-5 sm:p-6">
         <div class="flex items-start justify-between gap-4">
             <div>

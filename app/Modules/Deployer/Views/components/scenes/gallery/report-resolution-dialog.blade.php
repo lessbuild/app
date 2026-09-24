@@ -29,7 +29,7 @@
     {{ $triggerLabel }}
 </x-signal.ui.button>
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     :id="$dialogId"
     :title="$dialogTitle"
     :description="$dialogDescription"
@@ -55,4 +55,4 @@
         <x-forms.errors name="resolution_note" />
         <x-signal.ui.button type="submit" variant="primary">{{ $submitLabel }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

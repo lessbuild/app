@@ -458,7 +458,7 @@
         >{{ __('Open incident timeline') }}</a>
     @endif
 
-    <x-dialogs.modal
+    <x-signal.overlays.modal
         id="{{ $operationalIncidentDialogId }}"
         :title="__('Incident timeline')"
         :description="__('Review encrypted incident evidence without leaving observability.')"
@@ -468,5 +468,5 @@
         <div data-modal-content>
             <p class="p-5 text-sm text-muted">{{ __('Loading incident timeline…') }}</p>
         </div>
-    </x-dialogs.modal>
+    </x-signal.overlays.modal>
 </x-layouts.app>

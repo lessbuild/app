@@ -3,7 +3,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="project-preview-settings-dialog"
     :title="__('Preview environment settings')"
     :description="__('Control preview lifetime and the host name used for pull-request environments.')"
@@ -32,4 +32,4 @@
         </label>
         <x-signal.ui.button type="submit" variant="primary" class="sm:col-span-2">{{ __('Save previews') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

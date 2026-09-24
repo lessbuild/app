@@ -4,7 +4,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="save-investigation-dialog"
     :title="__('Save this investigation')"
     :description="__('Create a named, expiring link for workspace members. Evidence is rechecked when the link is opened.')"
@@ -35,4 +35,4 @@
         <x-forms.errors name="service" />
         <x-signal.ui.button type="submit" variant="primary">{{ __('Save view') }}</x-signal.ui.button>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>

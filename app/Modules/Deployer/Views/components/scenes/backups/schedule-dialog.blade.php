@@ -4,7 +4,7 @@
     'open' => false,
 ])
 
-<x-dialogs.modal
+<x-signal.overlays.modal
     id="backup-schedule-dialog"
     :title="__('Add schedule')"
     :description="__('Automate retention without managing cron jobs.')"
@@ -58,4 +58,4 @@
             <x-signal.ui.button type="submit" variant="primary">{{ __('Save schedule') }}</x-signal.ui.button>
         </div>
     </form>
-</x-dialogs.modal>
+</x-signal.overlays.modal>
