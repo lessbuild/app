@@ -95,12 +95,12 @@
 <header class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur" data-mobile-header data-topbar-shell>
     <div class="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
         <div class="flex min-h-16 items-center gap-3">
-            @if (in_array($activeProduct, ['core', 'monitor', 'analytics'], true))
+            @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
                 <details class="ui-topbar-menu group relative shrink-0 lg:hidden">
                     <summary class="ui-icon-btn cursor-pointer list-none" aria-label="{{ __('Open application navigation') }}" aria-haspopup="true">
                         <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
                     </summary>
-                    <div class="absolute left-0 top-full z-40 grid max-h-[min(75vh,38rem)] w-[min(22rem,calc(100vw-2rem))] gap-1 overflow-y-auto rounded-panel border border-line bg-surface p-2 shadow-panel">
+                    <div class="ui-popover ui-popover-mobile absolute left-0 top-full z-40 grid max-h-[min(75vh,38rem)] w-[min(22rem,calc(100vw-2rem))] gap-1 overflow-y-auto rounded-panel border border-line bg-surface p-2 shadow-panel">
                         <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Products') }}</p>
                         @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
                             <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" class="w-full justify-start" />
@@ -244,7 +244,7 @@
                     </div>
                 </details>
 
-                @if (in_array($activeProduct, ['core', 'monitor', 'analytics'], true))
+                @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
                     <x-signal.ui.button type="button" class="ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
                         <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
                         <span class="hidden xl:inline">{{ __('Search') }}</span>

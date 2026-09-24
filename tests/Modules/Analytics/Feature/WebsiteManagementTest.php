@@ -66,6 +66,57 @@ class WebsiteManagementTest extends TestCase
         $this->assertSame(['example.com', 'www.example.com'], $site->domains);
         $this->assertTrue($site->excludesPath('/admin/users'));
         $this->assertNotNull($site->collection_paused_at);
+
+        $this->withSession(['_token' => $csrf])->actingAs($user)->put(route('analytics.sites.settings.update', $site), [
+            '_token' => $csrf,
+            'name' => 'Updated site',
+            'domains' => "example.com\nwww.example.com",
+            'timezone' => 'UTC',
+            'excluded_paths' => "/admin/*\n/account",
+            'collection_enabled' => '0',
+            'collection_paused' => '0',
+        ])->assertRedirect();
+
+        $site->refresh();
+        $this->assertFalse($site->collection_enabled);
+        $this->assertNull($site->collection_paused_at);
+    }
+
+    public function test_site_forms_use_signal_fields_and_keep_validation_accessible(): void
+    {
+        [$user, $site] = $this->site();
+
+        $this->actingAs($user)->get(route('analytics.sites.create'))
+            ->assertOk()
+            ->assertSee('data-ui-page-header', false)
+            ->assertSee('name="domain"', false)
+            ->assertSee('aria-describedby="domain-help"', false)
+            ->assertSee('name="timezone"', false);
+
+        $this->actingAs($user)->get(route('analytics.sites.settings', $site))
+            ->assertOk()
+            ->assertSee('aria-describedby="domains-help"', false)
+            ->assertSee('id="collection_enabled"', false)
+            ->assertSee('name="collection_enabled" value="0"', false)
+            ->assertSee('class="ui-choice"', false);
+
+        $csrf = 'test-token';
+        $this->withSession(['_token' => $csrf])->actingAs($user)
+            ->from(route('analytics.sites.settings', $site))
+            ->followingRedirects()
+            ->put(route('analytics.sites.settings.update', $site), [
+                '_token' => $csrf,
+                'name' => '',
+                'domains' => 'example.com',
+                'timezone' => 'UTC',
+                'excluded_paths' => '',
+                'collection_enabled' => '0',
+                'collection_paused' => '0',
+            ])
+            ->assertOk()
+            ->assertSee('id="name-error"', false)
+            ->assertSee('aria-invalid="true"', false)
+            ->assertSee('aria-describedby="name-error"', false);
     }
 
     public function test_owner_deleting_a_site_removes_its_detail_rows(): void

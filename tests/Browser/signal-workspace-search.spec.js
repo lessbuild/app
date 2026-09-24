@@ -61,4 +61,13 @@ test('Signal workspace search renders safe cross-product results and restores ke
     await page.keyboard.press('Escape');
     await expect(dialog).not.toBeVisible();
     await expect(trigger).toBeFocused();
+
+    await page.evaluate(() => {
+        document.querySelector('a[data-signal-command-item]')?.addEventListener('click', (event) => event.preventDefault());
+    });
+    await trigger.click();
+    await expect(dialog).toBeVisible();
+    await page.getByRole('link', { name: 'Dashboard' }).click();
+    await expect(dialog).not.toBeVisible();
+    await expect(trigger).toBeFocused();
 });

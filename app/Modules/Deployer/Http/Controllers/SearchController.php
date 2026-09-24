@@ -13,8 +13,8 @@ use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Support\SqlLike;
 use Illuminate\Http\Request;
-use Illuminate\Http\Response;
 use Illuminate\Support\Collection;
+use Symfony\Component\HttpFoundation\Response;
 
 class SearchController extends Controller
 {
@@ -61,6 +61,7 @@ class SearchController extends Controller
 
                     $key = 'connected-'.$group['product'].'-'.$index;
                     $groups[$key] = [
+                        'product' => $group['product'],
                         'label' => $group['label'],
                         'results' => $results,
                         'has_more' => false,
@@ -68,6 +69,37 @@ class SearchController extends Controller
                     ];
                 }
             }
+        }
+
+        if ($request->expectsJson()) {
+            $commandGroups = collect($groups)
+                ->filter(fn (array $group): bool => collect($group['results'] ?? [])->isNotEmpty())
+                ->map(function (array $group): array {
+                    $results = collect($group['results'] ?? [])
+                        ->map(fn (array $result): array => [
+                            'type' => $result['type'] ?? $group['label'],
+                            'title' => $result['title'],
+                            'subtitle' => $result['subtitle'] ?? null,
+                            'url' => $result['url'],
+                        ])
+                        ->values();
+
+                    return [
+                        'product' => $group['product'] ?? 'deployer',
+                        'label' => $group['label'],
+                        'count' => $results->count(),
+                        'results' => $results,
+                    ];
+                })
+                ->values();
+
+            return response()
+                ->json([
+                    'query' => $query,
+                    'groups' => $commandGroups,
+                    'unavailable' => $unavailable,
+                ])
+                ->header('Cache-Control', 'private, no-store');
         }
 
         if ($request->string('fragment')->toString() === 'workspace') {

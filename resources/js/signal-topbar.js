@@ -254,7 +254,9 @@ palette?.addEventListener('keydown', (event) => {
 });
 
 palette?.addEventListener('click', (event) => {
-  if (event.target === palette) closePalette();
+  if (event.target === palette || event.target instanceof Element && event.target.closest('a[data-signal-command-item]')) {
+    closePalette();
+  }
 });
 
 palette?.addEventListener('close', () => {

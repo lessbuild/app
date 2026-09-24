@@ -2,6 +2,8 @@
 
 Use `resources/views/components/signal/` as the source of truth for shared Blade UI and `resources/css/signal/` plus `resources/css/components/ui.css` for its semantic theme styles. New product pages use the `x-signal.*` namespace. Product and legacy templates can keep compatibility names while they are migrated; adapters forward props, attributes, slots, and Livewire attributes to the shared implementation.
 
+The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `cdb156bf4fe92f30f18b7763eaa313da5819d974` (`Clamp component popovers on mobile`, 2026-09-24). Laravel Blade and Tailwind implementations adapt the source templates to the shared product routes and accessibility contracts.
+
 ## Current shared APIs
 
 | Component | Purpose |
@@ -38,6 +40,8 @@ Use `resources/views/components/signal/` as the source of truth for shared Blade
 | `x-signal.overlays.delete-confirmation` | Reusable delete confirmation composition on the shared dialog and button primitives. |
 
 Use explicit component props for variants and named slots for page-specific content. Cards also accept a constrained semantic element, spacing, and shadow options so a shared panel can remain a `form`, `section`, `article`, or `details` without copying its visual surface. Keep authorization, validation, queries, and domain behavior in their existing controllers, policies, requests, actions, and Livewire components.
+
+`x-signal.layouts.command-palette` accepts `searchUrl` for private asynchronous resource results, optional `searchActionUrl` for a normal GET results page on Enter, and `extraItems` for product-specific shortcuts. Deployer uses this shared palette while keeping its application/server/site/repository creation dialogs and operations links.
 
 ## Compatibility adapters
 

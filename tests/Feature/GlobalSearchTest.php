@@ -112,6 +112,29 @@ class GlobalSearchTest extends TestCase
         $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
     }
 
+    public function test_signal_command_palette_search_returns_only_safe_json_results(): void
+    {
+        $owner = User::factory()->create();
+        $recipe = $owner->recipes()->create([
+            'name' => 'Palette recipe',
+            'description' => 'Signal command palette result',
+            'script' => 'echo private-palette-script',
+        ]);
+
+        $response = $this->actingAs($owner)
+            ->getJson(route('search.index', ['q' => 'Palette']))
+            ->assertSuccessful()
+            ->assertJsonPath('query', 'Palette')
+            ->assertJsonPath('groups.0.product', 'deployer')
+            ->assertJsonPath('groups.0.label', 'Recipes')
+            ->assertJsonPath('groups.0.results.0.title', $recipe->name)
+            ->assertJsonPath('groups.0.results.0.url', route('recipes.show', $recipe));
+
+        $this->assertStringContainsString('private', $response->headers->get('Cache-Control'));
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control'));
+        $this->assertStringNotContainsString('private-palette-script', $response->getContent());
+    }
+
     public function test_deployer_workspace_fragment_includes_authorized_core_project_results(): void
     {
         $this->createCoreSearchSchema();
@@ -382,12 +405,17 @@ class GlobalSearchTest extends TestCase
         }
     }
 
-    public function test_authenticated_sidebar_contains_the_global_search_entry_point(): void
+    public function test_authenticated_deployer_shell_uses_the_signal_search_and_navigation_components(): void
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
             ->assertSee(route('search.index'))
-            ->assertSee('Search or jump to…');
+            ->assertSee('data-product="deployer"', false)
+            ->assertSee('data-signal-command-palette', false)
+            ->assertSee('data-signal-command-open', false)
+            ->assertSee('Open application navigation')
+            ->assertSee('Provision server')
+            ->assertDontSee('app-mobile-nav');
     }
 
     /** @return array<string, mixed> */

@@ -1,5 +1,55 @@
 # Signal theme integration progress
 
+## Slice 124 — move Deployer onto Signal's current topbar SaaS shell — 2026-09-24
+
+Responsibility problem:
+
+- Deployer rendered the shared Signal topbar markup, but its layout omitted the
+  product key. That kept the Signal product JavaScript entry from loading and
+  left Deployer on its custom mobile drawer and Alpine command palette.
+
+Boundary and implementation:
+
+- Checked the current upstream `main` of
+  `https://github.com/lessbuild/template`; it resolves to
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974` (`Clamp component popovers on
+  mobile`, 2026-09-24).
+- Made Deployer declare its product key, so it loads the shared Signal runtime
+  and uses the same responsive topbar navigation and command palette as the
+  other product modules. The legacy Deployer mobile drawer and palette are no
+  longer rendered; the four-item mobile quick-navigation bar remains.
+- Moved Deployer's existing 13 command shortcuts into the shared Signal
+  palette, including lazy server/site/repository dialogs and the full-page
+  search fallback. Added a private, bounded JSON response to its existing
+  workspace search route so the shared palette can also show cross-product
+  matches.
+- Applied the latest upstream mobile popover sizing and overflow rules to the
+  shared Signal component stylesheet without overwriting app-specific form
+  validation and theme styles.
+- Converted Analytics website setup and settings to Signal page headers, cards,
+  alerts, fields, choices, and actions. The settings keep domain/timezone/path
+  editing, collection pause controls, tracker installation, workspace access,
+  and deletion behavior.
+
+Preserved contracts and safety:
+
+- Product routes, role checks, dialog URLs, resource search scoping, modal
+  content loading, and project/activity mobile shortcuts remain in place.
+- No database, authentication, billing, or deployment behavior changed.
+
+Evidence:
+
+- Upstream `main` fetch and revision verification: passed.
+- `GlobalSearchTest.php`: **13 passed**, **110 assertions**.
+- Analytics `WebsiteManagementTest.php`: **4 passed**, **44 assertions**.
+- `signal-workspace-search.spec.js`: **1 passed** (15s), including static
+  action click, live result rendering, Escape, and keyboard focus restoration.
+- Production Vite build and Blade view cache: passed.
+- JavaScript syntax check and `git diff --check`: passed.
+
+Next task: verify the browser palette interactions, then deploy and check the
+served Deployer assets against the new build.
+
 ## Slice 123 — verify active Signal defaults in the rendered page — 2026-09-22
 
 Responsibility problem:
