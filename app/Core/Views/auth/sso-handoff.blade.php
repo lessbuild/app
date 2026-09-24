@@ -9,7 +9,7 @@
             <p class="mt-2 text-sm leading-6 text-muted">{{ __('You are being securely signed in to :host.', ['host' => $destination]) }}</p>
 
             <form method="POST" action="{{ $exchangeUrl }}" data-platform-sso-handoff class="mt-6">
-                <input type="hidden" name="code" value="{{ $ticket }}">
+                <x-signal.ui.input type="hidden" name="code" :value="$ticket" :restore="false" />
                 <noscript>
                     <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">
                         {{ __('Continue securely') }}

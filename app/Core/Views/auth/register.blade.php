@@ -18,30 +18,15 @@
                 <form method="POST" action="{{ route('platform.register.store') }}" class="mt-6 grid gap-5">
                     @csrf
                     @if ($invitationToken)
-                        <input type="hidden" name="invitation" value="{{ $invitationToken }}">
+                        <x-signal.ui.input type="hidden" name="invitation" :value="$invitationToken" :restore="false" />
                     @endif
-                    <x-signal.ui.field :label="__('Your name')" name="name" required>
-                        <x-signal.ui.input name="name" autocomplete="name" required autofocus />
-                    </x-signal.ui.field>
-
-                    <x-signal.ui.field :label="__('Email address')" name="email" required>
-                        <x-signal.ui.input name="email" type="email" autocomplete="email" :value="$invitation?->email" :readonly="$invitation !== null" required />
-                    </x-signal.ui.field>
-
-                    <x-signal.ui.field :label="__('Password')" name="password" required>
-                        <x-signal.ui.input name="password" type="password" autocomplete="new-password" minlength="12" required />
-                        <x-slot:description>{{ __('Use at least 12 characters.') }}</x-slot:description>
-                    </x-signal.ui.field>
-
-                    <x-signal.ui.field :label="__('Confirm password')" name="password_confirmation" required>
-                        <x-signal.ui.input name="password_confirmation" type="password" autocomplete="new-password" minlength="12" required />
-                    </x-signal.ui.field>
+                    <x-signal.ui.input-field name="name" :label="__('Your name')" autocomplete="name" required autofocus />
+                    <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="email" :value="$invitation?->email" :readonly="$invitation !== null" required />
+                    <x-signal.ui.input-field name="password" :label="__('Password')" type="password" autocomplete="new-password" minlength="12" :description="__('Use at least 12 characters.')" required />
+                    <x-signal.ui.input-field name="password_confirmation" :label="__('Confirm password')" type="password" autocomplete="new-password" minlength="12" required />
 
                     @unless ($invitation)
-                        <x-signal.ui.field :label="__('Workspace name')" name="workspace_name" required>
-                            <x-signal.ui.input name="workspace_name" autocomplete="organization" required />
-                            <x-slot:description>{{ __('Your team can join this workspace later. No product plan is started during sign-up.') }}</x-slot:description>
-                        </x-signal.ui.field>
+                        <x-signal.ui.input-field name="workspace_name" :label="__('Workspace name')" autocomplete="organization" :description="__('Your team can join this workspace later. No product plan is started during sign-up.')" required />
                     @endunless
 
                     <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">

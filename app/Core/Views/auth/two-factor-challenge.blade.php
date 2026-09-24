@@ -7,9 +7,7 @@
 
             <form method="POST" action="{{ route('platform.two-factor.store') }}" class="mt-6 grid gap-5">
                 @csrf
-                <x-signal.ui.field :label="__('Authentication or recovery code')" name="code" required>
-                    <x-signal.ui.input name="code" autocomplete="one-time-code" inputmode="text" required autofocus />
-                </x-signal.ui.field>
+                <x-signal.ui.input-field name="code" :label="__('Authentication or recovery code')" autocomplete="one-time-code" inputmode="text" required autofocus />
                 <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">{{ __('Verify and sign in') }}</x-signal.ui.button>
             </form>
         </x-signal.ui.card>

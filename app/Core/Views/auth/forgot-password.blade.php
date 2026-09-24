@@ -11,9 +11,7 @@
 
             <form method="POST" action="{{ route('platform.password.email') }}" class="mt-6 grid gap-5">
                 @csrf
-                <x-signal.ui.field :label="__('Email address')" name="email" required>
-                    <x-signal.ui.input name="email" type="email" autocomplete="email" required autofocus />
-                </x-signal.ui.field>
+                <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="email" required autofocus />
                 <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">{{ __('Send reset link') }}</x-signal.ui.button>
             </form>
 

@@ -6,16 +6,10 @@
 
             <form method="POST" action="{{ route('platform.password.update') }}" class="mt-6 grid gap-5">
                 @csrf
-                <input type="hidden" name="token" value="{{ $token }}">
-                <x-signal.ui.field :label="__('Email address')" name="email" required>
-                    <x-signal.ui.input name="email" type="email" autocomplete="email" :value="$email" required />
-                </x-signal.ui.field>
-                <x-signal.ui.field :label="__('New password')" name="password" required :description="__('Use at least 12 characters.')">
-                    <x-signal.ui.input name="password" type="password" autocomplete="new-password" required />
-                </x-signal.ui.field>
-                <x-signal.ui.field :label="__('Confirm new password')" name="password_confirmation" required>
-                    <x-signal.ui.input name="password_confirmation" type="password" autocomplete="new-password" required />
-                </x-signal.ui.field>
+                <x-signal.ui.input type="hidden" name="token" :value="$token" :restore="false" />
+                <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="email" :value="$email" required />
+                <x-signal.ui.input-field name="password" :label="__('New password')" type="password" autocomplete="new-password" :description="__('Use at least 12 characters.')" required />
+                <x-signal.ui.input-field name="password_confirmation" :label="__('Confirm new password')" type="password" autocomplete="new-password" required />
                 <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">{{ __('Save new password') }}</x-signal.ui.button>
             </form>
         </x-signal.ui.card>

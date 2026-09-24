@@ -125,10 +125,15 @@ final class PlatformAuthenticationTest extends TestCase
         $this->createPlatformUser('person@example.test', 'shared password');
         $this->createPlatformUser('PERSON@EXAMPLE.TEST', 'shared password');
 
-        $this->post(route('platform.login.store'), [
+        $this->from(route('platform.login'))->followingRedirects()->post(route('platform.login.store'), [
             'email' => 'person@example.test',
             'password' => 'shared password',
-        ])->assertSessionHasErrors('email');
+        ])
+            ->assertOk()
+            ->assertSee('id="email-error"', false)
+            ->assertSee('aria-describedby="email-error"', false)
+            ->assertSee('aria-invalid="true"', false)
+            ->assertDontSee('value="shared password"', false);
 
         $this->assertGuest('platform');
     }
@@ -241,7 +246,7 @@ final class PlatformAuthenticationTest extends TestCase
             ->assertSee('action="https://monitor.example.test/__platform/sso/exchange"', false)
             ->assertDontSee($returnTo, false);
 
-        preg_match('/name="code" value="([a-f0-9]{64})"/', $handoff->getContent(), $matches);
+        preg_match('/<input\b(?=[^>]*\bname="code")(?=[^>]*\bvalue="([a-f0-9]{64})")[^>]*>/', $handoff->getContent(), $matches);
         $this->assertArrayHasKey(1, $matches);
         $plainTextTicket = $matches[1];
         $ticket = DB::connection('core')->table('platform_sso_tickets')->first();

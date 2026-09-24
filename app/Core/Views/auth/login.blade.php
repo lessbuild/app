@@ -18,16 +18,11 @@
                 <form method="POST" action="{{ route('platform.login.store') }}" class="mt-6 grid gap-5">
                     @csrf
                     @if ($returnTo)
-                        <input type="hidden" name="return_to" value="{{ $returnTo }}">
+                        <x-signal.ui.input type="hidden" name="return_to" :value="$returnTo" :restore="false" />
                     @endif
 
-                    <x-signal.ui.field :label="__('Email address')" name="email" required>
-                        <x-signal.ui.input name="email" type="email" autocomplete="username" required autofocus />
-                    </x-signal.ui.field>
-
-                    <x-signal.ui.field :label="__('Password')" name="password" required>
-                        <x-signal.ui.input name="password" type="password" autocomplete="current-password" required />
-                    </x-signal.ui.field>
+                    <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="username" required autofocus />
+                    <x-signal.ui.input-field name="password" :label="__('Password')" type="password" autocomplete="current-password" required />
 
                     <div class="flex flex-wrap items-center justify-between gap-3">
                         <x-signal.ui.checkbox name="remember">{{ __('Remember me') }}</x-signal.ui.checkbox>
