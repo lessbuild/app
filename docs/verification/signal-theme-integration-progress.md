@@ -32,11 +32,18 @@ Evidence and release:
   assertions**), the asset-layout fixture (**313 assertions**), and the shared
   Signal regression suite passed. Mobile Playwright inventory checks, Pint,
   JavaScript syntax, Vite build, and `git diff --check` passed.
-- The verified source changes are local and are not yet published to the
-  production Deployer host. No application data or database migrations changed.
+- Commit `9529430` is pushed to `origin/feature/unified-platform` and deployed
+  as `/var/www/buildpusher-unified/releases/9529430`; `current` points to that
+  release. It was built from the active release snapshot so production-only
+  runtime files outside the branch were retained. Release-local config, route,
+  and view caches were rebuilt, then PHP-FPM was reloaded. The Buildpusher home,
+  product description pages, and central login return HTTP 200; Deployer,
+  Monitor, and Analytics roots retain their expected 302 redirects, and
+  Deployer health returns HTTP 200. Release `6c4a179` remains available for
+  rollback. No application data or database migrations changed.
 
-Next task: publish this slice, then complete the cross-product theme-token
-demonstration and representative Deployer visual/accessibility acceptance.
+Next task: complete the cross-product theme-token demonstration and
+representative Deployer visual/accessibility acceptance.
 
 ## Slice 132 — componentize Deployer automation dialogs — 2026-09-24
 
