@@ -27,14 +27,38 @@
                 <div class="divide-y divide-line">
                     @forelse ($members as $membership)
                         <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
-                            <div class="flex min-w-0 items-center gap-3">
+                            <div class="flex min-w-0 flex-1 items-center gap-3">
                                 <x-signal.ui.avatar :name="$membership->user?->name ?: $membership->user?->email" />
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-bold text-ink">{{ $membership->user?->name ?: __('Unknown account') }}</p>
                                     <p class="truncate text-xs text-muted">{{ $membership->user?->email }}</p>
                                 </div>
                             </div>
-                            <x-signal.ui.badge :tone="$membership->role === 'owner' ? 'accent' : 'neutral'">{{ str($membership->role)->headline() }}</x-signal.ui.badge>
+                            <div class="flex flex-wrap items-center justify-end gap-2">
+                                @if ($canManageRoles && $membership->role !== 'owner' && ($canAssignAdminRole || $membership->role !== 'admin'))
+                                    <form method="POST" action="{{ route('core.workspace.team.memberships.role.update', [$workspace, $membership]) }}" class="flex items-center gap-2">
+                                        @csrf
+                                        @method('PUT')
+                                        <x-signal.ui.select name="role" aria-label="{{ __('Workspace role for :name', ['name' => $membership->user?->name ?: $membership->user?->email]) }}">
+                                            @foreach (['admin' => __('Administrator'), 'billing' => __('Billing manager'), 'member' => __('Member'), 'viewer' => __('Viewer')] as $role => $label)
+                                                @continue($role === 'admin' && ! $canAssignAdminRole)
+                                                <option value="{{ $role }}" @selected($membership->role === $role)>{{ $label }}</option>
+                                            @endforeach
+                                        </x-signal.ui.select>
+                                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Save role') }}</x-signal.ui.button>
+                                    </form>
+                                @else
+                                    <x-signal.ui.badge :tone="$membership->role === 'owner' ? 'accent' : 'neutral'">{{ str($membership->role)->headline() }}</x-signal.ui.badge>
+                                @endif
+
+                                @if ($canManageMembers && $membership->role !== 'owner' && (string) $membership->user_id !== $actorUserId && ($canManageRoles || $membership->role !== 'admin'))
+                                    <form method="POST" action="{{ route('core.workspace.team.memberships.destroy', [$workspace, $membership]) }}" onsubmit='return confirm(@js(__('Remove this person from the workspace? Their workspace product grants will also be revoked.')))'>
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-signal.ui.button type="submit" variant="danger">{{ __('Remove') }}</x-signal.ui.button>
+                                    </form>
+                                @endif
+                            </div>
                         </div>
                     @empty
                         <x-signal.ui.empty-state :title="__('No active members')" :description="__('Active workspace members will appear here.')" icon="user-group" />

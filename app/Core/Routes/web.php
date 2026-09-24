@@ -54,6 +54,8 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::get('/', 'index')->name('index');
             Route::post('/invitations', 'storeInvitation')->middleware('throttle:10,1')->name('invitations.store');
             Route::delete('/invitations/{invitation}', 'revokeInvitation')->name('invitations.destroy');
+            Route::put('/memberships/{membership}/role', 'updateRole')->name('memberships.role.update');
+            Route::delete('/memberships/{membership}', 'revokeMembership')->name('memberships.destroy');
         });
 
     Route::prefix('workspaces/{workspace}')

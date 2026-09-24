@@ -6,6 +6,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceInvitation;
 use App\Core\Models\WorkspaceMembership;
+use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Notifications\PlatformVerifyEmail;
 use App\Core\Notifications\WorkspaceInvitationNotification;
 use App\Core\Services\Workspaces\CreateWorkspaceInvitation;
@@ -93,7 +94,40 @@ final class WorkspaceInvitationTest extends TestCase
             $table->string('product', 24);
             $table->string('role', 32)->default('member');
             $table->string('status', 24)->default('active');
+            $table->char('granted_by_user_id', 26)->nullable();
+            $table->timestamp('granted_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
             $table->timestamps();
+            $table->unique(['membership_id', 'product']);
+        });
+        Schema::connection('core')->create('projects', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('project_memberships', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('project_id', 26);
+            $table->char('user_id', 26);
+            $table->string('role', 32)->default('member');
+            $table->string('status', 24)->default('active');
+            $table->timestamp('granted_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspace_membership_events', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('membership_id', 26)->nullable();
+            $table->char('actor_user_id', 26)->nullable();
+            $table->char('subject_user_id', 26)->nullable();
+            $table->string('event', 48);
+            $table->string('previous_role', 32)->nullable();
+            $table->string('new_role', 32)->nullable();
+            $table->json('metadata')->nullable();
+            $table->timestamp('created_at')->useCurrent();
+            $table->index(['workspace_id', 'created_at']);
         });
         Schema::connection('core')->create('product_subscriptions', function (Blueprint $table): void {
             $table->char('id', 26)->primary();
@@ -126,6 +160,9 @@ final class WorkspaceInvitationTest extends TestCase
         Schema::connection('core')->dropIfExists('platform_auth_sessions');
         Schema::connection('core')->dropIfExists('platform_registration_mutexes');
         Schema::connection('core')->dropIfExists('product_subscriptions');
+        Schema::connection('core')->dropIfExists('workspace_membership_events');
+        Schema::connection('core')->dropIfExists('project_memberships');
+        Schema::connection('core')->dropIfExists('projects');
         Schema::connection('core')->dropIfExists('workspace_product_access');
         Schema::connection('core')->dropIfExists('workspace_invitations');
         Schema::connection('core')->dropIfExists('workspace_memberships');
@@ -301,6 +338,182 @@ final class WorkspaceInvitationTest extends TestCase
             ->assertRedirect(route('core.workspace.team.index', $workspace));
 
         $this->assertSame('revoked', $invitation->fresh()->status);
+    }
+
+    public function test_workspace_owner_can_change_a_member_role_and_the_change_is_audited(): void
+    {
+        [$owner, $workspace] = $this->createWorkspaceOwner();
+        $member = $this->createPlatformUser('member@example.test', 'Workspace Member');
+        $membership = WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $member->getKey(),
+            'role' => 'member',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($owner, 'platform')
+            ->get(route('core.workspace.team.index', $workspace))
+            ->assertOk()
+            ->assertSeeText('Save role')
+            ->assertSee('name="role"', false);
+
+        $this->put(route('core.workspace.team.memberships.role.update', [$workspace, $membership]), [
+            'role' => 'billing',
+        ])->assertRedirect(route('core.workspace.team.index', $workspace));
+
+        $this->assertSame('billing', $membership->fresh()->role);
+        $event = WorkspaceMembershipEvent::query()->sole();
+        $this->assertSame('role_changed', $event->event);
+        $this->assertSame('member', $event->previous_role);
+        $this->assertSame('billing', $event->new_role);
+        $this->assertSame($owner->getKey(), $event->actor_user_id);
+        $this->assertSame($member->getKey(), $event->subject_user_id);
+    }
+
+    public function test_admin_cannot_change_workspace_roles_or_remove_another_admin(): void
+    {
+        [$owner, $workspace] = $this->createWorkspaceOwner();
+        $admin = $this->createPlatformUser('admin@example.test', 'Workspace Admin');
+        WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $admin->getKey(),
+            'role' => 'admin',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $anotherAdmin = $this->createPlatformUser('another-admin@example.test', 'Another Admin');
+        $membership = WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $anotherAdmin->getKey(),
+            'role' => 'admin',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($admin, 'platform')
+            ->put(route('core.workspace.team.memberships.role.update', [$workspace, $membership]), ['role' => 'member'])
+            ->assertForbidden();
+        $this->actingAs($admin, 'platform')
+            ->delete(route('core.workspace.team.memberships.destroy', [$workspace, $membership]))
+            ->assertForbidden();
+
+        $this->assertSame('admin', $membership->fresh()->role);
+        $this->assertSame(0, WorkspaceMembershipEvent::query()->count());
+    }
+
+    public function test_admin_can_manage_standard_member_roles_but_cannot_promote_them_to_admin(): void
+    {
+        [$owner, $workspace] = $this->createWorkspaceOwner();
+        $admin = $this->createPlatformUser('admin@example.test', 'Workspace Admin');
+        WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $admin->getKey(),
+            'role' => 'admin',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $member = $this->createPlatformUser('member@example.test', 'Workspace Member');
+        $membership = WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $member->getKey(),
+            'role' => 'member',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($admin, 'platform')
+            ->put(route('core.workspace.team.memberships.role.update', [$workspace, $membership]), ['role' => 'billing'])
+            ->assertRedirect(route('core.workspace.team.index', $workspace));
+        $this->actingAs($admin, 'platform')
+            ->put(route('core.workspace.team.memberships.role.update', [$workspace, $membership]), ['role' => 'admin'])
+            ->assertForbidden();
+
+        $this->assertSame('billing', $membership->fresh()->role);
+        $this->assertSame('member', WorkspaceMembershipEvent::query()->sole()->previous_role);
+        $this->assertSame('billing', WorkspaceMembershipEvent::query()->sole()->new_role);
+        $this->assertSame($admin->getKey(), WorkspaceMembershipEvent::query()->sole()->actor_user_id);
+    }
+
+    public function test_revoking_a_member_also_revokes_core_project_memberships_and_product_grants(): void
+    {
+        [$owner, $workspace] = $this->createWorkspaceOwner();
+        $member = $this->createPlatformUser('member@example.test', 'Workspace Member');
+        $membership = WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $member->getKey(),
+            'role' => 'member',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+        $grantId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_product_access')->insert([
+            'id' => $grantId,
+            'membership_id' => $membership->getKey(),
+            'product' => 'deployer',
+            'role' => 'member',
+            'status' => 'active',
+            'granted_by_user_id' => $owner->getKey(),
+            'granted_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $workspace->getKey(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $projectMembershipId = (string) Str::ulid();
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => $projectMembershipId,
+            'project_id' => $projectId,
+            'user_id' => $member->getKey(),
+            'role' => 'member',
+            'status' => 'active',
+            'granted_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs($owner, 'platform')
+            ->delete(route('core.workspace.team.memberships.destroy', [$workspace, $membership]))
+            ->assertRedirect(route('core.workspace.team.index', $workspace));
+
+        $this->assertSame('revoked', $membership->fresh()->status);
+        $this->assertNotNull($membership->fresh()->revoked_at);
+        $this->assertSame('revoked', DB::connection('core')->table('workspace_product_access')->where('id', $grantId)->value('status'));
+        $this->assertNotNull(DB::connection('core')->table('workspace_product_access')->where('id', $grantId)->value('revoked_at'));
+        $this->assertSame('revoked', DB::connection('core')->table('project_memberships')->where('id', $projectMembershipId)->value('status'));
+
+        $event = WorkspaceMembershipEvent::query()->sole();
+        $this->assertSame('membership_revoked', $event->event);
+        $this->assertSame(['deployer'], $event->metadata['revoked_product_grants']);
+        $this->assertSame(1, $event->metadata['revoked_project_memberships']);
+    }
+
+    public function test_workspace_owner_cannot_remove_themselves_or_another_owner(): void
+    {
+        [$owner, $workspace] = $this->createWorkspaceOwner();
+        $secondOwner = $this->createPlatformUser('second-owner@example.test', 'Second Owner');
+        $secondOwnerMembership = WorkspaceMembership::query()->create([
+            'workspace_id' => $workspace->getKey(),
+            'user_id' => $secondOwner->getKey(),
+            'role' => 'owner',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($owner, 'platform')
+            ->delete(route('core.workspace.team.memberships.destroy', [$workspace, $secondOwnerMembership]))
+            ->assertForbidden();
+        $this->actingAs($owner, 'platform')
+            ->delete(route('core.workspace.team.memberships.destroy', [$workspace, $owner->workspaceMemberships()->firstOrFail()]))
+            ->assertForbidden();
+
+        $this->assertSame('active', $secondOwnerMembership->fresh()->status);
+        $this->assertSame(0, WorkspaceMembershipEvent::query()->count());
     }
 
     /** @return array{PlatformUser, Workspace} */

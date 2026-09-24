@@ -10,6 +10,7 @@ use App\Core\Notifications\WorkspaceInvitationNotification;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Core\Services\Workspaces\CreateWorkspaceInvitation;
+use App\Core\Services\Workspaces\ManageWorkspaceMembership;
 use App\Core\Services\Workspaces\RevokeWorkspaceInvitation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -60,7 +61,47 @@ final class WorkspaceTeamController
             'members' => $members,
             'invitations' => $invitations,
             'canManageMembers' => $access->canManageWorkspace($user, $workspace),
+            'canManageRoles' => $access->canManageWorkspace($user, $workspace),
+            'canAssignAdminRole' => $access->activeMembership($user, $workspace)?->role === 'owner',
+            'actorUserId' => (string) $user->getKey(),
         ]);
+    }
+
+    public function updateRole(
+        Request $request,
+        Workspace $workspace,
+        WorkspaceMembership $membership,
+        ResolvePlatformUser $platformUsers,
+        ManageWorkspaceMembership $manageMembership,
+    ): RedirectResponse {
+        $data = $request->validate([
+            'role' => ['required', 'string', Rule::in(['admin', 'billing', 'member', 'viewer'])],
+        ]);
+
+        $manageMembership->updateRole(
+            actor: $this->platformUser($request, $platformUsers),
+            workspace: $workspace,
+            membership: $membership,
+            role: $data['role'],
+        );
+
+        return redirect()->route('core.workspace.team.index', $workspace)->with('success', __('Workspace role updated.'));
+    }
+
+    public function revokeMembership(
+        Request $request,
+        Workspace $workspace,
+        WorkspaceMembership $membership,
+        ResolvePlatformUser $platformUsers,
+        ManageWorkspaceMembership $manageMembership,
+    ): RedirectResponse {
+        $manageMembership->revoke(
+            actor: $this->platformUser($request, $platformUsers),
+            workspace: $workspace,
+            membership: $membership,
+        );
+
+        return redirect()->route('core.workspace.team.index', $workspace)->with('success', __('Workspace membership revoked.'));
     }
 
     public function storeInvitation(
