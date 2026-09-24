@@ -1,5 +1,37 @@
 # Signal theme integration progress
 
+## Slice 136 — reconcile the live Deployer Signal shell with the current branch — 2026-09-24
+
+Boundary and implementation:
+
+- The active production release was labeled `1325a39`, but its Deployer topbar
+  view did not match the branch at that revision and lacked the current grouped
+  mobile navigation. Rebuilt from the verified `3e07861` branch commit so the
+  deployed Deployer shell uses the same Signal layout and component library as
+  the checked-in source.
+- Kept the shared `.env` and storage symlinks, retained the previous release
+  for rollback, and made no database or account changes.
+
+Evidence and release:
+
+- `SignalThemeArchitectureTest` and `GlobalSearchTest`: **15 tests, 123
+  assertions**. `npm run test:signal-theme`: **1 browser test passed** across
+  product layouts and mobile/desktop viewports. Vite production build, Composer
+  install from the lockfile, route/event/config/view caches, and the five-host
+  SSO route table passed.
+- The `current` symlink now points to `/var/www/buildpusher-unified/releases/3e07861`;
+  its Deployer topbar matches the branch. PHP-FPM was reloaded. The Buildpusher
+  home, product description pages, and central login returned HTTP 200. Product
+  roots handed off to central login as configured; the shared Signal stylesheet
+  returned HTTP 200. No product databases were migrated or modified.
+- Authenticated live-page visual acceptance remains open because the external
+  smoke checks did not use an account session. The shared component and theme
+  behavior is covered by the browser and feature checks above.
+
+Next task: compare representative authenticated Deployer, Monitor, and Analytics
+screens with the Signal Topbar SaaS reference in light/dark themes and at mobile
+and desktop widths, then complete keyboard/accessibility review.
+
 ## Slice 135 — verify shared Signal theme propagation across the product shells — 2026-09-24
 
 Boundary and implementation:
