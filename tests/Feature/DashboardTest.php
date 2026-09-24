@@ -54,9 +54,9 @@ class DashboardTest extends TestCase
             ->assertSee('aria-label="Products"', false)
             ->assertSee('id="signal-product-navigation"', false)
             ->assertSee('aria-label="Deployer sections"', false)
-            ->assertSee('<details class="ui-topbar-menu group relative shrink-0 lg:hidden">', false)
+            ->assertSee('data-signal-menu', false)
             ->assertSee('aria-label="Open application navigation"', false)
-            ->assertSee('aria-haspopup="true"', false)
+            ->assertSee('aria-haspopup="dialog"', false)
             ->assertSeeText('Search this workspace')
             ->assertSeeText('Signal quick navigation')
             ->assertSeeText('Deployments')
@@ -183,10 +183,13 @@ class DashboardTest extends TestCase
             ->assertSee(route('servers.index', ['dialog' => 'create-server']))
             ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 
-        $this->assertMatchesRegularExpression(
-            '/<nav[^>]*aria-label="Products">.*?<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*aria-current="page")[^>]*>Deployer<\/a>/s',
-            $response->getContent(),
-        );
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $currentDeployerLink = $xpath->query('//nav[@aria-label="Products" and contains(@class, "overflow-x-auto")]//a[@href="'.route('dashboard').'" and @aria-current="page"]');
+
+        $this->assertCount(1, $currentDeployerLink, 'The Deployer product must remain the active destination in the Signal topbar.');
+        $this->assertSame('Deployer', trim($currentDeployerLink->item(0)?->textContent ?? ''));
     }
 
     public function test_dashboard_hosts_creation_dialogs_and_keeps_creation_links_on_the_dashboard(): void

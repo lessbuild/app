@@ -587,8 +587,14 @@ class AutomationTest extends TestCase
             ->assertSee('id="automation-workflows"', false)
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
-        $this->assertMatchesRegularExpression('/<details\s+id="automation-quick-start"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($content);
+        $xpath = new \DOMXPath($dom);
+
+        foreach (['automation-tokens', 'automation-quick-start'] as $panelId) {
+            $panels = $xpath->query('//details[@id="'.$panelId.'" and @open and @data-responsive-details]');
+            $this->assertCount(1, $panels, "The {$panelId} panel must start open and use the responsive Signal disclosure.");
+        }
     }
 
     public function test_automation_surface_uses_compact_signal_panels_and_controls(): void
@@ -785,7 +791,10 @@ class AutomationTest extends TestCase
             ->assertOk()
             ->assertSee('Copy this token now')
             ->getContent();
-        $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*>/', $tokenPage);
+        $tokenPageDom = new \DOMDocument;
+        @$tokenPageDom->loadHTML($tokenPage);
+        $tokenPageXpath = new \DOMXPath($tokenPageDom);
+        $this->assertCount(1, $tokenPageXpath->query('//details[@id="automation-tokens" and @open]'));
 
         $rotate = $this->post(route('automation.tokens.rotate', $token));
 
