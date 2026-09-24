@@ -2,21 +2,30 @@
 
 namespace App\Modules\Deployer\Http\Middleware;
 
+use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\User;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\URL;
 use Symfony\Component\HttpFoundation\Response;
 
 /** Apply an explicitly linked organization to this request without changing the saved selection. */
 final class ResolveDeployerOrganizationContext
 {
+    public function __construct(
+        private readonly ProductAuthentication $authentication,
+        private readonly ProductWorkspaceAccess $workspaceAccess,
+    ) {}
+
     /**
      * @param  Closure(Request): Response  $next
      */
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->routeIs('servers.show', 'builds.show') || ! $request->query->has('organization_id')) {
+        if (! $request->query->has('organization_id') || $request->routeIs('organizations.switch', 'logout', 'account.*')) {
             return $next($request);
         }
 
@@ -34,9 +43,19 @@ final class ResolveDeployerOrganizationContext
         $organization = Organization::query()->find($organizationId);
         abort_unless($organization?->roleFor($user) !== null, 404);
 
+        if ($this->authentication->usesCoreAuthority('deployer')) {
+            $platformUser = $request->attributes->get('platform_user');
+            abort_unless(
+                $platformUser instanceof PlatformUser
+                    && $this->workspaceAccess->allows($platformUser, 'deployer', 'organization', $organization->getKey()),
+                404,
+            );
+        }
+
         // This principal is request-local. Do not persist a search destination as the user's default workspace.
         $user->setAttribute('current_organization_id', $organization->getKey());
         $user->setRelation('currentOrganization', $organization);
+        URL::defaults(['organization_id' => $organization->getKey()]);
 
         return $next($request);
     }

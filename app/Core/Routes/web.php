@@ -55,6 +55,9 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::post('/invitations', 'storeInvitation')->middleware('throttle:10,1')->name('invitations.store');
             Route::delete('/invitations/{invitation}', 'revokeInvitation')->name('invitations.destroy');
             Route::put('/memberships/{membership}/role', 'updateRole')->name('memberships.role.update');
+            Route::put('/memberships/{membership}/products/{product}', 'updateProductAccess')
+                ->whereIn('product', ['deployer', 'monitor', 'analytics'])
+                ->name('memberships.products.update');
             Route::delete('/memberships/{membership}', 'revokeMembership')->name('memberships.destroy');
         });
 

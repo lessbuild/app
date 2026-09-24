@@ -20,6 +20,9 @@ use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
+use App\Modules\Deployer\Http\Middleware\EnsureCoreProductWorkspaceAccess;
+use App\Modules\Deployer\Http\Middleware\ResolveDeployerOrganizationContext;
+use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
@@ -264,6 +267,154 @@ final class ProjectProductLinksTest extends TestCase
             );
         } finally {
             foreach (['projects', 'organization_user', 'organizations', 'users'] as $table) {
+                $schema->dropIfExists($table);
+            }
+        }
+    }
+
+    public function test_deployer_links_keep_the_authorized_workspace_context_without_changing_the_saved_selection(): void
+    {
+        config(['platform.products.deployer.auth_authority' => 'core']);
+        Route::get('/projects', static fn () => null)->name('projects.index');
+        Route::get('/projects/{project}', static fn () => null)->name('projects.show');
+        Route::getRoutes()->refreshNameLookups();
+        $this->addIdentity('deployer', '17');
+        $schema = Schema::connection('deployer');
+        $schema->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('current_organization_id')->nullable();
+        });
+        $schema->create('organizations', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('owner_id');
+            $table->string('name');
+            $table->string('slug');
+            $table->timestamps();
+        });
+        $schema->create('organization_user', function (Blueprint $table): void {
+            $table->unsignedBigInteger('organization_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('role');
+            $table->timestamps();
+        });
+        $schema->create('projects', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('organization_id');
+            $table->string('name');
+        });
+        $schema->create('environments', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('project_id');
+            $table->string('name');
+        });
+
+        try {
+            DB::connection('deployer')->table('users')->insert([
+                'id' => 17,
+                'current_organization_id' => 60,
+            ]);
+            DB::connection('deployer')->table('organizations')->insert([
+                ['id' => 50, 'owner_id' => 999, 'name' => 'Granted workspace', 'slug' => 'granted-workspace'],
+                ['id' => 60, 'owner_id' => 17, 'name' => 'Personal workspace', 'slug' => 'personal-workspace'],
+            ]);
+            DB::connection('deployer')->table('organization_user')->insert([
+                'organization_id' => 50,
+                'user_id' => 17,
+                'role' => 'viewer',
+            ]);
+            DB::connection('deployer')->table('projects')->insert([
+                'id' => 31,
+                'organization_id' => 50,
+                'name' => 'Granted project',
+            ]);
+
+            $workspaceId = (string) Str::ulid();
+            $membershipId = (string) Str::ulid();
+            DB::connection('core')->table('workspaces')->insert([
+                'id' => $workspaceId,
+                'owner_user_id' => self::PLATFORM_USER_ID,
+                'name' => 'Core workspace',
+                'slug' => 'core-workspace',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('workspace_memberships')->insert([
+                'id' => $membershipId,
+                'workspace_id' => $workspaceId,
+                'user_id' => self::PLATFORM_USER_ID,
+                'role' => 'member',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('workspace_product_access')->insert([
+                'id' => (string) Str::ulid(),
+                'membership_id' => $membershipId,
+                'product' => 'deployer',
+                'role' => 'member',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('legacy_identity_maps')->insert([
+                'id' => (string) Str::ulid(),
+                'source_product' => 'deployer',
+                'source_entity' => 'organization',
+                'source_id' => '50',
+                'canonical_entity' => 'workspace',
+                'canonical_id' => $workspaceId,
+                'status' => 'reconciled',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            $platformUser = $this->platformUser();
+            $provider = new DeployerResourceLinkProvider(
+                app(LegacyIdentityResolver::class),
+                app(ProductAuthentication::class),
+                app(ProductWorkspaceAccess::class),
+            );
+            $this->assertSame('project:31', $provider->candidates($platformUser)[0]->selectionKey());
+
+            $this->addProjectResource('deployer', 'project', '31');
+            $project = $this->project();
+            $link = app(DeployerProjectLink::class);
+            $url = $link->resolve($platformUser, $project);
+            $this->assertSame('/projects/31', parse_url($url, PHP_URL_PATH));
+            parse_str((string) parse_url($url, PHP_URL_QUERY), $query);
+            $this->assertSame('50', $query['organization_id']);
+
+            $mapping = ProjectResource::query()->findOrFail('01J8AA00000000000000000011');
+            $destination = app(DeployerResourceDestinationProvider::class)
+                ->destinations($platformUser, collect([$mapping]))['01J8AA00000000000000000011'];
+            $this->assertSame(ProjectResourceDestinationState::Available, $destination->state);
+            parse_str((string) parse_url($destination->url, PHP_URL_QUERY), $destinationQuery);
+            $this->assertSame('50', $destinationQuery['organization_id']);
+
+            $sourceUser = User::query()->findOrFail(17);
+            $request = Request::create('/projects/31?organization_id=50');
+            $request->setUserResolver(static fn () => $sourceUser);
+            $request->attributes->set('platform_user', $platformUser);
+            $route = Route::getRoutes()->getByName('projects.show');
+            $this->assertNotNull($route);
+            $route->bind($request);
+            $route->setParameter('project', \App\Modules\Deployer\Models\Project::query()->findOrFail(31));
+            $request->setRouteResolver(static fn () => $route);
+
+            $resolveContext = app(ResolveDeployerOrganizationContext::class);
+            $enforceCoreGrant = app(EnsureCoreProductWorkspaceAccess::class);
+            $resolveContext->handle($request, fn () => $enforceCoreGrant->handle($request, static fn () => response('authorized')));
+            $this->assertSame(50, $sourceUser->current_organization_id);
+            $this->assertSame(60, DB::connection('deployer')->table('users')->where('id', 17)->value('current_organization_id'));
+
+            DB::connection('core')->table('workspace_product_access')->update([
+                'status' => 'revoked',
+                'revoked_at' => now(),
+            ]);
+            $this->assertNull($link->projectFor($platformUser, $project));
+        } finally {
+            foreach (['environments', 'projects', 'organization_user', 'organizations', 'users'] as $table) {
                 $schema->dropIfExists($table);
             }
         }
@@ -577,7 +728,11 @@ final class ProjectProductLinksTest extends TestCase
                 'name' => 'Production',
             ]);
 
-            $provider = new DeployerResourceLinkProvider(app(LegacyIdentityResolver::class));
+            $provider = new DeployerResourceLinkProvider(
+                app(LegacyIdentityResolver::class),
+                app(ProductAuthentication::class),
+                app(ProductWorkspaceAccess::class),
+            );
             $candidates = $provider->candidates($this->platformUser());
 
             $this->assertCount(2, $candidates);

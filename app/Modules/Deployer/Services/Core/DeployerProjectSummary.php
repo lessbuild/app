@@ -11,7 +11,6 @@ use App\Core\Models\ProjectEnvironment;
 use App\Core\Models\ProjectResource;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Environment;
-use Illuminate\Support\Facades\Route;
 
 final class DeployerProjectSummary implements ProjectEnvironmentAwareSummaryProvider
 {
@@ -25,7 +24,7 @@ final class DeployerProjectSummary implements ProjectEnvironmentAwareSummaryProv
             return null;
         }
 
-        $url = Route::has('projects.show') ? route('projects.show', $legacyProject->getKey()) : null;
+        $url = $this->projects->urlFor($legacyProject);
         $build = Build::query()
             ->whereHas('environment', fn ($query) => $query->where('project_id', $legacyProject->getKey()))
             ->orderByDesc('created_at')
@@ -91,9 +90,7 @@ final class DeployerProjectSummary implements ProjectEnvironmentAwareSummaryProv
             ->orderByDesc('id')
             ->first(['id', 'status', 'revision', 'release_name', 'finished_at', 'built_at', 'updated_at']);
         $sourceEnvironmentId = $sourceEnvironments->first()->getKey();
-        $url = Route::has('projects.show')
-            ? route('projects.show', $legacyProject->getKey()).'#environment-'.$sourceEnvironmentId
-            : null;
+        $url = $this->projects->urlFor($legacyProject, 'environment-'.$sourceEnvironmentId);
 
         if ($build === null) {
             return new ProjectProductSnapshot(

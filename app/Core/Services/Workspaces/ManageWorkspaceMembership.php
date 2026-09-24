@@ -7,12 +7,22 @@ use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Services\Identity\ProjectProductWorkspaceMembership;
+use App\Core\Services\LegacyIdentityResolver;
+use Illuminate\Database\LostConnectionException;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\ValidationException;
 
 final class ManageWorkspaceMembership
 {
     private const EDITABLE_ROLES = ['admin', 'billing', 'member', 'viewer'];
+
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly ProjectProductWorkspaceMembership $productMemberships,
+    ) {}
 
     public function updateRole(
         PlatformUser $actor,
@@ -70,20 +80,62 @@ final class ManageWorkspaceMembership
             abort_if($actorMembership->role !== 'owner' && $target->role === 'admin', 403);
 
             $now = now();
-            $revokedProducts = WorkspaceProductAccess::query()
+            $productGrants = WorkspaceProductAccess::query()
                 ->where('membership_id', $target->getKey())
                 ->where('status', 'active')
                 ->whereNull('revoked_at')
+                ->lockForUpdate()
+                ->get();
+            $revokedProducts = $productGrants
                 ->pluck('product')
                 ->unique()
                 ->values()
                 ->all();
+            $pendingProductMembershipCleanup = [];
 
-            WorkspaceProductAccess::query()
-                ->where('membership_id', $target->getKey())
-                ->where('status', 'active')
-                ->whereNull('revoked_at')
-                ->update(['status' => 'revoked', 'revoked_at' => $now, 'updated_at' => $now]);
+            foreach ($productGrants as $productGrant) {
+                $metadata = $productGrant->metadata ?? [];
+                $projections = $metadata['managed_product_memberships'] ?? [];
+
+                if (is_array($projections) && $projections !== []) {
+                    $productUserIds = $target->user instanceof PlatformUser
+                        ? $this->identities->sourceIdsFor($target->user, $productGrant->product)
+                        : [];
+
+                    if (count($productUserIds) !== 1) {
+                        $pendingProductMembershipCleanup[] = $productGrant->product;
+                    } else {
+                        try {
+                            $this->productMemberships->revoke(
+                                $productGrant->product,
+                                $productUserIds[0],
+                                $projections,
+                            );
+                        } catch (LostConnectionException|QueryException $exception) {
+                            report($exception);
+                            $pendingProductMembershipCleanup[] = $productGrant->product;
+                        }
+                    }
+                }
+
+                $revocation = [
+                    'status' => 'revoked',
+                    'revoked_at' => $now,
+                ];
+
+                if (Schema::connection('core')->hasColumn('workspace_product_access', 'metadata')) {
+                    $cleanupPending = in_array($productGrant->product, $pendingProductMembershipCleanup, true);
+                    if ($cleanupPending) {
+                        $metadata['local_membership_cleanup_pending'] = true;
+                    } else {
+                        $metadata['managed_product_memberships'] = [];
+                        unset($metadata['local_membership_cleanup_pending']);
+                    }
+                    $revocation['metadata'] = $metadata;
+                }
+
+                $productGrant->forceFill($revocation)->save();
+            }
 
             $projectIds = DB::connection('core')->table('projects')
                 ->select('id')
@@ -112,6 +164,7 @@ final class ManageWorkspaceMembership
                 'metadata' => [
                     'revoked_product_grants' => $revokedProducts,
                     'revoked_project_memberships' => $revokedProjectMemberships,
+                    'pending_local_membership_cleanup' => array_values(array_unique($pendingProductMembershipCleanup)),
                 ],
                 'created_at' => $now,
             ]);

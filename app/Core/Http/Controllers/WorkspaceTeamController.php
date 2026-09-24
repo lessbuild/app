@@ -2,20 +2,25 @@
 
 namespace App\Core\Http\Controllers;
 
+use App\Core\Contracts\ProductPlanResolver;
+use App\Core\Enums\ProductKey;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceInvitation;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceMembershipEvent;
+use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Notifications\WorkspaceInvitationNotification;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Core\Services\Workspaces\CreateWorkspaceInvitation;
 use App\Core\Services\Workspaces\ManageWorkspaceMembership;
+use App\Core\Services\Workspaces\ManageWorkspaceProductAccess;
 use App\Core\Services\Workspaces\RevokeWorkspaceInvitation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
@@ -26,6 +31,7 @@ final class WorkspaceTeamController
         Workspace $workspace,
         ResolvePlatformUser $platformUsers,
         WorkspaceProjectAccess $access,
+        ProductPlanResolver $plans,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_if($access->activeMembership($user, $workspace) === null, 404);
@@ -33,7 +39,7 @@ final class WorkspaceTeamController
         $members = WorkspaceMembership::query()
             ->where('workspace_id', $workspace->getKey())
             ->currentlyActive()
-            ->with('user')
+            ->with(['user', 'productAccess'])
             ->orderBy('created_at')
             ->paginate(25);
 
@@ -55,6 +61,34 @@ final class WorkspaceTeamController
             ->pluck('workspace')
             ->filter();
         $canManageMembers = $access->canManageWorkspace($user, $workspace);
+        $actorRole = $access->activeMembership($user, $workspace)?->role;
+        $productAccessSummary = collect(ProductKey::cases())->mapWithKeys(function (ProductKey $product) use ($workspace, $plans): array {
+            $seatLimitKey = match ($product) {
+                ProductKey::Deployer, ProductKey::Analytics => 'members',
+                ProductKey::Monitor => 'seats',
+            };
+            $planTablesReady = Schema::connection('core')->hasTable('current_product_subscriptions');
+            $plan = $planTablesReady
+                ? $plans->resolve((string) $workspace->getKey(), $product)
+                : null;
+            $hasSeatLimit = $plan?->available === true && $plan->hasLimit($seatLimitKey);
+            $usedSeats = WorkspaceProductAccess::query()
+                ->where('product', $product->value)
+                ->where('status', 'active')
+                ->whereNull('revoked_at')
+                ->where(fn ($query) => $query->whereNull('expires_at')->orWhere('expires_at', '>', now()))
+                ->whereHas('membership', fn ($query) => $query
+                    ->where('workspace_id', $workspace->getKey())
+                    ->currentlyActive())
+                ->count();
+
+            return [$product->value => [
+                'label' => $product->name,
+                'used' => $usedSeats,
+                'limit' => $hasSeatLimit ? $plan?->limit($seatLimitKey) : null,
+                'plan_ready' => $hasSeatLimit,
+            ]];
+        });
         $auditEvents = $canManageMembers
             ? WorkspaceMembershipEvent::query()
                 ->where('workspace_id', $workspace->getKey())
@@ -73,6 +107,8 @@ final class WorkspaceTeamController
             'canManageMembers' => $canManageMembers,
             'canManageRoles' => $access->canManageWorkspace($user, $workspace),
             'canAssignAdminRole' => $access->activeMembership($user, $workspace)?->role === 'owner',
+            'canManageProductAdmins' => $actorRole === 'owner',
+            'productAccessSummary' => $productAccessSummary,
             'actorUserId' => (string) $user->getKey(),
             'auditEvents' => $auditEvents,
         ]);
@@ -113,6 +149,47 @@ final class WorkspaceTeamController
         );
 
         return redirect()->route('core.workspace.team.index', $workspace)->with('success', __('Workspace membership revoked.'));
+    }
+
+    public function updateProductAccess(
+        Request $request,
+        Workspace $workspace,
+        WorkspaceMembership $membership,
+        string $product,
+        ResolvePlatformUser $platformUsers,
+        ManageWorkspaceProductAccess $manageProductAccess,
+    ): RedirectResponse {
+        $data = $request->validate([
+            'role' => ['required', 'string', Rule::in(['none', 'viewer', 'member', 'admin'])],
+        ]);
+        $productKey = ProductKey::tryFrom($product);
+        abort_unless($productKey instanceof ProductKey, 404);
+
+        $role = $data['role'] === 'none' ? null : $data['role'];
+        $projectedWorkspaces = $manageProductAccess->update(
+            actor: $this->platformUser($request, $platformUsers),
+            workspace: $workspace,
+            membership: $membership,
+            product: $productKey,
+            role: $role,
+        );
+
+        if ($role === null) {
+            return redirect()->route('core.workspace.team.index', $workspace)
+                ->with('success', __(':product access was revoked.', ['product' => $productKey->name]));
+        }
+
+        $message = __(':product access was granted with the :role role.', [
+            'product' => $productKey->name,
+            'role' => str($role)->headline(),
+        ]);
+        if ($projectedWorkspaces === 0) {
+            $message .= ' '.__('No existing :product workspace is linked here yet, so this account will be added when one is connected.', [
+                'product' => $productKey->name,
+            ]);
+        }
+
+        return redirect()->route('core.workspace.team.index', $workspace)->with('success', $message);
     }
 
     public function storeInvitation(

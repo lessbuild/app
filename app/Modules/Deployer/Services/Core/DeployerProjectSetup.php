@@ -21,9 +21,7 @@ final class DeployerProjectSetup implements ProjectEnvironmentAwareSetupProvider
     public function steps(PlatformUser $user, CoreProject $project): array
     {
         $legacyProject = $this->projects->projectFor($user, $project);
-        $projectUrl = $legacyProject !== null && Route::has('projects.show')
-            ? route('projects.show', $legacyProject->getKey())
-            : null;
+        $projectUrl = $legacyProject !== null ? $this->projects->urlFor($legacyProject) : null;
         $projectIndexUrl = Route::has('projects.index') ? route('projects.index') : null;
 
         $projectStep = new ProjectSetupStep(
@@ -149,9 +147,7 @@ final class DeployerProjectSetup implements ProjectEnvironmentAwareSetupProvider
             )];
         }
 
-        $projectUrl = Route::has('projects.show')
-            ? route('projects.show', $legacyProject->getKey())
-            : null;
+        $projectUrl = $this->projects->urlFor($legacyProject);
         $environmentSteps = $this->stepsForMappedEnvironments($project, $legacyProject, $projectUrl, (string) $environment->getKey()) ?? [];
 
         return [

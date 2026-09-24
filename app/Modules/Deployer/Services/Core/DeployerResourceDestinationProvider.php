@@ -7,6 +7,8 @@ use App\Core\Data\Projects\ProjectResourceDestination;
 use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Project;
@@ -17,7 +19,11 @@ use Illuminate\Support\Facades\Route;
 
 final class DeployerResourceDestinationProvider implements ProjectResourceDestinationProvider
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly ProductAuthentication $authentication,
+        private readonly ProductWorkspaceAccess $workspaceAccess,
+    ) {}
 
     public function destinations(PlatformUser $user, Collection $resources): array
     {
@@ -60,9 +66,22 @@ final class DeployerResourceDestinationProvider implements ProjectResourceDestin
             return $destinations;
         }
 
-        $sourceUsers = User::query()
-            ->whereKey($sourceUserIds)
-            ->whereNotNull('current_organization_id')
+        $usesCoreAuthority = $this->authentication->usesCoreAuthority('deployer');
+        if ($usesCoreAuthority && count($sourceUserIds) !== 1) {
+            foreach ($supportedResources as $resource) {
+                $destinations[(string) $resource->getKey()] = new ProjectResourceDestination(
+                    ProjectResourceDestinationState::AccessChanged,
+                );
+            }
+
+            return $destinations;
+        }
+
+        $sourceUsersQuery = User::query()->whereKey($sourceUserIds);
+        if (! $usesCoreAuthority) {
+            $sourceUsersQuery->whereNotNull('current_organization_id');
+        }
+        $sourceUsers = $sourceUsersQuery
             ->get(['id', 'current_organization_id'])
             ->keyBy(fn (User $sourceUser): string => (string) $sourceUser->getKey());
         $projects = $projectsBySourceId->isEmpty()
@@ -110,20 +129,28 @@ final class DeployerResourceDestinationProvider implements ProjectResourceDestin
                 continue;
             }
 
-            $canView = $sourceUsers->contains(function (User $sourceUser) use ($membershipPairs, $sourceProject): bool {
-                if ((int) $sourceUser->current_organization_id !== (int) $sourceProject->organization_id
+            $canView = $sourceUsers->contains(function (User $sourceUser) use ($membershipPairs, $sourceProject, $usesCoreAuthority, $user): bool {
+                if ((! $usesCoreAuthority && (int) $sourceUser->current_organization_id !== (int) $sourceProject->organization_id)
                     || $sourceProject->organization === null) {
                     return false;
                 }
 
-                return (int) $sourceProject->organization->owner_id === (int) $sourceUser->getKey()
+                $hasLocalMembership = (int) $sourceProject->organization->owner_id === (int) $sourceUser->getKey()
                     || $membershipPairs->has($sourceProject->organization_id.':'.$sourceUser->getKey());
+
+                return $hasLocalMembership
+                    && (! $usesCoreAuthority || $this->workspaceAccess->allows($user, 'deployer', 'organization', $sourceProject->organization_id));
             });
+
+            $destinationParameters = ['project' => $sourceProject->getKey()];
+            if ($usesCoreAuthority) {
+                $destinationParameters['organization_id'] = $sourceProject->organization_id;
+            }
 
             $destinations[$mappingId] = $canView
                 ? new ProjectResourceDestination(
                     ProjectResourceDestinationState::Available,
-                    route('projects.show', $sourceProject->getKey()).($sourceEnvironment ? '#environment-'.$sourceEnvironment->getKey() : ''),
+                    route('projects.show', $destinationParameters).($sourceEnvironment ? '#environment-'.$sourceEnvironment->getKey() : ''),
                 )
                 : new ProjectResourceDestination(ProjectResourceDestinationState::AccessChanged);
         }

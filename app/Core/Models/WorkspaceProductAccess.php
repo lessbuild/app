@@ -26,6 +26,7 @@ class WorkspaceProductAccess extends CoreModel
             'granted_at' => 'datetime',
             'expires_at' => 'datetime',
             'revoked_at' => 'datetime',
+            'metadata' => 'array',
         ];
     }
 
