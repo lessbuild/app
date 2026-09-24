@@ -10,7 +10,7 @@
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1fr)_minmax(20rem,.8fr)]">
         <div class="space-y-6">
-            <section class="ui-card p-5 sm:p-6" aria-labelledby="server-import-discovery-heading">
+            <x-signal.ui.card as="section" class="p-5 sm:p-6" aria-labelledby="server-import-discovery-heading">
                 <p class="ui-eyebrow">{{ __('Read-only discovery') }}</p>
                 <h2 id="server-import-discovery-heading" class="mt-2 text-xl font-extrabold text-ink">{{ $report['hostname'] ?? __('Unknown host') }}</h2>
                 <dl class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -32,16 +32,16 @@
                     <h3 class="text-sm font-bold text-ink">{{ __('Detected services') }}</h3>
                     <p class="mt-1 text-sm text-muted">{{ ($report['services'] ?? []) !== [] ? implode(', ', $report['services']) : __('No managed service binaries detected.') }}</p>
                 </div>
-            </section>
+            </x-signal.ui.card>
 
-            <section class="ui-card p-5 sm:p-6" aria-labelledby="server-import-identity-heading">
+            <x-signal.ui.card as="section" class="p-5 sm:p-6" aria-labelledby="server-import-identity-heading">
                 <p class="ui-eyebrow">{{ __('Trust boundary') }}</p>
                 <h2 id="server-import-identity-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('SSH host identity') }}</h2>
                 <p class="mt-2 text-sm leading-6 text-muted">{{ __('Compare this SHA-256 fingerprint with your provider console or a trusted existing SSH connection. :app will pin it and reject future connections if it changes.', ['app' => config('app.name')]) }}</p>
                 <code class="library-code mt-4 block break-all">{{ $report['fingerprint'] }}</code>
-            </section>
+            </x-signal.ui.card>
 
-            <section class="ui-alert ui-alert--warning" aria-labelledby="server-import-impact-heading">
+            <x-signal.ui.alert tone="warning" aria-labelledby="server-import-impact-heading">
                 <h2 id="server-import-impact-heading" class="font-extrabold">{{ __('Changes provisioning may make') }}</h2>
                 <ul class="mt-3 list-disc space-y-2 pl-5 text-sm">
                     <li>{{ __('Install and update operating-system packages for the selected server type.') }}</li>
@@ -52,40 +52,44 @@
                 @foreach ($report['warnings'] ?? [] as $warning)
                     <p class="mt-3 font-bold">⚠ {{ $warning }}</p>
                 @endforeach
-            </section>
+            </x-signal.ui.alert>
         </div>
 
-        <section class="ui-card h-fit p-5 sm:p-6" aria-labelledby="server-import-approve-heading">
+        <x-signal.ui.card as="section" class="h-fit p-5 sm:p-6" aria-labelledby="server-import-approve-heading">
             <p class="ui-eyebrow">{{ __('Explicit approval') }}</p>
             <h2 id="server-import-approve-heading" class="mt-1 text-xl font-extrabold text-ink">{{ __('Approve takeover') }}</h2>
             <p class="mt-2 text-sm leading-6 text-muted">{{ __('This inspection expires :time. If anything changed after inspection, go back and inspect again.', ['time' => $assessment->expires_at->diffForHumans()]) }}</p>
 
-            @if ($errors->any())
-                <x-ui.alert tone="danger" class="mt-4">
-                    <ul class="list-disc space-y-1 pl-5">
-                        @foreach ($errors->all() as $error)
-                            <li>{{ $error }}</li>
-                        @endforeach
-                    </ul>
-                </x-ui.alert>
-            @endif
-
             <form method="POST" action="{{ route('servers.import.confirm', $assessment) }}" class="mt-6 space-y-5">
                 @csrf
-                <label class="flex items-start gap-3">
-                    <input type="checkbox" name="host_fingerprint_confirmed" value="1" required class="ui-check mt-1">
-                    <span class="text-sm text-muted">{{ __('I verified the SSH fingerprint through a trusted source.') }}</span>
-                </label>
-                <label class="flex items-start gap-3">
-                    <input type="checkbox" name="backup_confirmed" value="1" required class="ui-check mt-1">
-                    <span class="text-sm text-muted">{{ __('I have a current backup or disposable server snapshot and understand existing configuration may change.') }}</span>
-                </label>
-                <div>
-                    <label for="confirmation" class="ui-label">{{ __('Type :name to approve', ['name' => $assessment->configuration['name']]) }}</label>
-                    <input id="confirmation" name="confirmation" required autocomplete="off" class="ui-input">
-                </div>
-                <x-ui.button type="submit" variant="primary" class="w-full">{{ __('Approve and begin provisioning') }}</x-ui.button>
+                <x-signal.ui.checkbox
+                    id="host_fingerprint_confirmed"
+                    name="host_fingerprint_confirmed"
+                    value="1"
+                    required
+                    :restore="false"
+                >
+                    {{ __('I verified the SSH fingerprint through a trusted source.') }}
+                </x-signal.ui.checkbox>
+                <x-signal.ui.checkbox
+                    id="backup_confirmed"
+                    name="backup_confirmed"
+                    value="1"
+                    required
+                    :restore="false"
+                >
+                    {{ __('I have a current backup or disposable server snapshot and understand existing configuration may change.') }}
+                </x-signal.ui.checkbox>
+                <x-signal.ui.input-field
+                    id="confirmation"
+                    name="confirmation"
+                    :label="__('Type :name to approve', ['name' => $assessment->configuration['name']])"
+                    required
+                    autocomplete="off"
+                    class="w-full"
+                />
+                <x-signal.ui.button type="submit" variant="primary" class="w-full">{{ __('Approve and begin provisioning') }}</x-signal.ui.button>
             </form>
-        </section>
+        </x-signal.ui.card>
     </div>
 </x-layouts.app>

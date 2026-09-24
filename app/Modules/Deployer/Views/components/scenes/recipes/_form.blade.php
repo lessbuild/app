@@ -4,79 +4,63 @@
 ])
 
 <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
-    <div>
-        <label for="{{ $fieldPrefix }}name" class="ui-label">{{ __('Name') }}</label>
-        <input
-            id="{{ $fieldPrefix }}name"
-            class="ui-input mt-2"
-            name="name"
-            type="text"
-            value="{{ old('name', $recipe?->name ?? '') }}"
-            placeholder="Install monitoring agent"
-            required
+    <x-signal.ui.input-field
+        :id="$fieldPrefix.'name'"
+        name="name"
+        :label="__('Name')"
+        :value="$recipe?->name"
+        placeholder="Install monitoring agent"
+        required
+        class="w-full"
+    />
+
+    <x-signal.ui.textarea-field
+        :id="$fieldPrefix.'description'"
+        name="description"
+        :label="__('Description')"
+        :value="$recipe?->description"
+        rows="3"
+        placeholder="Describe what this recipe changes on a server."
+        class="w-full"
+    />
+
+    <x-signal.ui.textarea-field
+        :id="$fieldPrefix.'script'"
+        name="script"
+        :label="__('Bash script')"
+        :value="$recipe?->script"
+        :description="__('This runs as root during provisioning. The recipe stops provisioning if any command fails.')"
+        rows="14"
+        spellcheck="false"
+        placeholder="apt-get install -y fail2ban"
+        required
+        class="w-full font-mono"
+    />
+
+    <x-signal.ui.card tone="muted" class="space-y-4 p-4" :shadow="false">
+        <x-signal.ui.checkbox
+            :id="$fieldPrefix.'is_published'"
+            name="is_published"
+            value="1"
+            :checked="$recipe?->is_published ?? false"
+            unchecked-value="0"
+            :description="__('Everyone with an account can inspect and copy this script. Never publish passwords, tokens, private keys, or customer data.')"
         >
-        <x-forms.errors name="name" />
-    </div>
+            {{ __('Publish to the community gallery') }}
+        </x-signal.ui.checkbox>
 
-    <div>
-        <label for="{{ $fieldPrefix }}description" class="ui-label">{{ __('Description') }}</label>
-        <textarea
-            id="{{ $fieldPrefix }}description"
-            class="ui-input mt-2"
-            name="description"
-            rows="3"
-            placeholder="Describe what this recipe changes on a server."
-        >{{ old('description', $recipe?->description ?? '') }}</textarea>
-        <x-forms.errors name="description" />
-    </div>
-
-    <div>
-        <label for="{{ $fieldPrefix }}script" class="ui-label">{{ __('Bash script') }}</label>
-        <p class="mb-2 mt-1 text-xs text-muted">
-            {{ __('This runs as root during provisioning. The recipe stops provisioning if any command fails.') }}
-        </p>
-        <textarea
-            id="{{ $fieldPrefix }}script"
-            class="ui-input font-mono"
-            name="script"
-            rows="14"
-            spellcheck="false"
-            placeholder="apt-get install -y fail2ban"
-            required
-        >{{ old('script', $recipe?->script ?? '') }}</textarea>
-        <x-forms.errors name="script" />
-    </div>
-
-    <div class="ui-card bg-surface-muted p-4">
-        <div class="flex items-start gap-3">
-            <input type="hidden" name="is_published" value="0">
-            <input
-                id="{{ $fieldPrefix }}is_published"
-                name="is_published"
-                type="checkbox"
-                value="1"
-                class="ui-check mt-1"
-                @checked(old('is_published', $recipe?->is_published ?? false))
-            >
-            <div>
-                <label for="{{ $fieldPrefix }}is_published" class="block text-sm font-semibold text-ink">{{ __('Publish to the community gallery') }}</label>
-                <p class="mt-1 text-xs text-muted">
-                    {{ __('Everyone with an account can inspect and copy this script. Never publish passwords, tokens, private keys, or customer data.') }}
-                </p>
-            </div>
-        </div>
-        <div class="mt-4">
-            <label for="{{ $fieldPrefix }}category" class="ui-label">{{ __('Gallery category') }}</label>
-            <select id="{{ $fieldPrefix }}category" name="category" class="ui-input mt-2 w-full sm:max-w-xs">
-                <option value="">{{ __('Select a category') }}</option>
-                @foreach (\App\Modules\Deployer\Models\Recipe::CATEGORIES as $category)
-                    <option value="{{ $category }}" @selected(old('category', $recipe?->category ?? '') === $category)>
-                        {{ str($category)->title() }}
-                    </option>
-                @endforeach
-            </select>
-            <x-forms.errors name="category" />
-            <x-forms.errors name="is_published" />
-        </div>
-    </div>
+        <x-signal.ui.select-field
+            :id="$fieldPrefix.'category'"
+            name="category"
+            :label="__('Gallery category')"
+            class="w-full sm:max-w-xs"
+        >
+            <option value="">{{ __('Select a category') }}</option>
+            @foreach (\App\Modules\Deployer\Models\Recipe::CATEGORIES as $category)
+                <option value="{{ $category }}" @selected(old('category', $recipe?->category ?? '') === $category)>
+                    {{ str($category)->title() }}
+                </option>
+            @endforeach
+        </x-signal.ui.select-field>
+    </x-signal.ui.card>
 </div>

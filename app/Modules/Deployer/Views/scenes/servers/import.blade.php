@@ -2,24 +2,24 @@
     <x-layouts.partials.breadcrumbs :route="route('servers.index')" :title="__('Back to servers')" />
 
     @if (! $planUsage['plan_available'] || ! $planUsage['limit_configured'])
-        <x-ui.alert tone="warning" class="my-4">
+        <x-signal.ui.alert tone="warning" class="my-4">
             {{ __('We could not confirm this workspace’s Deployer plan and server allowance. Retry shortly or contact support.') }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     @elseif (! $planUsage['allowed'])
-        <x-ui.alert tone="warning" class="my-4">
+        <x-signal.ui.alert tone="warning" class="my-4">
             <p class="font-semibold">{{ __('Your plan’s server limit has been reached') }}</p>
-            <x-ui.button :href="route('pricing')" variant="secondary" class="mt-3">{{ __('View plans') }}</x-ui.button>
-        </x-ui.alert>
+            <x-signal.ui.button :href="route('pricing')" variant="secondary" class="mt-3">{{ __('View plans') }}</x-signal.ui.button>
+        </x-signal.ui.alert>
     @endif
 
     @error('plan')
-        <x-ui.alert tone="danger" class="my-4">{{ $message }}</x-ui.alert>
+        <x-signal.ui.alert tone="danger" class="my-4">{{ $message }}</x-signal.ui.alert>
     @enderror
 
     <div class="mx-auto max-w-4xl">
         <form action="{{ route('servers.import.store') }}" method="POST">
             @csrf
-            <x-ui.card class="mt-8 overflow-hidden">
+            <x-signal.ui.card class="mt-8 overflow-hidden">
                 <div class="border-b border-line px-5 py-5 sm:px-8">
                     <p class="ui-eyebrow">{{ __('Infrastructure') }}</p>
                     <h1 class="mt-1 text-xl font-extrabold text-ink">{{ __('Import an existing server') }}</h1>
@@ -27,52 +27,75 @@
                 </div>
 
                 <div class="space-y-6 bg-surface px-5 py-5 sm:px-8">
-                    <x-ui.alert tone="warning">
+                    <x-signal.ui.alert tone="warning">
                         {{ __('This first step is read-only. :app will verify SSH access, inspect the operating system and existing services, and show the host fingerprint and exact change categories before asking for approval.', ['app' => config('app.name')]) }}
-                    </x-ui.alert>
+                    </x-signal.ui.alert>
 
-                    <div>
-                        <label for="name" class="ui-label">{{ __('Server name') }}</label>
-                        <input id="name" name="name" value="{{ old('name') }}" maxlength="255" required class="ui-input" placeholder="production-1">
-                        <x-forms.errors name="name" />
-                    </div>
+                    <x-signal.ui.input-field
+                        id="name"
+                        name="name"
+                        :label="__('Server name')"
+                        maxlength="255"
+                        required
+                        placeholder="production-1"
+                        class="w-full"
+                    />
 
-                    <div>
-                        <label for="type" class="ui-label">{{ __('Server type') }}</label>
-                        <select id="type" name="type" required class="ui-input">
-                            @foreach ($types as $type)
-                                <option value="{{ $type->value }}" @selected(old('type') === $type->value)>{{ str($type->value)->headline() }} ({{ implode(', ', $type->installs()) }})</option>
-                            @endforeach
-                        </select>
-                        <x-forms.errors name="type" />
-                    </div>
+                    <x-signal.ui.select-field
+                        id="type"
+                        name="type"
+                        :label="__('Server type')"
+                        required
+                        class="w-full"
+                    >
+                        @foreach ($types as $type)
+                            <option value="{{ $type->value }}" @selected(old('type') === $type->value)>{{ str($type->value)->headline() }} ({{ implode(', ', $type->installs()) }})</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
 
                     <div class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_10rem]">
-                        <div>
-                            <label for="public_ip" class="ui-label">{{ __('Public IP address') }}</label>
-                            <input id="public_ip" name="public_ip" value="{{ old('public_ip') }}" required inputmode="decimal" class="ui-input" placeholder="203.0.113.10">
-                            <x-forms.errors name="public_ip" />
-                        </div>
-                        <div>
-                            <label for="ssh_port" class="ui-label">{{ __('SSH port') }}</label>
-                            <input id="ssh_port" name="ssh_port" type="number" min="1" max="65535" value="{{ old('ssh_port', 22) }}" required class="ui-input">
-                            <x-forms.errors name="ssh_port" />
-                        </div>
+                        <x-signal.ui.input-field
+                            id="public_ip"
+                            name="public_ip"
+                            :label="__('Public IP address')"
+                            required
+                            inputmode="decimal"
+                            placeholder="203.0.113.10"
+                            class="w-full"
+                        />
+                        <x-signal.ui.input-field
+                            id="ssh_port"
+                            name="ssh_port"
+                            :label="__('SSH port')"
+                            type="number"
+                            min="1"
+                            max="65535"
+                            :value="22"
+                            required
+                            class="w-full"
+                        />
                     </div>
 
-                    <div>
-                        <label for="ssh_private_key" class="ui-label">{{ __('Root SSH private key') }}</label>
-                        <textarea id="ssh_private_key" name="ssh_private_key" rows="9" required autocomplete="off" spellcheck="false" class="ui-input font-mono" placeholder="-----BEGIN OPENSSH PRIVATE KEY-----">{{ old('ssh_private_key') }}</textarea>
-                        <p class="ui-help">{{ __('The key is encrypted at rest. Password-protected keys are not supported by unattended provisioning.') }}</p>
-                        <x-forms.errors name="ssh_private_key" />
-                    </div>
+                    <x-signal.ui.textarea-field
+                        id="ssh_private_key"
+                        name="ssh_private_key"
+                        :label="__('Root SSH private key')"
+                        :description="__('The key is encrypted at rest. Password-protected keys are not supported by unattended provisioning.')"
+                        rows="9"
+                        required
+                        autocomplete="off"
+                        spellcheck="false"
+                        placeholder="-----BEGIN OPENSSH PRIVATE KEY-----"
+                        :restore="false"
+                        class="w-full font-mono"
+                    />
                 </div>
 
                 <div class="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-surface-muted px-5 py-4 sm:px-8">
-                    <x-ui.button :href="route('servers.index')" variant="ghost">{{ __('Cancel') }}</x-ui.button>
-                    <x-ui.button type="submit" variant="primary" :disabled="! $planUsage['allowed']">{{ __('Inspect server safely') }}</x-ui.button>
+                    <x-signal.ui.button :href="route('servers.index')" variant="ghost">{{ __('Cancel') }}</x-signal.ui.button>
+                    <x-signal.ui.button type="submit" variant="primary" :disabled="! $planUsage['allowed']">{{ __('Inspect server safely') }}</x-signal.ui.button>
                 </div>
-            </x-ui.card>
+            </x-signal.ui.card>
         </form>
     </div>
 </x-layouts.app>

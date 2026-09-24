@@ -25,6 +25,41 @@ class ImportServerTest extends TestCase
         Cache::flush();
     }
 
+    public function test_import_form_uses_signal_fields_and_never_flashes_the_private_key(): void
+    {
+        config()->set('billing.enforce_limits', false);
+        $owner = User::factory()->create();
+        $privateKey = 'PRIVATE-KEY-MUST-NOT-BE-FLASHED';
+
+        $this->actingAs($owner)
+            ->get(route('servers.import.create'))
+            ->assertOk()
+            ->assertSee('id="name"', false)
+            ->assertSee('id="type"', false)
+            ->assertSee('id="public_ip"', false)
+            ->assertSee('id="ssh_port"', false)
+            ->assertSee('id="ssh_private_key"', false)
+            ->assertSee('<label for="name"', false)
+            ->assertSee('Inspect server safely');
+
+        $this->from(route('servers.import.create'))
+            ->actingAs($owner)
+            ->followingRedirects()
+            ->post(route('servers.import.store'), [
+                'name' => 'Existing server',
+                'type' => 'web',
+                'public_ip' => 'not-an-ip',
+                'ssh_port' => 22,
+                'ssh_private_key' => $privateKey,
+            ])
+            ->assertOk()
+            ->assertDontSee($privateKey)
+            ->assertSee('id="ssh_private_key"', false);
+
+        $this->assertArrayNotHasKey('ssh_private_key', session()->get('_old_input', []));
+        $this->assertDatabaseCount('servers', 0);
+    }
+
     public function test_viewer_cannot_start_a_server_import_before_input_validation(): void
     {
         config()->set('billing.enforce_limits', false);
@@ -138,7 +173,15 @@ class ImportServerTest extends TestCase
         $assessment = ServerImportAssessment::query()->sole();
 
         $this->actingAs($other)->get(route('servers.import.review', $assessment))->assertNotFound();
-        $this->actingAs($owner)->post(route('servers.import.confirm', $assessment), [])->assertSessionHasErrors(['confirmation', 'backup_confirmed', 'host_fingerprint_confirmed']);
+        $reviewUrl = route('servers.import.review', $assessment);
+        $this->from($reviewUrl)
+            ->actingAs($owner)
+            ->followingRedirects()
+            ->post(route('servers.import.confirm', $assessment), [])
+            ->assertOk()
+            ->assertSee('id="confirmation-error"', false)
+            ->assertSee('id="backup_confirmed-error"', false)
+            ->assertSee('id="host_fingerprint_confirmed-error"', false);
         $this->assertDatabaseCount('servers', 0);
         $assessment->update(['expires_at' => now()->subSecond()]);
         $this->get(route('servers.import.review', $assessment))->assertNotFound();

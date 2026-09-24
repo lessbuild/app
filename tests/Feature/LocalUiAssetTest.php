@@ -427,7 +427,7 @@ class LocalUiAssetTest extends TestCase
 
         $this->assertStringContainsString('class="ui-check"', $reports);
         $this->assertStringNotContainsString('ui-check rounded-md', $reports);
-        $this->assertStringContainsString('class="ui-check mt-1"', $recipeForm);
+        $this->assertStringContainsString('x-signal.ui.checkbox', $recipeForm);
         $this->assertStringNotContainsString('rounded-md', $recipeForm);
     }
 
@@ -1133,7 +1133,15 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringContainsString('x-signal.ui.card', $serverEditDialog);
         $this->assertStringContainsString('x-signal.ui.button', $serverEditDialog);
         $this->assertStringContainsString('ui-input', File::get(resource_path('views/livewire/scenes/servers/command.blade.php')));
-        $this->assertStringContainsString('ui-check', File::get(resource_path('views/scenes/servers/import-review.blade.php')));
+        $serverImport = File::get(resource_path('views/scenes/servers/import.blade.php'));
+        $serverImportReview = File::get(resource_path('views/scenes/servers/import-review.blade.php'));
+        $this->assertStringContainsString('x-signal.ui.input-field', $serverImport);
+        $this->assertStringContainsString('x-signal.ui.select-field', $serverImport);
+        $this->assertStringContainsString('x-signal.ui.textarea-field', $serverImport);
+        $this->assertStringContainsString(':restore="false"', $serverImport);
+        $this->assertStringContainsString('x-signal.ui.checkbox', $serverImportReview);
+        $this->assertStringContainsString('x-signal.ui.input-field', $serverImportReview);
+        $this->assertStringContainsString('x-signal.ui.card', $serverImportReview);
     }
 
     public function test_website_import_and_provisioning_surfaces_use_signal_primitives(): void
@@ -1366,9 +1374,11 @@ class LocalUiAssetTest extends TestCase
         }
 
         $form = File::get(resource_path('views/components/scenes/recipes/_form.blade.php'));
-        $this->assertStringContainsString('ui-label', $form);
-        $this->assertStringContainsString('ui-input', $form);
-        $this->assertStringContainsString('ui-card bg-surface-muted', $form);
+        $this->assertStringContainsString('x-signal.ui.input-field', $form);
+        $this->assertStringContainsString('x-signal.ui.textarea-field', $form);
+        $this->assertStringContainsString('x-signal.ui.checkbox', $form);
+        $this->assertStringContainsString('x-signal.ui.select-field', $form);
+        $this->assertStringContainsString('x-signal.ui.card', $form);
     }
 
     public function test_gallery_inventory_comparison_and_feedback_surfaces_use_signal_primitives(): void

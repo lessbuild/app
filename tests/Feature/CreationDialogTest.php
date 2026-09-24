@@ -322,7 +322,9 @@ class CreationDialogTest extends TestCase
             ->assertSee('id="recipe-create-dialog"', false)
             ->assertSee('data-modal-trigger="recipe-create-dialog"', false)
             ->assertSee('action="'.route('recipes.store', ['dialog' => 'create-recipe']).'"', false)
+            ->assertSee('id="recipe-create-name"', false)
             ->assertSee('id="recipe-create-script"', false)
+            ->assertSee('id="recipe-create-is_published"', false)
             ->assertDontSee('echo install-monitoring');
 
         $this->actingAs($user)
@@ -330,7 +332,9 @@ class CreationDialogTest extends TestCase
             ->assertOk()
             ->assertSee('id="recipe-edit-dialog-'.$recipe->id.'"', false)
             ->assertSee('action="'.route('recipes.update', ['recipe' => $recipe, 'dialog' => 'edit-recipe']).'"', false)
+            ->assertSee('id="recipe-edit-name"', false)
             ->assertSee('id="recipe-edit-script"', false)
+            ->assertSee('id="recipe-edit-is_published"', false)
             ->assertSee('echo install-monitoring');
     }
 

@@ -45,6 +45,7 @@ class Handler extends ExceptionHandler
         'password',
         'password_confirmation',
         'secret_key',
+        'ssh_private_key',
         'token',
     ];
 

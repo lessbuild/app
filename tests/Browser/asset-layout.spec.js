@@ -604,7 +604,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
         await expect(dialog.locator('form[method="POST"]').first()).toBeVisible();
         if (workflow.query === 'edit-website' || workflow.query === 'edit-repository') {
             await expect(dialog.locator('.ui-input').first()).toBeVisible();
-            await expect(dialog.locator('.ui-panel').first()).toBeVisible();
+            await expect(dialog.locator('.ui-card').first()).toBeVisible();
         }
         expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
         expect(new URL(page.url()).pathname).toBe(initialPath);
@@ -625,6 +625,13 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     await expect(recipeDialog).toBeVisible();
     await expect(recipeDialog.locator('form[method="POST"]')).toBeVisible();
     await expect(recipeDialog.locator('.ui-input').first()).toBeVisible();
+    for (const field of ['name', 'description', 'script', 'category']) {
+        await expect(recipeDialog.locator(`#recipe-edit-${field}`)).toBeVisible();
+        await expect(recipeDialog.locator(`label[for="recipe-edit-${field}"]`)).toBeVisible();
+    }
+    const publishChoice = recipeDialog.getByRole('checkbox', { name: 'Publish to the community gallery', exact: true });
+    await expect(publishChoice).toBeVisible();
+    await expect(publishChoice).toHaveAttribute('id', 'recipe-edit-is_published');
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^edit-recipe-\d+$/);
     expect(new URL(page.url()).pathname).toBe(recipeInitialPath);
     await expect(recipeDialog.locator('[data-modal-close]')).toBeFocused();
