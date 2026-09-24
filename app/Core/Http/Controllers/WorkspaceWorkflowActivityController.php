@@ -11,6 +11,7 @@ use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectResourceDestinations;
 use App\Core\Services\Projects\ProjectWorkflowProgress;
+use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -26,6 +27,7 @@ final class WorkspaceWorkflowActivityController
         WorkspaceProjectAccess $access,
         ProjectResourceDestinations $resourceDestinations,
         ProjectWorkflowProgress $workflowProgress,
+        WorkspaceActivityProviderRegistry $activityProviders,
     ): View {
         $principal = $request->user();
         abort_unless($principal !== null, 401);
@@ -99,14 +101,61 @@ final class WorkspaceWorkflowActivityController
             $access->canManageWorkspace($user, $workspace),
             limit: 30,
         );
+        $accessibleProjects = $this->accessibleProjects($workspace, $user, $visibleProducts);
+        $unavailableProducts = collect();
+
+        foreach ($visibleProducts as $product) {
+            $provider = $activityProviders->get($product);
+            if ($provider === null) {
+                continue;
+            }
+
+            $snapshot = $provider->recentForWorkspace($user, $workspace, $accessibleProjects, 30);
+
+            if (! $snapshot->available) {
+                $unavailableProducts->push((string) config('platform.products.'.$product.'.label', str($product)->headline()));
+            }
+
+            $workflowRuns = $workflowRuns->concat($snapshot->runs);
+        }
+
+        $workflowRuns = $workflowRuns
+            ->sortByDesc(fn ($run): int => $run->recordedAt->getTimestamp())
+            ->take(30)
+            ->values();
 
         return view('core::workspaces.workflows', [
             'user' => $user,
             'workspace' => $workspace,
             'workspaces' => $this->workspacesFor($user),
             'workflowRuns' => $workflowRuns,
+            'unavailableProducts' => $unavailableProducts->unique()->values(),
             'contextProjects' => $this->contextProjects($workspace, $user),
         ]);
+    }
+
+    /** @return Collection<int, Project> */
+    private function accessibleProjects(Workspace $workspace, PlatformUser $user, array $visibleProducts): Collection
+    {
+        if ($visibleProducts === []) {
+            return collect();
+        }
+
+        return Project::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where('status', 'active')
+            ->whereNull('archived_at')
+            ->whereHas('memberships', fn (Builder $query) => $query
+                ->where('user_id', $user->getKey())
+                ->where('status', 'active')
+                ->whereNull('revoked_at'))
+            ->whereHas('products', fn (Builder $query) => $query
+                ->whereIn('product', $visibleProducts)
+                ->where('status', 'active'))
+            ->with(['products' => fn ($query) => $query
+                ->whereIn('product', $visibleProducts)
+                ->where('status', 'active')])
+            ->get(['id', 'workspace_id', 'name', 'status', 'archived_at']);
     }
 
     /** @return Collection<int, Workspace> */

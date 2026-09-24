@@ -3,7 +3,7 @@
 <x-signal.ui.card class="p-5">
     <div class="flex flex-wrap items-start justify-between gap-3">
         <div class="min-w-0">
-            <p class="ui-eyebrow">{{ __('Workflow run') }}</p>
+            <p class="ui-eyebrow">{{ __('Product activity') }}</p>
             <h3 class="mt-1 truncate text-base font-extrabold text-ink">{{ $run->title }}</h3>
             @if ($run->projectUrl && $run->projectName)
                 <x-signal.ui.link :href="$run->projectUrl" size="inline" variant="muted" class="mt-1">
@@ -49,6 +49,11 @@
                         @csrf
                         <x-signal.ui.button type="submit" class="min-h-8 px-3 text-xs">{{ __('Retry this step') }}</x-signal.ui.button>
                     </form>
+                @endif
+                @if ($step->resultUrl)
+                    <x-signal.ui.link :href="$step->resultUrl" size="sm" class="mt-3 inline-flex">
+                        {{ __('Open in :product', ['product' => $step->productLabel]) }}
+                    </x-signal.ui.link>
                 @endif
             </li>
         @endforeach

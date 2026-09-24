@@ -6,7 +6,13 @@ use App\Core\Contracts\ProjectResourceDestinationProvider;
 use App\Core\Data\Projects\ProjectResourceDestination;
 use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Models\PlatformUser;
+use App\Core\Models\Project as CoreProject;
+use App\Core\Models\ProjectResource;
+use App\Core\Models\Workspace;
 use App\Core\Services\ProjectResourceDestinationRegistry;
+use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceProjectAccess;
+use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +39,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
 
         $this->withoutVite();
         $this->createTables();
+        $this->createDeployerTables();
 
         $this->userId = (string) Str::ulid();
         $this->workspaceId = (string) Str::ulid();
@@ -198,9 +205,14 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             'workspace_product_access',
             'workspace_memberships',
             'workspaces',
+            'legacy_identity_maps',
             'users',
         ] as $table) {
             Schema::connection('core')->dropIfExists($table);
+        }
+
+        foreach (['builds', 'repositories', 'websites', 'servers', 'environments', 'projects', 'organizations', 'users'] as $table) {
+            Schema::connection('deployer')->dropIfExists($table);
         }
 
         parent::tearDown();
@@ -243,6 +255,16 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             $table->string('status', 24);
             $table->timestamp('expires_at')->nullable();
             $table->timestamp('revoked_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('legacy_identity_maps', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->string('source_product', 24);
+            $table->string('source_entity', 100);
+            $table->string('source_id', 191);
+            $table->string('canonical_entity', 100)->nullable();
+            $table->string('canonical_id', 191)->nullable();
+            $table->string('status', 24)->default('pending');
             $table->timestamps();
         });
         Schema::connection('core')->create('projects', function (Blueprint $table): void {
@@ -320,6 +342,54 @@ final class WorkspaceWorkflowActivityTest extends TestCase
         });
     }
 
+    private function createDeployerTables(): void
+    {
+        Schema::connection('deployer')->create('users', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('current_organization_id')->nullable();
+        });
+        Schema::connection('deployer')->create('organizations', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('owner_id');
+        });
+        Schema::connection('deployer')->create('projects', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('organization_id');
+        });
+        Schema::connection('deployer')->create('environments', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('project_id');
+            $table->unsignedBigInteger('server_id')->nullable();
+            $table->unsignedBigInteger('website_id')->nullable();
+            $table->string('name');
+            $table->string('slug')->default('production');
+            $table->string('type')->default('production');
+        });
+        Schema::connection('deployer')->create('servers', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('provider_id')->nullable();
+        });
+        Schema::connection('deployer')->create('websites', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('server_id')->nullable();
+        });
+        Schema::connection('deployer')->create('repositories', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('website_id');
+            $table->unsignedBigInteger('provider_id')->nullable();
+        });
+        Schema::connection('deployer')->create('builds', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('environment_id')->nullable();
+            $table->string('status')->nullable();
+            $table->string('revision')->nullable();
+            $table->string('release_name')->nullable();
+            $table->timestamp('started_at')->nullable();
+            $table->timestamp('finished_at')->nullable();
+            $table->timestamps();
+        });
+    }
+
     public function test_workflow_activity_persists_steps_and_offers_only_the_failed_step_for_retry(): void
     {
         $user = PlatformUser::query()->findOrFail($this->userId);
@@ -351,7 +421,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
 
         $this->get(route('core.workspace.workflows', $this->workspaceId))
             ->assertOk()
-            ->assertSeeText('No connected workflow activity yet')
+            ->assertSeeText('No recent product activity yet')
             ->assertDontSeeText('Deployment v12 succeeded');
 
         DB::connection('core')->table('workspace_product_access')
@@ -363,5 +433,166 @@ final class WorkspaceWorkflowActivityTest extends TestCase
         $this->get(route('core.workspace.workflows', $this->workspaceId))
             ->assertOk()
             ->assertDontSeeText('Deployment v12 succeeded');
+    }
+
+    public function test_workspace_activity_includes_deployer_builds_only_for_authorized_mapped_environments(): void
+    {
+        config(['platform.products.deployer.auth_authority' => 'core']);
+        $this->addIdentityMap('user', '17', 'user', $this->userId);
+        $this->addIdentityMap('organization', '50', 'workspace', $this->workspaceId);
+        $this->seedDeployerProjectAndBuilds();
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $project = CoreProject::query()->findOrFail($this->projectId);
+        $projectLink = app(DeployerProjectLink::class);
+        $this->assertNotNull($projectLink->projectFor($user, $project));
+        $environmentResource = ProjectResource::query()
+            ->where('project_id', $this->projectId)
+            ->where('product', 'deployer')
+            ->where('resource_type', 'environment')
+            ->where('resource_id', '41')
+            ->firstOrFail();
+        $this->assertNotNull($projectLink->accessibleEnvironment($user, $project, $environmentResource));
+        $provider = app(WorkspaceActivityProviderRegistry::class)->get('deployer');
+        $this->assertNotNull($provider);
+        $workspace = Workspace::query()->findOrFail($this->workspaceId);
+        $membership = app(WorkspaceProjectAccess::class)->activeMembership($user, $workspace);
+        $this->assertNotNull($membership);
+        $this->assertTrue(app(WorkspaceProjectAccess::class)->hasProductAccess($membership, 'deployer'));
+        $accessibleProjects = CoreProject::query()
+            ->where('workspace_id', $this->workspaceId)
+            ->where('status', 'active')
+            ->whereNull('archived_at')
+            ->whereHas('memberships', fn ($query) => $query->where('user_id', $this->userId)->where('status', 'active')->whereNull('revoked_at'))
+            ->whereHas('products', fn ($query) => $query->whereIn('product', ['deployer', 'monitor'])->where('status', 'active'))
+            ->with(['products' => fn ($query) => $query->whereIn('product', ['deployer', 'monitor'])->where('status', 'active')])
+            ->get(['id', 'workspace_id', 'name', 'status', 'archived_at']);
+        $this->assertCount(1, $accessibleProjects);
+        $accessibleProject = $accessibleProjects->first();
+        $this->assertTrue(app(WorkspaceProjectAccess::class)->canAccessProductResource($user, $accessibleProject, 'deployer'));
+        $this->assertNotNull($projectLink->projectFor($user, $accessibleProject));
+        $this->assertNotNull($projectLink->accessibleEnvironment($user, $accessibleProject, $environmentResource));
+        $snapshot = $provider->recentForWorkspace($user, $workspace, $accessibleProjects, 30);
+        $this->assertTrue($snapshot->available);
+        $this->assertCount(2, $snapshot->runs);
+
+        $response = $this->actingAs($user, 'platform')
+            ->get(route('core.workspace.workflows', $this->workspaceId));
+
+        $response
+            ->assertOk()
+            ->assertSeeText('Deployment abc123456789')
+            ->assertSeeText('Production environment deployment')
+            ->assertSeeText('Succeeded')
+            ->assertSeeText('Needs approval')
+            ->assertSeeText('Open in Deployer')
+            ->assertDontSeeText('unmapped-build-revision');
+        $response->assertSee(route('builds.show', ['build' => 100, 'organization_id' => 50]));
+
+        DB::connection('core')->table('project_resources')
+            ->where('product', 'deployer')
+            ->where('resource_type', 'environment')
+            ->where('resource_id', '41')
+            ->update(['status' => 'disconnected']);
+
+        $this->get(route('core.workspace.workflows', $this->workspaceId))
+            ->assertOk()
+            ->assertDontSeeText('Deployment abc123456789');
+
+        DB::connection('core')->table('project_resources')
+            ->where('product', 'deployer')
+            ->where('resource_type', 'environment')
+            ->where('resource_id', '41')
+            ->update(['status' => 'active']);
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'deployer')
+            ->update(['revoked_at' => now()]);
+
+        $this->get(route('core.workspace.workflows', $this->workspaceId))
+            ->assertOk()
+            ->assertDontSeeText('Deployment abc123456789');
+
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'deployer')
+            ->update(['revoked_at' => null]);
+        DB::connection('deployer')->table('organizations')->where('id', 50)->update(['owner_id' => 999]);
+
+        $this->get(route('core.workspace.workflows', $this->workspaceId))
+            ->assertOk()
+            ->assertDontSeeText('Deployment abc123456789');
+    }
+
+    public function test_workspace_activity_marks_a_product_unavailable_without_hiding_other_runs(): void
+    {
+        config(['platform.products.deployer.auth_authority' => 'core']);
+        $this->addIdentityMap('user', '17', 'user', $this->userId);
+        $this->addIdentityMap('organization', '50', 'workspace', $this->workspaceId);
+        $this->seedDeployerProjectAndBuilds();
+        Schema::connection('deployer')->dropIfExists('builds');
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->get(route('core.workspace.workflows', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('Recent activity from Deployer is temporarily unavailable')
+            ->assertSeeText('Deployment v12 succeeded');
+    }
+
+    private function addIdentityMap(string $sourceEntity, string $sourceId, string $canonicalEntity, string $canonicalId): void
+    {
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'deployer',
+            'source_entity' => $sourceEntity,
+            'source_id' => $sourceId,
+            'canonical_entity' => $canonicalEntity,
+            'canonical_id' => $canonicalId,
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function seedDeployerProjectAndBuilds(): void
+    {
+        DB::connection('deployer')->table('users')->insert([
+            'id' => 17,
+            'current_organization_id' => 60,
+        ]);
+        DB::connection('deployer')->table('organizations')->insert([
+            'id' => 50,
+            'owner_id' => 17,
+        ]);
+        DB::connection('deployer')->table('projects')->insert([
+            'id' => 31,
+            'organization_id' => 50,
+        ]);
+        DB::connection('deployer')->table('environments')->insert([
+            ['id' => 41, 'project_id' => 31, 'server_id' => null, 'website_id' => null, 'name' => 'Production', 'slug' => 'production', 'type' => 'production'],
+            ['id' => 42, 'project_id' => 31, 'server_id' => null, 'website_id' => null, 'name' => 'Unmapped', 'slug' => 'unmapped', 'type' => 'staging'],
+        ]);
+        DB::connection('deployer')->table('builds')->insert([
+            ['id' => 100, 'environment_id' => 41, 'status' => 'succeeded', 'revision' => 'abc123456789abcdef', 'release_name' => null, 'created_at' => now()->subMinute(), 'updated_at' => now(), 'started_at' => now()->subMinutes(2), 'finished_at' => now()],
+            ['id' => 101, 'environment_id' => 42, 'status' => 'failed', 'revision' => 'unmapped-build-revision', 'release_name' => null, 'created_at' => now(), 'updated_at' => now(), 'started_at' => now(), 'finished_at' => now()],
+            ['id' => 102, 'environment_id' => 41, 'status' => 'awaiting_approval', 'revision' => 'def987654321abcdef', 'release_name' => null, 'created_at' => now(), 'updated_at' => now(), 'started_at' => null, 'finished_at' => null],
+        ]);
+
+        foreach ([
+            ['project', '31', null, 'Checkout app'],
+            ['environment', '41', '01J8AA00000000000000000001', 'Production environment'],
+        ] as [$resourceType, $resourceId, $environmentId, $name]) {
+            DB::connection('core')->table('project_resources')->insert([
+                'id' => (string) Str::ulid(),
+                'project_id' => $this->projectId,
+                'environment_id' => $environmentId,
+                'product' => 'deployer',
+                'resource_type' => $resourceType,
+                'resource_id' => $resourceId,
+                'name' => $name,
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }

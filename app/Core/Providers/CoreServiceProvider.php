@@ -20,6 +20,7 @@ use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
+use App\Core\Services\WorkspaceActivityProviderRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -40,6 +41,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ProjectSetupRegistry::class);
         $this->app->singleton(ProjectTrafficContextRegistry::class);
         $this->app->singleton(WorkspaceSearchProviderRegistry::class);
+        $this->app->singleton(WorkspaceActivityProviderRegistry::class);
         $this->app->singleton(ProductPrincipalRegistry::class);
         $this->app->singleton(ProductPrincipalProvisionerRegistry::class);
         $this->app->singleton(ProductWorkspaceMembershipProjectorRegistry::class);

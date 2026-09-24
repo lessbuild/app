@@ -19,5 +19,6 @@ final readonly class ProjectWorkflowStep
         public ?string $connectionId = null,
         public ?string $deliveryId = null,
         public ?string $retryUrl = null,
+        public ?string $resultUrl = null,
     ) {}
 }

@@ -104,6 +104,7 @@ final class DeployerProjectLink implements ProjectProductLink
             ->whereKey($mapping->resource_id)
             ->where('project_id', $legacyProject->getKey())
             ->with([
+                'project:id,organization_id',
                 'server:id,provider_id',
                 'website:id,server_id',
                 'website.server:id,provider_id',
