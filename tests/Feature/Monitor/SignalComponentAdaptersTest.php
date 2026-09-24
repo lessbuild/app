@@ -13,6 +13,7 @@ final class SignalComponentAdaptersTest extends TestCase
             'email' => 'Use a verified address.',
             'optional-field' => 'This standalone field should not display errors by default.',
         ]);
+        $this->withSession(['_old_input' => ['connection_monitoring_enabled' => '1']]);
 
         $html = Blade::render(<<<'BLADE'
             <x-monitor::ui.button variant="outline" size="sm" href="/disabled" disabled aria-label="Unavailable">Unavailable</x-monitor::ui.button>
@@ -22,6 +23,7 @@ final class SignalComponentAdaptersTest extends TestCase
             <x-monitor::ui.select name="status" label="Status" value="paused" :options="['active' => 'Active', 'paused' => 'Paused']" />
             <x-monitor::ui.textarea name="secret_note" label="Secret note" value="must-also-stay-private" sensitive />
             <x-monitor::ui.choice id="member-confirm" name="confirm" label="Confirm membership" type="radio" required description="This applies to the selected workspace." />
+            <x-signal.ui.choice id="monitoring-off" name="connection_monitoring_enabled" label="Automatic checks" :checked="false" :restore="false" unchecked-value="0" />
             <x-monitor::ui.alert tone="primary" role="status">Monitor is configured.</x-monitor::ui.alert>
             <x-monitor::ui.badge tone="sky">Informational</x-monitor::ui.badge>
             <x-monitor::ui.card padding="p-0" :shadow="false">Shared card</x-monitor::ui.card>
@@ -49,6 +51,10 @@ final class SignalComponentAdaptersTest extends TestCase
         $this->assertStringNotContainsString('must-also-stay-private', $html);
         $this->assertMatchesRegularExpression('/<option value="paused" selected>Paused<\/option>/', $html);
         $this->assertStringContainsString('type="radio"', $html);
+        $this->assertStringContainsString('<input type="hidden" name="connection_monitoring_enabled" value="0">', $html);
+        preg_match('/<input\b(?=[^>]*\bname="connection_monitoring_enabled")(?=[^>]*\btype="checkbox")[^>]*>/', $html, $checkbox);
+        $this->assertArrayHasKey(0, $checkbox);
+        $this->assertStringNotContainsString('checked', $checkbox[0]);
         $this->assertStringContainsString('data-ui-feedback="alert"', $html);
         $this->assertStringContainsString('ui-alert--info', $html);
         $this->assertStringContainsString('role="status"', $html);

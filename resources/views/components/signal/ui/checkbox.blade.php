@@ -4,9 +4,11 @@
     'value' => '1',
     'checked' => false,
     'uncheckedValue' => null,
+    'restore' => true,
 ])
 
 @php($id = $id ?: $name)
+@php($checked = $restore ? old($name, $checked) : $checked)
 
 @if ($uncheckedValue !== null)
     <input type="hidden" name="{{ $name }}" value="{{ $uncheckedValue }}">
@@ -17,7 +19,7 @@
         name="{{ $name }}"
         type="checkbox"
         value="{{ $value }}"
-        @checked(old($name, $checked))
+        @checked($checked)
         {{ $attributes->class(['h-4 w-4 rounded border-line accent-[var(--ui-primary)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus']) }}
     >
     <span>{{ $slot }}</span>

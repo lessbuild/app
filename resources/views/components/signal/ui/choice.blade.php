@@ -10,6 +10,8 @@
     'required' => false,
     'errorKey' => null,
     'showErrors' => true,
+    'restore' => true,
+    'uncheckedValue' => null,
 ])
 
 @php($controlType = in_array($type, ['checkbox', 'radio'], true) ? $type : 'checkbox')
@@ -18,13 +20,16 @@
 @php($describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$id.'-help' : '').($hasError ? ' '.$id.'-error' : '')))
 
 <div class="min-w-0">
+    @if ($uncheckedValue !== null)
+        <input type="hidden" name="{{ $name }}" value="{{ $uncheckedValue }}">
+    @endif
     <label for="{{ $id }}" @class(['ui-choice' => $card, 'inline-flex min-h-10 cursor-pointer items-start gap-3 py-1' => ! $card])>
         <input
             id="{{ $id }}"
             name="{{ $name }}"
             type="{{ $controlType }}"
             value="{{ $value }}"
-            @checked(old($fieldName ?? $name, $checked))
+            @checked($restore ? old($fieldName ?? $name, $checked) : $checked)
             @required($required)
             aria-invalid="{{ $hasError ? 'true' : 'false' }}"
             @if ($describedBy !== '') aria-describedby="{{ $describedBy }}" @endif

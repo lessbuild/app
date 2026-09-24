@@ -64,9 +64,9 @@ class ProviderSubmissionFeedbackTest extends TestCase
         );
         $response
             ->assertSee('Credentials are encrypted at rest and never shown in connection history.')
-            ->assertSee('Optional automatic credential health checks.')
-            ->assertSee('name="provider" value="digitalocean"', false)
-            ->assertSee('name="provider" value="github"', false);
+            ->assertSee('Optional automatic credential health checks.');
+        $this->assertMatchesRegularExpression('/<input\b(?=[^>]*\bname="provider")(?=[^>]*\bvalue="digitalocean")[^>]*>/', $response->getContent());
+        $this->assertMatchesRegularExpression('/<input\b(?=[^>]*\bname="provider")(?=[^>]*\bvalue="github")[^>]*>/', $response->getContent());
     }
 
     public function test_plan_rejection_is_visible_after_redirect_without_flashing_the_token(): void

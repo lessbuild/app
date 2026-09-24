@@ -20,42 +20,22 @@
         <legend class="ui-label mb-0">{{ __('Provider') }}</legend>
         <p class="ui-help">{{ __('Choose the integration that owns this credential.') }}</p>
         <div class="mt-3 grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4" role="radiogroup" aria-label="{{ __('Provider') }}">
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="digitalocean" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'digitalocean')>
-                <span class="text-sm font-semibold text-ink">{{ __('DigitalOcean') }}</span>
-            </label>
-
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="github" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'github')>
-                <span class="text-sm font-semibold text-ink">{{ __('GitHub') }}</span>
-            </label>
-
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="gitlab" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'gitlab')>
-                <span class="text-sm font-semibold text-ink">{{ __('GitLab') }}</span>
-            </label>
-
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="bitbucket" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'bitbucket')>
-                <span class="text-sm font-semibold text-ink">{{ __('Bitbucket') }}</span>
-            </label>
-
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="hetzner" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'hetzner')>
-                <span class="text-sm font-semibold text-ink">{{ __('Hetzner Cloud') }}</span>
-            </label>
-
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="vultr" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'vultr')>
-                <span class="text-sm font-semibold text-ink">{{ __('Vultr') }}</span>
-            </label>
-
-            <label class="ui-choice relative min-h-16 cursor-pointer items-center focus-within:ring-2 focus-within:ring-focus">
-                <input type="radio" name="provider" value="cloudflare" class="ui-check h-4 w-4 shrink-0" x-model="selectedProvider" required @checked($selectedProvider === 'cloudflare')>
-                <span class="text-sm font-semibold text-ink">{{ __('Cloudflare DNS') }}</span>
-            </label>
+            @foreach(['digitalocean' => __('DigitalOcean'), 'github' => __('GitHub'), 'gitlab' => __('GitLab'), 'bitbucket' => __('Bitbucket'), 'hetzner' => __('Hetzner Cloud'), 'vultr' => __('Vultr'), 'cloudflare' => __('Cloudflare DNS')] as $providerKey => $providerLabel)
+                <x-signal.ui.choice
+                    :id="$fieldPrefix.'provider-'.$providerKey"
+                    name="provider"
+                    :value="$providerKey"
+                    :label="$providerLabel"
+                    type="radio"
+                    :checked="$selectedProvider === $providerKey"
+                    :restore="false"
+                    :card="true"
+                    class="h-4 w-4 self-center"
+                    x-model="selectedProvider"
+                    required
+                />
+            @endforeach
         </div>
-        <x-forms.errors name="provider" />
     </fieldset>
 
     @if (! $isEditing && app(\App\Modules\Deployer\Services\GitHubApp::class)->configured())
@@ -76,47 +56,36 @@
         </x-ui.alert>
     @endif
 
-    <div>
-        <label for="{{ $fieldPrefix }}token" class="ui-label">{{ __('Provider Token') }}</label>
-        <input
-            value="{{ old('token') }}"
-            type="password"
-            name="token"
-            id="{{ $fieldPrefix }}token"
-            autocomplete="off"
-            @if (! $isEditing) required @endif
-            class="ui-input"
-            placeholder="************"
-        >
-        <p class="ui-help">{{ __('Credentials are encrypted at rest and never shown in connection history.') }}</p>
-        <x-forms.errors name="token" />
-    </div>
+    <x-signal.ui.input-field
+        :id="$fieldPrefix.'token'"
+        name="token"
+        :label="__('Provider Token')"
+        type="password"
+        autocomplete="off"
+        placeholder="************"
+        :restore="false"
+        :required="! $isEditing"
+        :description="__('Credentials are encrypted at rest and never shown in connection history.')"
+    />
 
-    <div>
-        <label for="{{ $fieldPrefix }}name" class="ui-label">{{ __('Provider Name') }}</label>
-        <input
-            value="{{ old('name') ?? ($provider?->name ?? null) }}"
-            type="text"
-            name="name"
-            id="{{ $fieldPrefix }}name"
-            class="ui-input"
-            placeholder="Example: Source control access token"
-        >
-        <x-forms.errors name="name" />
-    </div>
+    <x-signal.ui.input-field
+        :id="$fieldPrefix.'name'"
+        name="name"
+        :label="__('Provider Name')"
+        :value="$provider?->name"
+        placeholder="Example: Source control access token"
+    />
 
-    <div class="sm:col-span-2">
-        <label for="{{ $fieldPrefix }}description" class="ui-label">{{ __('Description') }}</label>
-        <textarea
-            id="{{ $fieldPrefix }}description"
-            name="description"
-            rows="3"
-            class="ui-input min-h-24"
-            placeholder="{{ __('Example: To manage one website') }}"
-        >{{ old('description') ?? ($provider?->description ?? null) }}</textarea>
-        <p class="ui-help">{{ __('Brief description of the provider token') }}</p>
-        <x-forms.errors name="description" />
-    </div>
+    <x-signal.ui.textarea-field
+        :id="$fieldPrefix.'description'"
+        name="description"
+        :label="__('Description')"
+        :value="$provider?->description"
+        :description="__('Brief description of the provider token')"
+        :placeholder="__('Example: To manage one website')"
+        rows="3"
+        class="min-h-24"
+    />
 
     <details id="{{ $fieldPrefix }}provider-monitoring-settings" class="ui-responsive-details group ui-card ui-card--muted overflow-hidden sm:col-span-2" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
         <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden [&::-webkit-details-marker]:hidden">
@@ -129,58 +98,38 @@
         <fieldset class="ui-responsive-details__content border-t border-line p-4 lg:border-0">
             <legend class="sr-only">{{ __('Connection monitoring') }}</legend>
             <div class="flex items-start gap-3">
-                <input type="hidden" name="connection_monitoring_enabled" value="0">
-                <input
+                <x-signal.ui.choice
                     id="{{ $fieldPrefix }}connection_monitoring_enabled"
                     name="connection_monitoring_enabled"
+                    :label="__('Automatically monitor credential health')"
+                    :description="$monitoringAllowed ? __('Periodically verify this credential and alert on failures or recovery. Manual connection tests remain available when paused.') : __('Automatic checks require a plan with monitoring. You can add a provider and test its connection manually.')"
                     type="checkbox"
                     value="1"
-                    class="ui-check mt-1"
-                    @checked($monitoringAllowed && (bool) old('connection_monitoring_enabled', $provider->connection_monitoring_enabled ?? true))
-                    @disabled(! $monitoringAllowed)
-                >
-                <div>
-                    <label for="{{ $fieldPrefix }}connection_monitoring_enabled" class="block text-sm font-semibold text-ink">
-                        {{ __('Automatically monitor credential health') }}
-                    </label>
-                    <p class="mt-1 text-sm text-muted">
-                        @if ($monitoringAllowed)
-                            {{ __('Periodically verify this credential and alert on failures or recovery. Manual connection tests remain available when paused.') }}
-                        @else
-                            {{ __('Automatic checks require a plan with monitoring. You can add a provider and test its connection manually.') }}
-                        @endif
-                    </p>
-                </div>
+                    :checked="$monitoringAllowed && (bool) old('connection_monitoring_enabled', $provider->connection_monitoring_enabled ?? true)"
+                    :restore="false"
+                    unchecked-value="0"
+                    :disabled="! $monitoringAllowed"
+                    class="mt-1"
+                />
             </div>
-            <x-forms.errors name="connection_monitoring_enabled" />
 
             <div class="mt-5 grid gap-5 border-t border-line pt-5 sm:grid-cols-2">
-                <div>
-                    <label for="{{ $fieldPrefix }}connection_check_interval_minutes" class="ui-label">{{ __('Automatic check interval') }}</label>
-                    <select id="{{ $fieldPrefix }}connection_check_interval_minutes" name="connection_check_interval_minutes" class="ui-input">
+                <x-signal.ui.select-field :id="$fieldPrefix.'connection_check_interval_minutes'" name="connection_check_interval_minutes" :label="__('Automatic check interval')" :description="__('Applies to scheduled monitoring only. Manual connection tests can still run immediately.')">
                         @foreach (\App\Modules\Deployer\Models\Provider::CONNECTION_CHECK_INTERVALS as $minutes)
                             @php($hours = intdiv($minutes, 60))
                             <option value="{{ $minutes }}" @selected((int) old('connection_check_interval_minutes', $provider?->connection_check_interval_minutes ?? \App\Modules\Deployer\Models\Provider::defaultConnectionCheckInterval()) === $minutes)>
                                 {{ trans_choice('Every :count hour|Every :count hours', $hours, ['count' => $hours]) }}
                             </option>
                         @endforeach
-                    </select>
-                    <p class="ui-help">{{ __('Applies to scheduled monitoring only. Manual connection tests can still run immediately.') }}</p>
-                    <x-forms.errors name="connection_check_interval_minutes" />
-                </div>
+                </x-signal.ui.select-field>
 
-                <div>
-                    <label for="{{ $fieldPrefix }}connection_failure_threshold" class="ui-label">{{ __('Failure confirmation') }}</label>
-                    <select id="{{ $fieldPrefix }}connection_failure_threshold" name="connection_failure_threshold" class="ui-input">
+                <x-signal.ui.select-field :id="$fieldPrefix.'connection_failure_threshold'" name="connection_failure_threshold" :label="__('Failure confirmation')" :description="__('A successful check resets the count. One failure incident is created when this threshold is first reached.')">
                         @foreach (\App\Modules\Deployer\Models\Provider::CONNECTION_FAILURE_THRESHOLDS as $failures)
                             <option value="{{ $failures }}" @selected((int) old('connection_failure_threshold', $provider?->connection_failure_threshold ?? \App\Modules\Deployer\Models\Provider::defaultConnectionFailureThreshold()) === $failures)>
                                 {{ trans_choice('After :count consecutive failure|After :count consecutive failures', $failures, ['count' => $failures]) }}
                             </option>
                         @endforeach
-                    </select>
-                    <p class="ui-help">{{ __('A successful check resets the count. One failure incident is created when this threshold is first reached.') }}</p>
-                    <x-forms.errors name="connection_failure_threshold" />
-                </div>
+                </x-signal.ui.select-field>
             </div>
         </fieldset>
     </details>
