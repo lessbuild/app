@@ -5,6 +5,7 @@ use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\MarketingController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\ProjectEnvironmentsController;
+use App\Core\Http\Controllers\ProjectHandoverController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
 use App\Core\Http\Controllers\WorkspaceProjectsController;
@@ -73,8 +74,13 @@ Route::middleware('auth:platform')->group(function (): void {
         ->controller(WorkspaceProjectsController::class)
         ->group(function (): void {
             Route::get('/projects', 'index')->name('index');
+            Route::get('/projects/handover', [ProjectHandoverController::class, 'form'])->name('handover.form');
+            Route::post('/projects/handover/validate', [ProjectHandoverController::class, 'validateManifest'])
+                ->middleware('throttle:10,1')
+                ->name('handover.validate');
             Route::get('/projects/create', 'create')->name('create');
             Route::post('/projects', 'store')->name('store');
+            Route::get('/projects/{project}/handover', [ProjectHandoverController::class, 'export'])->name('handover.export');
             Route::get('/projects/{project}/edit', 'edit')->name('edit');
             Route::put('/projects/{project}', 'update')->name('update');
             Route::get('/projects/{project}', 'show')->name('show');

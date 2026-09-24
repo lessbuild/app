@@ -21,6 +21,11 @@
         :description="$projectStatus === 'archived' ? __('Archived projects retain their app mappings and history until restored.') : __('One project directory for every connected application.')"
     >
         <x-slot:actions>
+            @if ($canManageProjects && $projectStatus === 'active')
+                <x-signal.ui.button :href="route('core.projects.handover.form', $workspace)">
+                    {{ __('Validate handover') }}
+                </x-signal.ui.button>
+            @endif
             @if ($canCreateProjects)
                 <x-signal.ui.button variant="primary" :href="route('core.projects.create', $workspace)">
                     <svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#plus"></use></svg>

@@ -53,6 +53,9 @@
     >
         <x-slot:actions>
             @if ($canManageProjects)
+                <x-signal.ui.button :href="route('core.projects.handover.export', [$workspace, $project])">
+                    {{ __('Export manifest') }}
+                </x-signal.ui.button>
                 <x-signal.ui.button :href="route('core.projects.edit', [$workspace, $project])">
                     <svg class="h-4 w-4 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#pencil"></use></svg>
                     {{ __('Edit project') }}
