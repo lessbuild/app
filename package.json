@@ -5,6 +5,7 @@
         "build": "vite build",
         "test:browser": "playwright test",
         "test:analytics-tracker": "playwright test tests/Browser/analytics-tracker.spec.js",
+        "test:signal-theme": "npm run build && playwright test tests/Browser/signal-theme-tokens.spec.js",
         "test:assets": "npm run build && playwright test tests/Browser/asset-layout.spec.js"
     },
     "devDependencies": {

@@ -1,5 +1,46 @@
 # Signal theme integration progress
 
+## Slice 135 — verify shared Signal theme propagation across the product shells — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked Signal `main` at `0e8218d8bac1a945fea3cc78e342e9d56b631ca8`; it
+  still changes only `PLAN.md` from the integrated UI revision
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974`. There are no newer upstream
+  component or stylesheet files to import.
+- Added an architecture regression test requiring Core, Deployer, Monitor,
+  Analytics, public, and authentication layouts to use the shared Signal
+  document and theme runtime. Deployer's application wrapper composes the
+  shared topbar with `product-key="deployer"` and the shared Signal stylesheet.
+- Added a browser fixture that exercises Signal's real topbar and shared panel,
+  card, primary button, and labeled input at mobile and desktop widths. One
+  stylesheet build is served across all six contexts while URL-selected palette,
+  radius, typography, and density values are checked, including Deployer's
+  mobile product navigation and active state.
+- Confirmed Deployer has no separate stylesheet or theme entry point. Its
+  source-authored product views use shared `x-signal.ui.*` primitives; its
+  app-specific styles consume Signal semantic tokens.
+
+Evidence and release:
+
+- `npm run test:signal-theme`: **1 browser test passed** across 12 product/layout
+  and viewport combinations. It checks one shared CSS fingerprint, rose primary
+  color, panel/card/control radii, compact input density, editorial typography,
+  accessible button/input labels, active navigation, and horizontal overflow.
+- `SignalThemeArchitectureTest`: **2 tests, 13 assertions**. Pint and
+  `git diff --check` passed.
+- Live unauthenticated checks on 24 September returned the Buildpusher homepage
+  at HTTP 200. Deployer, Monitor, and Analytics guest flows ended at central
+  login and loaded the same fingerprinted Signal stylesheet,
+  `app-uzv_x7JM.css`. This confirms the deployed shared theme entry; authenticated
+  product-page visual acceptance remains open.
+- This slice changes test coverage and documentation only. It does not alter
+  production runtime behavior, data, or database state.
+
+Next task: compare representative authenticated Deployer, Monitor, and Analytics
+screens with the Signal Topbar SaaS reference in light/dark themes and at mobile
+and desktop widths, then complete keyboard/accessibility review.
+
 ## Slice 133 — converge Deployer views on the latest Signal component library — 2026-09-24
 
 Boundary and implementation:
