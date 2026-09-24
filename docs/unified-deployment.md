@@ -62,6 +62,13 @@ dispatches product checks and retention tasks once per minute. Configure
 `DIAGNOSTIC_SYSTEMD_TIMERS=true` and set `DIAGNOSTIC_SYSTEMD_SERVICES` to the FPM and
 worker service names so the control panel checks the active runtime.
 
+During a product cutover, confirm that the unified scheduler and workers own each
+task before retiring the legacy services. Check for running and queued work, drain
+or translate it, then stop and disable legacy schedulers/workers that would execute
+the same task against the old installation. Retain legacy databases, release files,
+and required backup timers through the reconciliation and rollback-retention window.
+Do not run two schedulers or workers against the same migrated workload.
+
 ## Release procedure
 
 Build assets and install locked PHP dependencies before switching traffic. Keep the
