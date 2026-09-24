@@ -9,6 +9,7 @@ use App\Core\Http\Middleware\ResolveProductPrincipal;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Billing\ResolveProductPlan;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
@@ -38,6 +39,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ProjectTrafficContextRegistry::class);
         $this->app->singleton(WorkspaceSearchProviderRegistry::class);
         $this->app->singleton(ProductPrincipalRegistry::class);
+        $this->app->singleton(ProductPrincipalProvisionerRegistry::class);
         $this->app->singleton(ProductWorkspaceMembershipProjectorRegistry::class);
         $this->app->bind(ProductPlanResolver::class, ResolveProductPlan::class);
 

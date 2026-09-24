@@ -5,9 +5,11 @@ namespace Tests\Feature\Core;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\ProductAuthentication;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
+use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -74,6 +76,10 @@ final class ProductRouteAuthenticationTest extends TestCase
         app(ProductPrincipalRegistry::class)->register(
             'analytics',
             new MappedProductPrincipalAdapter('analytics', AnalyticsUser::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductPrincipalProvisionerRegistry::class)->register(
+            'analytics',
+            app(AnalyticsPlatformPrincipalProvisioner::class),
         );
 
         $authentication = app(ProductAuthentication::class);

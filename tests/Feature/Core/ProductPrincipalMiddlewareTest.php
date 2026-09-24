@@ -4,11 +4,15 @@ namespace Tests\Feature\Core;
 
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
+use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Models\User as DeployerUser;
+use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Models\User as MonitorUser;
+use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -33,6 +37,7 @@ final class ProductPrincipalMiddlewareTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        $this->registerProvisioners();
 
         Schema::connection('core')->create('legacy_identity_maps', function (Blueprint $table): void {
             $table->ulid('id')->primary();
@@ -234,6 +239,36 @@ final class ProductPrincipalMiddlewareTest extends TestCase
         ], 'core');
     }
 
+    public function test_core_authority_synchronizes_only_the_exact_reconciled_product_identity(): void
+    {
+        config(['platform.products.analytics.auth_authority' => 'core']);
+        DB::connection('analytics')->table('users')->insert([
+            'id' => 42,
+            'platform_user_id' => $this->platformUser->getKey(),
+            'name' => 'Old local name',
+            'email' => 'old-local@example.test',
+            'password' => Hash::make('old local password'),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->map('analytics', 42);
+        $this->platformUser->forceFill([
+            'name' => 'Updated Core name',
+            'email' => 'updated-core@example.test',
+            'password' => Hash::make('updated core password'),
+            'email_verified_at' => now(),
+        ]);
+        $this->actingAs($this->platformUser, 'platform');
+
+        $this->get('/_test/platform-principal/analytics')->assertOk();
+
+        $productUser = AnalyticsUser::query()->findOrFail(42);
+        $this->assertSame('Updated Core name', $productUser->name);
+        $this->assertSame('updated-core@example.test', $productUser->email);
+        $this->assertTrue(Hash::check('updated core password', (string) $productUser->getAuthPassword()));
+        $this->assertNotNull($productUser->email_verified_at);
+    }
+
     public function test_core_authority_does_not_merge_an_unmapped_product_account_by_email(): void
     {
         config(['platform.products.analytics.auth_authority' => 'core']);
@@ -307,5 +342,20 @@ final class ProductPrincipalMiddlewareTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+    }
+
+    private function registerProvisioners(): void
+    {
+        $registry = app(ProductPrincipalProvisionerRegistry::class);
+
+        foreach ([
+            'deployer' => DeployerPlatformPrincipalProvisioner::class,
+            'monitor' => MonitorPlatformPrincipalProvisioner::class,
+            'analytics' => AnalyticsPlatformPrincipalProvisioner::class,
+        ] as $product => $provisioner) {
+            if ($registry->get($product) === null) {
+                $registry->register($product, app($provisioner));
+            }
+        }
     }
 }

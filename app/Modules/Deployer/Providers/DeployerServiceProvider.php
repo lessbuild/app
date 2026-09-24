@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\LegacyIdentityResolver;
@@ -26,6 +27,7 @@ use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
@@ -66,6 +68,10 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProductPrincipalRegistry::class)->register(
             'deployer',
             new MappedProductPrincipalAdapter('deployer', User::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductPrincipalProvisionerRegistry::class)->register(
+            'deployer',
+            app(DeployerPlatformPrincipalProvisioner::class),
         );
         app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
             'deployer',

@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\LegacyIdentityResolver;
@@ -17,6 +18,7 @@ use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
+use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSetup;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
@@ -79,6 +81,10 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         app(ProductPrincipalRegistry::class)->register(
             'analytics',
             new MappedProductPrincipalAdapter('analytics', User::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductPrincipalProvisionerRegistry::class)->register(
+            'analytics',
+            app(AnalyticsPlatformPrincipalProvisioner::class),
         );
         app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
             'analytics',

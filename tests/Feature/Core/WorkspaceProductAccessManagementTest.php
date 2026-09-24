@@ -10,14 +10,18 @@ use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Models\WorkspaceProductAccess;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\Workspaces\ManageWorkspaceMembership;
 use App\Core\Services\Workspaces\ManageWorkspaceProductAccess;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
+use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceMembershipProjector;
 use App\Modules\Deployer\Models\User as DeployerUser;
+use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
 use App\Modules\Monitor\Models\User as MonitorUser;
+use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
@@ -50,6 +54,7 @@ final class WorkspaceProductAccessManagementTest extends TestCase
         parent::setUp();
         $this->withoutVite();
 
+        $this->registerPrincipalProvisioners();
         $this->registerWorkspaceMembershipProjectors();
         Artisan::call('platform:migrate', ['module' => 'core']);
         $this->createProductTables();
@@ -402,6 +407,21 @@ final class WorkspaceProductAccessManagementTest extends TestCase
         ] as $product => $projector) {
             if ($registry->get($product) === null) {
                 $registry->register($product, app($projector));
+            }
+        }
+    }
+
+    private function registerPrincipalProvisioners(): void
+    {
+        $registry = app(ProductPrincipalProvisionerRegistry::class);
+
+        foreach ([
+            'deployer' => DeployerPlatformPrincipalProvisioner::class,
+            'monitor' => MonitorPlatformPrincipalProvisioner::class,
+            'analytics' => AnalyticsPlatformPrincipalProvisioner::class,
+        ] as $product => $provisioner) {
+            if ($registry->get($product) === null) {
+                $registry->register($product, app($provisioner));
             }
         }
     }

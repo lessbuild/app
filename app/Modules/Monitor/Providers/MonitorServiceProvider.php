@@ -4,6 +4,7 @@ namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
+use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\LegacyIdentityResolver;
@@ -24,6 +25,7 @@ use App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace;
 use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
+use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
@@ -101,6 +103,10 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProductPrincipalRegistry::class)->register(
             'monitor',
             new MappedProductPrincipalAdapter('monitor', User::class, app(LegacyIdentityResolver::class)),
+        );
+        app(ProductPrincipalProvisionerRegistry::class)->register(
+            'monitor',
+            app(MonitorPlatformPrincipalProvisioner::class),
         );
         app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
             'monitor',
