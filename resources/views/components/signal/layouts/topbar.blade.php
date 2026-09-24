@@ -92,8 +92,8 @@
     $logoutUrl = \Illuminate\Support\Facades\Route::has($logoutRoute) ? route($logoutRoute) : null;
 @endphp
 
-<header class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur" data-mobile-header data-topbar-shell>
-    <div class="mx-auto max-w-screen-2xl px-4 sm:px-6 lg:px-8">
+<header class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur" data-mobile-header data-topbar-shell>
+    <div class="ui-layout-gutter mx-auto max-w-content">
         <div class="flex min-h-16 items-center gap-3">
             @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
                 <button

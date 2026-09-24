@@ -50,6 +50,9 @@ final class SignalThemeArchitectureTest extends TestCase
         $mobileNavigation = File::get(base_path('resources/views/components/signal/layouts/mobile-navigation.blade.php'));
         $mobileSidebar = File::get(base_path('resources/views/components/signal/layouts/mobile-sidebar.blade.php'));
         $deployerLayout = File::get(base_path('resources/views/components/layouts/app.blade.php'));
+        $coreLayout = File::get(base_path('resources/views/components/signal/layouts/platform.blade.php'));
+        $monitorLayout = File::get(base_path('app/Modules/Monitor/Views/layouts/app.blade.php'));
+        $analyticsLayout = File::get(base_path('app/Modules/Analytics/Views/layouts/app.blade.php'));
 
         $this->assertStringContainsString('<x-signal.layouts.mobile-navigation', $topbar);
         $this->assertStringContainsString('class="topbar-nav-link"', $topbar);
@@ -58,7 +61,14 @@ final class SignalThemeArchitectureTest extends TestCase
         $this->assertStringContainsString('data-mobile-breakpoint="{{ $breakpoint }}"', $mobileSidebar);
         $this->assertStringContainsString('data-mobile-header-selector="[data-mobile-header]"', $mobileSidebar);
         $this->assertStringContainsString('top: var(--signal-mobile-header-height, var(--header-height))', $mobileSidebar);
-        $this->assertStringContainsString('class="ui-layout-gutter mx-auto w-full max-w-screen-2xl', $deployerLayout);
+        $this->assertStringContainsString('bg-surface/90 backdrop-blur" data-mobile-header data-topbar-shell', $topbar);
+        $this->assertStringContainsString('class="ui-layout-gutter mx-auto max-w-content"', $topbar);
+
+        foreach ([$deployerLayout, $coreLayout, $monitorLayout, $analyticsLayout] as $layout) {
+            $this->assertStringContainsString('ui-layout-gutter mx-auto', $layout);
+            $this->assertStringContainsString('max-w-content', $layout);
+            $this->assertStringNotContainsString('max-w-screen-2xl', $layout);
+        }
     }
 
     public function test_shared_command_palette_uses_the_current_signal_command_composition(): void

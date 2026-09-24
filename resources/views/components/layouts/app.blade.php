@@ -68,7 +68,7 @@
             :shared-context-unavailable="$sharedContextUnavailable ?? false"
         />
 
-        <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="ui-layout-gutter mx-auto w-full max-w-screen-2xl py-7 sm:py-9">
+        <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="ui-layout-gutter mx-auto w-full max-w-content py-7 sm:py-9">
             <x-alerts.flash />
             {{ $slot }}
         </main>

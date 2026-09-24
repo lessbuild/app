@@ -1,5 +1,19 @@
 # Signal theme integration progress
 
+## Slice 145 — align product shells with the latest Signal width tokens — 2026-09-24
+
+Boundary and implementation:
+
+- Checked `lessbuild/template` `main` at `49c26b48dd44335901da95926963339e644eedae` (`Add per-workspace brand profiles`). Upstream's shared theme, component catalog, and Topbar SaaS example are unchanged from the previously integrated source. Its current app shell now uses the shared layout gutter and `max-w-content` token consistently for the header, workspace context, and page content; its workspace brand controls are browser-only demo behavior.
+- Updated the shared topbar and Core, Deployer, Monitor, and Analytics shells to use Signal's theme-backed content width and gutter. The Deployer header now follows the current Signal surface treatment. This corrects the overly wide Deployer shell that made the current component library look like the older product layout.
+- Kept workspace identity server-authoritative. The static template's local workspace creation and brand-profile storage are not suitable for Buildpusher's real memberships and access checks.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/Core/WorkspaceWorkflowActivityTest.php tests/Feature/Core/ProjectConnectionDiagnosticsTest.php tests/Feature/Core/ProjectProductLinksTest.php`: **37 tests, 223 assertions passed**.
+- `npm run test:signal-theme`: production Vite build passed; **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth at mobile and desktop widths. The shared theme tokens, navigation drawer, and component treatment remained consistent after the layout-width change.
+- The production release still needs the current feature branch; local shell updates do not change the deployed site until the release is updated.
+
 ## Slice 144 — verify latest Signal sources and production theme drift — 2026-09-24
 
 Boundary and findings:
