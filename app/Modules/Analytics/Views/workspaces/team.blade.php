@@ -17,7 +17,7 @@
         @endif
 
         @if ($workspaceRole?->canManageMembers())
-            <form class="ui-panel grid gap-4 p-6 sm:grid-cols-[1fr_10rem_auto] sm:items-end" method="POST" action="{{ route('analytics.workspaces.invitations.store', $workspace) }}">
+            <x-signal.ui.panel as="form" class="grid gap-4 p-6 sm:grid-cols-[1fr_10rem_auto] sm:items-end" method="POST" :action="route('analytics.workspaces.invitations.store', $workspace)">
                 @csrf
                 <x-signal.ui.field label="Email address" name="email" required>
                     <x-signal.ui.input name="email" type="email" :value="old('email')" placeholder="teammate@example.com" required autocomplete="email" />
@@ -29,10 +29,10 @@
                     </x-signal.ui.select>
                 </x-signal.ui.field>
                 <x-signal.ui.button type="submit" variant="primary">Send invite</x-signal.ui.button>
-            </form>
+            </x-signal.ui.panel>
         @endif
 
-        <section class="ui-panel overflow-hidden">
+        <x-signal.ui.panel as="section" class="overflow-hidden">
             <div class="border-b border-line px-6 py-4"><h2 class="font-extrabold">Members</h2></div>
             @foreach ($members as $member)
                 @php($isCurrentMember = in_array((string) $member->getKey(), $currentProductUserIds, true))
@@ -47,7 +47,7 @@
                             <form method="POST" action="{{ route('analytics.workspaces.members.update', [$workspace, $member]) }}">
                                 @csrf
                                 @method('PUT')
-                                <input type="hidden" name="role" value="{{ $member->pivot->role === 'admin' ? 'viewer' : 'admin' }}">
+                                <x-signal.ui.input type="hidden" name="role" :value="$member->pivot->role === 'admin' ? 'viewer' : 'admin'" />
                                 <x-signal.ui.button type="submit" variant="ghost" class="text-xs">Make {{ $member->pivot->role === 'admin' ? 'viewer' : 'admin' }}</x-signal.ui.button>
                             </form>
                             <form method="POST" action="{{ route('analytics.workspaces.members.destroy', [$workspace, $member]) }}">
@@ -59,10 +59,10 @@
                     </div>
                 </div>
             @endforeach
-        </section>
+        </x-signal.ui.panel>
 
         @if ($invitations->isNotEmpty())
-            <section class="ui-panel overflow-hidden">
+            <x-signal.ui.panel as="section" class="overflow-hidden">
                 <div class="border-b border-line px-6 py-4"><h2 class="font-extrabold">Pending invitations</h2></div>
                 @foreach ($invitations as $invitation)
                     <div class="flex flex-wrap items-center justify-between gap-3 border-b border-line p-5 last:border-b-0">
@@ -70,7 +70,7 @@
                         <x-signal.ui.badge tone="warning">Pending</x-signal.ui.badge>
                     </div>
                 @endforeach
-            </section>
+            </x-signal.ui.panel>
         @endif
     </div>
 @endsection

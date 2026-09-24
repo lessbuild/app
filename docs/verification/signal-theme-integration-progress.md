@@ -45,6 +45,39 @@ Evidence and release:
 Next task: complete the cross-product theme-token demonstration and
 representative Deployer visual/accessibility acceptance.
 
+## Slice 134 — bring Analytics product views onto shared Signal controls — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated Analytics account, authentication, goal, site setup, export, and
+  workspace/team views to the shared Signal page header, panel, card, field,
+  input, select, checkbox, button, link, alert, badge, and empty-state
+  components. Existing routes, HTTP methods, field names, CSRF/method fields,
+  old input, and user-facing feature behavior remain unchanged.
+- Added a shared Signal code-block component backed by theme tokens and moved
+  Analytics installation snippets and verification-token surface onto shared
+  components. Code samples render escaped text rather than executable markup.
+- Removed the last raw Analytics form controls and direct panel/button/input
+  classes from the active product views. Added an architecture regression test
+  to keep future Analytics views on Signal controls and surfaces.
+- Rechecked Signal `main` at `0e8218d8bac1a945fea3cc78e342e9d56b631ca8`;
+  it changes only upstream `PLAN.md` from the integrated UI revision, so there
+  were no newer component or stylesheet files to import. The deployed Deployer
+  release uses the shared Signal topbar shell and the current shared CSS and
+  theme scripts on its login flow.
+
+Evidence and release:
+
+- Blade view caching and the Vite production asset build passed. The Analytics
+  view-architecture and identity/data preservation suite passed: **12 tests**,
+  **134 assertions**. Pint and `git diff --check` passed.
+- Release and publication evidence will be recorded after this slice is
+  committed and deployed.
+
+Next task: complete the cross-product theme-token demonstration and
+representative authenticated Deployer/Monitor/Analytics visual and accessibility
+acceptance; the full capability-level feature parity review remains open.
+
 ## Slice 132 — componentize Deployer automation dialogs — 2026-09-24
 
 Boundary and implementation:

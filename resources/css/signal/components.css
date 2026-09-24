@@ -76,6 +76,8 @@
   .ui-prose code { border-radius: 0.4rem; background: var(--ui-surface-muted); padding: 0.15rem 0.32rem; color: var(--ui-ink); font-family: var(--font-code); font-size: 0.82em; }
   .ui-emphasis { background: var(--ui-emphasis); color: var(--ui-emphasis-ink); }
   .ui-emphasis-muted { color: var(--ui-emphasis-muted); }
+  .ui-code-block { max-width: 100%; min-width: 0; overflow-x: auto; border: 1px solid var(--ui-line); border-radius: var(--radius-card-value); background: var(--ui-emphasis); padding: 1rem; color: var(--ui-emphasis-ink); font-family: var(--font-code); font-size: 0.75rem; line-height: 1.5rem; }
+  .ui-code-block code { font: inherit; }
   .theme-option { display: inline-flex; min-height: 2.5rem; align-items: center; justify-content: center; gap: 0.45rem; border: 1px solid var(--ui-line); border-radius: var(--radius-control-value); background: var(--ui-surface); color: var(--ui-muted); padding: 0.55rem 0.75rem; font-size: 0.75rem; font-weight: 750; transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, transform 160ms ease; }
   .theme-option:hover { border-color: color-mix(in srgb, var(--ui-primary) 55%, var(--ui-line)); color: var(--ui-ink); transform: translateY(-1px); }
   .theme-option.is-active { border-color: var(--ui-primary); background: var(--ui-primary-soft); color: var(--ui-primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ui-primary) 12%, transparent); }

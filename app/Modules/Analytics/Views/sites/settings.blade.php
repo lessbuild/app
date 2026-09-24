@@ -12,6 +12,7 @@
     ];
     $domains = implode("\n", $site->domains ?? []);
     $excludedPaths = implode("\n", $site->excluded_paths ?? []);
+    $trackingSnippet = sprintf('<script defer src="%s" data-site="%s"></script>', url('/tracker/v1.js'), $site->public_id);
 @endphp
 
 <div class="mx-auto max-w-4xl space-y-8">
@@ -109,7 +110,7 @@
     <x-signal.ui.card as="section" class="p-6">
         <p class="ui-eyebrow">{{ __('Installation') }}</p>
         <h2 class="mt-2 text-lg font-extrabold text-ink">{{ __('Tracker snippet') }}</h2>
-        <pre class="mt-4 overflow-x-auto rounded-card bg-zinc-950 p-4 text-xs leading-6 text-zinc-200"><code>&lt;script defer src="{{ url('/tracker/v1.js') }}" data-site="{{ $site->public_id }}"&gt;&lt;/script&gt;</code></pre>
+        <x-signal.ui.code-block :code="$trackingSnippet" class="mt-4" />
         <p class="mt-3 text-xs leading-5 text-muted">
             {{ __('Collection status: :status · Detail retention: :days days.', ['status' => $site->isCollectionAvailable() ? __('active') : __('not accepting events'), 'days' => config('analytics.event_retention_days')]) }}
         </p>

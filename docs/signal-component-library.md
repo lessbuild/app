@@ -2,7 +2,7 @@
 
 Use `resources/views/components/signal/` as the source of truth for shared Blade UI and `resources/css/signal/` plus `resources/css/components/ui.css` for its semantic theme styles. New product pages use the `x-signal.*` namespace. Product and legacy templates can keep compatibility names while they are migrated; adapters forward props, attributes, slots, and Livewire attributes to the shared implementation.
 
-The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `cdb156bf4fe92f30f18b7763eaa313da5819d974` (`Clamp component popovers on mobile`, 2026-09-24). Laravel Blade and Tailwind implementations adapt the source templates to the shared product routes and accessibility contracts.
+The upstream Signal source is `https://github.com/lessbuild/template` on `main`. The latest source checked for this integration is `0e8218d8bac1a945fea3cc78e342e9d56b631ca8` (`Plan topbar reliability and SaaS template improvements`, 2026-09-24). Since the integrated UI revision `cdb156bf4fe92f30f18b7763eaa313da5819d974`, this upstream commit changes only `PLAN.md`; no newer component or stylesheet files are available to merge. Laravel Blade and Tailwind implementations adapt the source templates to the shared product routes and accessibility contracts.
 
 ## Current shared APIs
 
@@ -19,6 +19,7 @@ The upstream Signal source is `https://github.com/lessbuild/template` on `main`.
 | `x-signal.ui.button` | Link and button actions with primary, secondary, ghost, quiet, outline, soft, danger, inverse, link, and stateful variants; small/default/large sizes and disabled-link semantics. |
 | `x-signal.ui.card` | Shared panel/card surface with default, muted, and interactive tones. |
 | `x-signal.ui.checkbox` | Labeled checkbox input with the shared focus and theme treatment, optional unchecked value, and old-input restoration control. |
+| `x-signal.ui.code-block` | Horizontally scrollable code sample styled with shared Signal emphasis, border, radius, and code-font tokens. |
 | `x-signal.ui.choice` | Labeled checkbox or radio choice with optional card treatment, descriptions, validation state, unchecked values, old-input control, and forwarded Livewire attributes. |
 | `x-signal.ui.empty-state` | Empty result state with title, description, icon or illustration, action slot, and surface options. |
 | `x-signal.ui.field` | Label, visually hidden labels, required marker, description, validation message, error association, and input slot. |

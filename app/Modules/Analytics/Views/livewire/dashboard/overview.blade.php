@@ -44,14 +44,14 @@
                     <p class="mt-3 max-w-xl text-sm leading-6 text-muted">Create a site, verify its domain, and add one small script. Your first pageview will appear here as soon as it is processed.</p>
                     <x-signal.ui.button variant="primary" class="mt-6" :href="route('analytics.sites.create')">Add a website <span aria-hidden="true">→</span></x-signal.ui.button>
                 </div>
-                <div class="rounded-panel bg-surface-muted p-6">
+                <x-signal.ui.card tone="muted" class="p-6">
                     <p class="ui-eyebrow">What you’ll see</p>
                     <div class="mt-5 space-y-4 text-sm">
                         <div class="flex gap-3"><span class="grid size-7 shrink-0 place-items-center rounded-full bg-surface text-xs font-extrabold">1</span><p class="text-muted"><strong class="text-ink">Visitors and visits</strong><br>Daily estimates and session activity without cross-site tracking.</p></div>
                         <div class="flex gap-3"><span class="grid size-7 shrink-0 place-items-center rounded-full bg-surface text-xs font-extrabold">2</span><p class="text-muted"><strong class="text-ink">Pages and sources</strong><br>See what brings people in and where they go.</p></div>
                         <div class="flex gap-3"><span class="grid size-7 shrink-0 place-items-center rounded-full bg-surface text-xs font-extrabold">3</span><p class="text-muted"><strong class="text-ink">Goals</strong><br>Measure the actions that matter to your team.</p></div>
                     </div>
-                </div>
+                </x-signal.ui.card>
             </div>
             </x-signal.ui.card>
         </section>
