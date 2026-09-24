@@ -156,15 +156,38 @@
                             @endforeach
                         @endif
                         <div class="my-1 border-t border-line"></div>
-                        @foreach ($navigation['groups'] ?? [] as $group)
-                            <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ $group['label'] }}</p>
-                            @foreach ($group['items'] ?? [] as $item)
-                                <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                            @endforeach
-                        @endforeach
-                        @foreach (array_merge($navigation['profile'] ?? [], $navigation['support'] ?? []) as $item)
-                            <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
-                        @endforeach
+                        @php
+                            $mobileGroups = data_get($navigation, 'mobile.groups');
+                        @endphp
+                        @if (is_array($mobileGroups))
+                            <nav id="signal-mobile-product-navigation" class="grid gap-1" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
+                                @foreach ($mobileGroups[0] ?? [] as $item)
+                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
+                                @endforeach
+                                @foreach ($mobileGroups[2] ?? [] as $item)
+                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
+                                @endforeach
+                            </nav>
+                            <nav id="signal-mobile-profile-navigation" class="mt-1 grid gap-1 border-t border-line pt-1" aria-label="{{ __('Account and support') }}">
+                                @foreach ($mobileGroups[1] ?? [] as $item)
+                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
+                                @endforeach
+                            </nav>
+                        @else
+                            <nav id="signal-mobile-product-navigation" class="grid gap-1" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
+                                @foreach ($navigation['groups'] ?? [] as $group)
+                                    <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ $group['label'] }}</p>
+                                    @foreach ($group['items'] ?? [] as $item)
+                                        <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
+                                    @endforeach
+                                @endforeach
+                            </nav>
+                            <nav id="signal-mobile-profile-navigation" class="mt-1 grid gap-1 border-t border-line pt-1" aria-label="{{ __('Account and support') }}">
+                                @foreach (array_merge($navigation['profile'] ?? [], $navigation['support'] ?? []) as $item)
+                                    <x-signal.layouts.navigation-link :item="$item" class="w-full justify-start" />
+                                @endforeach
+                            </nav>
+                        @endif
                         @if ($logoutUrl)
                             <form action="{{ $logoutUrl }}" method="post" class="mt-1 border-t border-line pt-1">
                                 @csrf

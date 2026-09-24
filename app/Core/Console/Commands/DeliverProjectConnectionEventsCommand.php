@@ -139,23 +139,26 @@ final class DeliverProjectConnectionEventsCommand extends Command
 
             try {
                 $dispatcher->dispatch($event);
-                $event->forceFill([
+                $updated = $this->finishClaimedSourceEvent($event, [
                     'status' => 'dispatched',
                     'dispatched_at' => now(),
                     'available_at' => null,
                     'last_error_code' => null,
                     'last_error_at' => null,
-                ])->save();
-                $dispatched++;
+                ]);
+
+                if ($updated) {
+                    $dispatched++;
+                }
             } catch (Throwable) {
                 $terminal = $event->attempts >= 12;
                 $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $event->attempts - 1))));
-                $event->forceFill([
+                $this->finishClaimedSourceEvent($event, [
                     'status' => $terminal ? 'failed' : 'pending',
                     'available_at' => $terminal ? null : now()->addSeconds($backoffSeconds),
                     'last_error_code' => 'core_dispatch_failed',
                     'last_error_at' => now(),
-                ])->save();
+                ]);
             }
         }
 
@@ -201,23 +204,26 @@ final class DeliverProjectConnectionEventsCommand extends Command
 
             try {
                 $dispatcher->dispatch($event);
-                $event->forceFill([
+                $updated = $this->finishClaimedSourceEvent($event, [
                     'status' => 'dispatched',
                     'dispatched_at' => now(),
                     'available_at' => null,
                     'last_error_code' => null,
                     'last_error_at' => null,
-                ])->save();
-                $dispatched++;
+                ]);
+
+                if ($updated) {
+                    $dispatched++;
+                }
             } catch (Throwable) {
                 $terminal = $event->attempts >= 12;
                 $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $event->attempts - 1))));
-                $event->forceFill([
+                $this->finishClaimedSourceEvent($event, [
                     'status' => $terminal ? 'failed' : 'pending',
                     'available_at' => $terminal ? null : now()->addSeconds($backoffSeconds),
                     'last_error_code' => 'core_dispatch_failed',
                     'last_error_at' => now(),
-                ])->save();
+                ]);
             }
         }
 
@@ -282,5 +288,23 @@ final class DeliverProjectConnectionEventsCommand extends Command
                 'last_error_at' => now(),
                 'updated_at' => now(),
             ]);
+    }
+
+    /**
+     * Complete only the lease generation that performed the dispatch. A lease
+     * can be recovered while a slow worker is still running, so an unguarded
+     * model save here could overwrite a newer worker's result.
+     *
+     * @param  array<string, mixed>  $values
+     */
+    private function finishClaimedSourceEvent(
+        DeploymentSucceededOutboxEvent|ProjectConnectionIncidentOutboxEvent $event,
+        array $values,
+    ): bool {
+        return $event::query()
+            ->whereKey($event->getKey())
+            ->where('status', 'processing')
+            ->where('attempts', $event->attempts)
+            ->update([...$values, 'updated_at' => now()]) === 1;
     }
 }

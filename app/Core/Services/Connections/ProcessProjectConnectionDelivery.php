@@ -159,8 +159,18 @@ final class ProcessProjectConnectionDelivery
                 ->lockForUpdate()
                 ->first();
 
-            if ($locked === null || $locked->status !== 'processing') {
+            if ($locked === null) {
+                return 'skipped';
+            }
+
+            if ($locked->status !== 'processing') {
                 return $locked?->status ?? 'skipped';
+            }
+
+            // A recovered lease increments attempts. A slow worker must not
+            // commit over the newer worker's claim or final state.
+            if ($locked->attempts !== $delivery->attempts) {
+                return 'skipped';
             }
 
             $locked->forceFill([
@@ -186,9 +196,7 @@ final class ProcessProjectConnectionDelivery
 
     private function markFailure(ProjectConnectionDelivery $delivery, Throwable $exception): string
     {
-        $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $delivery->attempts - 1))));
-
-        return DB::connection('core')->transaction(function () use ($delivery, $exception, $backoffSeconds): string {
+        return DB::connection('core')->transaction(function () use ($delivery, $exception): string {
             $connectionId = ProjectConnectionDelivery::query()
                 ->whereKey($delivery->getKey())
                 ->value('project_connection_id');
@@ -212,8 +220,18 @@ final class ProcessProjectConnectionDelivery
                 ->lockForUpdate()
                 ->first();
 
-            if ($locked === null || $locked->status !== 'processing') {
+            if ($locked === null) {
+                return 'skipped';
+            }
+
+            if ($locked->status !== 'processing') {
                 return $locked?->status ?? 'skipped';
+            }
+
+            // A recovered lease increments attempts. A stale failure must not
+            // overwrite the current attempt's processing or terminal state.
+            if ($locked->attempts !== $delivery->attempts) {
+                return 'skipped';
             }
 
             $disconnected = $connection->status === 'disconnected' || $connection->disconnected_at !== null;
@@ -224,6 +242,7 @@ final class ProcessProjectConnectionDelivery
                 || $exception instanceof ValidationException
                 || ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() < 500);
             $terminal = $blocked || $locked->attempts >= self::MAX_ATTEMPTS;
+            $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $locked->attempts - 1))));
             $status = $disconnected ? 'discarded' : ($blocked ? 'blocked' : ($terminal ? 'failed' : 'pending'));
             $errorCode = $disconnected
                 ? 'connection_disconnected'

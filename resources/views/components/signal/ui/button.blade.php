@@ -13,7 +13,6 @@
     'inverse' => 'secondary',
     default => $variant,
 })
-@php($type = in_array($type, ['button', 'submit', 'reset'], true) ? $type : 'button')
 @php($classes = ['ui-btn', 'ui-btn-'.$signalVariant, 'ui-btn-sm' => $size === 'sm', 'ui-btn-lg' => $size === 'lg'])
 
 @if ($href !== null && $disabled)
@@ -21,5 +20,5 @@
 @elseif ($href !== null)
     <a href="{{ htmlspecialchars_decode($href, ENT_QUOTES) }}" {{ $attributes->class($classes) }}>{{ $slot }}</a>
 @else
-    <button type="{{ $type }}" @disabled($disabled) {{ $attributes->class($classes) }}>{{ $slot }}</button>
+    <button type="{{ in_array($type, ['button', 'submit', 'reset'], true) ? $type : 'button' }}" @disabled($disabled) {{ $attributes->class($classes) }}>{{ $slot }}</button>
 @endif

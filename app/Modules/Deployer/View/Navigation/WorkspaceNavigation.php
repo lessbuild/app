@@ -3,7 +3,10 @@
 namespace App\Modules\Deployer\View\Navigation;
 
 use App\Core\Services\WorkspaceProjectNavigation;
+use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
 /**
@@ -26,8 +29,8 @@ final class WorkspaceNavigation
      *         groups: list<list<array<string, mixed>>>,
      *     },
      *     unread_notifications: int,
-     *     workspaces: \Illuminate\Support\Collection<int, \App\Modules\Deployer\Models\Organization>,
-     *     projects: \Illuminate\Support\Collection<int, \App\Modules\Deployer\Models\Project>,
+     *     workspaces: Collection<int, Organization>,
+     *     projects: Collection<int, Project>,
      *     projects_url: string,
      * }
      */
@@ -162,13 +165,15 @@ final class WorkspaceNavigation
             $this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*']),
         ];
 
+        $administration = [];
+
         foreach ($groups as $group) {
             if ($group['label'] === __('Administration')) {
-                $secondary = [...$secondary, ...$group['items']];
+                $administration = $group['items'];
             }
         }
 
-        return [$primary, $secondary];
+        return [$primary, $secondary, $administration];
     }
 
     /**

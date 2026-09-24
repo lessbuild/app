@@ -69,7 +69,7 @@ class LocalUiAssetTest extends TestCase
     {
         foreach ([
             'css/signal/theme.css' => '980e9be5120e1498103fbd5cf71cad93541a4d15908f6b3a0a746757ccb8713d',
-            'css/signal/components.css' => 'a5ebd67c16e9334b85ab4370279deb3ada0e485943aebbb636d511d66e56c384',
+            'css/signal/components.css' => '2e1ed170519457bc07431356e9fcfb588173069e9a33709cbe0de39e44253cbb',
             'css/signal/themes.json' => 'abb484b2897b144830e45e7f51f34a420972ba0371b47676880d4664b74b6872',
         ] as $relativePath => $expectedHash) {
             $this->assertSame(
@@ -187,7 +187,6 @@ class LocalUiAssetTest extends TestCase
             resource_path('views/components/signal/ui/filter-panel.blade.php'),
             resource_path('views/components/layouts/public-header.blade.php'),
             resource_path('views/components/layouts/mobile-navigation.blade.php'),
-            resource_path('views/components/layouts/app.blade.php'),
             resource_path('views/livewire/scenes/servers/command.blade.php'),
         ] as $viewPath) {
             $source = File::get($viewPath);
@@ -929,37 +928,31 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('id="signal-mobile-product-navigation"', false)
             ->assertSee('id="signal-mobile-profile-navigation"', false)
             ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/95 shadow-soft backdrop-blur', false)
-            ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
-            ->assertSee('app-sidebar-link', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
             ->assertSee('data-mobile-header', false)
-            ->assertSee('data-mobile-navigation', false)
+            ->assertSee('data-mobile-quick-navigation', false)
             ->assertDontSee('data-mobile-footer', false)
-            ->assertSee('id="app-mobile-nav"', false)
-            ->assertSee('aria-controls="app-mobile-nav"', false)
+            ->assertDontSee('id="app-mobile-nav"', false)
+            ->assertDontSee('aria-controls="app-mobile-nav"', false)
             ->assertSee('aria-label="Deployer sections"', false)
-            ->assertSee('aria-label="Open navigation"', false)
-            ->assertSee('aria-label="Close navigation"', false)
-            ->assertSee('x-ref="navigationToggle"', false)
-            ->assertSee('x-ref="closeNavigation"', false)
-            ->assertSee('x-ref="mobilePaletteToggle"', false)
+            ->assertSee('aria-label="Open application navigation"', false)
+            ->assertSee('aria-haspopup="true"', false)
+            ->assertSee('aria-controls="signal-command-palette"', false)
+            ->assertSee('id="signal-command-palette"', false)
+            ->assertSee('data-signal-command-search-url=', false)
+            ->assertSee('aria-labelledby="signal-command-title"', false)
+            ->assertSee('aria-label="Quick navigation"', false)
             ->assertSee('x-cloak', false)
-            ->assertSee('restorePaletteFocus()', false)
+            ->assertDontSee('x-trap.inert.noscroll="menu"', false)
             ->assertSee('data-mobile-keyboard-open', false)
-            ->assertSee('$refs.closeNavigation.focus()', false)
-            ->assertSee('$refs.navigationToggle.focus()', false)
             ->assertSee('href="#main-content"', false)
             ->assertSee('id="main-content" tabindex="-1"', false)
-            ->assertSee('@keydown.escape.window="if (palette) { closePalette()', false)
-            ->assertSee('role="dialog" aria-modal="true" aria-labelledby="command-palette-title"', false)
-            ->assertSee('data-workspace-search-dialog', false)
-            ->assertSee('x-ref="commandPalette"', false)
-            ->assertSee('@cancel.prevent="closePalette()"', false)
-            ->assertSee('workspaceSearchSequence', false)
-            ->assertSee('x-trap.inert.noscroll="menu"', false)
+            ->assertSee('data-signal-command-palette', false)
+            ->assertSee('data-signal-command-input', false)
+            ->assertSee('data-signal-command-results', false)
             ->assertSee('overflow-y-auto', false)
-            ->assertSee('z-50', false)
+            ->assertSee('ui-popover-mobile', false)
             ->assertSee('ada@example.test')
             ->assertSee('action="'.route('logout').'" method="post"', false)
             ->assertSee('New app')
@@ -998,7 +991,7 @@ class LocalUiAssetTest extends TestCase
         $this->assertStringNotContainsString('app-topbar', $appShell);
         $this->assertStringNotContainsString('app-footer', $appShell);
         $signalComponents = File::get(resource_path('css/signal/components.css'));
-        $this->assertStringContainsString('app-sidebar-link', $signalComponents);
+        $this->assertStringContainsString('ui-topbar-menu', File::get(resource_path('views/components/signal/layouts/topbar.blade.php')));
         $this->assertStringNotContainsString('app-mobile-nav-link', $signalComponents);
         $this->assertStringContainsString('ui-btn ui-btn-primary', $coreLayout);
         $this->assertStringContainsString('ui-btn ui-btn-secondary', $coreLayout);
@@ -1244,10 +1237,14 @@ class LocalUiAssetTest extends TestCase
         $providerForm = File::get(resource_path('views/components/scenes/providers/_form.blade.php'));
 
         $this->assertStringContainsString('role="radiogroup"', $providerForm);
-        $this->assertStringContainsString('ui-choice relative', $providerForm);
-        $this->assertStringContainsString('focus-within:ring-focus', $providerForm);
-        $this->assertStringContainsString('ui-input', $providerForm);
-        $this->assertStringContainsString('ui-check', $providerForm);
+        $this->assertStringContainsString('<x-signal.ui.choice', $providerForm);
+        $this->assertStringContainsString('type="radio"', $providerForm);
+        $this->assertStringContainsString('focus-visible:ring-2 focus-visible:ring-focus', $providerForm);
+        $this->assertStringContainsString('.ui-choice:has(input:checked)', File::get(resource_path('css/signal/components.css')));
+        $this->assertStringContainsString('<x-signal.ui.input-field', $providerForm);
+        $this->assertStringContainsString('<x-signal.ui.textarea-field', $providerForm);
+        $this->assertStringContainsString('<x-signal.ui.select-field', $providerForm);
+        $this->assertStringContainsString('ui-check', File::get(resource_path('views/components/signal/ui/choice.blade.php')));
         $this->assertStringNotContainsString('border-ternary', $providerForm);
         $this->assertStringNotContainsString('bg-tertiary', $providerForm);
         $this->assertStringNotContainsString('ring-ternary', $providerForm);
@@ -1341,10 +1338,10 @@ class LocalUiAssetTest extends TestCase
         }
 
         $button = File::get(resource_path('views/components/signal/ui/button.blade.php'));
-        $this->assertStringContainsString("'ui-btn ui-btn-'.\$signalVariant", $button);
+        $this->assertStringContainsString("'ui-btn', 'ui-btn-'.\$signalVariant", $button);
 
         $emptyState = File::get(resource_path('views/components/signal/ui/empty-state.blade.php'));
-        $this->assertStringContainsString('ui-card', $emptyState);
+        $this->assertStringContainsString('<x-signal.ui.card', $emptyState);
         $this->assertStringContainsString('bg-primary-soft', $emptyState);
         $this->assertStringContainsString('text-[var(--ui-primary)]', $emptyState);
         $this->assertStringContainsString('rounded-card', $emptyState);
@@ -1509,10 +1506,12 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('href="'.route('activity.index').'"', false)
             ->assertSee('aria-current="page"', false);
 
-        $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('activity.index'), '/').'"[^>]*aria-current="page"[^>]*>/s',
-            $response->getContent(),
-        );
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $currentActivityLinks = $xpath->query('//*[@id="signal-product-navigation"]//a[@href="'.route('activity.index').'" and @aria-current="page"]');
+
+        $this->assertCount(1, $currentActivityLinks);
     }
 
     public function test_every_primary_destination_marks_its_active_link_as_current(): void
@@ -1556,7 +1555,7 @@ class LocalUiAssetTest extends TestCase
             ],
             'signal-mobile-profile-navigation' => [
                 'account.index' => 'account.index',
-                'costs.index' => 'billing.index',
+                'costs.index' => 'costs.index',
                 'billing.index' => 'billing.index',
             ],
         ] as $navigation => $routes) {

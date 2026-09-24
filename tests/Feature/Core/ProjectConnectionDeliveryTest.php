@@ -33,6 +33,7 @@ use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
 use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -140,6 +141,70 @@ final class ProjectConnectionDeliveryTest extends TestCase
         $this->assertSame($deployment->getKey(), $replayed->getKey());
         $this->assertSame(1, Deployment::query()->count());
         $this->assertSame(1, ProjectConnectionEventReceipt::query()->count());
+    }
+
+    public function test_slow_delivery_worker_cannot_overwrite_a_recovered_claim(): void
+    {
+        $delivery = $this->makeDelivery();
+        $reclaimed = false;
+
+        DB::listen(function (QueryExecuted $query) use ($delivery, &$reclaimed): void {
+            if ($reclaimed || $query->connectionName !== 'monitor'
+                || ! str_contains($query->sql, 'project_connection_event_receipts')) {
+                return;
+            }
+
+            $reclaimed = true;
+            DB::connection('core')->table('project_connection_deliveries')
+                ->where('id', $delivery->getKey())
+                ->update([
+                    'status' => 'processing',
+                    'attempts' => 2,
+                    'last_attempted_at' => now(),
+                    'updated_at' => now(),
+                ]);
+        });
+
+        $status = app(ProcessProjectConnectionDelivery::class)->process((string) $delivery->getKey());
+
+        $this->assertTrue($reclaimed);
+        $this->assertSame('skipped', $status);
+        $this->assertSame('processing', $delivery->fresh()->status);
+        $this->assertSame(2, $delivery->fresh()->attempts);
+        $this->assertSame(1, Deployment::query()->count());
+        $this->assertSame(1, ProjectConnectionEventReceipt::query()->count());
+    }
+
+    public function test_slow_source_dispatcher_cannot_complete_a_recovered_outbox_claim(): void
+    {
+        $event = $this->outboxEvent();
+        $reclaimed = false;
+
+        DB::listen(function (QueryExecuted $query) use ($event, &$reclaimed): void {
+            if ($reclaimed || $query->connectionName !== 'core'
+                || ! str_contains($query->sql, 'project_resources')) {
+                return;
+            }
+
+            $reclaimed = true;
+            DeploymentSucceededOutboxEvent::query()
+                ->whereKey($event->getKey())
+                ->update([
+                    'status' => 'processing',
+                    'attempts' => 2,
+                    'updated_at' => now(),
+                ]);
+        });
+
+        $exitCode = Artisan::call('project-connections:deliver');
+
+        $this->assertSame(0, $exitCode);
+        $this->assertTrue($reclaimed);
+        $this->assertSame('processing', $event->fresh()->status);
+        $this->assertSame(2, $event->fresh()->attempts);
+        $this->assertSame(1, ProjectConnectionDelivery::query()
+            ->where('source_event_id', $event->getKey())
+            ->count());
     }
 
     public function test_deployments_without_an_active_core_mapping_are_consumed_without_retries(): void

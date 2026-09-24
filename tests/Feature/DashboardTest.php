@@ -46,7 +46,7 @@ class DashboardTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('login'));
     }
 
-    public function test_dashboard_has_a_signal_mobile_navigation_drawer(): void
+    public function test_dashboard_has_the_signal_topbar_mobile_application_menu(): void
     {
         $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
         $response->assertSuccessful()
@@ -54,20 +54,50 @@ class DashboardTest extends TestCase
             ->assertSee('aria-label="Products"', false)
             ->assertSee('id="signal-product-navigation"', false)
             ->assertSee('aria-label="Deployer sections"', false)
-            ->assertSee('id="app-mobile-nav"', false)
-            ->assertSee('x-trap.inert.noscroll="menu"', false)
-            ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
-            ->assertSee('class="relative flex h-full w-[min(22rem,calc(100vw-2rem))] flex-col overflow-y-auto bg-surface', false)
-            ->assertSee('Search or jump to…')
-            ->assertSee('Settings and support')
-            ->assertSee('>Deployments<', false)
-            ->assertSee('>Repositories<', false)
-            ->assertSee('>Recipes<', false)
-            ->assertSee('>Gallery<', false)
-            ->assertSee('>Billing<', false)
-            ->assertSee('>Costs<', false)
-            ->assertSee('>Settings<', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Open navigation"'));
+            ->assertSee('<details class="ui-topbar-menu group relative shrink-0 lg:hidden">', false)
+            ->assertSee('aria-label="Open application navigation"', false)
+            ->assertSee('aria-haspopup="true"', false)
+            ->assertSeeText('Search this workspace')
+            ->assertSeeText('Signal quick navigation')
+            ->assertSeeText('Deployments')
+            ->assertSeeText('Repositories')
+            ->assertSeeText('Recipes')
+            ->assertSeeText('Gallery')
+            ->assertSeeText('Billing')
+            ->assertSeeText('Costs')
+            ->assertSeeText('Settings');
+        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Open application navigation"'));
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+
+        foreach ([
+            'signal-mobile-product-navigation' => [
+                'dashboard' => ['Dashboard'],
+                'projects.index' => ['Applications'],
+                'builds.index' => ['Deployments'],
+                'repositories.index' => ['Repositories'],
+                'domains.index' => ['Domains'],
+                'databases.index' => ['Databases'],
+                'observability.index' => ['Observability'],
+            ],
+            'signal-mobile-profile-navigation' => [
+                'costs.index' => ['Costs'],
+                'billing.index' => ['Billing'],
+                'account.index' => ['Account', 'Settings'],
+            ],
+        ] as $navigationId => $destinations) {
+            foreach ($destinations as $routeName => $expectedLabels) {
+                $links = $xpath->query('//*[@id="'.$navigationId.'"]//a[@href="'.route($routeName).'"]');
+                $this->assertCount(count($expectedLabels), $links, implode(' / ', $expectedLabels).' must remain directly reachable from the mobile Signal menu.');
+                $actualLabels = array_map(static fn (\DOMNode $link): string => trim($link->textContent), iterator_to_array($links));
+                $this->assertSame($expectedLabels, $actualLabels);
+            }
+        }
+
+        $currentDashboard = $xpath->query('//*[@id="signal-mobile-product-navigation"]//a[@href="'.route('dashboard').'" and @aria-current="page"]');
+        $this->assertCount(1, $currentDashboard, 'The active destination must remain marked in the mobile Signal menu.');
     }
 
     public function test_navigation_uses_the_signal_topbar_and_product_sections(): void
@@ -88,7 +118,8 @@ class DashboardTest extends TestCase
             ->assertSee('data-mobile-shell', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
-            ->assertSee('aria-controls="command-palette"', false)
+            ->assertSee('aria-controls="signal-command-palette"', false)
+            ->assertSee('data-mobile-quick-navigation', false)
             ->assertDontSee('data-mobile-footer', false)
             ->assertDontSee('app-footer', false)
             ->assertDontSee('ui-bottom-nav', false)
@@ -153,7 +184,7 @@ class DashboardTest extends TestCase
             ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 
         $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*app-sidebar-link[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
+            '/<nav[^>]*aria-label="Products">.*?<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*aria-current="page")[^>]*>Deployer<\/a>/s',
             $response->getContent(),
         );
     }
