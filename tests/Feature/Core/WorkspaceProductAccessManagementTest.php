@@ -321,8 +321,17 @@ final class WorkspaceProductAccessManagementTest extends TestCase
             ->firstOrFail()
             ->metadata['local_membership_cleanup_pending']);
 
+        $this->assertSame(0, Artisan::call('workspace-product-access:retry-cleanup', ['--limit' => 100]));
+        $this->assertDatabaseHas('user_workspace', [
+            'workspace_id' => $this->sourceWorkspaces['monitor'],
+            'user_id' => $this->memberProductUsers['monitor'],
+        ], 'monitor');
+
         $this->identityMap('monitor', 'user', $this->memberProductUsers['monitor'], 'user', (string) $this->member->getKey());
-        $manager->update($this->owner, $this->workspace, $this->memberMembership, ProductKey::Monitor, null);
+        $this->assertSame(0, Artisan::call('workspace-product-access:retry-cleanup', [
+            '--limit' => 100,
+            '--apply' => true,
+        ]));
 
         $this->assertDatabaseMissing('user_workspace', [
             'workspace_id' => $this->sourceWorkspaces['monitor'],
@@ -332,6 +341,56 @@ final class WorkspaceProductAccessManagementTest extends TestCase
         $this->assertSame('product_access_cleanup_completed', WorkspaceMembershipEvent::query()
             ->where('event', 'product_access_cleanup_completed')
             ->value('event'));
+        $this->assertSame(0, Artisan::call('workspace-product-access:retry-cleanup', [
+            '--limit' => 100,
+            '--apply' => true,
+        ]));
+        $this->assertSame(1, WorkspaceMembershipEvent::query()
+            ->where('event', 'product_access_cleanup_completed')
+            ->count());
+    }
+
+    public function test_scheduled_cleanup_retries_after_the_shared_workspace_member_is_removed(): void
+    {
+        app(ManageWorkspaceProductAccess::class)->update(
+            $this->owner,
+            $this->workspace,
+            $this->memberMembership,
+            ProductKey::Monitor,
+            'member',
+        );
+        DB::connection('core')->table('legacy_identity_maps')
+            ->where('source_product', 'monitor')
+            ->where('source_entity', 'user')
+            ->where('source_id', $this->memberProductUsers['monitor'])
+            ->delete();
+
+        app(ManageWorkspaceMembership::class)->revoke($this->owner, $this->workspace, $this->memberMembership);
+
+        $grant = WorkspaceProductAccess::query()
+            ->where('membership_id', $this->memberMembership->getKey())
+            ->where('product', 'monitor')
+            ->firstOrFail();
+        $this->assertSame('revoked', $grant->status);
+        $this->assertSame('revoked', $this->memberMembership->fresh()->status);
+        $this->assertTrue($grant->metadata['local_membership_cleanup_pending']);
+        $this->assertDatabaseHas('user_workspace', [
+            'workspace_id' => $this->sourceWorkspaces['monitor'],
+            'user_id' => $this->memberProductUsers['monitor'],
+        ], 'monitor');
+
+        $this->identityMap('monitor', 'user', $this->memberProductUsers['monitor'], 'user', (string) $this->member->getKey());
+        Artisan::call('workspace-product-access:retry-cleanup', ['--limit' => 100, '--apply' => true]);
+
+        $this->assertDatabaseMissing('user_workspace', [
+            'workspace_id' => $this->sourceWorkspaces['monitor'],
+            'user_id' => $this->memberProductUsers['monitor'],
+        ], 'monitor');
+        $this->assertFalse($grant->fresh()->metadata['local_membership_cleanup_pending']);
+        $this->assertSame(1, WorkspaceMembershipEvent::query()
+            ->where('membership_id', $this->memberMembership->getKey())
+            ->where('event', 'product_access_cleanup_completed')
+            ->count());
     }
 
     private function createProductTables(): void

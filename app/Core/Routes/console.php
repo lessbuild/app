@@ -9,3 +9,11 @@ Schedule::command('project-connections:deliver')
         && Schema::connection('deployer')->hasTable('deployment_succeeded_outbox_events'))
     ->withoutOverlapping(5)
     ->onOneServer();
+
+Schedule::command('workspace-product-access:retry-cleanup --apply --limit=100')
+    ->everyFiveMinutes()
+    ->when(fn (): bool => Schema::connection('core')->hasTable('workspace_product_access')
+        && Schema::connection('core')->hasColumn('workspace_product_access', 'metadata')
+        && Schema::connection('core')->hasTable('legacy_identity_maps'))
+    ->withoutOverlapping(5)
+    ->onOneServer();

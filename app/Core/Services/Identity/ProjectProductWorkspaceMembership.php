@@ -47,4 +47,9 @@ final class ProjectProductWorkspaceMembership
 
         return $projector->revoke($principalId, $projections);
     }
+
+    public function isAvailable(string $product): bool
+    {
+        return $this->projectors->get($product) !== null;
+    }
 }
