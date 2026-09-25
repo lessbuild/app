@@ -159,7 +159,8 @@ final class WorkspaceProductAccessManagementTest extends TestCase
             ->assertSeeText('Deployer')
             ->assertSeeText('Monitor')
             ->assertSeeText('Analytics')
-            ->assertSeeText('2 of 2 seats in use');
+            ->assertSeeText('2 of 2 seats in use')
+            ->assertSeeText('Changing this app role keeps 2 seats in use. Choosing No access frees this app seat.');
 
         $this->put(route('core.workspace.team.memberships.products.update', [$this->workspace, $this->memberMembership, 'monitor']), [
             'role' => 'viewer',
@@ -257,6 +258,36 @@ final class WorkspaceProductAccessManagementTest extends TestCase
             ->where('membership_id', $this->memberMembership->getKey())
             ->where('product', 'monitor')
             ->value('status'));
+    }
+
+    public function test_team_page_previews_the_product_seat_usage_before_granting_access(): void
+    {
+        $monitorSubscription = ProductSubscription::query()
+            ->where('workspace_id', $this->workspace->getKey())
+            ->where('product', 'monitor')
+            ->firstOrFail();
+        $snapshot = $monitorSubscription->metadata;
+        $snapshot['plan_snapshot']['limits']['seats'] = 3;
+        $monitorSubscription->forceFill(['metadata' => $snapshot])->save();
+
+        $newUser = $this->createPlatformUser('new-member@example.test', 'New Member');
+        $newMembership = WorkspaceMembership::query()->create([
+            'workspace_id' => $this->workspace->getKey(),
+            'user_id' => $newUser->getKey(),
+            'role' => 'member',
+            'status' => 'active',
+            'joined_at' => now(),
+        ]);
+
+        $this->actingAs($this->owner, 'platform')
+            ->get(route('core.workspace.team.index', $this->workspace))
+            ->assertOk()
+            ->assertSeeText('Granting any role other than No access will use 2 of 3 Monitor seats.');
+
+        $this->assertDatabaseMissing('workspace_product_access', [
+            'membership_id' => $newMembership->getKey(),
+            'product' => 'monitor',
+        ], 'core');
     }
 
     public function test_grant_provisions_a_missing_product_workspace_projection_from_the_core_workspace(): void

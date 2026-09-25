@@ -146,6 +146,15 @@
                                                     @endif
                                                 </x-signal.ui.select>
                                                 <x-signal.ui.button type="submit" variant="secondary" class="justify-center">{{ $cleanupPending ? __('Retry app cleanup') : __('Save app access') }}</x-signal.ui.button>
+                                                @if ($activeGrant)
+                                                    <p class="text-xs leading-5 text-muted">{{ __('Changing this app role keeps :used seats in use. Choosing No access frees this app seat.', ['used' => $summary['used']]) }}</p>
+                                                @elseif ($seatAvailable)
+                                                    @if ($summary['limit'] === null)
+                                                        <p class="text-xs leading-5 text-muted">{{ __('Granting any role other than No access adds one active :product seat. This plan is unlimited.', ['product' => $summary['label']]) }}</p>
+                                                    @else
+                                                        <p class="text-xs leading-5 text-muted">{{ __('Granting any role other than No access will use :projected of :limit :product seats.', ['projected' => $summary['used'] + 1, 'limit' => $summary['limit'], 'product' => $summary['label']]) }}</p>
+                                                    @endif
+                                                @endif
                                                 @if ($cleanupPending)
                                                     <p class="text-xs leading-5 text-warning">{{ __('Core access is already blocked; only app-local membership cleanup needs review.') }}</p>
                                                 @endif
