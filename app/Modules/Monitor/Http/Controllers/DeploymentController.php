@@ -61,9 +61,11 @@ class DeploymentController extends Controller
         }
 
         $comparison = $metrics->aroundDeploymentWindow($workspace->get(), $deployment, $comparisonSeconds, $requestedMinutes);
+        $nearbyDeployments = $metrics->otherDeploymentsInWindow($workspace->get(), $deployment, $comparison['from'], $comparison['until']);
+        $overlappingIncidents = $metrics->incidentsOverlappingWindow($workspace->get(), $deployment, $comparison['from'], $comparison['until']);
 
         return response()->view('monitor::deployments.show', [
-            ...compact('application', 'environment', 'deployment', 'filters'),
+            ...compact('application', 'environment', 'deployment', 'filters', 'nearbyDeployments', 'overlappingIncidents'),
             'comparison' => $comparison,
             'trafficContexts' => $trafficContexts,
             'note' => $redactor->redact(['note' => $deployment->note])['note'],

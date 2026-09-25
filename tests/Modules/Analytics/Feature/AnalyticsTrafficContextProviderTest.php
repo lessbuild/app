@@ -163,7 +163,7 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
         $this->assertSame('2026-04-02 12:01:00', $current->processedAt?->format('Y-m-d H:i:s'));
         $this->assertSame(2, $previous?->pageviews);
         $this->assertSame(1, $previous?->visitors);
-        $this->assertSame(['pageviews', 'visitors', 'conversions', 'convertedVisits', 'processedAt'], array_keys(get_object_vars($current)));
+        $this->assertSame(['pageviews', 'visitors', 'conversions', 'convertedVisits', 'processedAt', 'sourceUrl'], array_keys(get_object_vars($current)));
         $this->assertNull($provider->aggregate(
             $platformUser,
             $project,

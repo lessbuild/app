@@ -10,6 +10,7 @@ use App\Core\Models\ProjectResource;
 use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\GoalConversion;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Route;
 
 final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProvider
 {
@@ -70,6 +71,9 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
             processedAt: $site->last_processed_at === null
                 ? null
                 : CarbonImmutable::instance($site->last_processed_at)->utc(),
+            sourceUrl: Route::has('analytics.dashboard')
+                ? route('analytics.dashboard', ['site' => $site->getKey()])
+                : null,
         );
     }
 }

@@ -2,13 +2,17 @@
 
 namespace App\Modules\Monitor\Services;
 
+use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\Environment;
+use App\Modules\Monitor\Models\Incident;
+use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\Release;
 use App\Modules\Monitor\Models\TelemetryEvent;
 use App\Modules\Monitor\Models\Workspace;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 
 final class ReleaseMetrics
 {
@@ -85,6 +89,43 @@ final class ReleaseMetrics
         $after = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', $this->boundary($at))->where('occurred_at', '<', $this->boundary($until))) : null;
 
         return ['before' => $before, 'after' => $after, 'from' => $from, 'deployedAt' => $at, 'until' => $until, 'seconds' => $seconds, 'requestedMinutes' => $requestedMinutes];
+    }
+
+    /** @return Collection<int, Deployment> */
+    public function otherDeploymentsInWindow(Workspace $workspace, Deployment $deployment, CarbonImmutable $from, CarbonImmutable $until): Collection
+    {
+        return Deployment::query()->forWorkspace($workspace)
+            ->where('environment_id', $deployment->environment_id)
+            ->where('id', '!=', $deployment->getKey())
+            ->where('deployed_at', '>=', $this->boundary($from))
+            ->where('deployed_at', '<', $this->boundary($until))
+            ->whereHas('release', fn (Builder $release): Builder => $release
+                ->where('application_id', $deployment->release->application_id)
+                ->where('service_hash', $deployment->release->service_hash))
+            ->with('release:id,application_id,service,service_namespace,version,service_hash')
+            ->orderBy('deployed_at')->orderBy('id')->limit(20)->get();
+    }
+
+    /** @return Collection<int, Incident> */
+    public function incidentsOverlappingWindow(Workspace $workspace, Deployment $deployment, CarbonImmutable $from, CarbonImmutable $until): Collection
+    {
+        if ($from >= $until) {
+            return collect();
+        }
+
+        $environmentId = $deployment->environment_id;
+
+        return Incident::query()->forWorkspace($workspace)
+            ->where(function (Builder $query) use ($environmentId): void {
+                $query->whereIn('monitor_id', Monitor::withTrashed()->where('environment_id', $environmentId)->select('id'))
+                    ->orWhereIn('alert_rule_id', AlertRule::withTrashed()->where('environment_id', $environmentId)->select('id'));
+            })
+            ->where('opened_at', '<', $this->boundary($until))
+            ->where(fn (Builder $query): Builder => $query
+                ->whereNull('resolved_at')
+                ->orWhere('resolved_at', '>=', $this->boundary($from)))
+            ->orderBy('opened_at')->orderBy('id')->limit(20)
+            ->get(['id', 'title', 'status', 'opened_at', 'resolved_at']);
     }
 
     /** Legacy second-only timestamps must be compared on the same boundary. */

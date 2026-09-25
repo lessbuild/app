@@ -25,3 +25,6 @@
         Analytics processed through {{ $after->processedAt->utc()->format('Y-m-d H:i:s') }} UTC. This timestamp does not rule out ingestion gaps.
     @endif
 </p>
+@if($after->sourceUrl)
+    <div class="border-t border-line px-5 py-4 dark:border-line"><a href="{{ $after->sourceUrl }}" class="text-xs font-bold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus dark:text-primary">Open Analytics site →</a></div>
+@endif

@@ -15,6 +15,36 @@
         <div class="p-5"><h2 class="font-bold">Before and after this deployment</h2><p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">Same environment and service identity, across all explicitly reported versions. Overlapping deployments and rollbacks can affect both windows. This is a time comparison, not an attribution of failures to this deployment.</p>
         @if($comparison['seconds'] > 0)<p class="mt-2 text-xs text-muted dark:text-subtle">Equal {{ number_format($comparison['seconds']) }}-second windows: {{ $comparison['from']->format('Y-m-d H:i:s.u') }} → {{ $comparison['deployedAt']->format('Y-m-d H:i:s.u') }} → {{ $comparison['until']->format('Y-m-d H:i:s.u') }} UTC. Start inclusive, end exclusive; recent deployments use shorter windows.</p>@else<p class="mt-2 text-sm text-warning dark:text-warning">Awaiting an elapsed comparison window. Refresh after the reported deployment time.</p>@endif</div>
         <x-monitor::ui.release-comparison :left="$comparison['before']" :right="$comparison['after']" left-label="Before deployment" right-label="After deployment" />
+        @if($comparison['seconds'] > 0)
+            <div class="grid gap-5 border-t border-line p-5 sm:grid-cols-2 dark:border-line">
+                <section aria-labelledby="overlapping-releases-heading">
+                    <h3 id="overlapping-releases-heading" class="text-sm font-bold">Other deployments during this window</h3>
+                    <div class="mt-3 space-y-3">
+                        @forelse($nearbyDeployments as $nearby)
+                            <a href="{{ route('monitor.deployments.show', [$application, $environment, $nearby]) }}" class="block rounded-card border border-line p-3 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus dark:border-line">
+                                <span class="block text-sm font-semibold">{{ $nearby->release->version }} · {{ $nearby->release->serviceLabel() }}</span>
+                                <time class="mt-1 block text-xs text-muted dark:text-subtle" datetime="{{ $nearby->deployed_at->toISOString() }}">{{ $nearby->deployed_at->utc()->format('Y-m-d H:i:s.u') }} UTC</time>
+                            </a>
+                        @empty
+                            <p class="text-xs text-muted dark:text-subtle">No other same-service deployment was recorded in these windows.</p>
+                        @endforelse
+                    </div>
+                </section>
+                <section aria-labelledby="overlapping-incidents-heading">
+                    <h3 id="overlapping-incidents-heading" class="text-sm font-bold">Incidents overlapping these windows</h3>
+                    <div class="mt-3 space-y-3">
+                        @forelse($overlappingIncidents as $overlappingIncident)
+                            <a href="{{ route('monitor.incidents.show', $overlappingIncident) }}" class="block rounded-card border border-line p-3 hover:border-primary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus dark:border-line">
+                                <span class="block text-sm font-semibold">#{{ $overlappingIncident->id }} · {{ $overlappingIncident->title }}</span>
+                                <span class="mt-1 block text-xs text-muted dark:text-subtle">{{ ucfirst($overlappingIncident->status) }} · Opened {{ $overlappingIncident->opened_at->utc()->format('Y-m-d H:i:s') }} UTC{{ $overlappingIncident->resolved_at ? ' · Resolved '.$overlappingIncident->resolved_at->utc()->format('Y-m-d H:i:s').' UTC' : '' }}</span>
+                            </a>
+                        @empty
+                            <p class="text-xs text-muted dark:text-subtle">No incident interval overlaps this comparison window.</p>
+                        @endforelse
+                    </div>
+                </section>
+            </div>
+        @endif
     </x-signal.ui.panel>
     <x-signal.ui.panel as="section" class="overflow-hidden">
         <div class="border-b border-line p-5 dark:border-line">
