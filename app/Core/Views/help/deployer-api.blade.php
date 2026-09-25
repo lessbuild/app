@@ -53,6 +53,38 @@ Accept: application/json</code></pre>
   {{ $apiBaseUrl }}/environments/1/deploy</code></pre>
                 <p class="mt-3 text-sm leading-6 text-muted">{{ __('Use a project, deployment, and environment identifier from the same authorized Deployer workspace. Every write checks token scope, membership, product limits, and the target resource policy.') }}</p>
             </x-signal.ui.card>
+
+            @if ($configurationRequestExample)
+                <section class="mt-6 space-y-4" aria-labelledby="configuration-api-example-heading">
+                    <x-signal.ui.card class="p-6 sm:p-7">
+                        <p class="ui-eyebrow">{{ __('Version 2 configuration API') }}</p>
+                        <h2 id="configuration-api-example-heading" class="mt-1 text-xl font-extrabold">{{ __('Preview, review, and apply configuration') }}</h2>
+                        <p class="mt-2 text-sm leading-6 text-muted">{{ __('This request body comes from the published OpenAPI example. It references an existing secret by ID; it does not contain a secret value. Save it as configuration.json and replace the example project, website, and secret IDs with resources in the authorized workspace.') }}</p>
+                        <x-signal.ui.code-block class="mt-4" :code="$configurationRequestExample" />
+                    </x-signal.ui.card>
+
+                    <div class="grid gap-4 lg:grid-cols-3">
+                        <x-signal.ui.card class="p-5">
+                            <x-signal.ui.badge tone="info">{{ __('Step 1 · Read only') }}</x-signal.ui.badge>
+                            <h3 class="mt-3 font-bold">{{ __('Preview the plan') }}</h3>
+                            <p class="mt-1 text-sm leading-6 text-muted">{{ __('Review the returned changes. Planning does not save the configuration or contact a provider.') }}</p>
+                            <x-signal.ui.code-block class="mt-3 overflow-x-auto text-xs" :code="$configurationPreviewCommand" />
+                        </x-signal.ui.card>
+                        <x-signal.ui.card class="p-5">
+                            <x-signal.ui.badge tone="warning">{{ __('Step 2 · Save review') }}</x-signal.ui.badge>
+                            <h3 class="mt-3 font-bold">{{ __('Save the reviewed input') }}</h3>
+                            <p class="mt-1 text-sm leading-6 text-muted">{{ __('Only after accepting the preview, submit the same file. The encrypted review expires after 15 minutes.') }}</p>
+                            <x-signal.ui.code-block class="mt-3 overflow-x-auto text-xs" :code="$configurationReviewCommand" />
+                        </x-signal.ui.card>
+                        <x-signal.ui.card class="p-5">
+                            <x-signal.ui.badge tone="accent">{{ __('Step 3 · Explicit apply') }}</x-signal.ui.badge>
+                            <h3 class="mt-3 font-bold">{{ __('Apply that exact review') }}</h3>
+                            <p class="mt-1 text-sm leading-6 text-muted">{{ __('Set REVIEW_ID to the saved review response data.id and run this separately after checking the plan. Applying records local changes and deployment intents; remote completion is reported by the receipt.') }}</p>
+                            <x-signal.ui.code-block class="mt-3 overflow-x-auto text-xs" :code="$configurationApplyCommand" />
+                        </x-signal.ui.card>
+                    </div>
+                </section>
+            @endif
         </div>
     </main>
 </x-signal.layouts.core>

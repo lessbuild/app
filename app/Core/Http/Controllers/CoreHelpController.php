@@ -59,14 +59,40 @@ final class CoreHelpController
                     ];
                 }))
             ->values();
+        $apiBaseUrl = rtrim($reference->baseUrl, '/').'/api/v1';
+        $configurationRequest = data_get(
+            $reference->document,
+            'components.requestBodies.ConfigurationInput.content.application/json.examples.runtime.value',
+        );
 
         return view('core::help.deployer-api', [
-            'apiBaseUrl' => rtrim($reference->baseUrl, '/').'/api/v1',
+            'apiBaseUrl' => $apiBaseUrl,
             'openApiUrl' => $reference->openApiUrl,
             'automationUrl' => $links->to('deployer', 'automation.index'),
             'apiOperations' => $apiOperations,
             'apiVersion' => $reference->document['info']['version'] ?? $reference->document['openapi'],
             'openApiVersion' => $reference->document['openapi'],
+            'configurationRequestExample' => is_array($configurationRequest)
+                ? json_encode($configurationRequest, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR)
+                : null,
+            'configurationPreviewCommand' => str_replace(':apiBaseUrl', $apiBaseUrl, <<<'CURL'
+curl --request POST ":apiBaseUrl/projects/$PROJECT_ID/configuration/plan" \
+  --header "Authorization: Bearer $BUILDPUSHER_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data-binary @configuration.json
+CURL),
+            'configurationReviewCommand' => str_replace(':apiBaseUrl', $apiBaseUrl, <<<'CURL'
+curl --request POST ":apiBaseUrl/projects/$PROJECT_ID/configuration/reviews" \
+  --header "Authorization: Bearer $BUILDPUSHER_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data-binary @configuration.json
+CURL),
+            'configurationApplyCommand' => str_replace(':apiBaseUrl', $apiBaseUrl, <<<'CURL'
+curl --request POST ":apiBaseUrl/projects/$PROJECT_ID/configuration/reviews/$REVIEW_ID/apply" \
+  --header "Authorization: Bearer $BUILDPUSHER_TOKEN" \
+  --header "Content-Type: application/json" \
+  --data '{}'
+CURL),
         ]);
     }
 

@@ -34,6 +34,10 @@ final class CoreHelpRoutesTest extends TestCase
             ->assertSee('/api/v1/projects/{project}/configuration/plan')
             ->assertSee('/api/v1/projects/{project}/configuration/applications/{application}/operations/{operation}/retry')
             ->assertSee('OpenAPI 3.1.0')
+            ->assertSee('Preview, review, and apply configuration')
+            ->assertSee('secret_ref: token')
+            ->assertSee('/projects/$PROJECT_ID/configuration/plan')
+            ->assertSee('/projects/$PROJECT_ID/configuration/reviews/$REVIEW_ID/apply')
             ->assertSee('https://deployer.buildpusher.com/api/v1/environments/1/deploy')
             ->assertSee('Authorization: Bearer YOUR_TOKEN')
             ->assertSee('New tokens are bound to the active workspace');
