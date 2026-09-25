@@ -2,9 +2,10 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Modules\Deployer\Services\Core\DeployerApiDocumentationProvider;
 use App\Modules\Deployer\Services\RegistrationAccess;
 use Illuminate\Contracts\View\View;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
+use Illuminate\Http\JsonResponse;
 
 final class PublicPageController extends Controller
 {
@@ -20,12 +21,12 @@ final class PublicPageController extends Controller
         ]);
     }
 
-    /** @return BinaryFileResponse The public OpenAPI contract with its original content type and cache lifetime. */
-    public function openapi(): BinaryFileResponse
+    /** @return JsonResponse The current configured-host OpenAPI contract. */
+    public function openapi(DeployerApiDocumentationProvider $documentation): JsonResponse
     {
-        return response()->file(public_path('openapi.json'), [
-            'Cache-Control' => 'public, max-age=300',
-            'Content-Type' => 'application/json',
-        ]);
+        $reference = $documentation->reference();
+        abort_if($reference === null, 404);
+
+        return response()->json($reference->document)->header('Cache-Control', 'public, max-age=300');
     }
 }

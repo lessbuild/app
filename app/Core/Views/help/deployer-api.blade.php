@@ -16,7 +16,7 @@
                 @if ($automationUrl)<x-signal.ui.button :href="$automationUrl" variant="secondary">{{ __('Manage Deployer tokens') }}</x-signal.ui.button>@endif
             </div>
             <header class="mt-8 border-b border-line pb-8">
-                <p class="ui-eyebrow">{{ __('Deployer · API v1') }}</p>
+                <p class="ui-eyebrow">{{ __('Deployer · API :version', ['version' => $apiVersion]) }}</p>
                 <h1 class="mt-2 text-4xl font-extrabold tracking-tight">{{ __('Control plane API') }}</h1>
                 <p class="mt-3 max-w-2xl leading-7 text-muted">{{ __('Automate projects, deployments, runtime state, scaling, and workflow configuration with scoped Bearer tokens.') }}</p>
                 <p class="mt-2 text-sm text-muted">{{ __('API base URL: :url', ['url' => $apiBaseUrl]) }}</p>
@@ -30,30 +30,17 @@ Accept: application/json</code></pre>
                 <p class="mt-3 text-sm leading-6 text-muted">{{ __('Existing tokens keep their current behavior until revoked or rotated. Rotating an existing unscoped token binds its replacement to the active workspace.') }}</p>
             </x-signal.ui.card>
 
-            @php
-                $apiOperations = [
-                    ['GET', '/api/v1/me', 'read', __('Current user and workspace')],
-                    ['GET', '/api/v1/projects', 'read', __('List applications and environments')],
-                    ['GET', '/api/v1/projects/{project}', 'read', __('Get an application')],
-                    ['PUT', '/api/v1/projects/{project}/workflow', 'manage', __('Apply buildpusher.yaml')],
-                    ['GET', '/api/v1/deployments', 'read', __('List recent deployments')],
-                    ['GET', '/api/v1/deployments/{build}', 'read', __('Get a deployment')],
-                    ['POST', '/api/v1/environments/{environment}/deploy', 'deploy', __('Queue a deployment')],
-                    ['PATCH', '/api/v1/environments/{environment}/scale', 'manage', __('Change desired capacity')],
-                    ['PATCH', '/api/v1/environments/{environment}/runtime', 'manage', __('Hibernate or resume')],
-                ];
-            @endphp
-
             <x-signal.ui.card class="mt-6 overflow-hidden">
                 <div class="border-b border-line p-5 sm:p-6">
                     <p class="ui-eyebrow">{{ __('Available operations') }}</p>
                     <h2 class="mt-1 text-xl font-extrabold">{{ __('Endpoints') }}</h2>
+                    <p class="mt-1 text-sm text-muted">{{ __('OpenAPI :version', ['version' => $openApiVersion]) }}</p>
                 </div>
-                @foreach ($apiOperations as [$method, $path, $scope, $description])
+                @foreach ($apiOperations as $operation)
                     <article class="grid gap-3 border-b border-line p-5 last:border-0 sm:grid-cols-[5rem_1fr_8rem] sm:items-center">
-                        <x-signal.ui.badge tone="neutral" class="w-fit font-mono">{{ $method }}</x-signal.ui.badge>
-                        <div><code class="break-all text-sm text-ink">{{ $path }}</code><p class="mt-1 text-xs text-muted">{{ $description }}</p></div>
-                        <x-signal.ui.badge tone="accent" class="w-fit sm:justify-self-end">{{ $scope }}</x-signal.ui.badge>
+                        <x-signal.ui.badge tone="neutral" class="w-fit font-mono">{{ $operation['method'] }}</x-signal.ui.badge>
+                        <div><code class="break-all text-sm text-ink">{{ $operation['path'] }}</code><p class="mt-1 text-xs text-muted">{{ $operation['description'] }}</p></div>
+                        <x-signal.ui.badge tone="accent" class="w-fit sm:justify-self-end">{{ $operation['scope'] }}</x-signal.ui.badge>
                     </article>
                 @endforeach
             </x-signal.ui.card>
@@ -63,7 +50,7 @@ Accept: application/json</code></pre>
                 <pre class="library-code mt-4 overflow-x-auto"><code>curl -X POST \
   -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
   -H "Accept: application/json" \
-  {{ $apiBaseUrl }}/api/v1/environments/1/deploy</code></pre>
+  {{ $apiBaseUrl }}/environments/1/deploy</code></pre>
                 <p class="mt-3 text-sm leading-6 text-muted">{{ __('Use a project, deployment, and environment identifier from the same authorized Deployer workspace. Every write checks token scope, membership, product limits, and the target resource policy.') }}</p>
             </x-signal.ui.card>
         </div>

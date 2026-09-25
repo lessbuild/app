@@ -12,6 +12,7 @@ use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\PlatformStatusProviderRegistry;
+use App\Core\Services\ProductApiDocumentationRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -37,6 +38,7 @@ use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Services\Core\DeployerApiDocumentationProvider;
 use App\Modules\Deployer\Services\Core\DeployerCustomerStatusPageProvider;
 use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerPlatformStatusProvider;
@@ -78,6 +80,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         }
 
         Cashier::useCustomerModel(User::class);
+        app(ProductApiDocumentationRegistry::class)->register('deployer', app(DeployerApiDocumentationProvider::class));
         app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
         app(ProjectConnectionDiagnosticRegistry::class)->register('deployer', app(DeployerProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));

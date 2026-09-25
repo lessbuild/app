@@ -8,13 +8,13 @@ use Illuminate\View\View;
 
 final class CoreHelpController
 {
-    public function index(PlatformProductRouteLinks $links, ProductApiDocumentationRegistry $references): View
+    public function index(ProductApiDocumentationRegistry $references): View
     {
         $documents = [
             'deployer' => collect([
                 ['label' => __('Deployer guides'), 'description' => __('Projects, infrastructure, deployments, automation, and recovery.'), 'href' => route('core.help.deployer')],
                 ['label' => __('Deployer API reference'), 'description' => __('API endpoints and request examples.'), 'href' => route('core.help.deployer.api')],
-                ['label' => __('OpenAPI specification'), 'description' => __('Download the machine-readable Deployer API specification.'), 'href' => $links->to('deployer', 'openapi')],
+                ['label' => __('OpenAPI specification'), 'description' => __('Download the machine-readable Deployer API specification.'), 'href' => $references->reference('deployer')?->openApiUrl],
             ])->filter(fn (array $item): bool => filled($item['href'] ?? null))->values(),
             'monitor' => collect([
                 ['label' => __('Monitor API reference'), 'description' => __('Ingestion, checks, incidents, and alerting API guidance.'), 'href' => $references->reference('monitor') === null ? null : route('core.help.monitor.api')],
@@ -36,12 +36,37 @@ final class CoreHelpController
         ]);
     }
 
-    public function deployerApi(PlatformProductRouteLinks $links): View
+    public function deployerApi(PlatformProductRouteLinks $links, ProductApiDocumentationRegistry $references): View
     {
+        $reference = $references->reference('deployer');
+        abort_if($reference === null, 404);
+
+        $methods = ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'];
+        $apiOperations = collect($reference->document['paths'])
+            ->flatMap(fn (array $pathOperations, string $path) => collect($pathOperations)
+                ->filter(fn (mixed $operation, string $method): bool => in_array(strtolower($method), $methods, true)
+                    && is_array($operation))
+                ->map(function (array $operation, string $method) use ($path, $reference): array {
+                    $security = array_key_exists('security', $operation)
+                        ? $operation['security']
+                        : ($reference->document['security'] ?? []);
+
+                    return [
+                        'method' => strtoupper($method),
+                        'path' => '/api/v1'.$path,
+                        'scope' => $operation['x-required-scope'] ?? ($security === [] ? __('Public') : __('Bearer token')),
+                        'description' => $operation['summary'] ?? __('API operation'),
+                    ];
+                }))
+            ->values();
+
         return view('core::help.deployer-api', [
-            'apiBaseUrl' => rtrim((string) (config('platform.products.deployer.url') ?: 'https://deployer.buildpusher.com'), '/'),
-            'openApiUrl' => $links->to('deployer', 'openapi'),
+            'apiBaseUrl' => rtrim($reference->baseUrl, '/').'/api/v1',
+            'openApiUrl' => $reference->openApiUrl,
             'automationUrl' => $links->to('deployer', 'automation.index'),
+            'apiOperations' => $apiOperations,
+            'apiVersion' => $reference->document['info']['version'] ?? $reference->document['openapi'],
+            'openApiVersion' => $reference->document['openapi'],
         ]);
     }
 
