@@ -98,6 +98,7 @@ final class CoreHelpRoutesTest extends TestCase
     {
         config([
             'platform.products.monitor.enabled' => true,
+            'platform.products.monitor.host' => 'monitor.test',
             'platform.products.monitor.url' => 'https://monitor.test',
         ]);
 
@@ -111,6 +112,13 @@ final class CoreHelpRoutesTest extends TestCase
             ->assertSee('https://monitor.test/api/v1/openapi.json')
             ->assertSee('POST /api/v1/ingest')
             ->assertSee('POST /api/v1/otlp/v1/{signal}')
-            ->assertSee('Authorization: Bearer YOUR_ENVIRONMENT_TOKEN');
+            ->assertSee('Authorization: Bearer YOUR_ENVIRONMENT_TOKEN')
+            ->assertSee('Signed alert webhooks')
+            ->assertSee('X-Beacon-Delivery')
+            ->assertSee('X-Beacon-Timestamp')
+            ->assertSee('X-Beacon-Signature')
+            ->assertSee('HMAC_SHA256(key, timestamp + "." + raw_body)')
+            ->assertSee('up to five total attempts')
+            ->assertSee('constant time');
     }
 }

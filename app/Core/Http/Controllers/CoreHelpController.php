@@ -98,7 +98,7 @@ CURL),
         ]);
     }
 
-    public function monitorApi(ProductApiDocumentationRegistry $references): View
+    public function monitorApi(PlatformProductRouteLinks $links, ProductApiDocumentationRegistry $references): View
     {
         $reference = $references->reference('monitor');
         abort_if($reference === null, 404);
@@ -109,10 +109,17 @@ CURL),
             "  --header 'Content-Type: application/json' \\",
             "  --data '{\"batch_id\":\"connection-test-1\",\"events\":[{\"id\":\"connection-test-1\",\"type\":\"log\",\"name\":\"Connection test\",\"service\":\"my-service\",\"severity\":\"info\"}]}'",
         ]);
+        $alertWebhookSignatureExample = implode("\n", [
+            'X-Beacon-Delivery: DELIVERY_ID',
+            'X-Beacon-Timestamp: UNIX_SECONDS',
+            'X-Beacon-Signature: v1=HMAC_SHA256(key, timestamp + "." + raw_body)',
+        ]);
 
         return view('core::help.monitor-api', [
             'reference' => $reference,
             'curlExample' => $curlExample,
+            'alertWebhookSignatureExample' => $alertWebhookSignatureExample,
+            'alertDestinationsUrl' => $links->to('monitor', 'monitor.alert-destinations.index'),
         ]);
     }
 
