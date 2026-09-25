@@ -131,6 +131,10 @@ final class CoreServiceProvider extends ModuleServiceProvider
             'platform-register:'.$request->ip(),
         ));
 
+        RateLimiter::for('platform.social', static fn (Request $request): Limit => Limit::perMinute(12)->by(
+            'platform-social:'.$request->ip(),
+        ));
+
         RateLimiter::for('platform.sso.issue', static function (Request $request): array {
             $userId = (string) ($request->user('platform')?->getAuthIdentifier() ?? 'guest');
 

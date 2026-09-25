@@ -133,6 +133,76 @@
             @endif
         </x-signal.ui.panel>
 
+        <x-signal.ui.panel as="section" class="space-y-5 p-6" aria-labelledby="social-accounts-heading">
+            <div>
+                <p class="ui-eyebrow">{{ __('Other sign-in methods') }}</p>
+                <h2 id="social-accounts-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Connected accounts') }}</h2>
+                <p class="mt-2 max-w-3xl text-sm leading-6 text-muted">{{ __('Connect a verified GitHub, GitLab, or Bitbucket identity to use the same Buildpusher account across every product. An email match alone never connects two accounts.') }}</p>
+            </div>
+
+            @if (session('social_status'))
+                <x-signal.ui.alert tone="success" role="status">{{ session('social_status') }}</x-signal.ui.alert>
+            @endif
+            @if (session('social_error'))
+                <x-signal.ui.alert tone="danger" role="alert">{{ session('social_error') }}</x-signal.ui.alert>
+            @endif
+            @if ($errors->getBag('social')->any())
+                <x-signal.ui.alert tone="danger" role="alert">{{ $errors->getBag('social')->first() }}</x-signal.ui.alert>
+            @endif
+
+            <ul class="grid gap-3">
+                @foreach ($socialProviders as $provider)
+                    <li class="grid gap-4 rounded-panel border border-line p-4 lg:grid-cols-[minmax(0,1fr)_minmax(18rem,0.85fr)] lg:items-center">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h3 class="text-sm font-bold text-ink">{{ $provider['name'] }}</h3>
+                                <x-signal.ui.badge :tone="$provider['connected'] ? 'success' : 'neutral'">
+                                    {{ $provider['connected'] ? __('Connected') : __('Not connected') }}
+                                </x-signal.ui.badge>
+                            </div>
+                            @if ($provider['connected'])
+                                <p class="mt-2 break-all text-xs leading-5 text-muted">{{ $provider['email'] ?: __('Verified email unavailable') }}</p>
+                                <p class="mt-1 text-xs text-subtle">{{ __('Connected :time', ['time' => $provider['connected_at']?->diffForHumans() ?? __('recently')]) }}</p>
+                            @elseif (! $provider['configured'])
+                                <p class="mt-2 text-xs leading-5 text-muted">{{ __('This sign-in provider is not configured yet.') }}</p>
+                            @endif
+                        </div>
+
+                        @if ($provider['connected'])
+                            <form method="POST" action="{{ route('platform.account.social.disconnect', $provider['key']) }}" class="grid gap-3 rounded-panel border border-line bg-surface-muted p-3 sm:grid-cols-2">
+                                @csrf
+                                @method('DELETE')
+                                <x-signal.ui.input type="hidden" name="social_provider" :value="$provider['key']" :restore="false" />
+                                @if ($hasPassword)
+                                    <x-signal.ui.input-field :id="'social-'.$provider['key'].'-current-password'" :error-key="old('social_provider') === $provider['key'] ? 'current_password' : false" name="current_password" :label="__('Current password')" type="password" required autocomplete="current-password" error-bag="social" />
+                                @endif
+                                @if ($user->twoFactorEnabled())
+                                    <x-signal.ui.input-field :id="'social-'.$provider['key'].'-disconnect-code'" :error-key="old('social_provider') === $provider['key'] ? 'code' : false" name="code" :label="__('Authenticator or recovery code')" type="text" required autocomplete="one-time-code" error-bag="social" />
+                                @endif
+                                <div class="sm:col-span-2">
+                                    <x-signal.ui.button type="submit" variant="quiet" onclick="return confirm({{ Illuminate\Support\Js::from(__('Disconnect :provider?', ['provider' => $provider['name']])) }})">{{ __('Disconnect') }}</x-signal.ui.button>
+                                </div>
+                            </form>
+                        @elseif ($provider['configured'])
+                            <form method="POST" action="{{ route('platform.account.social.connect', $provider['key']) }}" class="grid gap-3 rounded-panel border border-line bg-surface-muted p-3 sm:grid-cols-2">
+                                @csrf
+                                <x-signal.ui.input type="hidden" name="social_provider" :value="$provider['key']" :restore="false" />
+                                @if ($hasPassword)
+                                    <x-signal.ui.input-field :id="'social-'.$provider['key'].'-connect-password'" :error-key="old('social_provider') === $provider['key'] ? 'current_password' : false" name="current_password" :label="__('Current password')" type="password" required autocomplete="current-password" error-bag="social" />
+                                @endif
+                                @if ($user->twoFactorEnabled())
+                                    <x-signal.ui.input-field :id="'social-'.$provider['key'].'-connect-code'" :error-key="old('social_provider') === $provider['key'] ? 'code' : false" name="code" :label="__('Authenticator or recovery code')" type="text" required autocomplete="one-time-code" error-bag="social" />
+                                @endif
+                                <div class="sm:col-span-2">
+                                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Connect :provider', ['provider' => $provider['name']]) }}</x-signal.ui.button>
+                                </div>
+                            </form>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </x-signal.ui.panel>
+
         <x-signal.ui.panel as="section" class="space-y-5 p-6" aria-labelledby="passkeys-heading" data-passkey-surface>
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>

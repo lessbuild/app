@@ -3,6 +3,11 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Models\PlatformUser;
+use App\Core\Services\Auth\ConnectPlatformSocialIdentity;
+use App\Core\Services\Auth\DisconnectPlatformSocialIdentity;
+use App\Core\Services\Auth\PlatformSocialIdentityResult;
+use App\Core\Services\Auth\PlatformSocialLoginResolution;
+use App\Core\Services\Auth\ResolvePlatformSocialLogin;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Blade;
@@ -90,6 +95,25 @@ final class PlatformAuthenticationTest extends TestCase
         Schema::connection('core')->create('platform_registration_mutexes', function (Blueprint $table): void {
             $table->unsignedTinyInteger('id')->primary();
         });
+        Schema::connection('core')->create('workspaces', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('owner_user_id', 26);
+            $table->string('name');
+            $table->string('slug')->unique();
+            $table->string('status', 24)->default('active');
+            $table->json('settings')->nullable();
+            $table->timestamp('archived_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('workspace_memberships', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('user_id', 26);
+            $table->string('role', 32)->default('member');
+            $table->string('status', 24)->default('active');
+            $table->timestamp('joined_at')->nullable();
+            $table->timestamps();
+        });
         DB::connection('core')->table('platform_registration_mutexes')->insert(['id' => 1]);
 
         Auth::forgetGuards();
@@ -101,6 +125,8 @@ final class PlatformAuthenticationTest extends TestCase
         Schema::connection('core')->dropIfExists('platform_sso_tickets');
         Schema::connection('core')->dropIfExists('platform_auth_sessions');
         Schema::connection('core')->dropIfExists('platform_registration_mutexes');
+        Schema::connection('core')->dropIfExists('workspace_memberships');
+        Schema::connection('core')->dropIfExists('workspaces');
         Schema::connection('core')->dropIfExists('password_reset_tokens');
         Schema::connection('core')->dropIfExists('user_identities');
         Schema::connection('core')->dropIfExists('passkeys');
@@ -135,6 +161,23 @@ final class PlatformAuthenticationTest extends TestCase
             ->assertOk()
             ->assertSeeText('Choose a new password')
             ->assertSee('value="person@example.test"', false);
+    }
+
+    public function test_social_buttons_only_render_for_configured_provider_origins(): void
+    {
+        config([
+            'services.github.client_id' => 'github-client',
+            'services.github.client_secret' => 'github-secret',
+            'services.gitlab.client_id' => 'gitlab-client',
+            'services.gitlab.client_secret' => 'gitlab-secret',
+            'services.gitlab.host' => 'http://gitlab.example.test',
+        ]);
+
+        $this->get(route('platform.login'))
+            ->assertOk()
+            ->assertSeeText('Continue with GitHub')
+            ->assertDontSeeText('Continue with GitLab')
+            ->assertDontSeeText('Continue with Bitbucket');
     }
 
     public function test_signed_in_shared_theme_is_rendered_from_core_preferences(): void
@@ -209,6 +252,155 @@ final class PlatformAuthenticationTest extends TestCase
 
         $response->assertRedirect(route('core.home'));
         $this->assertAuthenticatedAs($user, 'platform');
+    }
+
+    public function test_social_login_resolves_exact_provider_identity_before_email_checks(): void
+    {
+        $user = $this->createPlatformUser('owner@example.test', 'an existing password');
+        DB::connection('core')->table('user_identities')->insert([
+            'id' => (string) Str::ulid(),
+            'user_id' => $user->getKey(),
+            'provider' => 'github',
+            'provider_user_id' => 'github-account-42',
+            'provider_email' => 'owner@example.test',
+            'verified_at' => now(),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $resolution = app(ResolvePlatformSocialLogin::class)->handle(
+            'github',
+            'github-account-42',
+            'another-email@example.test',
+            'Changed Provider Name',
+        );
+
+        $this->assertSame(PlatformSocialLoginResolution::RESOLVED, $resolution->status);
+        $this->assertTrue($user->is($resolution->user));
+        $this->assertSame('owner@example.test', $user->fresh()->email);
+        $this->assertSame(1, DB::connection('core')->table('user_identities')->count());
+    }
+
+    public function test_social_login_never_links_an_identity_from_an_email_match_alone(): void
+    {
+        config(['lessbuild.registration.enabled' => true]);
+        $existing = $this->createPlatformUser('existing@example.test', 'an existing password');
+
+        $resolution = app(ResolvePlatformSocialLogin::class)->handle(
+            'gitlab',
+            'gitlab-account-88',
+            'EXISTING@example.test',
+            'Provider Person',
+        );
+
+        $this->assertSame(PlatformSocialLoginResolution::EMAIL_EXISTS, $resolution->status);
+        $this->assertSame($existing->getKey(), PlatformUser::query()->sole()->getKey());
+        $this->assertSame(0, DB::connection('core')->table('user_identities')->count());
+    }
+
+    public function test_social_registration_creates_a_core_identity_and_personal_workspace(): void
+    {
+        config(['lessbuild.registration.enabled' => true]);
+
+        $resolution = app(ResolvePlatformSocialLogin::class)->handle(
+            'bitbucket',
+            '{bb-user-17}',
+            'New.Person@example.test',
+            'New Person',
+        );
+
+        $this->assertSame(PlatformSocialLoginResolution::RESOLVED, $resolution->status);
+        $this->assertNotNull($resolution->user);
+        $this->assertSame('new.person@example.test', $resolution->user->email_normalized);
+        $this->assertNotNull($resolution->user->email_verified_at);
+        $this->assertNull($resolution->user->password);
+        $this->assertSame('bitbucket', $resolution->user->auth_type);
+        $this->assertDatabaseHas('user_identities', [
+            'user_id' => $resolution->user->getKey(),
+            'provider' => 'bitbucket',
+            'provider_user_id' => '{bb-user-17}',
+            'status' => 'active',
+        ], 'core');
+        $this->assertDatabaseCount('workspaces', 1, 'core');
+        $this->assertDatabaseHas('workspace_memberships', [
+            'user_id' => $resolution->user->getKey(),
+            'role' => 'owner',
+            'status' => 'active',
+        ], 'core');
+    }
+
+    public function test_social_identity_cannot_be_connected_to_a_second_core_account(): void
+    {
+        $owner = $this->createPlatformUser('identity-owner@example.test', 'owner password');
+        $other = $this->createPlatformUser('identity-other@example.test', 'other password');
+        DB::connection('core')->table('user_identities')->insert([
+            'id' => (string) Str::ulid(),
+            'user_id' => $owner->getKey(),
+            'provider' => 'github',
+            'provider_user_id' => 'owned-github-account',
+            'provider_email' => $owner->email,
+            'verified_at' => now(),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $result = app(ConnectPlatformSocialIdentity::class)->handle(
+            $other,
+            'github',
+            'owned-github-account',
+            $other->email,
+        );
+
+        $this->assertSame(PlatformSocialIdentityResult::OWNED_BY_ANOTHER_ACCOUNT, $result->status);
+        $this->assertSame($owner->getKey(), DB::connection('core')->table('user_identities')->value('user_id'));
+    }
+
+    public function test_social_disconnect_keeps_the_last_sign_in_method(): void
+    {
+        $user = $this->createPlatformUser('social-only@example.test', 'placeholder password');
+        $user->forceFill(['password' => null, 'password_set_at' => null])->save();
+        DB::connection('core')->table('user_identities')->insert([
+            'id' => (string) Str::ulid(),
+            'user_id' => $user->getKey(),
+            'provider' => 'github',
+            'provider_user_id' => 'only-sign-in-method',
+            'provider_email' => $user->email,
+            'verified_at' => now(),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $result = app(DisconnectPlatformSocialIdentity::class)->handle($user, 'github');
+
+        $this->assertSame(PlatformSocialIdentityResult::LAST_SIGN_IN_METHOD, $result->status);
+        $this->assertDatabaseCount('user_identities', 1, 'core');
+    }
+
+    public function test_social_disconnect_removes_an_identity_when_a_password_remains(): void
+    {
+        $user = $this->createPlatformUser('social-with-password@example.test', 'retained password');
+        $user->forceFill(['auth_type' => 'github'])->save();
+        DB::connection('core')->table('user_identities')->insert([
+            'id' => (string) Str::ulid(),
+            'user_id' => $user->getKey(),
+            'provider' => 'github',
+            'provider_user_id' => 'removable-github-account',
+            'provider_email' => $user->email,
+            'verified_at' => now(),
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $result = app(DisconnectPlatformSocialIdentity::class)->handle($user, 'github');
+
+        $this->assertSame(PlatformSocialIdentityResult::DISCONNECTED, $result->status);
+        $this->assertDatabaseCount('user_identities', 0, 'core');
+        $this->assertSame('password', $user->fresh()->auth_type);
+        $this->assertTrue($user->fresh()->hasPassword());
     }
 
     public function test_core_login_rejects_ambiguous_normalized_emails(): void

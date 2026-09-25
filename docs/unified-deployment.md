@@ -49,6 +49,31 @@ because changing it invalidates existing passkey registrations. If setting
 `PLATFORM_PASSKEY_ALLOWED_ORIGINS` explicitly, use the exact HTTPS origins for
 the apex, auth, dashboard, and product hosts.
 
+## Social sign-in providers
+
+Core owns social sign-in and linked identities on `auth.buildpusher.com`. Set the
+existing `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, `GITLAB_CLIENT_ID` and
+`GITLAB_CLIENT_SECRET`, and `BITBUCKET_CLIENT_ID` and `BITBUCKET_CLIENT_SECRET`
+values only after creating the corresponding OAuth applications. Register these
+exact callback URLs in each provider console:
+
+```text
+https://auth.buildpusher.com/social/callback/github
+https://auth.buildpusher.com/social/callback/gitlab
+https://auth.buildpusher.com/social/callback/bitbucket
+```
+
+Core builds each callback URL from its named route; the older `*_REDIRECT`
+settings are not used by the central flow. Until a provider has both credentials,
+Core hides its sign-in button and reports linking as unavailable. Never resolve a
+Core account from a provider email match alone. If an invitation is involved,
+Core checks its pending invitation email and returns to the invitation page; the
+user still explicitly accepts the invitation there.
+
+`GITLAB_HOST` defaults to `https://gitlab.com` for self-managed deployments and
+must remain an HTTPS origin. Core requests the current GitLab v4 user profile and
+does not use an unconfirmed profile email for account creation or linking.
+
 ## Queues and scheduler
 
 Install `deploy/systemd/buildpusher-worker@.service`,

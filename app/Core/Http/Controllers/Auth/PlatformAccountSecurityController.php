@@ -11,6 +11,7 @@ use App\Core\Models\Passkey;
 use App\Core\Models\PlatformAuthSession;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\PlatformAuthenticationSessions;
+use App\Core\Services\Auth\PlatformSocialProviders;
 use App\Core\Services\Auth\PlatformTwoFactorCredentials;
 use App\Core\Services\Auth\PlatformTwoFactorSettings;
 use App\Core\Services\Auth\UpdatePlatformPassword;
@@ -25,6 +26,7 @@ final class PlatformAccountSecurityController
         Request $request,
         PlatformTwoFactorCredentials $credentials,
         PlatformTwoFactorSettings $twoFactor,
+        PlatformSocialProviders $socialProviders,
     ): Response {
         $user = $this->user($request);
         $pendingSecret = $twoFactor->pendingSecret($user);
@@ -45,6 +47,19 @@ final class PlatformAccountSecurityController
                 'last_used_at' => $passkey->last_used_at,
                 'created_at' => $passkey->created_at,
             ]);
+        $connectedIdentities = $user->identities()->where('status', 'active')->get()->keyBy('provider');
+        $socialProviderCards = collect($socialProviders->catalog())
+            ->map(function (array $provider) use ($connectedIdentities): array {
+                $identity = $connectedIdentities->get($provider['key']);
+
+                return [
+                    ...$provider,
+                    'connected' => $identity !== null,
+                    'email' => $identity?->provider_email,
+                    'connected_at' => $identity?->created_at,
+                ];
+            })
+            ->all();
 
         return response()->view('core::account.security', [
             'user' => $user,
@@ -53,6 +68,7 @@ final class PlatformAccountSecurityController
             'provisioningUri' => $pendingSecret === null ? null : $credentials->provisioningUri($user, $pendingSecret),
             'activeSessions' => $sessions,
             'passkeys' => $passkeys,
+            'socialProviders' => $socialProviderCards,
             'currentSessionId' => is_string($currentSessionId) ? $currentSessionId : null,
             'recoveryCodes' => session('platform.auth.recovery_codes'),
         ])->header('Cache-Control', 'private, no-store, max-age=0')

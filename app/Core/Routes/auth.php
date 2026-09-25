@@ -6,7 +6,9 @@ use App\Core\Http\Controllers\Auth\PlatformPasskeyController;
 use App\Core\Http\Controllers\Auth\PlatformPasswordResetController;
 use App\Core\Http\Controllers\Auth\PlatformRegistrationController;
 use App\Core\Http\Controllers\Auth\PlatformSessionController;
+use App\Core\Http\Controllers\Auth\PlatformSocialAuthController;
 use App\Core\Http\Controllers\Auth\PlatformWorkspaceInvitationController;
+use App\Core\Services\Auth\PlatformSocialProviders;
 
 Route::get('/invitations/{token}', [PlatformWorkspaceInvitationController::class, 'show'])
     ->where('token', '[a-f0-9]{64}')
@@ -21,6 +23,14 @@ Route::get('/login', [PlatformSessionController::class, 'create'])->name('login'
 Route::post('/login', [PlatformSessionController::class, 'store'])
     ->middleware('throttle:platform.login')
     ->name('login.store');
+Route::get('/social/redirect/{provider}', [PlatformSocialAuthController::class, 'redirect'])
+    ->whereIn('provider', PlatformSocialProviders::keys())
+    ->middleware('throttle:platform.social')
+    ->name('social.redirect');
+Route::get('/social/callback/{provider}', [PlatformSocialAuthController::class, 'callback'])
+    ->whereIn('provider', PlatformSocialProviders::keys())
+    ->middleware('throttle:platform.social')
+    ->name('social.callback');
 Route::post('/passkeys/login/options', [PlatformPasskeyController::class, 'loginOptions'])
     ->middleware('throttle:platform.passkey')
     ->name('passkey.login.options');
@@ -65,6 +75,14 @@ Route::post('/logout', [PlatformSessionController::class, 'destroy'])
 Route::middleware('auth:platform')->group(function (): void {
     Route::get('/account/security', [PlatformAccountSecurityController::class, 'index'])
         ->name('account.security');
+    Route::post('/account/security/social/{provider}', [PlatformSocialAuthController::class, 'connect'])
+        ->whereIn('provider', PlatformSocialProviders::keys())
+        ->middleware('throttle:sensitive-account')
+        ->name('account.social.connect');
+    Route::delete('/account/security/social/{provider}', [PlatformSocialAuthController::class, 'disconnect'])
+        ->whereIn('provider', PlatformSocialProviders::keys())
+        ->middleware('throttle:sensitive-account')
+        ->name('account.social.disconnect');
     Route::post('/account/security/passkeys/options', [PlatformPasskeyController::class, 'registrationOptions'])
         ->middleware(['throttle:sensitive-account', 'throttle:platform.passkey'])
         ->name('account.passkeys.options');

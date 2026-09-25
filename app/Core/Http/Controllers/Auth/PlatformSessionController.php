@@ -5,6 +5,7 @@ namespace App\Core\Http\Controllers\Auth;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\PlatformAuthenticationSessions;
 use App\Core\Services\Auth\PlatformRedirectTarget;
+use App\Core\Services\Auth\PlatformSocialProviders;
 use App\Core\Services\Auth\PlatformSsoHandoff;
 use App\Core\Services\Auth\RegisterPlatformAccount;
 use App\Core\Services\Auth\VerifyPlatformTwoFactorCode;
@@ -22,6 +23,7 @@ final class PlatformSessionController
         PlatformRedirectTarget $redirects,
         PlatformSsoHandoff $handoff,
         RegisterPlatformAccount $registration,
+        PlatformSocialProviders $socialProviders,
     ): View|Response {
         $requestedTarget = $request->query('return_to');
         $target = $redirects->resolve(is_string($requestedTarget) ? $requestedTarget : null, $request);
@@ -35,6 +37,7 @@ final class PlatformSessionController
         return view('core::auth.login', [
             'returnTo' => $target,
             'registrationOpen' => $registration->available(),
+            'socialProviders' => $socialProviders->catalog(),
         ]);
     }
 
