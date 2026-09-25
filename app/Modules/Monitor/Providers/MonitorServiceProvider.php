@@ -47,6 +47,7 @@ use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
 use App\Modules\Monitor\Services\Core\MonitorAlertAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorApiDocumentationProvider;
 use App\Modules\Monitor\Services\Core\MonitorCustomerStatusPageProvider;
+use App\Modules\Monitor\Services\Core\MonitorConfigurationAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorDestinationAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
@@ -167,6 +168,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(WorkspaceMonitorAdministrationRegistry::class)->registerAlerts(app(MonitorAlertAdministrationProvider::class));
         app(WorkspaceMonitorAdministrationRegistry::class)->registerDestinations(app(MonitorDestinationAdministrationProvider::class));
         app(WorkspaceMonitorAdministrationRegistry::class)->registerSettings(app(MonitorSettingsAdministrationProvider::class));
+        app(WorkspaceMonitorAdministrationRegistry::class)->registerConfiguration(app(MonitorConfigurationAdministrationProvider::class));
         app(ProjectConnectionDiagnosticRegistry::class)->register('monitor', app(MonitorProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('monitor', app(MonitorResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));

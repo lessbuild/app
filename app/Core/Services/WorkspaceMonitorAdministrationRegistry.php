@@ -5,6 +5,7 @@ namespace App\Core\Services;
 use App\Core\Contracts\WorkspaceMonitorAlertAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorDestinationAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorSettingsAdministrationProvider;
+use App\Core\Contracts\WorkspaceMonitorConfigurationAdministrationProvider;
 
 /** Keeps Monitor's administration domains independently replaceable and typed. */
 final class WorkspaceMonitorAdministrationRegistry
@@ -14,6 +15,13 @@ final class WorkspaceMonitorAdministrationRegistry
     private ?WorkspaceMonitorDestinationAdministrationProvider $destinations = null;
 
     private ?WorkspaceMonitorSettingsAdministrationProvider $settings = null;
+
+    private ?WorkspaceMonitorConfigurationAdministrationProvider $configuration = null;
+
+    public function registerConfiguration(WorkspaceMonitorConfigurationAdministrationProvider $provider): void
+    {
+        $this->configuration = $provider;
+    }
 
     public function registerAlerts(WorkspaceMonitorAlertAdministrationProvider $provider): void
     {
@@ -43,5 +51,10 @@ final class WorkspaceMonitorAdministrationRegistry
     public function settings(): ?WorkspaceMonitorSettingsAdministrationProvider
     {
         return $this->settings;
+    }
+
+    public function configuration(): ?WorkspaceMonitorConfigurationAdministrationProvider
+    {
+        return $this->configuration;
     }
 }
