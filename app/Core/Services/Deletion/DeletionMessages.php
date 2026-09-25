@@ -28,6 +28,7 @@ final class DeletionMessages
             'deployer_activity_claims_open' => __('Waiting for Deployer activity to finish. If an operation was interrupted, support must confirm that its worker and remote effects have stopped before cleanup can continue.'),
             'telemetry_claim_unresolved', 'delivery_claim_unresolved', 'notification_claim_unresolved', 'outbox_claim_unresolved', 'probe_claim_unresolved' => __('An interrupted app operation has an uncertain outcome. Support must reconcile it before cleanup can continue.'),
             'export_file_cleanup_pending' => __('Waiting for export files to be removed from storage.'),
+            'site_deletion_pending' => __('Waiting for accepted Analytics site deletions and their export cleanup to finish.'),
             'core_activity_draining' => __('Waiting for previously claimed cross-app work to finish or be reconciled by its recovery worker.'),
             default => __('This app needs attention before cleanup can continue. Your saved request and completed steps are preserved.'),
         };

@@ -32,6 +32,17 @@ final class AnalyticsDeletionFence
             'This Analytics workspace is being deleted.');
     }
 
+    public function assertSiteOpen(string|int $siteId): void
+    {
+        abort_if($this->isSiteFenced((string) $siteId), 409, 'This Analytics site is being deleted.');
+    }
+
+    public function isSiteFenced(string|int $siteId): bool
+    {
+        return DB::connection('analytics')->table('site_deletion_operations')
+            ->where('site_source_id', (string) $siteId)->exists();
+    }
+
     public function isFenced(string $kind, string $sourceId): bool
     {
         return DB::connection('analytics')->table('analytics_deletion_tombstones')

@@ -3,6 +3,7 @@
 namespace App\Modules\Analytics\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Blueprints\ProjectBlueprintProviderRegistry;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Deletion\ProductDeletionRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
@@ -21,6 +22,7 @@ use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceAnalyticsAdministrationProviderRegistry;
 use App\Core\Services\WorkspaceProductUsageProviderRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
@@ -31,6 +33,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsApiDocumentationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformStatusProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsProductWorkspaceProvisioner;
+use App\Modules\Analytics\Services\Core\AnalyticsProjectBlueprintProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSetup;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
@@ -38,8 +41,11 @@ use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceLinkProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsTrafficContextProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceActivityProvider;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceDataAdministrationProvider;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceGoalAdministrationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceMembershipProjector;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceSearchProvider;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceSiteAdministrationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceUsageProvider;
 use App\Modules\Analytics\Services\Deletion\AnalyticsProductDeletionProvider;
 use App\Modules\Analytics\Services\WorkspaceViewData;
@@ -100,6 +106,10 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('analytics', app(AnalyticsProjectLink::class));
+        app(ProjectBlueprintProviderRegistry::class)->register('analytics', app(AnalyticsProjectBlueprintProvider::class));
+        app(WorkspaceAnalyticsAdministrationProviderRegistry::class)->registerSites(app(AnalyticsWorkspaceSiteAdministrationProvider::class));
+        app(WorkspaceAnalyticsAdministrationProviderRegistry::class)->registerGoals(app(AnalyticsWorkspaceGoalAdministrationProvider::class));
+        app(WorkspaceAnalyticsAdministrationProviderRegistry::class)->registerData(app(AnalyticsWorkspaceDataAdministrationProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('analytics', app(AnalyticsResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('analytics', app(AnalyticsProjectSummary::class));
         app(WorkspaceActivityProviderRegistry::class)->register('analytics', app(AnalyticsWorkspaceActivityProvider::class));

@@ -10,16 +10,17 @@
     <x-signal.ui.page-header
         :eyebrow="$workspace->name"
         :title="__('API credentials')"
-        :description="__('Review Deployer API tokens and Monitor collection keys mapped to this workspace. Core never displays credential secrets.')"
+        :description="__('Review Deployer API tokens and Monitor collection keys mapped to this workspace. The inventory contains metadata only.')"
     >
         <x-slot:actions>
+            <x-signal.ui.button :href="route('core.workspace.credentials.create', $workspace)" variant="primary">{{ __('Create credential') }}</x-signal.ui.button>
             <x-signal.ui.button :href="route('core.workspace.admin', $workspace)" variant="secondary">{{ __('Workspace management') }}</x-signal.ui.button>
             <x-signal.ui.button :href="route('core.workspace.dashboard', $workspace)" variant="primary">{{ __('Workspace overview') }}</x-signal.ui.button>
         </x-slot:actions>
     </x-signal.ui.page-header>
 
     <x-signal.ui.alert tone="info" class="mt-6">
-        {{ __('Create, rotate, and revoke credentials in the owning product. Each link uses the shared sign-in handoff and the product checks its own workspace role and policies again. A newly issued secret is shown only once by its source product.') }}
+        {{ __('Create, rotate, and revoke supported credentials here. The owning product rechecks its workspace role, plan rules, resource mapping, and deletion state before writing. A newly issued secret is shown only once in a private response.') }}
     </x-signal.ui.alert>
 
     @if ($hasAnalyticsAccess)
@@ -116,9 +117,26 @@
                                     @endif
                                 </dl>
                             </div>
-                            @if ($credential->manageUrl)
-                                <x-signal.ui.button :href="$credential->manageUrl" variant="secondary" class="ui-btn-sm">{{ __('Manage in :product', ['product' => $credential->productLabel]) }}</x-signal.ui.button>
-                            @endif
+                            <div class="flex flex-wrap gap-2">
+                                    @if ($credential->status === 'active')
+                                        <form method="POST" action="{{ route('core.workspace.credentials.rotate', [$workspace, $credential->key]) }}">
+                                            @csrf
+                                            <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
+                                            <x-signal.ui.button type="submit" variant="secondary" class="ui-btn-sm">{{ __('Rotate') }}</x-signal.ui.button>
+                                        </form>
+                                    @endif
+                                    @if (in_array($credential->status, ['active', 'expired'], true))
+                                        <form method="POST" action="{{ route('core.workspace.credentials.revoke', [$workspace, $credential->key]) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}">
+                                            <x-signal.ui.button type="submit" variant="danger" class="ui-btn-sm">{{ __('Revoke') }}</x-signal.ui.button>
+                                        </form>
+                                    @endif
+                                    @if ($credential->manageUrl)
+                                        <x-signal.ui.button :href="$credential->manageUrl" variant="ghost" class="ui-btn-sm">{{ __('Open :product', ['product' => $credential->productLabel]) }}</x-signal.ui.button>
+                                    @endif
+                            </div>
                         </div>
                     </x-signal.ui.card>
                 @endforeach
@@ -129,6 +147,6 @@
             @endif
         @endif
 
-        <p class="mt-4 text-xs leading-5 text-subtle">{{ __('This page shows metadata only. Token plaintext, hashes, signing secrets, and collector values are never sent to Core. Deployer tokens shown here belong to your Deployer account; Monitor workspace credentials are limited to mapped environments in workspaces where your Monitor role can manage them.') }}</p>
+        <p class="mt-4 text-xs leading-5 text-subtle">{{ __('This inventory shows metadata only. Core never stores credential plaintext or hashes; newly issued secrets appear only once in a private response. Deployer tokens shown here belong to your Deployer account; Monitor workspace credentials are limited to mapped environments in workspaces where your Monitor role can manage them.') }}</p>
     </section>
 </x-signal.layouts.platform>

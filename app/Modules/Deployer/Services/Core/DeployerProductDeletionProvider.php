@@ -682,6 +682,9 @@ final class DeployerProductDeletionProvider implements ProductDeletionProvider
     private function purgeWorkspace(string $workspaceId): void
     {
         $db = DB::connection('deployer');
+        foreach (['credential_mutation_receipts', 'blueprint_application_receipts'] as $table) {
+            $this->deleteWhereInIfExists($table, 'workspace_source_id', [$workspaceId]);
+        }
         if (! $db->table('organizations')->where('id', $workspaceId)->exists()) {
             return;
         }
@@ -791,6 +794,9 @@ final class DeployerProductDeletionProvider implements ProductDeletionProvider
     private function purgeAccount(string $userId): void
     {
         $db = DB::connection('deployer');
+        foreach (['credential_mutation_receipts', 'blueprint_application_receipts'] as $table) {
+            $this->deleteWhereInIfExists($table, 'actor_source_id', [$userId]);
+        }
         if (! $db->table('users')->where('id', $userId)->exists()) {
             return;
         }

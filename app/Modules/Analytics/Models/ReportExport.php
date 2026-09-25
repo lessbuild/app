@@ -12,7 +12,7 @@ class ReportExport extends AnalyticsModel
 
     protected $fillable = [
         'workspace_id', 'site_id', 'requested_by', 'token_hash', 'status', 'filters',
-        'file_path', 'expires_at', 'completed_at', 'failure_message',
+        'file_path', 'expires_at', 'completed_at', 'failure_message', 'generation',
     ];
 
     protected function casts(): array
@@ -21,6 +21,7 @@ class ReportExport extends AnalyticsModel
             'filters' => 'array',
             'expires_at' => 'datetime',
             'completed_at' => 'datetime',
+            'generation' => 'integer',
         ];
     }
 

@@ -3,10 +3,14 @@
 namespace App\Modules\Analytics\Http\Controllers;
 
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
+use App\Modules\Analytics\Services\Deletion\AnalyticsSiteDeletionService;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class SiteSettingsController extends Controller
@@ -18,7 +22,7 @@ class SiteSettingsController extends Controller
         return view('analytics::sites.settings', compact('site'));
     }
 
-    public function update(Request $request, Site $site): RedirectResponse
+    public function update(Request $request, Site $site, AnalyticsDeletionFence $fence): RedirectResponse
     {
         $this->authorize('manage', $site);
 
@@ -30,10 +34,6 @@ class SiteSettingsController extends Controller
             'collection_enabled' => ['sometimes', 'boolean'],
             'collection_paused' => ['sometimes', 'boolean'],
         ]);
-
-        if ($site->events()->exists() && $validated['timezone'] !== $site->timezone) {
-            return back()->withErrors(['timezone' => 'The reporting timezone cannot change after collection begins.'])->withInput();
-        }
 
         $domains = collect(preg_split('/[,\r\n]+/', $validated['domains']) ?: [])
             ->map(fn (string $domain): string => $this->normalizeDomain($domain))
@@ -54,35 +54,68 @@ class SiteSettingsController extends Controller
             ->values()
             ->all();
 
-        $domainChanged = $domains !== ($site->domains ?? []);
-        $site->update([
-            'name' => $validated['name'],
-            'domains' => $domains,
-            'timezone' => $validated['timezone'],
-            'excluded_paths' => $excludedPaths,
-            'collection_enabled' => (bool) ($validated['collection_enabled'] ?? false),
-            'collection_paused_at' => ($validated['collection_paused'] ?? false) ? now() : null,
-            'verified_at' => $domainChanged ? null : $site->verified_at,
-        ]);
+        try {
+            $domainChanged = DB::connection('analytics')->transaction(function () use ($site, $fence, $validated, $domains, $excludedPaths): bool {
+                $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+                $lockedSite = Site::query()->where('workspace_id', $workspace->getKey())->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+                $fence->assertWorkspaceOpen($workspace->getKey());
+                $fence->assertSiteOpen($lockedSite->getKey());
+                $this->authorize('manage', $lockedSite);
+                if ($lockedSite->events()->exists() && $validated['timezone'] !== $lockedSite->timezone) {
+                    throw ValidationException::withMessages([
+                        'timezone' => 'The reporting timezone cannot change after collection begins.',
+                    ]);
+                }
+                $domainChanged = $domains !== ($lockedSite->domains ?? []);
+                $lockedSite->update([
+                    'name' => $validated['name'], 'domains' => $domains, 'timezone' => $validated['timezone'],
+                    'excluded_paths' => $excludedPaths,
+                    'collection_enabled' => (bool) ($validated['collection_enabled'] ?? false),
+                    'collection_paused_at' => ($validated['collection_paused'] ?? false) ? now() : null,
+                    'verified_at' => $domainChanged ? null : $lockedSite->verified_at,
+                ]);
+
+                return $domainChanged;
+            }, attempts: 3);
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors())->withInput();
+        }
 
         return back()->with('status', $domainChanged ? 'Settings saved. Verify the new domain before collection resumes.' : 'Website settings saved.');
     }
 
-    public function destroy(Site $site): RedirectResponse
+    public function destroy(Request $request, Site $site, AnalyticsSiteDeletionService $deletions): RedirectResponse
     {
         $this->authorize('delete', $site);
-        DB::connection('analytics')->transaction(function () use ($site): void {
-            $site->update(['collection_enabled' => false, 'collection_paused_at' => now()]);
-            $site->events()->delete();
-            $site->releaseAnnotations()->delete();
-            $site->incidentAnnotations()->delete();
-            $site->visits()->delete();
-            $site->goals()->delete();
-            $site->ingestionBatches()->delete();
-            $site->delete();
-        });
+        $confirmation = $request->validate(['confirmation' => ['required', 'string', 'max:255']])['confirmation'];
+        $requester = $request->user();
+        abort_unless($requester instanceof Authenticatable, 401);
+        $outcome = $deletions->request($requester, $site, (string) $confirmation);
 
-        return to_route('analytics.dashboard')->with('status', 'Website deleted.');
+        return $outcome->completed()
+            ? to_route('analytics.dashboard')->with('status', 'Website deleted.')
+            : to_route('analytics.sites.deletion-status', $outcome->requestId);
+    }
+
+    public function deletionStatus(Request $request, string $requestId, AnalyticsSiteDeletionService $deletions): View
+    {
+        $requester = $request->user();
+        abort_unless($requester instanceof Authenticatable, 401);
+        $outcome = $deletions->status($requestId, $requester);
+
+        return view('analytics::sites.deletion', compact('outcome'));
+    }
+
+    public function retryDeletion(Request $request, string $requestId, AnalyticsSiteDeletionService $deletions): RedirectResponse
+    {
+        $requester = $request->user();
+        abort_unless($requester instanceof Authenticatable, 401);
+        $outcome = $deletions->retry($requestId, $requester);
+        if ($outcome->completed()) {
+            return to_route('analytics.dashboard')->with('status', 'Website deleted.');
+        }
+
+        return to_route('analytics.sites.deletion-status', $outcome->requestId);
     }
 
     private function normalizeDomain(string $domain): string

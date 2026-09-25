@@ -13,6 +13,7 @@ use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Services\AnalyticsPlanAuthority;
 use Illuminate\Console\Command;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 
 class PruneAnalyticsData extends Command
@@ -39,15 +40,22 @@ class PruneAnalyticsData extends Command
         $aggregates = ReportDailyAggregate::query()->where('local_date', '<', $aggregateCutoff)->delete();
         $invitations = Invitation::query()->where('expires_at', '<', now())->delete();
         $exports = 0;
-        ReportExport::query()->where('expires_at', '<', now())->chunkById(100, function ($items) use (&$exports): void {
-            foreach ($items as $export) {
-                if ($export->file_path) {
-                    Storage::disk('analytics-local')->delete($export->file_path);
-                }
-                $export->delete();
-                $exports++;
+        $exportWorkspaceIds = ReportExport::query()->where('expires_at', '<', now())
+            ->select('workspace_id')->distinct()->orderBy('workspace_id')->pluck('workspace_id');
+        foreach ($exportWorkspaceIds as $workspaceId) {
+            $workspace = Workspace::query()->find($workspaceId);
+
+            if ($workspace === null) {
+                continue;
             }
-        });
+
+            $exports += $this->pruneWorkspaceExports(
+                $workspace,
+                fn (): Builder => ReportExport::query()
+                    ->where('workspace_id', $workspace->getKey())
+                    ->where('expires_at', '<', now()),
+            );
+        }
 
         $this->info("Pruned {$events} events, {$visits} visits, {$batches} batches, {$aggregates} aggregates, {$invitations} invitations, and {$exports} exports.");
 
@@ -112,26 +120,18 @@ class PruneAnalyticsData extends Command
 
             $exportHours = $this->retentionLimit($resolution, 'export_retention_hours');
             $exportCutoff = $exportHours === null ? null : $now->copy()->subHours($exportHours);
-            $exports = ReportExport::query()
-                ->where('workspace_id', $workspace->getKey())
-                ->where(function (Builder $query) use ($exportCutoff, $now): void {
-                    $query->where('expires_at', '<', $now);
+            $counts['exports'] += $this->pruneWorkspaceExports(
+                $workspace,
+                fn (): Builder => ReportExport::query()
+                    ->where('workspace_id', $workspace->getKey())
+                    ->where(function (Builder $query) use ($exportCutoff, $now): void {
+                        $query->where('expires_at', '<', $now);
 
-                    if ($exportCutoff !== null) {
-                        $query->orWhere('created_at', '<', $exportCutoff);
-                    }
-                });
-
-            $exports->chunkById(100, function ($items) use (&$counts): void {
-                foreach ($items as $export) {
-                    if ($export->file_path) {
-                        Storage::disk('analytics-local')->delete($export->file_path);
-                    }
-
-                    $export->delete();
-                    $counts['exports']++;
-                }
-            });
+                        if ($exportCutoff !== null) {
+                            $query->orWhere('created_at', '<', $exportCutoff);
+                        }
+                    }),
+            );
         }
 
         $invitations = Invitation::query()->where('expires_at', '<', $now)->delete();
@@ -147,6 +147,96 @@ class PruneAnalyticsData extends Command
         ));
 
         return self::SUCCESS;
+    }
+
+    /** @param \Closure(): Builder<ReportExport> $queryFactory */
+    private function pruneWorkspaceExports(Workspace $workspace, \Closure $queryFactory): int
+    {
+        return DB::connection('analytics')->transaction(function () use ($workspace, $queryFactory): int {
+            DB::connection('analytics')->table('workspaces')
+                ->where('id', $workspace->getKey())->update(['id' => DB::raw('id')]);
+            $lockedWorkspace = Workspace::query()->whereKey($workspace->getKey())->lockForUpdate()->first();
+
+            if ($lockedWorkspace === null) {
+                return 0;
+            }
+
+            // Accepted site deletion requests take this same workspace lock before
+            // creating their operation. This makes the fence check atomic with
+            // pruning each export's file and ownership row.
+            $pendingSiteIds = DB::connection('analytics')->table('site_deletion_operations')
+                ->where('workspace_source_id', (string) $lockedWorkspace->getKey())
+                ->where('status', '!=', 'completed')
+                ->pluck('site_source_id');
+            $exports = $queryFactory();
+
+            if ($pendingSiteIds->isNotEmpty()) {
+                $exports->whereNotIn('site_id', $pendingSiteIds);
+            }
+
+            if (! $exports->exists()) {
+                return 0;
+            }
+
+            try {
+                $disk = Storage::disk('analytics-local');
+                $files = $disk->allFiles('exports');
+            } catch (\Throwable) {
+                return 0;
+            }
+
+            $pruned = 0;
+            $exports->chunkById(100, function ($items) use ($disk, $files, &$pruned): void {
+                foreach ($items as $export) {
+                    $exportId = (string) $export->getKey();
+                    $deterministicPath = 'exports/'.$exportId.'.csv';
+                    $legacyPattern = '/^exports\/'.preg_quote($exportId, '/').'(?:-[A-Za-z0-9_.-]+|_[A-Za-z0-9_.-]+|\.[A-Za-z0-9_.-]+|\/[^\/]+)$/';
+                    $ownsPath = static fn (string $path): bool => $path === $deterministicPath || preg_match($legacyPattern, $path) === 1;
+                    $paths = [$deterministicPath];
+
+                    if (filled($export->file_path)) {
+                        $persistedPath = (string) $export->file_path;
+
+                        if (! $ownsPath($persistedPath)) {
+                            continue;
+                        }
+
+                        $paths[] = $persistedPath;
+                    }
+
+                    foreach ($files as $candidate) {
+                        if (is_string($candidate) && $ownsPath($candidate)) {
+                            $paths[] = $candidate;
+                        }
+                    }
+
+                    $cleanupConfirmed = true;
+                    try {
+                        foreach (array_unique($paths) as $path) {
+                            $disk->delete($path);
+
+                            if ($disk->exists($path)) {
+                                $cleanupConfirmed = false;
+                                break;
+                            }
+                        }
+                    } catch (\Throwable) {
+                        // Keep the row as the durable owner of a file whose removal
+                        // could not be confirmed; a later prune can retry it.
+                        $cleanupConfirmed = false;
+                    }
+
+                    if (! $cleanupConfirmed) {
+                        continue;
+                    }
+
+                    $export->delete();
+                    $pruned++;
+                }
+            });
+
+            return $pruned;
+        }, attempts: 3);
     }
 
     private function retentionLimit(ProductPlanResolution $plan, string $limit, ?int $operatorOverride = null): ?int

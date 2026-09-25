@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Actions\Automation;
 
+use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\Entitlements;
 use Laravel\Sanctum\NewAccessToken;
@@ -17,11 +18,10 @@ class CreatePersonalAccessTokenAction
      * @param  array{name: string, abilities: list<string>, expires_in_days: int|string, project_ids?: list<int|string>}  $attributes  Validated token attributes.
      * @return NewAccessToken The one-time plaintext token result.
      */
-    public function handle(User $actor, array $attributes): NewAccessToken
+    public function handle(User $actor, array $attributes, ?Organization $organization = null): NewAccessToken
     {
-        $this->entitlements->enforce($actor, 'api');
-
-        $organization = $actor->currentOrganization;
+        $organization ??= $actor->currentOrganization;
+        $this->entitlements->enforce($organization ?? $actor, 'api');
         abort_unless($organization !== null, 403, 'An active workspace is required to create an API token.');
 
         $scopeAbilities = ['workspace:'.$organization->getKey()];

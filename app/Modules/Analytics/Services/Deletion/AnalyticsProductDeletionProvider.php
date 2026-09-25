@@ -15,6 +15,7 @@ use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 
 final class AnalyticsProductDeletionProvider implements ProductDeletionProvider
@@ -206,6 +207,10 @@ final class AnalyticsProductDeletionProvider implements ProductDeletionProvider
                 return 'waiting:activity_draining';
             }
 
+            if ($this->pendingSiteDeletionExists($target)) {
+                return 'waiting:site_deletion_pending';
+            }
+
             $this->recordExportFiles($target, (int) $tombstone->id);
             $this->assertFreshAuthority($attempt);
             if ($target->kind === 'workspace') {
@@ -270,6 +275,9 @@ final class AnalyticsProductDeletionProvider implements ProductDeletionProvider
             }
             if ($connection->table('analytics_deletion_files')->where('tombstone_id', $tombstone->id)->where('status', '!=', 'deleted')->exists()) {
                 return 'waiting:export_file_cleanup_pending';
+            }
+            if ($this->pendingSiteDeletionExists($target)) {
+                return 'waiting:site_deletion_pending';
             }
 
             if ($target->kind === 'workspace') {
@@ -546,8 +554,26 @@ final class AnalyticsProductDeletionProvider implements ProductDeletionProvider
         }
     }
 
+    private function pendingSiteDeletionExists(ProductDeletionTarget $target): bool
+    {
+        if (! Schema::connection('analytics')->hasTable('site_deletion_operations')) {
+            return false;
+        }
+
+        return DB::connection('analytics')->table('site_deletion_operations')->where('status', '!=', 'completed')
+            ->where($target->kind === 'workspace' ? 'workspace_source_id' : 'requester_source_id', (string) $target->sourceId)
+            ->exists();
+    }
+
     private function purgeWorkspace(Workspace $workspace): void
     {
+        if (Schema::connection('analytics')->hasTable('site_deletion_operations')) {
+            DB::connection('analytics')->table('site_deletion_operations')->where('workspace_source_id', (string) $workspace->getKey())
+                ->where('status', 'completed')->delete();
+        }
+        if (Schema::connection('analytics')->hasTable('blueprint_application_receipts')) {
+            DB::connection('analytics')->table('blueprint_application_receipts')->where('workspace_source_id', $workspace->getKey())->delete();
+        }
         $siteIds = Site::query()->withTrashed()->where('workspace_id', $workspace->getKey())->pluck('id');
         DB::connection('analytics')->table('report_exports')->where('workspace_id', $workspace->getKey())->delete();
         DB::connection('analytics')->table('site_incident_annotations')->whereIn('site_id', $siteIds)->delete();
@@ -559,6 +585,13 @@ final class AnalyticsProductDeletionProvider implements ProductDeletionProvider
     private function purgeAccountIdentityData(User $user): void
     {
         $connection = DB::connection('analytics');
+        if (Schema::connection('analytics')->hasTable('site_deletion_operations')) {
+            $connection->table('site_deletion_operations')->where('requester_source_id', (string) $user->getKey())
+                ->where('status', 'completed')->delete();
+        }
+        if (Schema::connection('analytics')->hasTable('blueprint_application_receipts')) {
+            $connection->table('blueprint_application_receipts')->where('actor_source_id', $user->getKey())->delete();
+        }
         $connection->table('sessions')->where('user_id', $user->getKey())->delete();
         $connection->table('password_reset_tokens')
             ->whereRaw('lower(email) = ?', [mb_strtolower(trim((string) $user->email))])->delete();

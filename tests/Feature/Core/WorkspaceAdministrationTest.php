@@ -3,6 +3,7 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Models\PlatformUser;
+use App\Core\Services\WorkspaceAdministrationCatalog;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -101,7 +102,8 @@ final class WorkspaceAdministrationTest extends TestCase
             ->assertSeeText('Feedback review')
             ->assertSee(route('servers.index'))
             ->assertSee(route('backups.index'))
-            ->assertSee(route('costs.index'))
+            ->assertSee(route('core.workspace.costs', $this->workspaceId))
+            ->assertSee(route('core.workspace.blueprints.index', $this->workspaceId))
             ->assertSee('data-search="team access members roles invitations grants seats', false)
             ->assertSee('data-search="server fleet and imports deployer review servers', false)
             ->assertSee('data-search="backups and recovery deployer manage backup destinations', false);
@@ -134,8 +136,44 @@ final class WorkspaceAdministrationTest extends TestCase
         $this->actingAs($user, 'platform')
             ->get(route('core.workspace.admin', $this->workspaceId))
             ->assertOk()
-            ->assertDontSeeText('App administration')
-            ->assertDontSeeText('Server fleet and imports');
+            ->assertDontSeeText('Server fleet and imports')
+            ->assertSee(route('core.workspace.costs', $this->workspaceId));
+    }
+
+    public function test_native_origin_failure_does_not_hide_authorized_core_administration(): void
+    {
+        config(['platform.products.deployer.url' => 'https://deployer.example.test']);
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $tools = app(WorkspaceAdministrationCatalog::class)->forWorkspace($user, $user->workspaceMemberships()->firstOrFail()->workspace)['deployer'];
+
+        $this->assertFalse($tools->contains('route', 'servers.index'));
+        $this->assertTrue($tools->contains('route', 'core.workspace.subscriptions'));
+        $this->assertTrue($tools->contains('route', 'core.workspace.costs'));
+    }
+
+    public function test_monitor_and_analytics_core_controls_require_current_product_grants_and_enabled_apps(): void
+    {
+        config(['platform.products.monitor.enabled' => true, 'platform.products.analytics.enabled' => true]);
+        foreach (['monitor', 'analytics'] as $product) {
+            DB::connection('core')->table('workspace_product_access')->insert([
+                'id' => (string) Str::ulid(), 'membership_id' => $this->membershipId,
+                'product' => $product, 'role' => 'owner', 'status' => 'active',
+                'created_at' => now(), 'updated_at' => now(),
+            ]);
+        }
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $workspace = $user->workspaceMemberships()->firstOrFail()->workspace;
+        $catalog = app(WorkspaceAdministrationCatalog::class);
+        $tools = $catalog->forWorkspace($user, $workspace);
+        $this->assertTrue($tools['monitor']->contains('route', 'core.workspace.monitor.alerts'));
+        $this->assertTrue($tools['analytics']->contains('route', 'core.workspace.analytics.sites.index'));
+        $this->assertTrue($tools['analytics']->every(fn (array $tool): bool => $tool['core']));
+
+        DB::connection('core')->table('workspace_product_access')->where('product', 'monitor')->update(['revoked_at' => now()]);
+        config(['platform.products.analytics.enabled' => false]);
+        $tools = $catalog->forWorkspace($user, $workspace);
+        $this->assertArrayNotHasKey('monitor', $tools);
+        $this->assertArrayNotHasKey('analytics', $tools);
     }
 
     private function createTables(): void

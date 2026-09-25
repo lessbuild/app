@@ -32,6 +32,9 @@ final class FinalizeDeletion
         $db->table('project_connection_events')->whereIn('project_connection_id', $connections)->delete();
         $db->table('project_lifecycle_events')->whereIn('project_id', $projects)->delete();
         $db->table('resource_restoration_requests')->whereIn('workspace_id', $workspaceIds)->delete();
+        $db->table('project_blueprint_runs')->whereIn('workspace_id', $workspaceIds)->delete();
+        $db->table('project_blueprints')->whereIn('workspace_id', $workspaceIds)->delete();
+        $db->table('workspace_credential_mutations')->whereIn('workspace_id', $workspaceIds)->delete();
         $db->table('project_connections')->whereIn('id', $connections)->update([
             'capabilities' => '[]', 'metadata' => null, 'status' => 'disconnected', 'last_error_code' => null, 'updated_at' => now(),
         ]);
@@ -84,6 +87,8 @@ final class FinalizeDeletion
     private function scrubAccount(PlatformUser $user): void
     {
         $db = DB::connection('core');
+        $db->table('project_blueprint_runs')->where('requested_by_user_id', $user->getKey())->delete();
+        $db->table('workspace_credential_mutations')->where('actor_id', $user->getKey())->delete();
         foreach (['platform_sso_tickets', 'platform_auth_sessions', 'passkeys', 'user_identities',
             'workspace_notification_reads', 'workspace_notification_preferences', 'workspace_notification_saved_filters',
             'workspace_dashboard_selections', 'workspace_feedback', 'sessions'] as $table) {

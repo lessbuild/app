@@ -18,6 +18,7 @@ return new class extends Migration
             $table->foreignId('requested_by')->constrained('users')->cascadeOnDelete();
             $table->string('token_hash', 64)->unique();
             $table->string('status', 24)->default('pending');
+            $table->unsignedInteger('generation')->default(0);
             $table->json('filters')->nullable();
             $table->string('file_path')->nullable();
             $table->timestamp('expires_at');

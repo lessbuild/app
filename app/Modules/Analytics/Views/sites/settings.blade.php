@@ -128,9 +128,10 @@
     <x-signal.ui.card as="section" class="border-danger/20 p-6">
         <p class="ui-eyebrow text-danger">{{ __('Danger zone') }}</p>
         <h2 class="mt-2 text-lg font-extrabold text-ink">{{ __('Delete this website') }}</h2>
-        <p class="mt-2 text-sm leading-6 text-muted">{{ __('Collection stops immediately and stored events, visits, goals, and batches are removed.') }}</p>
+        <p class="mt-2 text-sm leading-6 text-muted">{{ __('Collection stops immediately. Analytics fences new events and exports, removes private export files and stored site data, then completes the deletion.') }}</p>
         <form class="mt-5" method="POST" action="{{ route('analytics.sites.destroy', $site) }}">
             @csrf
+            <x-signal.ui.input-field name="confirmation" :label="__('Type the site slug to confirm')" :value="old('confirmation')" :placeholder="$site->slug" required />
             <x-signal.ui.button variant="danger" type="submit">{{ __('Delete website') }}</x-signal.ui.button>
         </form>
     </x-signal.ui.card>

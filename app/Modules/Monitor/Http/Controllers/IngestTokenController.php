@@ -7,12 +7,11 @@ use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\IngestToken;
 use App\Modules\Monitor\Services\CreateIngestToken;
-use App\Modules\Monitor\Services\RecordAuditLog;
+use App\Modules\Monitor\Services\RevokeIngestToken;
 use App\Modules\Monitor\Services\RotateIngestToken;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 
 class IngestTokenController extends Controller
@@ -37,18 +36,10 @@ class IngestTokenController extends Controller
             ->with('issued_ingest_token', ['environment_id' => $environment->id, 'encrypted_secret' => Crypt::encryptString($issued->secret)]);
     }
 
-    public function destroy(Application $application, Environment $environment, IngestToken $ingestToken, RecordAuditLog $audit): RedirectResponse
+    public function destroy(Application $application, Environment $environment, IngestToken $ingestToken, RevokeIngestToken $revokeToken): RedirectResponse
     {
         Gate::authorize('update', $environment);
-        DB::connection('monitor')->transaction(function () use ($application, $environment, $ingestToken, $audit): void {
-            $workspace = $application->workspace()->lockForUpdate()->firstOrFail();
-            Gate::authorize('update', $environment);
-            $token = $environment->ingestTokens()->lockForUpdate()->findOrFail($ingestToken->id);
-            if ($token->revoked_at === null) {
-                $token->forceFill(['revoked_at' => now()])->save();
-                $audit->record($workspace, request()->user(), 'ingest_token.revoked', $token, ['label' => $token->name, 'environment' => $environment->name, 'application' => $application->name]);
-            }
-        });
+        $revokeToken->revoke($ingestToken, request()->user(), $environment, $application);
 
         return to_route('monitor.environments.show', [$application, $environment])->with('status', 'Token revoked. Requests using this token will be rejected.');
     }

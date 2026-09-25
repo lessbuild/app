@@ -7,8 +7,10 @@ use App\Modules\Analytics\Actions\Goals\RebuildGoalConversions;
 use App\Modules\Analytics\Actions\Reporting\RebuildReportAggregates;
 use App\Modules\Analytics\Models\Goal;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\View\View;
 
 class GoalController extends Controller
@@ -27,14 +29,15 @@ class GoalController extends Controller
         return view('analytics::goals.create', compact('site'));
     }
 
-    public function store(Request $request, Site $site, RebuildSiteVisits $rebuildSiteVisits, RebuildGoalConversions $rebuildGoalConversions, RebuildReportAggregates $rebuildReportAggregates): RedirectResponse
+    public function store(Request $request, Site $site, RebuildSiteVisits $rebuildSiteVisits, RebuildGoalConversions $rebuildGoalConversions, RebuildReportAggregates $rebuildReportAggregates, AnalyticsDeletionFence $fence): RedirectResponse
     {
-        $this->authorize('manage', $site);
-
-        $site->goals()->create($request->validate($this->rules()));
-        $rebuildSiteVisits->handle($site);
-        $rebuildGoalConversions->handle($site);
-        $rebuildReportAggregates->handle($site);
+        $attributes = $request->validate($this->rules());
+        $this->mutateSite($site, $fence, function (Site $lockedSite) use ($attributes, $rebuildSiteVisits, $rebuildGoalConversions, $rebuildReportAggregates): void {
+            $lockedSite->goals()->create($attributes);
+            $rebuildSiteVisits->handle($lockedSite);
+            $rebuildGoalConversions->handle($lockedSite);
+            $rebuildReportAggregates->handle($lockedSite);
+        });
 
         return to_route('analytics.goals.index', $site)->with('status', 'Goal created.');
     }
@@ -47,27 +50,28 @@ class GoalController extends Controller
         return view('analytics::goals.edit', compact('site', 'goal'));
     }
 
-    public function update(Request $request, Site $site, Goal $goal, RebuildSiteVisits $rebuildSiteVisits, RebuildGoalConversions $rebuildGoalConversions, RebuildReportAggregates $rebuildReportAggregates): RedirectResponse
+    public function update(Request $request, Site $site, Goal $goal, RebuildSiteVisits $rebuildSiteVisits, RebuildGoalConversions $rebuildGoalConversions, RebuildReportAggregates $rebuildReportAggregates, AnalyticsDeletionFence $fence): RedirectResponse
     {
-        $this->authorize('manage', $site);
-        abort_unless($goal->site_id === $site->id, 404);
-
-        $goal->update($request->validate($this->rules()));
-        $rebuildSiteVisits->handle($site);
-        $rebuildGoalConversions->handle($site);
-        $rebuildReportAggregates->handle($site);
+        $attributes = $request->validate($this->rules());
+        $this->mutateSite($site, $fence, function (Site $lockedSite) use ($goal, $attributes, $rebuildSiteVisits, $rebuildGoalConversions, $rebuildReportAggregates): void {
+            $lockedGoal = Goal::query()->where('site_id', $lockedSite->getKey())->whereKey($goal->getKey())->lockForUpdate()->firstOrFail();
+            $lockedGoal->update($attributes);
+            $rebuildSiteVisits->handle($lockedSite);
+            $rebuildGoalConversions->handle($lockedSite);
+            $rebuildReportAggregates->handle($lockedSite);
+        });
 
         return to_route('analytics.goals.index', $site)->with('status', 'Goal updated.');
     }
 
-    public function destroy(Site $site, Goal $goal, RebuildSiteVisits $rebuildSiteVisits, RebuildGoalConversions $rebuildGoalConversions, RebuildReportAggregates $rebuildReportAggregates): RedirectResponse
+    public function destroy(Site $site, Goal $goal, RebuildSiteVisits $rebuildSiteVisits, RebuildGoalConversions $rebuildGoalConversions, RebuildReportAggregates $rebuildReportAggregates, AnalyticsDeletionFence $fence): RedirectResponse
     {
-        $this->authorize('manage', $site);
-        abort_unless($goal->site_id === $site->id, 404);
-        $goal->delete();
-        $rebuildSiteVisits->handle($site);
-        $rebuildGoalConversions->handle($site);
-        $rebuildReportAggregates->handle($site);
+        $this->mutateSite($site, $fence, function (Site $lockedSite) use ($goal, $rebuildSiteVisits, $rebuildGoalConversions, $rebuildReportAggregates): void {
+            Goal::query()->where('site_id', $lockedSite->getKey())->whereKey($goal->getKey())->lockForUpdate()->firstOrFail()->delete();
+            $rebuildSiteVisits->handle($lockedSite);
+            $rebuildGoalConversions->handle($lockedSite);
+            $rebuildReportAggregates->handle($lockedSite);
+        });
 
         return to_route('analytics.goals.index', $site)->with('status', 'Goal removed.');
     }
@@ -82,5 +86,17 @@ class GoalController extends Controller
             'match_value' => ['required', 'string', 'max:255'],
             'active' => ['sometimes', 'boolean'],
         ];
+    }
+
+    private function mutateSite(Site $site, AnalyticsDeletionFence $fence, callable $operation): void
+    {
+        DB::connection('analytics')->transaction(function () use ($site, $fence, $operation): void {
+            $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+            $lockedSite = Site::query()->where('workspace_id', $workspace->getKey())->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $fence->assertWorkspaceOpen($workspace->getKey());
+            $fence->assertSiteOpen($lockedSite->getKey());
+            $this->authorize('manage', $lockedSite);
+            $operation($lockedSite);
+        }, attempts: 3);
     }
 }

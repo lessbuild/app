@@ -29,6 +29,7 @@
                 <x-signal.ui.button :href="route('core.workspace.deliveries', $workspace)" variant="secondary">{{ __('Delivery history') }}</x-signal.ui.button>
                 <x-signal.ui.button :href="route('core.workspace.credentials', $workspace)" variant="secondary">{{ __('API credentials') }}</x-signal.ui.button>
                 @if ($canManageWorkspace)
+                    <x-signal.ui.button :href="route('core.workspace.blueprints.index', $workspace)" variant="secondary">{{ __('Project blueprints') }}</x-signal.ui.button>
                     <x-signal.ui.button :href="route('core.workspace.feature-rollouts.index', $workspace)" variant="secondary">{{ __('Feature rollouts') }}</x-signal.ui.button>
                 @endif
                 <x-signal.ui.button :href="route('core.workspace.costs', $workspace)" variant="secondary">{{ __('Costs') }}</x-signal.ui.button>
@@ -57,7 +58,7 @@
                 <x-signal.ui.card class="p-5">
                     <p class="ui-eyebrow">{{ __('App administration') }}</p>
                     <h2 class="mt-2 text-lg font-extrabold text-ink">{{ $label }}</h2>
-                    <p class="mt-2 text-sm leading-6 text-muted">{{ __('These tools open the existing :product app. Its permissions are checked again before any settings or records are shown.', ['product' => $label]) }}</p>
+                    <p class="mt-2 text-sm leading-6 text-muted">{{ __('Manage :product settings and open its operational views. Each action checks your current app permissions.', ['product' => $label]) }}</p>
                     <ul class="mt-4 grid gap-1 border-t border-line pt-3">
                         @foreach ($tools->take(4) as $tool)
                             <li>
@@ -66,17 +67,13 @@
                         @endforeach
                         @if ($tools->count() > 4)
                             <li>
-                                <details class="group rounded-control border-t border-line px-3 py-2">
-                                    <summary class="flex min-h-10 cursor-pointer list-none items-center justify-between gap-3 text-sm font-bold text-primary marker:hidden focus-visible:outline-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
-                                        {{ __('More :product tools', ['product' => $label]) }}
-                                        <svg class="h-4 w-4 shrink-0 rotate-90 stroke-2 transition-transform group-open:-rotate-90" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>
-                                    </summary>
-                                    <ul class="mt-1 grid gap-1 border-t border-line pt-2">
+                                <x-signal.ui.disclosure :title="__('More :product tools', ['product' => $label])">
+                                    <ul class="grid gap-1">
                                         @foreach ($tools->skip(4) as $tool)
                                             <li><x-signal.blocks.admin-link :href="$tool['href']" :label="$tool['label']" :description="$tool['description']" /></li>
                                         @endforeach
                                     </ul>
-                                </details>
+                                </x-signal.ui.disclosure>
                             </li>
                         @endif
                     </ul>

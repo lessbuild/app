@@ -57,6 +57,8 @@ Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification
     Route::get('/sites/{site}/settings', [SiteSettingsController::class, 'edit'])->name('sites.settings');
     Route::put('/sites/{site}/settings', [SiteSettingsController::class, 'update'])->name('sites.settings.update');
     Route::delete('/sites/{site}', [SiteSettingsController::class, 'destroy'])->middleware('password.confirm')->name('sites.destroy');
+    Route::get('/site-deletions/{requestId}', [SiteSettingsController::class, 'deletionStatus'])->name('sites.deletion-status');
+    Route::post('/site-deletions/{requestId}/retry', [SiteSettingsController::class, 'retryDeletion'])->middleware('password.confirm')->name('sites.deletion-retry');
     Route::post('/sites/{site}/exports', [ReportExportController::class, 'store'])->name('reports.exports.store');
     Route::get('/sites/{site}/exports/{export}/record', [ReportExportController::class, 'record'])->name('reports.exports.record');
     Route::get('/sites/{site}/exports/{export}/download', [ReportExportController::class, 'downloadRecord'])->name('reports.exports.download-record');

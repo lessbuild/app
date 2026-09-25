@@ -66,7 +66,8 @@ final class AnalyticsWorkspaceAccess
     {
         $workspace = $site->workspace;
 
-        return $workspace instanceof Workspace
+        return ! $this->deletionFence->isSiteFenced($site->getKey())
+            && $workspace instanceof Workspace
             && $this->hasAccess($user, $workspace)
             && $this->projectResources->allows(
                 $user, 'analytics', 'site', $site->getKey(), 'workspace', $workspace->getKey(),

@@ -34,17 +34,20 @@ class ReportExportController extends Controller
         $export = DB::connection('analytics')->transaction(function () use ($site, $productUserId, $token, $validated, $deletionFence): ReportExport {
             $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
             $deletionFence->assertWorkspaceOpen($workspace->getKey());
+            $lockedSite = Site::query()->where('workspace_id', $workspace->getKey())->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $deletionFence->assertSiteOpen($lockedSite->getKey());
+            $this->authorize('manage', $lockedSite);
 
             return ReportExport::create([
                 'workspace_id' => $workspace->getKey(),
-                'site_id' => $site->id,
+                'site_id' => $lockedSite->getKey(),
                 'requested_by' => $productUserId,
                 'token_hash' => hash('sha256', $token),
                 'filters' => $validated,
                 'expires_at' => now()->addHours(config('analytics.export_retention_hours')),
             ]);
         }, attempts: 3);
-        GenerateReportExport::dispatch($export->id)->afterCommit();
+        GenerateReportExport::dispatch($export->id, (int) $export->generation)->afterCommit();
 
         return back()->with('status', 'Your CSV export is being generated.')->with('export_token', $token);
     }
@@ -54,6 +57,7 @@ class ReportExportController extends Controller
         $export = ReportExport::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
         $this->authorize('view', $export->site);
         $deletionFence->assertWorkspaceOpen($export->workspace_id);
+        $deletionFence->assertSiteOpen($export->site_id);
 
         return $this->downloadExport($export);
     }
@@ -63,6 +67,7 @@ class ReportExportController extends Controller
         $export = ReportExport::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
         $this->authorize('view', $export->site);
         $deletionFence->assertWorkspaceOpen($export->workspace_id);
+        $deletionFence->assertSiteOpen($export->site_id);
 
         return view('analytics::exports.show', [
             'export' => $export,
@@ -76,6 +81,7 @@ class ReportExportController extends Controller
         $this->assertExportBelongsToSite($export, $site);
         $this->authorize('view', $site);
         $deletionFence->assertWorkspaceOpen($site->workspace_id);
+        $deletionFence->assertSiteOpen($site->getKey());
 
         return view('analytics::exports.record', [
             'export' => $export,
@@ -90,6 +96,7 @@ class ReportExportController extends Controller
         $this->assertExportBelongsToSite($export, $site);
         $this->authorize('view', $site);
         $deletionFence->assertWorkspaceOpen($site->workspace_id);
+        $deletionFence->assertSiteOpen($site->getKey());
 
         return $this->downloadExport($export);
     }
@@ -104,6 +111,9 @@ class ReportExportController extends Controller
         $updatedExport = DB::connection('analytics')->transaction(function () use ($site, $export, $productUserId, $deletionFence): ReportExport {
             $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
             $deletionFence->assertWorkspaceOpen($workspace->getKey());
+            $lockedSite = Site::query()->where('workspace_id', $workspace->getKey())->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $deletionFence->assertSiteOpen($lockedSite->getKey());
+            $this->authorize('manage', $lockedSite);
             $lockedExport = ReportExport::query()
                 ->whereKey($export->getKey())
                 ->where('site_id', $site->getKey())
@@ -120,12 +130,13 @@ class ReportExportController extends Controller
                 'file_path' => null,
                 'completed_at' => null,
                 'expires_at' => now()->addHours(config('analytics.export_retention_hours')),
+                'generation' => (int) $lockedExport->generation + 1,
             ]);
 
             return $lockedExport;
         });
 
-        GenerateReportExport::dispatch($updatedExport->getKey())->afterCommit();
+        GenerateReportExport::dispatch($updatedExport->getKey(), (int) $updatedExport->generation)->afterCommit();
 
         return back()->with('status', 'The CSV export has been queued again.');
     }

@@ -11,6 +11,7 @@ use App\Core\Http\Middleware\ResolveProductPrincipal;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Billing\ResolveProductPlan;
+use App\Core\Services\Blueprints\ProjectBlueprintProviderRegistry;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
@@ -33,10 +34,14 @@ use App\Core\Services\ProjectTrafficContextRegistry;
 use App\Core\Services\Restoration\ProductResourceRestorationRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceAnalyticsAdministrationProviderRegistry;
 use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
+use App\Core\Services\WorkspaceCredentialMutationProviderRegistry;
 use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceDeployerAdministrationProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
+use App\Core\Services\WorkspaceMonitorAdministrationRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceNativeNotificationProviderRegistry;
 use App\Core\Services\WorkspaceProductUsageProviderRegistry;
@@ -54,6 +59,11 @@ final class CoreServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(ProjectProductLinkRegistry::class);
+        $this->app->singleton(WorkspaceAnalyticsAdministrationProviderRegistry::class);
+        $this->app->singleton(WorkspaceMonitorAdministrationRegistry::class);
+        $this->app->singleton(WorkspaceCredentialMutationProviderRegistry::class);
+        $this->app->singleton(WorkspaceDeployerAdministrationProviderRegistry::class);
+        $this->app->singleton(ProjectBlueprintProviderRegistry::class);
         $this->app->singleton(ProjectInfrastructureProviderRegistry::class);
         $this->app->singleton(WorkspaceNativeNotificationProviderRegistry::class);
         $this->app->singleton(ProductDeletionRegistry::class);

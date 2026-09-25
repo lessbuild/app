@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Actions\Automation;
 
+use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\Entitlements;
 use Laravel\Sanctum\NewAccessToken;
@@ -22,13 +23,14 @@ class RotatePersonalAccessTokenAction
      * @param  PersonalAccessToken  $token  Already-authorized token being replaced.
      * @return NewAccessToken The replacement plaintext token result.
      */
-    public function handle(User $actor, PersonalAccessToken $token): NewAccessToken
+    public function handle(User $actor, PersonalAccessToken $token, ?Organization $organization = null): NewAccessToken
     {
-        $this->entitlements->enforce($actor, 'api');
+        $organization ??= $actor->currentOrganization;
+        $this->entitlements->enforce($organization ?? $actor, 'api');
         $abilities = $token->abilities;
         $hasWorkspaceScope = collect($abilities)->contains(fn (mixed $ability): bool => is_string($ability) && str_starts_with($ability, 'workspace:'));
-        if (! $hasWorkspaceScope && $actor->currentOrganization !== null) {
-            $abilities[] = 'workspace:'.$actor->currentOrganization->getKey();
+        if (! $hasWorkspaceScope && $organization !== null) {
+            $abilities[] = 'workspace:'.$organization->getKey();
         }
 
         $replacement = $actor->createToken($token->name, array_values(array_unique($abilities)), now()->addYear());

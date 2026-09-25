@@ -15,6 +15,7 @@ class CreateProjectAction
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly ApplicationTemplateCatalog $templates,
+        private readonly ApplyApplicationTemplate $applyTemplate,
     ) {}
 
     /**
@@ -29,34 +30,21 @@ class CreateProjectAction
         $preset = $attributes['preset'] ?? null;
         $template = $this->templates->for(is_string($preset) ? $preset : '');
         $slug = $this->uniqueSlug($organization->id, $attributes['name']);
+        unset($attributes['preset']);
 
         return DB::connection('deployer')->transaction(function () use ($organization, $actor, $attributes, $template, $slug): Project {
             $project = $organization->projects()->create([
                 ...$attributes,
-                'template_version' => $template->version(),
+                ...$this->applyTemplate->projectAttributes($template),
                 'slug' => $slug,
                 'created_by' => $actor->id,
             ]);
-            $environment = $project->environments()->create([
+            $environment = $this->applyTemplate->createEnvironment($project, [
                 'name' => 'Production',
                 'slug' => 'production',
                 'type' => 'production',
-                'branch' => 'main',
-                'runtime_type' => $template->runtimeType,
-                'build_command' => $template->buildCommand,
-                'start_command' => $template->startCommand,
-                'container_port' => $template->containerPort,
-                'dockerfile_path' => $template->dockerfilePath,
-                'is_protected' => true,
-                'requires_deployment_approval' => true,
-            ]);
-            if ($this->entitlements->allows($organization, 'workers')) {
-                foreach ($template->processes as $process) {
-                    $environment->processes()->create([
-                        ...$process, 'replicas' => 1, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => true,
-                    ]);
-                }
-            }
+            ], $template);
+            $this->applyTemplate->configureProcesses($environment, $template, $this->entitlements->allows($organization, 'workers'));
 
             return $project;
         });

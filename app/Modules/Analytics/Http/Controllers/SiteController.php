@@ -5,10 +5,12 @@ namespace App\Modules\Analytics\Http\Controllers;
 use App\Modules\Analytics\Actions\Sites\CreateSiteForWorkspace;
 use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Models\Site;
-use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use App\Modules\Analytics\Services\AnalyticsPlanAuthority;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
@@ -18,8 +20,7 @@ class SiteController extends Controller
         EnsurePersonalWorkspace $ensureWorkspace,
         AnalyticsWorkspaceAccess $access,
         AnalyticsPlanAuthority $plans,
-    ): View
-    {
+    ): View {
         $user = request()->user();
         $workspace = $ensureWorkspace->handle($user);
         abort_unless($access->roleFor($user, $workspace)?->canManageSites() === true, 403);
@@ -48,8 +49,7 @@ class SiteController extends Controller
         AnalyticsWorkspaceAccess $access,
         AnalyticsPlanAuthority $plans,
         CreateSiteForWorkspace $createSite,
-    ): RedirectResponse
-    {
+    ): RedirectResponse {
         $workspace = $ensureWorkspace->handle($request->user());
         abort_unless($access->roleFor($request->user(), $workspace)?->canManageSites() === true, 403);
 
@@ -84,7 +84,7 @@ class SiteController extends Controller
         return view('analytics::sites.setup', compact('site'));
     }
 
-    public function verify(Request $request, Site $site): RedirectResponse
+    public function verify(Request $request, Site $site, AnalyticsDeletionFence $fence): RedirectResponse
     {
         $this->authorize('manage', $site);
 
@@ -97,7 +97,15 @@ class SiteController extends Controller
             return back()->withErrors(['token' => 'That verification token does not match.']);
         }
 
-        $site->update(['verified_at' => now()]);
+        DB::connection('analytics')->transaction(function () use ($site, $fence, $validated): void {
+            $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+            $lockedSite = Site::query()->where('workspace_id', $workspace->getKey())->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $fence->assertWorkspaceOpen($workspace->getKey());
+            $fence->assertSiteOpen($lockedSite->getKey());
+            $this->authorize('manage', $lockedSite);
+            abort_unless(hash_equals((string) $lockedSite->verification_token, $validated['token']), 422);
+            $lockedSite->update(['verified_at' => now()]);
+        }, attempts: 3);
 
         return back()->with('status', 'Domain verified. Your tracker can now collect events.');
     }

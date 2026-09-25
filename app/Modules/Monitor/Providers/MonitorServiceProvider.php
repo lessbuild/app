@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Blueprints\ProjectBlueprintProviderRegistry;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
@@ -25,7 +26,9 @@ use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\Restoration\ProductResourceRestorationRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceCredentialMutationProviderRegistry;
 use App\Core\Services\WorkspaceCredentialProviderRegistry;
+use App\Core\Services\WorkspaceMonitorAdministrationRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
@@ -41,12 +44,15 @@ use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
+use App\Modules\Monitor\Services\Core\MonitorAlertAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorApiDocumentationProvider;
 use App\Modules\Monitor\Services\Core\MonitorCustomerStatusPageProvider;
+use App\Modules\Monitor\Services\Core\MonitorDestinationAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
 use App\Modules\Monitor\Services\Core\MonitorProductDeletionProvider;
 use App\Modules\Monitor\Services\Core\MonitorProductWorkspaceProvisioner;
+use App\Modules\Monitor\Services\Core\MonitorProjectBlueprintProvider;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionOutboxDispatcher;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionOutboxSource;
@@ -56,7 +62,9 @@ use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceRestorationProvider;
+use App\Modules\Monitor\Services\Core\MonitorSettingsAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceCredentialMutationProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceCredentialProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
@@ -154,6 +162,11 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         }
 
         app(ProjectProductLinkRegistry::class)->register('monitor', app(MonitorProjectLink::class));
+        app(ProjectBlueprintProviderRegistry::class)->register('monitor', app(MonitorProjectBlueprintProvider::class));
+        app(WorkspaceCredentialMutationProviderRegistry::class)->register('monitor', app(MonitorWorkspaceCredentialMutationProvider::class));
+        app(WorkspaceMonitorAdministrationRegistry::class)->registerAlerts(app(MonitorAlertAdministrationProvider::class));
+        app(WorkspaceMonitorAdministrationRegistry::class)->registerDestinations(app(MonitorDestinationAdministrationProvider::class));
+        app(WorkspaceMonitorAdministrationRegistry::class)->registerSettings(app(MonitorSettingsAdministrationProvider::class));
         app(ProjectConnectionDiagnosticRegistry::class)->register('monitor', app(MonitorProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('monitor', app(MonitorResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));

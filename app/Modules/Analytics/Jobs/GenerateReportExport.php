@@ -5,6 +5,7 @@ namespace App\Modules\Analytics\Jobs;
 use App\Core\Services\Auth\ProductAuthentication;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Modules\Analytics\Models\ReportExport;
+use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Policies\SitePolicy;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
@@ -25,7 +26,7 @@ class GenerateReportExport implements ShouldQueue
 
     public int $tries = 2;
 
-    public function __construct(public int $exportId)
+    public function __construct(public int $exportId, public int $generation = 0)
     {
         $this->connection = 'analytics';
         $this->queue = 'analytics';
@@ -34,14 +35,15 @@ class GenerateReportExport implements ShouldQueue
     public function handle(OverviewReport $report): void
     {
         $export = DB::connection('analytics')->transaction(function (): ?ReportExport {
-            $candidate = ReportExport::query()->find($this->exportId);
+            $candidate = ReportExport::query()->whereKey($this->exportId)->where('generation', $this->generation)->find($this->exportId);
             if (! $candidate) {
                 return null;
             }
             DB::connection('analytics')->table('workspaces')->where('id', $candidate->workspace_id)->update(['id' => DB::raw('id')]);
             $workspace = Workspace::query()->whereKey($candidate->workspace_id)->lockForUpdate()->first();
-            $export = ReportExport::query()->lockForUpdate()->with('site')->find($this->exportId);
-            if (! $workspace || ! $export || $export->status !== 'pending') {
+            $site = Site::query()->where('workspace_id', $candidate->workspace_id)->whereKey($candidate->site_id)->lockForUpdate()->first();
+            $export = ReportExport::query()->where('generation', $this->generation)->lockForUpdate()->with('site')->find($this->exportId);
+            if (! $workspace || ! $site || ! $export || $export->status !== 'pending') {
                 return null;
             }
             if (CarbonImmutable::parse($export->expires_at)->isPast()) {
@@ -49,8 +51,9 @@ class GenerateReportExport implements ShouldQueue
 
                 return null;
             }
-            if (app(AnalyticsDeletionFence::class)->isFenced('workspace', (string) $export->workspace_id)) {
-                $export->update(['status' => 'failed', 'failure_message' => 'The Analytics workspace is being deleted.']);
+            $fence = app(AnalyticsDeletionFence::class);
+            if ($fence->isFenced('workspace', (string) $export->workspace_id) || $fence->isSiteFenced($site->getKey())) {
+                $export->update(['status' => 'failed', 'failure_message' => 'The Analytics site is being deleted.']);
 
                 return null;
             }
@@ -111,14 +114,17 @@ class GenerateReportExport implements ShouldQueue
             DB::connection('analytics')->transaction(function () use ($export, $path, $contents): void {
                 DB::connection('analytics')->table('workspaces')->where('id', $export->workspace_id)->update(['id' => DB::raw('id')]);
                 $workspace = Workspace::query()->whereKey($export->workspace_id)->lockForUpdate()->first();
-                $current = ReportExport::query()->lockForUpdate()->with('site')->find($export->getKey());
+                $site = Site::query()->where('workspace_id', $export->workspace_id)->whereKey($export->site_id)->lockForUpdate()->first();
+                $current = ReportExport::query()->where('generation', $this->generation)->lockForUpdate()->with('site')->find($export->getKey());
 
                 if ($workspace === null
+                    || $site === null
                     || $current === null
                     || $current->status !== 'processing'
                     || app(AnalyticsDeletionFence::class)->isFenced('workspace', (string) $export->workspace_id)
+                    || app(AnalyticsDeletionFence::class)->isSiteFenced($site->getKey())
                     || ! $this->requesterCanAccess($current)) {
-                    $current?->update(['status' => 'failed', 'failure_message' => 'The Analytics workspace or requester is no longer available.']);
+                    $current?->update(['status' => 'failed', 'failure_message' => 'The Analytics site or requester is no longer available.']);
 
                     return;
                 }
@@ -130,17 +136,17 @@ class GenerateReportExport implements ShouldQueue
                 $current->update(['status' => 'completed', 'file_path' => $path, 'completed_at' => now()]);
             }, attempts: 3);
         } catch (\Throwable $exception) {
-            if (is_string($path)) {
-                Storage::disk('analytics-local')->delete($path);
-            }
-            $export->update(['status' => 'failed', 'failure_message' => str($exception->getMessage())->limit(500)->toString()]);
+            ReportExport::query()->whereKey($export->getKey())->where('generation', $this->generation)
+                ->where('status', 'processing')->update([
+                    'status' => 'failed', 'failure_message' => str($exception->getMessage())->limit(500)->toString(), 'updated_at' => now(),
+                ]);
             throw $exception;
         }
     }
 
     public function failed(?\Throwable $exception): void
     {
-        ReportExport::query()->whereKey($this->exportId)->update([
+        ReportExport::query()->whereKey($this->exportId)->where('generation', $this->generation)->whereIn('status', ['pending', 'processing'])->update([
             'status' => 'failed',
             'failure_message' => str($exception?->getMessage())->limit(500)->toString(),
         ]);

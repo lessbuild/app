@@ -29,3 +29,9 @@ Schedule::command('resource-restorations:process --limit=100')
     ->when(fn (): bool => Schema::connection('core')->hasTable('resource_restoration_requests'))
     ->withoutOverlapping(5)
     ->onOneServer();
+
+Schedule::command('project-blueprints:process --limit=100')
+    ->everyMinute()
+    ->when(fn (): bool => Schema::connection('core')->hasTable('project_blueprint_steps'))
+    ->withoutOverlapping(15)
+    ->onOneServer();

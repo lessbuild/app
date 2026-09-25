@@ -18,6 +18,7 @@ use App\Core\Http\Controllers\WorkspaceCredentialInventoryController;
 use App\Core\Http\Controllers\WorkspaceCustomerStatusPagesController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
+use App\Core\Http\Controllers\WorkspaceDeployerDeploymentControlsController;
 use App\Core\Http\Controllers\WorkspaceDirectoryController;
 use App\Core\Http\Controllers\WorkspaceFeatureRolloutController;
 use App\Core\Http\Controllers\WorkspaceFeedbackController;
@@ -166,6 +167,15 @@ Route::middleware('auth:platform')->group(function (): void {
     Route::get('/workspaces/{workspace}/workflows', WorkspaceWorkflowActivityController::class)
         ->name('core.workspace.workflows');
 
+    Route::prefix('workspaces/{workspace}/projects/{project}/environments/{environment}/deployment-controls')
+        ->scopeBindings()
+        ->name('core.projects.deployer-deployment-controls.')
+        ->controller(WorkspaceDeployerDeploymentControlsController::class)
+        ->group(function (): void {
+            Route::get('/', 'show')->name('show');
+            Route::patch('/', 'update')->middleware('throttle:30,1')->name('update');
+        });
+
     Route::get('/workspaces/{workspace}/deliveries', WorkspaceWebhookDeliveryHistoryController::class)
         ->middleware(EnsureWorkspaceFeatureRollout::class.':delivery_history')
         ->name('core.workspace.deliveries');
@@ -272,3 +282,8 @@ Route::middleware('auth:platform')->group(function (): void {
                 ->name('connections.automation');
         });
 });
+
+require __DIR__.'/credential-management.php';
+require __DIR__.'/monitor-administration.php';
+require __DIR__.'/analytics-administration.php';
+require __DIR__.'/project-blueprints.php';

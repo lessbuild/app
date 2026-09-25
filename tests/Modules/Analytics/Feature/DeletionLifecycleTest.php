@@ -18,9 +18,11 @@ use App\Modules\Analytics\Models\IngestionBatch;
 use App\Modules\Analytics\Models\Invitation;
 use App\Modules\Analytics\Models\ReportExport;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Models\SiteDeletionOperation;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Services\Deletion\AnalyticsProductDeletionProvider;
+use App\Modules\Analytics\Services\Deletion\AnalyticsSiteDeletionService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -358,6 +360,31 @@ final class DeletionLifecycleTest extends TestCase
 
         $this->assertSame('completed', $provider->purge($purgeAttempt)->status);
         $this->assertDatabaseHas('analytics_deletion_files', ['path' => $path, 'status' => 'deleted'], 'analytics');
+    }
+
+    public function test_workspace_purge_waits_for_accepted_site_cleanup_which_can_finish_after_workspace_fencing(): void
+    {
+        Storage::fake('analytics-local');
+        [$provider, $attempt, $workspace, $request, $step] = $this->workspaceAttempt();
+        $owner = $workspace->users()->wherePivot('role', WorkspaceRole::Owner->value)->firstOrFail();
+        $site = $this->makeSite($workspace);
+        $operation = SiteDeletionOperation::query()->create([
+            'site_source_id' => (string) $site->getKey(), 'workspace_source_id' => (string) $workspace->getKey(),
+            'requester_source_id' => (string) $owner->getKey(), 'payload_hash' => hash('sha256', 'accepted-site-cleanup'),
+            'status' => 'waiting', 'last_error_code' => 'export_file_cleanup_pending', 'file_manifest' => [], 'manifest_at' => now(),
+        ]);
+
+        $this->assertSame('ready', $provider->prepare($attempt)->status);
+        $purgeAttempt = $this->advanceToPurge($request, $step);
+        $waiting = $provider->purge($purgeAttempt);
+        $this->assertSame('waiting', $waiting->status);
+        $this->assertSame('site_deletion_pending', $waiting->reasonCode);
+        $this->assertDatabaseHas('workspaces', ['id' => $workspace->getKey()], 'analytics');
+
+        $this->assertTrue(app(AnalyticsSiteDeletionService::class)->processAccepted((string) $operation->getKey())->completed());
+        $this->assertSame('completed', $provider->purge($purgeAttempt)->status);
+        $this->assertDatabaseMissing('workspaces', ['id' => $workspace->getKey()], 'analytics');
+        $this->assertDatabaseMissing('site_deletion_operations', ['id' => $operation->getKey()], 'analytics');
     }
 
     private function advanceToPurge(DeletionRequest $request, DeletionStep $step): ProductDeletionAttempt

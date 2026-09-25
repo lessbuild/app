@@ -10,6 +10,7 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('analytics:dispatch-pending')->everyMinute()->withoutOverlapping();
+Schedule::command('analytics:process-site-deletions')->everyMinute()->withoutOverlapping();
 Artisan::command('analytics:health-probe', function (): int {
     RecordQueueWorkerHealth::dispatch();
 

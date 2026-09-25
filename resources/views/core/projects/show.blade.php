@@ -249,7 +249,14 @@
                                     @foreach ($environment->resources as $resource)
                                         <li class="flex items-center justify-between gap-3 text-sm">
                                             <span class="truncate font-bold text-ink">{{ $resource->name ?: str($resource->resource_type)->headline() }}</span>
-                                            <span class="shrink-0 text-xs text-muted">{{ $products[$resource->product] ?? str($resource->product)->headline() }}</span>
+                                            <span class="flex shrink-0 items-center gap-3">
+                                                <span class="text-xs text-muted">{{ $products[$resource->product] ?? str($resource->product)->headline() }}</span>
+                                                @if ($resource->product === 'deployer' && $resource->resource_type === 'environment' && $resource->status === 'active' && $environment->status === 'active')
+                                                    <a href="{{ route('core.projects.deployer-deployment-controls.show', [$workspace, $project, $environment]) }}" class="text-xs font-extrabold text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus">
+                                                        {{ __('Deployment controls') }}
+                                                    </a>
+                                                @endif
+                                            </span>
                                         </li>
                                     @endforeach
                                 </ul>

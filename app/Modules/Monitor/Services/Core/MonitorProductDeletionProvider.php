@@ -13,6 +13,7 @@ use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 final class MonitorProductDeletionProvider implements ProductDeletionProvider
 {
@@ -315,12 +316,14 @@ final class MonitorProductDeletionProvider implements ProductDeletionProvider
             throw new \RuntimeException('Monitor account still owns or belongs to a workspace.');
         }
         DB::connection('monitor')->table('sessions')->where('user_id', $user->getKey())->delete();
+        $this->purgeOperationReceipts('actor_source_id', (string) $user->getKey());
         DB::connection('monitor')->table('password_reset_tokens')->where('email', $user->email)->delete();
         $user->delete();
     }
 
     private function purgeWorkspace(string $workspaceId): void
     {
+        $this->purgeOperationReceipts('workspace_source_id', $workspaceId);
         $workspace = Workspace::query()->whereKey($workspaceId)->lockForUpdate()->first();
         if ($workspace === null) {
             throw (new ModelNotFoundException)->setModel(Workspace::class, [$workspaceId]);
@@ -345,6 +348,15 @@ final class MonitorProductDeletionProvider implements ProductDeletionProvider
             'updated_at' => now('UTC'),
         ]);
         $workspace->delete();
+    }
+
+    private function purgeOperationReceipts(string $column, string $id): void
+    {
+        foreach (['credential_mutation_receipts', 'blueprint_application_receipts'] as $table) {
+            if (Schema::connection('monitor')->hasTable($table)) {
+                DB::connection('monitor')->table($table)->where($column, $id)->delete();
+            }
+        }
     }
 
     private function validTarget(ProductDeletionTarget $target): bool

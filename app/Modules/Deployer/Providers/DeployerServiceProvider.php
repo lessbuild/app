@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Blueprints\ProjectBlueprintProviderRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
@@ -26,8 +27,10 @@ use App\Core\Services\ResolveSharedProjectContextForRequest;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
+use App\Core\Services\WorkspaceCredentialMutationProviderRegistry;
 use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceDeployerAdministrationProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
 use App\Core\Services\WorkspaceNativeNotificationProviderRegistry;
 use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
@@ -51,6 +54,7 @@ use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerPlatformStatusProvider;
 use App\Modules\Deployer\Services\Core\DeployerProductDeletionProvider;
 use App\Modules\Deployer\Services\Core\DeployerProductWorkspaceProvisioner;
+use App\Modules\Deployer\Services\Core\DeployerProjectBlueprintProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionDiagnosticProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionOutboxDispatcher;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionOutboxSource;
@@ -62,8 +66,10 @@ use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceActivityProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceCostBreakdownProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceCredentialMutationProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceCredentialProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceCustomerStatusManagementProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceDeploymentControlsProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceFeedbackHistoryProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
@@ -106,6 +112,8 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         Cashier::useCustomerModel(User::class);
         app(ProductApiDocumentationRegistry::class)->register('deployer', app(DeployerApiDocumentationProvider::class));
         app(ProjectProductLinkRegistry::class)->register('deployer', app(DeployerProjectLink::class));
+        app(ProjectBlueprintProviderRegistry::class)->register('deployer', app(DeployerProjectBlueprintProvider::class));
+        app(WorkspaceCredentialMutationProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCredentialMutationProvider::class));
         app(ProjectConnectionDiagnosticRegistry::class)->register('deployer', app(DeployerProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
@@ -113,6 +121,9 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(WorkspaceNativeNotificationProviderRegistry::class)->register('deployer', app(DeployerNativeNotificationProvider::class));
         app(ProjectInfrastructureProviderRegistry::class)->register('deployer', app(DeployerProjectInfrastructureProvider::class));
         app(WorkspaceCredentialProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCredentialProvider::class));
+        app(WorkspaceDeployerAdministrationProviderRegistry::class)->registerDeploymentControls(
+            app(DeployerWorkspaceDeploymentControlsProvider::class),
+        );
         app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
         app(WorkspaceCostBreakdownProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCostBreakdownProvider::class));
         app(WorkspaceCustomerStatusManagementProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCustomerStatusManagementProvider::class));

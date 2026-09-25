@@ -39,7 +39,7 @@ class ProcessEventBatch implements ShouldQueue
             if (! $candidate) {
                 return;
             }
-            $site = Site::query()->withTrashed()->find($candidate->site_id);
+            $site = Site::withTrashed()->find($candidate->site_id);
             if (! $site) {
                 IngestionBatch::query()->whereKey($this->batchId)->where('status', IngestionStatus::Pending->value)->update([
                     'status' => IngestionStatus::Failed->value,
@@ -51,12 +51,17 @@ class ProcessEventBatch implements ShouldQueue
             }
             DB::connection('analytics')->table('workspaces')->where('id', $site->workspace_id)->update(['id' => DB::raw('id')]);
             $workspace = Workspace::query()->whereKey($site->workspace_id)->lockForUpdate()->first();
+            $site = Site::withTrashed()->where('workspace_id', $workspace?->getKey() ?? $site->workspace_id)
+                ->whereKey($site->getKey())->lockForUpdate()->first();
             $batch = IngestionBatch::query()->lockForUpdate()->find($this->batchId);
 
             if (! $batch || in_array($batch->status, [IngestionStatus::Processed->value, IngestionStatus::Failed->value], true)) {
                 return;
             }
-            if (! $workspace || app(AnalyticsDeletionFence::class)->isFenced('workspace', (string) $workspace->getKey())) {
+            $fence = app(AnalyticsDeletionFence::class);
+            if (! $workspace || ! $site || $site->trashed()
+                || $fence->isFenced('workspace', (string) $workspace->getKey())
+                || $fence->isSiteFenced($site->getKey())) {
                 $batch->update([
                     'status' => IngestionStatus::Failed->value,
                     'failure_message' => 'The Analytics workspace is being deleted.',
@@ -66,6 +71,7 @@ class ProcessEventBatch implements ShouldQueue
             }
 
             $batch->update(['status' => IngestionStatus::Processing->value]);
+            $batch->setRelation('site', $site);
             $rebuildSiteVisits->handle($batch->site, $batch);
             $rebuildGoalConversions->handle($batch->site, $batch);
             $rebuildReportAggregates->handle($batch->site, $batch);

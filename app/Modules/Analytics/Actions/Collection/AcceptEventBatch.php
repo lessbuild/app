@@ -33,11 +33,12 @@ final class AcceptEventBatch
         $receivedAt = CarbonImmutable::now();
 
         $result = DB::connection('analytics')->transaction(function () use ($site, $events, $batchId, $receivedAt, $monthlyEventLimit): array {
-            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
-            $workspace = $lockedSite->workspace()->lockForUpdate()->firstOrFail();
+            $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+            $lockedSite = Site::query()->where('workspace_id', $workspace->getKey())->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
             $this->deletionFence->assertWorkspaceOpen($workspace->getKey());
+            $this->deletionFence->assertSiteOpen($lockedSite->getKey());
 
-            $usagePeriod = $this->usageMeter->lockPeriod($site->workspace_id, $receivedAt);
+            $usagePeriod = $this->usageMeter->lockPeriod($lockedSite->workspace_id, $receivedAt);
             $batch = $lockedSite->ingestionBatches()->create([
                 'batch_id' => $batchId,
                 'event_count' => count($events),
@@ -46,7 +47,7 @@ final class AcceptEventBatch
             ]);
 
             $rows = array_map(
-                fn (NormalizedEvent $event): array => $event->toDatabase($site->id, $batch->id, $receivedAt),
+                fn (NormalizedEvent $event): array => $event->toDatabase($lockedSite->id, $batch->id, $receivedAt),
                 $events,
             );
 
