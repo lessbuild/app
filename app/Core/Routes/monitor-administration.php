@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Http\Controllers\WorkspaceMonitorAdministrationController;
+use App\Core\Http\Controllers\WorkspaceMonitorMaintenanceWindowController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:platform')->prefix('/workspaces/{workspace}/monitor')->name('core.workspace.monitor.')->group(function (): void {
@@ -23,4 +24,9 @@ Route::middleware('auth:platform')->prefix('/workspaces/{workspace}/monitor')->n
     Route::get('/integrations', [WorkspaceMonitorAdministrationController::class, 'integrations'])->name('integrations');
     Route::get('/audit', [WorkspaceMonitorAdministrationController::class, 'audit'])->name('audit');
     Route::get('/export', [WorkspaceMonitorAdministrationController::class, 'export'])->middleware('throttle:10,1')->name('export');
+
+    Route::get('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'index'])->name('maintenance-windows');
+    Route::post('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'store'])->middleware('throttle:30,1')->name('maintenance-windows.store');
+    Route::patch('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'update'])->middleware('throttle:30,1')->name('maintenance-windows.update');
+    Route::delete('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'destroy'])->middleware('throttle:30,1')->name('maintenance-windows.destroy');
 });

@@ -49,6 +49,7 @@ use App\Modules\Monitor\Services\Core\MonitorApiDocumentationProvider;
 use App\Modules\Monitor\Services\Core\MonitorConfigurationAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorCustomerStatusPageProvider;
 use App\Modules\Monitor\Services\Core\MonitorDestinationAdministrationProvider;
+use App\Modules\Monitor\Services\Core\MonitorMaintenanceWindowAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
 use App\Modules\Monitor\Services\Core\MonitorProductDeletionProvider;
@@ -169,6 +170,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(WorkspaceMonitorAdministrationRegistry::class)->registerDestinations(app(MonitorDestinationAdministrationProvider::class));
         app(WorkspaceMonitorAdministrationRegistry::class)->registerSettings(app(MonitorSettingsAdministrationProvider::class));
         app(WorkspaceMonitorAdministrationRegistry::class)->registerConfiguration(app(MonitorConfigurationAdministrationProvider::class));
+        app(WorkspaceMonitorAdministrationRegistry::class)->registerMaintenanceWindows(app(MonitorMaintenanceWindowAdministrationProvider::class));
         app(ProjectConnectionDiagnosticRegistry::class)->register('monitor', app(MonitorProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('monitor', app(MonitorResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));

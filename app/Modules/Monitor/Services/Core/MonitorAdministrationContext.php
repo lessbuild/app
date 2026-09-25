@@ -51,6 +51,9 @@ final class MonitorAdministrationContext
         }
 
         $sourceUserIds = $this->identities->sourceIdsFor($user, 'monitor');
+        if (count($sourceUserIds) !== 1) {
+            return null;
+        }
         $memberIds = $sourceWorkspace->members()->whereIn('users.id', $sourceUserIds)->pluck('users.id')->map(strval(...))->all();
         if (count($memberIds) !== 1) {
             return null;
