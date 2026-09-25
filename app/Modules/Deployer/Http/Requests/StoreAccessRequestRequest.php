@@ -78,7 +78,11 @@ class StoreAccessRequestRequest extends FormRequest
     protected function failedAuthorization(): never
     {
         if (app(RegistrationAccess::class)->allowsNewUser()) {
-            throw new HttpResponseException(redirect()->route('register'));
+            $registrationRoute = $this->routeIs('core.access-request.store')
+                ? 'platform.register'
+                : 'register';
+
+            throw new HttpResponseException(redirect()->route($registrationRoute));
         }
 
         throw new AuthorizationException;

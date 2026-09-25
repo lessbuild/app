@@ -1,6 +1,7 @@
 <?php
 
 use App\Core\Http\Controllers\Auth\PlatformSessionController;
+use App\Core\Http\Controllers\CoreAccessRequestController;
 use App\Core\Http\Controllers\CoreCustomerStatusPageController;
 use App\Core\Http\Controllers\CoreHelpController;
 use App\Core\Http\Controllers\CoreHomeController;
@@ -48,6 +49,11 @@ Route::post('/status/{product}/{slug}/subscribe', [CoreCustomerStatusPageControl
 $corePublicRoutePrefix = filled(config('platform.dashboard_host')) ? '' : 'core';
 Route::prefix($corePublicRoutePrefix)->group(function (): void {
     Route::get('/pricing', MarketingPricingController::class)->name('core.pricing');
+    Route::get('/request-access', [CoreAccessRequestController::class, 'create'])
+        ->name('core.access-request.create');
+    Route::post('/request-access', [CoreAccessRequestController::class, 'store'])
+        ->middleware('throttle:access-requests')
+        ->name('core.access-request.store');
     Route::view('/privacy', 'core::marketing.privacy')->name('core.privacy');
     Route::view('/terms', 'core::marketing.terms')->name('core.terms');
 });

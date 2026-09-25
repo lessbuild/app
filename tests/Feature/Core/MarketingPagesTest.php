@@ -22,7 +22,8 @@ final class MarketingPagesTest extends TestCase
             ->assertOk()
             ->assertSee(route('core.privacy'), false)
             ->assertSee(route('core.terms'), false)
-            ->assertSee(route('core.pricing'), false);
+            ->assertSee(route('core.pricing'), false)
+            ->assertSee(route('core.access-request.create'), false);
     }
 
     public function test_core_pricing_page_preserves_independent_configured_product_catalogs(): void
@@ -98,7 +99,8 @@ final class MarketingPagesTest extends TestCase
                 ->assertOk()
                 ->assertSee('At a glance')
                 ->assertSee('What you can do')
-                ->assertSee(route('core.pricing'), false);
+                ->assertSee(route('core.pricing'), false)
+                ->assertSee(route('core.access-request.create'), false);
         }
     }
 

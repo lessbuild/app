@@ -253,6 +253,7 @@
             ['label' => __('Monitor'), 'href' => route('core.marketing.product', 'monitor')],
             ['label' => __('Analytics'), 'href' => route('core.marketing.product', 'analytics')],
             ['label' => __('Pricing'), 'href' => route('core.pricing')],
+            ['label' => __('Request Deployer access'), 'href' => route('core.access-request.create')],
             ['label' => __('Help and API docs'), 'href' => route('core.help')],
             ['label' => __('Platform status'), 'href' => route('core.status')],
         ]"

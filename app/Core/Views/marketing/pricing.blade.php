@@ -134,6 +134,7 @@
         </x-signal.ui.alert>
 
         <footer class="mt-8 flex flex-wrap gap-3">
+            <x-signal.ui.button :href="route('core.access-request.create')" variant="secondary">{{ __('Request Deployer access') }}</x-signal.ui.button>
             <x-signal.ui.button :href="route('core.help')" variant="secondary">{{ __('Help and API docs') }}</x-signal.ui.button>
             <x-signal.ui.button :href="route('core.status')" variant="quiet">{{ __('Service status') }}</x-signal.ui.button>
         </footer>
