@@ -39,7 +39,7 @@
 
             <x-signal.ui.card class="mt-5 p-5 sm:p-6">
                 <h2 class="text-lg font-extrabold">{{ __('Server-side collection example') }}</h2>
-                <p class="mt-1 text-sm leading-6 text-muted">{{ __('Send at most 20 events per request. Keep each UUID unchanged on retry; duplicate IDs are ignored. The response acknowledges acceptance, not completed report processing.') }}</p>
+                <p class="mt-1 text-sm leading-6 text-muted">{{ __('Send at most 20 events in a request no larger than 32,768 bytes. Keep each UUID unchanged on retry; duplicate IDs are ignored. The response acknowledges acceptance, not completed report processing.') }}</p>
                 <x-signal.ui.code-block class="mt-4" :code="$curlExample" />
                 <p class="mt-3 text-xs leading-5 text-muted">{{ __('No bearer token is sent. The public site ID is not a secret; every event is validated, site-origin rules are enforced when Origin is present, and workspace collection availability is checked.') }}</p>
             </x-signal.ui.card>
@@ -53,6 +53,17 @@
                                 <div class="min-w-0">
                                     <code class="break-all text-sm font-bold text-ink">{{ strtoupper($method) }} {{ $path }}</code>
                                     <p class="mt-1 text-xs leading-5 text-muted">{{ $operation['summary'] }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-muted">{{ __('Responses: :codes', ['codes' => implode(', ', array_keys($operation['responses'] ?? []))]) }}</p>
+                                    @if (isset($operation['x-max-body-bytes']))
+                                        <p class="mt-1 text-xs leading-5 text-muted">{{ __('Maximum request body') }}: {{ number_format($operation['x-max-body-bytes']) }} {{ __('bytes') }}</p>
+                                    @endif
+                                    @if ($operation['x-rate-limits'] ?? [])
+                                        <div class="mt-2 flex flex-wrap gap-2">
+                                            @foreach ($operation['x-rate-limits'] as $rateLimit)
+                                                <x-signal.ui.badge tone="neutral">{{ number_format($rateLimit['requests']) }}/min · {{ $rateLimit['key'] }}</x-signal.ui.badge>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 </div>
                                 <span class="shrink-0 text-xs font-semibold text-subtle">{{ $operation['operationId'] }}</span>
                             </div>

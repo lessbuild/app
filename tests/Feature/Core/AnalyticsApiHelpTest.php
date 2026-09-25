@@ -12,6 +12,7 @@ final class AnalyticsApiHelpTest extends TestCase
             'platform.products.analytics.enabled' => true,
             'platform.products.analytics.host' => 'analytics.example.test',
             'platform.products.analytics.url' => 'https://analytics.example.test',
+            'analytics.collect_rate_per_minute' => 44,
         ]);
 
         $this->get(route('core.help'))
@@ -23,6 +24,9 @@ final class AnalyticsApiHelpTest extends TestCase
             ->assertOk()
             ->assertSee('https://analytics.example.test/api/v1/openapi.json')
             ->assertSee('/api/v1/collect/{publicId}')
+            ->assertSee('Responses: 202, 403, 404, 413, 422, 429, 503')
+            ->assertSee('44/min · source IP')
+            ->assertSee('32,768 bytes')
             ->assertSee('SITE_PUBLIC_ID')
             ->assertDontSee('Authorization: Bearer');
     }

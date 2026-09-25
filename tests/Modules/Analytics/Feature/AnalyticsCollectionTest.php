@@ -14,6 +14,7 @@ use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
 use Carbon\CarbonImmutable;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
@@ -104,6 +105,40 @@ class AnalyticsCollectionTest extends TestCase
 
         $this->assertDatabaseCount('analytics_events', 1);
         $this->assertDatabaseCount('ingestion_batches', 1);
+    }
+
+    public function test_collection_rate_limit_returns_standard_retry_headers(): void
+    {
+        Queue::fake();
+        Cache::flush();
+        config(['analytics.collect_rate_per_minute' => 1]);
+        $site = $this->makeSite();
+        $payload = ['events' => [[
+            'id' => (string) Str::uuid(),
+            'type' => 'pageview',
+            'path' => '/',
+        ]]];
+
+        $this->postJson("/api/v1/collect/{$site->public_id}", $payload)->assertAccepted();
+        $this->postJson("/api/v1/collect/{$site->public_id}", $payload)
+            ->assertStatus(429)
+            ->assertHeader('Retry-After')
+            ->assertHeader('X-RateLimit-Limit', '1')
+            ->assertHeader('X-RateLimit-Remaining', '0');
+    }
+
+    public function test_collection_rejects_request_bodies_over_the_published_limit(): void
+    {
+        $site = $this->makeSite();
+
+        $this->postJson("/api/v1/collect/{$site->public_id}", [
+            'events' => [[
+                'id' => (string) Str::uuid(),
+                'type' => 'event',
+                'path' => '/',
+                'oversized' => str_repeat('x', 33000),
+            ]],
+        ])->assertStatus(413);
     }
 
     public function test_duplicate_event_ids_within_a_batch_count_only_inserted_events(): void

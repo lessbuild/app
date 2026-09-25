@@ -4,6 +4,8 @@ Prepared 23 September 2026; updated 25 September 2026. Implementation is in prog
 
 ## Implementation status
 
+Analytics collection now reads its 20-event and 32,768-byte request bounds from the same constants used by its OpenAPI contract. The published POST and CORS-preflight operations document their configured per-IP and per-site/IP limits, standard `429` headers, response codes, and JSON error bodies; Core Help displays the current limits and request bound. Deferred tests cover route/document parity, configured limits, rate-limit headers, and oversized payload rejection. See [Analytics API reference progress](verification/analytics-api-reference-progress-2026-09-25.md).
+
 The preview-first historical Deployer feedback importer and its remaining cutover gates are documented in [Deployer feedback import progress](verification/deployer-feedback-import-progress-2026-09-25.md).
 
 Monitor deployment details now add a before/after Analytics comparison for explicitly connected sites, using processed pageviews, distinct visitors, goal conversions, and converted visits. Both products use the same UTC windows, capped by elapsed time and the workspace plans; Analytics processing lag and pending/failed intake submissions are surfaced with their time semantics. The comparison links to the authorized Analytics site, other same-service deployments, and incidents that overlap the exact environment/window. Complete coverage indicators, source-report reconciliation, and full acceptance remain open. See [release traffic comparison progress](verification/release-traffic-comparison-progress-2026-09-25.md).

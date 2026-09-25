@@ -2,13 +2,14 @@
 
 namespace App\Modules\Analytics\Http\Requests\Collection;
 
+use App\Modules\Analytics\Services\AnalyticsCollectionLimits;
 use Illuminate\Foundation\Http\FormRequest;
 
 class CollectEventsRequest extends FormRequest
 {
     protected function prepareForValidation(): void
     {
-        abort_if(strlen($this->getContent()) > 32768, 413, 'Analytics payload is too large.');
+        abort_if(strlen($this->getContent()) > AnalyticsCollectionLimits::MAX_REQUEST_BYTES, 413, 'Analytics payload is too large.');
     }
 
     public function authorize(): bool
@@ -19,7 +20,7 @@ class CollectEventsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'events' => ['required', 'array', 'min:1', 'max:20'],
+            'events' => ['required', 'array', 'min:1', 'max:'.AnalyticsCollectionLimits::MAX_EVENTS_PER_BATCH],
             'events.*.id' => ['required', 'uuid'],
             'events.*.type' => ['required', 'string', 'in:pageview,event'],
             // The client timestamp is accepted only for schema compatibility;

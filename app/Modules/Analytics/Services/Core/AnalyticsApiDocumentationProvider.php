@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Services\Core;
 
 use App\Core\Contracts\ProductApiDocumentationProvider;
 use App\Core\Data\Help\ProductApiReference;
+use App\Modules\Analytics\Services\AnalyticsCollectionLimits;
 
 final class AnalyticsApiDocumentationProvider implements ProductApiDocumentationProvider
 {
@@ -80,6 +81,8 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
     /** @return array<string, mixed> */
     private function document(string $baseUrl): array
     {
+        $ratePerMinute = (int) config('analytics.collect_rate_per_minute', 120);
+
         return [
             'openapi' => '3.1.0',
             'info' => [
@@ -100,20 +103,25 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                     'post' => [
                         'operationId' => 'collectAnalyticsEventsV1',
                         'summary' => 'Accept a batch of Analytics events',
-                        'description' => 'Accepts one to twenty events. Event IDs are UUIDs and should remain unchanged when retrying. Events are processed asynchronously; the server records receipt time as occurred_at. Browser origins must match a domain registered for the site. The optional properties object is reduced to the supported name field before storage.',
+                        'description' => 'Accepts one to '.AnalyticsCollectionLimits::MAX_EVENTS_PER_BATCH.' events in a request no larger than '.number_format(AnalyticsCollectionLimits::MAX_REQUEST_BYTES).' bytes. Event IDs are UUIDs and should remain unchanged when retrying. Events are processed asynchronously; the server records receipt time as occurred_at. Browser origins must match a domain registered for the site. The optional properties object is reduced to the supported name field before storage.',
                         'security' => [],
+                        'x-max-body-bytes' => AnalyticsCollectionLimits::MAX_REQUEST_BYTES,
+                        'x-rate-limits' => [
+                            ['key' => 'source IP', 'requests' => $ratePerMinute, 'window_seconds' => 60],
+                            ['key' => 'public site ID and source IP', 'requests' => $ratePerMinute, 'window_seconds' => 60],
+                        ],
                         'requestBody' => [
                             'required' => true,
                             'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CollectionBatch']]],
                         ],
                         'responses' => [
                             '202' => ['description' => 'Batch accepted or duplicate event IDs ignored.', 'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/CollectionAccepted']]]],
-                            '403' => ['description' => 'Request origin is not registered for this site.'],
-                            '404' => ['description' => 'Site is missing or collection is unavailable.'],
-                            '413' => ['description' => 'Request body exceeds the payload limit.'],
-                            '422' => ['description' => 'Event payload failed validation.'],
-                            '429' => ['description' => 'Collection rate limit exceeded.'],
-                            '503' => ['description' => 'Collection is temporarily unavailable for the workspace plan.'],
+                            '403' => $this->errorResponse('Request origin is not registered for this site.'),
+                            '404' => $this->errorResponse('Site is missing or collection is unavailable.'),
+                            '413' => $this->errorResponse('Request body exceeds the '.number_format(AnalyticsCollectionLimits::MAX_REQUEST_BYTES).'-byte payload limit.'),
+                            '422' => $this->errorResponse('Event payload failed validation.'),
+                            '429' => $this->rateLimitResponse(),
+                            '503' => $this->errorResponse('Collection is temporarily unavailable for the workspace plan.'),
                         ],
                     ],
                     'options' => [
@@ -121,11 +129,15 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                         'summary' => 'Check whether a browser origin is allowed',
                         'description' => 'CORS preflight for the public collection endpoint. The Origin host must be registered for the site.',
                         'security' => [],
+                        'x-rate-limits' => [
+                            ['key' => 'source IP', 'requests' => $ratePerMinute, 'window_seconds' => 60],
+                            ['key' => 'public site ID and source IP', 'requests' => $ratePerMinute, 'window_seconds' => 60],
+                        ],
                         'responses' => [
                             '204' => ['description' => 'Origin is allowed.'],
-                            '403' => ['description' => 'Origin is not registered for this site.'],
-                            '404' => ['description' => 'Site is not available.'],
-                            '429' => ['description' => 'Collection rate limit exceeded.'],
+                            '403' => $this->errorResponse('Origin is not registered for this site.'),
+                            '404' => $this->errorResponse('Site is not available.'),
+                            '429' => $this->rateLimitResponse(),
                         ],
                     ],
                 ],
@@ -145,7 +157,7 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                         'type' => 'object',
                         'required' => ['events'],
                         'properties' => [
-                            'events' => ['type' => 'array', 'minItems' => 1, 'maxItems' => 20, 'items' => ['$ref' => '#/components/schemas/CollectionEvent']],
+                            'events' => ['type' => 'array', 'minItems' => 1, 'maxItems' => AnalyticsCollectionLimits::MAX_EVENTS_PER_BATCH, 'items' => ['$ref' => '#/components/schemas/CollectionEvent']],
                         ],
                         'additionalProperties' => true,
                     ],
@@ -178,8 +190,35 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                             'accepted' => ['type' => 'integer', 'minimum' => 0],
                         ],
                     ],
+                    'Error' => ['type' => 'object', 'properties' => [
+                        'message' => ['type' => 'string'],
+                        'errors' => ['type' => 'object', 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']]],
+                    ]],
                 ],
             ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function errorResponse(string $description): array
+    {
+        return [
+            'description' => $description,
+            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']]],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function rateLimitResponse(): array
+    {
+        return [
+            'description' => 'A per-IP or per-site-and-IP collection rate limit was exceeded.',
+            'headers' => [
+                'Retry-After' => ['description' => 'Seconds until another request may be attempted.', 'schema' => ['type' => 'integer']],
+                'X-RateLimit-Limit' => ['schema' => ['type' => 'integer']],
+                'X-RateLimit-Remaining' => ['schema' => ['type' => 'integer']],
+            ],
+            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']]],
         ];
     }
 }

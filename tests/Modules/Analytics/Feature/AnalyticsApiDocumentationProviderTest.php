@@ -3,6 +3,7 @@
 namespace Tests\Modules\Analytics\Feature;
 
 use App\Modules\Analytics\Services\Core\AnalyticsApiDocumentationProvider;
+use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 final class AnalyticsApiDocumentationProviderTest extends TestCase
@@ -13,6 +14,7 @@ final class AnalyticsApiDocumentationProviderTest extends TestCase
             'platform.products.analytics.enabled' => true,
             'platform.products.analytics.host' => 'analytics.example.test',
             'platform.products.analytics.url' => 'https://analytics.example.test',
+            'analytics.collect_rate_per_minute' => 37,
         ]);
 
         $reference = (new AnalyticsApiDocumentationProvider)->reference();
@@ -31,9 +33,51 @@ final class AnalyticsApiDocumentationProviderTest extends TestCase
         $this->assertArrayHasKey('202', $operation['responses']);
         $this->assertArrayHasKey('403', $operation['responses']);
         $this->assertArrayHasKey('503', $operation['responses']);
+        $this->assertArrayHasKey('413', $operation['responses']);
+        $this->assertArrayHasKey('Retry-After', $operation['responses']['429']['headers']);
+        $this->assertSame(32768, $operation['x-max-body-bytes']);
+        $this->assertSame([37, 37], array_column($operation['x-rate-limits'], 'requests'));
         $this->assertSame(20, $batchSchema['properties']['events']['maxItems']);
         $this->assertSame('uuid', $eventSchema['properties']['id']['format']);
         $this->assertStringContainsString('server receipt time', $eventSchema['properties']['occurred_at']['description']);
+        $this->assertArrayHasKey('429', $reference->document['paths']['/api/v1/collect/{publicId}']['options']['responses']);
+        $this->assertArrayHasKey('Retry-After', $reference->document['paths']['/api/v1/collect/{publicId}']['options']['responses']['429']['headers']);
+
+        $documented = collect($reference->document['paths']['/api/v1/collect/{publicId}'])
+            ->only(['post', 'options'])
+            ->keys()
+            ->map(fn (string $method): string => strtoupper($method).' /api/v1/collect/{publicId}')
+            ->sort()
+            ->values()
+            ->all();
+        $registered = collect(Route::getRoutes()->getRoutes())
+            ->filter(fn ($route): bool => in_array($route->getName(), ['analytics.api.collect', 'analytics.api.collect.preflight'], true))
+            ->flatMap(fn ($route) => collect($route->methods())
+                ->reject(fn (string $method): bool => $method === 'HEAD')
+                ->map(fn (string $method): string => $method.' /'.$route->uri()))
+            ->sort()
+            ->values()
+            ->all();
+
+        if ($registered === []) {
+            Route::domain('analytics.example.test')
+                ->middleware('api')
+                ->prefix('api')
+                ->as('analytics.')
+                ->group(app_path('Modules/Analytics/Routes/api.php'));
+
+            $registered = collect(Route::getRoutes()->getRoutes())
+                ->filter(fn ($route): bool => in_array($route->getName(), ['analytics.api.collect', 'analytics.api.collect.preflight'], true))
+                ->flatMap(fn ($route) => collect($route->methods())
+                    ->reject(fn (string $method): bool => $method === 'HEAD')
+                    ->map(fn (string $method): string => $method.' /'.$route->uri()))
+                ->sort()
+                ->values()
+                ->all();
+        }
+
+        $this->assertSame($registered, $documented);
+        $this->assertFileExists(public_path('tracker/v1.js'));
     }
 
     public function test_it_does_not_publish_a_reference_for_disabled_or_path_scoped_hosts(): void
