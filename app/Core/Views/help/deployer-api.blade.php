@@ -13,6 +13,7 @@
             <div class="flex flex-wrap justify-end gap-2">
                 <x-signal.ui.button :href="route('core.help.deployer')" variant="secondary">{{ __('Deployer guide') }}</x-signal.ui.button>
                 @if ($openApiUrl)<x-signal.ui.button :href="$openApiUrl" variant="primary" download>{{ __('Download OpenAPI specification') }}</x-signal.ui.button>@endif
+                @if ($automationUrl)<x-signal.ui.button :href="$automationUrl" variant="secondary">{{ __('Manage Deployer tokens') }}</x-signal.ui.button>@endif
             </div>
             <header class="mt-8 border-b border-line pb-8">
                 <p class="ui-eyebrow">{{ __('Deployer · API v1') }}</p>
@@ -25,7 +26,8 @@
                 <h2 class="text-xl font-extrabold">{{ __('Authentication') }}</h2>
                 <pre class="library-code mt-4 overflow-x-auto"><code>Authorization: Bearer YOUR_TOKEN
 Accept: application/json</code></pre>
-                <p class="mt-3 text-sm leading-6 text-muted">{{ __('Create named read, deploy, or manage tokens from Automation. Tokens are shown once and can be rotated or revoked.') }}</p>
+                <p class="mt-3 text-sm leading-6 text-muted">{{ __('Create named read, deploy, or manage tokens from Automation. New tokens are bound to the active workspace; select projects to narrow access further. Every request combines token abilities with current workspace membership, project policy, and plan entitlements.') }}</p>
+                <p class="mt-3 text-sm leading-6 text-muted">{{ __('Existing tokens keep their current behavior until revoked or rotated. Rotating an existing unscoped token binds its replacement to the active workspace.') }}</p>
             </x-signal.ui.card>
 
             @php

@@ -58,6 +58,17 @@ class ApiPlanAccessTest extends TestCase
             ->assertJsonPath('data.organization.plan', 'free');
     }
 
+    public function test_pre_scope_personal_tokens_keep_their_existing_workspace_behavior(): void
+    {
+        $user = User::factory()->create();
+        $legacyToken = $user->createToken('Existing integration', ['read'])->plainTextToken;
+
+        $this->withToken($legacyToken)
+            ->getJson('/api/v1/me')
+            ->assertOk()
+            ->assertJsonPath('data.organization.id', $user->current_organization_id);
+    }
+
     public function test_api_requests_use_the_free_plan_limit_and_return_throttle_headers(): void
     {
         config(['billing.plans.free.limits.api_requests_per_minute' => 2]);

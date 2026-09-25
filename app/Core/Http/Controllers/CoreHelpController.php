@@ -41,6 +41,7 @@ final class CoreHelpController
         return view('core::help.deployer-api', [
             'apiBaseUrl' => rtrim((string) (config('platform.products.deployer.url') ?: 'https://deployer.buildpusher.com'), '/'),
             'openApiUrl' => $links->to('deployer', 'openapi'),
+            'automationUrl' => $links->to('deployer', 'automation.index'),
         ]);
     }
 

@@ -32,10 +32,19 @@ class StorePersonalAccessTokenRequest extends FormRequest
      */
     public function rules(): array
     {
+        $organizationId = $this->user()?->current_organization_id;
+
         return [
             'name' => ['required', 'string', 'max:100'],
             'abilities' => ['required', 'array', 'min:1'],
             'abilities.*' => [Rule::in(['read', 'deploy', 'manage'])],
+            'project_ids' => ['sometimes', 'array', 'min:1'],
+            'project_ids.*' => [
+                'required',
+                'integer',
+                'distinct',
+                Rule::exists('deployer.projects', 'id')->where('organization_id', $organizationId),
+            ],
             'expires_in_days' => ['required', 'integer', Rule::in([30, 90, 180, 365])],
         ];
     }

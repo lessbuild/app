@@ -31,7 +31,8 @@ final class CoreHelpRoutesTest extends TestCase
         $this->get(route('core.help.deployer.api'))
             ->assertOk()
             ->assertSee('/api/v1/environments/{environment}/deploy')
-            ->assertSee('Authorization: Bearer YOUR_TOKEN');
+            ->assertSee('Authorization: Bearer YOUR_TOKEN')
+            ->assertSee('New tokens are bound to the active workspace');
     }
 
     public function test_monitor_api_reference_is_rendered_on_core_with_monitor_host_endpoints(): void

@@ -1,9 +1,11 @@
-@props(['open' => false])
+@props(['open' => false, 'projects' => collect()])
+
+@php($hasProjectScopeErrors = $errors->has('project_ids') || collect($errors->keys())->contains(fn (string $key): bool => str_starts_with($key, 'project_ids.')))
 
 <x-signal.overlays.modal
     id="automation-token-dialog"
     :title="__('Create personal access token')"
-    :description="__('Use the smallest set of abilities and an explicit expiry for each integration.')"
+    :description="__('Each token is bound to this workspace. You can optionally limit it to selected projects.')"
     :open="$open"
 >
     <form method="POST" action="{{ route('automation.tokens.store') }}" class="space-y-4">
@@ -57,6 +59,37 @@
             </div>
             <x-forms.errors name="abilities" id="automation-token-abilities-error" />
         </x-signal.ui.card>
+        @if ($projects->isNotEmpty())
+            <x-signal.ui.card
+                as="fieldset"
+                tone="muted"
+                class="p-4"
+                :shadow="false"
+                :aria-invalid="$hasProjectScopeErrors ? 'true' : 'false'"
+                :aria-describedby="$hasProjectScopeErrors ? 'automation-token-projects-error' : null"
+            >
+                <legend class="ui-eyebrow">{{ __('Limit to projects (optional)') }}</legend>
+                <p class="mt-2 text-xs leading-5 text-muted">{{ __('With no project selected, the token can access projects in this workspace that its abilities and your access permit.') }}</p>
+                <div class="mt-3 grid gap-2 sm:grid-cols-2">
+                    @foreach ($projects as $project)
+                        <x-signal.ui.checkbox
+                            :id="'automation-token-project-'.$project->id"
+                            name="project_ids[]"
+                            :value="$project->id"
+                            :checked="in_array((string) $project->id, array_map('strval', (array) old('project_ids', [])), true)"
+                            :restore="false"
+                            :error-key="false"
+                            :show-errors="false"
+                        >
+                            {{ $project->name }}
+                        </x-signal.ui.checkbox>
+                    @endforeach
+                </div>
+                @if ($hasProjectScopeErrors)
+                    <p id="automation-token-projects-error" class="mt-2 text-sm text-danger" role="alert">{{ $errors->first('project_ids') ?: $errors->first('project_ids.0') }}</p>
+                @endif
+            </x-signal.ui.card>
+        @endif
         <x-signal.ui.button type="submit" variant="primary">{{ __('Create token') }}</x-signal.ui.button>
     </form>
 </x-signal.overlays.modal>

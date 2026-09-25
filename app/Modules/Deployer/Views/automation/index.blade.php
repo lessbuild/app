@@ -1,7 +1,9 @@
 <x-layouts.app>
     @php
         $tokenDialogHasErrors = old('_automation_token_form') === '1'
-            && $errors->hasAny(['name', 'expires_in_days', 'abilities', 'abilities.0', 'abilities.1', 'abilities.2']);
+            && collect($errors->keys())->contains(static fn (string $key): bool => in_array($key, ['name', 'expires_in_days', 'abilities', 'project_ids'], true)
+                || str_starts_with($key, 'abilities.')
+                || str_starts_with($key, 'project_ids.'));
         $tokenDialogOpen = (request()->query('dialog') === 'create-token' && ! session()->has('success'))
             || $tokenDialogHasErrors;
         $tokenDialogUrl = route('automation.index', ['dialog' => 'create-token']);
@@ -48,7 +50,9 @@
     @php
         $automationErrorKeys = array_keys($errors->getBag('default')->getMessages());
         $tokenPanelOpen = session('plainTextToken') || collect($automationErrorKeys)->contains(
-            static fn (string $key): bool => in_array($key, ['name', 'expires_in_days'], true) || str_starts_with($key, 'abilities.'),
+            static fn (string $key): bool => in_array($key, ['name', 'expires_in_days', 'project_ids'], true)
+                || str_starts_with($key, 'abilities.')
+                || str_starts_with($key, 'project_ids.'),
         );
         $environmentCount = $projects->sum(fn ($project) => $project->environments->count());
         $deploymentScheduleCount = $projects->sum(fn ($project) => $project->environments->sum(fn ($environment) => $environment->deploymentSchedules->count()));
@@ -152,8 +156,17 @@
                         <div class="min-w-0">
                             <p class="font-bold text-ink">{{ $token->name }}</p>
                             <div class="mt-1 flex flex-wrap items-center gap-1 text-xs text-muted">
+                                @if (! collect($token->abilities)->contains(fn (mixed $ability): bool => is_string($ability) && str_starts_with($ability, 'workspace:')))
+                                    <x-signal.ui.badge tone="warning">{{ __('Legacy workspace scope') }}</x-signal.ui.badge>
+                                @endif
                                 @foreach ($token->abilities as $ability)
-                                    <x-signal.ui.badge>{{ ucfirst($ability) }}</x-signal.ui.badge>
+                                    @if (str_starts_with($ability, 'workspace:'))
+                                        <x-signal.ui.badge>{{ __('Workspace :id', ['id' => substr($ability, strlen('workspace:'))]) }}</x-signal.ui.badge>
+                                    @elseif (str_starts_with($ability, 'project:'))
+                                        <x-signal.ui.badge>{{ __('Project :id', ['id' => substr($ability, strlen('project:'))]) }}</x-signal.ui.badge>
+                                    @else
+                                        <x-signal.ui.badge>{{ ucfirst($ability) }}</x-signal.ui.badge>
+                                    @endif
                                 @endforeach
                                 <span>{{ $token->last_used_at ? __('used :time', ['time' => $token->last_used_at->diffForHumans()]) : __('never used') }}</span>
                                 <span>·</span>
@@ -182,7 +195,7 @@
         </x-signal.ui.panel>
 
         @if ($features['api'] && $canManage)
-            <x-scenes.automation.token-dialog :open="$tokenDialogOpen" />
+            <x-scenes.automation.token-dialog :open="$tokenDialogOpen" :projects="$projects" />
         @endif
 
         <x-signal.ui.panel as="details" id="automation-quick-start" class="ui-responsive-details ui-panel group overflow-hidden" open data-responsive-details data-responsive-details-mobile-open="false" data-automation-quick-start>

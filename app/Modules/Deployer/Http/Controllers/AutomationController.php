@@ -48,10 +48,23 @@ class AutomationController extends Controller
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
+        $projects = $organization->projects()
+            ->with(['environments.deploymentSchedules', 'environments.scalingSchedules', 'environments.scheduledTasks.runs' => fn ($query) => $query->latest()->limit(10)])
+            ->orderBy('name')
+            ->get();
+        $tokens = $request->user()->tokens()->latest()->get()
+            ->filter(function (PersonalAccessToken $token) use ($organization): bool {
+                $workspaceScopes = collect($token->abilities)
+                    ->filter(fn (mixed $ability): bool => is_string($ability) && str_starts_with($ability, 'workspace:'));
+
+                return $workspaceScopes->isEmpty()
+                    || $workspaceScopes->contains('workspace:'.$organization->getKey());
+            })
+            ->values();
 
         return view('automation.index', [
-            'projects' => $organization->projects()->with(['environments.deploymentSchedules', 'environments.scalingSchedules', 'environments.scheduledTasks.runs' => fn ($query) => $query->latest()->limit(10)])->orderBy('name')->get(),
-            'tokens' => $request->user()->tokens()->latest()->get(),
+            'projects' => $projects,
+            'tokens' => $tokens,
             'canManage' => $organization->permits($request->user(), 'manage'),
             'features' => collect(['api', 'scheduled_deployments', 'scaling', 'scheduled_scaling', 'hibernation'])->mapWithKeys(fn ($feature) => [$feature => $this->entitlements->allows($organization, $feature)]),
         ]);

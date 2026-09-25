@@ -1,6 +1,6 @@
 {
   "openapi": "3.1.0",
-  "info": {"title": "Deployer Control Plane API", "version": "1.0.0", "description": "Automate Deployer projects, environments and deployments."},
+  "info": {"title": "Deployer Control Plane API", "version": "1.0.0", "description": "Automate Deployer projects, environments and deployments. New personal access tokens include a workspace:<id> claim and may include project:<id> claims in addition to read, deploy, and manage abilities. The API filters collection results and checks these claims together with current workspace policy and entitlements. Tokens created before workspace claims retain their legacy scope until rotated or revoked; rotation binds a legacy replacement to the active workspace."},
   "servers": [{"url": "https://deployer.buildpusher.com/api/v1"}],
   "security": [{"bearerAuth": []}],
   "paths": {

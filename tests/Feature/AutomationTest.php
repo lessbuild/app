@@ -498,6 +498,65 @@ class AutomationTest extends TestCase
         Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
     }
 
+    public function test_persisted_api_tokens_filter_project_lists_and_deny_other_project_resources(): void
+    {
+        $owner = User::factory()->create();
+        $allowedProject = $owner->currentOrganization->projects()->create([
+            'created_by' => $owner->id,
+            'name' => 'Allowed API project',
+            'slug' => 'allowed-api-project',
+            'preset' => 'custom',
+        ]);
+        $blockedProject = $owner->currentOrganization->projects()->create([
+            'created_by' => $owner->id,
+            'name' => 'Blocked API project',
+            'slug' => 'blocked-api-project',
+            'preset' => 'custom',
+        ]);
+        $blockedEnvironment = $blockedProject->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'type' => 'production',
+            'branch' => 'main',
+        ]);
+        $plainTextToken = $owner->createToken('Single project', [
+            'read',
+            'manage',
+            'workspace:'.$owner->current_organization_id,
+            'project:'.$allowedProject->id,
+        ])->plainTextToken;
+
+        $this->withToken($plainTextToken)
+            ->getJson('/api/v1/projects')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Allowed API project'])
+            ->assertJsonMissing(['name' => 'Blocked API project']);
+
+        $this->withToken($plainTextToken)
+            ->getJson('/api/v1/projects/'.$blockedProject->id)
+            ->assertForbidden();
+
+        $this->withToken($plainTextToken)
+            ->patchJson('/api/v1/environments/'.$blockedEnvironment->id.'/scale', ['replicas' => 2])
+            ->assertForbidden();
+    }
+
+    public function test_workspace_scoped_api_token_stops_working_after_the_account_switches_workspaces(): void
+    {
+        $owner = User::factory()->create();
+        $otherWorkspaceOwner = User::factory()->create();
+        $plainTextToken = $owner->createToken('Workspace token', [
+            'read',
+            'workspace:'.$owner->current_organization_id,
+        ])->plainTextToken;
+
+        $owner->forceFill(['current_organization_id' => $otherWorkspaceOwner->current_organization_id])->save();
+
+        $this->withToken($plainTextToken)
+            ->getJson('/api/v1/me')
+            ->assertForbidden();
+    }
+
     public function test_api_scale_and_runtime_preserve_envelopes_and_queue_shared_operations(): void
     {
         Queue::fake();
@@ -657,6 +716,12 @@ class AutomationTest extends TestCase
     public function test_token_composer_is_a_dialog_and_reopens_for_validation_errors(): void
     {
         $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create([
+            'created_by' => $user->id,
+            'name' => 'Token scope project',
+            'slug' => 'token-scope-project',
+            'preset' => 'custom',
+        ]);
 
         $default = $this->actingAs($user)
             ->get(route('automation.index'))
@@ -676,7 +741,9 @@ class AutomationTest extends TestCase
         );
         $tokenDialog->assertSee('id="automation-token-name"', false)
             ->assertSee('id="automation-token-expires-in-days"', false)
-            ->assertSee('id="automation-token-ability-read"', false);
+            ->assertSee('id="automation-token-ability-read"', false)
+            ->assertSee('id="automation-token-project-'.$project->id.'"', false)
+            ->assertSee('Limit to projects (optional)');
 
         $response = $this->actingAs($user)
             ->from($dialogUrl)
@@ -802,7 +869,7 @@ class AutomationTest extends TestCase
         $replacement = $user->tokens()->sole();
         $this->assertNotSame($token->id, $replacement->id);
         $this->assertNotSame($oldHash, $replacement->token);
-        $this->assertSame(['read', 'deploy'], $replacement->abilities);
+        $this->assertSame(['read', 'deploy', 'workspace:'.$user->current_organization_id], $replacement->abilities);
         $this->assertTrue($replacement->expires_at->isBetween(now()->addMonths(11), now()->addMonths(13)));
     }
 
@@ -818,11 +885,67 @@ class AutomationTest extends TestCase
         $response->assertRedirect()->assertSessionHas('plainTextToken');
         $plainTextToken = $response->getSession()->get('plainTextToken');
         $token = $user->tokens()->sole();
-        $this->assertSame(['read', 'deploy'], $token->abilities);
+        $this->assertSame(['read', 'deploy', 'workspace:'.$user->current_organization_id], $token->abilities);
         $this->assertTrue($token->expires_at->isBetween(now()->addDays(364), now()->addDays(366)));
         $this->assertIsString($plainTextToken);
         $this->assertNotSame($plainTextToken, $token->token);
         $this->assertStringNotContainsString($plainTextToken, (string) DB::table('personal_access_tokens')->whereKey($token->id)->value('token'));
+    }
+
+    public function test_rotating_a_legacy_token_binds_the_replacement_to_the_active_workspace(): void
+    {
+        $user = User::factory()->create();
+        $legacyToken = $user->createToken('Legacy automation', ['read', 'deploy'])->accessToken;
+
+        $this->actingAs($user)
+            ->post(route('automation.tokens.rotate', $legacyToken))
+            ->assertRedirect()
+            ->assertSessionHas('plainTextToken');
+
+        $replacement = $user->tokens()->sole();
+        $this->assertSame(['read', 'deploy', 'workspace:'.$user->current_organization_id], $replacement->abilities);
+        $this->assertNull($legacyToken->fresh());
+    }
+
+    public function test_new_token_can_be_limited_to_projects_in_the_current_workspace(): void
+    {
+        $user = User::factory()->create();
+        $allowedProject = $user->currentOrganization->projects()->create([
+            'created_by' => $user->id,
+            'name' => 'Allowed project',
+            'slug' => 'allowed-project',
+            'preset' => 'custom',
+        ]);
+        $otherWorkspaceOwner = User::factory()->create();
+        $foreignProject = $otherWorkspaceOwner->currentOrganization->projects()->create([
+            'created_by' => $otherWorkspaceOwner->id,
+            'name' => 'Foreign project',
+            'slug' => 'foreign-project',
+            'preset' => 'custom',
+        ]);
+
+        $this->actingAs($user)->post(route('automation.tokens.store'), [
+            'name' => 'Project-scoped token',
+            'abilities' => ['read'],
+            'project_ids' => [$allowedProject->id],
+            'expires_in_days' => 90,
+        ])->assertRedirect()->assertSessionHas('plainTextToken');
+
+        $token = $user->tokens()->sole();
+        $this->assertSame([
+            'read',
+            'workspace:'.$user->current_organization_id,
+            'project:'.$allowedProject->id,
+        ], $token->abilities);
+
+        $this->actingAs($user)->post(route('automation.tokens.store'), [
+            'name' => 'Foreign project token',
+            'abilities' => ['read'],
+            'project_ids' => [$foreignProject->id],
+            'expires_in_days' => 90,
+        ])->assertSessionHasErrors('project_ids.0');
+
+        $this->assertDatabaseCount('personal_access_tokens', 1);
     }
 
     public function test_token_creation_denies_non_owner_before_malformed_input_and_writes_nothing(): void

@@ -25,7 +25,8 @@
                 <h2 class="text-xl font-extrabold">{{ __('Authentication') }}</h2>
                 <pre class="library-code mt-4"><code>Authorization: Bearer YOUR_TOKEN
 Accept: application/json</code></pre>
-                <p class="mt-3 text-sm leading-6 text-muted">{{ __('Create named read, deploy, or manage tokens from Automation. Tokens are shown once and can be rotated or revoked.') }}</p>
+                <p class="mt-3 text-sm leading-6 text-muted">{{ __('Create named read, deploy, or manage tokens from Automation. New tokens are bound to the active workspace and can optionally be limited to selected projects. API abilities are still checked together with workspace membership, project policy, and plan entitlements.') }}</p>
+                <p class="mt-3 text-sm leading-6 text-muted">{{ __('Tokens created before workspace scopes were introduced keep their existing behavior until revoked or rotated. Rotating one binds its replacement to the active workspace.') }}</p>
             </x-signal.ui.card>
 
             @php

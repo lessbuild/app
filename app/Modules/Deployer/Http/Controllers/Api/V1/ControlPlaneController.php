@@ -66,7 +66,11 @@ class ControlPlaneController extends Controller
     public function projects(Request $request): JsonResponse
     {
         $this->api($request, 'read');
-        $projects = $request->user()->currentOrganization->projects()->with('environments:id,project_id,name,slug,type,branch,desired_replicas,hibernated_at')->get();
+        $projectIds = $this->controlPlaneAccess->projectIds($request);
+        $projects = $request->user()->currentOrganization->projects()
+            ->when($projectIds !== null, fn ($query) => $query->whereIn('id', $projectIds))
+            ->with('environments:id,project_id,name,slug,type,branch,desired_replicas,hibernated_at')
+            ->get();
 
         return response()->json(['data' => $projects->map(fn (Project $project) => $this->projectData($project))]);
     }
@@ -88,7 +92,10 @@ class ControlPlaneController extends Controller
     public function deployments(Request $request): JsonResponse
     {
         $this->api($request, 'read');
-        $builds = Build::query()->whereHas('repository', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
+        $projectIds = $this->controlPlaneAccess->projectIds($request);
+        $builds = Build::query()
+            ->whereHas('repository', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
+            ->when($projectIds !== null, fn ($query) => $query->whereHas('environment', fn ($environment) => $environment->whereIn('project_id', $projectIds)))
             ->latest()->limit(100)->get();
 
         return response()->json(['data' => $builds->map(fn (Build $build) => $this->buildData($build))]);
@@ -143,6 +150,7 @@ class ControlPlaneController extends Controller
         $target = Environment::query()->whereKey($request->targetEnvironmentId())
             ->whereHas('project', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
             ->firstOrFail();
+        $this->controlPlaneAccess->enforceProject($request, $target->project_id);
         $result = $promote->handle($build, $target, $request->user(), $request->promotionNote());
 
         return response()->json([

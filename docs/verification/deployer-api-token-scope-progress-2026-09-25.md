@@ -1,0 +1,9 @@
+# Deployer API token scope progress — 25 September 2026
+
+New Deployer personal access tokens carry the ID of the active Deployer workspace. Owners can optionally select one or more Deployer projects; project IDs must belong to that workspace. Project and deployment collection responses apply the allowlist, and requests for projects, environments, builds, or configuration resources check it alongside the existing Sanctum ability, workspace membership, product policy, and plan entitlement. Promotion checks both the source build and target environment.
+
+The Automation token composer shows workspace/project scope and existing tokens are listed only in their matching workspace, while unscoped legacy tokens remain visible for cleanup. Rotation preserves existing explicit scopes and upgrades an unscoped legacy token to the active workspace. Revocation remains available to the credential owner, including for legacy credentials. No token plaintext or new credential material is persisted in Core.
+
+Regression coverage was added for project-scope selection, rejection of a foreign-workspace project, filtered project listings, blocked project/environment actions, workspace-switch revocation of API access, legacy token compatibility, and rotation-based scope upgrade. These tests are authored and intentionally unrun until the unified plan is complete. Static syntax/style checks, route registration, OpenAPI JSON parsing, and Blade cache compilation passed for this slice.
+
+This advances Deployer's scoped credential management. Cross-product credential inventory/actions, Monitor webhook delivery history aggregation, wider endpoint compatibility fixtures, signed callback review, and real-client rehearsal remain open under I13.
