@@ -131,6 +131,44 @@ final class ResolveProjectTrafficContextTest extends TestCase
         $this->assertSame(0, $provider->calls);
     }
 
+    public function test_it_stops_querying_analytics_after_the_project_connection_is_disconnected(): void
+    {
+        DB::connection('core')->table('project_connections')
+            ->where('project_id', $this->projectId)
+            ->update(['status' => 'disconnected', 'disconnected_at' => now()]);
+        $provider = new class implements ProjectTrafficContextProvider
+        {
+            public int $calls = 0;
+
+            public function aggregate(
+                PlatformUser $user,
+                Project $project,
+                ProjectResource $resource,
+                CarbonImmutable $from,
+                CarbonImmutable $until,
+            ): ?ProjectTrafficWindowSummary {
+                $this->calls++;
+
+                return new ProjectTrafficWindowSummary(pageviews: 1, visitors: 1);
+            }
+        };
+
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-04-02 14:00:00', 'UTC'));
+        try {
+            $result = $this->resolver($provider)->forMonitorDeployment(
+                $this->user,
+                'monitor-env-1',
+                CarbonImmutable::parse('2026-04-02 12:00:00', 'UTC'),
+                requestedSeconds: 3600,
+            );
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+
+        $this->assertTrue($result->isEmpty());
+        $this->assertSame(0, $provider->calls);
+    }
+
     public function test_it_resolves_plan_bounded_analytics_comparisons_around_a_monitor_deployment(): void
     {
         CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-04-02 14:00:00', 'UTC'));
