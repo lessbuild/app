@@ -117,6 +117,40 @@
                             @endif
                         @endif
 
+                        @if ($productUsageProviders->get($key))
+                            <x-signal.ui.card as="div" class="mt-4 border-line bg-surface-muted/40 p-4 shadow-none">
+                                <p class="text-xs font-bold text-ink">{{ __('Usage') }}</p>
+                                @if ($productUsageUnavailable->get($key))
+                                    <p class="mt-2 text-xs leading-5 text-muted">{{ __('Analytics event usage is temporarily unavailable.') }}</p>
+                                @elseif (($usageSummary = $productUsageSummaries->get($key)) === null)
+                                    <p class="mt-2 text-xs leading-5 text-muted">{{ __('Analytics event usage is unavailable until its workspace mapping is reconciled.') }}</p>
+                                @else
+                                    @foreach ($usageSummary->meters as $meter)
+                                        @php
+                                            $meterLimitIsKnown = $resolution?->hasLimit($meter->key) ?? false;
+                                            $meterLimit = $meterLimitIsKnown ? $resolution->limit($meter->key) : null;
+                                            $usageValue = ! $meterLimitIsKnown
+                                                ? __(':used accepted events · allowance unavailable', ['used' => number_format($meter->used)])
+                                                : ($meterLimit === null
+                                                    ? __(':used accepted events · unlimited allowance', ['used' => number_format($meter->used)])
+                                                    : __(':used of :limit accepted events', ['used' => number_format($meter->used), 'limit' => number_format($meterLimit)]));
+                                        @endphp
+                                        <p class="mt-2 text-sm font-semibold text-ink">{{ $usageValue }}</p>
+                                        @if ($meterLimitIsKnown && $meterLimit !== null && $meterLimit > 0)
+                                            <x-signal.ui.progress
+                                                class="mt-3 bg-line"
+                                                role="meter"
+                                                :label="$meter->label"
+                                                :value="$meter->used"
+                                                :max="$meterLimit"
+                                            />
+                                        @endif
+                                        <p class="mt-2 text-xs leading-5 text-muted">{{ $usageSummary->periodLabel }}</p>
+                                    @endforeach
+                                @endif
+                            </x-signal.ui.card>
+                        @endif
+
                         @if ($resolution !== null && ! $resolution->available)
                             <p class="mt-2 text-xs leading-5 text-muted">{{ __('Detailed entitlements are unavailable until this app’s plan record is reconciled.') }}</p>
                         @endif

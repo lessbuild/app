@@ -28,6 +28,8 @@ final class AnalyticsApiDocumentationProviderTest extends TestCase
         $operation = $reference->document['paths']['/api/v1/collect/{publicId}']['post'];
         $batchSchema = $reference->document['components']['schemas']['CollectionBatch'];
         $eventSchema = $reference->document['components']['schemas']['CollectionEvent'];
+        $monthlyAllowanceResponse = $operation['responses']['429'];
+        $usageSchema = $reference->document['components']['schemas']['Error']['properties']['usage'];
 
         $this->assertSame([], $operation['security']);
         $this->assertArrayHasKey('202', $operation['responses']);
@@ -35,6 +37,13 @@ final class AnalyticsApiDocumentationProviderTest extends TestCase
         $this->assertArrayHasKey('503', $operation['responses']);
         $this->assertArrayHasKey('413', $operation['responses']);
         $this->assertArrayHasKey('Retry-After', $operation['responses']['429']['headers']);
+        $this->assertStringContainsString('duplicate retries do not add usage', $operation['description']);
+        $this->assertStringContainsString('UTC calendar month', $operation['description']);
+        $this->assertStringContainsString('atomically', $operation['description']);
+        $this->assertStringContainsString('monthly accepted-event allowance', $monthlyAllowanceResponse['description']);
+        $this->assertArrayHasKey('used', $usageSchema['properties']);
+        $this->assertArrayHasKey('limit', $usageSchema['properties']);
+        $this->assertSame('date', $usageSchema['properties']['period_start']['format']);
         $this->assertSame(32768, $operation['x-max-body-bytes']);
         $this->assertSame([37, 37], array_column($operation['x-rate-limits'], 'requests'));
         $this->assertSame(20, $batchSchema['properties']['events']['maxItems']);

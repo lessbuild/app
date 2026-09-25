@@ -1,0 +1,7 @@
+# Analytics monthly event usage progress
+
+Analytics now stores accepted-event usage in its own `workspace_usage_periods` table, grouped by Analytics workspace and UTC calendar month. The counter is independent from ingestion batches and event details, so the Analytics retention job can prune event records without erasing a month's usage. Batch insertion and counter updates share one Analytics transaction; duplicate event IDs do not add usage, and a batch that would exceed a finite `events_per_month` plan snapshot is rejected as a whole with `429`, a usage body, and `Retry-After` until the next UTC month.
+
+Core reads the meter through an Analytics-owned usage provider and the reconciled Core-to-Analytics workspace mapping. The Signal Plans page shows the current month's count and plan allowance to workspace owners and billing managers. Ordinary members do not receive usage details. This does not add Analytics pricing or a paid catalog. Existing imported `legacy_access` snapshots keep their explicit unlimited allowance and remain unaffected.
+
+Regression cases have been authored for cross-site workspace totals, duplicate retries, atomic over-limit rejection, provider reporting, OpenAPI response documentation, and billing-manager visibility. They remain intentionally unrun until the implementation plan is complete. Static syntax, formatting, and Blade checks are performed separately. The migration has not been applied to production; production rollout still requires the normal backup, migration, and deployment process.

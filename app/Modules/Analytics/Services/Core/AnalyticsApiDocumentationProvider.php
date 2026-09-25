@@ -103,7 +103,7 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                     'post' => [
                         'operationId' => 'collectAnalyticsEventsV1',
                         'summary' => 'Accept a batch of Analytics events',
-                        'description' => 'Accepts one to '.AnalyticsCollectionLimits::MAX_EVENTS_PER_BATCH.' events in a request no larger than '.number_format(AnalyticsCollectionLimits::MAX_REQUEST_BYTES).' bytes. Event IDs are UUIDs and should remain unchanged when retrying. Events are processed asynchronously; the server records receipt time as occurred_at. Browser origins must match a domain registered for the site. The optional properties object is reduced to the supported name field before storage.',
+                        'description' => 'Accepts one to '.AnalyticsCollectionLimits::MAX_EVENTS_PER_BATCH.' events in a request no larger than '.number_format(AnalyticsCollectionLimits::MAX_REQUEST_BYTES).' bytes. Event IDs are UUIDs and should remain unchanged when retrying; duplicate retries do not add usage. Analytics measures accepted events by server receipt time in the UTC calendar month and enforces a finite plan allowance atomically across the workspace. When that allowance is reached, the endpoint returns 429 with Retry-After until the next UTC month. Events are processed asynchronously. Browser origins must match a domain registered for the site. The optional properties object is reduced to the supported name field before storage.',
                         'security' => [],
                         'x-max-body-bytes' => AnalyticsCollectionLimits::MAX_REQUEST_BYTES,
                         'x-rate-limits' => [
@@ -120,7 +120,7 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                             '404' => $this->errorResponse('Site is missing or collection is unavailable.'),
                             '413' => $this->errorResponse('Request body exceeds the '.number_format(AnalyticsCollectionLimits::MAX_REQUEST_BYTES).'-byte payload limit.'),
                             '422' => $this->errorResponse('Event payload failed validation.'),
-                            '429' => $this->rateLimitResponse(),
+                            '429' => $this->collectionLimitResponse(),
                             '503' => $this->errorResponse('Collection is temporarily unavailable for the workspace plan.'),
                         ],
                     ],
@@ -192,6 +192,12 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                     ],
                     'Error' => ['type' => 'object', 'properties' => [
                         'message' => ['type' => 'string'],
+                        'code' => ['type' => 'string'],
+                        'usage' => ['type' => 'object', 'properties' => [
+                            'used' => ['type' => 'integer', 'minimum' => 0],
+                            'limit' => ['type' => 'integer', 'minimum' => 0],
+                            'period_start' => ['type' => 'string', 'format' => 'date'],
+                        ]],
                         'errors' => ['type' => 'object', 'additionalProperties' => ['type' => 'array', 'items' => ['type' => 'string']]],
                     ]],
                 ],
@@ -217,6 +223,20 @@ final class AnalyticsApiDocumentationProvider implements ProductApiDocumentation
                 'Retry-After' => ['description' => 'Seconds until another request may be attempted.', 'schema' => ['type' => 'integer']],
                 'X-RateLimit-Limit' => ['schema' => ['type' => 'integer']],
                 'X-RateLimit-Remaining' => ['schema' => ['type' => 'integer']],
+            ],
+            'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']]],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function collectionLimitResponse(): array
+    {
+        return [
+            'description' => 'The per-IP or per-site-and-IP request limit, or the workspace monthly accepted-event allowance, was reached.',
+            'headers' => [
+                'Retry-After' => ['description' => 'Seconds until the request limit clears or the next UTC calendar month begins.', 'schema' => ['type' => 'integer']],
+                'X-RateLimit-Limit' => ['description' => 'Present for request-rate throttling.', 'schema' => ['type' => 'integer']],
+                'X-RateLimit-Remaining' => ['description' => 'Present for request-rate throttling.', 'schema' => ['type' => 'integer']],
             ],
             'content' => ['application/json' => ['schema' => ['$ref' => '#/components/schemas/Error']]],
         ];

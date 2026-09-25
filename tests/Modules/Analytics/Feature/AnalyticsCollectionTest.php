@@ -2,6 +2,11 @@
 
 namespace Tests\Modules\Analytics\Feature;
 
+use App\Core\Contracts\ProductPlanResolver;
+use App\Core\Data\Billing\ProductPlanResolution;
+use App\Core\Enums\ProductKey;
+use App\Core\Models\LegacyIdentityMap;
+use App\Core\Models\Workspace as CoreWorkspace;
 use App\Modules\Analytics\Actions\Collection\RebuildSiteVisits;
 use App\Modules\Analytics\Actions\Goals\RebuildGoalConversions;
 use App\Modules\Analytics\Actions\Reporting\RebuildReportAggregates;
@@ -13,8 +18,10 @@ use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
+use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceUsageProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
@@ -105,6 +112,72 @@ class AnalyticsCollectionTest extends TestCase
 
         $this->assertDatabaseCount('analytics_events', 1);
         $this->assertDatabaseCount('ingestion_batches', 1);
+    }
+
+    public function test_monthly_event_allowance_is_workspace_wide_atomic_and_duplicate_safe(): void
+    {
+        Queue::fake();
+        $site = $this->makeSite();
+        $otherSite = $site->workspace->sites()->create([
+            'name' => 'Second site',
+            'domains' => ['second.example'],
+            'timezone' => 'UTC',
+            'verified_at' => now(),
+        ]);
+        $canonicalWorkspaceId = $this->useFiniteCoreEventAllowance($site->workspace, 3);
+        $firstEventIds = [(string) Str::uuid(), (string) Str::uuid()];
+        $firstBatch = ['events' => $this->eventsForIds($firstEventIds)];
+
+        $this->postJson("/api/v1/collect/{$site->public_id}", $firstBatch)
+            ->assertAccepted()
+            ->assertJsonPath('accepted', 2);
+        $this->postJson("/api/v1/collect/{$site->public_id}", $firstBatch)
+            ->assertAccepted()
+            ->assertJsonPath('accepted', 0);
+
+        $overLimitBatch = ['events' => $this->eventsForIds([(string) Str::uuid(), (string) Str::uuid()])];
+        $this->postJson("/api/v1/collect/{$otherSite->public_id}", $overLimitBatch)
+            ->assertStatus(429)
+            ->assertJsonPath('code', 'monthly_event_limit_reached')
+            ->assertJsonPath('usage.used', 2)
+            ->assertJsonPath('usage.limit', 3)
+            ->assertHeader('Retry-After');
+
+        $this->assertDatabaseCount('analytics_events', 2);
+        $this->assertDatabaseCount('ingestion_batches', 1);
+
+        $this->postJson("/api/v1/collect/{$otherSite->public_id}", [
+            'events' => $this->eventsForIds([(string) Str::uuid()]),
+        ])->assertAccepted()->assertJsonPath('accepted', 1);
+
+        $this->postJson("/api/v1/collect/{$otherSite->public_id}", [
+            'events' => $this->eventsForIds([(string) Str::uuid()]),
+        ])->assertStatus(429)->assertJsonPath('usage.used', 3);
+
+        $period = CarbonImmutable::now('UTC')->startOfMonth()->toDateString();
+        $this->assertSame(3, (int) DB::connection('analytics')->table('workspace_usage_periods')
+            ->where('workspace_id', $site->workspace_id)
+            ->whereDate('period_start', $period)
+            ->value('accepted_events'));
+
+        $coreWorkspace = new CoreWorkspace;
+        $coreWorkspace->setAttribute('id', $canonicalWorkspaceId);
+        $summary = app(AnalyticsWorkspaceUsageProvider::class)->summarize($coreWorkspace);
+
+        $this->assertNotNull($summary);
+        $this->assertSame('events_per_month', $summary->meters[0]->key);
+        $this->assertSame(3, $summary->meters[0]->used);
+
+        DB::connection('analytics')->table('analytics_events')
+            ->whereIn('site_id', [$site->id, $otherSite->id])
+            ->delete();
+        DB::connection('analytics')->table('ingestion_batches')
+            ->whereIn('site_id', [$site->id, $otherSite->id])
+            ->delete();
+
+        $retainedSummary = app(AnalyticsWorkspaceUsageProvider::class)->summarize($coreWorkspace);
+        $this->assertNotNull($retainedSummary);
+        $this->assertSame(3, $retainedSummary->meters[0]->used);
     }
 
     public function test_collection_rate_limit_returns_standard_retry_headers(): void
@@ -306,5 +379,55 @@ class AnalyticsCollectionTest extends TestCase
             'timezone' => 'UTC',
             'verified_at' => now(),
         ], $attributes));
+    }
+
+    private function useFiniteCoreEventAllowance(Workspace $workspace, int $limit): string
+    {
+        $canonicalWorkspaceId = (string) Str::ulid();
+        LegacyIdentityMap::query()->create([
+            'source_product' => 'analytics',
+            'source_entity' => 'workspace',
+            'source_id' => (string) $workspace->getKey(),
+            'canonical_entity' => 'workspace',
+            'canonical_id' => $canonicalWorkspaceId,
+            'status' => 'reconciled',
+            'batch_key' => 'analytics-usage-test',
+            'imported_at' => now(),
+            'reconciled_at' => now(),
+        ]);
+
+        app()->instance(ProductPlanResolver::class, new class($limit) implements ProductPlanResolver
+        {
+            public function __construct(private readonly int $limit) {}
+
+            public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
+            {
+                return new ProductPlanResolution(
+                    product: $product,
+                    workspaceId: $workspaceId,
+                    available: true,
+                    planKey: 'usage-test',
+                    planName: 'Usage test',
+                    subscriptionStatus: 'active',
+                    entitlements: ['event_collection'],
+                    limits: ['events_per_month' => $this->limit],
+                );
+            }
+        });
+        config(['analytics.plan_authority' => 'core']);
+
+        return $canonicalWorkspaceId;
+    }
+
+    /** @param list<string> $ids
+     * @return list<array{id: string, type: string, path: string}>
+     */
+    private function eventsForIds(array $ids): array
+    {
+        return array_map(static fn (string $id): array => [
+            'id' => $id,
+            'type' => 'pageview',
+            'path' => '/',
+        ], $ids);
     }
 }

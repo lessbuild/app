@@ -4,14 +4,19 @@ namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectProductSummaryProvider;
 use App\Core\Contracts\ProjectSetupProvider;
+use App\Core\Contracts\WorkspaceProductUsageProvider;
+use App\Core\Data\Billing\ProductUsageMeter;
+use App\Core\Data\Billing\ProductUsageSummary;
 use App\Core\Data\Projects\ProjectProductSnapshot;
 use App\Core\Data\Projects\ProjectProductSnapshotState;
 use App\Core\Data\Projects\ProjectSetupStep;
 use App\Core\Data\Projects\ProjectSetupStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\Workspace;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectSetupRegistry;
+use App\Core\Services\WorkspaceProductUsageProviderRegistry;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -464,6 +469,46 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertDontSeeText('Current period ends')
             ->assertDontSeeText('Deployer seat add-on quantity: 2')
             ->assertDontSeeText('sub_deployer_private');
+    }
+
+    public function test_workspace_usage_is_visible_to_billing_managers_but_not_members(): void
+    {
+        $this->seedSubscriptionsForWorkspace();
+        $this->setAnalyticsEventLimit(100);
+
+        $usageProviders = new WorkspaceProductUsageProviderRegistry;
+        $usageProviders->register('analytics', new class implements WorkspaceProductUsageProvider
+        {
+            public function summarize(Workspace $workspace): ?ProductUsageSummary
+            {
+                return new ProductUsageSummary(
+                    periodLabel: 'UTC calendar month September 1, 2026 through September 30, 2026',
+                    meters: [new ProductUsageMeter(
+                        key: 'events_per_month',
+                        label: 'Accepted Analytics events',
+                        used: 10,
+                    )],
+                );
+            }
+        });
+        app()->instance(WorkspaceProductUsageProviderRegistry::class, $usageProviders);
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->get(route('core.workspace.subscriptions', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('Usage')
+            ->assertSeeText('10 of 100 accepted events')
+            ->assertSeeText('UTC calendar month September 1, 2026 through September 30, 2026');
+
+        DB::connection('core')->table('workspace_memberships')
+            ->where('id', $this->membershipId)
+            ->update(['role' => 'member']);
+
+        $this->get(route('core.workspace.subscriptions', $this->workspaceId))
+            ->assertOk()
+            ->assertDontSeeText('Usage')
+            ->assertDontSeeText('accepted events')
+            ->assertDontSeeText('UTC calendar month September 1');
     }
 
     public function test_workspace_subscriptions_are_not_disclosed_to_non_members(): void
@@ -1570,6 +1615,23 @@ final class WorkspaceDashboardTest extends TestCase
             'verified' => true,
             'source' => 'stripe_subscription_items',
         ];
+
+        DB::connection('core')->table('product_subscriptions')->where('id', $subscriptionId)->update([
+            'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),
+            'updated_at' => now(),
+        ]);
+    }
+
+    private function setAnalyticsEventLimit(int $limit): void
+    {
+        $subscriptionId = DB::connection('core')->table('current_product_subscriptions')
+            ->where('workspace_id', $this->workspaceId)
+            ->where('product', 'analytics')
+            ->value('product_subscription_id');
+        $subscription = DB::connection('core')->table('product_subscriptions')->where('id', $subscriptionId)->first();
+        $metadata = json_decode($subscription->metadata, true, 512, JSON_THROW_ON_ERROR);
+        $metadata['plan_snapshot']['limits']['events_per_month'] = $limit;
+        $metadata['plan_snapshot']['entitlements'][] = 'event_collection';
 
         DB::connection('core')->table('product_subscriptions')->where('id', $subscriptionId)->update([
             'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),

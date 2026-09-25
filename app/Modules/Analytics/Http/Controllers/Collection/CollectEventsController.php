@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Http\Controllers\Collection;
 
 use App\Modules\Analytics\Actions\Collection\AcceptEventBatch;
 use App\Modules\Analytics\Data\NormalizedEvent;
+use App\Modules\Analytics\Exceptions\MonthlyEventLimitReached;
 use App\Modules\Analytics\Http\Controllers\Controller;
 use App\Modules\Analytics\Http\Requests\Collection\CollectEventsRequest;
 use App\Modules\Analytics\Models\Site;
@@ -46,7 +47,8 @@ class CollectEventsController extends Controller
             return response()->json(['message' => 'Origin is not registered for this site.'], 403);
         }
 
-        if (! $plans->canCollect($site->workspace)) {
+        $plan = $plans->resolve($site->workspace);
+        if (! $plan->allows('event_collection') || ! $plan->hasLimit('events_per_month')) {
             return response()->json(
                 ['message' => 'Collection is temporarily unavailable for this workspace.'],
                 503,
@@ -81,7 +83,21 @@ class CollectEventsController extends Controller
             );
         })->filter()->values()->all();
 
-        $result = $acceptEventBatch->handle($site, $events);
+        try {
+            $result = $acceptEventBatch->handle($site, $events, $plan->limit('events_per_month'));
+        } catch (MonthlyEventLimitReached $exception) {
+            $retryAfter = max(1, $exception->retryAt->getTimestamp() - CarbonImmutable::now('UTC')->getTimestamp());
+
+            return response()->json([
+                'message' => 'The Analytics workspace has reached its monthly accepted-event allowance.',
+                'code' => 'monthly_event_limit_reached',
+                'usage' => [
+                    'used' => $exception->used,
+                    'limit' => $exception->limit,
+                    'period_start' => $exception->periodStart->toDateString(),
+                ],
+            ], 429, [...$this->corsHeaders($request), 'Retry-After' => (string) $retryAfter]);
+        }
 
         return response()->json($result, 202, $this->corsHeaders($request));
     }

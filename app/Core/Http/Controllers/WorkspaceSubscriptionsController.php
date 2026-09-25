@@ -9,8 +9,9 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Billing\PlatformProductBillingLinks;
-use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\Identity\EnsureProductWorkspaceMapping;
+use App\Core\Services\Identity\ResolvePlatformUser;
+use App\Core\Services\WorkspaceProductUsageProviderRegistry;
 use App\Core\Services\WorkspaceProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -29,6 +30,7 @@ final class WorkspaceSubscriptionsController
         ProductPlanResolver $plans,
         PlatformProductBillingLinks $billingLinks,
         EnsureProductWorkspaceMapping $productWorkspaces,
+        WorkspaceProductUsageProviderRegistry $usageProviders,
     ): View {
         $principal = $request->user();
         abort_unless($principal !== null, 401);
@@ -54,6 +56,9 @@ final class WorkspaceSubscriptionsController
         $memberProductAccess = collect();
         $billingManagementLinks = collect();
         $billingLinkIssues = collect();
+        $productUsageSummaries = collect();
+        $productUsageProviders = collect();
+        $productUsageUnavailable = collect();
 
         foreach (ProductKey::cases() as $product) {
             $productKey = $product->value;
@@ -79,7 +84,23 @@ final class WorkspaceSubscriptionsController
                 ->exists());
 
             if ($canManageBilling && $hasSubscriptionTables) {
-                $planResolutions->put($productKey, $plans->resolve((string) $workspace->getKey(), $product));
+                $resolution = $plans->resolve((string) $workspace->getKey(), $product);
+                $planResolutions->put($productKey, $resolution);
+
+                $usageProvider = $usageProviders->get($productKey);
+                if ($usageProvider !== null) {
+                    $productUsageProviders->put($productKey, true);
+
+                    try {
+                        $summary = $usageProvider->summarize($workspace);
+                        if ($summary !== null) {
+                            $productUsageSummaries->put($productKey, $summary);
+                        }
+                    } catch (Throwable $exception) {
+                        report($exception);
+                        $productUsageUnavailable->put($productKey, true);
+                    }
+                }
 
                 if ($billingLinks->supports($productKey)) {
                     try {
@@ -113,6 +134,9 @@ final class WorkspaceSubscriptionsController
             'memberProductAccess' => $memberProductAccess,
             'billingManagementLinks' => $billingManagementLinks,
             'billingLinkIssues' => $billingLinkIssues,
+            'productUsageSummaries' => $productUsageSummaries,
+            'productUsageProviders' => $productUsageProviders,
+            'productUsageUnavailable' => $productUsageUnavailable,
             'canManageBilling' => $canManageBilling,
             'billingDataAvailable' => $hasSubscriptionTables,
         ]);
