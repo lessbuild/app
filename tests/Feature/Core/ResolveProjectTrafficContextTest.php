@@ -12,10 +12,16 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
+use App\Core\Services\Identity\ResolvePlatformUser;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\ProjectTrafficContextRegistry;
 use App\Core\Services\ResolveProjectTrafficContext;
 use App\Core\Services\WorkspaceProjectAccess;
+use App\Modules\Monitor\Models\Deployment as MonitorDeployment;
+use App\Modules\Monitor\Services\Core\DeploymentTrafficContext;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\LostConnectionException;
+use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -167,6 +173,73 @@ final class ResolveProjectTrafficContextTest extends TestCase
         $this->assertSame('2026-04-02T13:00:00+00:00', $provider->windows[1]['until']->toIso8601String());
         $this->assertSame(3, $context->before->conversions);
         $this->assertSame(2, $context->after->convertedVisits);
+    }
+
+    public function test_analytics_query_outage_returns_no_optional_deployment_context(): void
+    {
+        $provider = $this->throwingTrafficProvider(
+            new QueryException('analytics', 'select 1', [], new \RuntimeException('Analytics database unavailable.')),
+        );
+        $contexts = $this->deploymentTrafficContext($provider)->forDeployment(
+            $this->user,
+            $this->deployment(),
+            3600,
+        );
+
+        $this->assertTrue($contexts->isEmpty());
+        $this->assertSame(1, $provider->calls);
+    }
+
+    public function test_analytics_lost_connection_returns_no_optional_deployment_context(): void
+    {
+        $provider = $this->throwingTrafficProvider(new LostConnectionException('Analytics database connection was lost.'));
+        $contexts = $this->deploymentTrafficContext($provider)->forDeployment(
+            $this->user,
+            $this->deployment(),
+            3600,
+        );
+
+        $this->assertTrue($contexts->isEmpty());
+        $this->assertSame(1, $provider->calls);
+    }
+
+    private function deploymentTrafficContext(ProjectTrafficContextProvider $provider): DeploymentTrafficContext
+    {
+        return new DeploymentTrafficContext(
+            new ResolvePlatformUser(app(LegacyIdentityResolver::class)),
+            $this->resolver($provider),
+        );
+    }
+
+    private function deployment(): MonitorDeployment
+    {
+        return (new MonitorDeployment)->forceFill([
+            'id' => 1,
+            'environment_id' => 'monitor-env-1',
+            'release_id' => 1,
+            'deployed_at' => CarbonImmutable::parse('2026-04-02 12:00:00', 'UTC'),
+        ]);
+    }
+
+    private function throwingTrafficProvider(\Throwable $exception): ProjectTrafficContextProvider
+    {
+        return new class($exception) implements ProjectTrafficContextProvider
+        {
+            public int $calls = 0;
+
+            public function __construct(private readonly \Throwable $exception) {}
+
+            public function aggregate(
+                PlatformUser $user,
+                Project $project,
+                ProjectResource $resource,
+                CarbonImmutable $from,
+                CarbonImmutable $until,
+            ): ?ProjectTrafficWindowSummary {
+                $this->calls++;
+                throw $this->exception;
+            }
+        };
     }
 
     private function resolver(ProjectTrafficContextProvider $provider): ResolveProjectTrafficContext
