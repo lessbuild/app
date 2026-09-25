@@ -560,7 +560,7 @@
         <x-signal.ui.settings-section
             id="account-data"
             :title="__('Your data and account')"
-            :description="__('Export your information or permanently delete your :app account.', ['app' => config('app.name')])"
+            :description="$canDeleteAccount ? __('Export your information or permanently delete your :app account.', ['app' => config('app.name')]) : __('Export your information. Account deletion will return after shared product cleanup is coordinated.')"
             :collapsible="true"
             :open="$errors->getBag('deleteAccount')->any()"
         >
@@ -569,21 +569,28 @@
                     <div><h3 class="font-bold text-ink">{{ __('Export account data') }}</h3><p class="mt-1 text-sm text-muted">{{ __('Download profile, workspace, infrastructure metadata, and sign-in records as JSON. Secrets are excluded.') }}</p></div>
                     <x-signal.ui.button href="{{ route('account.export') }}" variant="secondary" class="shrink-0">{{ __('Download export') }}</x-signal.ui.button>
                 </x-signal.ui.card>
-                <x-signal.ui.panel as="form" method="POST" action="{{ route('account.destroy') }}" class="ui-panel ui-panel--danger space-y-4 p-4">
-                    @csrf @method('DELETE')
-                    <div><h3 class="font-bold text-ink">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-muted">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
-                    <label class="block"><span class="ui-label">{{ __('Type your email address to confirm') }}</span><x-signal.ui.input name="confirmation" type="email" autocomplete="off" class="ui-input" required :restore="false" /></label>
-                    @if (auth()->user()->hasLocalPassword())
-                        <label class="block"><span class="ui-label">{{ __('Current password') }}</span><x-signal.ui.input name="current_password" type="password" autocomplete="current-password" class="ui-input" required :restore="false" /></label>
-                    @endif
-                    @if (auth()->user()->twoFactorEnabled())
-                        <label class="block"><span class="ui-label">{{ __('Authenticator or recovery code') }}</span><x-signal.ui.input name="code" autocomplete="one-time-code" class="ui-input font-mono" required :restore="false" /></label>
-                    @endif
-                    <x-forms.errors name="confirmation" bag="deleteAccount" />
-                    <x-forms.errors name="current_password" bag="deleteAccount" />
-                    <x-forms.errors name="code" bag="deleteAccount" />
-                    <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</x-signal.ui.button>
-                </x-signal.ui.panel>
+                @if ($canDeleteAccount)
+                    <x-signal.ui.panel as="form" method="POST" action="{{ route('account.destroy') }}" class="ui-panel ui-panel--danger space-y-4 p-4">
+                        @csrf @method('DELETE')
+                        <div><h3 class="font-bold text-ink">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-muted">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
+                        <label class="block"><span class="ui-label">{{ __('Type your email address to confirm') }}</span><x-signal.ui.input name="confirmation" type="email" autocomplete="off" class="ui-input" required :restore="false" /></label>
+                        @if (auth()->user()->hasLocalPassword())
+                            <label class="block"><span class="ui-label">{{ __('Current password') }}</span><x-signal.ui.input name="current_password" type="password" autocomplete="current-password" class="ui-input" required :restore="false" /></label>
+                        @endif
+                        @if (auth()->user()->twoFactorEnabled())
+                            <label class="block"><span class="ui-label">{{ __('Authenticator or recovery code') }}</span><x-signal.ui.input name="code" autocomplete="one-time-code" class="ui-input font-mono" required :restore="false" /></label>
+                        @endif
+                        <x-forms.errors name="confirmation" bag="deleteAccount" />
+                        <x-forms.errors name="current_password" bag="deleteAccount" />
+                        <x-forms.errors name="code" bag="deleteAccount" />
+                        <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</x-signal.ui.button>
+                    </x-signal.ui.panel>
+                @else
+                    <x-signal.ui.panel class="space-y-2 border-l-4 border-l-warning p-4">
+                        <h3 class="font-bold text-ink">{{ __('Account deletion is temporarily unavailable') }}</h3>
+                        <p class="text-sm leading-6 text-muted">{{ __('This account is shared across Buildpusher products. Deleting only the Deployer copy could leave workspace access or product data in an inconsistent state, so no product-local deletion is allowed. The coordinated account cleanup workflow is still being completed. Your account and data remain unchanged; you can download the shared account export from Core account security.') }}</p>
+                    </x-signal.ui.panel>
+                @endif
             </div>
         </x-signal.ui.settings-section>
     </div>

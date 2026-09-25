@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Deployer\Actions\Account\DisconnectSocialAccountAction;
 use App\Modules\Deployer\Actions\Account\RevokeOtherSessionsAction;
 use App\Modules\Deployer\Actions\Account\RevokeSessionAction;
@@ -33,6 +34,7 @@ class UsersController extends Controller
         BrowserSessionManager $browserSessions,
         ClientMetadata $clients,
         TwoFactorAuthentication $twoFactor,
+        ProductAuthentication $authentication,
     ): View {
         $connected = $request->user()->connectedSocialProviders();
 
@@ -73,6 +75,7 @@ class UsersController extends Controller
                     'requires_password' => $request->user()->hasLocalPassword(),
                 ]),
             'twoFactorProvisioningUri' => $twoFactor->provisioningUri($request->user()),
+            'canDeleteAccount' => ! $authentication->usesCoreAuthority('deployer'),
         ]);
     }
 

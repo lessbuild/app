@@ -301,7 +301,7 @@
             <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-5 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus sm:p-6 lg:hidden">
                 <span>
                     <span class="block text-xl font-extrabold text-ink">{{ __('Delete workspace') }}</span>
-                    <span class="mt-2 block text-sm leading-6 text-muted">{{ __('Permanently removes this workspace and its :app records.', ['app' => config('app.name')]) }}</span>
+                    <span class="mt-2 block text-sm leading-6 text-muted">{{ $canDeleteWorkspace ? __('Permanently removes this workspace and its :app records.', ['app' => config('app.name')]) : __('Deletion will return after shared workspace cleanup is coordinated.') }}</span>
                 </span>
                 <span class="shrink-0 text-xl transition-transform group-open:rotate-45" style="color: var(--ui-danger)" aria-hidden="true">+</span>
             </summary>
@@ -313,10 +313,11 @@
                     </svg>
                     <div>
                         <h2 id="delete-workspace-title" class="text-xl font-extrabold text-ink">{{ __('Delete workspace') }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-muted">{{ __('Permanently removes this workspace and its :app records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.', ['app' => config('app.name')]) }}</p>
+                        <p class="mt-2 text-sm leading-6 text-muted">{{ $canDeleteWorkspace ? __('Permanently removes this workspace and its :app records. Provider-side servers and resources remain in your connected accounts. Remove teammates and finish active operations first.', ['app' => config('app.name')]) : __('Deployer-only workspace deletion is disabled while the coordinated Buildpusher cleanup workflow is being completed.') }}</p>
                     </div>
                 </div>
-                <form method="POST" action="{{ route('organizations.destroy', $organization) }}" class="mt-6 grid gap-4 sm:grid-cols-2">
+                @if ($canDeleteWorkspace)
+                    <form method="POST" action="{{ route('organizations.destroy', $organization) }}" class="mt-6 grid gap-4 sm:grid-cols-2">
                     @csrf
                     @method('DELETE')
                     <div>
@@ -338,7 +339,13 @@
                     <div class="sm:col-span-2">
                         <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete this workspace?')) }})">{{ __('Permanently delete workspace') }}</x-signal.ui.button>
                     </div>
-                </form>
+                    </form>
+                @else
+                    <x-signal.ui.panel class="mt-6 space-y-2 border-l-4 border-l-warning p-4">
+                        <h3 class="font-bold text-ink">{{ __('Workspace deletion is temporarily unavailable') }}</h3>
+                        <p class="text-sm leading-6 text-muted">{{ __('This workspace is connected to shared Buildpusher projects and product access. Deleting only its Deployer records could leave the other products inconsistent. The coordinated workspace cleanup workflow is still being completed. No data was changed.') }}</p>
+                    </x-signal.ui.panel>
+                @endif
             </div>
             </div>
         </x-signal.ui.panel>

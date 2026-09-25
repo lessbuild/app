@@ -21,3 +21,14 @@ exclusion. It remains unrun under the plan-wide test deferral. Changed PHP synta
 Pint, account-export route discovery, Blade view compilation, and
 `git diff --check` pass. Full product-data portability, account deletion, and
 cross-host security acceptance remain open.
+
+Production currently uses Core as the Deployer auth authority, while the old
+Deployer account and workspace deletion actions only clean their local records.
+Those DELETE routes now return `409` before a local deletion can run whenever
+Core authority is active. Their forms are replaced with an explanation, and
+Core account security states that coordinated deletion is not available yet.
+Legacy-authority behavior remains unchanged. Unit coverage for the guard is
+authored and remains unrun under the plan-wide test deferral. This is a safety
+guard, not completion of account or workspace deletion: the tracked lifecycle
+workflow still needs cross-product cleanup/retention acknowledgements and
+recovery behavior.

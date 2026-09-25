@@ -65,6 +65,7 @@ use App\Modules\Deployer\Http\Livewire\ServerShow;
 use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
 use App\Modules\Deployer\Http\Middleware\EnsureCoreProductWorkspaceAccess;
 use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
+use App\Modules\Deployer\Http\Middleware\PreventProductLocalDeletion;
 use App\Modules\Deployer\Http\Middleware\ResolveDeployerOrganizationContext;
 use App\Modules\Deployer\Http\Middleware\VerifyCsrfToken;
 use App\Modules\Deployer\Models\User;
@@ -138,7 +139,7 @@ Route::middleware([
     Route::patch('organization/members/{member}', [OrganizationController::class, 'updateMember'])->name('organizations.members.update');
     Route::delete('organization/members/{member}', [OrganizationController::class, 'removeMember'])->name('organizations.members.destroy');
     Route::delete('organization/{organization}', [OrganizationController::class, 'destroy'])
-        ->middleware('throttle:sensitive-account')
+        ->middleware(['throttle:sensitive-account', PreventProductLocalDeletion::class.':workspace'])
         ->name('organizations.destroy');
     Route::get('billing', [BillingController::class, 'index'])->name('billing.index');
     Route::post('billing/checkout/{plan}', [BillingController::class, 'checkout'])->name('billing.checkout');
@@ -150,7 +151,7 @@ Route::middleware([
         ->middleware('throttle:sensitive-account')
         ->name('account.export');
     Route::delete('account', AccountDeletionController::class)
-        ->middleware('throttle:sensitive-account')
+        ->middleware(['throttle:sensitive-account', PreventProductLocalDeletion::class.':account'])
         ->name('account.destroy');
     Route::patch('account/profile', [UsersController::class, 'updateProfile'])
         ->middleware('throttle:sensitive-account')

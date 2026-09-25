@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Deployer\Actions\Organization\AcceptOrganizationInvitationAction;
 use App\Modules\Deployer\Actions\Organization\DeleteOrganizationAction;
 use App\Modules\Deployer\Actions\Organization\InviteOrganizationMemberAction;
@@ -33,8 +34,12 @@ class OrganizationController extends Controller
     /**
      * Ensure and authorize the current workspace, then render members, outstanding invitations, and the seat allowance.
      */
-    public function index(Request $request, PersonalOrganization $personal, PlanLimits $limits): View
-    {
+    public function index(
+        Request $request,
+        PersonalOrganization $personal,
+        PlanLimits $limits,
+        ProductAuthentication $authentication,
+    ): View {
         $organization = $personal->ensure($request->user());
         $this->authorize('view', $organization);
 
@@ -43,6 +48,7 @@ class OrganizationController extends Controller
             'invitations' => $organization->invitations()->whereNull('accepted_at')->latest()->get(),
             'canManage' => $organization->permits($request->user(), 'manage'),
             'memberUsage' => $limits->usage($request->user(), 'members'),
+            'canDeleteWorkspace' => ! $authentication->usesCoreAuthority('deployer'),
         ]);
     }
 
