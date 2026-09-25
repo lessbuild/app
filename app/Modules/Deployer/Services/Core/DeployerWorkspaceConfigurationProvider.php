@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /** Keeps Core configuration edits on the exact mapped Deployer resources and their native actions. */
 final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerConfigurationProvider
@@ -60,7 +61,7 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
         foreach ($projectPage as $project) {
             try {
                 $projectContext = $this->resolveProject($context, $project, ability: 'update');
-            } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $exception) {
+            } catch (HttpExceptionInterface $exception) {
                 if (in_array($exception->getStatusCode(), [403, 404], true)) {
                     continue;
                 }
@@ -135,12 +136,13 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
                 $environmentContext = $this->resolveEnvironment($projectContext, $environment, ability: 'update', lock: true);
                 $nativeEnvironment = $environmentContext['nativeEnvironment'];
                 $nativeActor = $context['nativeActor'];
+                abort_if(array_key_exists('type', $attributes), 422);
 
                 // Commands and server/site placement remain private to Deployer. Preserve the current
                 // values in the action payload and validate them as the native environment request does.
                 $completeAttributes = [
                     'name' => $attributes['name'],
-                    'type' => $attributes['type'],
+                    'type' => $nativeEnvironment->type,
                     'branch' => $attributes['branch'],
                     'runtime_type' => $nativeEnvironment->runtime_type ?: 'php',
                     'runtime_version' => $nativeEnvironment->runtime_version,
@@ -313,6 +315,9 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
             ->whereKey((string) $mapping->resource_id)
             ->where('project_id', $projectContext['nativeProject']->getKey()))->first();
         abort_if($nativeEnvironment === null, 404);
+        // A native type edit without a matching Core update would make the canonical
+        // environment disagree across products. Existing mismatches also stay closed.
+        abort_unless((string) $coreEnvironment->environment_type === (string) $nativeEnvironment->type, 404);
         abort_unless($projectContext['nativeActor']->can($ability, $nativeEnvironment), 403);
 
         return ['coreEnvironment' => $coreEnvironment, 'nativeEnvironment' => $nativeEnvironment];
@@ -323,8 +328,7 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
         ?string $environmentSearch = null,
         int $environmentPage = 1,
         bool $includeEnvironments = true,
-    ): DeployerProjectConfigurationSnapshot
-    {
+    ): DeployerProjectConfigurationSnapshot {
         $environments = [];
         $environmentPaginator = null;
 
@@ -340,7 +344,7 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
             foreach ($environmentPaginator as $coreEnvironment) {
                 try {
                     $environmentContext = $this->resolveEnvironment($projectContext, $coreEnvironment, ability: 'update');
-                } catch (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $exception) {
+                } catch (HttpExceptionInterface $exception) {
                     if (in_array($exception->getStatusCode(), [403, 404], true)) {
                         continue;
                     }
@@ -417,5 +421,4 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
             'hibernate_after_minutes' => ['nullable', 'integer', Rule::in([5, 15, 30, 60, 120, 1440])],
         ];
     }
-
 }

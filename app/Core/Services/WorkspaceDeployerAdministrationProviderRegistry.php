@@ -2,8 +2,8 @@
 
 namespace App\Core\Services;
 
-use App\Core\Contracts\Deployer\WorkspaceDeployerDeploymentControlsProvider;
 use App\Core\Contracts\Deployer\WorkspaceDeployerConfigurationProvider;
+use App\Core\Contracts\Deployer\WorkspaceDeployerDeploymentControlsProvider;
 
 final class WorkspaceDeployerAdministrationProviderRegistry
 {

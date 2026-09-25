@@ -1,5 +1,4 @@
 @php
-    $environmentTypes = \App\Modules\Deployer\Models\Environment::TYPES;
     $replicaOptions = range(1, 20);
     $hibernationOptions = [5, 15, 30, 60, 120, 1440];
     $observationOptions = \App\Modules\Deployer\Models\Environment::POST_DEPLOYMENT_OBSERVATION_MINUTES;
@@ -48,15 +47,11 @@
                 <input class="ui-input mt-1" type="text" name="name" value="{{ old('name', $snapshot->environmentName) }}" maxlength="100" required>
                 @error('name')<span class="mt-1 block text-sm text-danger">{{ $message }}</span>@enderror
             </label>
-            <label>
+            <div>
                 <span class="ui-label">{{ __('Environment type') }}</span>
-                <select class="ui-input mt-1" name="type" required>
-                    @foreach ($environmentTypes as $type)
-                        <option value="{{ $type }}" @selected(old('type', $snapshot->environmentType) === $type)>{{ str($type)->headline() }}</option>
-                    @endforeach
-                </select>
-                @error('type')<span class="mt-1 block text-sm text-danger">{{ $message }}</span>@enderror
-            </label>
+                <p class="ui-input mt-1">{{ str($snapshot->environmentType)->headline() }}</p>
+                <p class="mt-1 text-xs text-muted">{{ __('Change the shared environment type through a coordinated project workflow.') }}</p>
+            </div>
             <label class="sm:col-span-2">
                 <span class="ui-label">{{ __('Deployment branch') }}</span>
                 <input class="ui-input mt-1" type="text" name="branch" value="{{ old('branch', $snapshot->branch) }}" maxlength="255" required>

@@ -4,8 +4,8 @@ namespace App\Core\Http\Requests\Deployer;
 
 use App\Modules\Deployer\Rules\Hostname;
 use Illuminate\Contracts\Validation\Validator;
-use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class UpdateProjectPreviewSettingsRequest extends FormRequest
 {

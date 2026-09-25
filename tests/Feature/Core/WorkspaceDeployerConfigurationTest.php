@@ -126,6 +126,7 @@ final class WorkspaceDeployerConfigurationTest extends TestCase
             ->assertOk()
             ->assertSee('8.3')
             ->assertSee('main')
+            ->assertDontSee('name="type"', false)
             ->assertDontSee('CONFIGURATION_COMMAND_SENTINEL')
             ->assertDontSee('CONFIGURATION_SECRET_SENTINEL');
 
@@ -143,7 +144,6 @@ final class WorkspaceDeployerConfigurationTest extends TestCase
         $this->actingAs($this->platformOwner, 'platform')
             ->patch($this->environmentUpdateUrl(), [
                 'name' => 'Production Runtime',
-                'type' => 'production',
                 'branch' => 'release',
                 'minimum_replicas' => '1',
                 'maximum_replicas' => '1',
@@ -221,7 +221,6 @@ final class WorkspaceDeployerConfigurationTest extends TestCase
             ->from($this->environmentUrl())
             ->patch($this->environmentUpdateUrl(), [
                 'name' => 'Production',
-                'type' => 'production',
                 'branch' => 'main',
                 'minimum_replicas' => '1',
                 'maximum_replicas' => '2',
@@ -247,6 +246,41 @@ final class WorkspaceDeployerConfigurationTest extends TestCase
         $this->actingAs($this->platformOwner, 'platform')
             ->get($this->projectUrl())
             ->assertNotFound();
+    }
+
+    public function test_forged_environment_type_change_is_rejected_without_mutating_the_native_record(): void
+    {
+        $this->actingAs($this->platformOwner, 'platform')
+            ->from($this->environmentUrl())
+            ->patch($this->environmentUpdateUrl(), [
+                'name' => 'Production', 'type' => 'staging', 'branch' => 'main',
+                'minimum_replicas' => 1, 'maximum_replicas' => 1,
+                'hibernate_after_minutes' => '', 'post_deployment_observation_minutes' => '',
+            ])
+            ->assertRedirect($this->environmentUrl())
+            ->assertSessionHasErrors('type');
+
+        $this->assertSame('production', $this->nativeEnvironment->fresh()->type);
+        $this->assertSame('main', $this->nativeEnvironment->fresh()->branch);
+    }
+
+    public function test_preexisting_core_native_environment_type_mismatch_is_hidden_and_cannot_be_edited(): void
+    {
+        $this->environment->forceFill(['environment_type' => 'custom'])->save();
+
+        $this->actingAs($this->platformOwner, 'platform')
+            ->get($this->environmentUrl())
+            ->assertNotFound();
+        $this->actingAs($this->platformOwner, 'platform')
+            ->patch($this->environmentUpdateUrl(), [
+                'name' => 'Would be changed', 'branch' => 'release',
+                'minimum_replicas' => 1, 'maximum_replicas' => 1,
+                'hibernate_after_minutes' => '', 'post_deployment_observation_minutes' => '',
+            ])
+            ->assertNotFound();
+
+        $this->assertSame('Production', $this->nativeEnvironment->fresh()->name);
+        $this->assertSame('production', $this->nativeEnvironment->fresh()->type);
     }
 
     public function test_native_role_and_core_product_grant_are_rechecked_for_configuration_access(): void

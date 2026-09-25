@@ -2,9 +2,9 @@
 
 namespace App\Core\Contracts\Deployer;
 
-use App\Core\Data\Deployer\DeployerProjectConfigurationSnapshot;
-use App\Core\Data\Deployer\DeployerProjectConfigurationDirectory;
 use App\Core\Data\Deployer\DeployerEnvironmentConfigurationSnapshot;
+use App\Core\Data\Deployer\DeployerProjectConfigurationDirectory;
+use App\Core\Data\Deployer\DeployerProjectConfigurationSnapshot;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectEnvironment;
@@ -42,7 +42,7 @@ interface WorkspaceDeployerConfigurationProvider
         ProjectEnvironment $environment,
     ): DeployerEnvironmentConfigurationSnapshot;
 
-    /** @param array{name: string, type: string, branch: string, minimum_replicas: int, maximum_replicas: int, hibernate_after_minutes: ?int, post_deployment_observation_minutes: ?int} $attributes */
+    /** @param array{name: string, branch: string, minimum_replicas: int, maximum_replicas: int, hibernate_after_minutes: ?int, post_deployment_observation_minutes: ?int} $attributes */
     public function updateEnvironment(
         PlatformUser $actor,
         Workspace $workspace,

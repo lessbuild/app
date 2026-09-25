@@ -20,7 +20,8 @@ final class UpdateEnvironmentConfigurationRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:100'],
-            'type' => ['required', Rule::in(Environment::TYPES)],
+            // A type change needs a coordinated update of the mapped Core environment.
+            'type' => ['prohibited'],
             'branch' => ['required', 'string', 'max:255'],
             'minimum_replicas' => ['required', 'integer', 'between:1,20'],
             'maximum_replicas' => ['required', 'integer', 'between:1,20', 'gte:minimum_replicas'],

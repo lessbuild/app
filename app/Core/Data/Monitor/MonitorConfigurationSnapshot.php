@@ -8,9 +8,9 @@ use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 final readonly class MonitorConfigurationSnapshot
 {
     /**
-     * @param LengthAwarePaginator<int, array<string, mixed>> $applications
-     * @param LengthAwarePaginator<int, array<string, mixed>> $environments
-     * @param LengthAwarePaginator<int, array<string, mixed>> $checks
+     * @param  LengthAwarePaginator<int, array<string, mixed>>  $applications
+     * @param  LengthAwarePaginator<int, array<string, mixed>>  $environments
+     * @param  LengthAwarePaginator<int, array<string, mixed>>  $checks
      */
     public function __construct(
         public LengthAwarePaginator $applications,

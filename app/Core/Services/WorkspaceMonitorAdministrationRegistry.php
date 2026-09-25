@@ -3,9 +3,9 @@
 namespace App\Core\Services;
 
 use App\Core\Contracts\WorkspaceMonitorAlertAdministrationProvider;
+use App\Core\Contracts\WorkspaceMonitorConfigurationAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorDestinationAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorSettingsAdministrationProvider;
-use App\Core\Contracts\WorkspaceMonitorConfigurationAdministrationProvider;
 
 /** Keeps Monitor's administration domains independently replaceable and typed. */
 final class WorkspaceMonitorAdministrationRegistry

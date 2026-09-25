@@ -285,5 +285,7 @@ Route::middleware('auth:platform')->group(function (): void {
 
 require __DIR__.'/credential-management.php';
 require __DIR__.'/monitor-administration.php';
+require __DIR__.'/monitor-configuration.php';
+require __DIR__.'/deployer-configuration.php';
 require __DIR__.'/analytics-administration.php';
 require __DIR__.'/project-blueprints.php';
