@@ -19,7 +19,7 @@
 
 ## Remaining scope and acceptance
 
-- Decide the final feedback cutover after legacy mappings and encryption-key continuity are verified. Core currently exposes historical Deployer records read-only; mutations and authoritative records remain in Deployer until a safe, reviewed migration is defined.
+- Run the new preview-first importer only after current identity mappings and encryption-key continuity are verified; review blocked records, take a fresh Core backup, and apply during an approved cutover. Until then, Core shows legacy records read-only and Deployer remains authoritative.
 - Complete Core-owned billing checkout, customer portal, webhook reconciliation, plan changes, and lifecycle handling; the existing Core subscriptions screen remains a summary and handoff surface.
 - Deploy the new Monitor and Analytics heartbeat-table migrations and minute probes, then confirm fresh status changes with each real queue worker stopped and restored. The current code reports stale or missing heartbeats as degraded; production rollout and observed worker-failure/recovery evidence remain open. Customer status records and operational histories remain product-owned.
 - Finish a route-by-route administrative and configuration inventory against the existing feature parity matrix, including authenticated SSO checks for Monitor and Analytics on their configured hosts. The Core index is an entry point; source tables, destructive operations, sensitive settings, and module policies remain in product modules.

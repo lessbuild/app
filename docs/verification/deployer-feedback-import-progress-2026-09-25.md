@@ -1,0 +1,13 @@
+# Deployer historical feedback import — 25 September 2026
+
+Core's feedback page previously showed Deployer records through a bounded, read-only projection while leaving Deployer authoritative. Added a controlled migration command, **platform:import-deployer-feedback**, to preserve that history in Core when the identity and encryption prerequisites are satisfied.
+
+The command previews by default. Each feedback row must resolve through a reconciled Deployer organization-to-Core workspace map and submitter-to-Core-user map. A reviewed row also requires a reconciled reviewer map. Target workspace and user records must exist in Core. Unsupported categories, severities, statuses, invalid titles/pages, missing mappings, conflicting source mappings, and unreadable ciphertext are held with generic reason codes; field contents and exception details are never written to reconciliation notes.
+
+Deployer's encrypted model casts decrypt the three private fields before import. Core's encrypted casts encrypt them under the active application key on write. The import preserves product, category, severity, status, title, description, reproduction steps, review response, page, submitter/reviewer attribution, resolution time, and source timestamps. A LegacyIdentityMap record connects each source feedback ID to its Core feedback ULID and canonical workspace. Its HMAC fingerprint includes the mapped identities and source revision without storing private feedback text. Repeat runs do not duplicate rows; source changes update the same Core row while Deployer remains the source of truth. The Core page suppresses imported source rows from its read-only legacy projection, including after a Core-side deletion, so imported history is not presented twice or silently restored.
+
+The command's --apply option is explicit. Production import remains pending until a read-only preview confirms mapping counts, private-key decryptability, and the exact blocked records; a fresh Core backup and approved feedback cutover are also required. No production database was previewed, modified, or migrated for this implementation.
+
+Regression tests were authored for preview safety, source-to-Core encryption, preserved timestamps and review fields, idempotency, source updates, held mappings that become importable after reconciliation, unreadable ciphertext, and deduplication between imported feedback and the legacy projection. They remain unrun under the instruction to defer all test execution until the unified application plan is complete.
+
+Static verification passed: PHP syntax checks, Pint, Artisan command discovery, and git diff --check. No test runner, production import, migration, or deployment was run.

@@ -3,6 +3,9 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Models\PlatformUser;
+use App\Core\Models\Workspace;
+use App\Core\Models\WorkspaceFeedback;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceFeedbackHistoryProvider;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Crypt;
@@ -173,6 +176,56 @@ final class WorkspaceFeedbackHistoryTest extends TestCase
             ->assertDontSee('organization_id=700');
     }
 
+    public function test_feedback_imported_into_core_is_not_repeated_in_the_read_only_legacy_projection(): void
+    {
+        $this->seedLegacyOrganizationAndFeedback();
+        DB::connection('deployer')->table('product_feedback')->insert([
+            'id' => 500,
+            'organization_id' => 700,
+            'user_id' => $this->legacyUserId(),
+            'category' => 'idea',
+            'severity' => 'normal',
+            'status' => 'open',
+            'title' => 'Older feedback not imported yet',
+            'description' => Crypt::encryptString('This older record should stay visible.'),
+            'created_at' => now()->subHour(),
+            'updated_at' => now()->subHour(),
+        ]);
+        $coreFeedback = WorkspaceFeedback::query()->create([
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $this->userId,
+            'product' => 'deployer',
+            'category' => 'bug',
+            'severity' => 'high',
+            'status' => 'reviewing',
+            'title' => 'Historical private report',
+            'description' => 'A historical report with private details.',
+            'reproduction_steps' => 'Open the deployment history.',
+            'page' => '/projects',
+        ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'deployer',
+            'source_entity' => 'product_feedback',
+            'source_id' => '501',
+            'canonical_entity' => 'workspace_feedback',
+            'canonical_id' => $coreFeedback->getKey(),
+            'status' => 'reconciled',
+            'metadata' => json_encode(['workspace_id' => $this->workspaceId], JSON_THROW_ON_ERROR),
+        ]);
+
+        $history = app(DeployerWorkspaceFeedbackHistoryProvider::class)->forWorkspace(
+            user: PlatformUser::query()->findOrFail($this->userId),
+            workspace: Workspace::query()->findOrFail($this->workspaceId),
+            filters: [],
+            canReview: true,
+        );
+
+        $this->assertCount(1, $history->entries);
+        $this->assertSame('500', $history->entries[0]->sourceId);
+        $this->assertTrue($history->available);
+    }
+
     private function createTables(): void
     {
         foreach (['workspace_feedback', 'legacy_identity_maps', 'workspace_product_access', 'workspace_memberships', 'workspaces', 'users'] as $table) {
@@ -228,6 +281,7 @@ final class WorkspaceFeedbackHistoryTest extends TestCase
             $table->string('canonical_entity')->nullable();
             $table->string('canonical_id', 26)->nullable();
             $table->string('status');
+            $table->json('metadata')->nullable();
         });
         Schema::connection('core')->create('workspace_feedback', function (Blueprint $table): void {
             $table->char('id', 26)->primary();

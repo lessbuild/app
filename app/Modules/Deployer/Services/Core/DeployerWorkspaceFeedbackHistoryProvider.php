@@ -64,15 +64,63 @@ final class DeployerWorkspaceFeedbackHistoryProvider implements WorkspaceFeedbac
                 return new WorkspaceFeedbackHistory;
             }
 
-            $rows = ProductFeedback::query()
+            $limit = max(1, min(50, (int) ($filters['limit'] ?? 15)));
+            $query = ProductFeedback::query()
                 ->where('organization_id', $organization->getKey())
                 ->when(! $canReview, fn ($query) => $query->where('user_id', $productUser->getKey()))
                 ->when($filters['status'] ?? null, fn ($query, string $status) => $query->where('status', $status))
                 ->when($filters['category'] ?? null, fn ($query, string $category) => $query->where('category', $category))
                 ->with('submitter:id,name')
-                ->latest()
-                ->limit(max(1, min(50, (int) ($filters['limit'] ?? 15))))
-                ->get();
+                ->orderByDesc('created_at')
+                ->orderByDesc('id');
+            $rows = collect();
+            $cursor = null;
+
+            do {
+                $pageQuery = clone $query;
+                if ($cursor !== null) {
+                    $pageQuery->where(function ($ordered) use ($cursor): void {
+                        $ordered->where('created_at', '<', $cursor['created_at'])
+                            ->orWhere(function ($tie) use ($cursor): void {
+                                $tie->where('created_at', $cursor['created_at'])
+                                    ->where('id', '<', $cursor['id']);
+                            });
+                    });
+                }
+
+                $page = $pageQuery->limit($limit)->get();
+                if ($page->isEmpty()) {
+                    break;
+                }
+
+                $sourceIds = $page->map(static fn (ProductFeedback $feedback): string => (string) $feedback->getKey());
+                $importedIds = LegacyIdentityMap::query()
+                    ->where('source_product', 'deployer')
+                    ->where('source_entity', 'product_feedback')
+                    ->where('canonical_entity', 'workspace_feedback')
+                    ->where('status', 'reconciled')
+                    ->where('metadata->workspace_id', (string) $workspace->getKey())
+                    ->whereIn('source_id', $sourceIds)
+                    ->pluck('source_id')
+                    ->map(static fn ($id): string => (string) $id)
+                    ->all();
+
+                $rows = $rows->concat($page->reject(
+                    static fn (ProductFeedback $feedback): bool => in_array(
+                        (string) $feedback->getKey(),
+                        $importedIds,
+                        true,
+                    ),
+                ));
+
+                $last = $page->last();
+                $cursor = [
+                    'created_at' => $last->getRawOriginal('created_at'),
+                    'id' => (string) $last->getKey(),
+                ];
+            } while ($page->count() === $limit && $rows->count() < $limit);
+
+            $rows = $rows->take($limit);
 
             return new WorkspaceFeedbackHistory(
                 entries: $rows->map(fn (ProductFeedback $feedback): WorkspaceFeedbackHistoryEntry => new WorkspaceFeedbackHistoryEntry(
