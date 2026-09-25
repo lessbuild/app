@@ -40,11 +40,12 @@ Set `SESSION_CONNECTION=core` so central authentication sessions do not depend o
 the Deployer database. The Core migration creates the Laravel session table.
 
 Platform passkeys use the apex host as their WebAuthn relying-party ID and the
-configured Buildpusher app hosts as allowed origins. Set
-`PLATFORM_PASSKEY_RELYING_PARTY_ID=buildpusher.com` explicitly in production.
-`PLATFORM_PASSKEY_USER_HANDLE_SECRET` overrides the stable `APP_KEY` fallback;
-keep whichever value is active unchanged across releases because changing it
-invalidates existing passkey registrations. If setting
+configured Buildpusher app hosts as allowed origins. Production currently derives
+`buildpusher.com` from the dashboard host; set
+`PLATFORM_PASSKEY_RELYING_PARTY_ID=buildpusher.com` explicitly if the dashboard
+host may change. `PLATFORM_PASSKEY_USER_HANDLE_SECRET` overrides the stable
+`APP_KEY` fallback; keep whichever value is active unchanged across releases
+because changing it invalidates existing passkey registrations. If setting
 `PLATFORM_PASSKEY_ALLOWED_ORIGINS` explicitly, use the exact HTTPS origins for
 the apex, auth, dashboard, and product hosts.
 
