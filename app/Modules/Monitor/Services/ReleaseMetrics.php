@@ -60,8 +60,20 @@ final class ReleaseMetrics
      */
     public function aroundDeployment(Workspace $workspace, Deployment $deployment, int $minutes): array
     {
+        return $this->compareAroundDeployment($workspace, $deployment, $minutes * 60, $minutes);
+    }
+
+    /** @return array{before: array<string, int|float|null>|null, after: array<string, int|float|null>|null, from: CarbonImmutable, deployedAt: CarbonImmutable, until: CarbonImmutable, seconds: int, requestedMinutes: int} */
+    public function aroundDeploymentWindow(Workspace $workspace, Deployment $deployment, int $requestedSeconds, int $requestedMinutes): array
+    {
+        return $this->compareAroundDeployment($workspace, $deployment, $requestedSeconds, $requestedMinutes);
+    }
+
+    /** @return array{before: array<string, int|float|null>|null, after: array<string, int|float|null>|null, from: CarbonImmutable, deployedAt: CarbonImmutable, until: CarbonImmutable, seconds: int, requestedMinutes: int} */
+    private function compareAroundDeployment(Workspace $workspace, Deployment $deployment, int $requestedSeconds, int $requestedMinutes): array
+    {
         $at = $deployment->deployed_at;
-        $seconds = (int) max(0, min($minutes * 60, $at->diffInSeconds(CarbonImmutable::now('UTC'), false)));
+        $seconds = (int) max(0, min($requestedSeconds, $at->diffInSeconds(CarbonImmutable::now('UTC'), false)));
         $from = $at->subSeconds($seconds);
         $until = $at->addSeconds($seconds);
         $query = TelemetryEvent::query()
@@ -72,7 +84,7 @@ final class ReleaseMetrics
         $before = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', $this->boundary($from))->where('occurred_at', '<', $this->boundary($at))) : null;
         $after = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', $this->boundary($at))->where('occurred_at', '<', $this->boundary($until))) : null;
 
-        return ['before' => $before, 'after' => $after, 'from' => $from, 'deployedAt' => $at, 'until' => $until, 'seconds' => $seconds, 'requestedMinutes' => $minutes];
+        return ['before' => $before, 'after' => $after, 'from' => $from, 'deployedAt' => $at, 'until' => $until, 'seconds' => $seconds, 'requestedMinutes' => $requestedMinutes];
     }
 
     /** Legacy second-only timestamps must be compared on the same boundary. */

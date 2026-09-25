@@ -9,6 +9,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Models\Workspace as CoreWorkspace;
 use App\Core\Services\LegacyIdentityResolver;
+use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Analytics\Models\Workspace as AnalyticsWorkspace;
@@ -106,14 +107,37 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
         $incidentOpenedAt = CarbonImmutable::parse('2026-04-02 12:00:00', 'UTC');
         $this->recordPageview($site, '2026-04-02 11:10:00', 'visitor-a', processed: true);
         $this->recordPageview($site, '2026-04-02 11:30:00', 'visitor-a', processed: true);
-        $this->recordPageview($site, '2026-04-02 11:55:00', 'visitor-b', processed: true);
+        $convertedEvent = $this->recordPageview($site, '2026-04-02 11:55:00', 'visitor-b', processed: true);
         $this->recordPageview($site, '2026-04-02 11:56:00', 'visitor-event', processed: true, type: 'custom');
-        $this->recordPageview($site, '2026-04-02 11:59:00', 'visitor-pending', processed: false);
+        $pendingEvent = $this->recordPageview($site, '2026-04-02 11:59:00', 'visitor-pending', processed: false);
         $this->recordPageview($site, '2026-04-02 12:00:00', 'visitor-boundary', processed: true);
         $this->recordPageview($site, '2026-04-02 10:30:00', 'visitor-prior', processed: true);
         $this->recordPageview($site, '2026-04-02 10:59:00', 'visitor-prior', processed: true);
         $this->recordPageview($site, '2026-04-02 09:59:00', 'visitor-outside', processed: true);
         $this->recordPageview($privateSite, '2026-04-02 11:15:00', 'private-visitor', processed: true);
+
+        $goal = $site->goals()->create(['name' => 'Checkout', 'kind' => 'path', 'match_type' => 'exact', 'match_value' => '/checkout', 'active' => true]);
+        $visit = $site->visits()->create([
+            'visit_key' => 'converted-visit',
+            'visitor_hash' => hash('sha256', 'visitor-converted'),
+            'started_at' => '2026-04-02 11:54:00',
+            'last_seen_at' => '2026-04-02 11:55:00',
+            'pageviews' => 2,
+            'conversion_count' => 1,
+        ]);
+        $site->goalConversions()->create([
+            'goal_id' => $goal->getKey(),
+            'goal_version_id' => $goal->versions()->firstOrFail()->getKey(),
+            'analytics_event_id' => $convertedEvent->getKey(),
+            'visit_id' => $visit->getKey(),
+            'converted_at' => '2026-04-02 11:55:00',
+        ]);
+        $site->goalConversions()->create([
+            'goal_id' => $goal->getKey(),
+            'goal_version_id' => $goal->versions()->firstOrFail()->getKey(),
+            'analytics_event_id' => $pendingEvent->getKey(),
+            'converted_at' => '2026-04-02 11:59:00',
+        ]);
 
         $provider = new AnalyticsTrafficContextProvider(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
         $current = $provider->aggregate(
@@ -134,10 +158,12 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
         $this->assertInstanceOf(ProjectTrafficWindowSummary::class, $current);
         $this->assertSame(3, $current->pageviews);
         $this->assertSame(2, $current->visitors);
+        $this->assertSame(1, $current->conversions);
+        $this->assertSame(1, $current->convertedVisits);
         $this->assertSame('2026-04-02 12:01:00', $current->processedAt?->format('Y-m-d H:i:s'));
         $this->assertSame(2, $previous?->pageviews);
         $this->assertSame(1, $previous?->visitors);
-        $this->assertSame(['pageviews', 'visitors', 'processedAt'], array_keys(get_object_vars($current)));
+        $this->assertSame(['pageviews', 'visitors', 'conversions', 'convertedVisits', 'processedAt'], array_keys(get_object_vars($current)));
         $this->assertNull($provider->aggregate(
             $platformUser,
             $project,
@@ -153,7 +179,7 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
         string $visitor,
         bool $processed,
         string $type = 'pageview',
-    ): void {
+    ): AnalyticsEvent {
         $batch = $site->ingestionBatches()->create([
             'batch_id' => (string) Str::uuid(),
             'event_count' => 1,
@@ -161,7 +187,8 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
             'accepted_at' => $occurredAt,
             'processed_at' => $processed ? $occurredAt : null,
         ]);
-        $site->events()->create([
+
+        return $site->events()->create([
             'ingestion_batch_id' => $batch->getKey(),
             'event_id' => (string) Str::uuid(),
             'type' => $type,

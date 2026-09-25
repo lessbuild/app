@@ -16,5 +16,22 @@
         @if($comparison['seconds'] > 0)<p class="mt-2 text-xs text-muted dark:text-subtle">Equal {{ number_format($comparison['seconds']) }}-second windows: {{ $comparison['from']->format('Y-m-d H:i:s.u') }} → {{ $comparison['deployedAt']->format('Y-m-d H:i:s.u') }} → {{ $comparison['until']->format('Y-m-d H:i:s.u') }} UTC. Start inclusive, end exclusive; recent deployments use shorter windows.</p>@else<p class="mt-2 text-sm text-warning dark:text-warning">Awaiting an elapsed comparison window. Refresh after the reported deployment time.</p>@endif</div>
         <x-monitor::ui.release-comparison :left="$comparison['before']" :right="$comparison['after']" left-label="Before deployment" right-label="After deployment" />
     </x-signal.ui.panel>
+    <x-signal.ui.panel as="section" class="overflow-hidden">
+        <div class="border-b border-line p-5 dark:border-line">
+            <h2 class="font-bold">Connected Analytics traffic and conversions</h2>
+            <p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">Active Analytics site connections are compared over the same plan-limited windows as this Monitor comparison. Only aggregate counts are shown.</p>
+        </div>
+        @forelse($trafficContexts as $trafficContext)
+            <div class="border-b border-line last:border-b-0 dark:border-line">
+                <div class="px-5 pt-5">
+                    <p class="text-sm font-semibold">{{ $trafficContext->siteName }}</p>
+                    <p class="mt-1 text-xs text-muted dark:text-subtle">Project: {{ $trafficContext->projectName }} · {{ number_format($trafficContext->windowSeconds) }}-second windows · {{ $trafficContext->deployedAt->format('Y-m-d H:i:s.u') }} UTC</p>
+                </div>
+                <x-monitor::ui.traffic-comparison :before="$trafficContext->before" :after="$trafficContext->after" :expected-through="$trafficContext->deployedAt->addSeconds($trafficContext->windowSeconds)" />
+            </div>
+        @empty
+            <p class="p-5 text-sm text-muted dark:text-subtle">No connected Analytics traffic is available for this deployment under the current workspace access and plan settings.</p>
+        @endforelse
+    </x-signal.ui.panel>
 </div>
 @endsection

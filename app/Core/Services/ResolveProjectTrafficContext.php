@@ -2,6 +2,7 @@
 
 namespace App\Core\Services;
 
+use App\Core\Data\Projects\ProjectReleaseTrafficContextSnapshot;
 use App\Core\Data\Projects\ProjectTrafficContextSnapshot;
 use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Models\PlatformUser;
@@ -97,6 +98,94 @@ final class ResolveProjectTrafficContext
                     incidentOpenedAt: $openedAt,
                     incidentWindow: $incidentWindow,
                     previousWindow: $previousWindow,
+                ));
+            }
+        }
+
+        return $contexts;
+    }
+
+    /** @return Collection<int, ProjectReleaseTrafficContextSnapshot> */
+    public function forMonitorDeployment(
+        PlatformUser $user,
+        string|int $monitorEnvironmentId,
+        DateTimeInterface $deployedAt,
+        int $requestedSeconds,
+    ): Collection {
+        if ($requestedSeconds <= 0) {
+            return collect();
+        }
+
+        $at = CarbonImmutable::instance($deployedAt)->utc();
+        $elapsedSeconds = (int) max(0, $at->diffInSeconds(CarbonImmutable::now('UTC'), false));
+        $contexts = collect();
+        $targets = ProjectResource::query()
+            ->where('product', 'monitor')
+            ->where('resource_type', 'environment')
+            ->where('resource_id', (string) $monitorEnvironmentId)
+            ->where('status', 'active')
+            ->get();
+
+        foreach ($targets as $target) {
+            $project = Project::query()->find($target->project_id);
+
+            if ($project === null
+                || ! $this->access->canViewProject($user, $project)
+                || ! $this->access->canAccessProductResource($user, $project, 'monitor')
+                || ! $this->access->canAccessProductResource($user, $project, 'analytics')) {
+                continue;
+            }
+
+            $provider = $this->providers->get('analytics');
+            $maximumMinutes = $this->entitlements->trafficContextWindowMinutes($project);
+
+            if ($provider === null || $maximumMinutes === null) {
+                continue;
+            }
+
+            $windowSeconds = min($requestedSeconds, $maximumMinutes * 60, $elapsedSeconds);
+
+            if ($windowSeconds <= 0) {
+                continue;
+            }
+
+            $connections = ProjectConnection::query()
+                ->where('project_id', $project->getKey())
+                ->where('target_resource_id', $target->getKey())
+                ->where('status', 'active')
+                ->whereNull('disconnected_at')
+                ->with('sourceResource')
+                ->orderBy('id')
+                ->get();
+
+            foreach ($connections as $connection) {
+                if (! in_array(ProjectConnectionCapability::TrafficContext->value, $connection->capabilities ?? [], true)) {
+                    continue;
+                }
+
+                $source = $connection->sourceResource;
+
+                if ($source === null
+                    || $source->product !== 'analytics'
+                    || $source->resource_type !== 'site'
+                    || $source->status !== 'active') {
+                    continue;
+                }
+
+                $before = $provider->aggregate($user, $project, $source, $at->subSeconds($windowSeconds), $at);
+                $after = $provider->aggregate($user, $project, $source, $at, $at->addSeconds($windowSeconds));
+
+                if ($before === null || $after === null) {
+                    continue;
+                }
+
+                $contexts->push(new ProjectReleaseTrafficContextSnapshot(
+                    projectName: $project->name,
+                    siteName: $source->name ?: __('Analytics site'),
+                    windowSeconds: $windowSeconds,
+                    deployedAt: $at,
+                    before: $before,
+                    after: $after,
                 ));
             }
         }

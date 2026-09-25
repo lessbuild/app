@@ -5,6 +5,7 @@ namespace Tests\Feature\Core;
 use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Contracts\ProjectTrafficContextProvider;
 use App\Core\Data\Billing\ProductPlanResolution;
+use App\Core\Data\Projects\ProjectReleaseTrafficContextSnapshot;
 use App\Core\Data\Projects\ProjectTrafficWindowSummary;
 use App\Core\Enums\ProductKey;
 use App\Core\Models\PlatformUser;
@@ -122,6 +123,50 @@ final class ResolveProjectTrafficContextTest extends TestCase
 
         $this->assertTrue($result->isEmpty());
         $this->assertSame(0, $provider->calls);
+    }
+
+    public function test_it_resolves_plan_bounded_analytics_comparisons_around_a_monitor_deployment(): void
+    {
+        CarbonImmutable::setTestNow(CarbonImmutable::parse('2026-04-02 14:00:00', 'UTC'));
+        $provider = new class implements ProjectTrafficContextProvider
+        {
+            /** @var list<array{from: CarbonImmutable, until: CarbonImmutable}> */
+            public array $windows = [];
+
+            public function aggregate(
+                PlatformUser $user,
+                Project $project,
+                ProjectResource $resource,
+                CarbonImmutable $from,
+                CarbonImmutable $until,
+            ): ?ProjectTrafficWindowSummary {
+                $this->windows[] = ['from' => $from, 'until' => $until];
+
+                return new ProjectTrafficWindowSummary(pageviews: 12, visitors: 8, conversions: 3, convertedVisits: 2);
+            }
+        };
+
+        try {
+            $contexts = $this->resolver($provider)->forMonitorDeployment(
+                $this->user,
+                'monitor-env-1',
+                CarbonImmutable::parse('2026-04-02 12:00:00', 'UTC'),
+                requestedSeconds: 5400,
+            );
+        } finally {
+            CarbonImmutable::setTestNow();
+        }
+
+        $this->assertCount(1, $contexts);
+        $context = $contexts->first();
+        $this->assertInstanceOf(ProjectReleaseTrafficContextSnapshot::class, $context);
+        $this->assertSame(3600, $context->windowSeconds);
+        $this->assertSame('2026-04-02T11:00:00+00:00', $provider->windows[0]['from']->toIso8601String());
+        $this->assertSame('2026-04-02T12:00:00+00:00', $provider->windows[0]['until']->toIso8601String());
+        $this->assertSame('2026-04-02T12:00:00+00:00', $provider->windows[1]['from']->toIso8601String());
+        $this->assertSame('2026-04-02T13:00:00+00:00', $provider->windows[1]['until']->toIso8601String());
+        $this->assertSame(3, $context->before->conversions);
+        $this->assertSame(2, $context->after->convertedVisits);
     }
 
     private function resolver(ProjectTrafficContextProvider $provider): ResolveProjectTrafficContext

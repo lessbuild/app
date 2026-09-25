@@ -8,6 +8,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Modules\Analytics\Models\AnalyticsEvent;
+use App\Modules\Analytics\Models\GoalConversion;
 use Carbon\CarbonImmutable;
 
 final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProvider
@@ -49,10 +50,23 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
             ->whereNotNull('visitor_hash')
             ->distinct()
             ->count('visitor_hash');
+        $conversions = GoalConversion::query()
+            ->where('site_id', $site->getKey())
+            ->where('converted_at', '>=', $from->utc())
+            ->where('converted_at', '<', $until->utc())
+            ->whereHas('event', fn ($event) => $event
+                ->whereNotNull('ingestion_batch_id')
+                ->whereHas('ingestionBatch', fn ($batch) => $batch
+                    ->where('status', 'processed')
+                    ->whereNotNull('processed_at')));
+        $conversionCount = (clone $conversions)->count();
+        $convertedVisits = (clone $conversions)->whereNotNull('visit_id')->distinct()->count('visit_id');
 
         return new ProjectTrafficWindowSummary(
             pageviews: $pageviews,
             visitors: $visitors,
+            conversions: $conversionCount,
+            convertedVisits: $convertedVisits,
             processedAt: $site->last_processed_at === null
                 ? null
                 : CarbonImmutable::instance($site->last_processed_at)->utc(),

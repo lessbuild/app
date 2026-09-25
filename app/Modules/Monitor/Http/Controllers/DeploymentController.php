@@ -7,6 +7,7 @@ use App\Modules\Monitor\Http\Requests\StoreDeploymentRequest;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\Environment;
+use App\Modules\Monitor\Services\Core\DeploymentTrafficContext;
 use App\Modules\Monitor\Services\CurrentWorkspace;
 use App\Modules\Monitor\Services\RecordDeployment;
 use App\Modules\Monitor\Services\ReleaseMetrics;
@@ -44,14 +45,27 @@ class DeploymentController extends Controller
             ->with('status', $deployment->wasRecentlyCreated ? 'Deployment recorded. No code was deployed by '.config('app.name').'.' : 'This deployment was already recorded. No duplicate was created.');
     }
 
-    public function show(SearchReleasesRequest $request, Application $application, Environment $environment, Deployment $deployment, CurrentWorkspace $workspace, ReleaseMetrics $metrics, TelemetryRedactor $redactor): Response
+    public function show(SearchReleasesRequest $request, Application $application, Environment $environment, Deployment $deployment, CurrentWorkspace $workspace, ReleaseMetrics $metrics, DeploymentTrafficContext $trafficContext, TelemetryRedactor $redactor): Response
     {
         $deployment->load(['release', 'actor:id,name']);
         $filters = $request->filters();
+        $requestedMinutes = (int) $filters['window'];
+        $requestedSeconds = $requestedMinutes * 60;
+        $trafficContexts = $trafficContext->forDeployment($request->user(), $deployment, $requestedSeconds);
+        $comparisonSeconds = $trafficContexts->isEmpty()
+            ? $requestedSeconds
+            : (int) $trafficContexts->min('windowSeconds');
+
+        if ($trafficContexts->contains(fn ($context): bool => $context->windowSeconds !== $comparisonSeconds)) {
+            $trafficContexts = $trafficContext->forDeployment($request->user(), $deployment, $comparisonSeconds);
+        }
+
+        $comparison = $metrics->aroundDeploymentWindow($workspace->get(), $deployment, $comparisonSeconds, $requestedMinutes);
 
         return response()->view('monitor::deployments.show', [
             ...compact('application', 'environment', 'deployment', 'filters'),
-            'comparison' => $metrics->aroundDeployment($workspace->get(), $deployment, (int) $filters['window']),
+            'comparison' => $comparison,
+            'trafficContexts' => $trafficContexts,
             'note' => $redactor->redact(['note' => $deployment->note])['note'],
             'windowOptions' => SearchReleasesRequest::WINDOWS,
         ])->header('Cache-Control', 'private, no-store');
