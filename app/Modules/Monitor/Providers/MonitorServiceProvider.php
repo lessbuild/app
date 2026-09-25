@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Providers;
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
@@ -42,6 +43,7 @@ use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
 use App\Modules\Monitor\Services\Core\MonitorProductWorkspaceProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
+use App\Modules\Monitor\Services\Core\MonitorProjectConnectionOutboxSource;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
@@ -126,6 +128,10 @@ final class MonitorServiceProvider extends ModuleServiceProvider
             app(MonitorPlatformStatusProvider::class),
         );
         app(ProjectConnectionDeliveryConsumerRegistry::class)->register(app(ConsumeDeploymentSucceeded::class));
+        app(ProjectConnectionOutboxSourceRegistry::class)->register(
+            'monitor',
+            app(MonitorProjectConnectionOutboxSource::class),
+        );
 
         if (! config('platform.products.monitor.enabled', false)
             || ! filled(config('platform.products.monitor.host'))) {

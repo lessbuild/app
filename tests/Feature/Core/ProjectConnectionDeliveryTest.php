@@ -4,6 +4,7 @@ namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Data\Billing\ProductPlanResolution;
+use App\Core\Data\Connections\ProjectConnectionOutboxEvent;
 use App\Core\Enums\ProductKey;
 use App\Core\Enums\ProjectWorkflowStepState;
 use App\Core\Models\PlatformUser;
@@ -31,6 +32,7 @@ use App\Modules\Monitor\Models\ProjectConnectionEventReceipt;
 use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
 use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
 use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
@@ -113,7 +115,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
     public function test_deployer_outbox_delivers_a_deployment_to_monitor_once_and_keeps_a_receipt(): void
     {
         $event = $this->outboxEvent();
-        $created = app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event);
+        $created = app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($this->deploymentOutboxData($event));
 
         $this->assertSame(1, $created);
         $delivery = ProjectConnectionDelivery::query()->sole();
@@ -148,7 +150,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
     {
         $event = $this->outboxEvent();
         $dispatcher = app(DispatchDeploymentSucceededOutboxEvent::class);
-        $this->assertSame(1, $dispatcher->dispatch($event));
+        $this->assertSame(1, $dispatcher->dispatch($this->deploymentOutboxData($event)));
         ProjectConnectionDelivery::query()->sole()->delete();
         $event->forceFill(['status' => 'dispatched'])->save();
         $this->assertSame('dispatched', $event->fresh()->status);
@@ -183,7 +185,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
         ]);
         $event->forceFill(['status' => 'dispatched'])->save();
 
-        $this->assertSame(0, app(DispatchDeploymentSucceededOutboxEvent::class)->missingDeliveryCount($event));
+        $this->assertSame(0, app(DispatchDeploymentSucceededOutboxEvent::class)->missingDeliveryCount($this->deploymentOutboxData($event)));
         $this->artisan('project-connections:reconcile', [
             '--source' => 'deployer',
             '--event-id' => (string) $event->getKey(),
@@ -278,7 +280,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'updated_at' => now(),
         ]);
         $event = $this->outboxEvent();
-        $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event));
+        $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($this->deploymentOutboxData($event)));
         $event->forceFill(['status' => 'dispatched'])->save();
         $delivery = ProjectConnectionDelivery::query()
             ->where('project_connection_id', $analyticsConnectionId)
@@ -434,7 +436,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'status' => 'inactive',
         ]);
 
-        $created = app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event);
+        $created = app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($this->deploymentOutboxData($event));
 
         $this->assertSame(0, $created);
         $this->assertSame(0, ProjectConnectionDelivery::query()->count());
@@ -463,7 +465,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
         ]);
         $event = $this->outboxEvent();
 
-        $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($event));
+        $this->assertSame(2, app(DispatchDeploymentSucceededOutboxEvent::class)->dispatch($this->deploymentOutboxData($event)));
         $connections = ProjectConnection::query()
             ->where('project_id', $this->projectId)
             ->with(['sourceResource', 'targetResource'])
@@ -582,8 +584,9 @@ final class ProjectConnectionDeliveryTest extends TestCase
                 'available_at' => now(),
             ]);
 
-            $this->assertSame(1, $dispatcher->dispatch($event));
-            $this->assertSame(0, $dispatcher->dispatch($event));
+            $eventData = $this->monitorOutboxData($event);
+            $this->assertSame(1, $dispatcher->dispatch($eventData));
+            $this->assertSame(0, $dispatcher->dispatch($eventData));
             $delivery = ProjectConnectionDelivery::query()
                 ->where('project_connection_id', $analyticsConnectionId)
                 ->where('source_event_id', $event->getKey())
@@ -648,7 +651,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $this->assertSame(0, app(DispatchMonitorIncidentOutboxEvent::class)->missingDeliveryCount($event));
+        $this->assertSame(0, app(DispatchMonitorIncidentOutboxEvent::class)->missingDeliveryCount($this->monitorOutboxData($event)));
         $this->artisan('project-connections:reconcile', [
             '--source' => 'monitor',
             '--event-id' => (string) $event->getKey(),
@@ -693,7 +696,7 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'available_at' => null,
         ]);
         $dispatcher = app(DispatchMonitorIncidentOutboxEvent::class);
-        $this->assertSame(1, $dispatcher->dispatch($event));
+        $this->assertSame(1, $dispatcher->dispatch($this->monitorOutboxData($event)));
         ProjectConnectionDelivery::query()->sole()->delete();
 
         $arguments = ['--source' => 'monitor', '--event-id' => (string) $event->getKey()];
@@ -962,6 +965,42 @@ final class ProjectConnectionDeliveryTest extends TestCase
             'status' => 'pending',
             'available_at' => now(),
         ]);
+    }
+
+    private function deploymentOutboxData(DeploymentSucceededOutboxEvent $event): ProjectConnectionOutboxEvent
+    {
+        return new ProjectConnectionOutboxEvent(
+            sourceProduct: 'deployer',
+            id: (string) $event->getKey(),
+            eventType: (string) $event->event_type,
+            eventVersion: (int) $event->event_version,
+            sourceBuildId: (string) $event->source_build_id,
+            sourceProjectId: (string) $event->source_project_id,
+            sourceEnvironmentId: (string) $event->source_environment_id,
+            sourceIncidentId: null,
+            payload: (array) $event->payload,
+            status: (string) $event->status,
+            attempts: (int) $event->attempts,
+            createdAt: CarbonImmutable::instance($event->created_at),
+        );
+    }
+
+    private function monitorOutboxData(ProjectConnectionIncidentOutboxEvent $event): ProjectConnectionOutboxEvent
+    {
+        return new ProjectConnectionOutboxEvent(
+            sourceProduct: 'monitor',
+            id: (string) $event->getKey(),
+            eventType: (string) $event->event_type,
+            eventVersion: (int) $event->event_version,
+            sourceBuildId: null,
+            sourceProjectId: null,
+            sourceEnvironmentId: (string) $event->source_environment_id,
+            sourceIncidentId: (string) $event->source_incident_id,
+            payload: (array) $event->payload,
+            status: (string) $event->status,
+            attempts: (int) $event->attempts,
+            createdAt: CarbonImmutable::instance($event->created_at),
+        );
     }
 
     private function makeDelivery(): ProjectConnectionDelivery

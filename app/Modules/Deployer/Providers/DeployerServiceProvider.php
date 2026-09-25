@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
@@ -44,6 +45,7 @@ use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerPlatformStatusProvider;
 use App\Modules\Deployer\Services\Core\DeployerProductWorkspaceProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionDiagnosticProvider;
+use App\Modules\Deployer\Services\Core\DeployerProjectConnectionOutboxSource;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
@@ -74,6 +76,11 @@ final class DeployerServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        app(ProjectConnectionOutboxSourceRegistry::class)->register(
+            'deployer',
+            app(DeployerProjectConnectionOutboxSource::class),
+        );
 
         if (! config('platform.products.deployer.enabled', false)) {
             return;

@@ -12,6 +12,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Services\Billing\ResolveProductPlan;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -49,6 +50,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ProjectProductLinkRegistry::class);
         $this->app->singleton(ProjectConnectionDiagnosticRegistry::class);
         $this->app->singleton(ProjectConnectionDeliveryConsumerRegistry::class);
+        $this->app->singleton(ProjectConnectionOutboxSourceRegistry::class);
         $this->app->singleton(ProjectProductSummaryRegistry::class);
         $this->app->singleton(ProjectResourceDestinationRegistry::class);
         $this->app->singleton(ProjectResourceLinkRegistry::class);

@@ -2,28 +2,28 @@
 
 namespace App\Core\Services\Connections;
 
+use App\Core\Data\Connections\ProjectConnectionOutboxEvent;
 use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Models\ProjectResource;
-use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
 use RuntimeException;
 
 final class DispatchMonitorIncidentOutboxEvent
 {
-    public function dispatch(ProjectConnectionIncidentOutboxEvent $event): int
+    public function dispatch(ProjectConnectionOutboxEvent $event): int
     {
         $created = 0;
 
         foreach ($this->deliveryCandidates($event) as [$connection, $deliveryPayload]) {
             $delivery = ProjectConnectionDelivery::query()->firstOrCreate(
                 [
-                    'source_event_id' => $event->getKey(),
+                    'source_event_id' => $event->id,
                     'project_connection_id' => $connection->getKey(),
                 ],
                 [
-                    'event_type' => $event->event_type,
-                    'event_version' => $event->event_version,
+                    'event_type' => $event->eventType,
+                    'event_version' => $event->eventVersion,
                     'payload' => $deliveryPayload,
                     'status' => 'pending',
                     'attempts' => 0,
@@ -40,7 +40,7 @@ final class DispatchMonitorIncidentOutboxEvent
     }
 
     /** Count eligible connection deliveries which have not yet been recorded. */
-    public function missingDeliveryCount(ProjectConnectionIncidentOutboxEvent $event): int
+    public function missingDeliveryCount(ProjectConnectionOutboxEvent $event): int
     {
         $candidates = $this->deliveryCandidates($event);
 
@@ -50,7 +50,7 @@ final class DispatchMonitorIncidentOutboxEvent
 
         $connectionIds = collect($candidates)->map(fn (array $candidate): string => (string) $candidate[0]->getKey());
         $existingConnectionIds = ProjectConnectionDelivery::query()
-            ->where('source_event_id', $event->getKey())
+            ->where('source_event_id', $event->id)
             ->whereIn('project_connection_id', $connectionIds)
             ->pluck('project_connection_id')
             ->map(static fn ($id): string => (string) $id)
@@ -60,32 +60,34 @@ final class DispatchMonitorIncidentOutboxEvent
     }
 
     /** @return list<array{0: ProjectConnection, 1: array<string, string>}> */
-    private function deliveryCandidates(ProjectConnectionIncidentOutboxEvent $event): array
+    private function deliveryCandidates(ProjectConnectionOutboxEvent $event): array
     {
-        $expectedStatus = match ($event->event_type) {
-            ProjectConnectionIncidentOutboxEvent::OPENED => 'open',
-            ProjectConnectionIncidentOutboxEvent::ACKNOWLEDGED => 'acknowledged',
-            ProjectConnectionIncidentOutboxEvent::RESOLVED => 'resolved',
+        $expectedStatus = match ($event->eventType) {
+            ProjectConnectionOutboxEvent::MONITOR_INCIDENT_OPENED => 'open',
+            ProjectConnectionOutboxEvent::MONITOR_INCIDENT_ACKNOWLEDGED => 'acknowledged',
+            ProjectConnectionOutboxEvent::MONITOR_INCIDENT_RESOLVED => 'resolved',
             default => null,
         };
         $payload = $event->payload;
 
-        if ($event->event_version !== 1
+        if ($event->sourceProduct !== 'monitor'
+            || $event->eventVersion !== 1
             || $expectedStatus === null
-            || ! is_array($payload)
+            || $event->sourceIncidentId === null
+            || $event->sourceEnvironmentId === null
             || ! is_string($payload['incident_id'] ?? null)
             || ! preg_match('/\A[1-9]\d*\z/D', $payload['incident_id'])
-            || $payload['incident_id'] !== (string) $event->source_incident_id
+            || $payload['incident_id'] !== $event->sourceIncidentId
             || ($payload['status'] ?? null) !== $expectedStatus
             || ! is_string($payload['occurred_at'] ?? null)
-            || ! preg_match('/\A[1-9]\d*\z/D', (string) $event->source_environment_id)) {
+            || ! preg_match('/\A[1-9]\d*\z/D', $event->sourceEnvironmentId)) {
             throw new RuntimeException('The Monitor incident event payload is invalid.');
         }
 
         $sourceEnvironment = ProjectResource::query()
             ->where('product', 'monitor')
             ->where('resource_type', 'environment')
-            ->where('resource_id', (string) $event->source_environment_id)
+            ->where('resource_id', $event->sourceEnvironmentId)
             ->where('status', 'active')
             ->first();
 
@@ -95,7 +97,7 @@ final class DispatchMonitorIncidentOutboxEvent
 
         $connections = ProjectConnection::query()
             ->where('project_id', $sourceEnvironment->project_id)
-            ->where('created_at', '<=', $event->created_at)
+            ->where('created_at', '<=', $event->createdAt)
             ->whereIn('status', ['pending', 'active', 'failed'])
             ->whereNull('disconnected_at')
             ->with(['sourceResource', 'targetResource'])
@@ -123,7 +125,7 @@ final class DispatchMonitorIncidentOutboxEvent
                     'incident_id' => $payload['incident_id'],
                     'status' => $payload['status'],
                     'occurred_at' => $payload['occurred_at'],
-                    'source_environment_id' => (string) $event->source_environment_id,
+                    'source_environment_id' => $event->sourceEnvironmentId,
                     'target_site_id' => (string) $target->resource_id,
                 ],
             ];

@@ -2,14 +2,14 @@
 
 namespace App\Core\Console\Commands;
 
+use App\Core\Contracts\ProjectConnectionOutboxSource;
+use App\Core\Data\Connections\ProjectConnectionOutboxEvent;
 use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
 use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
-use App\Modules\Deployer\Models\DeploymentSucceededOutboxEvent;
-use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
+use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use Illuminate\Console\Command;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Throwable;
 
@@ -24,7 +24,8 @@ final class DeliverProjectConnectionEventsCommand extends Command
     protected $description = 'Dispatch durable project connection events and deliver due integrations';
 
     public function handle(
-        DispatchDeploymentSucceededOutboxEvent $dispatch,
+        ProjectConnectionOutboxSourceRegistry $sources,
+        DispatchDeploymentSucceededOutboxEvent $deployerDispatch,
         DispatchMonitorIncidentOutboxEvent $monitorDispatch,
         ProcessProjectConnectionDelivery $deliveries,
     ): int {
@@ -66,9 +67,15 @@ final class DeliverProjectConnectionEventsCommand extends Command
             return self::FAILURE;
         }
 
-        if (! Schema::connection('core')->hasTable('project_connection_deliveries')
-            || ! Schema::connection('deployer')->hasTable('deployment_succeeded_outbox_events')) {
-            $this->error('Run the Core and Deployer module migrations before delivering project connection events.');
+        if (! Schema::connection('core')->hasTable('project_connection_deliveries')) {
+            $this->error('Run the Core module migrations before delivering project connection events.');
+
+            return self::FAILURE;
+        }
+
+        $deployerSource = $sources->get('deployer');
+        if (! $deployerSource instanceof ProjectConnectionOutboxSource || ! $deployerSource->hasRequiredTables()) {
+            $this->error('Run the Deployer module migration before delivering project connection events.');
 
             return self::FAILURE;
         }
@@ -89,21 +96,38 @@ final class DeliverProjectConnectionEventsCommand extends Command
             return self::FAILURE;
         }
 
-        if ($retryFailed && ! $this->requeueFailedSourceEvent($source, $eventId)) {
+        $products = $retryFailed
+            ? [$source]
+            : ['deployer', ...(config('platform.products.monitor.enabled', false) ? ['monitor'] : [])];
+        $activeSources = [];
+
+        foreach ($products as $product) {
+            $outbox = $sources->get($product);
+
+            if (! $outbox instanceof ProjectConnectionOutboxSource || ! $outbox->hasRequiredTables()) {
+                $this->error("Run the {$product} module migration before processing its connection events.");
+
+                return self::FAILURE;
+            }
+
+            $activeSources[$product] = $outbox;
+        }
+
+        if ($retryFailed && ! $activeSources[$source]->retryFailedEvent($eventId)) {
             $this->error("The {$source} source event {$eventId} was not found in a failed state.");
 
             return self::FAILURE;
         }
 
-        $this->recoverExpiredClaims($retryFailed ? $source : null, $retryFailed ? $eventId : null);
-        $dispatched = 0;
-
-        if (! $retryFailed || $source === 'deployer') {
-            $dispatched += $this->dispatchDue($dispatch, $limit, $retryFailed ? $eventId : null);
+        foreach ($activeSources as $outbox) {
+            $outbox->recoverExpiredClaims($retryFailed ? $eventId : null);
         }
+        $this->recoverExpiredTargetClaims($retryFailed ? $source : null, $retryFailed ? $eventId : null, $activeSources);
 
-        if (config('platform.products.monitor.enabled', false) && (! $retryFailed || $source === 'monitor')) {
-            $dispatched += $this->dispatchMonitorDue($monitorDispatch, $limit, $retryFailed ? $eventId : null);
+        $dispatched = 0;
+        foreach ($activeSources as $outbox) {
+            $dispatcher = $outbox->product() === 'deployer' ? $deployerDispatch : $monitorDispatch;
+            $dispatched += $this->dispatchDue($outbox, $dispatcher, $limit, $retryFailed ? $eventId : null);
         }
 
         $deliveryResults = $this->deliverDue(
@@ -111,6 +135,7 @@ final class DeliverProjectConnectionEventsCommand extends Command
             $limit,
             $retryFailed ? $source : null,
             $retryFailed ? $eventId : null,
+            $activeSources,
         );
 
         $this->info(sprintf(
@@ -126,67 +151,28 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return self::SUCCESS;
     }
 
-    private function requeueFailedSourceEvent(string $source, string $eventId): bool
-    {
-        $query = $source === 'deployer'
-            ? DeploymentSucceededOutboxEvent::query()
-            : ProjectConnectionIncidentOutboxEvent::query();
-
-        return $query
-            ->where('id', $eventId)
-            ->where('status', 'failed')
-            ->update([
-                'status' => 'pending',
-                'attempts' => 0,
-                'available_at' => now(),
-                'last_error_code' => null,
-                'last_error_at' => null,
-                'updated_at' => now(),
-            ]) === 1;
-    }
-
-    private function dispatchDue(DispatchDeploymentSucceededOutboxEvent $dispatcher, int $limit, ?string $eventId = null): int
-    {
+    private function dispatchDue(
+        ProjectConnectionOutboxSource $source,
+        DispatchDeploymentSucceededOutboxEvent|DispatchMonitorIncidentOutboxEvent $dispatcher,
+        int $limit,
+        ?string $eventId = null,
+    ): int {
         $dispatched = 0;
-        $query = DeploymentSucceededOutboxEvent::query()
-            ->where('status', 'pending')
-            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
 
-        if ($eventId !== null) {
-            $query->where('id', $eventId);
-        }
+        foreach ($source->pendingEventIds($limit, $eventId) as $pendingEventId) {
+            $event = $source->claimDueEvent($pendingEventId);
 
-        $eventIds = $query->orderBy('created_at')->limit($limit)->pluck('id');
-
-        foreach ($eventIds as $eventId) {
-            $event = DB::connection((new DeploymentSucceededOutboxEvent)->getConnectionName())
-                ->transaction(function () use ($eventId): ?DeploymentSucceededOutboxEvent {
-                    $query = DeploymentSucceededOutboxEvent::query()
-                        ->where('status', 'pending')
-                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
-
-                    $event = $query->where('id', $eventId)->lockForUpdate()->first();
-
-                    if ($event === null) {
-                        return null;
-                    }
-
-                    $event->forceFill([
-                        'status' => 'processing',
-                        'attempts' => $event->attempts + 1,
-                        'last_error_code' => null,
-                    ])->save();
-
-                    return $event->refresh();
-                });
-
-            if (! $event instanceof DeploymentSucceededOutboxEvent) {
+            if (! $event instanceof ProjectConnectionOutboxEvent) {
                 continue;
             }
 
             try {
+                if ($event->sourceProduct !== $source->product()) {
+                    throw new \LogicException('The outbox event source does not match its registered adapter.');
+                }
+
                 $dispatcher->dispatch($event);
-                $updated = $this->finishClaimedSourceEvent($event, [
+                $updated = $source->finishClaimedEvent($event, [
                     'status' => 'dispatched',
                     'dispatched_at' => now(),
                     'available_at' => null,
@@ -200,7 +186,7 @@ final class DeliverProjectConnectionEventsCommand extends Command
             } catch (Throwable) {
                 $terminal = $event->attempts >= 12;
                 $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $event->attempts - 1))));
-                $this->finishClaimedSourceEvent($event, [
+                $source->finishClaimedEvent($event, [
                     'status' => $terminal ? 'failed' : 'pending',
                     'available_at' => $terminal ? null : now()->addSeconds($backoffSeconds),
                     'last_error_code' => 'core_dispatch_failed',
@@ -212,79 +198,15 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return $dispatched;
     }
 
-    private function dispatchMonitorDue(DispatchMonitorIncidentOutboxEvent $dispatcher, int $limit, ?string $eventId = null): int
-    {
-        $dispatched = 0;
-        $query = ProjectConnectionIncidentOutboxEvent::query()
-            ->where('status', 'pending')
-            ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
-
-        if ($eventId !== null) {
-            $query->where('id', $eventId);
-        }
-
-        $eventIds = $query->orderBy('created_at')->limit($limit)->pluck('id');
-
-        foreach ($eventIds as $eventId) {
-            $event = DB::connection((new ProjectConnectionIncidentOutboxEvent)->getConnectionName())
-                ->transaction(function () use ($eventId): ?ProjectConnectionIncidentOutboxEvent {
-                    $query = ProjectConnectionIncidentOutboxEvent::query()
-                        ->where('status', 'pending')
-                        ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
-
-                    $event = $query->where('id', $eventId)->lockForUpdate()->first();
-
-                    if ($event === null) {
-                        return null;
-                    }
-
-                    $event->forceFill([
-                        'status' => 'processing',
-                        'attempts' => $event->attempts + 1,
-                        'last_error_code' => null,
-                    ])->save();
-
-                    return $event->refresh();
-                });
-
-            if (! $event instanceof ProjectConnectionIncidentOutboxEvent) {
-                continue;
-            }
-
-            try {
-                $dispatcher->dispatch($event);
-                $updated = $this->finishClaimedSourceEvent($event, [
-                    'status' => 'dispatched',
-                    'dispatched_at' => now(),
-                    'available_at' => null,
-                    'last_error_code' => null,
-                    'last_error_at' => null,
-                ]);
-
-                if ($updated) {
-                    $dispatched++;
-                }
-            } catch (Throwable) {
-                $terminal = $event->attempts >= 12;
-                $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $event->attempts - 1))));
-                $this->finishClaimedSourceEvent($event, [
-                    'status' => $terminal ? 'failed' : 'pending',
-                    'available_at' => $terminal ? null : now()->addSeconds($backoffSeconds),
-                    'last_error_code' => 'core_dispatch_failed',
-                    'last_error_at' => now(),
-                ]);
-            }
-        }
-
-        return $dispatched;
-    }
-
-    /** @return array{delivered: int, pending: int, blocked: int, failed: int, discarded: int} */
+    /** @param array<string, ProjectConnectionOutboxSource> $sources
+     * @return array{delivered: int, pending: int, blocked: int, failed: int, discarded: int}
+     */
     private function deliverDue(
         ProcessProjectConnectionDelivery $processor,
         int $limit,
         ?string $source = null,
         ?string $eventId = null,
+        array $sources = [],
     ): array {
         $results = ['delivered' => 0, 'pending' => 0, 'blocked' => 0, 'failed' => 0, 'discarded' => 0];
         $query = ProjectConnectionDelivery::query()
@@ -292,7 +214,7 @@ final class DeliverProjectConnectionEventsCommand extends Command
             ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
 
         if ($source !== null && $eventId !== null) {
-            $query->where('source_event_id', $eventId)->whereIn('event_type', $this->eventTypes($source));
+            $query->where('source_event_id', $eventId)->whereIn('event_type', $sources[$source]->eventTypes());
         }
 
         $deliveryIds = $query->orderBy('created_at')->limit($limit)->pluck('id');
@@ -307,52 +229,15 @@ final class DeliverProjectConnectionEventsCommand extends Command
         return $results;
     }
 
-    private function recoverExpiredClaims(?string $source = null, ?string $eventId = null): void
+    /** @param array<string, ProjectConnectionOutboxSource> $sources */
+    private function recoverExpiredTargetClaims(?string $source, ?string $eventId, array $sources): void
     {
-        if ($source === null || $source === 'deployer') {
-            $query = DeploymentSucceededOutboxEvent::query()
-                ->where('status', 'processing')
-                ->where('updated_at', '<', now()->subMinutes(10));
-
-            if ($eventId !== null) {
-                $query->where('id', $eventId);
-            }
-
-            $query->update([
-                'status' => 'pending',
-                'available_at' => now(),
-                'last_error_code' => 'dispatch_lease_expired',
-                'last_error_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
-        if (config('platform.products.monitor.enabled', false)
-            && ($source === null || $source === 'monitor')
-            && Schema::connection('monitor')->hasTable('project_connection_incident_outbox_events')) {
-            $query = ProjectConnectionIncidentOutboxEvent::query()
-                ->where('status', 'processing')
-                ->where('updated_at', '<', now()->subMinutes(10));
-
-            if ($eventId !== null) {
-                $query->where('id', $eventId);
-            }
-
-            $query->update([
-                'status' => 'pending',
-                'available_at' => now(),
-                'last_error_code' => 'dispatch_lease_expired',
-                'last_error_at' => now(),
-                'updated_at' => now(),
-            ]);
-        }
-
         $query = ProjectConnectionDelivery::query()
             ->where('status', 'processing')
             ->where('last_attempted_at', '<', now()->subMinutes(10));
 
         if ($source !== null && $eventId !== null) {
-            $query->where('source_event_id', $eventId)->whereIn('event_type', $this->eventTypes($source));
+            $query->where('source_event_id', $eventId)->whereIn('event_type', $sources[$source]->eventTypes());
         }
 
         $query->update([
@@ -362,35 +247,5 @@ final class DeliverProjectConnectionEventsCommand extends Command
             'last_error_at' => now(),
             'updated_at' => now(),
         ]);
-    }
-
-    /** @return list<string> */
-    private function eventTypes(string $source): array
-    {
-        return $source === 'deployer'
-            ? [DeploymentSucceededOutboxEvent::EVENT_TYPE]
-            : [
-                ProjectConnectionIncidentOutboxEvent::OPENED,
-                ProjectConnectionIncidentOutboxEvent::ACKNOWLEDGED,
-                ProjectConnectionIncidentOutboxEvent::RESOLVED,
-            ];
-    }
-
-    /**
-     * Complete only the lease generation that performed the dispatch. A lease
-     * can be recovered while a slow worker is still running, so an unguarded
-     * model save here could overwrite a newer worker's result.
-     *
-     * @param  array<string, mixed>  $values
-     */
-    private function finishClaimedSourceEvent(
-        DeploymentSucceededOutboxEvent|ProjectConnectionIncidentOutboxEvent $event,
-        array $values,
-    ): bool {
-        return $event::query()
-            ->whereKey($event->getKey())
-            ->where('status', 'processing')
-            ->where('attempts', $event->attempts)
-            ->update([...$values, 'updated_at' => now()]) === 1;
     }
 }

@@ -2,33 +2,33 @@
 
 namespace App\Core\Services\Connections;
 
+use App\Core\Data\Connections\ProjectConnectionOutboxEvent;
 use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Models\ProjectConnection;
 use App\Core\Models\ProjectConnectionDelivery;
 use App\Core\Models\ProjectResource;
-use App\Modules\Deployer\Models\DeploymentSucceededOutboxEvent;
 use RuntimeException;
 
 final class DispatchDeploymentSucceededOutboxEvent
 {
-    public function dispatch(DeploymentSucceededOutboxEvent $event): int
+    public function dispatch(ProjectConnectionOutboxEvent $event): int
     {
         $created = 0;
 
         foreach ($this->deliveryCandidates($event) as [$connection, $targetPayload]) {
             $delivery = ProjectConnectionDelivery::query()->firstOrCreate(
                 [
-                    'source_event_id' => $event->getKey(),
+                    'source_event_id' => $event->id,
                     'project_connection_id' => $connection->getKey(),
                 ],
                 [
-                    'event_type' => $event->event_type,
-                    'event_version' => $event->event_version,
+                    'event_type' => $event->eventType,
+                    'event_version' => $event->eventVersion,
                     'payload' => [
                         ...$event->payload,
-                        'source_project_id' => (string) $event->source_project_id,
-                        'source_environment_id' => (string) $event->source_environment_id,
-                        'source_build_id' => (string) $event->source_build_id,
+                        'source_project_id' => $event->sourceProjectId,
+                        'source_environment_id' => $event->sourceEnvironmentId,
+                        'source_build_id' => $event->sourceBuildId,
                         'canonical_project_id' => (string) $connection->sourceResource->project_id,
                         'canonical_environment_id' => (string) $connection->sourceResource->environment_id,
                         ...$targetPayload,
@@ -48,7 +48,7 @@ final class DispatchDeploymentSucceededOutboxEvent
     }
 
     /** Count eligible connection deliveries which have not yet been recorded. */
-    public function missingDeliveryCount(DeploymentSucceededOutboxEvent $event): int
+    public function missingDeliveryCount(ProjectConnectionOutboxEvent $event): int
     {
         $candidates = $this->deliveryCandidates($event);
 
@@ -58,7 +58,7 @@ final class DispatchDeploymentSucceededOutboxEvent
 
         $connectionIds = collect($candidates)->map(fn (array $candidate): string => (string) $candidate[0]->getKey());
         $existingConnectionIds = ProjectConnectionDelivery::query()
-            ->where('source_event_id', $event->getKey())
+            ->where('source_event_id', $event->id)
             ->whereIn('project_connection_id', $connectionIds)
             ->pluck('project_connection_id')
             ->map(static fn ($id): string => (string) $id)
@@ -68,15 +68,19 @@ final class DispatchDeploymentSucceededOutboxEvent
     }
 
     /** @return list<array{0: ProjectConnection, 1: array{target_environment_id: string}|array{target_site_id: string}}> */
-    private function deliveryCandidates(DeploymentSucceededOutboxEvent $event): array
+    private function deliveryCandidates(ProjectConnectionOutboxEvent $event): array
     {
         $payload = $event->payload;
 
-        if ($event->event_type !== DeploymentSucceededOutboxEvent::EVENT_TYPE || $event->event_version !== 1) {
+        if ($event->sourceProduct !== 'deployer'
+            || $event->eventType !== ProjectConnectionOutboxEvent::DEPLOYER_DEPLOYMENT_SUCCEEDED
+            || $event->eventVersion !== 1) {
             throw new RuntimeException('The Deployer event type or version is unsupported.');
         }
 
-        if (! is_array($payload)
+        if ($event->sourceEnvironmentId === null
+            || $event->sourceProjectId === null
+            || $event->sourceBuildId === null
             || ! is_string($payload['deployment_id'] ?? null)
             || ! is_string($payload['version'] ?? null)
             || ! is_string($payload['deployed_at'] ?? null)) {
@@ -86,7 +90,7 @@ final class DispatchDeploymentSucceededOutboxEvent
         $sourceEnvironment = ProjectResource::query()
             ->where('product', 'deployer')
             ->where('resource_type', 'environment')
-            ->where('resource_id', (string) $event->source_environment_id)
+            ->where('resource_id', $event->sourceEnvironmentId)
             ->where('status', 'active')
             ->first();
 
@@ -97,7 +101,7 @@ final class DispatchDeploymentSucceededOutboxEvent
         $sourceProject = ProjectResource::query()
             ->where('product', 'deployer')
             ->where('resource_type', 'project')
-            ->where('resource_id', (string) $event->source_project_id)
+            ->where('resource_id', $event->sourceProjectId)
             ->where('status', 'active')
             ->first();
 
@@ -111,7 +115,7 @@ final class DispatchDeploymentSucceededOutboxEvent
 
         $connections = ProjectConnection::query()
             ->where('project_id', $sourceEnvironment->project_id)
-            ->where('created_at', '<=', $event->created_at)
+            ->where('created_at', '<=', $event->createdAt)
             ->whereIn('status', ['pending', 'active', 'failed'])
             ->whereNull('disconnected_at')
             ->with(['sourceResource', 'targetResource'])
