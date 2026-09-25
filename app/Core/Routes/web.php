@@ -42,6 +42,14 @@ Route::post('/status/{product}/{slug}/subscribe', [CoreCustomerStatusPageControl
     ->whereIn('product', ['deployer'])
     ->middleware('throttle:5,1')
     ->name('core.status-pages.subscribe');
+
+// Keep local/test routes distinct when product hostnames are not configured.
+$legalRoutePrefix = filled(config('platform.dashboard_host')) ? '' : 'core';
+Route::prefix($legalRoutePrefix)->group(function (): void {
+    Route::view('/privacy', 'core::marketing.privacy')->name('core.privacy');
+    Route::view('/terms', 'core::marketing.terms')->name('core.terms');
+});
+
 Route::get('/{product}', [MarketingController::class, 'showProduct'])
     ->whereIn('product', ['deployer', 'monitor', 'analytics'])
     ->name('core.marketing.product');

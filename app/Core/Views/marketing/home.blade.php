@@ -207,8 +207,8 @@
             ['label' => __('Analytics'), 'href' => route('core.marketing.product', 'analytics')],
             ['label' => __('Help and API docs'), 'href' => route('core.help')],
             ['label' => __('Platform status'), 'href' => route('core.status')],
-            ['label' => __('Privacy'), 'href' => route('privacy')],
-            ['label' => __('Terms'), 'href' => route('terms')],
+            ['label' => __('Privacy'), 'href' => route('core.privacy')],
+            ['label' => __('Terms'), 'href' => route('core.terms')],
             ['label' => __('Sign in'), 'href' => route('platform.login')],
         ]"
         :closing-eyebrow="__('Your workspace, your tools')"

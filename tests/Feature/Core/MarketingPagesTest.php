@@ -16,6 +16,48 @@ final class MarketingPagesTest extends TestCase
             ->assertSee('Analytics');
     }
 
+    public function test_buildpusher_homepage_links_to_core_legal_pages(): void
+    {
+        $this->get(route('core.entry'))
+            ->assertOk()
+            ->assertSee(route('core.privacy'), false)
+            ->assertSee(route('core.terms'), false);
+    }
+
+    public function test_core_legal_pages_are_public_complete_and_cross_linked(): void
+    {
+        $this->get(route('core.privacy'))
+            ->assertOk()
+            ->assertSee('Privacy Policy')
+            ->assertSee('Information we process')
+            ->assertSee('monitor check results')
+            ->assertSee(config('legal.effective_date'))
+            ->assertSee(config('legal.contact_email'))
+            ->assertSee(route('core.terms'), false)
+            ->assertSee(route('core.status'), false);
+
+        $this->get(route('core.terms'))
+            ->assertOk()
+            ->assertSee('Terms of Service')
+            ->assertSee('Product plans and billing')
+            ->assertSee('changing one app plan does not change the other apps’ plans')
+            ->assertSee(config('legal.effective_date'))
+            ->assertSee(config('legal.contact_email'))
+            ->assertSee(route('core.privacy'), false)
+            ->assertSee(route('core.status'), false);
+    }
+
+    public function test_existing_deployer_legal_pages_remain_available(): void
+    {
+        $this->get(route('privacy'))
+            ->assertOk()
+            ->assertSee('Privacy Policy');
+
+        $this->get(route('terms'))
+            ->assertOk()
+            ->assertSee('Terms of Service');
+    }
+
     public function test_each_product_landing_page_is_available_on_core(): void
     {
         foreach (['deployer', 'monitor', 'analytics'] as $product) {
