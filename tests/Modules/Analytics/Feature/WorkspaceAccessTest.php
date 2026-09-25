@@ -25,7 +25,7 @@ class WorkspaceAccessTest extends TestCase
 {
     use RefreshAnalyticsDatabase;
 
-    public function test_core_authority_requires_a_product_grant_for_a_mapped_analytics_workspace(): void
+    public function test_core_authority_gates_analytics_workspace_and_dashboard_destinations_on_product_grant(): void
     {
         config(['platform.products.analytics.auth_authority' => 'core']);
 
@@ -77,6 +77,11 @@ class WorkspaceAccessTest extends TestCase
         ]);
         $analyticsWorkspace = Workspace::create(['name' => 'Analytics workspace']);
         $analyticsWorkspace->users()->attach($productUserId, ['role' => WorkspaceRole::Owner->value]);
+        $site = $analyticsWorkspace->sites()->create([
+            'name' => 'Restricted Analytics site',
+            'domains' => ['restricted.example.test'],
+            'timezone' => 'UTC',
+        ]);
         DB::connection('core')->table('legacy_identity_maps')->insert([
             'id' => (string) Str::ulid(),
             'source_product' => 'analytics',
@@ -108,6 +113,13 @@ class WorkspaceAccessTest extends TestCase
         $this->assertFalse($access->hasAccess($principal, $analyticsWorkspace));
         $this->assertNull($access->roleFor($principal, $analyticsWorkspace));
         $this->assertCount(0, $access->workspacesFor($principal));
+
+        try {
+            app(EnsurePersonalWorkspace::class)->handle($principal, $site->getKey());
+            $this->fail('A direct dashboard site destination must not survive revoked shared Analytics access.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(409, $exception->getStatusCode());
+        }
     }
 
     public function test_core_authority_does_not_auto_create_an_unlinked_analytics_workspace(): void
