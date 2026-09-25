@@ -5,6 +5,8 @@
         'Visitors' => [number_format($before->visitors), number_format($after->visitors)],
         'Goal conversions' => [number_format($before->conversions), number_format($after->conversions)],
         'Converted visits' => [number_format($before->convertedVisits), number_format($after->convertedVisits)],
+        'Pending or processing submissions' => [number_format($before->unprocessedBatches), number_format($after->unprocessedBatches)],
+        'Failed submissions' => [number_format($before->failedBatches), number_format($after->failedBatches)],
     ];
 @endphp
 <div class="overflow-x-auto">
@@ -15,6 +17,7 @@
         @endforeach
     </x-monitor::ui.table>
 </div>
+<p class="px-5 pt-4 text-xs leading-5 text-muted dark:text-subtle">Pageviews and conversions use event time. Pending, processing, and failed submission counts use the time Analytics accepted each batch; those batches are excluded from processed traffic and conversions.</p>
 <p class="border-t border-line px-5 py-4 text-xs leading-5 text-muted dark:border-line dark:text-subtle">
     These are observed counts for the connected Analytics site. Ingestion delay, sampling, visitor mix, and overlapping releases affect the comparison; differences do not establish that this deployment caused a change.
     @if($after->processedAt === null)

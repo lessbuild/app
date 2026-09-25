@@ -7,8 +7,10 @@ use App\Core\Data\Projects\ProjectTrafficWindowSummary;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
+use App\Modules\Analytics\Enums\IngestionStatus;
 use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\GoalConversion;
+use App\Modules\Analytics\Models\IngestionBatch;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +64,14 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
                     ->whereNotNull('processed_at')));
         $conversionCount = (clone $conversions)->count();
         $convertedVisits = (clone $conversions)->whereNotNull('visit_id')->distinct()->count('visit_id');
+        $batches = IngestionBatch::query()
+            ->where('site_id', $site->getKey())
+            ->where('accepted_at', '>=', $from->utc())
+            ->where('accepted_at', '<', $until->utc());
+        $unprocessedBatches = (clone $batches)
+            ->whereIn('status', [IngestionStatus::Pending->value, IngestionStatus::Processing->value])
+            ->count();
+        $failedBatches = (clone $batches)->where('status', IngestionStatus::Failed->value)->count();
 
         return new ProjectTrafficWindowSummary(
             pageviews: $pageviews,
@@ -74,6 +84,8 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
             sourceUrl: Route::has('analytics.dashboard')
                 ? route('analytics.dashboard', ['site' => $site->getKey()])
                 : null,
+            unprocessedBatches: $unprocessedBatches,
+            failedBatches: $failedBatches,
         );
     }
 }

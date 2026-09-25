@@ -110,6 +110,12 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
         $convertedEvent = $this->recordPageview($site, '2026-04-02 11:55:00', 'visitor-b', processed: true);
         $this->recordPageview($site, '2026-04-02 11:56:00', 'visitor-event', processed: true, type: 'custom');
         $pendingEvent = $this->recordPageview($site, '2026-04-02 11:59:00', 'visitor-pending', processed: false);
+        $site->ingestionBatches()->create([
+            'batch_id' => (string) Str::uuid(),
+            'event_count' => 2,
+            'status' => 'failed',
+            'accepted_at' => '2026-04-02 11:58:00',
+        ]);
         $this->recordPageview($site, '2026-04-02 12:00:00', 'visitor-boundary', processed: true);
         $this->recordPageview($site, '2026-04-02 10:30:00', 'visitor-prior', processed: true);
         $this->recordPageview($site, '2026-04-02 10:59:00', 'visitor-prior', processed: true);
@@ -160,10 +166,12 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
         $this->assertSame(2, $current->visitors);
         $this->assertSame(1, $current->conversions);
         $this->assertSame(1, $current->convertedVisits);
+        $this->assertSame(1, $current->unprocessedBatches);
+        $this->assertSame(1, $current->failedBatches);
         $this->assertSame('2026-04-02 12:01:00', $current->processedAt?->format('Y-m-d H:i:s'));
         $this->assertSame(2, $previous?->pageviews);
         $this->assertSame(1, $previous?->visitors);
-        $this->assertSame(['pageviews', 'visitors', 'conversions', 'convertedVisits', 'processedAt', 'sourceUrl'], array_keys(get_object_vars($current)));
+        $this->assertSame(['pageviews', 'visitors', 'conversions', 'convertedVisits', 'processedAt', 'sourceUrl', 'unprocessedBatches', 'failedBatches'], array_keys(get_object_vars($current)));
         $this->assertNull($provider->aggregate(
             $platformUser,
             $project,

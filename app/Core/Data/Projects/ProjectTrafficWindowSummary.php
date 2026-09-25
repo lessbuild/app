@@ -13,5 +13,7 @@ final readonly class ProjectTrafficWindowSummary
         public int $convertedVisits = 0,
         public ?CarbonImmutable $processedAt = null,
         public ?string $sourceUrl = null,
+        public int $unprocessedBatches = 0,
+        public int $failedBatches = 0,
     ) {}
 }
