@@ -243,6 +243,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             'deployment_observations',
             'website_log_snapshots',
             'server_log_snapshots',
+            'website_domains',
             'website_health_checks',
             'builds',
             'repositories',
@@ -1708,6 +1709,110 @@ final class WorkspaceWorkflowActivityTest extends TestCase
                     'old-observation-url-secret.test',
                     'old_observation_error_secret',
                     'cross-resource-observation-secret.test',
+                ] as $secret) {
+                    $this->assertStringNotContainsString($secret, $step->detail);
+                }
+            }
+        }
+    }
+
+    public function test_deployer_domain_activity_is_mapped_stale_aware_and_redacted(): void
+    {
+        config(['platform.products.deployer.auth_authority' => 'core']);
+        $this->addIdentityMap('user', '17', 'user', $this->userId);
+        $this->addIdentityMap('organization', '50', 'workspace', $this->workspaceId);
+        $this->seedDeployerProjectAndBuilds();
+        $this->createDeployerOperationalActivityTables();
+
+        DB::connection('deployer')->table('environments')->where('id', 41)->update([
+            'server_id' => 501,
+            'website_id' => 601,
+        ]);
+        DB::connection('deployer')->table('environments')->insert([
+            'id' => 43,
+            'project_id' => 31,
+            'server_id' => 502,
+            'website_id' => 602,
+            'name' => 'Cross-organization resources',
+            'slug' => 'cross-organization-resources',
+            'type' => 'staging',
+        ]);
+        DB::connection('core')->table('project_resources')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $this->projectId,
+            'product' => 'deployer',
+            'resource_type' => 'environment',
+            'resource_id' => '43',
+            'name' => 'Cross-organization environment',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('deployer')->table('servers')->insert([
+            ['id' => 501, 'organization_id' => 50, 'type' => 'app', 'setup_stage' => 12, 'provisioning_status' => 'provisioned', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 502, 'organization_id' => 999, 'type' => 'app', 'setup_stage' => 12, 'provisioning_status' => 'provisioned', 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        DB::connection('deployer')->table('websites')->insert([
+            ['id' => 601, 'server_id' => 501, 'organization_id' => 50, 'name' => 'Checkout website', 'setup_stage' => 12, 'provisioning_status' => 'provisioned', 'deleted_at' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 602, 'server_id' => 502, 'organization_id' => 999, 'name' => 'Other organization website', 'setup_stage' => 12, 'provisioning_status' => 'provisioned', 'deleted_at' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+        Schema::connection('deployer')->create('website_domains', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('website_id');
+            $table->unsignedBigInteger('dns_provider_id')->nullable();
+            $table->string('hostname')->unique();
+            $table->string('dns_status', 20)->default('pending');
+            $table->string('ssl_status', 20)->default('pending');
+            $table->timestamp('certificate_expires_at')->nullable();
+            $table->timestamp('last_checked_at')->nullable();
+            $table->text('last_error')->nullable();
+            $table->timestamps();
+        });
+        DB::connection('deployer')->table('website_domains')->insert([
+            ['id' => 741, 'website_id' => 601, 'dns_provider_id' => 901, 'hostname' => 'mapped-dns-error-secret.test', 'dns_status' => 'error', 'ssl_status' => 'active', 'last_checked_at' => now()->subMinutes(2), 'last_error' => 'dns_error_secret', 'created_at' => now()->subMinutes(2), 'updated_at' => now()->subMinutes(2)],
+            ['id' => 742, 'website_id' => 601, 'dns_provider_id' => 901, 'hostname' => 'mapped-tls-expiring-secret.test', 'dns_status' => 'active', 'ssl_status' => 'expiring', 'last_checked_at' => now()->subMinute(), 'last_error' => null, 'created_at' => now()->subMinute(), 'updated_at' => now()->subMinute()],
+            ['id' => 743, 'website_id' => 602, 'dns_provider_id' => 902, 'hostname' => 'other-organization-domain-secret.test', 'dns_status' => 'error', 'ssl_status' => 'expired', 'last_checked_at' => now(), 'last_error' => 'other_org_dns_error_secret', 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 744, 'website_id' => 601, 'dns_provider_id' => null, 'hostname' => 'manual-dns-setup-secret.test', 'dns_status' => 'pending', 'ssl_status' => 'active', 'last_checked_at' => now(), 'last_error' => null, 'created_at' => now(), 'updated_at' => now()],
+            ['id' => 745, 'website_id' => 601, 'dns_provider_id' => 901, 'hostname' => 'stale-tls-check-secret.test', 'dns_status' => 'active', 'ssl_status' => 'pending', 'last_checked_at' => now()->subMinutes(30), 'last_error' => null, 'created_at' => now()->subMinutes(30), 'updated_at' => now()->subMinutes(30)],
+            ['id' => 746, 'website_id' => 601, 'dns_provider_id' => 901, 'hostname' => 'healthy-domain-secret.test', 'dns_status' => 'active', 'ssl_status' => 'active', 'last_checked_at' => now(), 'last_error' => null, 'created_at' => now(), 'updated_at' => now()],
+        ]);
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $workspace = Workspace::query()->findOrFail($this->workspaceId);
+        $project = CoreProject::query()->findOrFail($this->projectId);
+        $snapshot = app(WorkspaceActivityProviderRegistry::class)
+            ->get('deployer')
+            ?->recentForWorkspace($user, $workspace, collect([$project]), 30);
+
+        $this->assertNotNull($snapshot);
+        $this->assertTrue($snapshot->available);
+        $runsByKey = $snapshot->runs->keyBy('key');
+        $this->assertTrue($runsByKey->has('deployer:website-domain:741'));
+        $this->assertTrue($runsByKey->has('deployer:website-domain:742'));
+        $this->assertTrue($runsByKey->has('deployer:website-domain:744'));
+        $this->assertTrue($runsByKey->has('deployer:website-domain:745'));
+        $this->assertFalse($runsByKey->has('deployer:website-domain:743'));
+        $this->assertFalse($runsByKey->has('deployer:website-domain:746'));
+        $this->assertSame('failed', $runsByKey['deployer:website-domain:741']->steps[0]->state->value);
+        $this->assertSame('blocked', $runsByKey['deployer:website-domain:742']->steps[1]->state->value);
+        $this->assertSame('blocked', $runsByKey['deployer:website-domain:744']->steps[0]->state->value);
+        $this->assertSame('unknown', $runsByKey['deployer:website-domain:745']->steps[1]->state->value);
+        $this->assertSame(
+            route('websites.show', ['website' => 601, 'organization_id' => 50]),
+            $runsByKey['deployer:website-domain:742']->steps[0]->resultUrl,
+        );
+
+        foreach ($snapshot->runs as $run) {
+            foreach ($run->steps as $step) {
+                foreach ([
+                    'mapped-dns-error-secret.test',
+                    'mapped-tls-expiring-secret.test',
+                    'other-organization-domain-secret.test',
+                    'manual-dns-setup-secret.test',
+                    'stale-tls-check-secret.test',
+                    'healthy-domain-secret.test',
+                    'dns_error_secret',
+                    'other_org_dns_error_secret',
                 ] as $secret) {
                     $this->assertStringNotContainsString($secret, $step->detail);
                 }

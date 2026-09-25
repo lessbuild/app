@@ -29,6 +29,7 @@ final class DeployerOperationalActivity
         private readonly DeployerServerDiagnosticActivity $serverDiagnosticActivity,
         private readonly DeployerLogSnapshotActivity $logSnapshotActivity,
         private readonly DeployerWebsiteHealthCheckActivity $websiteHealthCheckActivity,
+        private readonly DeployerWebsiteDomainActivity $websiteDomainActivity,
         private readonly DeployerDeploymentObservationActivity $deploymentObservationActivity,
         private readonly DeployerLoadBalancerActivity $loadBalancerActivity,
     ) {}
@@ -52,6 +53,7 @@ final class DeployerOperationalActivity
             ->concat($this->serverDiagnosticActivity->forMappedEnvironments($mappedEnvironments, $workspace, $queryLimit))
             ->concat($this->logSnapshotActivity->forMappedEnvironments($mappedEnvironments, $workspace, $queryLimit))
             ->concat($this->websiteHealthCheckActivity->forMappedEnvironments($mappedEnvironments, $workspace, $queryLimit))
+            ->concat($this->websiteDomainActivity->forMappedEnvironments($mappedEnvironments, $workspace, $queryLimit))
             ->concat($this->deploymentObservationActivity->forMappedEnvironments($mappedEnvironments, $workspace, $queryLimit))
             ->concat($this->loadBalancerActivity->forMappedEnvironments($mappedEnvironments, $workspace, $queryLimit))
             ->concat($this->scheduledTaskRuns($mappedEnvironments, $workspace, $queryLimit))
