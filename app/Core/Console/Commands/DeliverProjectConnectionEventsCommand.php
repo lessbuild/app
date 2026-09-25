@@ -2,12 +2,12 @@
 
 namespace App\Core\Console\Commands;
 
+use App\Core\Contracts\ProjectConnectionOutboxDispatcher;
 use App\Core\Contracts\ProjectConnectionOutboxSource;
 use App\Core\Data\Connections\ProjectConnectionOutboxEvent;
 use App\Core\Models\ProjectConnectionDelivery;
-use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
-use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
 use App\Core\Services\Connections\ProcessProjectConnectionDelivery;
+use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
@@ -25,8 +25,7 @@ final class DeliverProjectConnectionEventsCommand extends Command
 
     public function handle(
         ProjectConnectionOutboxSourceRegistry $sources,
-        DispatchDeploymentSucceededOutboxEvent $deployerDispatch,
-        DispatchMonitorIncidentOutboxEvent $monitorDispatch,
+        ProjectConnectionOutboxDispatcherRegistry $dispatchers,
         ProcessProjectConnectionDelivery $deliveries,
     ): int {
         $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
@@ -113,6 +112,19 @@ final class DeliverProjectConnectionEventsCommand extends Command
             $activeSources[$product] = $outbox;
         }
 
+        $activeDispatchers = [];
+        foreach ($activeSources as $product => $outbox) {
+            $dispatcher = $dispatchers->get($product);
+
+            if (! $dispatcher instanceof ProjectConnectionOutboxDispatcher) {
+                $this->error("The {$product} module has not registered its project connection dispatcher.");
+
+                return self::FAILURE;
+            }
+
+            $activeDispatchers[$product] = $dispatcher;
+        }
+
         if ($retryFailed && ! $activeSources[$source]->retryFailedEvent($eventId)) {
             $this->error("The {$source} source event {$eventId} was not found in a failed state.");
 
@@ -125,9 +137,8 @@ final class DeliverProjectConnectionEventsCommand extends Command
         $this->recoverExpiredTargetClaims($retryFailed ? $source : null, $retryFailed ? $eventId : null, $activeSources);
 
         $dispatched = 0;
-        foreach ($activeSources as $outbox) {
-            $dispatcher = $outbox->product() === 'deployer' ? $deployerDispatch : $monitorDispatch;
-            $dispatched += $this->dispatchDue($outbox, $dispatcher, $limit, $retryFailed ? $eventId : null);
+        foreach ($activeSources as $product => $outbox) {
+            $dispatched += $this->dispatchDue($outbox, $activeDispatchers[$product], $limit, $retryFailed ? $eventId : null);
         }
 
         $deliveryResults = $this->deliverDue(
@@ -153,7 +164,7 @@ final class DeliverProjectConnectionEventsCommand extends Command
 
     private function dispatchDue(
         ProjectConnectionOutboxSource $source,
-        DispatchDeploymentSucceededOutboxEvent|DispatchMonitorIncidentOutboxEvent $dispatcher,
+        ProjectConnectionOutboxDispatcher $dispatcher,
         int $limit,
         ?string $eventId = null,
     ): int {

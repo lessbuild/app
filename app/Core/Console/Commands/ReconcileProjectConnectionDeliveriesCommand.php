@@ -2,10 +2,10 @@
 
 namespace App\Core\Console\Commands;
 
+use App\Core\Contracts\ProjectConnectionOutboxDispatcher;
 use App\Core\Contracts\ProjectConnectionOutboxSource;
 use App\Core\Data\Connections\ProjectConnectionOutboxEvent;
-use App\Core\Services\Connections\DispatchDeploymentSucceededOutboxEvent;
-use App\Core\Services\Connections\DispatchMonitorIncidentOutboxEvent;
+use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Schema;
@@ -23,8 +23,7 @@ final class ReconcileProjectConnectionDeliveriesCommand extends Command
 
     public function handle(
         ProjectConnectionOutboxSourceRegistry $sources,
-        DispatchDeploymentSucceededOutboxEvent $deployerDispatcher,
-        DispatchMonitorIncidentOutboxEvent $monitorDispatcher,
+        ProjectConnectionOutboxDispatcherRegistry $dispatchers,
     ): int {
         $source = $this->option('source');
         $source = is_string($source) && trim($source) !== '' ? strtolower(trim($source)) : null;
@@ -81,6 +80,19 @@ final class ReconcileProjectConnectionDeliveriesCommand extends Command
             $activeSources[$product] = $outbox;
         }
 
+        $activeDispatchers = [];
+        foreach ($activeSources as $product => $outbox) {
+            $dispatcher = $dispatchers->get($product);
+
+            if (! $dispatcher instanceof ProjectConnectionOutboxDispatcher) {
+                $this->error("The {$product} module has not registered its project connection dispatcher.");
+
+                return self::FAILURE;
+            }
+
+            $activeDispatchers[$product] = $dispatcher;
+        }
+
         $events = $this->sourceEvents($activeSources, $eventId, $limit);
 
         if ($eventId !== null && $events === []) {
@@ -96,7 +108,7 @@ final class ReconcileProjectConnectionDeliveriesCommand extends Command
 
         foreach ($events as [$product, $event]) {
             try {
-                $dispatcher = $product === 'deployer' ? $deployerDispatcher : $monitorDispatcher;
+                $dispatcher = $activeDispatchers[$product];
                 $missing = $dispatcher->missingDeliveryCount($event);
                 $created = $this->option('apply') ? $dispatcher->dispatch($event) : 0;
             } catch (Throwable $exception) {

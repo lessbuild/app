@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Providers;
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
@@ -43,6 +44,7 @@ use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
 use App\Modules\Monitor\Services\Core\MonitorProductWorkspaceProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
+use App\Modules\Monitor\Services\Core\MonitorProjectConnectionOutboxDispatcher;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionOutboxSource;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
@@ -131,6 +133,10 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProjectConnectionOutboxSourceRegistry::class)->register(
             'monitor',
             app(MonitorProjectConnectionOutboxSource::class),
+        );
+        app(ProjectConnectionOutboxDispatcherRegistry::class)->register(
+            'monitor',
+            app(MonitorProjectConnectionOutboxDispatcher::class),
         );
 
         if (! config('platform.products.monitor.enabled', false)
