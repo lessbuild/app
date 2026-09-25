@@ -174,6 +174,88 @@ final class WorkspaceNotificationInboxTest extends TestCase
         ], 'core');
     }
 
+    public function test_unread_totals_and_filters_follow_the_visible_project_and_severity_items(): void
+    {
+        $otherProjectId = $this->addProject('Recovery app', 'monitor');
+        $recordedAt = CarbonImmutable::now('UTC');
+        $runs = collect([
+            new ProjectWorkflowRun(
+                key: 'monitor:critical-incident',
+                title: 'Monitor incident',
+                recordedAt: $recordedAt,
+                projectId: $this->projectId,
+                steps: [new ProjectWorkflowStep(
+                    product: 'monitor',
+                    productLabel: 'Monitor',
+                    title: 'Incident · Production',
+                    detail: 'Open Monitor for authorized details.',
+                    state: ProjectWorkflowStepState::Failed,
+                    recordedAt: $recordedAt,
+                )],
+            ),
+            new ProjectWorkflowRun(
+                key: 'monitor:recovery',
+                title: 'Monitor recovery',
+                recordedAt: $recordedAt->addMinute(),
+                projectId: $otherProjectId,
+                steps: [new ProjectWorkflowStep(
+                    product: 'monitor',
+                    productLabel: 'Monitor',
+                    title: 'Recovery · Production',
+                    detail: 'The monitored service recovered.',
+                    state: ProjectWorkflowStepState::Succeeded,
+                    recordedAt: $recordedAt->addMinute(),
+                )],
+            ),
+        ]);
+        app(WorkspaceActivityProviderRegistry::class)->register('monitor', new class($runs) implements WorkspaceActivityProvider
+        {
+            public function __construct(private readonly Collection $runs) {}
+
+            public function recentForWorkspace(PlatformUser $user, Workspace $workspace, Collection $projects, int $limit): WorkspaceActivitySnapshot
+            {
+                return new WorkspaceActivitySnapshot($this->runs);
+            }
+        });
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($user, 'platform')
+            ->get(route('core.workspace.notifications', [
+                'workspace' => $this->workspaceId,
+                'product' => 'monitor',
+                'severity' => 'information',
+            ]))
+            ->assertOk()
+            ->assertSeeText('Monitor recovery')
+            ->assertDontSeeText('Monitor incident')
+            ->assertSeeText('1 unread item')
+            ->assertSee('aria-label="Unread notifications"', false);
+
+        $this->get(route('core.workspace.notifications', [
+            'workspace' => $this->workspaceId,
+            'state' => 'unread',
+            'product' => 'monitor',
+            'project' => $otherProjectId,
+        ]))
+            ->assertOk()
+            ->assertSeeText('Monitor recovery')
+            ->assertDontSeeText('Monitor incident')
+            ->assertSeeText('1 unread item');
+
+        $this->get(route('core.workspace.notifications', [
+            'workspace' => $this->workspaceId,
+            'state' => 'unread',
+            'product' => 'monitor',
+            'severity' => 'critical',
+            'project' => $otherProjectId,
+        ]))
+            ->assertOk()
+            ->assertSeeText('No notifications match these filters')
+            ->assertSeeText('0 unread items')
+            ->assertDontSeeText('Mark visible as read')
+            ->assertDontSee('aria-label="Unread notifications"', false);
+    }
+
     public function test_revoked_workspace_membership_conceals_the_inbox(): void
     {
         $user = PlatformUser::query()->findOrFail($this->userId);
@@ -340,5 +422,41 @@ final class WorkspaceNotificationInboxTest extends TestCase
         $stepTitle = $product === 'monitor' ? 'Incident check failed' : 'Release failed';
 
         return hash('sha256', $runKey.'|'.$product.'|'.$stepTitle);
+    }
+
+    private function addProject(string $name, string $product): string
+    {
+        $projectId = (string) Str::ulid();
+        DB::connection('core')->table('projects')->insert([
+            'id' => $projectId,
+            'workspace_id' => $this->workspaceId,
+            'created_by_user_id' => $this->userId,
+            'name' => $name,
+            'slug' => Str::slug($name),
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'user_id' => $this->userId,
+            'role' => 'owner',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('project_products')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $projectId,
+            'product' => $product,
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return $projectId;
     }
 }

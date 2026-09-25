@@ -43,16 +43,8 @@ final class WorkspaceNotificationInboxController
         }
 
         $feed = $notifications->forWorkspace($user, $workspace, $projects, $products);
-        $items = $feed->notifications
-            ->filter(fn (WorkspaceNotification $item): bool => ($filters['state'] ?? 'all') === 'all'
-                || (($filters['state'] ?? 'all') === 'unread' && ! $item->read)
-                || (($filters['state'] ?? 'all') === 'read' && $item->read))
-            ->when(($filters['product'] ?? 'all') !== 'all', fn (Collection $items): Collection => $items->where('product', $filters['product']))
-            ->when(($filters['severity'] ?? 'all') !== 'all', fn (Collection $items): Collection => $items->filter(
-                fn (WorkspaceNotification $item): bool => $item->severity->value === $filters['severity'],
-            ))
-            ->when($selectedProject !== 'all' && $selectedProject !== null, fn (Collection $items): Collection => $items->where('projectId', $selectedProject))
-            ->values();
+        $items = $this->visibleItems($feed->notifications, $filters, $selectedProject);
+        $visibleUnreadCount = $items->where('read', false)->count();
         $preferences = WorkspaceNotificationPreference::query()
             ->where('workspace_id', $workspace->getKey())
             ->where('user_id', $user->getKey())
@@ -75,8 +67,8 @@ final class WorkspaceNotificationInboxController
             'items' => $items,
             'threads' => $items->groupBy('threadKey'),
             'unavailableProducts' => $feed->unavailableProducts,
-            'unreadCount' => $feed->unreadCount,
-            'visibleUnreadCount' => $items->where('read', false)->count(),
+            'unreadCount' => $visibleUnreadCount,
+            'visibleUnreadCount' => $visibleUnreadCount,
             'preferences' => $preferences,
             'filters' => [
                 'state' => $filters['state'] ?? 'all',
@@ -137,15 +129,11 @@ final class WorkspaceNotificationInboxController
             abort_unless($projects->contains(fn (Project $project): bool => (string) $project->getKey() === $selectedProject), 404);
         }
 
-        $visibleItems = $notifications->forWorkspace($user, $workspace, $projects, $products)->notifications
-            ->filter(fn (WorkspaceNotification $item): bool => ($filters['state'] ?? 'all') === 'all'
-                || (($filters['state'] ?? 'all') === 'unread' && ! $item->read)
-                || (($filters['state'] ?? 'all') === 'read' && $item->read))
-            ->when(($filters['product'] ?? 'all') !== 'all', fn (Collection $items): Collection => $items->where('product', $filters['product']))
-            ->when(($filters['severity'] ?? 'all') !== 'all', fn (Collection $items): Collection => $items->filter(
-                fn (WorkspaceNotification $item): bool => $item->severity->value === $filters['severity'],
-            ))
-            ->when($selectedProject !== 'all' && $selectedProject !== null, fn (Collection $items): Collection => $items->where('projectId', $selectedProject))
+        $visibleItems = $this->visibleItems(
+            $notifications->forWorkspace($user, $workspace, $projects, $products)->notifications,
+            $filters,
+            $selectedProject,
+        )
             ->filter(fn (WorkspaceNotification $item): bool => ! $item->read)
             ->values();
 
@@ -266,6 +254,25 @@ final class WorkspaceNotificationInboxController
             'workspace' => $workspace,
             ...$request->only(['state', 'product', 'severity', 'project']),
         ]);
+    }
+
+    /**
+     * @param  Collection<int, WorkspaceNotification>  $notifications
+     * @param  array<string, mixed>  $filters
+     * @return Collection<int, WorkspaceNotification>
+     */
+    private function visibleItems(Collection $notifications, array $filters, ?string $selectedProject = 'all'): Collection
+    {
+        return $notifications
+            ->filter(fn (WorkspaceNotification $item): bool => ($filters['state'] ?? 'all') === 'all'
+                || (($filters['state'] ?? 'all') === 'unread' && ! $item->read)
+                || (($filters['state'] ?? 'all') === 'read' && $item->read))
+            ->when(($filters['product'] ?? 'all') !== 'all', fn (Collection $items): Collection => $items->where('product', $filters['product']))
+            ->when(($filters['severity'] ?? 'all') !== 'all', fn (Collection $items): Collection => $items->filter(
+                fn (WorkspaceNotification $item): bool => $item->severity->value === $filters['severity'],
+            ))
+            ->when($selectedProject !== 'all' && $selectedProject !== null, fn (Collection $items): Collection => $items->where('projectId', $selectedProject))
+            ->values();
     }
 
     private function user(Request $request): PlatformUser
