@@ -30,6 +30,7 @@ Route::get('/help', [CoreHelpController::class, 'index'])->name('core.help');
 Route::get('/help/deployer', [CoreHelpController::class, 'deployerGuide'])->name('core.help.deployer');
 Route::get('/help/deployer/api', [CoreHelpController::class, 'deployerApi'])->name('core.help.deployer.api');
 Route::get('/help/monitor/api', [CoreHelpController::class, 'monitorApi'])->name('core.help.monitor.api');
+Route::get('/help/analytics/api', [CoreHelpController::class, 'analyticsApi'])->name('core.help.analytics.api');
 Route::get('/status', [CorePlatformStatusController::class, 'show'])->name('core.status');
 Route::get('/status/report.json', [CorePlatformStatusController::class, 'report'])->name('core.status.report');
 Route::get('/status/{product}/{slug}', CoreCustomerStatusPageController::class)

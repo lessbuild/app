@@ -10,6 +10,7 @@ use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\PlatformStatusProviderRegistry;
+use App\Core\Services\ProductApiDocumentationRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -21,6 +22,7 @@ use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
+use App\Modules\Analytics\Services\Core\AnalyticsApiDocumentationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformStatusProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsProductWorkspaceProvisioner;
@@ -71,6 +73,11 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        app(ProductApiDocumentationRegistry::class)->register(
+            'analytics',
+            app(AnalyticsApiDocumentationProvider::class),
+        );
 
         app(PlatformStatusProviderRegistry::class)->register(
             'analytics',

@@ -19,7 +19,9 @@ final class CoreHelpController
             'monitor' => collect([
                 ['label' => __('Monitor API reference'), 'description' => __('Ingestion, checks, incidents, and alerting API guidance.'), 'href' => $references->reference('monitor') === null ? null : route('core.help.monitor.api')],
             ])->filter(fn (array $item): bool => filled($item['href'] ?? null))->values(),
-            'analytics' => collect(),
+            'analytics' => collect([
+                ['label' => __('Analytics tracker and API reference'), 'description' => __('Browser tracking, event collection, and the versioned OpenAPI contract.'), 'href' => $references->reference('analytics') === null ? null : route('core.help.analytics.api')],
+            ])->filter(fn (array $item): bool => filled($item['href'] ?? null))->values(),
         ];
 
         return view('core::help.index', [
@@ -56,6 +58,25 @@ final class CoreHelpController
 
         return view('core::help.monitor-api', [
             'reference' => $reference,
+            'curlExample' => $curlExample,
+        ]);
+    }
+
+    public function analyticsApi(ProductApiDocumentationRegistry $references): View
+    {
+        $reference = $references->reference('analytics');
+        abort_if($reference === null, 404);
+
+        $trackerSnippet = '<script defer src="'.$reference->baseUrl.'/tracker/v1.js" data-site="SITE_PUBLIC_ID"></script>';
+        $curlExample = implode("\n", [
+            "curl --request POST '{$reference->baseUrl}/api/v1/collect/YOUR_SITE_PUBLIC_ID' \\",
+            "  --header 'Content-Type: application/json' \\",
+            "  --data '{\"events\":[{\"id\":\"3b241101-e2bb-4255-8caf-4136c566a962\",\"type\":\"event\",\"path\":\"/checkout\",\"properties\":{\"name\":\"checkout_started\"}}]}'",
+        ]);
+
+        return view('core::help.analytics-api', [
+            'reference' => $reference,
+            'trackerSnippet' => $trackerSnippet,
             'curlExample' => $curlExample,
         ]);
     }
