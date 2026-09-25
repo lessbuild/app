@@ -103,6 +103,11 @@ final class WorkspaceSubscriptionsController
                 }
 
                 if ($billingLinks->supports($productKey)) {
+                    if ($productKey === 'analytics' && ! $memberProductAccess->get($productKey, false)) {
+                        $billingLinkIssues->put($productKey, __('Analytics billing opens in Analytics and requires your current Analytics workspace access.'));
+
+                        continue;
+                    }
                     try {
                         $productWorkspaceId = $productWorkspaces->handle($productKey, $workspace);
                         $billingManagementLinks->put($productKey, $billingLinks->for($productKey, $productWorkspaceId));

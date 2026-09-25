@@ -72,6 +72,27 @@ final class WorkspaceSubscriptionBillingLinksTest extends TestCase
         $links = new PlatformProductBillingLinks(Request::create('https://dashboard.example.test/workspaces'));
 
         $this->assertNull($links->for('analytics'));
+
+        if (! Route::has('analytics.workspaces.billing')) {
+            $this->assertFalse($links->supports('analytics'));
+        }
+    }
+
+    public function test_analytics_billing_link_targets_the_exact_native_workspace_when_enabled(): void
+    {
+        if (! Route::has('analytics.workspaces.billing')) {
+            Route::get('/analytics/workspaces/{workspace}/billing', static fn () => null)
+                ->name('analytics.workspaces.billing');
+        }
+
+        $target = route('analytics.workspaces.billing', ['workspace' => 123]);
+        $origin = $this->originOf($target);
+        Config::set('platform.products.analytics.url', $origin);
+
+        $links = new PlatformProductBillingLinks(Request::create($origin.'/workspaces'));
+
+        $this->assertSame($target, $links->for('analytics', 123));
+        $this->assertNull($links->for('analytics', 'another-workspace'));
     }
 
     private function originOf(string $url): string

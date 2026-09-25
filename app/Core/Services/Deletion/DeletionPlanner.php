@@ -4,6 +4,8 @@ namespace App\Core\Services\Deletion;
 
 use App\Core\Data\Deletion\ProductDeletionTarget;
 use App\Core\Exceptions\Deletion\DeletionBlocked;
+use App\Core\Models\AnalyticsCheckoutAttempt;
+use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProductBillingEvent;
@@ -142,7 +144,22 @@ final class DeletionPlanner
 
     public function billingBlockers(string $workspaceId): array
     {
+        // An unsettled checkout can still turn into a charge after the user
+        // requests deletion. Only a provider-confirmed expired session or a
+        // projected subscription can remove this separate checkout blocker.
+        if (AnalyticsCheckoutAttempt::query()->where('core_workspace_id', $workspaceId)
+            ->whereNull('provider_subscription_id')
+            ->where('status', '!=', 'expired')->exists()) {
+            return ['pending_billing_reconciliation'];
+        }
+
+        $currentIds = CurrentProductSubscription::query()->where('workspace_id', $workspaceId)
+            ->pluck('product_subscription_id')->map(fn ($id): string => (string) $id)->all();
         foreach (ProductSubscription::query()->where('workspace_id', $workspaceId)->get() as $subscription) {
+            if ($subscription->product === 'analytics' && $subscription->status === 'superseded'
+                && ! in_array((string) $subscription->getKey(), $currentIds, true)) {
+                continue;
+            }
             $paid = filled($subscription->provider_subscription_id);
             $terminal = in_array($subscription->status, ['canceled', 'cancelled', 'expired', 'incomplete_expired'], true);
             if (($paid && (! $terminal || $subscription->current_period_ends_at?->isFuture()))

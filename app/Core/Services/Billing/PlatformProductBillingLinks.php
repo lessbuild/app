@@ -15,6 +15,7 @@ final class PlatformProductBillingLinks
     private const ROUTES = [
         'deployer' => 'billing.index',
         'monitor' => 'monitor.settings.billing',
+        'analytics' => 'analytics.workspaces.billing',
     ];
 
     public function __construct(private readonly Request $request) {}
@@ -35,7 +36,11 @@ final class PlatformProductBillingLinks
         }
 
         $route = self::ROUTES[$product];
-        $workspaceParameter = $product === 'deployer' ? 'organization_id' : 'workspace_id';
+        $workspaceParameter = match ($product) {
+            'deployer' => 'organization_id',
+            'analytics' => 'workspace',
+            default => 'workspace_id',
+        };
         $target = route($route, [$workspaceParameter => (string) $productWorkspaceId]);
 
         $targetOrigin = $this->origin($target);

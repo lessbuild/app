@@ -297,6 +297,43 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
         $this->assertSame(1, AnalyticsCheckoutAttempt::query()->count(), 'Recovery must resume the original attempt, not create another.');
     }
 
+    public function test_aged_uncertain_attempt_stays_exclusive_and_cannot_replay_after_provider_idempotency_window(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $this->actingAs($actor['platform_user'], 'platform');
+        $this->initializeLegacyPlanSlot($fixture['core_workspace']);
+        $this->configureBilling();
+        $attempt = $this->makeAttempt($fixture, $actor['platform_user'], 'analytics-aged-failed-key-2026', 'failed');
+        AnalyticsCheckoutAttempt::query()->whereKey($attempt->getKey())
+            ->update(['created_at' => now('UTC')->subHours(13)]);
+        $checkoutPosts = 0;
+        Http::fake(function (ClientRequest $request) use (&$checkoutPosts) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/prices/price_fixture_pro') {
+                return Http::response($this->providerPrice(), 200);
+            }
+            if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
+                $checkoutPosts++;
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        try {
+            $this->startCheckout($fixture['analytics_workspace'], $actor['platform_user'], 'analytics-new-aged-key-2026');
+            $this->fail('An aged uncertain checkout must require provider reconciliation.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('provider reconciliation', $exception->getMessage());
+        }
+        $this->assertSame(0, $checkoutPosts);
+        $this->assertSame('failed', $attempt->fresh()->status);
+        $this->assertSame(1, AnalyticsCheckoutAttempt::query()->count());
+    }
+
     public function test_same_failed_attempt_replays_with_its_stable_provider_idempotency_key(): void
     {
         $fixture = $this->workspaceFixture();

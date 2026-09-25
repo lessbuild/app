@@ -2,6 +2,7 @@
 
 use App\Core\Http\Controllers\Auth\PlatformSessionController;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Modules\Analytics\Http\Controllers\AnalyticsBillingController;
 use App\Modules\Analytics\Http\Controllers\Auth\SessionController;
 use App\Modules\Analytics\Http\Controllers\GoalController;
 use App\Modules\Analytics\Http\Controllers\InvitationController;
@@ -29,7 +30,23 @@ Route::view('/verify-email', 'analytics::auth.verify-email')->middleware($authen
 
 Route::middleware($authenticatedMiddleware)->post('/logout', $logoutAction)->name('logout');
 
-Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification.notice'])->group(function (): void {
+Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification.notice'])->group(function () use ($analyticsAuthentication): void {
+    if ($analyticsAuthentication->usesCoreAuthority('analytics')
+        && (config('analytics.billing.enabled', false) || config('analytics.billing.webhooks_enabled', false))) {
+        Route::get('/workspaces/{workspace}/billing', [AnalyticsBillingController::class, 'index'])
+            ->whereNumber('workspace')->name('workspaces.billing');
+        Route::post('/workspaces/{workspace}/billing/checkout', [AnalyticsBillingController::class, 'checkout'])
+            ->whereNumber('workspace')->middleware('throttle:10,1')->name('workspaces.billing.checkout');
+        Route::post('/workspaces/{workspace}/billing/portal', [AnalyticsBillingController::class, 'portal'])
+            ->whereNumber('workspace')->middleware('throttle:10,1')->name('workspaces.billing.portal');
+        Route::post('/workspaces/{workspace}/billing/cancel-subscription', [AnalyticsBillingController::class, 'cancelSubscription'])
+            ->whereNumber('workspace')->middleware('throttle:10,1')->name('workspaces.billing.cancel-subscription');
+        Route::get('/workspaces/{workspace}/billing/success', [AnalyticsBillingController::class, 'success'])
+            ->whereNumber('workspace')->name('workspaces.billing.success');
+        Route::get('/workspaces/{workspace}/billing/canceled', [AnalyticsBillingController::class, 'canceled'])
+            ->whereNumber('workspace')->name('workspaces.billing.canceled');
+    }
+
     Route::get('/dashboard', Overview::class)->name('dashboard');
     Route::get('/account', [ProfileController::class, 'edit'])->name('account.profile');
     Route::get('/workspaces', [WorkspaceController::class, 'index'])->name('workspaces.index');

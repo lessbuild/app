@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Http\Controllers;
 use App\Modules\Monitor\Exceptions\StripeBillingException;
 use App\Modules\Monitor\Http\Requests\StoreBillingCheckoutRequest;
 use App\Modules\Monitor\Services\CurrentWorkspace;
+use App\Modules\Monitor\Services\MonitorPlanAuthority;
 use App\Modules\Monitor\Services\RecordAuditLog;
 use App\Modules\Monitor\Services\StripeBillingClient;
 use App\Modules\Monitor\Services\WorkspaceUsage;

@@ -119,6 +119,12 @@ final class AnalyticsBillingCheckout
         if ($attempt->provider_checkout_session_id !== null) {
             return $this->existingSession($attempt, reused: true);
         }
+        // Stripe may discard idempotency records after 24 hours. A provider
+        // response lost beyond this conservative window cannot be replayed
+        // safely; keep the attempt exclusive for manual reconciliation.
+        if ($attempt->created_at === null || $attempt->created_at->lte(now('UTC')->subHours(12))) {
+            throw new AnalyticsBillingException('This unresolved Analytics checkout needs provider reconciliation before retrying.');
+        }
 
         // Authorization may change while the request is preparing the provider call.
         $context = $this->access->authorize($workspace, $actor);
