@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Core;
 
+use DOMDocument;
+use DOMXPath;
 use Tests\TestCase;
 
 final class MarketingPagesTest extends TestCase
@@ -61,6 +63,24 @@ final class MarketingPagesTest extends TestCase
             foreach ($plan['features'] as $feature) {
                 $html->assertSee($feature);
             }
+        }
+    }
+
+    public function test_pricing_card_layout_is_retained_with_and_without_featured_styling(): void
+    {
+        $document = new DOMDocument;
+        $document->loadHTML($this->get(route('core.pricing'))->assertOk()->getContent(), LIBXML_NOERROR | LIBXML_NOWARNING);
+        $cards = (new DOMXPath($document))->query('//*[@data-pricing-plan]');
+
+        $this->assertCount(count(config('billing.plans')) + count(config('monitor.beacon.plans')), $cards);
+
+        foreach ($cards as $card) {
+            $classes = preg_split('/\s+/', trim($card->getAttribute('class')));
+            foreach (['ui-card', 'relative', 'flex', 'h-full', 'flex-col', 'p-6'] as $layoutClass) {
+                $this->assertContains($layoutClass, $classes, $card->getAttribute('data-pricing-plan'));
+            }
+
+            $this->assertSame(str_ends_with($card->getAttribute('data-pricing-plan'), '-pro'), in_array('ring-2', $classes, true));
         }
     }
 

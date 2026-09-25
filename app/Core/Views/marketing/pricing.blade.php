@@ -68,7 +68,7 @@
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
                 @foreach ($deployerPlans as $key => $plan)
                     @php($isFeatured = $key === 'pro')
-                    <x-signal.ui.card class="relative flex h-full flex-col p-6 sm:p-7" data-pricing-plan="deployer-{{ $key }}" @class(['border-2 ring-2' => $isFeatured]) @style(['border-color: var(--ui-primary); --tw-ring-color: var(--ui-primary)' => $isFeatured])>
+                    <x-signal.ui.card data-pricing-plan="deployer-{{ $key }}" @class(['relative flex h-full flex-col p-6 sm:p-7', 'border-2 ring-2' => $isFeatured]) @style(['border-color: var(--ui-primary); --tw-ring-color: var(--ui-primary)' => $isFeatured])>
                         @if ($isFeatured)
                             <x-signal.ui.badge class="absolute -top-3 left-6" tone="accent">{{ __('Most popular') }}</x-signal.ui.badge>
                         @endif
@@ -118,7 +118,7 @@
             <div class="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                 @foreach ($monitorPlans as $key => $plan)
                     @php($isFeatured = $key === 'pro')
-                    <x-signal.ui.card class="relative flex h-full flex-col p-6" data-pricing-plan="monitor-{{ $key }}" @class(['border-2 ring-2' => $isFeatured]) @style(['border-color: var(--ui-primary); --tw-ring-color: var(--ui-primary)' => $isFeatured])>
+                    <x-signal.ui.card data-pricing-plan="monitor-{{ $key }}" @class(['relative flex h-full flex-col p-6', 'border-2 ring-2' => $isFeatured]) @style(['border-color: var(--ui-primary); --tw-ring-color: var(--ui-primary)' => $isFeatured])>
                         @if ($isFeatured)
                             <x-signal.ui.badge class="absolute -top-3 left-5" tone="accent">{{ __('Most popular') }}</x-signal.ui.badge>
                         @endif
