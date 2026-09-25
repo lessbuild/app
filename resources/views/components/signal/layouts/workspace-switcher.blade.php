@@ -46,7 +46,7 @@
                         'bg-primary-soft text-primary' => (string) $currentWorkspaceId === (string) data_get($workspace, 'id'),
                         'text-muted hover:bg-surface-muted hover:text-ink' => (string) $currentWorkspaceId !== (string) data_get($workspace, 'id'),
                     ])
-                    @if ((string) $currentWorkspaceId === (string) data_get($workspace, 'id')) aria-current="true" @endif
+                    :aria-current="(string) $currentWorkspaceId === (string) data_get($workspace, 'id') ? 'true' : null"
                 >
                     <span class="min-w-0 flex-1 truncate">{{ data_get($workspace, 'name') }}</span>
                     @if ((string) $currentWorkspaceId === (string) data_get($workspace, 'id'))

@@ -338,7 +338,7 @@
                         @endcan
                     </x-signal.ui.panel>
 
-                    <x-signal.ui.panel as="details" class="group bg-surface-muted p-4" id="environment-{{ $environment->id }}-resources" @if($resourcesOpen) open @endif data-project-resources>
+                    <x-signal.ui.panel as="details" class="group bg-surface-muted p-4" id="environment-{{ $environment->id }}-resources" :open="$resourcesOpen" data-project-resources>
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-ink"><span>{{ __('Attached resources') }} <span class="text-muted">({{ $environment->resources->count() }})</span></span><span class="text-muted group-open:rotate-45">+</span></summary>
                         <div class="mt-3 space-y-2">@foreach($environment->resources as $resource)<x-signal.ui.panel class="ui-panel flex items-center gap-3 bg-surface p-3" data-project-resource><div class="min-w-0 flex-1"><p class="font-bold text-ink">{{ $resource->name }}</p><p class="text-xs text-muted">{{ str($resource->type)->replace('_', ' ')->title() }} · {{ $resource->is_managed ? __('Managed') : __('External') }} · {{ ucfirst($resource->status) }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.resources.destroy', [$environment, $resource]) }}">@csrf @method('DELETE')<x-signal.ui.button variant="link" type="submit" class="ui-link text-xs">{{ __('Detach') }}</x-signal.ui.button></form>@endcan</x-signal.ui.panel>@endforeach</div>
                         @can('update', $environment)

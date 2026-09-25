@@ -582,8 +582,83 @@
                     <h2 id="project-team-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('Team access') }}</h2>
                 </div>
                 <div class="p-5 sm:p-6">
-                    <p class="text-sm leading-6 text-muted">{{ __('Project access requires an active project membership. Product grants and subscriptions are managed separately for each app.') }}</p>
-                    <p class="mt-4 text-xs text-muted">{{ __('Project created :date', ['date' => $project->created_at->toFormattedDateString()]) }}</p>
+                    <p class="text-sm leading-6 text-muted">
+                        {{ __('Project access is managed separately from workspace membership. It does not grant access to Deployer, Monitor, or Analytics or change any app subscription.') }}
+                    </p>
+
+                    @php
+                        $visibleWorkspaceMembers = $workspaceMembers->filter(function ($membership) use ($canManageProjectAccess, $projectMemberships): bool {
+                            if ($canManageProjectAccess) {
+                                return true;
+                            }
+
+                            $projectMembership = $projectMemberships->get((string) $membership->user_id);
+
+                            return $projectMembership?->status === 'active' && $projectMembership->revoked_at === null;
+                        });
+                    @endphp
+
+                    <ul class="mt-5 divide-y divide-line" aria-label="{{ __('Project members') }}">
+                        @forelse ($visibleWorkspaceMembers as $workspaceMembership)
+                            @php
+                                $projectMembership = $projectMemberships->get((string) $workspaceMembership->user_id);
+                                $hasProjectAccess = $projectMembership?->status === 'active' && $projectMembership->revoked_at === null;
+                                $protectedFromRevoke = $workspaceMembership->role === 'owner'
+                                    || ($workspaceMembership->role === 'admin' && ! $canManageProductAdmins);
+                            @endphp
+                            <li class="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                                <div class="flex min-w-0 items-center gap-3">
+                                    <x-signal.ui.avatar :name="$workspaceMembership->user?->name ?: $workspaceMembership->user?->email" />
+                                    <div class="min-w-0">
+                                        <p class="truncate text-sm font-bold text-ink">{{ $workspaceMembership->user?->name ?: __('Unknown account') }}</p>
+                                        <p class="truncate text-xs text-muted">{{ $workspaceMembership->user?->email }} · {{ str($workspaceMembership->role)->headline() }}</p>
+                                    </div>
+                                </div>
+                                <div class="flex flex-wrap items-center gap-2">
+                                    @if ($workspaceMembership->role === 'owner')
+                                        <x-signal.ui.badge tone="accent">{{ __('Owner access') }}</x-signal.ui.badge>
+                                    @elseif ($hasProjectAccess)
+                                        <x-signal.ui.badge tone="success">{{ __('Project access') }}</x-signal.ui.badge>
+                                    @else
+                                        <x-signal.ui.badge tone="neutral">{{ __('No project access') }}</x-signal.ui.badge>
+                                    @endif
+
+                                    @if ($canManageProjectAccess && $workspaceMembership->role !== 'owner')
+                                        @if ($hasProjectAccess)
+                                            @if (! $protectedFromRevoke)
+                                                <form
+                                                    method="POST"
+                                                    action="{{ route('core.projects.memberships.destroy', [$workspace, $project, $workspaceMembership->getKey()]) }}"
+                                                    data-confirm="{{ __('Revoke this person’s access to this project? Their workspace membership, app access, and product data will remain unchanged.') }}"
+                                                >
+                                                    @csrf
+                                                    @method('DELETE')
+                                                    <x-signal.ui.button type="submit" variant="danger" class="min-h-8 px-3 text-xs">{{ __('Revoke project access') }}</x-signal.ui.button>
+                                                </form>
+                                            @else
+                                                <span class="text-xs text-muted">{{ __('Administrators keep project access.') }}</span>
+                                            @endif
+                                        @else
+                                            <form method="POST" action="{{ route('core.projects.memberships.store', [$workspace, $project, $workspaceMembership->getKey()]) }}">
+                                                @csrf
+                                                <x-signal.ui.button type="submit" variant="secondary" class="min-h-8 px-3 text-xs">{{ __('Grant project access') }}</x-signal.ui.button>
+                                            </form>
+                                        @endif
+                                    @endif
+                                </div>
+                            </li>
+                        @empty
+                            <li>
+                                <x-signal.ui.empty-state
+                                    :title="__('No active project members')"
+                                    :description="__('Workspace members granted access to this project will appear here.')"
+                                    icon="users"
+                                />
+                            </li>
+                        @endforelse
+                    </ul>
+
+                    <p class="mt-5 border-t border-line pt-4 text-xs text-muted">{{ __('Project created :date', ['date' => $project->created_at->toFormattedDateString()]) }}</p>
                 </div>
             </x-signal.ui.card>
         </section>

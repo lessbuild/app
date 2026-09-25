@@ -43,7 +43,7 @@
         </x-signal.ui.panel>
         <p class="text-xs leading-5 text-muted dark:text-subtle">Stored event data is shown below with the current redaction rules applied. Redaction is best-effort; avoid sending personal data or secrets that your collection rules do not cover.</p>
         @foreach(['Attributes' => $attributesJson, 'Payload' => $payloadJson] as $label => $json)
-            <x-signal.ui.card as="details" class="overflow-hidden" @if($label === 'Attributes') open @endif>
+            <x-signal.ui.card as="details" class="overflow-hidden" :open="$label === 'Attributes'">
                 <summary class="cursor-pointer p-5 text-sm font-bold focus-visible:outline-2 focus-visible:outline-primary">{{ $label }}</summary>
                 <div class="flex flex-col gap-3 border-t border-line p-5 dark:border-line">
                     <x-monitor::ui.button type="button" variant="secondary" class="self-start" data-copy-target="event-{{ strtolower($label) }}"><span data-copy-label>Copy {{ strtolower($label) }}</span></x-monitor::ui.button>

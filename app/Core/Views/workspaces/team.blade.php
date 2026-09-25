@@ -252,6 +252,14 @@
                                             @if (! empty($event->metadata['pending_local_membership_cleanup']))
                                                 <p class="mt-1 text-xs leading-5 text-muted">{{ __('Core access is blocked. App-local membership cleanup needs review for :products.', ['products' => collect($event->metadata['pending_local_membership_cleanup'])->map(fn ($product) => str($product)->headline())->join(', ')]) }}</p>
                                             @endif
+                                        @elseif (in_array($event->event, ['project_access_granted', 'project_access_revoked'], true))
+                                            <p class="text-sm leading-6 text-ink">
+                                                @if ($event->event === 'project_access_granted')
+                                                    {{ __(':actor granted :subject access to :project.', ['actor' => $actorName, 'subject' => $subjectName, 'project' => $event->metadata['project_name'] ?? __('a project')]) }}
+                                                @else
+                                                    {{ __(':actor revoked :subject’s access to :project.', ['actor' => $actorName, 'subject' => $subjectName, 'project' => $event->metadata['project_name'] ?? __('a project')]) }}
+                                                @endif
+                                            </p>
                                         @else
                                             <p class="text-sm leading-6 text-ink">{{ __('A workspace membership changed.') }}</p>
                                         @endif

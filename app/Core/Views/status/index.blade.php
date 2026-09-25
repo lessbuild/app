@@ -33,13 +33,13 @@
             </div>
 
             <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                @foreach ($snapshot['components'] as $component)
+                @foreach ($snapshot['components'] as $statusComponent)
                     <article class="rounded-panel border border-line bg-surface-muted/50 p-4">
                         <div class="flex items-center justify-between gap-3">
-                            <h3 class="font-bold text-ink">{{ $component['name'] }}</h3>
-                            <x-signal.ui.badge :tone="$component['operational'] ? 'success' : 'warning'">{{ $component['status'] }}</x-signal.ui.badge>
+                            <h3 class="font-bold text-ink">{{ $statusComponent['name'] }}</h3>
+                            <x-signal.ui.badge :tone="$statusComponent['operational'] ? 'success' : 'warning'">{{ $statusComponent['status'] }}</x-signal.ui.badge>
                         </div>
-                        <p class="mt-2 text-sm leading-6 text-muted">{{ $component['description'] }}</p>
+                        <p class="mt-2 text-sm leading-6 text-muted">{{ $statusComponent['description'] }}</p>
                     </article>
                 @endforeach
             </div>

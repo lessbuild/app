@@ -10,7 +10,7 @@ final class CoreHelpController
 {
     public function index(ProductApiDocumentationRegistry $references): View
     {
-        $documents = [
+        $documents = collect([
             'deployer' => collect([
                 ['label' => __('Deployer guides'), 'description' => __('Projects, infrastructure, deployments, automation, and recovery.'), 'href' => route('core.help.deployer')],
                 ['label' => __('Deployer API reference'), 'description' => __('API endpoints and request examples.'), 'href' => route('core.help.deployer.api')],
@@ -22,7 +22,7 @@ final class CoreHelpController
             'analytics' => collect([
                 ['label' => __('Analytics tracker and API reference'), 'description' => __('Browser tracking, event collection, and the versioned OpenAPI contract.'), 'href' => $references->reference('analytics') === null ? null : route('core.help.analytics.api')],
             ])->filter(fn (array $item): bool => filled($item['href'] ?? null))->values(),
-        ];
+        ]);
 
         return view('core::help.index', [
             'documents' => $documents,

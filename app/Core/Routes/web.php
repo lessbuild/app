@@ -241,6 +241,8 @@ Route::middleware('auth:platform')->group(function (): void {
             Route::post('/projects/{project}/archive', 'archive')->name('archive');
             Route::post('/projects/{project}/restore', 'restore')->name('restore');
             Route::post('/projects/{project}/resources', 'storeResource')->name('resources.store');
+            Route::post('/projects/{project}/members/{memberId}', 'grantMemberAccess')->name('memberships.store');
+            Route::delete('/projects/{project}/members/{memberId}', 'revokeMemberAccess')->name('memberships.destroy');
             Route::post('/projects/{project}/environments', [ProjectEnvironmentsController::class, 'store'])
                 ->name('environments.store');
             Route::post('/projects/{project}/connections', [ProjectConnectionsController::class, 'store'])

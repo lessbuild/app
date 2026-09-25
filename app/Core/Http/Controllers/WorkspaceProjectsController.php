@@ -9,8 +9,10 @@ use App\Core\Http\Requests\UpdateWorkspaceProjectRequest;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
+use App\Core\Models\ProjectMembership;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\Workspace;
+use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\BuildProjectContextNavigation;
 use App\Core\Services\Connections\ProjectConnectionDiagnostics;
@@ -21,6 +23,7 @@ use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\ProjectResourceDestinations;
 use App\Core\Services\ProjectResourceLinks;
 use App\Core\Services\Projects\CreateCanonicalProject;
+use App\Core\Services\Projects\ManageCanonicalProjectMembership;
 use App\Core\Services\Projects\ProjectWorkflowProgress;
 use App\Core\Services\Projects\ResolveProjectEnvironmentContext;
 use App\Core\Services\Projects\SetCanonicalProjectArchiveState;
@@ -335,6 +338,16 @@ final class WorkspaceProjectsController
             'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections, $user),
             'projectConnections' => $projectConnections,
             'projectWorkflowRuns' => $projectWorkflowRuns,
+            'workspaceMembers' => WorkspaceMembership::query()
+                ->where('workspace_id', $workspace->getKey())
+                ->currentlyActive()
+                ->with('user')
+                ->orderBy('created_at')
+                ->get(),
+            'projectMemberships' => ProjectMembership::query()
+                ->where('project_id', $project->getKey())
+                ->get()
+                ->keyBy(fn (ProjectMembership $membership): string => (string) $membership->user_id),
             'hiddenConnectionCount' => $hiddenConnectionCount,
             'resourceCandidates' => $canManageConnections
                 ? $resourceLinks->candidates($user, $availableProducts)
@@ -348,10 +361,52 @@ final class WorkspaceProjectsController
                 : collect(),
             'canManageBilling' => $canManageBilling,
             'canManageProjects' => $canManageProjects,
+            'canManageProjectAccess' => $canManageProjects,
+            'canManageProjectAdmins' => $membership->role === 'owner',
             'canManageConnections' => $canManageConnections,
             'connectionCapabilities' => $connectionEntitlements->availableFor($project),
             'connectionResources' => $connectionResources,
         ]);
+    }
+
+    public function grantMemberAccess(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        string $memberId,
+        ResolvePlatformUser $platformUsers,
+        ManageCanonicalProjectMembership $memberships,
+    ): RedirectResponse {
+        $changed = $memberships->grant(
+            actor: $this->platformUser($request, $platformUsers),
+            workspace: $workspace,
+            project: $project,
+            workspaceMembershipId: $memberId,
+        );
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project]).'#team-access'
+            ->with('success', $changed ? __('Project access granted.') : __('This person already has project access.'));
+    }
+
+    public function revokeMemberAccess(
+        Request $request,
+        Workspace $workspace,
+        Project $project,
+        string $memberId,
+        ResolvePlatformUser $platformUsers,
+        ManageCanonicalProjectMembership $memberships,
+    ): RedirectResponse {
+        $changed = $memberships->revoke(
+            actor: $this->platformUser($request, $platformUsers),
+            workspace: $workspace,
+            project: $project,
+            workspaceMembershipId: $memberId,
+        );
+
+        return redirect()
+            ->route('core.projects.show', [$workspace, $project]).'#team-access'
+            ->with('success', $changed ? __('Project access revoked.') : __('This person did not have project access.'));
     }
 
     public function storeResource(

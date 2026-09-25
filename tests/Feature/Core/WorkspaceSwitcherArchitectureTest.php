@@ -18,6 +18,8 @@ final class WorkspaceSwitcherArchitectureTest extends TestCase
         $this->assertStringContainsString('<details', $component);
         $this->assertStringContainsString('data-workspace-switcher', $component);
         $this->assertStringContainsString('aria-label="{{ __(\'Switch workspace\') }}"', $component);
+        $this->assertStringContainsString(':aria-current=', $component);
+        $this->assertStringNotContainsString('@if (', $component);
         $this->assertStringContainsString('<x-signal.layouts.workspace-switcher', $topbar);
         $this->assertStringContainsString('<x-signal.layouts.workspace-switcher', $mobileNavigation);
         $this->assertStringNotContainsString('@foreach ($workspaceOptions as $workspace)', $mobileNavigation);

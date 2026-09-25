@@ -25,6 +25,8 @@ final class AnalyticsApiHelpTest extends TestCase
             ->assertSee('https://analytics.example.test/api/v1/openapi.json')
             ->assertSee('/api/v1/collect/{publicId}')
             ->assertSee('Responses: 202, 403, 404, 413, 422, 429, 503')
+            ->assertSee('Check whether a browser origin is allowed')
+            ->assertSee('GET /tracker/v1.js')
             ->assertSee('44/min · source IP')
             ->assertSee('32,768 bytes')
             ->assertSee('SITE_PUBLIC_ID')

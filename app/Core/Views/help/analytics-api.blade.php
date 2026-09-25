@@ -49,23 +49,24 @@
                 <div class="mt-4 divide-y divide-line border-y border-line">
                     @foreach ($reference->document['paths'] as $path => $methods)
                         @foreach ($methods as $method => $operation)
+                            @continue(! in_array(strtolower((string) $method), ['get', 'post', 'put', 'patch', 'delete', 'options', 'head', 'trace'], true) || ! is_array($operation))
                             <div class="flex flex-col gap-2 py-3 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="min-w-0">
                                     <code class="break-all text-sm font-bold text-ink">{{ strtoupper($method) }} {{ $path }}</code>
-                                    <p class="mt-1 text-xs leading-5 text-muted">{{ $operation['summary'] }}</p>
+                                    <p class="mt-1 text-xs leading-5 text-muted">{{ $operation['summary'] ?? __('API operation') }}</p>
                                     <p class="mt-1 text-xs leading-5 text-muted">{{ __('Responses: :codes', ['codes' => implode(', ', array_keys($operation['responses'] ?? []))]) }}</p>
                                     @if (isset($operation['x-max-body-bytes']))
                                         <p class="mt-1 text-xs leading-5 text-muted">{{ __('Maximum request body') }}: {{ number_format($operation['x-max-body-bytes']) }} {{ __('bytes') }}</p>
                                     @endif
-                                    @if ($operation['x-rate-limits'] ?? [])
+                                    @if (! empty($operation['x-rate-limits']))
                                         <div class="mt-2 flex flex-wrap gap-2">
-                                            @foreach ($operation['x-rate-limits'] as $rateLimit)
+                                            @foreach ((array) $operation['x-rate-limits'] as $rateLimit)
                                                 <x-signal.ui.badge tone="neutral">{{ number_format($rateLimit['requests']) }}/min · {{ $rateLimit['key'] }}</x-signal.ui.badge>
                                             @endforeach
                                         </div>
                                     @endif
                                 </div>
-                                <span class="shrink-0 text-xs font-semibold text-subtle">{{ $operation['operationId'] }}</span>
+                                <span class="shrink-0 text-xs font-semibold text-subtle">{{ $operation['operationId'] ?? strtoupper($method).' '.str($path)->headline() }}</span>
                             </div>
                         @endforeach
                     @endforeach

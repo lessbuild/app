@@ -238,7 +238,7 @@
         @if ($connectionChecks->isEmpty())
             <x-signal.ui.empty-state class="mt-4" :title="__('No connection checks have been recorded yet.')" />
         @else
-            <x-signal.ui.card as="details" class="group mt-4 overflow-hidden" id="provider-connection-history" @if ($connectionMetrics['failure_streak'] > 0) open @endif>
+            <x-signal.ui.card as="details" class="group mt-4 overflow-hidden" id="provider-connection-history" :open="$connectionMetrics['failure_streak'] > 0">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
                     <span>{{ __('Latest check results') }}</span>
                     <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>

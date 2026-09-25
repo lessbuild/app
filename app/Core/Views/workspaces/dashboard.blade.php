@@ -228,10 +228,14 @@
                         <p class="mt-5 text-sm font-bold text-muted">{{ __('Billing details are visible to workspace owners and billing managers.') }}</p>
                     @endif
                     <p class="mt-3 border-t border-line pt-3 text-xs text-muted">
-                        @php($activeProjectCount = (int) $activeProductCounts->get($key, 0))
+                        @php
+                            $activeProjectCount = (int) $activeProductCounts->get($key, 0);
+                        @endphp
                         {{ trans_choice(':count active project|:count active projects', $activeProjectCount, ['count' => $activeProjectCount]) }}
                     </p>
-                    @php($activationRollup = $productActivationRollups->get($key, ['setting_up' => 0, 'needs_attention' => 0]))
+                    @php
+                        $activationRollup = $productActivationRollups->get($key, ['setting_up' => 0, 'needs_attention' => 0]);
+                    @endphp
                     @if ($activationRollup['setting_up'] > 0 || $activationRollup['needs_attention'] > 0)
                         <div class="mt-2 flex flex-wrap gap-2" aria-label="{{ __(':product project activation states', ['product' => $product['label']]) }}">
                             @if ($activationRollup['setting_up'] > 0)

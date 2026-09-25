@@ -127,7 +127,7 @@
                             || $errors->has('target_resource_id')
                             || $errors->has('confirmation');
                     @endphp
-                    <x-signal.ui.card as="details" class="group mt-5 overflow-hidden" id="database-management-{{ $resource->id }}" @if ($databaseManagementOpen) open @endif>
+                    <x-signal.ui.card as="details" class="group mt-5 overflow-hidden" id="database-management-{{ $resource->id }}" :open="$databaseManagementOpen">
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold text-ink [&::-webkit-details-marker]:hidden">
                             <span>
                                 <span class="ui-eyebrow text-[0.65rem]">{{ __('Operations') }}</span>
