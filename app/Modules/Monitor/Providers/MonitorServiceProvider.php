@@ -20,6 +20,7 @@ use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
@@ -45,6 +46,7 @@ use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceCredentialProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceStatusManagementProvider;
@@ -134,6 +136,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProjectSetupRegistry::class)->register('monitor', app(MonitorProjectSetup::class));
         app(WorkspaceSearchProviderRegistry::class)->register('monitor', app(MonitorWorkspaceSearchProvider::class));
         app(WorkspaceActivityProviderRegistry::class)->register('monitor', app(MonitorWorkspaceActivityProvider::class));
+        app(WorkspaceCredentialProviderRegistry::class)->register('monitor', app(MonitorWorkspaceCredentialProvider::class));
         app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('monitor', app(MonitorWorkspaceActivityProvider::class));
         app(ProductPrincipalRegistry::class)->register(
             'monitor',

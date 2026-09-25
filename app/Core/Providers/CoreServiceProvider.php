@@ -27,6 +27,7 @@ use App\Core\Services\ProjectTrafficContextRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
+use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
@@ -55,6 +56,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ProductApiDocumentationRegistry::class);
         $this->app->singleton(WorkspaceSearchProviderRegistry::class);
         $this->app->singleton(WorkspaceActivityProviderRegistry::class);
+        $this->app->singleton(WorkspaceCredentialProviderRegistry::class);
         $this->app->singleton(WorkspaceCostBreakdownProviderRegistry::class);
         $this->app->singleton(WorkspaceCustomerStatusManagementProviderRegistry::class);
         $this->app->singleton(WorkspaceMonitorStatusManagementProviderRegistry::class);

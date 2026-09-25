@@ -126,6 +126,6 @@ final class MonitorProjectLink implements ProjectProductLink
                 ->whereIn('workspace_id', $workspaceIds)
                 ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds)))
             ->with('application.workspace')
-            ->first(['id', 'application_id', 'last_seen_at']);
+            ->first(['id', 'application_id', 'name', 'last_seen_at']);
     }
 }

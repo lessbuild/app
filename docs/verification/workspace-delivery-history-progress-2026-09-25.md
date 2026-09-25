@@ -6,4 +6,4 @@ Core receives only a small typed summary: product, project, event label, status,
 
 The new regression coverage checks the Core aggregation/filter/redaction boundary and Monitor mapping, webhook-only destination selection, status/attempt summaries, and workspace isolation. Tests are authored and intentionally unrun until the unified plan is complete. PHP syntax and Pint checks passed, Blade cache compilation succeeded, and `core.workspace.deliveries` is registered.
 
-I13 remains open for a shared credential inventory and actions, additional product delivery coverage if those products add webhook providers, complete endpoint/payload compatibility fixtures, and representative public-client rehearsal.
+I13 now has the initial shared credential inventory described in [workspace credential inventory progress](workspace-credential-inventory-progress-2026-09-25.md). Product-owned create, rotate, revoke, and retry actions remain in their source apps. Additional product delivery coverage if those products add webhook providers, complete endpoint/payload compatibility fixtures, and representative public-client rehearsal also remain open.

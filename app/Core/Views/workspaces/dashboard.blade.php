@@ -27,6 +27,9 @@
             <x-signal.ui.button :href="route('core.workspace.deliveries', $workspace)">
                 {{ __('Delivery history') }}
             </x-signal.ui.button>
+            <x-signal.ui.button :href="route('core.workspace.credentials', $workspace)">
+                {{ __('API credentials') }}
+            </x-signal.ui.button>
             <x-signal.ui.button :href="route('core.workspace.team.index', $workspace)">
                 {{ __('Team') }}
             </x-signal.ui.button>

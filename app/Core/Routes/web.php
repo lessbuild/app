@@ -11,6 +11,7 @@ use App\Core\Http\Controllers\ProjectEnvironmentsController;
 use App\Core\Http\Controllers\ProjectHandoverController;
 use App\Core\Http\Controllers\WorkspaceAdministrationController;
 use App\Core\Http\Controllers\WorkspaceCostBreakdownController;
+use App\Core\Http\Controllers\WorkspaceCredentialInventoryController;
 use App\Core\Http\Controllers\WorkspaceCustomerStatusPagesController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
@@ -120,6 +121,9 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::get('/workspaces/{workspace}/deliveries', WorkspaceWebhookDeliveryHistoryController::class)
         ->name('core.workspace.deliveries');
+
+    Route::get('/workspaces/{workspace}/credentials', WorkspaceCredentialInventoryController::class)
+        ->name('core.workspace.credentials');
 
     Route::get('/workspaces/{workspace}/notifications', WorkspaceNotificationInboxController::class)
         ->name('core.workspace.notifications');

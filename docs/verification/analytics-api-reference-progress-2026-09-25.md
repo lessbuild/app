@@ -6,4 +6,4 @@ The generated contract follows the actual collection request: one to twenty even
 
 Regression tests were added for the OpenAPI schema/config boundary and the Core Help page. They are authored and intentionally unrun while the unified plan remains incomplete. Static verification is recorded with this implementation slice.
 
-I13 remains incomplete. Centralized credential inventory/create/rotate/revoke, cross-product webhook delivery history and safe retry controls, full route/payload contract fixtures, and representative public-client compatibility rehearsals are still required. Existing machine endpoints and token authorities remain module-owned.
+I13 remains incomplete. The initial centralized credential inventory is implemented, while product-owned create/rotate/revoke actions remain in their source modules. Broader cross-product webhook delivery history and safe retry controls, full route/payload contract fixtures, and representative public-client compatibility rehearsals are still required. Existing machine endpoints and token authorities remain module-owned.

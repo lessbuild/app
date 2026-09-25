@@ -3,7 +3,10 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectResourceDestinationProvider;
+use App\Core\Contracts\WorkspaceCredentialProvider;
 use App\Core\Contracts\WorkspaceWebhookDeliveryProvider;
+use App\Core\Data\Credentials\WorkspaceCredential;
+use App\Core\Data\Credentials\WorkspaceCredentialSnapshot;
 use App\Core\Data\Projects\ProjectResourceDestination;
 use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Data\Projects\WorkspaceWebhookDelivery;
@@ -14,10 +17,12 @@ use App\Core\Models\ProjectResource;
 use App\Core\Models\Workspace;
 use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceCredentialProvider;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
@@ -260,6 +265,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             'heartbeat_runs',
             'monitor_checks',
             'monitors',
+            'ingest_tokens',
             'ingest_receipts',
             'environments',
             'applications',
@@ -543,6 +549,94 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             ->assertOk()
             ->assertSeeText('No webhook deliveries match these filters')
             ->assertDontSeeText('Repository webhook');
+    }
+
+    public function test_workspace_credential_inventory_aggregates_and_filters_redacted_product_summaries(): void
+    {
+        app(WorkspaceCredentialProviderRegistry::class)->register('deployer', new class implements WorkspaceCredentialProvider
+        {
+            public function credentialsForWorkspace(
+                PlatformUser $user,
+                Workspace $workspace,
+                Collection $projects,
+                int $limit,
+            ): WorkspaceCredentialSnapshot {
+                return new WorkspaceCredentialSnapshot(collect([
+                    new WorkspaceCredential(
+                        key: 'deployer:token:1',
+                        product: 'deployer',
+                        productLabel: 'Buildpusher Deploy',
+                        type: 'Deployer API token',
+                        name: 'Production deploy token',
+                        scope: 'Workspace: Northstar Studio',
+                        status: 'active',
+                        statusLabel: 'Active',
+                        prefix: null,
+                        createdAt: CarbonImmutable::parse('2026-09-25 10:00:00 UTC'),
+                        lastUsedAt: null,
+                        expiresAt: null,
+                        manageUrl: 'https://deployer.example.test/automation',
+                    ),
+                ]));
+            }
+        });
+        app(WorkspaceCredentialProviderRegistry::class)->register('monitor', new class implements WorkspaceCredentialProvider
+        {
+            public function credentialsForWorkspace(
+                PlatformUser $user,
+                Workspace $workspace,
+                Collection $projects,
+                int $limit,
+            ): WorkspaceCredentialSnapshot {
+                return new WorkspaceCredentialSnapshot(collect([
+                    new WorkspaceCredential(
+                        key: 'monitor:ingest-token:1',
+                        product: 'monitor',
+                        productLabel: 'Buildpusher Monitor',
+                        type: 'Monitor ingestion token',
+                        name: 'Production collector token',
+                        scope: 'Checkout app · Production',
+                        status: 'active',
+                        statusLabel: 'Active',
+                        prefix: 'bcn_live',
+                        createdAt: CarbonImmutable::parse('2026-09-25 11:00:00 UTC'),
+                        lastUsedAt: null,
+                        expiresAt: null,
+                        manageUrl: 'https://monitor.example.test/environments/92',
+                    ),
+                    new WorkspaceCredential(
+                        key: 'monitor:ingest-token:2',
+                        product: 'monitor',
+                        productLabel: 'Buildpusher Monitor',
+                        type: 'Monitor ingestion token',
+                        name: 'Revoked collector token',
+                        scope: 'Checkout app · Production',
+                        status: 'revoked',
+                        statusLabel: 'Revoked',
+                        prefix: 'bcn_old',
+                        createdAt: CarbonImmutable::parse('2026-09-24 11:00:00 UTC'),
+                        lastUsedAt: null,
+                        expiresAt: null,
+                        manageUrl: 'https://monitor.example.test/environments/92',
+                    ),
+                ]));
+            }
+        });
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($user, 'platform')
+            ->get(route('core.workspace.credentials', [
+                'workspace' => $this->workspaceId,
+                'product' => 'monitor',
+                'status' => 'active',
+            ]))
+            ->assertOk()
+            ->assertSeeText('Credential inventory')
+            ->assertSeeText('Production collector token')
+            ->assertSeeText('bcn_live')
+            ->assertDontSeeText('Production deploy token')
+            ->assertDontSeeText('Revoked collector token')
+            ->assertSeeText('Core never displays credential secrets');
     }
 
     public function test_workflow_activity_disappears_when_product_or_local_resource_access_is_lost(): void
@@ -1832,6 +1926,157 @@ final class WorkspaceWorkflowActivityTest extends TestCase
         $this->assertFalse($snapshot->runs->contains(fn ($run): bool => str_starts_with($run->key, 'deployer:preview-initialization:')));
     }
 
+    public function test_monitor_credential_inventory_requires_a_mapped_admin_environment_and_omits_hashes(): void
+    {
+        $this->createMonitorActivityTables();
+        $this->addIdentityMap('user', '17', 'user', $this->userId, 'monitor');
+        $this->addIdentityMap('workspace', '81', 'workspace', $this->workspaceId, 'monitor');
+        DB::connection('monitor')->table('users')->insert([
+            'id' => 17,
+            'name' => 'Taylor Owner',
+            'email' => 'taylor@example.test',
+            'password' => 'not-used-by-the-credential-provider',
+        ]);
+        DB::connection('monitor')->table('workspaces')->insert([
+            'id' => 81,
+            'owner_id' => 17,
+            'name' => 'Northstar Monitor',
+            'slug' => 'northstar-monitor',
+            'plan' => 'free',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('monitor')->table('user_workspace')->insert([
+            'workspace_id' => 81,
+            'user_id' => 17,
+            'role' => 'owner',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('monitor')->table('applications')->insert([
+            'id' => 91,
+            'workspace_id' => 81,
+            'name' => 'Checkout monitor',
+            'slug' => 'checkout-monitor',
+            'framework' => 'Laravel',
+            'framework_version' => null,
+            'accent' => 'violet',
+            'created_at' => now(),
+            'updated_at' => now(),
+            'deleted_at' => null,
+        ]);
+        DB::connection('monitor')->table('environments')->insert([
+            [
+                'id' => 92,
+                'application_id' => 91,
+                'name' => 'Production',
+                'slug' => 'production',
+                'status' => 'active',
+                'event_count' => 0,
+                'last_seen_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'deleted_at' => null,
+            ],
+            [
+                'id' => 93,
+                'application_id' => 91,
+                'name' => 'Unmapped staging',
+                'slug' => 'staging',
+                'status' => 'active',
+                'event_count' => 0,
+                'last_seen_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'deleted_at' => null,
+            ],
+        ]);
+        DB::connection('core')->table('project_resources')
+            ->where('project_id', $this->projectId)
+            ->where('product', 'monitor')
+            ->where('resource_type', 'environment')
+            ->update(['resource_id' => '92', 'name' => 'Production telemetry']);
+        DB::connection('monitor')->table('ingest_tokens')->insert([
+            [
+                'id' => 301,
+                'environment_id' => 92,
+                'created_by' => 17,
+                'name' => 'Production ingest token',
+                'token_hash' => hash('sha256', 'ingest_secret_must_not_render'),
+                'prefix' => 'bcn_prod',
+                'expires_at' => null,
+                'revoked_at' => null,
+                'last_used_at' => now()->subMinute(),
+                'created_at' => now()->subDay(),
+                'updated_at' => now(),
+            ],
+            [
+                'id' => 302,
+                'environment_id' => 93,
+                'created_by' => 17,
+                'name' => 'Unmapped ingest token',
+                'token_hash' => hash('sha256', 'unmapped_ingest_secret_must_not_render'),
+                'prefix' => 'bcn_stage',
+                'expires_at' => null,
+                'revoked_at' => null,
+                'last_used_at' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ],
+        ]);
+        DB::connection('monitor')->table('monitors')->insert([
+            [
+                'id' => 401,
+                'environment_id' => 92,
+                'name' => 'Queue depth',
+                'type' => 'queue',
+                'queue_token_hash' => hash('sha256', 'queue_secret_must_not_render'),
+                'heartbeat_token_hash' => null,
+                'created_at' => now(),
+                'updated_at' => now(),
+                'deleted_at' => null,
+            ],
+            [
+                'id' => 402,
+                'environment_id' => 92,
+                'name' => 'Worker heartbeat',
+                'type' => 'heartbeat',
+                'queue_token_hash' => null,
+                'heartbeat_token_hash' => hash('sha256', 'heartbeat_secret_must_not_render'),
+                'created_at' => now(),
+                'updated_at' => now(),
+                'deleted_at' => null,
+            ],
+        ]);
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $workspace = Workspace::query()->findOrFail($this->workspaceId);
+        $project = CoreProject::query()->findOrFail($this->projectId);
+        $snapshot = app(MonitorWorkspaceCredentialProvider::class)
+            ->credentialsForWorkspace($user, $workspace, collect([$project]), 100);
+
+        $this->assertTrue($snapshot->available);
+        $this->assertCount(3, $snapshot->credentials);
+        $this->assertTrue($snapshot->credentials->contains(fn (WorkspaceCredential $credential): bool => $credential->key === 'monitor:ingest-token:301'));
+        $this->assertTrue($snapshot->credentials->contains(fn (WorkspaceCredential $credential): bool => $credential->key === 'monitor:queue-key:401'));
+        $this->assertTrue($snapshot->credentials->contains(fn (WorkspaceCredential $credential): bool => $credential->key === 'monitor:heartbeat-key:402'));
+        $this->assertFalse($snapshot->credentials->contains(fn (WorkspaceCredential $credential): bool => str_contains($credential->name, 'Unmapped')));
+        $serialized = json_encode($snapshot->credentials, JSON_THROW_ON_ERROR);
+        foreach ([
+            'ingest_secret_must_not_render',
+            'unmapped_ingest_secret_must_not_render',
+            'queue_secret_must_not_render',
+            'heartbeat_secret_must_not_render',
+        ] as $secret) {
+            $this->assertStringNotContainsString($secret, $serialized);
+        }
+
+        DB::connection('monitor')->table('user_workspace')->where('workspace_id', 81)->update(['role' => 'member']);
+        $memberSnapshot = app(MonitorWorkspaceCredentialProvider::class)
+            ->credentialsForWorkspace($user, $workspace, collect([$project]), 100);
+        $this->assertCount(0, $memberSnapshot->credentials);
+    }
+
     public function test_monitor_telemetry_activity_requires_mapped_environment_and_matching_source_workspace(): void
     {
         $this->createMonitorActivityTables();
@@ -2221,6 +2466,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             'heartbeat_runs',
             'monitor_checks',
             'monitors',
+            'ingest_tokens',
             'ingest_receipts',
             'environments',
             'applications',
@@ -2298,8 +2544,22 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             $table->unsignedBigInteger('environment_id');
             $table->string('name');
             $table->string('type');
+            $table->char('queue_token_hash', 64)->nullable();
+            $table->char('heartbeat_token_hash', 64)->nullable();
             $table->timestamps();
             $table->softDeletes();
+        });
+        Schema::connection('monitor')->create('ingest_tokens', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('environment_id');
+            $table->unsignedBigInteger('created_by')->nullable();
+            $table->string('name', 120);
+            $table->char('token_hash', 64)->unique();
+            $table->string('prefix', 16);
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamp('revoked_at')->nullable();
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamps();
         });
         Schema::connection('monitor')->create('monitor_checks', function (Blueprint $table): void {
             $table->char('id', 26)->primary();

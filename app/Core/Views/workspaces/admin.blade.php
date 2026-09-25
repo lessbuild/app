@@ -27,6 +27,7 @@
                 <x-signal.ui.button :href="route('core.projects.index', $workspace)" variant="secondary">{{ __('Projects') }}</x-signal.ui.button>
                 <x-signal.ui.button :href="route('core.workspace.workflows', $workspace)" variant="secondary">{{ __('Workflows') }}</x-signal.ui.button>
                 <x-signal.ui.button :href="route('core.workspace.deliveries', $workspace)" variant="secondary">{{ __('Delivery history') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('core.workspace.credentials', $workspace)" variant="secondary">{{ __('API credentials') }}</x-signal.ui.button>
                 <x-signal.ui.button :href="route('core.workspace.costs', $workspace)" variant="secondary">{{ __('Costs') }}</x-signal.ui.button>
                 @if (($moduleTools['deployer'] ?? collect())->isNotEmpty())
                     <x-signal.ui.button :href="route('core.workspace.status-pages.index', $workspace)" variant="secondary">{{ __('Customer status pages') }}</x-signal.ui.button>
