@@ -11,6 +11,7 @@
     'workspaceOptions' => [],
     'workspaceSwitchRoute' => 'organizations.switch',
     'workspaceManageUrl' => null,
+    'showWorkspaceSwitcher' => true,
     'showProjectContext' => true,
     'showProjectsLink' => true,
     'contextLabel' => 'Project',
@@ -75,7 +76,7 @@
             @endif
         @endforeach
 
-        @if (count($workspaceOptions) || $workspaceManageUrl)
+        @if ($showWorkspaceSwitcher && (count($workspaceOptions) || $workspaceManageUrl))
             <x-signal.layouts.workspace-switcher
                 :current-workspace="$currentWorkspace"
                 :workspace-options="$workspaceOptions"

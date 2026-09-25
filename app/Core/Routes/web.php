@@ -28,6 +28,7 @@ use App\Core\Http\Controllers\WorkspaceTeamController;
 use App\Core\Http\Controllers\WorkspaceWebhookDeliveryHistoryController;
 use App\Core\Http\Controllers\WorkspaceWorkflowActivityController;
 use App\Modules\Deployer\Http\Controllers\AdminAccessRequestController;
+use App\Modules\Deployer\Http\Controllers\AdminAnalyticsController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [MarketingController::class, 'home'])->name('core.entry');
@@ -70,6 +71,10 @@ Route::middleware('auth:platform')->group(function (): void {
         ->middleware('throttle:10,1')
         ->name('core.workspaces.store');
     Route::post('/core/logout', [PlatformSessionController::class, 'destroy'])->name('core.logout');
+
+    Route::get('/admin/deployer/analytics', AdminAnalyticsController::class)
+        ->middleware(['platform.principal:deployer', 'throttle:30,1'])
+        ->name('core.admin.analytics');
 
     Route::prefix('/admin/deployer/access-requests')
         ->name('core.admin.access-requests.')

@@ -6,12 +6,14 @@ use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Modules\Deployer\Models\AccessRequest;
 use App\Modules\Deployer\Models\User as DeployerUser;
+use App\Modules\Deployer\Services\BusinessAnalytics;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
+use Mockery;
 use Tests\TestCase;
 
 final class CoreAdminAccessRequestTest extends TestCase
@@ -183,5 +185,42 @@ final class CoreAdminAccessRequestTest extends TestCase
 
         $this->get(route('core.admin.access-requests.index'))->assertForbidden();
         $this->assertSame(1, DeployerUser::query()->count());
+    }
+
+    public function test_core_hosts_the_private_admin_analytics_screen_with_existing_cache_controls(): void
+    {
+        config(['lessbuild.platform_admin_emails' => ['admin@example.test']]);
+        $analytics = Mockery::mock(BusinessAnalytics::class);
+        $analytics->shouldReceive('snapshot')->once()->andReturn([
+            'totals' => [
+                'users' => 4,
+                'active_users' => 3,
+                'workspaces' => 2,
+                'paid_workspaces' => 1,
+                'conversion_rate' => 50,
+                'estimated_mrr' => 25.0,
+                'churned_30d' => 0,
+                'deployments_30d' => 2,
+                'denials_30d' => 1,
+                'pending_access_requests' => 1,
+            ],
+            'plans' => collect(['free' => 1, 'pro' => 1]),
+            'trend' => collect([[
+                'date' => '2026-09-25',
+                'signups' => 1,
+                'deployments' => 2,
+                'denials' => 0,
+            ]]),
+        ]);
+        $this->app->instance(BusinessAnalytics::class, $analytics);
+        $this->actingAs($this->platformUser, 'platform');
+
+        $this->get(route('core.admin.analytics'))
+            ->assertOk()
+            ->assertHeader('cache-control', 'no-store, private')
+            ->assertSee('data-product="core"', false)
+            ->assertSee('Business analytics')
+            ->assertSee('Estimated MRR')
+            ->assertSee(route('core.admin.access-requests.index'), false);
     }
 }

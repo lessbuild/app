@@ -331,6 +331,7 @@
         :workspace-options="$workspaceOptions"
         :workspace-switch-route="$workspaceSwitchRoute"
         :workspace-manage-url="$workspaceManageUrl"
+        :show-workspace-switcher="$showWorkspaceSwitcher"
         :show-project-context="$showProjectContext"
         :show-projects-link="$showProjectsLink"
         :context-label="$contextLabel"
