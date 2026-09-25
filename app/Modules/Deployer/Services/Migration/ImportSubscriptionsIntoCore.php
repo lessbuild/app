@@ -8,6 +8,7 @@ use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\ProductSubscription;
 use App\Core\Models\Workspace;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\DeployerSubscriptionSeatBilling;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Model;
@@ -30,11 +31,12 @@ final class ImportSubscriptionsIntoCore
 
     /**
      * Preview or import Deployer's owner-billed subscriptions into workspace product slots.
-     * Owners whose subscription is shared by multiple organizations are held for review.
+     * Shared-owner billing stays held unless a reviewed, one-workspace allocation is supplied.
      *
+     * @param  array{source_owner_user_id:string,source_organization_id:string,approved_by:string,evidence:string}|null  $sharedOwnerResolution
      * @return array{workspaces_seen:int,subscriptions_seen:int,subscriptions_without_workspace_owner:int,subscriptions_ready:int,subscriptions_imported:int,subscriptions_already_mapped:int,subscriptions_blocked:int,stripe_subscriptions_imported:int,billing_customers_imported:int,review_records_created:int}
      */
-    public function run(bool $apply = false): array
+    public function run(bool $apply = false, ?array $sharedOwnerResolution = null): array
     {
         foreach (['users', 'organizations', 'subscriptions', 'subscription_items'] as $table) {
             if (! Schema::connection('deployer')->hasTable($table)) {
@@ -66,6 +68,21 @@ final class ImportSubscriptionsIntoCore
         $currentMaps = $this->mappingsFor('current_subscription');
         $customerMaps = $this->mappingsFor('billing_customer');
         $subscriptionMaps = $this->mappingsFor('subscription');
+
+        if ($sharedOwnerResolution !== null) {
+            $sharedOwnerResolution = $this->validateSharedOwnerResolution(
+                $sharedOwnerResolution,
+                $organizationsByOwner,
+                $users,
+                $subscriptions,
+                $subscriptionItems,
+                $currentMaps,
+                $userMaps,
+                $workspaceMaps,
+                $customerMaps,
+                $subscriptionMaps,
+            );
+        }
 
         $report = [
             'workspaces_seen' => $organizations->count(),
@@ -122,9 +139,17 @@ final class ImportSubscriptionsIntoCore
             $workspaceMap = $workspaceMaps->get($sourceWorkspaceId);
             $workspace = $this->canonicalWorkspace($workspaceMap);
             $ownerSubscriptions = $subscriptions->get($sourceUserId, collect());
-            $billingState = $sourceUser === null
-                ? null
-                : $this->billingState($sourceUser, $ownerSubscriptions, $subscriptionItems);
+            $ownerOrganizations = $organizationsByOwner->get($sourceUserId, collect());
+            $resolution = $this->sharedOwnerResolutionFor(
+                $ownerOrganizations,
+                $currentMaps,
+                $sourceUserId,
+                $sourceUser,
+                $ownerSubscriptions,
+                $sharedOwnerResolution,
+            );
+            $billingOwner = $sourceUser;
+            $workspaceSubscriptions = $ownerSubscriptions;
             $reasons = [];
 
             if ($sourceUser === null || $canonicalOwnerId === null) {
@@ -137,10 +162,25 @@ final class ImportSubscriptionsIntoCore
                 $reasons[] = 'deployer_workspace_owner_mapping_mismatch';
             }
 
-            if ($organizationsByOwner->get($sourceUserId, collect())->count() > 1
-                && ($ownerSubscriptions->isNotEmpty() || filled($sourceUser->stripe_id ?? null))) {
-                $reasons[] = 'deployer_owner_billing_shared_across_workspaces';
+            $hasSharedOwnerBilling = $ownerOrganizations->count() > 1
+                && ($ownerSubscriptions->isNotEmpty() || filled($sourceUser->stripe_id ?? null));
+
+            if ($hasSharedOwnerBilling && ($resolution['conflict'] || $resolution['allocation'] === null)) {
+                $reasons[] = $resolution['conflict']
+                    ? 'deployer_owner_billing_resolution_conflict'
+                    : 'deployer_owner_billing_shared_across_workspaces';
+            } elseif ($hasSharedOwnerBilling && $resolution['allocation'] !== null
+                && $resolution['allocation']['source_organization_id'] !== $sourceWorkspaceId) {
+                $workspaceSubscriptions = collect();
+                $billingOwner = clone $sourceUser;
+                $billingOwner->stripe_id = null;
+                $billingOwner->pm_type = null;
+                $billingOwner->pm_last_four = null;
             }
+
+            $billingState = $sourceUser === null
+                ? null
+                : $this->billingState($billingOwner, $workspaceSubscriptions, $subscriptionItems);
 
             if ($billingState !== null && $billingState['current_subscription_is_valid'] && $billingState['plan_key'] === 'free'
                 && $billingState['current_subscription_has_price']) {
@@ -156,10 +196,10 @@ final class ImportSubscriptionsIntoCore
 
             if ($sourceUser !== null && $workspace !== null) {
                 $reasons = array_merge($reasons, $this->billingIdentityReviewReasons(
-                    $sourceUser,
+                    $billingOwner,
                     $workspace,
                     $customerMaps->get($sourceUserId),
-                    $ownerSubscriptions,
+                    $workspaceSubscriptions,
                     $subscriptionMaps,
                 ));
             }
@@ -182,13 +222,14 @@ final class ImportSubscriptionsIntoCore
             if ($apply && $sourceUser !== null && $workspace !== null && $billingState !== null
                 && $this->importWorkspaceSubscriptions(
                     $organization,
-                    $sourceUser,
+                    $billingOwner,
                     $workspace,
-                    $ownerSubscriptions,
+                    $workspaceSubscriptions,
                     $subscriptionItems,
                     $billingState,
                     $customerMaps->get($sourceUserId),
                     $subscriptionMaps,
+                    $resolution['allocation'],
                     $report,
                 )) {
                 $report['subscriptions_imported']++;
@@ -196,6 +237,204 @@ final class ImportSubscriptionsIntoCore
         }
 
         return $report;
+    }
+
+    /**
+     * @param  array<string, mixed>  $resolution
+     * @param  Collection<string, Collection<int, object>>  $organizationsByOwner
+     * @param  Collection<string, object>  $users
+     * @param  Collection<string, Collection<int, object>>  $subscriptions
+     * @param  Collection<string, LegacyIdentityMap>  $currentMaps
+     * @return array<string, mixed>
+     */
+    private function validateSharedOwnerResolution(
+        array $resolution,
+        Collection $organizationsByOwner,
+        Collection $users,
+        Collection $subscriptions,
+        Collection $subscriptionItems,
+        Collection $currentMaps,
+        Collection $userMaps,
+        Collection $workspaceMaps,
+        Collection $customerMaps,
+        Collection $subscriptionMaps,
+    ): array {
+        $ownerId = $this->stringValue($resolution['source_owner_user_id'] ?? null);
+        $organizationId = $this->stringValue($resolution['source_organization_id'] ?? null);
+        $approvedBy = $this->stringValue($resolution['approved_by'] ?? null);
+        $evidence = $this->stringValue($resolution['evidence'] ?? null);
+
+        if ($ownerId === null || $organizationId === null || $approvedBy === null || $evidence === null) {
+            throw new RuntimeException('Shared-owner billing resolution requires an owner, organization, reviewer, and evidence reference.');
+        }
+
+        if (strlen($approvedBy) > 160 || strlen($evidence) > 500) {
+            throw new RuntimeException('The reviewer must be at most 160 characters and the evidence reference at most 500 characters.');
+        }
+
+        $ownerOrganizations = $organizationsByOwner->get($ownerId, collect());
+        $organization = $ownerOrganizations->first(fn (object $candidate): bool => (string) $candidate->id === $organizationId);
+        $sourceUser = $users->get($ownerId);
+        $ownerSubscriptions = $subscriptions->get($ownerId, collect());
+
+        if ($ownerOrganizations->count() < 2 || $organization === null) {
+            throw new RuntimeException('The selected Deployer organization must belong to an owner with multiple organizations.');
+        }
+
+        if ($sourceUser === null || ($ownerSubscriptions->isEmpty() && ! filled($sourceUser->stripe_id ?? null))) {
+            throw new RuntimeException('The selected Deployer owner has no shared billing record to allocate.');
+        }
+
+        $canonicalOwnerId = $this->canonicalUserId($userMaps->get($ownerId));
+        $workspace = $this->canonicalWorkspace($workspaceMaps->get($organizationId));
+        if ($canonicalOwnerId === null || $workspace === null || (string) $workspace->owner_user_id !== $canonicalOwnerId) {
+            throw new RuntimeException('The selected Deployer organization and its owner must already map to the same Core workspace owner.');
+        }
+
+        $normalized = [
+            'source_owner_user_id' => $ownerId,
+            'source_organization_id' => $organizationId,
+            'source_subscription_ids' => $ownerSubscriptions->pluck('id')->map(fn (mixed $id): string => (string) $id)->sort()->values()->all(),
+            'source_stripe_customer_id' => $this->stringValue($sourceUser->stripe_id ?? null),
+            'approved_by' => $approvedBy,
+            'evidence' => $evidence,
+            'approved_at' => now()->toISOString(),
+        ];
+
+        foreach ($ownerOrganizations as $ownerOrganization) {
+            $mapping = $currentMaps->get((string) $ownerOrganization->id);
+            $existing = $mapping?->metadata['shared_owner_billing_resolution'] ?? null;
+
+            if (is_array($existing) && ! $this->sameSharedOwnerResolution($existing, $normalized)) {
+                throw new RuntimeException('A different shared-owner billing allocation is already recorded; it cannot be reassigned automatically.');
+            }
+
+            if ($mapping?->status === 'reconciled' && ! is_array($existing)) {
+                throw new RuntimeException('A Deployer workspace billing slot is already reconciled without this ownership evidence.');
+            }
+        }
+
+        $selectedCurrentMap = $currentMaps->get($organizationId);
+        $selectedAlreadyImported = $selectedCurrentMap?->status === 'reconciled'
+            && $this->sameSharedOwnerResolution(
+                $selectedCurrentMap->metadata['shared_owner_billing_resolution'] ?? [],
+                $normalized,
+            )
+            && $this->currentMappingIsValid($selectedCurrentMap, $workspaceMaps->get($organizationId));
+
+        if (! $selectedAlreadyImported && CurrentProductSubscription::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where('product', self::PRODUCT)
+            ->exists()) {
+            throw new RuntimeException('The selected Core workspace already has a Deployer subscription slot; this allocation was not applied.');
+        }
+
+        if (! $selectedAlreadyImported) {
+            $billingState = $this->billingState($sourceUser, $ownerSubscriptions, $subscriptionItems);
+            if ($billingState['current_subscription_is_valid'] && $billingState['plan_key'] === 'free'
+                && $billingState['current_subscription_has_price']) {
+                throw new RuntimeException('The selected Deployer subscription has an unrecognized active price; correct the catalog before allocation.');
+            }
+
+            $billingReasons = $this->billingIdentityReviewReasons(
+                $sourceUser,
+                $workspace,
+                $customerMaps->get($ownerId),
+                $ownerSubscriptions,
+                $subscriptionMaps,
+            );
+            if ($billingReasons !== []) {
+                throw new RuntimeException('The selected Deployer billing records have conflicting Core mappings; resolve those records before allocation.');
+            }
+        }
+
+        return $normalized;
+    }
+
+    /**
+     * @param  Collection<int, object>  $ownerOrganizations
+     * @param  Collection<string, LegacyIdentityMap>  $currentMaps
+     * @param  Collection<int, object>  $ownerSubscriptions
+     * @param  array<string, mixed>|null  $requestedResolution
+     * @return array{allocation:?array<string, mixed>,conflict:bool}
+     */
+    private function sharedOwnerResolutionFor(
+        Collection $ownerOrganizations,
+        Collection $currentMaps,
+        string $sourceUserId,
+        ?object $sourceUser,
+        Collection $ownerSubscriptions,
+        ?array $requestedResolution,
+    ): array {
+        $storedResolution = null;
+
+        foreach ($ownerOrganizations as $organization) {
+            $mapping = $currentMaps->get((string) $organization->id);
+            $candidate = $mapping?->metadata['shared_owner_billing_resolution'] ?? null;
+
+            if ($candidate === null) {
+                continue;
+            }
+
+            if (! is_array($candidate)
+                || ($candidate['source_owner_user_id'] ?? null) !== $sourceUserId
+                || ! $ownerOrganizations->contains(fn (object $item): bool => (string) $item->id === (string) ($candidate['source_organization_id'] ?? ''))
+                || ! filled($candidate['approved_by'] ?? null)
+                || ! filled($candidate['evidence'] ?? null)
+                || ! filled($candidate['approved_at'] ?? null)) {
+                return ['allocation' => null, 'conflict' => true];
+            }
+
+            if ($storedResolution !== null && ! $this->sameSharedOwnerResolution($storedResolution, $candidate)) {
+                return ['allocation' => null, 'conflict' => true];
+            }
+
+            $storedResolution = $candidate;
+        }
+
+        $requestedForOwner = $requestedResolution !== null
+            && $requestedResolution['source_owner_user_id'] === $sourceUserId
+            ? $requestedResolution
+            : null;
+
+        if ($requestedForOwner !== null && $storedResolution !== null
+            && ! $this->sameSharedOwnerResolution($storedResolution, $requestedForOwner)) {
+            return ['allocation' => null, 'conflict' => true];
+        }
+
+        $allocation = $storedResolution ?? $requestedForOwner;
+        if ($allocation === null) {
+            return ['allocation' => null, 'conflict' => false];
+        }
+
+        $subscriptionIds = $ownerSubscriptions->pluck('id')->map(fn (mixed $id): string => (string) $id)->sort()->values()->all();
+        if ($allocation['source_subscription_ids'] !== $subscriptionIds
+            || ($allocation['source_stripe_customer_id'] ?? null) !== $this->stringValue($sourceUser->stripe_id ?? null)) {
+            return ['allocation' => null, 'conflict' => true];
+        }
+
+        return ['allocation' => $allocation, 'conflict' => false];
+    }
+
+    /** @param array<string, mixed> $first
+     * @param  array<string, mixed>  $second
+     */
+    private function sameSharedOwnerResolution(array $first, array $second): bool
+    {
+        foreach ([
+            'source_owner_user_id',
+            'source_organization_id',
+            'source_subscription_ids',
+            'source_stripe_customer_id',
+            'approved_by',
+            'evidence',
+        ] as $key) {
+            if (($first[$key] ?? null) !== ($second[$key] ?? null)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /** @return array{plan_key:string,plan_snapshot:array<string,mixed>,billing_interval:string,current_subscription_id:?string,current_subscription_is_valid:bool,current_subscription_has_price:bool} */
@@ -308,6 +547,7 @@ final class ImportSubscriptionsIntoCore
      * @param  Collection<int, object>  $itemsBySubscription
      * @param  array<string, mixed>  $billingState
      * @param  Collection<string, LegacyIdentityMap>  $subscriptionMaps
+     * @param  array<string, mixed>|null  $sharedOwnerResolution
      * @param  array<string, int>  $report
      */
     private function importWorkspaceSubscriptions(
@@ -319,6 +559,7 @@ final class ImportSubscriptionsIntoCore
         array $billingState,
         ?LegacyIdentityMap $customerMap,
         Collection $subscriptionMaps,
+        ?array $sharedOwnerResolution,
         array &$report,
     ): bool {
         $sourceWorkspaceId = (string) $organization->id;
@@ -333,6 +574,7 @@ final class ImportSubscriptionsIntoCore
             $billingState,
             $customerMap,
             $subscriptionMaps,
+            $sharedOwnerResolution,
             $sourceWorkspaceId,
             $sourceUserId,
             &$report,
@@ -451,6 +693,8 @@ final class ImportSubscriptionsIntoCore
                     'plan_key' => $billingState['plan_key'],
                     'provider' => $currentSubscription->provider,
                     'provider_subscription_id' => $currentSubscription->provider_subscription_id,
+                ], $sharedOwnerResolution === null ? [] : [
+                    'shared_owner_billing_resolution' => $sharedOwnerResolution,
                 ]),
                 'imported_at' => $now,
                 'reconciled_at' => $now,

@@ -8,19 +8,44 @@ use Illuminate\Console\Command;
 final class ImportDeployerSubscriptions extends Command
 {
     protected $signature = 'platform:import-deployer-subscriptions
-        {--apply : Write eligible Deployer customers, subscriptions, and current plan slots to Core; default is a read-only preview}';
+        {--apply : Write eligible Deployer customers, subscriptions, and current plan slots to Core; default is a read-only preview}
+        {--shared-owner= : Source Deployer owner ID whose old billing is shared across organizations}
+        {--organization= : Source Deployer organization ID that its owner assigned the old billing to}
+        {--approved-by= : Reviewer identifier recorded with the ownership decision}
+        {--evidence= : Non-secret reference for the workspace owner billing decision}';
 
     protected $description = 'Preview or import Deployer owner subscriptions into Core workspace product slots';
 
     public function handle(ImportSubscriptionsIntoCore $importer): int
     {
         $apply = (bool) $this->option('apply');
+        $resolutionOptions = [
+            'source_owner_user_id' => $this->option('shared-owner'),
+            'source_organization_id' => $this->option('organization'),
+            'approved_by' => $this->option('approved-by'),
+            'evidence' => $this->option('evidence'),
+        ];
+        $providedResolutionOptions = array_filter($resolutionOptions, fn (mixed $value): bool => is_string($value) && trim($value) !== '');
+
+        if ($providedResolutionOptions !== [] && count($providedResolutionOptions) !== count($resolutionOptions)) {
+            $this->components->error('Shared-owner resolution requires --shared-owner, --organization, --approved-by, and --evidence together.');
+
+            return self::FAILURE;
+        }
+
+        $sharedOwnerResolution = $providedResolutionOptions === [] ? null : $resolutionOptions;
 
         $this->components->info($apply
             ? 'Importing eligible Deployer subscriptions into Core.'
             : 'Read-only Deployer subscription import preview.');
 
-        $report = $importer->run($apply);
+        if ($sharedOwnerResolution !== null) {
+            $this->line($apply
+                ? 'Applying the reviewed shared-owner workspace allocation.'
+                : 'Previewing the explicit shared-owner workspace allocation; no data will be changed.');
+        }
+
+        $report = $importer->run($apply, $sharedOwnerResolution);
 
         $this->table(
             ['Measure', 'Organizations / subscriptions'],
@@ -39,7 +64,7 @@ final class ImportDeployerSubscriptions extends Command
         );
 
         if (! $apply) {
-            $this->line('No data was changed. Reconcile Deployer accounts/workspaces and review shared owner billing before rerunning with --apply.');
+            $this->line('No data was changed. Review the report before rerunning with --apply.');
         }
 
         return self::SUCCESS;

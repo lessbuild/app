@@ -10,12 +10,20 @@ Cashier continues to verify the existing Deployer Stripe webhook signature and d
 
 Legacy Cashier period-end cancellations are imported as Core `active` subscriptions with `cancel_at` and `current_period_ends_at`, preserving the paid grace period. At expiry the normal Core plan resolver rejects the elapsed term even if the terminal webhook has not arrived yet.
 
+## Shared legacy-owner billing allocation
+
+The workspace/team billing decision is confirmed, with an independent Deployer plan slot per workspace. The old Deployer subscription is attached to a user who owns multiple organizations, so that decision alone does not identify which organization should inherit its existing paid subscription. The default importer continues to hold this case rather than grant one Stripe subscription to multiple workspaces.
+
+The importer now supports an explicit allocation preview and apply. The operator must name the legacy owner, one of that owner's Deployer organizations, the reviewer, and a non-secret evidence reference. It imports the existing Stripe customer and subscription history only into that selected workspace; the owner's other organizations receive separate no-charge Core slots. The allocation and the exact source subscription/customer snapshot are recorded in the Core identity maps. A changed source snapshot, conflicting allocation, or already-reconciled slot without matching evidence fails closed. The default command remains read-only, and a plain `--apply` still leaves unresolved shared-owner billing held for review.
+
+No allocation has been applied to production. The exact organization choice and owner-confirmation reference remain outstanding. The first production preview also exposed a missing service import in the deployed command; the namespace fix is authored locally and needs release validation.
+
 ## Deferred regressions and checks
 
-New tests cover workspace-scoped Stripe line items, trial/customer metadata, seat quantities, product-slot isolation, duplicate delivery, subscription cancellation, conflicting mappings, pending-event replay, webhook listener dispatch, and Deployer Cashier grace-period migration. They are authored but intentionally unrun until the full unified-application plan is complete.
+New tests cover workspace-scoped Stripe line items, trial/customer metadata, seat quantities, product-slot isolation, duplicate delivery, subscription cancellation, conflicting mappings, pending-event replay, webhook listener dispatch, Deployer Cashier grace-period migration, and one-to-one shared-owner allocation with evidence preservation and idempotent retry. They are authored but intentionally unrun until the full unified-application plan is complete.
 
 Static checks passed for all touched PHP files: `php -l`, Pint, `git diff --check`, Blade view compilation, route listing, and console command registration. No PHPUnit, browser, or other test runner was invoked. No live Stripe API request or production configuration change was made.
 
 ## Remaining billing acceptance
 
-Do not treat the Deployer billing cutover as complete yet. `DEPLOYER_PLAN_AUTHORITY` remains on its legacy default; Core checkout and webhook behavior has not been exercised against Stripe test mode or the full integration suite. Reconcile Deployer's shared-owner subscription review records without assigning one old subscription to multiple workspaces, verify portal configuration and webhook endpoint delivery, run independent-product billing acceptance after the plan is complete, then enable Core authority and verify workspace isolation, trials, renewals, seats, dunning, grace periods, cancellation, and recovery before release.
+Do not treat the Deployer billing cutover as complete yet. `DEPLOYER_PLAN_AUTHORITY` remains on its legacy default; Core checkout and webhook behavior has not been exercised against Stripe test mode or the full integration suite. Obtain the owner's exact workspace choice, review the explicit allocation preview, apply that one-to-one mapping, verify portal configuration and webhook endpoint delivery, run independent-product billing acceptance after the plan is complete, then enable Core authority and verify workspace isolation, trials, renewals, seats, dunning, grace periods, cancellation, and recovery before release.

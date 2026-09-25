@@ -145,6 +145,65 @@ final class DeployerSubscriptionImportTest extends TestCase
         $this->assertContains('deployer_owner_billing_shared_across_workspaces', $firstMetadata['reason_codes']);
     }
 
+    public function test_reviewed_shared_owner_allocation_assigns_paid_billing_to_one_workspace_only(): void
+    {
+        $this->addUser(32, 'cus_allocated');
+        $paidWorkspaceId = $this->addMappedOwnerAndOrganization(32, 32, 'Paid workspace');
+        $freeWorkspaceId = $this->addMappedOwnerAndOrganization(33, 32, 'Separate workspace');
+        $this->addSubscription(132, 32, 'sub_allocated', 'active', 'price_pro', null, null);
+        $resolution = [
+            'source_owner_user_id' => '32',
+            'source_organization_id' => '32',
+            'approved_by' => 'workspace-owner-confirmation',
+            'evidence' => 'billing-owner-confirmation-2026-09-25',
+        ];
+        $importer = app(ImportSubscriptionsIntoCore::class);
+
+        $preview = $importer->run(sharedOwnerResolution: $resolution);
+
+        $this->assertSame(2, $preview['subscriptions_ready']);
+        $this->assertSame(0, $preview['subscriptions_imported']);
+        $this->assertSame(0, DB::connection('core')->table('product_subscriptions')->count());
+        $this->assertSame(0, DB::connection('core')->table('current_product_subscriptions')->count());
+
+        $applied = $importer->run(apply: true, sharedOwnerResolution: $resolution);
+        $paidSubscription = DB::connection('core')->table('product_subscriptions')
+            ->where('provider_subscription_id', 'sub_allocated')->first();
+        $freeAssignment = DB::connection('core')->table('current_product_subscriptions')
+            ->where('workspace_id', $freeWorkspaceId)->where('product', 'deployer')->first();
+        $freeSubscription = DB::connection('core')->table('product_subscriptions')->find($freeAssignment->product_subscription_id);
+        $billingCustomer = DB::connection('core')->table('billing_customers')
+            ->where('provider_customer_id', 'cus_allocated')->first();
+        $allocationMaps = DB::connection('core')->table('legacy_identity_maps')
+            ->where('source_product', 'deployer')->where('source_entity', 'current_subscription')
+            ->whereIn('source_id', ['32', '33'])->get();
+
+        $this->assertSame(0, $applied['subscriptions_blocked']);
+        $this->assertSame(2, $applied['subscriptions_imported']);
+        $this->assertSame(1, $applied['stripe_subscriptions_imported']);
+        $this->assertSame($paidWorkspaceId, $paidSubscription->workspace_id);
+        $this->assertSame($paidWorkspaceId, $billingCustomer->workspace_id);
+        $this->assertSame(1, DB::connection('core')->table('billing_customers')->count());
+        $this->assertSame('pro', $paidSubscription->plan_key);
+        $this->assertSame('free', $freeSubscription->plan_key);
+        $this->assertNull($freeSubscription->billing_customer_id);
+        $this->assertNull($freeSubscription->provider_subscription_id);
+        $this->assertCount(2, $allocationMaps);
+
+        foreach ($allocationMaps as $allocationMap) {
+            $metadata = json_decode($allocationMap->metadata, true, 512, JSON_THROW_ON_ERROR);
+            $this->assertSame('32', $metadata['shared_owner_billing_resolution']['source_owner_user_id']);
+            $this->assertSame('32', $metadata['shared_owner_billing_resolution']['source_organization_id']);
+            $this->assertSame('workspace-owner-confirmation', $metadata['shared_owner_billing_resolution']['approved_by']);
+            $this->assertSame('billing-owner-confirmation-2026-09-25', $metadata['shared_owner_billing_resolution']['evidence']);
+        }
+
+        $retry = $importer->run(apply: true);
+        $this->assertSame(2, $retry['subscriptions_already_mapped']);
+        $this->assertSame(1, DB::connection('core')->table('product_subscriptions')
+            ->where('provider_subscription_id', 'sub_allocated')->count());
+    }
+
     public function test_unknown_active_price_is_reviewed_and_can_be_retried_after_catalog_correction(): void
     {
         $workspaceId = $this->addMappedOwnerAndOrganization(40, 40);
