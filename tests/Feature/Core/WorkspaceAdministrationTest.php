@@ -101,7 +101,10 @@ final class WorkspaceAdministrationTest extends TestCase
             ->assertSeeText('Feedback review')
             ->assertSee(route('servers.index'))
             ->assertSee(route('backups.index'))
-            ->assertSee(route('costs.index'));
+            ->assertSee(route('costs.index'))
+            ->assertSee('data-search="team access members roles invitations grants seats', false)
+            ->assertSee('data-search="server fleet and imports deployer review servers', false)
+            ->assertSee('data-search="backups and recovery deployer manage backup destinations', false);
     }
 
     public function test_admin_catalog_hides_product_controls_after_the_product_grant_is_revoked(): void
@@ -119,7 +122,8 @@ final class WorkspaceAdministrationTest extends TestCase
         $this->get(route('core.workspace.admin', $this->workspaceId))
             ->assertOk()
             ->assertDontSeeText('App administration')
-            ->assertDontSeeText('Server fleet and imports');
+            ->assertDontSeeText('Server fleet and imports')
+            ->assertDontSee('data-search="server fleet and imports deployer', false);
     }
 
     public function test_admin_catalog_fails_closed_when_the_configured_product_origin_disagrees_with_its_route(): void
