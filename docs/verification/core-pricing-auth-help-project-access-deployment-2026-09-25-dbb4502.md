@@ -23,3 +23,9 @@ Loopback HTTPS checks returned 200 for `/pricing`, `auth.buildpusher.com/login`,
 Static validation passed: all 506 compiled Blade views passed `php -l`; changed PHP files passed syntax checks and Pint; `git diff --check` passed; the production dependency install and Laravel config, route, and view caches completed. The automated feature tests were authored but remain unrun under the plan-wide test deferral.
 
 The production login page and authenticated templates were checked without signing in as a customer. An authenticated sign-in round trip still needs a controlled browser session. The root filesystem remains at 100% usage with roughly 64 MB available; release files and Composer cache were kept on the attached volume.
+
+## Pricing card follow-up
+
+Application commit `cdd92c690535ad66acbeda0a8d22df58304ddc79` was pushed and deployed from the same host. Inspecting the rendered cards after the initial release showed that a second, conditional class attribute replaced the static spacing and layout classes. The Deployer and Monitor cards now use a single class attribute containing both the layout classes and conditional featured styling.
+
+The current pointer resolves to `/mnt/volume_nyc1_1789401255960/buildpusher-unified/releases/cdd92c690535ad66acbeda0a8d22df58304ddc79`. Optimized production autoload generation, package discovery, route/view caches, and syntax checks of all 506 compiled Blade files passed. PHP-FPM reloaded successfully. Live loopback HTTPS checks returned 200 for pricing, login, help, Analytics API docs, and status. The rendered pricing page contains all three product tabs/panels, and every Deployer/Monitor plan retains its padding and flex layout; only the featured Pro plans carry the ring classes. A DOM-based regression was authored and remains unrun. No database migration or reset was performed.
