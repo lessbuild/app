@@ -67,8 +67,10 @@ final class CoreHelpController
 
         return view('core::help.deployer-api', [
             'apiBaseUrl' => $apiBaseUrl,
+            'deployerOrigin' => rtrim($reference->baseUrl, '/'),
             'openApiUrl' => $reference->openApiUrl,
             'automationUrl' => $links->to('deployer', 'automation.index'),
+            'repositoriesUrl' => $links->to('deployer', 'repositories.index'),
             'apiOperations' => $apiOperations,
             'apiVersion' => $reference->document['info']['version'] ?? $reference->document['openapi'],
             'openApiVersion' => $reference->document['openapi'],

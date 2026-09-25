@@ -40,7 +40,15 @@ final class CoreHelpRoutesTest extends TestCase
             ->assertSee('/projects/$PROJECT_ID/configuration/reviews/$REVIEW_ID/apply')
             ->assertSee('https://deployer.buildpusher.com/api/v1/environments/1/deploy')
             ->assertSee('Authorization: Bearer YOUR_TOKEN')
-            ->assertSee('New tokens are bound to the active workspace');
+            ->assertSee('New tokens are bound to the active workspace')
+            ->assertSee('Signed repository callbacks')
+            ->assertSee('https://deployer.buildpusher.com/api/repositories/{repository}/webhook')
+            ->assertSee('X-Hub-Signature-256')
+            ->assertSee('webhook-timestamp')
+            ->assertSee('X-Request-UUID')
+            ->assertSee('https://deployer.buildpusher.com/api/github-app/webhook')
+            ->assertSee('Duplicate push delivery IDs are acknowledged without creating another build')
+            ->assertSee('maximum request size is configured per Deployer deployment');
     }
 
     public function test_deployer_openapi_endpoint_uses_the_configured_product_origin(): void
@@ -55,6 +63,11 @@ final class CoreHelpRoutesTest extends TestCase
             ->assertOk()
             ->assertJsonPath('servers.0.url', 'https://deployer.example.test/api/v1')
             ->assertJsonPath('paths./projects/{project}/configuration/plan.post.x-required-scope', 'manage');
+
+        $this->get(route('core.help.deployer.api'))
+            ->assertOk()
+            ->assertSee('https://deployer.example.test/api/repositories/{repository}/webhook')
+            ->assertSee('https://deployer.example.test/api/github-app/webhook');
     }
 
     public function test_deployer_openapi_documents_each_versioned_control_plane_route(): void
