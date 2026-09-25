@@ -121,7 +121,6 @@
     @enderror
 
     @php
-        $latestBuild = $builds->first();
         $latestBuildStatusTone = match ($latestBuild?->status) {
             \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED => 'success',
             \App\Modules\Deployer\Models\Build::STATUS_FAILED => 'danger',
@@ -607,7 +606,7 @@
                 <span class="ui-eyebrow block">{{ __('Deployment timeline') }}</span>
                 <span class="mt-1 block text-lg">{{ __('Deployment timeline') }}</span>
                 <span class="mt-1 block text-sm font-normal text-muted">
-                    {{ $latestBuild ? __('Latest build: :status', ['status' => str($latestBuild->status)->replace('_', ' ')->headline()]) : __('No deployment has started yet.') }}
+                    {{ $latestBuild ? __('Latest build: :status', ['status' => str($latestBuild->status)->replace('_', ' ')->headline()]) : __('No deployment details available.') }}
                 </span>
             </span>
             <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
@@ -736,8 +735,8 @@
                 </x-signal.ui.card>
             @empty
                 <x-signal.ui.empty-state
-                    :title="__('No deployments yet')"
-                    :description="__('Deploy this repository to create its first build.')"
+                    :title="__('No deployment details available')"
+                    :description="__('Deployment history available to you appears here.')"
                 />
             @endforelse
         </div>

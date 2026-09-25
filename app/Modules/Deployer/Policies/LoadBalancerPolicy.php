@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\LoadBalancer;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class LoadBalancerPolicy
 {
@@ -23,6 +24,7 @@ class LoadBalancerPolicy
         return $loadBalancer->environment !== null
             && $user->can('view', $loadBalancer->environment)
             && (int) $loadBalancer->organization_id === (int) $user->current_organization_id
-            && ($loadBalancer->organization?->permits($user, 'manage') ?? false);
+            && ($loadBalancer->organization?->permits($user, 'manage') ?? false)
+            && app(DeployerProjectAccess::class)->canChangeLoadBalancer($user, $loadBalancer);
     }
 }

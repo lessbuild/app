@@ -3,6 +3,7 @@
 namespace App\Core\Services;
 
 use App\Core\Enums\ProductKey;
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectMembership;
@@ -116,8 +117,12 @@ final class WorkspaceProjectAccess
     }
 
     /** @return Builder<Project> */
-    public function accessibleProductProjects(PlatformUser $user, Workspace $workspace, ProductKey|string $product): Builder
-    {
+    public function accessibleProductProjects(
+        PlatformUser $user,
+        Workspace $workspace,
+        ProductKey|string $product,
+        ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive,
+    ): Builder {
         $query = Project::query()->where('workspace_id', $workspace->getKey());
         $product = $this->productKey($product);
         $membership = $this->activeMembership($user, $workspace);
@@ -126,11 +131,17 @@ final class WorkspaceProjectAccess
             return $query->whereRaw('1 = 0');
         }
 
-        return $query->where('status', 'active')->whereNull('archived_at')
+        $historical = $purpose === ProjectResourceAccessPurpose::HistoricalExport;
+
+        // Archiving retained data is distinct from revoking a member's access.
+        // Historical export never reactivates a project or its product module.
+        return $query->where(fn (Builder $projects) => $projects
+            ->where(fn (Builder $active) => $active->where('status', 'active')->whereNull('archived_at'))
+            ->when($historical, fn (Builder $archives) => $archives->orWhere('status', 'archived')))
             ->whereHas('memberships', fn (Builder $members) => $members
                 ->where('user_id', $user->getKey())->where('status', 'active')->whereNull('revoked_at'))
             ->whereHas('products', fn (Builder $products) => $products
-                ->where('product', $product)->where('status', 'active'));
+                ->where('product', $product)->whereIn('status', $historical ? ['active', 'inactive'] : ['active']));
     }
 
     /**

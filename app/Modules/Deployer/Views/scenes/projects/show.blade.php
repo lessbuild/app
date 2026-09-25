@@ -86,7 +86,7 @@
             />
             <x-signal.ui.stat
                 :label="__('Attached sites')"
-                :value="$project->environments->whereNotNull('website_id')->count()"
+                :value="$project->environments->filter(fn ($environment) => $environment->website !== null)->count()"
                 :description="__('Environments connected to a website.')"
             />
             <x-signal.ui.stat
@@ -157,13 +157,13 @@
                 $resourceDialogUrl = route('projects.show', ['project' => $project, 'dialog' => $resourceDialogKey]);
                 $environmentRepositoryCreateUrl = (string) \Illuminate\Support\Uri::of($projectPageUrl)->withQuery([
                     'dialog' => 'create-repository',
-                    'website_id' => $environment->website_id,
+                    'website_id' => $environment->website?->id,
                     'branch' => $environment->branch,
                 ]);
                 $environmentRepositoryCreateContentUrl = route('dialogs.create', [
                     'resource' => 'repository',
                     'return_to' => $projectPageUrl,
-                    'website_id' => $environment->website_id,
+                    'website_id' => $environment->website?->id,
                     'branch' => $environment->branch,
                 ]);
                 $environmentWebsiteCreateUrl = (string) \Illuminate\Support\Uri::of($projectPageUrl)->withQuery(['dialog' => 'create-website']);
@@ -199,7 +199,7 @@
                     <div class="min-w-0 flex-1">
                         @if($repository)
                             <p class="truncate text-sm font-bold text-ink">{{ $repository->name }} <span class="font-mono font-normal text-muted">· {{ $repository->branch }}</span></p>
-                            <p class="mt-0.5 text-xs text-muted">@if($repository->latestBuild){{ __('Latest deployment: :status', ['status' => str($repository->latestBuild->status)->replace('_', ' ')]) }}@else{{ __('Ready for the first deployment') }}@endif</p>
+                            <p class="mt-0.5 text-xs text-muted">@if($repository->latestBuild){{ __('Latest deployment: :status', ['status' => str($repository->latestBuild->status)->replace('_', ' ')]) }}@else{{ __('Latest deployment details are unavailable') }}@endif</p>
                         @elseif($environment->website)
                             <p class="text-sm font-bold text-ink">{{ __('Connect source control') }}</p><p class="mt-0.5 text-xs text-muted">{{ __('Attach a repository to complete this environment.') }}</p>
                         @else

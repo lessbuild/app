@@ -17,6 +17,7 @@ use App\Modules\Deployer\Http\Responses\PlainTextLogDownload;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Models\WebsiteHealthCheck;
 use App\Modules\Deployer\Models\WebsiteLogSnapshot;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Services\PlanLimits;
 use App\Modules\Deployer\Services\WebsiteHealthHistoryExporter;
 use App\Modules\Deployer\Services\WebsiteHealthHistoryQuery;
@@ -87,7 +88,10 @@ class WebsitesController extends Controller
             ? $request->user()->workspaceServers()->readyForWebsites()->get()
             : null;
 
-        $repositories = $website->repositories()->with('latestBuild')->latest()->paginate();
+        $projections = app(DeployerResourceProjection::class);
+        $repositories = $projections->repositories($website->repositories(), $request->user())
+            ->with(['latestBuild' => fn ($query) => $projections->builds($query, $request->user())])
+            ->latest()->paginate();
         $retainedHealthChecks = $this->healthHistory->retained($website);
 
         return view('scenes.websites.show', [

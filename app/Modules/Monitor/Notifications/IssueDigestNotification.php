@@ -20,6 +20,6 @@ class IssueDigestNotification extends Notification
     {
         return (new MailMessage)
             ->subject(config('app.name').' issue digest · '.$this->digest['workspace_name'])
-            ->markdown('mail.issue-digest', ['digest' => $this->digest]);
+            ->markdown('monitor::mail.issue-digest', ['digest' => $this->digest]);
     }
 }

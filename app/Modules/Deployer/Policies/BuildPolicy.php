@@ -39,6 +39,7 @@ class BuildPolicy
     public function cancel(User $user, Build $build): bool
     {
         return $this->view($user, $build)
+            && app(DeployerProjectAccess::class)->canChangeBuild($user, $build)
             && ($build->repository?->organization?->permits($user, 'deploy') ?? true);
     }
 
@@ -64,6 +65,7 @@ class BuildPolicy
     public function promote(User $user, Build $build): bool
     {
         return $this->view($user, $build)
+            && app(DeployerProjectAccess::class)->canChangeBuild($user, $build)
             && ($build->repository?->organization?->permits($user, 'deploy') ?? false);
     }
 
@@ -77,6 +79,7 @@ class BuildPolicy
     public function approve(User $user, Build $build): bool
     {
         return $this->view($user, $build)
+            && app(DeployerProjectAccess::class)->canChangeBuild($user, $build)
             && ($build->repository?->organization?->permits($user, 'manage') ?? false);
     }
 
@@ -101,6 +104,7 @@ class BuildPolicy
      */
     public function updateNote(User $user, Build $build): bool
     {
-        return $this->cancel($user, $build);
+        return $this->view($user, $build)
+            && ($build->repository?->organization?->permits($user, 'deploy') ?? true);
     }
 }

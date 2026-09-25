@@ -3,6 +3,8 @@
 namespace App\Modules\Deployer\Http\Requests;
 
 use App\Modules\Deployer\Models\StatusIncident;
+use App\Modules\Deployer\Models\StatusPage;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -30,7 +32,8 @@ abstract class StatusIncidentRequest extends FormRequest
             'status_page_id' => [
                 $this->requiresStatusPage() ? 'required' : 'sometimes',
                 'integer',
-                Rule::exists('status_pages', 'id')->where('organization_id', $this->incidentOrganizationId()),
+                Rule::exists('status_pages', 'id')->where('organization_id', $this->incidentOrganizationId())
+                    ->whereIn('id', app(DeployerProjectAccess::class)->statusPages(StatusPage::query()->where('organization_id', $this->incidentOrganizationId()), $this->user())->pluck('status_pages.id')->all()),
             ],
             'kind' => ['required', Rule::in(StatusIncident::KINDS)],
             'status' => ['required', Rule::in(StatusIncident::STATUSES)],

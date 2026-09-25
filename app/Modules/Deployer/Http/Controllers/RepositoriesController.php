@@ -14,6 +14,7 @@ use App\Modules\Deployer\Http\Requests\RepositoryWebhookDeliveryRequest;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Services\DeploymentGate;
 use App\Modules\Deployer\Services\DeploymentPreflight;
 use App\Modules\Deployer\Services\DeploymentPreflightGuidance;
@@ -46,7 +47,7 @@ class RepositoriesController extends Controller
     {
         $filters = $request->filters();
         $repositories = $this->repositoryInventory->for($request->user(), $filters)
-            ->with(['provider', 'website.server', 'latestBuild'])
+            ->with(['provider', 'website.server', 'latestBuild' => fn ($query) => app(DeployerResourceProjection::class)->builds($query, $request->user())])
             ->latest()
             ->paginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -115,13 +116,16 @@ class RepositoriesController extends Controller
     ): View {
         $this->authorize('view', $repository);
 
+        $projections = app(DeployerResourceProjection::class);
+        $repository->load(['latestBuild' => fn ($query) => $projections->builds($query, $request->user())]);
+
         if ($request->string('fragment')->toString() === 'webhook-delivery') {
             $deliveryId = filter_var($request->query('delivery_id'), FILTER_VALIDATE_INT, [
                 'options' => ['min_range' => 1],
             ]);
             abort_if($deliveryId === false, 404);
 
-            $delivery = $repository->webhookDeliveries()
+            $delivery = $this->webhookDeliveryHistory->scope($repository->webhookDeliveries(), $request->user())
                 ->with('build')
                 ->whereKey($deliveryId)
                 ->first();
@@ -169,15 +173,16 @@ class RepositoriesController extends Controller
             'providers' => $providers,
             'websites' => $websites,
             'websiteEditServers' => $websiteEditServers,
-            'builds' => $repository->builds()->latest()->limit(10)->get(),
-            'deploymentMetrics' => $deploymentInsights->metrics($repository),
-            'webhookDeliveries' => $this->webhookDeliveryHistory->for($repository, $deliveryFilters)
+            'builds' => $projections->builds($repository->builds(), $request->user())->latest()->limit(10)->get(),
+            'latestBuild' => $repository->latestBuild,
+            'deploymentMetrics' => $deploymentInsights->metrics($repository, $request->user()),
+            'webhookDeliveries' => $this->webhookDeliveryHistory->for($repository, $deliveryFilters, $request->user())
                 ->with('build')
                 ->latest('id')
                 ->paginate(10, pageName: 'webhook_page')
                 ->appends(array_filter($deliveryFilters, fn ($value) => $value !== null)),
             'deliveryFilters' => $deliveryFilters,
-            'deliveryMetrics' => $this->webhookDeliveryHistory->metrics($repository, $deliveryFilters),
+            'deliveryMetrics' => $this->webhookDeliveryHistory->metrics($repository, $deliveryFilters, $request->user()),
             'deliveryStatuses' => RepositoryWebhookDelivery::STATUSES,
             'selectedWebhookDelivery' => $this->selectedWebhookDelivery($request, $repository),
             'deploymentInProgress' => $repository->website->hasActiveDeployment(),
@@ -197,7 +202,7 @@ class RepositoriesController extends Controller
             return null;
         }
 
-        return $repository->webhookDeliveries()
+        return $this->webhookDeliveryHistory->scope($repository->webhookDeliveries(), $request->user())
             ->with('build')
             ->whereKey((int) $matches[1])
             ->first();
@@ -211,7 +216,7 @@ class RepositoriesController extends Controller
         $this->authorize('view', $repository);
         $deliveryFilters = $request->filters();
 
-        return $this->webhookDeliveryHistoryExporter->stream($repository, $deliveryFilters);
+        return $this->webhookDeliveryHistoryExporter->stream($repository, $deliveryFilters, $request->user());
     }
 
     /**

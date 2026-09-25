@@ -16,6 +16,7 @@ use App\Modules\Deployer\Models\LoadBalancer;
 use App\Modules\Deployer\Models\LoadBalancerNode;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -36,7 +37,7 @@ class LoadBalancerController extends Controller
         $organization = $request->user()->currentOrganization;
 
         return view('load-balancers.index', [
-            'loadBalancers' => $organization->loadBalancers()->whereIn('environment_id', $request->user()->workspaceProjects()->with('environments')->get()->pluck('environments')->flatten()->pluck('id'))->with(['environment.project', 'server', 'nodes.server'])->get(),
+            'loadBalancers' => app(DeployerProjectAccess::class)->loadBalancers($organization->loadBalancers(), $request->user())->with(['environment.project', 'server', 'nodes.server'])->get(),
             'environments' => $request->user()->workspaceProjects()->with('environments')->get()->pluck('environments')->flatten(),
             'servers' => $request->user()->workspaceServers()->where('provisioning_status', 'active')->orderBy('name')->get(),
             'canManage' => $organization->permits($request->user(), 'manage')
@@ -58,8 +59,8 @@ class LoadBalancerController extends Controller
         $data = $request->validated();
         $environment = Environment::findOrFail($data['environment_id']);
         $server = Server::findOrFail($data['server_id']);
-        $this->authorize('view', $environment);
-        $this->authorize('view', $server);
+        $this->authorize('update', $environment);
+        $this->authorize('update', $server);
         try {
             $createLoadBalancer->handle($organization, $request->user(), $environment, $server, $data);
         } catch (LoadBalancerOperationException $exception) {
@@ -77,6 +78,7 @@ class LoadBalancerController extends Controller
         $this->authorize('manage', $loadBalancer);
         $data = $request->validated();
         $server = $loadBalancer->organization->servers()->findOrFail($data['server_id']);
+        $this->authorize('update', $server);
         try {
             $addNode->handle($loadBalancer, $server, $data);
         } catch (LoadBalancerRemovalConflictException $exception) {

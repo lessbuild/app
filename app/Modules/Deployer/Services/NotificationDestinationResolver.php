@@ -10,6 +10,7 @@ use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Notifications\NotificationInbox;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Collection;
@@ -160,7 +161,11 @@ class NotificationDestinationResolver
             return [];
         }
 
-        return $model::query()
+        $resource = match ($model) {
+            Website::class => 'websites', Server::class => 'servers', Provider::class => 'providers',
+        };
+
+        return app(DeployerProjectAccess::class)->{$resource}($model::query(), $user)
             ->whereKey(array_values(array_unique($ids)))
             ->where(function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {
                 if ($canViewWorkspace && $organizationId !== null) {
@@ -188,7 +193,7 @@ class NotificationDestinationResolver
             return [];
         }
 
-        return Build::query()
+        return app(DeployerProjectAccess::class)->builds(Build::query(), $user)
             ->whereKey(array_values(array_unique($ids)))
             ->whereHas('repository', function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {
                 $query->where(function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {

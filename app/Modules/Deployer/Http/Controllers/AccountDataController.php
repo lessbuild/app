@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Http\Controllers;
 
 use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 
@@ -37,11 +38,11 @@ class AccountDataController extends Controller
             ])->values(),
             'current_workspace_data' => $current ? [
                 'projects' => $user->workspaceProjects()->with('environments:id,project_id,name,slug,type,branch,status')->get(['id', 'name', 'slug', 'description', 'created_at']),
-                'providers' => $current->providers()->get(['id', 'name', 'description', 'provider', 'connection_status', 'connection_checked_at', 'created_at']),
+                'providers' => app(DeployerProjectAccess::class)->providers($current->providers(), $user)->get(['id', 'name', 'description', 'provider', 'connection_status', 'connection_checked_at', 'created_at']),
                 'servers' => $user->workspaceServers()->get(['id', 'name', 'display_name', 'public_ip', 'provisioning_status', 'created_at']),
                 'websites' => $user->workspaceWebsites()->get(['id', 'name', 'url', 'description', 'provisioning_status', 'health_status', 'created_at']),
                 'repositories' => $user->workspaceRepositories()->get(['id', 'name', 'repository', 'branch', 'created_at']),
-                'status_pages' => $current->statusPages()->get(['id', 'name', 'slug', 'description', 'is_published', 'created_at']),
+                'status_pages' => app(DeployerProjectAccess::class)->statusPages($current->statusPages(), $user)->get(['id', 'name', 'slug', 'description', 'is_published', 'created_at']),
             ] : null,
             'sign_ins' => $user->signIns()->latest('signed_in_at')->get(['method', 'ip_address', 'user_agent', 'signed_in_at']),
             'note' => 'Encrypted credentials, environment secrets, private keys, command contents, and retained logs are excluded for safety.',

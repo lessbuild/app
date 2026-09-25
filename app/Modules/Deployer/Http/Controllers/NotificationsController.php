@@ -10,6 +10,7 @@ use App\Modules\Deployer\Http\Requests\BulkNotificationRequest;
 use App\Modules\Deployer\Http\Requests\NotificationIndexRequest;
 use App\Modules\Deployer\Http\Requests\SaveNotificationFilterRequest;
 use App\Modules\Deployer\Notifications\NotificationInbox;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use App\Modules\Deployer\Services\NotificationDestinationResolver;
 use App\Modules\Deployer\Services\NotificationInboxExporter;
 use App\Modules\Deployer\Services\NotificationInboxQuery;
@@ -48,8 +49,8 @@ class NotificationsController extends Controller
             'filters' => $filters,
             'metrics' => $this->inbox->metrics($user, $filters),
             'categories' => NotificationInbox::CATEGORIES,
-            'hasUnreadNotifications' => $user->unreadNotifications()->exists(),
-            'hasReadNotifications' => $user->readNotifications()->exists(),
+            'hasUnreadNotifications' => app(DeployerHistoryAccess::class)->notifications($user->unreadNotifications(), $user)->exists(),
+            'hasReadNotifications' => app(DeployerHistoryAccess::class)->notifications($user->readNotifications(), $user)->exists(),
             'savedFilters' => $user->preferences['notification_saved_filters'] ?? [],
         ]);
     }

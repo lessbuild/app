@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\StatusPage;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class StatusPagePolicy
 {
@@ -34,6 +35,7 @@ class StatusPagePolicy
     private function manages(User $user, StatusPage $page): bool
     {
         return (int) $page->organization_id === (int) $user->current_organization_id
-            && $page->organization->permits($user, 'manage');
+            && $page->organization->permits($user, 'manage')
+            && app(DeployerProjectAccess::class)->statusPages(StatusPage::query()->whereKey($page->getKey()), $user)->exists();
     }
 }

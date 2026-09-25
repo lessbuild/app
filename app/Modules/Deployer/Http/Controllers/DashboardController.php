@@ -12,10 +12,13 @@ use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\ServerCommandExecution;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\PlanLimits;
 use App\Modules\Deployer\Services\PublicPlatformStatus;
+use App\Modules\Deployer\Services\RepositoryWebhookDeliveryHistoryQuery;
 use App\Modules\Deployer\Services\SystemHealth;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -56,8 +59,8 @@ class DashboardController extends Controller
             ->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id));
         $workspaceCommands = ServerCommandExecution::query()
             ->whereIn('server_id', $user->workspaceServers()->select('servers.id'));
-        $workspaceWebhookDeliveries = RepositoryWebhookDelivery::query()
-            ->whereIn('repository_id', $user->workspaceRepositories()->select('repositories.id'));
+        $workspaceWebhookDeliveries = app(RepositoryWebhookDeliveryHistoryQuery::class)->scope(RepositoryWebhookDelivery::query()
+            ->whereIn('repository_id', $user->workspaceRepositories()->select('repositories.id')), $user);
         $canManageSystemHealth = $user->currentOrganization?->permits($user, 'manage') ?? false;
         $attentionWebsites = $user->workspaceWebsites()->where(function ($query): void {
             $query
@@ -71,7 +74,7 @@ class DashboardController extends Controller
         $attentionServers = $user->workspaceServers()
             ->where('provisioning_status', Server::STATUS_FAILED);
         $attentionRepositories = $user->workspaceRepositories()
-            ->whereHas('latestBuild', fn ($query) => $query->where('status', Build::STATUS_FAILED));
+            ->whereHas('latestBuild', fn ($query) => app(DeployerResourceProjection::class)->builds($query, $user)->where('status', Build::STATUS_FAILED));
         $providers = $user->workspaceProviders();
         $attentionProviders = (clone $providers)
             ->where('connection_status', Provider::CONNECTION_FAILED);
@@ -293,7 +296,7 @@ class DashboardController extends Controller
                 ->limit(5)
                 ->get(),
             'attentionRepositories' => $attentionRepositories
-                ->with(['latestBuild', 'website'])
+                ->with(['latestBuild' => fn ($query) => app(DeployerResourceProjection::class)->builds($query, $user), 'website'])
                 ->latest()
                 ->limit(5)
                 ->get(),
@@ -311,7 +314,7 @@ class DashboardController extends Controller
                 ->latest('builds.created_at')
                 ->limit(5)
                 ->get(),
-            'recentEvents' => $user->events()
+            'recentEvents' => app(DeployerHistoryAccess::class)->activity($user->events(), $user)
                 ->with('parentable')
                 ->latest()
                 ->limit(8)

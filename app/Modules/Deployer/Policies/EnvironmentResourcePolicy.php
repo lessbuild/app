@@ -30,6 +30,7 @@ class EnvironmentResourcePolicy
 
         return $organization !== null
             && app(DeployerProjectAccess::class)->environment($user, $resource->environment)
+            && app(DeployerProjectAccess::class)->canChangeEnvironment($user, $resource->environment)
             && (int) $organization->id === (int) $user->current_organization_id
             && $organization->permits($user, 'manage');
     }

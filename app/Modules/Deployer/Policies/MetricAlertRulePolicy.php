@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\MetricAlertRule;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class MetricAlertRulePolicy
 {
@@ -20,7 +21,9 @@ class MetricAlertRulePolicy
      */
     public function delete(User $user, MetricAlertRule $rule): bool
     {
-        return ($rule->server_id === null || ($rule->server !== null && $user->can('view', $rule->server)))
+        return ($rule->server_id === null
+            ? app(DeployerProjectAccess::class)->canAccessWorkspaceResources($user)
+            : ($rule->server !== null && $user->can('view', $rule->server)))
             && (int) $rule->organization_id === (int) $user->current_organization_id
             && $rule->organization->permits($user, 'manage');
     }

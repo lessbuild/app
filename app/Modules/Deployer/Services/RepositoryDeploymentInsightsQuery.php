@@ -4,6 +4,8 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 
 class RepositoryDeploymentInsightsQuery
 {
@@ -13,9 +15,10 @@ class RepositoryDeploymentInsightsQuery
      * @param  Repository  $repository  Repository whose deployment history is being summarized.
      * @return array{total: int, succeeded: int, failed: int, success_rate: ?int, median_duration_seconds: ?int, duration_sample_size: int}
      */
-    public function metrics(Repository $repository): array
+    public function metrics(Repository $repository, User $actor): array
     {
-        $counts = $repository->builds()
+        $visible = app(DeployerResourceProjection::class)->builds($repository->builds(), $actor);
+        $counts = (clone $visible)
             ->selectRaw('status, COUNT(*) as aggregate')
             ->groupBy('status')
             ->pluck('aggregate', 'status')
@@ -23,7 +26,7 @@ class RepositoryDeploymentInsightsQuery
         $succeeded = $counts->get(Build::STATUS_SUCCEEDED, 0);
         $failed = $counts->get(Build::STATUS_FAILED, 0);
         $completed = $succeeded + $failed;
-        $durations = $repository->builds()
+        $durations = (clone $visible)
             ->whereNotNull('started_at')
             ->whereNotNull('finished_at')
             ->orderByDesc('created_at')

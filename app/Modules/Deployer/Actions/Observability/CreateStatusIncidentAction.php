@@ -26,6 +26,7 @@ class CreateStatusIncidentAction
     {
         $this->entitlements->enforce($organization, 'status_pages');
         $page = $organization->statusPages()->findOrFail($attributes['status_page_id']);
+        abort_unless($actor->can('update', $page), 403);
         $incident = $page->incidents()->create([
             ...collect($attributes)->except('status_page_id')->all(),
             'created_by' => $actor->id,

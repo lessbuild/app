@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\AlertDestination;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class AlertDestinationPolicy
 {
@@ -12,7 +13,8 @@ class AlertDestinationPolicy
      */
     public function create(User $user): bool
     {
-        return $user->currentOrganization?->permits($user, 'manage') ?? false;
+        return ($user->currentOrganization?->permits($user, 'manage') ?? false)
+            && app(DeployerProjectAccess::class)->canAccessWorkspaceResources($user);
     }
 
     /**
@@ -34,6 +36,7 @@ class AlertDestinationPolicy
     private function manages(User $user, AlertDestination $destination): bool
     {
         return (int) $destination->organization_id === (int) $user->current_organization_id
-            && $destination->organization->permits($user, 'manage');
+            && $destination->organization->permits($user, 'manage')
+            && app(DeployerProjectAccess::class)->canAccessWorkspaceResources($user);
     }
 }

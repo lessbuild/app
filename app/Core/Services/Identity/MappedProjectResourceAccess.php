@@ -2,6 +2,7 @@
 
 namespace App\Core\Services\Identity;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
@@ -33,8 +34,9 @@ final class MappedProjectResourceAccess
         string|int $resourceId,
         string $sourceWorkspaceEntity,
         string|int $sourceWorkspaceId,
+        ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive,
     ): bool {
-        $denied = $this->deniedResourceIds($principal, $product, $resourceType, $sourceWorkspaceEntity, $sourceWorkspaceId, [(string) $resourceId]);
+        $denied = $this->deniedResourceIds($principal, $product, $resourceType, $sourceWorkspaceEntity, $sourceWorkspaceId, [(string) $resourceId], $purpose);
 
         return $denied !== null && ! in_array((string) $resourceId, $denied, true);
     }
@@ -43,6 +45,8 @@ final class MappedProjectResourceAccess
      * Null denies the entire source query: the current Core context is invalid.
      * An empty list means no additional mapped-project exclusions (or legacy mode).
      * Provide candidate IDs when available to bound the Core lookup.
+     * HistoricalExport requires separate native export permission and does not
+     * relax membership, product grants, tenant boundaries, or mapping integrity.
      *
      * @param  list<string|int>|null  $candidateIds
      * @return list<string>|null
@@ -54,6 +58,7 @@ final class MappedProjectResourceAccess
         string $sourceWorkspaceEntity,
         string|int $sourceWorkspaceId,
         ?array $candidateIds = null,
+        ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive,
     ): ?array {
         if (! $this->authentication->usesCoreAuthority($product)) {
             return [];
@@ -101,7 +106,7 @@ final class MappedProjectResourceAccess
         $projectIds = $resources->pluck('project_id')->merge($identityProjects->keys())
             ->merge($identityEnvironments->pluck('project_id'))->filter()->unique();
         $allowedProjects = [];
-        $permitted = $this->access->accessibleProductProjects($user, $workspace, $product);
+        $permitted = $this->access->accessibleProductProjects($user, $workspace, $product, $purpose);
         foreach ($projectIds->chunk(500) as $ids) {
             foreach ((clone $permitted)->whereKey($ids->all())->pluck('id') as $id) {
                 $allowedProjects[(string) $id] = true;
@@ -114,7 +119,7 @@ final class MappedProjectResourceAccess
         $denied = [];
 
         foreach ($mappedIds as $id) {
-            if (! $this->allowsMappings($workspace, $product, $resources->get($id, collect()), $identities->get($id, collect()), $identityProjects, $identityEnvironments, $allowedProjects)) {
+            if (! $this->allowsMappings($workspace, $product, $resources->get($id, collect()), $identities->get($id, collect()), $identityProjects, $identityEnvironments, $allowedProjects, $purpose)) {
                 $denied[] = (string) $id;
             }
         }
@@ -150,7 +155,7 @@ final class MappedProjectResourceAccess
     }
 
     /** @param array<string, true> $allowedProjects */
-    private function allowsMappings(Workspace $workspace, string $product, Collection $resources, Collection $identities, Collection $identityProjects, Collection $identityEnvironments, array $allowedProjects): bool
+    private function allowsMappings(Workspace $workspace, string $product, Collection $resources, Collection $identities, Collection $identityProjects, Collection $identityEnvironments, array $allowedProjects, ProjectResourceAccessPurpose $purpose): bool
     {
         if ($resources->count() > 1 || $identities->count() > 1) {
             return false;
@@ -160,7 +165,7 @@ final class MappedProjectResourceAccess
         $environment = null;
         $resource = $resources->first();
         if ($resource !== null) {
-            if (! $this->resourceIsAccessible($product, $resource->resource_type, $resource->status) || $resource->project === null) {
+            if (! $this->resourceIsAccessible($product, $resource->resource_type, $resource->status, $purpose) || $resource->project === null) {
                 return false;
             }
             $project = $resource->project;
@@ -168,7 +173,7 @@ final class MappedProjectResourceAccess
             if ($resource->resource_type === 'environment' && $resource->environment_id === null) {
                 return false;
             }
-            if ($resource->environment_id !== null && ($environment === null || ! $this->resourceIsAccessible($product, 'environment', $environment->status) || (string) $environment->project_id !== (string) $project->getKey())) {
+            if ($resource->environment_id !== null && ($environment === null || ! $this->resourceIsAccessible($product, 'environment', $environment->status, $purpose) || (string) $environment->project_id !== (string) $project->getKey())) {
                 return false;
             }
         }
@@ -186,7 +191,7 @@ final class MappedProjectResourceAccess
                 $identityProject = $identityProjects->get((string) $identity->canonical_id);
             } elseif ($identity->canonical_entity === 'project_environment') {
                 $identityEnvironment = $identityEnvironments->get((string) $identity->canonical_id);
-                if ($identityEnvironment === null || ! $this->resourceIsAccessible($product, 'environment', $identityEnvironment->status)
+                if ($identityEnvironment === null || ! $this->resourceIsAccessible($product, 'environment', $identityEnvironment->status, $purpose)
                     || ($environment !== null && (string) $environment->getKey() !== (string) $identityEnvironment->getKey())) {
                     return false;
                 }
@@ -210,8 +215,12 @@ final class MappedProjectResourceAccess
         return isset($allowedProjects[$projectId]);
     }
 
-    private function resourceIsAccessible(string $product, string $type, string $status): bool
+    private function resourceIsAccessible(string $product, string $type, string $status, ProjectResourceAccessPurpose $purpose): bool
     {
+        if ($purpose === ProjectResourceAccessPurpose::HistoricalExport && $status === 'archived') {
+            return true;
+        }
+
         // Importers preserve collection pauses as resource/environment state.
         // They do not revoke a member's permission to inspect or resume collection.
         return $status === 'active' || ($status === 'paused' && (

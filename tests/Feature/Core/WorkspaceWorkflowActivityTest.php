@@ -51,6 +51,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
 
         $this->withoutVite();
         $this->createTables();
+        (require app_path('Core/Database/Migrations/2026_09_25_210000_create_workspace_feature_rollouts.php'))->up();
         $this->createDeployerTables();
 
         $this->userId = (string) Str::ulid();
@@ -206,6 +207,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
     protected function tearDown(): void
     {
         Auth::forgetGuards();
+        (require app_path('Core/Database/Migrations/2026_09_25_210000_create_workspace_feature_rollouts.php'))->down();
 
         foreach ([
             'project_connection_deliveries',

@@ -185,7 +185,7 @@
                                     ])>{{ str($repository->latestBuild->status)->replace('_', ' ') }}</a>
                                     <span class="mt-1 block text-muted">{{ $repository->latestBuild->created_at->diffForHumans() }}</span>
                                 @else
-                                    {{ __('Never deployed') }}
+                                    {{ __('No deployment details') }}
                                 @endif
                             </dd>
                         </div>

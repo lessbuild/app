@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Actions\Notification;
 
 use App\Modules\Deployer\Enums\NotificationBulkOperation;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use Illuminate\Notifications\DatabaseNotification;
 
 class UpdateNotificationStateAction
@@ -23,13 +24,13 @@ class UpdateNotificationStateAction
     /** Mark all unread notifications belonging to the recipient as read. */
     public function markAllRead(User $user): void
     {
-        $user->unreadNotifications()->update(['read_at' => now()]);
+        app(DeployerHistoryAccess::class)->notifications($user->unreadNotifications(), $user)->update(['read_at' => now()]);
     }
 
     /** Delete all read notifications belonging to the recipient and return the affected count. */
     public function clearRead(User $user): int
     {
-        return $user->readNotifications()->delete();
+        return app(DeployerHistoryAccess::class)->notifications($user->readNotifications(), $user)->delete();
     }
 
     /**
@@ -39,7 +40,7 @@ class UpdateNotificationStateAction
      */
     public function bulk(User $user, NotificationBulkOperation $operation, array $notificationIds): int
     {
-        $notifications = $user->notifications()->whereKey($notificationIds);
+        $notifications = app(DeployerHistoryAccess::class)->notifications($user->notifications(), $user)->whereKey($notificationIds);
 
         return match ($operation) {
             NotificationBulkOperation::Read => $notifications->update(['read_at' => now()]),

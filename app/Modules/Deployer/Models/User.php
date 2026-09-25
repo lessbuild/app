@@ -182,7 +182,7 @@ class User extends Authenticatable implements MustVerifyEmailContract
     /** @return HasMany<Provider, Organization> */
     public function workspaceProviders(): HasMany
     {
-        return $this->currentOrganization()->firstOrFail()->providers();
+        return app(DeployerProjectAccess::class)->providers($this->currentOrganization()->firstOrFail()->providers(), $this);
     }
 
     /** @return HasMany<Server, Organization> */

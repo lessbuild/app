@@ -59,9 +59,8 @@ final class AnalyticsResourceDestinationProvider implements ProjectResourceDesti
             ->with('workspace')
             ->get(['id', 'workspace_id', 'deleted_at'])
             ->keyBy(fn (Site $site): string => (string) $site->getKey());
-        $accessibleSiteIds = $sites
-            ->filter(fn (Site $site): bool => $this->access->hasSiteAccess($user, $site))
-            ->keys()->map(static fn ($id): string => (string) $id);
+        $accessibleSiteIds = $this->access->filterSites($user, $sites)
+            ->mapWithKeys(fn (Site $site): array => [(string) $site->getKey() => true]);
 
         foreach ($resources->where('resource_type', 'site') as $resource) {
             $mappingId = (string) $resource->getKey();
@@ -70,7 +69,7 @@ final class AnalyticsResourceDestinationProvider implements ProjectResourceDesti
 
             $destinations[$mappingId] = $site === null
                 ? new ProjectResourceDestination(ProjectResourceDestinationState::Missing)
-                : (! $accessibleSiteIds->contains($sourceId)
+                : (! $accessibleSiteIds->has($sourceId)
                     ? new ProjectResourceDestination(ProjectResourceDestinationState::AccessChanged)
                     : ($site->trashed()
                         ? new ProjectResourceDestination(ProjectResourceDestinationState::Stale)

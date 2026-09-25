@@ -15,6 +15,7 @@ class ObservabilityInvestigationViewPolicy
         $environment = $view->environment;
 
         return $environment !== null
+            && $user->can('view', $environment)
             && ! $view->isExpired()
             && (int) $view->organization_id === (int) $user->current_organization_id
             && (int) $environment->project->organization_id === (int) $view->organization_id
@@ -27,6 +28,7 @@ class ObservabilityInvestigationViewPolicy
         $environment = $view->environment;
 
         return $environment !== null
+            && $user->can('view', $environment)
             && (int) $view->organization_id === (int) $user->current_organization_id
             && (int) $environment->project->organization_id === (int) $view->organization_id
             && ((int) $view->created_by === (int) $user->id

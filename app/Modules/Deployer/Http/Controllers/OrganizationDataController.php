@@ -2,8 +2,12 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
+use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\ExportOrganizationData;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -51,18 +55,21 @@ final class OrganizationDataController extends Controller
 
         $organization = $user->currentOrganization;
         abort_unless($organization instanceof Organization, 404);
-        abort_unless($organization->permits($user, 'manage'), 403);
+        abort_unless($organization->permits($user, 'manage') && app(DeployerProjectAccess::class)->workspace($user), 403);
         // A complete workspace export requires access to every included resource.
-        foreach (['projects', 'servers', 'websites', 'repositories'] as $relation) {
-            $visible = 'workspace'.ucfirst($relation);
+        foreach (['projects', 'servers', 'websites', 'repositories', 'providers', 'statusPages'] as $relation) {
             $owned = $organization->{$relation}();
-            $allowed = $user->{$visible}();
-            if (in_array($relation, ['websites', 'repositories'], true)) {
+            if (in_array($relation, ['websites', 'repositories', 'providers'], true)) {
                 $owned->withTrashed();
-                $allowed->withTrashed();
             }
-            abort_if($owned->whereNotIn($relation.'.id', $allowed->select($relation.'.id'))->exists(), 403);
+            $column = $owned->getModel()->qualifyColumn('id');
+            $allowed = app(DeployerProjectAccess::class)->{$relation}(clone $owned, $user, ProjectResourceAccessPurpose::HistoricalExport);
+            abort_if($owned->whereNotIn($column, $allowed->select($column))->exists(), 403);
         }
+
+        $builds = Build::query()->whereIn('repository_id', Repository::withTrashed()->where('organization_id', $organization->getKey())->select('id'));
+        $allowedBuilds = app(DeployerProjectAccess::class)->builds(clone $builds, $user, ProjectResourceAccessPurpose::HistoricalExport);
+        abort_if($builds->whereNotIn('builds.id', $allowedBuilds->select('builds.id'))->exists(), 403);
 
         return $organization;
     }

@@ -48,6 +48,7 @@ class RepositoryPolicy
     public function update(User $user, Repository $repository): bool
     {
         return $this->view($user, $repository)
+            && app(DeployerProjectAccess::class)->canChangeRepository($user, $repository)
             && ($repository->organization?->permits($user, 'deploy') ?? true);
     }
 
@@ -61,6 +62,7 @@ class RepositoryPolicy
     public function delete(User $user, Repository $repository): bool
     {
         return $this->view($user, $repository)
+            && app(DeployerProjectAccess::class)->canChangeRepository($user, $repository, deleting: true)
             && ($repository->organization?->permits($user, 'manage') ?? true);
     }
 

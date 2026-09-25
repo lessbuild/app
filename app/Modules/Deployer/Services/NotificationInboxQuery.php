@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Notifications\NotificationInbox;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use App\Modules\Deployer\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
@@ -17,7 +18,7 @@ class NotificationInboxQuery
      */
     public function for(User $user, array $filters): MorphMany
     {
-        return $user->notifications()
+        return app(DeployerHistoryAccess::class)->notifications($user->notifications(), $user)
             ->when($filters['state'] === 'unread', fn ($query) => $query->whereNull('read_at'))
             ->when($filters['state'] === 'read', fn ($query) => $query->whereNotNull('read_at'))
             ->when($filters['category'], fn ($query, string $category) => $query

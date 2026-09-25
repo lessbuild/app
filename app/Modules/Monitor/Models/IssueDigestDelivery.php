@@ -3,12 +3,12 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\IssueDigestDeliveryFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
     'resolved_count',
     'open_count',
     'critical_open_count',
+    'source_scope',
     'last_error_code',
     'sending_started_at',
     'sent_at',
@@ -77,6 +78,7 @@ class IssueDigestDelivery extends Model
             'resolved_count' => 'integer',
             'open_count' => 'integer',
             'critical_open_count' => 'integer',
+            'source_scope' => 'array',
             'sending_started_at' => 'immutable_datetime',
             'sent_at' => 'immutable_datetime',
             'failed_at' => 'immutable_datetime',

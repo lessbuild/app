@@ -4,6 +4,8 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -16,12 +18,12 @@ class RepositoryWebhookDeliveryHistoryExporter
      *
      * @param  array{delivery_status: ?string, delivery_date_from: ?string, delivery_date_to: ?string}  $filters
      */
-    public function stream(Repository $repository, array $filters): StreamedResponse
+    public function stream(Repository $repository, array $filters, User $actor): StreamedResponse
     {
         $filename = "lessbuild-repository-{$repository->id}-webhook-deliveries-"
             .now()->utc()->format('Ymd-His').'.csv';
 
-        return response()->streamDownload(function () use ($repository, $filters): void {
+        return response()->streamDownload(function () use ($repository, $filters, $actor): void {
             $output = fopen('php://output', 'wb');
             if ($output === false) {
                 throw new \RuntimeException('Unable to open the CSV output stream.');
@@ -39,8 +41,8 @@ class RepositoryWebhookDeliveryHistoryExporter
                 'Updated at',
             ], ',', '"', '');
 
-            $this->deliveries->for($repository, $filters)
-                ->with('build')
+            $this->deliveries->for($repository, $filters, $actor)
+                ->with(['build' => fn ($query) => app(DeployerResourceProjection::class)->builds($query, $actor)])
                 ->latest('id')
                 ->lazy(250)
                 ->each(function (RepositoryWebhookDelivery $delivery) use ($output): void {

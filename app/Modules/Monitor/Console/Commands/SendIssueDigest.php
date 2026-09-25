@@ -5,7 +5,6 @@ namespace App\Modules\Monitor\Console\Commands;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Services\DeliverIssueDigest;
-use App\Modules\Monitor\Services\IssueDigestReport;
 use App\Modules\Monitor\Services\WorkspacePlanLimits;
 use Carbon\CarbonImmutable;
 use Illuminate\Console\Attributes\Description;
@@ -17,11 +16,10 @@ use Illuminate\Support\Collection;
 use Throwable;
 
 #[Signature('issues:send-digest {--workspace= : Restrict the digest to a workspace ID} {--from= : Inclusive UTC period start} {--until= : Exclusive UTC period end}')]
-#[Description('Send daily issue digests to verified workspace owners')]
+#[Description('Send daily issue digests to eligible verified workspace members')]
 class SendIssueDigest extends Command
 {
     public function __construct(
-        private readonly IssueDigestReport $report,
         private readonly WorkspacePlanLimits $limits,
         private readonly DeliverIssueDigest $deliver,
     ) {
@@ -75,13 +73,6 @@ class SendIssueDigest extends Command
                 continue;
             }
 
-            $digest = $this->report->forWorkspace($workspace, $from, $until);
-            if (! $digest['has_activity']) {
-                $skipped++;
-
-                continue;
-            }
-
             $recipients = $this->recipients($workspace);
             if ($recipients->isEmpty()) {
                 $skipped++;
@@ -91,7 +82,7 @@ class SendIssueDigest extends Command
 
             foreach ($recipients as $recipient) {
                 try {
-                    match ($this->deliver->deliver($workspace, $recipient, $digest, $from, $until)) {
+                    match ($this->deliver->deliver($workspace, $recipient, $from, $until)) {
                         'sent' => $sent++,
                         'failed' => $failed++,
                         default => $skipped++,

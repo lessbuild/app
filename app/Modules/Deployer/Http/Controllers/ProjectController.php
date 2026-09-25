@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Deployer\Actions\Project\ApprovePreviewSecretsAction;
 use App\Modules\Deployer\Actions\Project\CreateProjectAction;
 use App\Modules\Deployer\Actions\Project\DeleteProjectAction;
@@ -10,13 +11,18 @@ use App\Modules\Deployer\Actions\Project\UpdateProjectPreviewsAction;
 use App\Modules\Deployer\Http\Requests\ApprovePreviewSecretsRequest;
 use App\Modules\Deployer\Http\Requests\StoreProjectRequest;
 use App\Modules\Deployer\Http\Requests\UpdateProjectPreviewsRequest;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\PreviewDeployment;
 use App\Modules\Deployer\Models\PreviewStackCleanup;
 use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Rules\Hostname;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
-use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -66,20 +72,41 @@ class ProjectController extends Controller
     public function show(Request $request, Project $project, Entitlements $entitlements): View
     {
         $this->authorize('view', $project);
+        $actor = $request->user();
+        $projection = app(DeployerResourceProjection::class);
+        $usesCore = app(ProductAuthentication::class)->usesCoreAuthority('deployer');
+        $environments = $projection->environments(Environment::query(), $actor)->select('environments.id');
+        $websites = $projection->websites(Website::withTrashed(), $actor)->select('websites.id');
+        $repositories = $projection->repositories(Repository::withTrashed(), $actor)->select('repositories.id');
+        $servers = $projection->servers(Server::query(), $actor)->select('servers.id');
+        $builds = $projection->builds(Build::query(), $actor)->select('builds.id');
 
         return view('scenes.projects.show', [
             'project' => $project->load([
-                'environments.server',
-                'environments.website.repositories' => fn ($query) => app(DeployerProjectAccess::class)->repositories($query, $request->user()),
+                'environments' => fn ($query) => $projection->environments($query, $actor),
+                'environments.server' => fn ($query) => $projection->servers($query, $actor),
+                'environments.website' => fn ($query) => $projection->websites($query, $actor),
+                'environments.website.repositories' => fn ($query) => $projection->repositories($query, $actor),
                 'environments.website.repositories.provider',
-                'environments.website.repositories.latestBuild',
-                'environments.website.repositories.latestSuccessfulBuild',
+                'environments.website.repositories.latestBuild' => fn ($query) => $projection->builds($query, $actor),
+                'environments.website.repositories.latestSuccessfulBuild' => fn ($query) => $projection->builds($query, $actor),
                 'environments.variables',
                 'environments.processes',
                 'environments.resources',
-                'previews.website',
+                'previews' => fn ($query) => $query->when($usesCore, fn ($preview) => $preview
+                    ->where(fn ($source) => $source->whereNull('source_repository_id')->orWhereIn('source_repository_id', clone $repositories))
+                    ->where(fn ($source) => $source->whereNull('source_environment_id')->orWhereIn('source_environment_id', clone $environments))
+                    ->where(fn ($source) => $source->whereNull('environment_id')->orWhereIn('environment_id', clone $environments))
+                    ->where(fn ($source) => $source->whereNull('website_id')->orWhereIn('website_id', clone $websites))
+                    ->where(fn ($source) => $source->whereNull('repository_id')->orWhereIn('repository_id', clone $repositories))
+                    ->where(fn ($source) => $source->whereNull('initialization_build_id')->orWhereIn('initialization_build_id', clone $builds))),
+                'previews.website' => fn ($query) => $projection->websites($query, $actor),
+                'previews.sourceEnvironment' => fn ($query) => $projection->environments($query, $actor),
                 'previews.sourceEnvironment.variables',
-                'previews.stackCleanups',
+                'previews.stackCleanups' => fn ($query) => $query->when($usesCore, fn ($cleanup) => $cleanup
+                    ->where(fn ($source) => $source->whereNull('environment_id')->orWhereIn('environment_id', clone $environments))
+                    ->where(fn ($source) => $source->whereNull('website_id')->orWhereIn('website_id', clone $websites))
+                    ->where(fn ($source) => $source->whereNull('server_id')->orWhereIn('server_id', clone $servers))),
             ]),
             'servers' => $request->user()->workspaceServers()->orderBy('name')->get(),
             'websites' => $request->user()->workspaceWebsites()->orderBy('name')->get(),

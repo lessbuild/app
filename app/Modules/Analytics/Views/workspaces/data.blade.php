@@ -27,7 +27,7 @@
                 <x-signal.ui.button :href="route('analytics.workspaces.data.export', $workspace)" variant="primary">
                     {{ __('Download workspace export') }}
                 </x-signal.ui.button>
-                <p class="text-xs text-muted">{{ __('Available to workspace owners and administrators. Site records include only sites you can currently access. Downloading does not change workspace data.') }}</p>
+                <p class="text-xs text-muted">{{ __('Available to workspace owners and administrators. Site records include authorized archived history while respecting current project access. Downloading does not change workspace data.') }}</p>
             </div>
         </x-signal.ui.panel>
     </div>

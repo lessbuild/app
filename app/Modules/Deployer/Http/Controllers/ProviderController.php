@@ -9,6 +9,7 @@ use App\Modules\Deployer\Exceptions\ProviderOperationException;
 use App\Modules\Deployer\Http\Requests\ProviderRequest;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\ProviderConnectionHistoryExporter;
 use App\Modules\Deployer\Services\ProviderConnectionHistoryQuery;
 use App\Modules\Deployer\Services\ProviderInventoryExporter;
@@ -38,7 +39,7 @@ class ProviderController extends Controller
     {
         $filters = $this->indexFilters($request);
         $providers = $this->providerInventory->for($request->user(), $filters)
-            ->withCount(['servers', 'repositories'])
+            ->withCount($this->providerInventory->associations($request->user()))
             ->latest()
             ->paginate()
             ->appends(array_filter($filters, fn ($value) => $value !== null));
@@ -66,15 +67,17 @@ class ProviderController extends Controller
     /**
      * Show the resource
      */
-    public function show(Provider $provider): View
+    public function show(Request $request, Provider $provider): View
     {
         $this->authorize('view', $provider);
 
-        $repositories = $provider->repositories()
+        $repositories = app(DeployerProjectAccess::class)->repositories($provider->repositories()->where('organization_id', $provider->organization_id)
+            ->when($provider->organization_id === null, fn ($query) => $query->where('user_id', $request->user()->getKey())), $request->user())
             ->latest()
             ->paginate(pageName: 'repositories_page');
 
-        $servers = $provider->servers()
+        $servers = app(DeployerProjectAccess::class)->servers($provider->servers()->where('organization_id', $provider->organization_id)
+            ->when($provider->organization_id === null, fn ($query) => $query->where('user_id', $request->user()->getKey())), $request->user())
             ->latest()
             ->paginate(pageName: 'servers_page');
         $retainedConnectionChecks = $provider->connectionChecks()

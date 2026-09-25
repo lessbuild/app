@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -49,7 +50,7 @@ class WebsiteInventoryExporter
 
             $this->websites->for($user, $filters)
                 ->with('server')
-                ->withCount('repositories')
+                ->withCount(['repositories' => fn ($query) => app(DeployerResourceProjection::class)->repositories($query, $user)])
                 ->latest('websites.id')
                 ->lazy(250)
                 ->each(function (Website $website) use ($output): void {

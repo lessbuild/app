@@ -45,6 +45,7 @@ class ServerPolicy
     public function delete(User $user, Server $server): bool
     {
         return $this->view($user, $server)
+            && app(DeployerProjectAccess::class)->canChangeServer($user, $server)
             && ($server->organization?->permits($user, 'manage') ?? true);
     }
 
@@ -56,6 +57,14 @@ class ServerPolicy
      * @return bool Whether the account is authorized; lifecycle eligibility is checked by the action.
      */
     public function update(User $user, Server $server): bool
+    {
+        return $this->view($user, $server)
+            && app(DeployerProjectAccess::class)->canChangeServer($user, $server)
+            && ($server->organization?->permits($user, 'deploy') ?? true);
+    }
+
+    /** Changing a local display label does not operate on attached infrastructure. */
+    public function updateDisplayName(User $user, Server $server): bool
     {
         return $this->view($user, $server)
             && ($server->organization?->permits($user, 'deploy') ?? true);
@@ -71,6 +80,7 @@ class ServerPolicy
     public function execute(User $user, Server $server): bool
     {
         return $this->view($user, $server)
+            && app(DeployerProjectAccess::class)->canChangeServer($user, $server)
             && ($server->organization?->permits($user, 'operate') ?? true);
     }
 

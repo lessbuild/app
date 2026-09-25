@@ -19,7 +19,8 @@ class ObservabilityDashboardQuery
     public function for(Organization $organization, ?User $actor = null): array
     {
         $incidents = StatusIncident::query()
-            ->whereHas('statusPage', fn ($query) => $query->where('organization_id', $organization->id))
+            ->whereHas('statusPage', fn ($query) => $query->where('organization_id', $organization->id)
+                ->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->statusPages($query, $actor)))
             ->with('statusPage')
             ->latest('starts_at')
             ->limit(50)
@@ -27,7 +28,7 @@ class ObservabilityDashboardQuery
 
         return [
             'destinations' => $organization->alertDestinations()->latest()->get(),
-            'statusPages' => $organization->statusPages()->with('websites')->latest()->get(),
+            'statusPages' => $organization->statusPages()->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->statusPages($query, $actor))->with('websites')->latest()->get(),
             'websites' => $organization->websites()->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->websites($query, $actor))->orderBy('name')->get(),
             'environmentProjects' => $organization->projects()
                 ->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->projects($query, $actor))

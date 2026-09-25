@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -48,14 +49,14 @@ class ProviderInventoryExporter
 
             $this->providers->for($user, $filters)
                 ->with([
-                    'servers' => fn ($query) => $query
+                    'servers' => fn ($query) => app(DeployerProjectAccess::class)->servers($query->where('servers.organization_id', $user->current_organization_id), $user)
                         ->select(['id', 'provider_id', 'name', 'display_name'])
                         ->orderBy('name'),
-                    'repositories' => fn ($query) => $query
+                    'repositories' => fn ($query) => app(DeployerProjectAccess::class)->repositories($query->where('repositories.organization_id', $user->current_organization_id), $user)
                         ->select(['id', 'provider_id', 'name'])
                         ->orderBy('name'),
                 ])
-                ->withCount(['servers', 'repositories'])
+                ->withCount($this->providers->associations($user))
                 ->latest('providers.id')
                 ->lazy(250)
                 ->each(function (Provider $provider) use ($output): void {

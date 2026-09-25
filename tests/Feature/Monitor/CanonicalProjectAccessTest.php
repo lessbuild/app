@@ -13,30 +13,43 @@ use App\Core\Models\Workspace as CoreWorkspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Projects\ManageCanonicalProjectMembership;
+use App\Modules\Monitor\Console\Commands\SendIssueDigest;
 use App\Modules\Monitor\Http\Controllers\EventController;
 use App\Modules\Monitor\Http\Controllers\TraceEventController;
 use App\Modules\Monitor\Models\AlertDelivery;
 use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\Application;
+use App\Modules\Monitor\Models\AuditLog;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Incident;
+use App\Modules\Monitor\Models\Issue;
+use App\Modules\Monitor\Models\IssueDigestDelivery;
+use App\Modules\Monitor\Models\IssueDigestPreference;
 use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\StatusPage;
 use App\Modules\Monitor\Models\TelemetryEvent;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
+use App\Modules\Monitor\Notifications\IssueDigestNotification;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
 use App\Modules\Monitor\Services\CreateIngestToken;
+use App\Modules\Monitor\Services\DeliverIssueDigest;
 use App\Modules\Monitor\Services\ExportWorkspaceData;
+use App\Modules\Monitor\Services\IssueDigestHistory;
+use App\Modules\Monitor\Services\IssueDigestReport;
 use App\Modules\Monitor\Services\Telemetry\CollectionHealthSummary;
 use App\Modules\Monitor\Services\Telemetry\DashboardMetrics;
 use App\Modules\Monitor\Services\Telemetry\ServiceDependencyMap;
+use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\Request;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tests\TestCase;
 
 /** Authored for the deferred plan-wide regression run. */
@@ -268,6 +281,339 @@ final class CanonicalProjectAccessTest extends TestCase
             $this->assertSame([$this->allowed->id], $records->where('type', 'application')->pluck('data.id')->values()->all());
             $this->assertSame([$this->allowedEnvironment->id], $records->where('type', 'environment')->pluck('data.id')->values()->all());
             $this->assertSame(['public-service'], $records->where('type', 'telemetry_event')->pluck('data.service')->values()->all());
+        } finally {
+            fclose($output);
+        }
+    }
+
+    public function test_daily_command_builds_a_separate_digest_for_each_current_recipient(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted issue');
+        $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed issue');
+        $viewer = $this->digestRecipient();
+        $this->revoke();
+        [$from, $until] = $this->digestPeriod();
+
+        $this->assertSame(0, Artisan::call(SendIssueDigest::class, [
+            '--workspace' => $this->workspace->id, '--from' => $from->toISOString(), '--until' => $until->toISOString(),
+        ]));
+        Notification::assertSentTo($this->user, IssueDigestNotification::class, fn ($notification): bool => array_column($notification->digest['new_issues'], 'title') === ['Allowed issue']
+            && $notification->digest['open_count'] === 1 && $notification->digest['critical_open_count'] === 1);
+        Notification::assertSentTo($viewer, IssueDigestNotification::class, fn ($notification): bool => array_column($notification->digest['new_issues'], 'title') === ['Restricted issue']
+            && $notification->digest['open_count'] === 1);
+        Notification::assertCount(2);
+        $this->assertSame(2, IssueDigestDelivery::query()->where('status', 'sent')->count());
+        $this->assertSame(2, Issue::forWorkspace($this->workspace)->count());
+        $this->assertSame('viewer', $this->workspace->roleFor($viewer));
+    }
+
+    public function test_delivery_rechecks_permissions_after_claim_and_completed_periods_are_not_resent(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted issue');
+        $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed issue');
+        IssueDigestDelivery::created(fn () => $this->revoke());
+        [$from, $until] = $this->digestPeriod();
+
+        $this->assertSame('sent', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        $this->assertSame('skipped', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertSentTo($this->user, IssueDigestNotification::class, fn ($notification): bool => array_column($notification->digest['new_issues'], 'title') === ['Allowed issue']
+            && $notification->digest['open_count'] === 1 && ! array_key_exists('source_scope', $notification->digest)
+            && $notification->toMail($this->user)->markdown === 'monitor::mail.issue-digest');
+        Notification::assertCount(1);
+        $delivery = IssueDigestDelivery::query()->sole();
+        $this->assertSame(1, $delivery->attempts);
+        $this->assertSame(1, $delivery->new_count);
+        $this->assertSame([['application_id' => $this->allowed->id, 'environment_id' => $this->allowedEnvironment->id]], $delivery->source_scope['sources']);
+    }
+
+    public function test_a_revocation_while_persisting_the_payload_cancels_transport_and_allows_a_filtered_retry(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted issue');
+        $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed issue');
+        $revoked = false;
+        IssueDigestDelivery::saving(function (IssueDigestDelivery $delivery) use (&$revoked): void {
+            if ($delivery->exists && ! $revoked) {
+                $revoked = true;
+                $this->revoke();
+            }
+        });
+        [$from, $until] = $this->digestPeriod();
+        $this->assertSame('skipped', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertNothingSent();
+        $this->assertSame('source_access_changed', IssueDigestDelivery::query()->sole()->last_error_code);
+        $this->assertSame('sent', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertSentTo($this->user, IssueDigestNotification::class, fn ($notification): bool => array_column($notification->digest['new_issues'], 'title') === ['Allowed issue']);
+        $this->assertSame(2, IssueDigestDelivery::query()->sole()->attempts);
+    }
+
+    public function test_failed_digest_retries_use_current_sources_and_counts(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted issue');
+        $this->digestIssue($this->allowed, null, 'Application issue');
+        [$from, $until] = $this->digestPeriod();
+        $delivery = IssueDigestDelivery::factory()->create([
+            'workspace_id' => $this->workspace->id, 'recipient_id' => $this->user->id,
+            'period_start' => $from, 'period_end' => $until, 'status' => 'failed', 'attempts' => 1,
+            'new_count' => 99, 'open_count' => 99, 'source_scope' => null, 'sent_at' => null,
+        ]);
+        $this->revoke();
+
+        $this->assertSame('sent', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertSentTo($this->user, IssueDigestNotification::class, fn ($notification): bool => array_column($notification->digest['new_issues'], 'title') === ['Application issue']);
+        $this->assertSame(2, $delivery->fresh()->attempts);
+        $this->assertSame(1, $delivery->fresh()->open_count);
+        $this->assertSame(1, IssueDigestDelivery::query()->count());
+    }
+
+    public function test_no_digest_is_sent_when_source_access_or_recipient_eligibility_is_removed(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted issue');
+        $this->revoke();
+        [$from, $until] = $this->digestPeriod();
+        $deliver = app(DeliverIssueDigest::class);
+        $this->assertSame('skipped', $deliver->deliver($this->workspace, $this->user, $from, $until));
+        $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed issue');
+        $this->user->forceFill(['email_verified_at' => null])->save();
+        $this->assertSame('skipped', $deliver->deliver($this->workspace, $this->user, $from, $until));
+        $this->user->forceFill(['email_verified_at' => now()])->save();
+        $preference = IssueDigestPreference::query()->create([
+            'workspace_id' => $this->workspace->id, 'user_id' => $this->user->id, 'enabled' => false, 'frequency' => 'off',
+        ]);
+        $this->assertSame('skipped', $deliver->deliver($this->workspace, $this->user, $from, $until));
+        $preference->update(['enabled' => true, 'frequency' => 'daily']);
+        $this->workspace->members()->detach($this->user);
+        $this->assertSame('skipped', $deliver->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertNothingSent();
+        $this->assertSame(0, IssueDigestDelivery::query()->count());
+    }
+
+    public function test_history_hides_original_aggregate_counts_after_any_contributing_project_is_revoked(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted issue');
+        $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed issue');
+        [$from, $until] = $this->digestPeriod();
+        app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until);
+        $history = app(IssueDigestHistory::class);
+        $this->assertTrue($history->forRecipient($this->workspace, $this->user)->sole()->summary_available);
+        $this->revoke();
+
+        $entry = $history->forRecipient($this->workspace, $this->user)->sole();
+        $this->assertFalse($entry->summary_available);
+        $this->assertNull($entry->new_count);
+        $this->assertNull($entry->open_count);
+        $this->assertNull($entry->source_scope);
+        $this->assertSame('sent', $entry->status);
+        $this->assertSame(2, IssueDigestDelivery::query()->sole()->open_count);
+        $this->assertCount(0, $history->forRecipient($this->workspace, $this->digestRecipient()));
+    }
+
+    public function test_legacy_history_stays_available_and_core_history_without_provenance_fails_closed(): void
+    {
+        $entry = IssueDigestDelivery::factory()->create([
+            'workspace_id' => $this->workspace->id, 'recipient_id' => $this->user->id, 'source_scope' => null, 'open_count' => 12,
+        ]);
+        $history = app(IssueDigestHistory::class);
+        $this->assertFalse($history->forRecipient($this->workspace, $this->user)->sole()->summary_available);
+        config(['platform.products.monitor.auth_authority' => 'legacy']);
+        $this->assertSame(12, $history->forRecipient($this->workspace, $this->user)->sole()->open_count);
+        config(['platform.products.monitor.auth_authority' => 'core']);
+        $entry->update(['source_scope' => ['version' => 1, 'sources' => [['application_id' => $this->allowed->id, 'environment_id' => $this->restrictedEnvironment->id]]]]);
+        $this->assertFalse($history->forRecipient($this->workspace, $this->user)->sole()->summary_available);
+        $entry->update(['source_scope' => ['version' => 1, 'sources' => [['application_id' => $this->allowed->id, 'environment_id' => $this->allowedEnvironment->id]]]]);
+        $this->assertTrue($history->forRecipient($this->workspace, $this->user)->sole()->summary_available);
+        $this->membership->update(['status' => 'inactive']);
+        $this->assertFalse($history->forRecipient($this->workspace, $this->user)->sole()->summary_available);
+        $this->assertSame(12, $entry->fresh()->open_count);
+    }
+
+    public function test_report_tracks_sources_outside_the_sampled_lists_and_filters_resolved_snoozed_and_critical_counts(): void
+    {
+        $this->configureDigests();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Old restricted critical')->update(['first_seen_at' => now()->subDays(5)]);
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted resolved')->forceFill(['status' => 'resolved', 'resolved_at' => now()->subMinute()])->save();
+        $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Restricted snoozed')->update(['status' => 'snoozed']);
+        for ($i = 0; $i < 11; $i++) {
+            $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed '.$i);
+        }
+        [$from, $until] = $this->digestPeriod();
+        $report = app(IssueDigestReport::class);
+        $before = $report->forRecipient($this->workspace, $this->user, $from, $until);
+        $this->assertCount(10, $before['new_issues']);
+        $this->assertCount(2, $before['source_scope']['sources']);
+        $this->assertSame(12, $before['critical_open_count']);
+        $this->assertSame(1, $before['snoozed_count']);
+        $this->revoke();
+        $after = $report->forRecipient($this->workspace, $this->user, $from, $until);
+        $this->assertSame(11, $after['open_count']);
+        $this->assertSame(11, $after['critical_open_count']);
+        $this->assertSame(0, $after['snoozed_count']);
+        $this->assertSame([], $after['resolved_issues']);
+        $this->assertSame([['application_id' => $this->allowed->id, 'environment_id' => $this->allowedEnvironment->id]], $after['source_scope']['sources']);
+    }
+
+    public function test_historical_export_retains_archived_dependencies_but_still_enforces_current_membership(): void
+    {
+        $issue = $this->digestIssue($this->restricted, $this->restrictedEnvironment, 'Archived issue');
+        $event = $this->event($this->restrictedEnvironment, 'archived-service');
+        $rule = AlertRule::factory()->create(['environment_id' => $this->restrictedEnvironment->id]);
+        $incident = Incident::factory()->create(['alert_rule_id' => $rule->id]);
+        $log = AuditLog::query()->create([
+            'workspace_id' => $this->workspace->id, 'action' => 'alert_rule.archived',
+            'subject_type' => $rule->getMorphClass(), 'subject_id' => $rule->id, 'metadata' => ['label' => 'Archived rule'],
+        ]);
+        $canonical = ProjectEnvironment::query()->create([
+            'project_id' => $this->project->getKey(), 'name' => 'Production', 'slug' => 'production', 'status' => 'archived',
+        ]);
+        ProjectResource::query()->create([
+            'project_id' => $this->project->getKey(), 'environment_id' => $canonical->getKey(), 'product' => 'monitor',
+            'resource_type' => 'environment', 'resource_id' => (string) $this->restrictedEnvironment->id, 'status' => 'archived',
+        ]);
+        ProjectResource::query()->where('resource_type', 'application')->where('resource_id', (string) $this->restricted->id)->update(['status' => 'archived']);
+        $this->project->update(['status' => 'archived']);
+        ProjectProduct::query()->where('project_id', $this->project->getKey())->update(['status' => 'inactive']);
+        $rule->delete();
+        $this->restrictedEnvironment->delete();
+        $this->restricted->delete();
+
+        $this->assertFalse(Gate::forUser($this->user)->allows('view', $this->restricted));
+        $this->assertFalse(Gate::forUser($this->user)->allows('restore', $this->restricted));
+        $this->assertSame([], Incident::query()->visibleTo($this->user, $this->workspace)->pluck('id')->all());
+        $records = $this->exportRecords();
+        foreach (['issue' => $issue, 'telemetry_event' => $event, 'incident' => $incident, 'audit_log' => $log] as $type => $model) {
+            $this->assertContains($model->id, $records->where('type', $type)->pluck('data.id')->all());
+        }
+        $this->assertContains($this->restricted->id, $records->where('type', 'application')->pluck('data.id')->all());
+        $this->assertContains($this->restrictedEnvironment->id, $records->where('type', 'environment')->pluck('data.id')->all());
+
+        // Membership remains authoritative even when a project is archived.
+        ProjectMembership::query()->where('project_id', $this->project->getKey())->where('user_id', $this->principal->getKey())->update(['status' => 'inactive']);
+        $after = $this->exportRecords();
+        foreach (['issue', 'telemetry_event', 'incident', 'audit_log'] as $type) {
+            $this->assertSame([], $after->where('type', $type)->values()->all());
+        }
+        $this->assertSame([$this->allowed->id], $after->where('type', 'application')->pluck('data.id')->values()->all());
+    }
+
+    public function test_imported_audit_subject_names_remain_subject_to_project_access(): void
+    {
+        $denied = AuditLog::query()->create([
+            'workspace_id' => $this->workspace->id, 'action' => 'application.updated',
+            'subject_type' => 'App\\Models\\Application', 'subject_id' => $this->restricted->id, 'metadata' => ['label' => 'Restricted application'],
+        ]);
+        $allowed = AuditLog::query()->create([
+            'workspace_id' => $this->workspace->id, 'action' => 'environment.updated',
+            'subject_type' => 'App\\Models\\Environment', 'subject_id' => $this->allowedEnvironment->id, 'metadata' => ['label' => 'Allowed environment'],
+        ]);
+        $this->revoke();
+
+        $this->assertSame([$allowed->id], AuditLog::forWorkspace($this->workspace)->visibleTo($this->user, $this->workspace)->pluck('id')->all());
+        $this->assertSame([$allowed->id], $this->exportRecords()->where('type', 'audit_log')->pluck('data.id')->values()->all());
+        $this->assertDatabaseHas('audit_logs', ['id' => $denied->id], 'monitor');
+    }
+
+    public function test_export_service_requires_a_current_native_admin(): void
+    {
+        $this->workspace->members()->updateExistingPivot($this->user->id, ['role' => 'viewer']);
+        $this->expectException(AuthorizationException::class);
+        $this->exportRecords();
+    }
+
+    public function test_export_without_a_current_core_context_writes_no_data_even_for_a_native_admin(): void
+    {
+        $this->membership->update(['status' => 'inactive']);
+        foreach ([null, $this->user] as $principal) {
+            $output = fopen('php://temp', 'w+');
+            try {
+                app(ExportWorkspaceData::class)->write($this->workspace, $output, $principal);
+                $this->fail('A missing or revoked Core principal must not export workspace metadata.');
+            } catch (HttpExceptionInterface $exception) {
+                $this->assertSame(403, $exception->getStatusCode());
+                $this->assertSame(0, ftell($output));
+            } finally {
+                fclose($output);
+            }
+        }
+    }
+
+    public function test_digest_skips_revoked_core_product_grants_and_keeps_legacy_source_behavior(): void
+    {
+        $this->configureDigests();
+        Notification::fake();
+        $this->digestIssue($this->allowed, $this->allowedEnvironment, 'Allowed issue');
+        WorkspaceProductAccess::query()->where('membership_id', $this->membership->getKey())->update(['status' => 'inactive']);
+        [$from, $until] = $this->digestPeriod();
+        $this->assertSame('skipped', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertNothingSent();
+        $this->assertSame(0, IssueDigestDelivery::query()->count());
+
+        config(['platform.products.monitor.auth_authority' => 'legacy']);
+        $this->assertSame('sent', app(DeliverIssueDigest::class)->deliver($this->workspace, $this->user, $from, $until));
+        Notification::assertSentTo($this->user, IssueDigestNotification::class);
+        $this->assertTrue(app(IssueDigestHistory::class)->forRecipient($this->workspace, $this->user)->sole()->summary_available);
+    }
+
+    private function configureDigests(): void
+    {
+        config(['monitor.beacon.plan_authority' => 'legacy', 'monitor.beacon.plans.free.issue_digest' => true]);
+        Artisan::registerCommand(app(SendIssueDigest::class));
+        Route::get('/monitor/issues', fn () => response(''))->name('monitor.issues.index');
+        Route::get('/monitor/issues/{issue}', fn () => response(''))->name('monitor.issues.show');
+    }
+
+    /** @return array{CarbonImmutable, CarbonImmutable} */
+    private function digestPeriod(): array
+    {
+        $until = CarbonImmutable::now('UTC')->addMinute();
+
+        return [$until->subDay(), $until];
+    }
+
+    private function digestIssue(Application $application, ?Environment $environment, string $title): Issue
+    {
+        return Issue::factory()->create([
+            'application_id' => $application->id, 'environment_id' => $environment?->id,
+            'title' => $title, 'severity' => 'critical', 'first_seen_at' => now()->subMinute(), 'last_seen_at' => now()->subMinute(),
+        ]);
+    }
+
+    private function digestRecipient(): User
+    {
+        $principal = $this->platformUser('digest-viewer');
+        $membership = WorkspaceMembership::query()->create([
+            'workspace_id' => $this->coreWorkspace->getKey(), 'user_id' => $principal->getKey(), 'role' => 'member', 'status' => 'active',
+        ]);
+        WorkspaceProductAccess::query()->create(['membership_id' => $membership->getKey(), 'product' => 'monitor', 'role' => 'viewer', 'status' => 'active']);
+        ProjectMembership::query()->create(['project_id' => $this->project->getKey(), 'user_id' => $principal->getKey(), 'role' => 'viewer', 'status' => 'active']);
+        $recipient = User::query()->forceCreate([
+            'name' => 'Digest viewer', 'email' => 'digest-viewer@monitor.example.test', 'password' => 'unused', 'email_verified_at' => now(),
+        ]);
+        $this->workspace->members()->attach($recipient, ['role' => 'viewer']);
+        $this->identity('user', $recipient->getKey(), 'user', $principal->getKey());
+        IssueDigestPreference::query()->create(['workspace_id' => $this->workspace->id, 'user_id' => $recipient->id, 'enabled' => true, 'frequency' => 'daily']);
+
+        return $recipient;
+    }
+
+    private function exportRecords(): Collection
+    {
+        $output = fopen('php://temp', 'w+');
+        try {
+            app(ExportWorkspaceData::class)->write($this->workspace, $output, $this->user);
+            rewind($output);
+
+            return collect(explode("\n", trim(stream_get_contents($output))))->map(fn ($line) => json_decode($line, true, flags: JSON_THROW_ON_ERROR));
         } finally {
             fclose($output);
         }

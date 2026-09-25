@@ -2,6 +2,7 @@
 
 namespace App\Modules\Analytics\Services;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\Goal;
 use App\Modules\Analytics\Models\GoalConversion;
@@ -30,6 +31,8 @@ final class ExportWorkspaceData
      */
     public function write(Workspace $workspace, mixed $output, Authenticatable $actor): void
     {
+        abort_unless($this->access->roleFor($actor, $workspace)?->canManageMembers() === true, 403);
+
         foreach ($this->records($workspace, $actor) as $record) {
             $line = json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
             $written = 0;
@@ -56,6 +59,7 @@ final class ExportWorkspaceData
             'format' => 'buildpusher-analytics-workspace-export',
             'version' => 1,
             'site_scope' => 'currently_authorized_sites',
+            'includes_authorized_archived_site_history' => true,
             'exported_at' => now('UTC')->toIso8601String(),
             'record_types' => [
                 'workspace',
@@ -116,7 +120,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach ($this->access->sitesQuery($actor, $workspace, withTrashed: true)->orderBy('id')->cursor() as $site) {
+        foreach ($this->siteQuery($workspace, $actor)->orderBy('id')->cursor() as $site) {
             yield $this->record('site', [
                 'id' => $site->getKey(),
                 'name' => $site->name,
@@ -320,7 +324,15 @@ final class ExportWorkspaceData
     /** @return Builder<Site> */
     private function siteIds(Workspace $workspace, Authenticatable $actor): Builder
     {
-        return $this->access->sitesQuery($actor, $workspace, withTrashed: true)->select('id');
+        return $this->siteQuery($workspace, $actor)->select('id');
+    }
+
+    /** @return Builder<Site> */
+    private function siteQuery(Workspace $workspace, Authenticatable $actor): Builder
+    {
+        return $this->access->sitesQuery(
+            $actor, $workspace, withTrashed: true, purpose: ProjectResourceAccessPurpose::HistoricalExport,
+        );
     }
 
     /** @param array<string, mixed> $data

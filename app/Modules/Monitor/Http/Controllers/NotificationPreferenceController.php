@@ -6,6 +6,7 @@ use App\Modules\Monitor\Http\Requests\UpdateNotificationPreferenceRequest;
 use App\Modules\Monitor\Models\IssueDigestPreference;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\CurrentWorkspace;
+use App\Modules\Monitor\Services\IssueDigestHistory;
 use App\Modules\Monitor\Services\SaveIssueDigestPreference;
 use App\Modules\Monitor\Services\WorkspacePlanLimits;
 use Illuminate\Http\RedirectResponse;
@@ -15,7 +16,7 @@ use Illuminate\View\View;
 
 class NotificationPreferenceController extends Controller
 {
-    public function index(Request $request, CurrentWorkspace $currentWorkspace, WorkspacePlanLimits $limits): View
+    public function index(Request $request, CurrentWorkspace $currentWorkspace, WorkspacePlanLimits $limits, IssueDigestHistory $history): View
     {
         $workspace = $currentWorkspace->get();
         Gate::authorize('view', $workspace);
@@ -32,9 +33,7 @@ class NotificationPreferenceController extends Controller
             'digestEnabled' => $preference?->enabled ?? ($user->id === $workspace->owner_id),
             'digestAvailable' => $limits->issueDigestEnabled($workspace),
             'isWorkspaceOwner' => $user->id === $workspace->owner_id,
-            'deliveries' => $workspace->issueDigestDeliveries()
-                ->whereBelongsTo($user, 'recipient')
-                ->latest('period_end')->latest('id')->limit(20)->get(),
+            'deliveries' => $history->forRecipient($workspace, $user),
         ]);
     }
 

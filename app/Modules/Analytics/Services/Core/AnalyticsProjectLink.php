@@ -49,7 +49,6 @@ final class AnalyticsProjectLink implements ProjectProductLink
             ->where('resource_type', 'site')
             ->where('status', 'active')
             ->orderBy('id')
-            ->limit(100)
             ->pluck('resource_id');
 
         if ($resourceIds->isEmpty() || ! filled($project->workspace_id)) {
@@ -72,13 +71,14 @@ final class AnalyticsProjectLink implements ProjectProductLink
             return collect();
         }
 
-        return Site::query()
+        $sites = Site::query()
             ->whereKey($resourceIds)
             ->whereIn('workspace_id', $workspaceIds)
             ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $legacyUserIds))
             ->with('workspace')
-            ->get()
-            ->filter(fn (Site $site): bool => $this->access->hasSiteAccess($user, $site))
-            ->values();
+            ->orderBy('id')
+            ->get();
+
+        return $this->access->filterSites($user, $sites)->take(100)->values();
     }
 }

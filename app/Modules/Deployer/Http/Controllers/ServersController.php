@@ -93,11 +93,11 @@ class ServersController extends Controller
     }
 
     /**
-     * Authorize server updates and render the form for its display label.
+     * Authorize the local display-label change and render its form.
      */
     public function edit(Server $server): View
     {
-        $this->authorize('update', $server);
+        $this->authorize('updateDisplayName', $server);
 
         return view('scenes.servers.edit', ['server' => $server]);
     }
@@ -112,7 +112,7 @@ class ServersController extends Controller
         Server $server,
         UpdateServerDisplayNameAction $updateDisplayName,
     ): RedirectResponse {
-        $this->authorize('update', $server);
+        $this->authorize('updateDisplayName', $server);
         /** @var string|null $displayName */
         $displayName = $request->validated('display_name');
         $updateDisplayName->handle($server, $displayName);

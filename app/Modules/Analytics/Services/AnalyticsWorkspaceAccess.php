@@ -2,6 +2,7 @@
 
 namespace App\Modules\Analytics\Services;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\ProductAuthentication;
 use App\Core\Services\Identity\MappedProjectResourceAccess;
@@ -70,9 +71,56 @@ final class AnalyticsWorkspaceAccess
             );
     }
 
-    /** @return Builder<Site> */
-    public function sitesQuery(Authenticatable $user, Workspace $workspace, bool $withTrashed = false): Builder
+    /**
+     * Recheck a collection in workspace batches without retaining permission decisions.
+     *
+     * @param  Collection<array-key, Site>  $sites
+     * @return Collection<int, Site>
+     */
+    public function filterSites(Authenticatable $user, Collection $sites): Collection
     {
+        if ($sites->isEmpty()) {
+            return collect();
+        }
+
+        $workspaces = Workspace::query()->whereKey($sites->pluck('workspace_id')->unique()->all())
+            ->get()->keyBy(fn (Workspace $workspace): string => (string) $workspace->getKey());
+        $allowed = [];
+
+        foreach ($sites->groupBy('workspace_id') as $workspaceId => $workspaceSites) {
+            $workspace = $workspaces->get((string) $workspaceId);
+
+            if ($workspace === null || ! $this->hasAccess($user, $workspace)) {
+                continue;
+            }
+
+            $candidateIds = $workspaceSites->map(fn (Site $site): string => (string) $site->getKey())->all();
+            $deniedIds = $this->projectResources->deniedResourceIds(
+                $user, 'analytics', 'site', 'workspace', $workspace->getKey(), $candidateIds,
+            );
+
+            if ($deniedIds === null) {
+                continue;
+            }
+
+            $denied = array_fill_keys($deniedIds, true);
+            foreach ($candidateIds as $id) {
+                if (! isset($denied[$id])) {
+                    $allowed[$id] = true;
+                }
+            }
+        }
+
+        return $sites->filter(fn (Site $site): bool => isset($allowed[(string) $site->getKey()]))->values();
+    }
+
+    /** @return Builder<Site> */
+    public function sitesQuery(
+        Authenticatable $user,
+        Workspace $workspace,
+        bool $withTrashed = false,
+        ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive,
+    ): Builder {
         $query = Site::query()->where('workspace_id', $workspace->getKey());
 
         if ($withTrashed) {
@@ -86,6 +134,7 @@ final class AnalyticsWorkspaceAccess
         $deniedIds = $this->projectResources->deniedResourceIds(
             $user, 'analytics', 'site', 'workspace', $workspace->getKey(),
             (clone $query)->pluck('id')->all(),
+            purpose: $purpose,
         );
 
         return $deniedIds === null

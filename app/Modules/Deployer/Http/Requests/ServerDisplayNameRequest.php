@@ -8,13 +8,13 @@ use Illuminate\Foundation\Http\FormRequest;
 class ServerDisplayNameRequest extends FormRequest
 {
     /**
-     * Allow label changes only when a server is route-bound and the request user can update it.
+     * Allow label changes only when a server is route-bound and its local label is editable.
      */
     public function authorize(): bool
     {
         $server = $this->route('server');
 
-        return $server instanceof Server && $this->user()?->can('update', $server) === true;
+        return $server instanceof Server && $this->user()?->can('updateDisplayName', $server) === true;
     }
 
     /** @return array<string, mixed> */

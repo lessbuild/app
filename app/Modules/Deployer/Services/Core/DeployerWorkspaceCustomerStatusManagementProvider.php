@@ -46,7 +46,7 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
             }
 
             [$organization, $productUser] = $context;
-            $pages = $organization->statusPages()
+            $pages = app(DeployerProjectAccess::class)->statusPages($organization->statusPages(), $productUser)
                 ->with('websites:id,name')
                 ->withCount(['subscriptions as confirmed_subscribers_count' => fn ($query) => $query->whereNotNull('verified_at')])
                 ->latest()
@@ -59,7 +59,7 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
                 ->get();
 
             return new WorkspaceCustomerStatusManagement(
-                websites: $organization->websites()->orderBy('name')->get(['id', 'name'])
+                websites: app(DeployerProjectAccess::class)->websites($organization->websites(), $productUser)->orderBy('name')->get(['id', 'name'])
                     ->map(fn ($website): array => ['id' => (string) $website->getKey(), 'name' => (string) $website->name])
                     ->all(),
                 pages: $pages->map(fn (StatusPage $page): array => [
@@ -99,7 +99,7 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
     public function createPage(PlatformUser $user, Workspace $workspace, array $attributes): bool
     {
         $context = $this->managerContext($user, $workspace);
-        if ($context === null || ! $this->ownsWebsites($context[0], $attributes['website_ids'] ?? [])) {
+        if ($context === null || ! $this->ownsWebsites($context[0], $context[1], $attributes['website_ids'] ?? [])) {
             return false;
         }
 
@@ -114,12 +114,12 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
     public function updatePage(PlatformUser $user, Workspace $workspace, string $pageId, array $attributes): bool
     {
         $context = $this->managerContext($user, $workspace);
-        if ($context === null || ! $this->ownsWebsites($context[0], $attributes['website_ids'] ?? [])) {
+        if ($context === null || ! $this->ownsWebsites($context[0], $context[1], $attributes['website_ids'] ?? [])) {
             return false;
         }
 
-        [$organization] = $context;
-        $page = $organization->statusPages()->whereKey($pageId)->first();
+        [$organization, $productUser] = $context;
+        $page = app(DeployerProjectAccess::class)->statusPages($organization->statusPages(), $productUser)->whereKey($pageId)->first();
         if (! $page instanceof StatusPage) {
             return false;
         }
@@ -136,8 +136,8 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
             return false;
         }
 
-        [$organization] = $context;
-        $page = $organization->statusPages()->whereKey($pageId)->first();
+        [$organization, $productUser] = $context;
+        $page = app(DeployerProjectAccess::class)->statusPages($organization->statusPages(), $productUser)->whereKey($pageId)->first();
         if (! $page instanceof StatusPage) {
             return false;
         }
@@ -150,7 +150,7 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
     public function createIncident(PlatformUser $user, Workspace $workspace, array $attributes): bool
     {
         $context = $this->managerContext($user, $workspace);
-        if ($context === null || ! $context[0]->statusPages()->whereKey($attributes['status_page_id'] ?? null)->exists()) {
+        if ($context === null || ! app(DeployerProjectAccess::class)->statusPages($context[0]->statusPages(), $context[1])->whereKey($attributes['status_page_id'] ?? null)->exists()) {
             return false;
         }
 
@@ -167,10 +167,10 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
             return false;
         }
 
-        [$organization] = $context;
+        [$organization, $productUser] = $context;
         $incident = StatusIncident::query()
             ->whereKey($incidentId)
-            ->whereHas('statusPage', fn ($query) => $query->where('organization_id', $organization->getKey()))
+            ->whereHas('statusPage', fn ($query) => app(DeployerProjectAccess::class)->statusPages($query->where('organization_id', $organization->getKey()), $productUser))
             ->first();
         if (! $incident instanceof StatusIncident) {
             return false;
@@ -216,6 +216,9 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
             return null;
         }
 
+        $productUser->setAttribute('current_organization_id', $organization->getKey());
+        $productUser->setRelation('currentOrganization', $organization);
+
         return [$organization, $productUser];
     }
 
@@ -228,14 +231,14 @@ final class DeployerWorkspaceCustomerStatusManagementProvider implements Workspa
     }
 
     /** @param mixed $websiteIds @return bool */
-    private function ownsWebsites(Organization $organization, mixed $websiteIds): bool
+    private function ownsWebsites(Organization $organization, User $productUser, mixed $websiteIds): bool
     {
         if (! is_array($websiteIds) || $websiteIds === []) {
             return false;
         }
 
         $requested = collect($websiteIds)->map(static fn ($id): string => (string) $id)->unique()->values();
-        $owned = $organization->websites()->whereKey($requested->all())->pluck('id')
+        $owned = app(DeployerProjectAccess::class)->websites($organization->websites(), $productUser)->whereKey($requested->all())->pluck('id')
             ->map(static fn ($id): string => (string) $id)
             ->unique()
             ->values();

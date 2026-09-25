@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Event;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use App\Modules\Deployer\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,7 +19,7 @@ class ActivityQuery
      */
     public function for(User $user, array $filters): HasMany
     {
-        return $user->events()
+        return app(DeployerHistoryAccess::class)->activity($user->events(), $user)
             ->when($filters['search'], fn ($query, string $value) => $query
                 ->whereRaw("event LIKE ? ESCAPE '!'", [SqlLike::contains($value)]))
             ->when($filters['category'], fn ($query, string $value) => $query

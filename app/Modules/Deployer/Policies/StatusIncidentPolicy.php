@@ -23,7 +23,6 @@ class StatusIncidentPolicy
         $page = $incident->statusPage;
 
         return $page !== null
-            && (int) $page->organization_id === (int) $user->current_organization_id
-            && $page->organization->permits($user, 'manage');
+            && $user->can('update', $page);
     }
 }

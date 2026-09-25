@@ -28,6 +28,7 @@ use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsResourceDestinationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceSearchProvider;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -280,6 +281,131 @@ final class CanonicalProjectAccessTest extends TestCase
 
         $this->assertFalse($access->hasAccess($context['user'], $context['workspace']));
         $this->assertFalse($access->hasSiteAccess($context['user'], $context['site']));
+    }
+
+    public function test_project_links_apply_the_site_limit_after_native_access_checks(): void
+    {
+        $context = $this->context();
+        $context['resource']->update(['status' => 'archived']);
+        $privateWorkspace = Workspace::query()->create(['name' => 'Unrelated source workspace']);
+
+        for ($index = 0; $index < 100; $index++) {
+            $site = $privateWorkspace->sites()->create([
+                'name' => 'Inaccessible site '.$index,
+                'domains' => ['private-'.$index.'.example.test'],
+                'timezone' => 'UTC',
+            ]);
+            $this->resource($context['project'], $site);
+        }
+
+        $this->resource($context['project'], $context['allowed_site']);
+        $sites = app(AnalyticsProjectLink::class)->accessibleSites($context['platform_user'], $context['project']);
+
+        $this->assertSame([$context['allowed_site']->getKey()], $sites->modelKeys());
+    }
+
+    public function test_project_link_and_destination_provider_queries_grow_by_workspace_instead_of_by_site(): void
+    {
+        $context = $this->context();
+        $links = app(AnalyticsProjectLink::class);
+        $destinations = app(AnalyticsResourceDestinationProvider::class);
+        $resources = collect([$context['resource']]);
+        $connections = [DB::connection('core'), DB::connection('analytics')];
+
+        $measure = function () use ($context, $links, $destinations, &$resources, $connections): array {
+            foreach ($connections as $connection) {
+                $connection->enableQueryLog();
+                $connection->flushQueryLog();
+            }
+
+            try {
+                $sites = $links->accessibleSites($context['platform_user'], $context['project']);
+                $resolved = $destinations->destinations($context['platform_user'], $resources);
+                $queryCount = array_sum(array_map(fn ($connection): int => count($connection->getQueryLog()), $connections));
+
+                return [$sites, $resolved, $queryCount];
+            } finally {
+                foreach ($connections as $connection) {
+                    $connection->disableQueryLog();
+                    $connection->flushQueryLog();
+                }
+            }
+        };
+
+        [, , $smallQueryCount] = $measure();
+        for ($index = 0; $index < 100; $index++) {
+            $site = $context['workspace']->sites()->create([
+                'name' => 'Additional site '.$index,
+                'domains' => ['additional-'.$index.'.example.test'],
+                'timezone' => 'UTC',
+            ]);
+            $resources->push($this->resource($context['project'], $site));
+        }
+
+        [$sites, $resolved, $largeQueryCount] = $measure();
+        $this->assertCount(100, $sites);
+        $this->assertCount(101, $resolved);
+        $this->assertTrue(collect($resolved)->every(fn ($destination): bool => $destination->state === ProjectResourceDestinationState::Available));
+        $this->assertLessThanOrEqual($smallQueryCount + 8, $largeQueryCount);
+
+        $this->revoke($context);
+        $this->assertCount(0, $links->accessibleSites($context['platform_user'], $context['project']));
+        $this->assertTrue(collect($destinations->destinations($context['platform_user'], $resources))
+            ->every(fn ($destination): bool => $destination->state === ProjectResourceDestinationState::AccessChanged));
+    }
+
+    public function test_workspace_export_preserves_authorized_archived_site_history_without_restoring_interactive_access(): void
+    {
+        $context = $this->context();
+        $site = $context['site'];
+        AnalyticsEvent::query()->create([
+            'site_id' => $site->getKey(),
+            'event_id' => (string) Str::uuid(),
+            'type' => 'pageview',
+            'occurred_at' => now()->subDays(10),
+            'received_at' => now()->subDays(10),
+            'path' => '/retained-history',
+        ]);
+        $goal = Goal::query()->create([
+            'site_id' => $site->getKey(),
+            'name' => 'Retained historical goal',
+            'kind' => 'path',
+            'match_type' => 'exact',
+            'match_value' => '/retained-history',
+            'active' => false,
+        ]);
+        $export = $this->reportExport($context, $site);
+        $context['project']->update(['status' => 'archived', 'archived_at' => now()]);
+        $context['resource']->update(['status' => 'archived']);
+        ProjectProduct::query()->where('project_id', $context['project']->getKey())->update(['status' => 'inactive']);
+
+        $this->assertFalse(app(SitePolicy::class)->view($context['user'], $site));
+        $this->actingAs($context['user'])->get(route('analytics.dashboard', ['site' => $site->getKey()]))->assertForbidden();
+        $this->assertCount(0, app(AnalyticsProjectLink::class)->accessibleSites($context['platform_user'], $context['project']));
+        $site->delete();
+        $this->assertFalse(app(AnalyticsWorkspaceAccess::class)
+            ->sitesQuery($context['user'], $context['workspace'], withTrashed: true)->whereKey($site->getKey())->exists());
+
+        $response = $this->actingAs($context['user'])->get(route('analytics.workspaces.data.export', $context['workspace']))->assertOk();
+        $content = $response->streamedContent();
+        $records = collect(explode("\n", trim($content)))->map(fn (string $line): array => json_decode($line, true, flags: JSON_THROW_ON_ERROR));
+        $historicalSite = $records->first(fn (array $record): bool => $record['type'] === 'site' && $record['data']['id'] === $site->getKey());
+
+        $this->assertNotNull($historicalSite);
+        $this->assertNotNull($historicalSite['data']['deleted_at']);
+        $this->assertStringContainsString('/retained-history', $content);
+        $this->assertTrue($records->contains(fn (array $record): bool => $record['type'] === 'goal_version' && $record['data']['goal_id'] === $goal->getKey()));
+        $this->assertTrue($records->contains(fn (array $record): bool => $record['type'] === 'report_export' && $record['data']['id'] === $export->getKey()));
+        $this->assertTrue($records->first()['data']['includes_authorized_archived_site_history']);
+
+        ProjectMembership::query()->where('project_id', $context['project']->getKey())
+            ->where('user_id', $context['platform_user']->getKey())->update(['status' => 'revoked', 'revoked_at' => now()]);
+
+        $revoked = $this->actingAs($context['user'])->get(route('analytics.workspaces.data.export', $context['workspace']))->assertOk()->streamedContent();
+        $this->assertStringNotContainsString('/retained-history', $revoked);
+        $this->assertStringNotContainsString('Retained historical goal', $revoked);
+        $this->assertStringNotContainsString('Site A restricted', $revoked);
+        $this->assertStringContainsString('Site Z allowed', $revoked);
     }
 
     /** @return array<string, mixed> */

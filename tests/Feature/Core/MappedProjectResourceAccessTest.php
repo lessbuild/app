@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
@@ -304,6 +305,95 @@ final class MappedProjectResourceAccessTest extends TestCase
             $smallQueryCount + 20,
             $largeQueryCount,
             'Growing from 5 to 505 mapped projects should add batch queries, not queries for every project.',
+        );
+    }
+
+    public function test_archived_data_can_be_exported_without_reopening_interactive_access(): void
+    {
+        $resource = $this->resource('analytics', 'site', '1');
+        $resource->update(['status' => 'archived']);
+        $this->identity('analytics', 'site', '1', 'project', $this->project->getKey());
+        $this->project->update(['status' => 'archived', 'archived_at' => now()]);
+        ProjectProduct::query()->where('project_id', $this->project->getKey())->where('product', 'analytics')->update(['status' => 'inactive']);
+
+        $this->assertFalse($this->allowed('analytics', 'site', '1'));
+        $this->assertTrue($this->historyAllowed('analytics', 'site', '1'));
+        $this->assertSame([], $this->access->deniedResourceIds(
+            $this->user, 'analytics', 'site', 'workspace', '10', ['1'],
+            ProjectResourceAccessPurpose::HistoricalExport,
+        ));
+        $this->assertSame('archived', $resource->fresh()->status);
+        $this->assertSame('archived', $this->project->fresh()->status);
+        $this->assertDatabaseHas('project_products', [
+            'project_id' => $this->project->getKey(), 'product' => 'analytics', 'status' => 'inactive',
+        ], 'core');
+    }
+
+    public function test_historical_export_never_restores_revoked_membership_or_product_access(): void
+    {
+        $this->resource('analytics', 'site', '1')->update(['status' => 'archived']);
+        $this->project->update(['status' => 'archived', 'archived_at' => now()]);
+        $this->assertTrue($this->historyAllowed('analytics', 'site', '1'));
+
+        $membership = ProjectMembership::query()->where('project_id', $this->project->getKey())->firstOrFail();
+        $membership->update(['revoked_at' => now()]);
+        $this->assertFalse($this->historyAllowed('analytics', 'site', '1'));
+        $membership->update(['revoked_at' => null]);
+
+        $grant = WorkspaceProductAccess::query()->where('membership_id', $this->membership->getKey())->where('product', 'analytics')->firstOrFail();
+        $grant->update(['revoked_at' => now()]);
+        $this->assertFalse($this->historyAllowed('analytics', 'site', '1'));
+        $grant->update(['revoked_at' => null]);
+
+        $this->membership->update(['expires_at' => now()->subSecond()]);
+        $this->assertFalse($this->historyAllowed('analytics', 'site', '1'));
+        $this->membership->update(['expires_at' => null]);
+        $this->workspace->update(['status' => 'archived', 'archived_at' => now()]);
+        $this->assertFalse($this->historyAllowed('analytics', 'site', '1'));
+    }
+
+    public function test_historical_environment_export_requires_the_exact_retained_environment_mapping(): void
+    {
+        $environment = ProjectEnvironment::query()->create([
+            'project_id' => $this->project->getKey(), 'name' => 'Production', 'slug' => 'production', 'status' => 'archived',
+        ]);
+        $resource = $this->resource('monitor', 'environment', '1');
+        $resource->update(['environment_id' => $environment->getKey(), 'status' => 'archived']);
+        $map = $this->identity('monitor', 'environment', '1', 'project_environment', $environment->getKey());
+        $this->assertFalse($this->allowed('monitor', 'environment', '1'));
+        $this->assertTrue($this->historyAllowed('monitor', 'environment', '1'));
+
+        $map->update(['status' => 'needs_review']);
+        $this->assertFalse($this->historyAllowed('monitor', 'environment', '1'));
+        $map->update(['status' => 'reconciled']);
+        $environment->delete();
+        $this->assertNull($resource->fresh()->environment_id);
+        $this->assertFalse($this->historyAllowed('monitor', 'environment', '1'));
+    }
+
+    public function test_historical_export_accepts_retained_inactive_products_but_not_missing_or_suspended_authority(): void
+    {
+        $resource = $this->resource('deployer', 'project', '1');
+        $product = ProjectProduct::query()->where('project_id', $this->project->getKey())->where('product', 'deployer')->firstOrFail();
+        $product->update(['status' => 'inactive']);
+        $this->assertFalse($this->allowed('deployer', 'project', '1'));
+        $this->assertTrue($this->historyAllowed('deployer', 'project', '1'));
+
+        $resource->update(['status' => 'revoked']);
+        $this->assertFalse($this->historyAllowed('deployer', 'project', '1'));
+        $resource->update(['status' => 'active']);
+        $this->project->update(['status' => 'suspended']);
+        $this->assertFalse($this->historyAllowed('deployer', 'project', '1'));
+        $this->project->update(['status' => 'active']);
+        $product->delete();
+        $this->assertFalse($this->historyAllowed('deployer', 'project', '1'));
+    }
+
+    private function historyAllowed(string $product, string $type, string $id): bool
+    {
+        return $this->access->allows(
+            $this->user, $product, $type, $id, $product === 'deployer' ? 'organization' : 'workspace', '10',
+            purpose: ProjectResourceAccessPurpose::HistoricalExport,
         );
     }
 

@@ -34,6 +34,7 @@ class EnvironmentPolicy
         $ability = $environment->is_protected ? 'manage' : 'deploy';
 
         return app(DeployerProjectAccess::class)->environment($user, $environment)
+            && app(DeployerProjectAccess::class)->canChangeEnvironment($user, $environment)
             && (int) $environment->project->organization_id === (int) $user->current_organization_id
             && $environment->project->organization->permits($user, $ability);
     }
@@ -48,6 +49,7 @@ class EnvironmentPolicy
     public function delete(User $user, Environment $environment): bool
     {
         return app(DeployerProjectAccess::class)->environment($user, $environment)
+            && app(DeployerProjectAccess::class)->canChangeEnvironment($user, $environment)
             && (int) $environment->project->organization_id === (int) $user->current_organization_id
             && $environment->project->organization->permits($user, 'manage');
     }

@@ -5,8 +5,11 @@ namespace App\Modules\Deployer\Services;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Support\SqlLike;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\Relation;
 
 class RepositoryInventoryQuery
 {
@@ -33,8 +36,7 @@ class RepositoryInventoryQuery
             ->when($filters['website_id'], fn ($query, int $id) => $query
                 ->where('website_id', $id))
             ->when($filters['status'] === 'none', fn ($query) => $query->neverDeployed())
-            ->when($filters['status'] && $filters['status'] !== 'none', fn ($query) => $query
-                ->latestBuildStatus($filters['status']));
+            ->when($filters['status'] && $filters['status'] !== 'none', fn ($query) => $this->latestBuildStatus($query, $user, $filters['status']));
     }
 
     /**
@@ -48,18 +50,19 @@ class RepositoryInventoryQuery
         return [
             'total' => $this->for($user, $filters)->count(),
             'never_deployed' => $this->for($user, $filters)->neverDeployed()->count(),
-            'active' => $this->for($user, $filters)
-                ->latestBuildStatus(Build::ACTIVE_STATUSES)
-                ->count(),
-            'succeeded' => $this->for($user, $filters)
-                ->latestBuildStatus(Build::STATUS_SUCCEEDED)
-                ->count(),
-            'failed' => $this->for($user, $filters)
-                ->latestBuildStatus(Build::STATUS_FAILED)
-                ->count(),
+            'active' => $this->latestBuildStatus($this->for($user, $filters), $user, Build::ACTIVE_STATUSES)->count(),
+            'succeeded' => $this->latestBuildStatus($this->for($user, $filters), $user, Build::STATUS_SUCCEEDED)->count(),
+            'failed' => $this->latestBuildStatus($this->for($user, $filters), $user, Build::STATUS_FAILED)->count(),
             'webhooks' => $this->for($user, $filters)
                 ->where('webhook_enabled', true)
                 ->count(),
         ];
+    }
+
+    /** A denied latest build has no visible status; an older result must not become the latest implicitly. */
+    private function latestBuildStatus(Builder|Relation $query, User $actor, string|array $statuses): Builder|Relation
+    {
+        return $query->whereHas('latestBuild', fn (Builder $builds) => app(DeployerResourceProjection::class)
+            ->builds($builds, $actor)->whereIn('status', is_array($statuses) ? $statuses : [$statuses]));
     }
 }

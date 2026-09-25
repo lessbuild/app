@@ -3,6 +3,7 @@
 namespace App\Core\Http\Controllers;
 
 use App\Core\Data\Projects\WorkspaceWebhookDelivery;
+use App\Core\Http\Middleware\EnsureWorkspaceFeatureRollout;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\Workspace;
@@ -92,6 +93,8 @@ final class WorkspaceWebhookDeliveryHistoryController
             $page,
             ['path' => $request->url(), 'query' => $request->query()],
         );
+
+        $request->attributes->set(EnsureWorkspaceFeatureRollout::DEGRADED_ATTRIBUTE, $unavailableProducts->isNotEmpty());
 
         return view('core::workspaces.deliveries', [
             'user' => $user,

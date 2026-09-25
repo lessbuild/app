@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Auth\Access\HandlesAuthorization;
 
 class ProviderPolicy
@@ -31,10 +32,11 @@ class ProviderPolicy
      */
     public function view(User $user, Provider $provider): bool
     {
-        return $provider->organization
+        return app(DeployerProjectAccess::class)->providers(Provider::query()->whereKey($provider->getKey()), $user)->exists()
+            && ($provider->organization
             ? (int) $provider->organization_id === (int) $user->current_organization_id
                 && $provider->organization->permits($user, 'view')
-            : (int) $provider->user_id === (int) $user->id;
+            : (int) $provider->user_id === (int) $user->id);
     }
 
     /**
@@ -71,7 +73,8 @@ class ProviderPolicy
     public function update(User $user, Provider $provider): bool
     {
         return $this->view($user, $provider)
-            && ($provider->organization?->permits($user, 'manage') ?? true);
+            && ($provider->organization?->permits($user, 'manage') ?? true)
+            && app(DeployerProjectAccess::class)->canChangeProvider($user, $provider);
     }
 
     /**

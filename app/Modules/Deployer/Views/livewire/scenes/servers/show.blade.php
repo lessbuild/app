@@ -54,6 +54,7 @@
                 {{ __('Deployment History') }}
             </x-signal.ui.button>
 
+            @can('updateDisplayName', $server)
             <x-signal.ui.button
                 :href="$displayNameDialogUrl"
                 data-modal-trigger="server-display-name-dialog"
@@ -66,6 +67,7 @@
                 </svg>
                 {{ __('Edit Display Name') }}
             </x-signal.ui.button>
+            @endcan
 
             <x-signal.ui.button
                 :href="route('servers.commands.index', $server)"
@@ -117,7 +119,9 @@
         <a href="#server-operations" class="ui-local-nav__link">{{ __('Logs') }}</a>
     </x-signal.ui.local-nav>
 
-    <x-scenes.servers.edit-dialog :server="$server" :open="$displayNameDialogOpen" />
+    @can('updateDisplayName', $server)
+        <x-scenes.servers.edit-dialog :server="$server" :open="$displayNameDialogOpen" />
+    @endcan
 
     <x-signal.overlays.modal
         id="server-command-history-dialog"

@@ -43,7 +43,13 @@
             <div class="divide-y divide-line dark:divide-line">
                 @forelse($deliveries as $delivery)
                     @php($tone = match($delivery->status) { 'sent' => 'green', 'failed' => 'red', default => 'amber' })
-                    <div class="flex flex-col justify-between gap-4 px-6 py-4 sm:flex-row sm:items-center"><div><div class="flex flex-wrap items-center gap-2"><p class="text-sm font-semibold">{{ $delivery->period_start->utc()->format('Y-m-d H:i') }} → {{ $delivery->period_end->utc()->format('Y-m-d H:i') }} UTC</p><x-monitor::ui.badge :tone="$tone">{{ ucfirst($delivery->status) }}</x-monitor::ui.badge></div><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $delivery->new_count }} new · {{ $delivery->resolved_count }} resolved · {{ $delivery->open_count }} open{{ $delivery->critical_open_count > 0 ? ' · '.$delivery->critical_open_count.' critical' : '' }}</p></div><time class="text-xs text-subtle" datetime="{{ ($delivery->sent_at ?? $delivery->failed_at ?? $delivery->created_at)->toIso8601String() }}">{{ ($delivery->sent_at ?? $delivery->failed_at ?? $delivery->created_at)->diffForHumans() }}</time></div>
+                    <div class="flex flex-col justify-between gap-4 px-6 py-4 sm:flex-row sm:items-center"><div><div class="flex flex-wrap items-center gap-2"><p class="text-sm font-semibold">{{ $delivery->period_start->utc()->format('Y-m-d H:i') }} → {{ $delivery->period_end->utc()->format('Y-m-d H:i') }} UTC</p><x-monitor::ui.badge :tone="$tone">{{ ucfirst($delivery->status) }}</x-monitor::ui.badge></div><p class="mt-1 text-xs text-muted dark:text-subtle">
+                        @if($delivery->summary_available)
+                            {{ $delivery->new_count }} new · {{ $delivery->resolved_count }} resolved · {{ $delivery->open_count }} open{{ $delivery->critical_open_count > 0 ? ' · '.$delivery->critical_open_count.' critical' : '' }}
+                        @else
+                            Summary unavailable under your current project access.
+                        @endif
+                    </p></div><time class="text-xs text-subtle" datetime="{{ ($delivery->sent_at ?? $delivery->failed_at ?? $delivery->created_at)->toIso8601String() }}">{{ ($delivery->sent_at ?? $delivery->failed_at ?? $delivery->created_at)->diffForHumans() }}</time></div>
                 @empty
                     <div class="px-6 py-12 text-center"><span class="mx-auto flex h-10 w-10 items-center justify-center rounded-control bg-surface-muted text-subtle dark:bg-surface-muted"><x-monitor::icon name="inbox" class="h-5 w-5" /></span><h3 class="mt-4 text-sm font-bold">No digest deliveries yet.</h3><p class="mt-1 text-xs text-muted dark:text-subtle">Once an issue digest is sent, its delivery result will appear here.</p></div>
                 @endforelse

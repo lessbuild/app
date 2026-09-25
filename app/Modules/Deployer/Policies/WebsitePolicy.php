@@ -45,6 +45,7 @@ class WebsitePolicy
     public function update(User $user, Website $website): bool
     {
         return $this->view($user, $website)
+            && app(DeployerProjectAccess::class)->canChangeWebsite($user, $website)
             && ($website->organization?->permits($user, 'deploy') ?? true);
     }
 
@@ -58,6 +59,7 @@ class WebsitePolicy
     public function delete(User $user, Website $website): bool
     {
         return $this->view($user, $website)
+            && app(DeployerProjectAccess::class)->canChangeWebsite($user, $website)
             && ($website->organization?->permits($user, 'manage') ?? true);
     }
 
@@ -67,6 +69,7 @@ class WebsitePolicy
     public function backup(User $user, Website $website): bool
     {
         return $this->view($user, $website)
+            && app(DeployerProjectAccess::class)->canChangeWebsite($user, $website)
             && (int) $website->organization_id === (int) $user->current_organization_id
             && ($website->organization?->permits($user, 'manage') ?? false);
     }

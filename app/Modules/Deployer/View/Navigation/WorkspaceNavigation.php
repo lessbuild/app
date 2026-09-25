@@ -8,6 +8,7 @@ use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
@@ -42,7 +43,7 @@ final class WorkspaceNavigation
      */
     public function for(User $user): array
     {
-        $unreadNotifications = $user->unreadNotifications()->count();
+        $unreadNotifications = app(DeployerHistoryAccess::class)->notifications($user->unreadNotifications(), $user)->count();
         $workspace = $user->currentOrganization;
         $coreWorkspaceId = $workspace === null ? null : $this->identities->canonicalIdForSource(
             'deployer',

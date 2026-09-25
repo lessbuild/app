@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerResourceProjection;
 use App\Modules\Deployer\Support\CsvCell;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -46,7 +47,7 @@ class RepositoryInventoryExporter
             ], ',', '"', '');
 
             $this->repositories->for($user, $filters)
-                ->with(['provider', 'website.server', 'latestBuild'])
+                ->with(['provider', 'website.server', 'latestBuild' => fn ($query) => app(DeployerResourceProjection::class)->builds($query, $user)])
                 ->latest('repositories.id')
                 ->lazy(250)
                 ->each(function (Repository $repository) use ($output): void {

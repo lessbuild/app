@@ -18,6 +18,7 @@ use App\Core\Http\Controllers\WorkspaceCustomerStatusPagesController;
 use App\Core\Http\Controllers\WorkspaceDashboardController;
 use App\Core\Http\Controllers\WorkspaceDashboardPreferencesController;
 use App\Core\Http\Controllers\WorkspaceDirectoryController;
+use App\Core\Http\Controllers\WorkspaceFeatureRolloutController;
 use App\Core\Http\Controllers\WorkspaceFeedbackController;
 use App\Core\Http\Controllers\WorkspaceMonitorStatusPagesController;
 use App\Core\Http\Controllers\WorkspaceNotificationInboxController;
@@ -27,6 +28,8 @@ use App\Core\Http\Controllers\WorkspaceSubscriptionsController;
 use App\Core\Http\Controllers\WorkspaceTeamController;
 use App\Core\Http\Controllers\WorkspaceWebhookDeliveryHistoryController;
 use App\Core\Http\Controllers\WorkspaceWorkflowActivityController;
+use App\Core\Http\Middleware\EnsureWorkspaceFeatureRollout;
+use App\Core\Services\WorkspaceFeatureRollouts;
 use App\Modules\Deployer\Http\Controllers\AdminAccessRequestController;
 use App\Modules\Deployer\Http\Controllers\AdminAnalyticsController;
 use Illuminate\Support\Facades\Route;
@@ -98,6 +101,13 @@ Route::middleware('auth:platform')->group(function (): void {
     Route::get('/workspaces/{workspace}/manage', WorkspaceAdministrationController::class)
         ->name('core.workspace.admin');
 
+    Route::get('/workspaces/{workspace}/feature-rollouts', [WorkspaceFeatureRolloutController::class, 'index'])
+        ->name('core.workspace.feature-rollouts.index');
+    Route::patch('/workspaces/{workspace}/feature-rollouts/{feature}', [WorkspaceFeatureRolloutController::class, 'update'])
+        ->whereIn('feature', WorkspaceFeatureRollouts::FEATURES)
+        ->middleware('throttle:30,1')
+        ->name('core.workspace.feature-rollouts.update');
+
     Route::get('/workspaces/{workspace}/costs', WorkspaceCostBreakdownController::class)
         ->name('core.workspace.costs');
     Route::patch('/workspaces/{workspace}/costs/budget', [WorkspaceCostBreakdownController::class, 'updateBudget'])
@@ -152,9 +162,11 @@ Route::middleware('auth:platform')->group(function (): void {
         ->name('core.workspace.workflows');
 
     Route::get('/workspaces/{workspace}/deliveries', WorkspaceWebhookDeliveryHistoryController::class)
+        ->middleware(EnsureWorkspaceFeatureRollout::class.':delivery_history')
         ->name('core.workspace.deliveries');
 
     Route::get('/workspaces/{workspace}/credentials', WorkspaceCredentialInventoryController::class)
+        ->middleware(EnsureWorkspaceFeatureRollout::class.':credential_inventory')
         ->name('core.workspace.credentials');
 
     Route::get('/workspaces/{workspace}/notifications', WorkspaceNotificationInboxController::class)

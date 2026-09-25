@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
 use Illuminate\Auth\Access\Response;
 use Illuminate\Notifications\DatabaseNotification;
 
@@ -30,7 +31,8 @@ class NotificationPolicy
     private function ownershipResponse(User $user, DatabaseNotification $notification): Response
     {
         if ((string) $notification->notifiable_id === (string) $user->getKey()
-            && $notification->notifiable_type === $user->getMorphClass()) {
+            && $notification->notifiable_type === $user->getMorphClass()
+            && app(DeployerHistoryAccess::class)->notifications($user->notifications()->whereKey($notification->getKey()), $user)->exists()) {
             return Response::allow();
         }
 
