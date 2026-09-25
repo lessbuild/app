@@ -48,6 +48,7 @@
         }
     },
     "scripts": {
+        "check:module-boundaries": "@php scripts/check-module-boundaries.php",
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"

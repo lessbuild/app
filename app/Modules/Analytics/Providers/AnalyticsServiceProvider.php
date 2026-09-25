@@ -3,6 +3,7 @@
 namespace App\Modules\Analytics\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -23,6 +24,8 @@ use App\Core\Services\WorkspaceProductUsageProviderRegistry;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
+use App\Modules\Analytics\Services\Connections\ConsumeDeployerReleaseAnnotation;
+use App\Modules\Analytics\Services\Connections\ConsumeMonitorIncidentAnnotation;
 use App\Modules\Analytics\Services\Core\AnalyticsApiDocumentationProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformStatusProvider;
@@ -85,6 +88,8 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
             'analytics',
             app(AnalyticsPlatformStatusProvider::class),
         );
+        app(ProjectConnectionDeliveryConsumerRegistry::class)->register(app(ConsumeDeployerReleaseAnnotation::class));
+        app(ProjectConnectionDeliveryConsumerRegistry::class)->register(app(ConsumeMonitorIncidentAnnotation::class));
 
         if (! config('platform.products.analytics.enabled', false)
             || ! filled(config('platform.products.analytics.host'))) {

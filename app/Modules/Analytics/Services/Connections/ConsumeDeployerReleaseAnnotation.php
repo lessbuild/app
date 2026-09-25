@@ -2,7 +2,9 @@
 
 namespace App\Modules\Analytics\Services\Connections;
 
+use App\Core\Contracts\ProjectConnectionDeliveryConsumer;
 use App\Core\Data\Connections\ProjectConnectionDeliveryAuthority;
+use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Exceptions\Connections\ProjectConnectionDeliveryBlocked;
 use App\Core\Services\Connections\ProjectConnectionDeliveryAuthorization;
 use App\Modules\Analytics\Models\Site;
@@ -11,11 +13,34 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-final class ConsumeDeployerReleaseAnnotation
+final class ConsumeDeployerReleaseAnnotation implements ProjectConnectionDeliveryConsumer
 {
     public const HANDLER = 'analytics.record-release-annotation.v1';
 
+    public const EVENT_TYPE = 'deployer.deployment_succeeded';
+
     public function __construct(private readonly ProjectConnectionDeliveryAuthorization $authorization) {}
+
+    public function eventTypes(): array
+    {
+        return [self::EVENT_TYPE];
+    }
+
+    public function capability(): ProjectConnectionCapability
+    {
+        return ProjectConnectionCapability::ReleaseAnnotations;
+    }
+
+    public function targetProduct(): string
+    {
+        return 'analytics';
+    }
+
+    /** @param array<string, mixed> $payload */
+    public function consume(string $deliveryId, string $connectionId, array $payload): void
+    {
+        $this->handle($deliveryId, $connectionId, $payload);
+    }
 
     /** @param array<string, mixed> $payload */
     public function handle(string $deliveryId, string $connectionId, array $payload): SiteReleaseAnnotation

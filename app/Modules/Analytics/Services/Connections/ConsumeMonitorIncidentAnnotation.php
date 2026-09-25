@@ -2,7 +2,9 @@
 
 namespace App\Modules\Analytics\Services\Connections;
 
+use App\Core\Contracts\ProjectConnectionDeliveryConsumer;
 use App\Core\Data\Connections\ProjectConnectionDeliveryAuthority;
+use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Exceptions\Connections\ProjectConnectionDeliveryBlocked;
 use App\Core\Services\Connections\ProjectConnectionDeliveryAuthorization;
 use App\Modules\Analytics\Models\Site;
@@ -11,11 +13,37 @@ use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
-final class ConsumeMonitorIncidentAnnotation
+final class ConsumeMonitorIncidentAnnotation implements ProjectConnectionDeliveryConsumer
 {
     public const HANDLER = 'analytics.record-incident-annotation.v1';
 
+    public const OPENED_EVENT = 'monitor.incident_opened';
+
+    public const ACKNOWLEDGED_EVENT = 'monitor.incident_acknowledged';
+
+    public const RESOLVED_EVENT = 'monitor.incident_resolved';
+
     public function __construct(private readonly ProjectConnectionDeliveryAuthorization $authorization) {}
+
+    public function eventTypes(): array
+    {
+        return [self::OPENED_EVENT, self::ACKNOWLEDGED_EVENT, self::RESOLVED_EVENT];
+    }
+
+    public function capability(): ProjectConnectionCapability
+    {
+        return ProjectConnectionCapability::IncidentAnnotations;
+    }
+
+    public function targetProduct(): string
+    {
+        return 'analytics';
+    }
+
+    public function consume(string $deliveryId, string $connectionId, array $payload): void
+    {
+        $this->handle($deliveryId, $connectionId, $payload);
+    }
 
     /** @param array<string, mixed> $payload */
     public function handle(string $deliveryId, string $connectionId, array $payload): SiteIncidentAnnotation

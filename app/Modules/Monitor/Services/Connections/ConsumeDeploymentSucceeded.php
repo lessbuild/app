@@ -2,7 +2,9 @@
 
 namespace App\Modules\Monitor\Services\Connections;
 
+use App\Core\Contracts\ProjectConnectionDeliveryConsumer;
 use App\Core\Data\Connections\ProjectConnectionDeliveryAuthority;
+use App\Core\Enums\ProjectConnectionCapability;
 use App\Core\Services\Connections\ProjectConnectionDeliveryAuthorization;
 use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\Environment;
@@ -13,14 +15,37 @@ use Illuminate\Support\Str;
 use LogicException;
 use RuntimeException;
 
-final class ConsumeDeploymentSucceeded
+final class ConsumeDeploymentSucceeded implements ProjectConnectionDeliveryConsumer
 {
     public const HANDLER = 'monitor.record-deployment.v1';
+
+    public const EVENT_TYPE = 'deployer.deployment_succeeded';
 
     public function __construct(
         private readonly RecordDeployment $deployments,
         private readonly ProjectConnectionDeliveryAuthorization $authorization,
     ) {}
+
+    public function eventTypes(): array
+    {
+        return [self::EVENT_TYPE];
+    }
+
+    public function capability(): ProjectConnectionCapability
+    {
+        return ProjectConnectionCapability::DeploymentContext;
+    }
+
+    public function targetProduct(): string
+    {
+        return 'monitor';
+    }
+
+    /** @param array<string, mixed> $payload */
+    public function consume(string $deliveryId, string $connectionId, array $payload): void
+    {
+        $this->handle($deliveryId, $connectionId, $payload);
+    }
 
     /** @param array<string, mixed> $payload */
     public function handle(string $deliveryId, string $connectionId, array $payload): Deployment

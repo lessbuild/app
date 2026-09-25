@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
+use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
@@ -34,6 +35,7 @@ use App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace;
 use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
+use App\Modules\Monitor\Services\Connections\ConsumeDeploymentSucceeded;
 use App\Modules\Monitor\Services\Core\MonitorApiDocumentationProvider;
 use App\Modules\Monitor\Services\Core\MonitorCustomerStatusPageProvider;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
@@ -123,6 +125,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
             'monitor',
             app(MonitorPlatformStatusProvider::class),
         );
+        app(ProjectConnectionDeliveryConsumerRegistry::class)->register(app(ConsumeDeploymentSucceeded::class));
 
         if (! config('platform.products.monitor.enabled', false)
             || ! filled(config('platform.products.monitor.host'))) {
