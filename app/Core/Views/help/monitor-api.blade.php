@@ -24,7 +24,7 @@
             <x-signal.ui.card class="p-5 lg:col-span-2">
                 <p class="ui-eyebrow">{{ __('Authentication') }}</p>
                 <h2 class="mt-2 text-lg font-extrabold text-ink">{{ __('Keep credentials server-side') }}</h2>
-                <p class="mt-2 text-sm leading-6 text-muted">{{ __('Environment tokens use the standard Authorization header. Heartbeat and queue keys are scoped to one Monitor and must never be shipped in a browser bundle.') }}</p>
+                <p class="mt-2 text-sm leading-6 text-muted">{{ __('Use Authorization: Bearer for environment tokens. Existing environment-token clients may also send X-Beacon-Token. Heartbeat and queue keys are scoped to one Monitor, require bearer authentication, and must never be shipped in a browser bundle.') }}</p>
                 <x-signal.ui.code-block class="mt-4" :code="'Authorization: Bearer YOUR_ENVIRONMENT_TOKEN'" />
             </x-signal.ui.card>
 
@@ -53,6 +53,14 @@
                             <div class="min-w-0">
                                 <code class="break-all text-sm font-bold text-ink">{{ strtoupper($method) }} {{ $path }}</code>
                                 <p class="mt-1 text-xs leading-5 text-muted">{{ $operation['summary'] }}</p>
+                                <p class="mt-1 text-xs leading-5 text-muted">{{ __('Responses: :codes', ['codes' => implode(', ', array_keys($operation['responses'] ?? []))]) }}</p>
+                                @if ($operation['x-rate-limits'] ?? [])
+                                    <div class="mt-2 flex flex-wrap gap-2">
+                                        @foreach ($operation['x-rate-limits'] as $rateLimit)
+                                            <x-signal.ui.badge tone="neutral">{{ number_format($rateLimit['requests']) }}/min · {{ $rateLimit['key'] }}</x-signal.ui.badge>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
                             <span class="shrink-0 text-xs font-semibold text-subtle">{{ $operation['operationId'] }}</span>
                         </div>

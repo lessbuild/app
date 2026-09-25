@@ -51,6 +51,7 @@ use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceStatusManagementProvider;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;
+use App\Modules\Monitor\Services\MonitorPublicApiLimits;
 use App\Modules\Monitor\Services\NativeDnsRecordResolver;
 use App\Modules\Monitor\Services\NativeDnsResolver;
 use App\Modules\Monitor\Services\NativeTcpConnector;
@@ -183,20 +184,22 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         });
         RateLimiter::for('monitor.account-email', fn (Request $request) => Limit::perMinute(3)->by($request->user()?->id ?? $request->ip()));
         RateLimiter::for('monitor.registration', fn (Request $request) => Limit::perHour(10)->by($request->ip()));
-        RateLimiter::for('monitor.heartbeat-ingress', fn (Request $request): Limit => Limit::perMinute(240)->by('heartbeat-ip:'.$request->ip()));
-        RateLimiter::for('monitor.heartbeats', fn (Request $request): Limit => Limit::perMinute(60)->by('heartbeat-monitor:'.$request->attributes->get('heartbeat_monitor_id')));
-        RateLimiter::for('monitor.queue-ingress', fn (Request $request): Limit => Limit::perMinute(2400)->by('queue-ip:'.$request->ip()));
-        RateLimiter::for('monitor.queue-signals', fn (Request $request): Limit => Limit::perMinute($request->routeIs('monitor.api.queues.snapshots.store') ? 60 : 600)
+        RateLimiter::for('monitor.heartbeat-ingress', fn (Request $request): Limit => Limit::perMinute(MonitorPublicApiLimits::HEARTBEAT_IP_PER_MINUTE)->by('heartbeat-ip:'.$request->ip()));
+        RateLimiter::for('monitor.heartbeats', fn (Request $request): Limit => Limit::perMinute(MonitorPublicApiLimits::HEARTBEAT_MONITOR_PER_MINUTE)->by('heartbeat-monitor:'.$request->attributes->get('heartbeat_monitor_id')));
+        RateLimiter::for('monitor.queue-ingress', fn (Request $request): Limit => Limit::perMinute(MonitorPublicApiLimits::QUEUE_IP_PER_MINUTE)->by('queue-ip:'.$request->ip()));
+        RateLimiter::for('monitor.queue-signals', fn (Request $request): Limit => Limit::perMinute($request->routeIs('monitor.api.queues.snapshots.store')
+            ? MonitorPublicApiLimits::QUEUE_SNAPSHOT_MONITOR_PER_MINUTE
+            : MonitorPublicApiLimits::QUEUE_WORKER_MONITOR_PER_MINUTE)
             ->by('queue-monitor:'.$request->attributes->get('queue_monitor_id').':'.$request->route()->getName()));
         RateLimiter::for('monitor.ingest', function (Request $request): Limit {
             $token = $request->bearerToken() ?? $request->header('X-Beacon-Token');
 
-            return Limit::perMinute(240)->by(is_string($token) ? hash('sha256', $token) : $request->ip());
+            return Limit::perMinute(MonitorPublicApiLimits::INGEST_TOKEN_PER_MINUTE)->by(is_string($token) ? hash('sha256', $token) : $request->ip());
         });
         RateLimiter::for('monitor.deployments', function (Request $request): Limit {
             $token = $request->bearerToken() ?? $request->header('X-Beacon-Token');
 
-            return Limit::perMinute(60)->by(is_string($token) ? hash('sha256', $token) : $request->ip());
+            return Limit::perMinute(MonitorPublicApiLimits::DEPLOYMENT_TOKEN_PER_MINUTE)->by(is_string($token) ? hash('sha256', $token) : $request->ip());
         });
     }
 

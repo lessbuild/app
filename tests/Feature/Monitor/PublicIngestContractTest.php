@@ -8,9 +8,12 @@ use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\IngestReceipt;
 use App\Modules\Monitor\Models\IngestToken;
 use App\Modules\Monitor\Models\Release;
+use App\Modules\Monitor\Services\MonitorPublicApiLimits;
+use App\Modules\Monitor\Services\OpenApiDocument;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Route;
@@ -138,6 +141,66 @@ final class PublicIngestContractTest extends TestCase
         $this->assertDatabaseCount('telemetry_events', 0, 'monitor');
         $this->assertSame(0, $token->environment->fresh()->event_count);
         $this->assertNull($token->environment->fresh()->last_seen_at);
+    }
+
+    public function test_openapi_paths_responses_and_limits_match_the_public_api_contract(): void
+    {
+        $document = app(OpenApiDocument::class)->make('https://monitor.example.test');
+        $documented = collect($document['paths'])
+            ->flatMap(fn (array $pathOperations, string $path) => collect($pathOperations)
+                ->keys()
+                ->map(fn (string $method): string => strtoupper($method).' '.$path))
+            ->sort()
+            ->values()
+            ->all();
+        $registered = collect(Route::getRoutes()->getRoutes())
+            ->filter(fn ($route): bool => str_starts_with($route->uri(), 'api/v1/')
+                && str_starts_with((string) $route->getName(), 'monitor.api.')
+                && $route->getName() !== 'monitor.api.openapi')
+            ->flatMap(fn ($route) => collect($route->methods())
+                ->reject(fn (string $method): bool => $method === 'HEAD')
+                ->map(fn (string $method): string => $method.' /'.$route->uri()))
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertSame($registered, $documented);
+        $this->assertArrayHasKey('201', $document['paths']['/api/v1/deployments']['post']['responses']);
+        $this->assertArrayHasKey('200', $document['paths']['/api/v1/deployments']['post']['responses']);
+        $this->assertArrayHasKey('429', $document['paths']['/api/v1/ingest']['post']['responses']);
+        $this->assertArrayHasKey('400', $document['paths']['/api/v1/ingest']['post']['responses']);
+        $this->assertArrayHasKey('413', $document['paths']['/api/v1/ingest']['post']['responses']);
+        $this->assertArrayHasKey('415', $document['paths']['/api/v1/queues/{queue}/workers']['post']['responses']);
+        $this->assertSame(MonitorPublicApiLimits::INGEST_TOKEN_PER_MINUTE,
+            $document['paths']['/api/v1/ingest']['post']['x-rate-limits'][0]['requests']);
+        $this->assertSame(MonitorPublicApiLimits::DEPLOYMENT_TOKEN_PER_MINUTE,
+            $document['paths']['/api/v1/deployments']['post']['x-rate-limits'][1]['requests']);
+        $this->assertSame(MonitorPublicApiLimits::QUEUE_WORKER_MONITOR_PER_MINUTE,
+            $document['paths']['/api/v1/queues/{queue}/workers']['post']['x-rate-limits'][1]['requests']);
+        $this->assertSame('#/components/schemas/QueueSnapshotRequest',
+            $document['paths']['/api/v1/queues/{queue}/snapshots']['post']['requestBody']['content']['application/json']['schema']['$ref']);
+    }
+
+    public function test_environment_token_rate_limit_returns_standard_retry_headers(): void
+    {
+        Cache::flush();
+        RateLimiter::for('monitor.ingest', static fn (Request $request): Limit => Limit::perMinute(1)->by('monitor-ingest-rate-test'));
+        $this->collector('rate-limit-secret');
+        $payload = [
+            'batch_id' => 'rate-limit-batch-001',
+            'events' => [['id' => 'rate-limit-event-001', 'type' => 'log', 'name' => 'Rate limit contract']],
+        ];
+
+        $this->withToken('rate-limit-secret')
+            ->postJson('https://monitor.example.test/api/v1/ingest', $payload)
+            ->assertAccepted();
+
+        $this->withToken('rate-limit-secret')
+            ->postJson('https://monitor.example.test/api/v1/ingest', $payload)
+            ->assertStatus(429)
+            ->assertHeader('Retry-After')
+            ->assertHeader('X-RateLimit-Limit', '1')
+            ->assertHeader('X-RateLimit-Remaining', '0');
     }
 
     private function collector(string $secret): IngestToken

@@ -119,6 +119,9 @@ final class CoreHelpRoutesTest extends TestCase
             ->assertSee('X-Beacon-Signature')
             ->assertSee('HMAC_SHA256(key, timestamp + "." + raw_body)')
             ->assertSee('up to five total attempts')
-            ->assertSee('constant time');
+            ->assertSee('constant time')
+            ->assertSee('240/min · environment token')
+            ->assertSee('Responses: 200, 202, 400, 401, 413, 415, 422, 429')
+            ->assertSee('X-Beacon-Token');
     }
 }
