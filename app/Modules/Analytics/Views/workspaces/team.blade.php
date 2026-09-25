@@ -8,6 +8,9 @@
             description="Invite collaborators with the least access they need. Invitations expire automatically."
         >
             <x-slot:actions>
+                @if ($workspaceRole?->canManageMembers())
+                    <x-signal.ui.button href="{{ route('analytics.workspaces.data', $workspace) }}" variant="secondary">{{ __('Data & privacy') }}</x-signal.ui.button>
+                @endif
                 <x-signal.ui.button href="{{ route('analytics.dashboard') }}" variant="secondary">Overview</x-signal.ui.button>
             </x-slot:actions>
         </x-signal.ui.page-header>

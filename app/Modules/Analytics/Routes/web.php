@@ -12,6 +12,7 @@ use App\Modules\Analytics\Http\Controllers\SiteController;
 use App\Modules\Analytics\Http\Controllers\SiteSettingsController;
 use App\Modules\Analytics\Http\Controllers\TeamController;
 use App\Modules\Analytics\Http\Controllers\WorkspaceController;
+use App\Modules\Analytics\Http\Controllers\WorkspaceDataController;
 use App\Modules\Analytics\Http\Controllers\WorkspaceSearchController;
 use App\Modules\Analytics\Livewire\Dashboard\Overview;
 use Illuminate\Support\Facades\Route;
@@ -38,6 +39,10 @@ Route::middleware([...$authenticatedMiddleware, 'verified:analytics.verification
         ->middleware('throttle:60,1')
         ->name('workspace.search');
     Route::get('/workspaces/{workspace}/team', [TeamController::class, 'index'])->name('workspaces.team');
+    Route::get('/workspaces/{workspace}/data', [WorkspaceDataController::class, 'index'])->name('workspaces.data');
+    Route::get('/workspaces/{workspace}/data/export', [WorkspaceDataController::class, 'export'])
+        ->middleware('throttle:sensitive-account')
+        ->name('workspaces.data.export');
     Route::post('/workspaces/{workspace}/invitations', [TeamController::class, 'invite'])->middleware('password.confirm')->name('workspaces.invitations.store');
     Route::put('/workspaces/{workspace}/members/{user}', [TeamController::class, 'updateRole'])->middleware('password.confirm')->name('workspaces.members.update');
     Route::delete('/workspaces/{workspace}/members/{user}', [TeamController::class, 'remove'])->middleware('password.confirm')->name('workspaces.members.destroy');

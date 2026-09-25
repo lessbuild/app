@@ -104,6 +104,15 @@ final class WorkspaceViewData
                 'href' => route('analytics.workspaces.team', $currentWorkspace),
                 'active' => $this->request->routeIs('analytics.workspaces.team'),
             ];
+
+            if ($currentWorkspaceRole?->canManageMembers() === true) {
+                $managementItems[] = [
+                    'label' => 'Data & privacy',
+                    'href' => route('analytics.workspaces.data', $currentWorkspace),
+                    'icon' => 'shield',
+                    'active' => $this->request->routeIs('analytics.workspaces.data*'),
+                ];
+            }
         }
 
         $groups[] = ['label' => 'Manage', 'items' => $managementItems];
