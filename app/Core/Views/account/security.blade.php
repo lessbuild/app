@@ -316,6 +316,15 @@
                 </ul>
             @endif
         </x-signal.ui.panel>
+
+        <x-signal.ui.panel as="section" class="flex flex-wrap items-center justify-between gap-5 p-6" aria-labelledby="account-export-heading">
+            <div class="max-w-3xl">
+                <p class="ui-eyebrow">{{ __('Data and privacy') }}</p>
+                <h2 id="account-export-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Download your shared account data') }}</h2>
+                <p class="mt-2 text-sm leading-6 text-muted">{{ __('Export your Buildpusher profile, sign-in metadata, workspace and project access, personal dashboard settings, notification preferences, and feedback. Product operational data remains available from that product’s export tools.') }}</p>
+            </div>
+            <x-signal.ui.button href="{{ route('platform.account.export') }}" variant="secondary">{{ __('Download account export') }}</x-signal.ui.button>
+        </x-signal.ui.panel>
     </main>
     @vite('resources/js/platform-passkeys.js')
 </x-signal.layouts.core>

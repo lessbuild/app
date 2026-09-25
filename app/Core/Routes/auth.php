@@ -1,5 +1,6 @@
 <?php
 
+use App\Core\Http\Controllers\Auth\PlatformAccountDataExportController;
 use App\Core\Http\Controllers\Auth\PlatformAccountSecurityController;
 use App\Core\Http\Controllers\Auth\PlatformEmailVerificationController;
 use App\Core\Http\Controllers\Auth\PlatformPasskeyController;
@@ -75,6 +76,9 @@ Route::post('/logout', [PlatformSessionController::class, 'destroy'])
 Route::middleware('auth:platform')->group(function (): void {
     Route::get('/account/security', [PlatformAccountSecurityController::class, 'index'])
         ->name('account.security');
+    Route::get('/account/export', PlatformAccountDataExportController::class)
+        ->middleware('throttle:sensitive-account')
+        ->name('account.export');
     Route::post('/account/security/social/{provider}', [PlatformSocialAuthController::class, 'connect'])
         ->whereIn('provider', PlatformSocialProviders::keys())
         ->middleware('throttle:sensitive-account')
