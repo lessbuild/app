@@ -5,8 +5,10 @@ namespace Tests\Feature\Monitor;
 use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Services\ReleaseMetrics;
+use Carbon\Carbon;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
@@ -22,7 +24,7 @@ final class DeploymentComparisonContextTest extends TestCase
 
     protected function tearDown(): void
     {
-        foreach (['incidents', 'monitors', 'alert_rules', 'deployments', 'releases', 'environments', 'applications', 'workspaces'] as $table) {
+        foreach (['telemetry_events', 'incidents', 'monitors', 'alert_rules', 'deployments', 'releases', 'environments', 'applications', 'workspaces'] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
 
@@ -44,9 +46,91 @@ final class DeploymentComparisonContextTest extends TestCase
         $this->assertSame([1, 3], $incidents->modelKeys());
     }
 
+    public function test_it_compares_monitor_latency_and_error_signals_on_equal_half_open_service_windows(): void
+    {
+        $workspace = (new Workspace)->forceFill(['id' => 1, 'name' => 'Workspace', 'slug' => 'workspace']);
+        $deployment = Deployment::query()->findOrFail(1);
+        Carbon::setTestNow('2026-04-02 14:00:00 UTC');
+        try {
+            $comparison = app(ReleaseMetrics::class)->aroundDeploymentWindow($workspace, $deployment, 3600, 60);
+        } finally {
+            Carbon::setTestNow();
+        }
+
+        $this->assertSame(3600, $comparison['seconds']);
+        $this->assertSame([
+            'events' => 2,
+            'requests' => 2,
+            'timed' => 2,
+            'failed' => 1,
+            'averageDuration' => 150.0,
+            'errorRate' => 50.0,
+            'exceptions' => 0,
+            'issues' => 0,
+        ], $comparison['before']);
+        $this->assertSame([
+            'events' => 2,
+            'requests' => 2,
+            'timed' => 1,
+            'failed' => 1,
+            'averageDuration' => 50.0,
+            'errorRate' => 50.0,
+            'exceptions' => 0,
+            'issues' => 0,
+        ], $comparison['after']);
+        $this->assertSame('2026-04-02 11:00:00', $comparison['from']->format('Y-m-d H:i:s'));
+        $this->assertSame('2026-04-02 13:00:00', $comparison['until']->format('Y-m-d H:i:s'));
+    }
+
+    public function test_release_comparison_distinguishes_missing_samples_and_explains_observed_deltas(): void
+    {
+        $left = [
+            'events' => 4,
+            'requests' => 2,
+            'timed' => 2,
+            'failed' => 0,
+            'averageDuration' => 100.0,
+            'errorRate' => 0.0,
+            'exceptions' => 1,
+            'issues' => 0,
+        ];
+        $right = [
+            'events' => 10,
+            'requests' => 4,
+            'timed' => 2,
+            'failed' => 1,
+            'averageDuration' => 150.0,
+            'errorRate' => 25.0,
+            'exceptions' => 2,
+            'issues' => 1,
+        ];
+        $html = Blade::render(
+            '<x-monitor::ui.release-comparison :left="$left" :right="$right" left-label="Before deployment" right-label="After deployment" />',
+            ['left' => $left, 'right' => $right],
+        );
+
+        $this->assertStringContainsString('Request error-signal ratio', $html);
+        $this->assertStringContainsString('0.00%', $html);
+        $this->assertStringContainsString('25.00%', $html);
+        $this->assertStringContainsString('100.00 ms', $html);
+        $this->assertStringContainsString('150.00 ms', $html);
+        $this->assertStringContainsString('+25.00 percentage points', $html);
+        $this->assertStringContainsString('+50.00 ms', $html);
+        $this->assertStringContainsString('not unique user requests or availability measurements', $html);
+
+        $missing = [...$left, 'requests' => 0, 'timed' => 0, 'averageDuration' => null, 'errorRate' => null];
+        $missingHtml = Blade::render(
+            '<x-monitor::ui.release-comparison :left="$missing" :right="$right" />',
+            ['missing' => $missing, 'right' => $right],
+        );
+        $this->assertStringContainsString('No samples', $missingHtml);
+        $this->assertStringContainsString('No timed samples', $missingHtml);
+        $this->assertStringNotContainsString('Observed change:', $missingHtml);
+    }
+
     private function createTables(): void
     {
-        foreach (['incidents', 'monitors', 'alert_rules', 'deployments', 'releases', 'environments', 'applications', 'workspaces'] as $table) {
+        foreach (['telemetry_events', 'incidents', 'monitors', 'alert_rules', 'deployments', 'releases', 'environments', 'applications', 'workspaces'] as $table) {
             Schema::connection('monitor')->dropIfExists($table);
         }
 
@@ -85,6 +169,17 @@ final class DeploymentComparisonContextTest extends TestCase
             $table->foreignId('release_id');
             $table->timestamp('deployed_at', 6);
             $table->timestamps(6);
+        });
+        Schema::connection('monitor')->create('telemetry_events', function (Blueprint $table): void {
+            $table->id();
+            $table->unsignedBigInteger('environment_id');
+            $table->unsignedBigInteger('release_id')->nullable();
+            $table->unsignedBigInteger('issue_id')->nullable();
+            $table->string('type');
+            $table->string('severity')->nullable();
+            $table->unsignedSmallInteger('status_code')->nullable();
+            $table->decimal('duration_ms', 10, 3)->nullable();
+            $table->timestamp('occurred_at', 6);
         });
         Schema::connection('monitor')->create('alert_rules', function (Blueprint $table): void {
             $table->id();
@@ -152,6 +247,15 @@ final class DeploymentComparisonContextTest extends TestCase
             ['id' => 4, 'alert_rule_id' => 4, 'monitor_id' => null, 'title' => 'Later incident', 'status' => 'open', 'opened_at' => '2026-04-02 13:00:00', 'resolved_at' => null],
             ['id' => 5, 'alert_rule_id' => 5, 'monitor_id' => null, 'title' => 'Staging incident', 'status' => 'open', 'opened_at' => '2026-04-02 11:30:00', 'resolved_at' => null],
             ['id' => 6, 'alert_rule_id' => 6, 'monitor_id' => null, 'title' => 'Private incident', 'status' => 'open', 'opened_at' => '2026-04-02 11:30:00', 'resolved_at' => null],
+        ]);
+        DB::connection('monitor')->table('telemetry_events')->insert([
+            ['id' => 1, 'environment_id' => 1, 'release_id' => 1, 'issue_id' => null, 'type' => 'request', 'severity' => 'info', 'status_code' => 200, 'duration_ms' => 100, 'occurred_at' => '2026-04-02 11:30:00'],
+            ['id' => 2, 'environment_id' => 1, 'release_id' => 2, 'issue_id' => null, 'type' => 'request', 'severity' => 'info', 'status_code' => 500, 'duration_ms' => 200, 'occurred_at' => '2026-04-02 11:59:59'],
+            ['id' => 3, 'environment_id' => 1, 'release_id' => 3, 'issue_id' => null, 'type' => 'request', 'severity' => 'error', 'status_code' => 503, 'duration_ms' => 900, 'occurred_at' => '2026-04-02 11:45:00'],
+            ['id' => 4, 'environment_id' => 2, 'release_id' => 1, 'issue_id' => null, 'type' => 'request', 'severity' => 'error', 'status_code' => 503, 'duration_ms' => 900, 'occurred_at' => '2026-04-02 11:45:00'],
+            ['id' => 5, 'environment_id' => 1, 'release_id' => 1, 'issue_id' => null, 'type' => 'request', 'severity' => 'info', 'status_code' => 200, 'duration_ms' => 50, 'occurred_at' => '2026-04-02 12:00:00'],
+            ['id' => 6, 'environment_id' => 1, 'release_id' => 2, 'issue_id' => null, 'type' => 'request', 'severity' => 'error', 'status_code' => 404, 'duration_ms' => null, 'occurred_at' => '2026-04-02 12:59:59'],
+            ['id' => 7, 'environment_id' => 1, 'release_id' => 2, 'issue_id' => null, 'type' => 'request', 'severity' => 'info', 'status_code' => 500, 'duration_ms' => 50, 'occurred_at' => '2026-04-02 13:00:00'],
         ]);
     }
 }
