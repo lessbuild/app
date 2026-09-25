@@ -27,6 +27,10 @@
 
     if (allowed[name]?.includes(shared)) return shared;
 
+    if (name === 'appearance' && allowed.appearance.includes(root.dataset.themeUserAppearance)) {
+      return root.dataset.themeUserAppearance;
+    }
+
     try {
       const stored = localStorage.getItem(`${namespace}-${name}`);
 

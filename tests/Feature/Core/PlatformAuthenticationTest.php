@@ -5,6 +5,7 @@ namespace Tests\Feature\Core;
 use App\Core\Models\PlatformUser;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Blade;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
@@ -33,6 +34,7 @@ final class PlatformAuthenticationTest extends TestCase
             $table->text('two_factor_secret')->nullable();
             $table->text('two_factor_recovery_codes')->nullable();
             $table->timestamp('two_factor_confirmed_at')->nullable();
+            $table->json('preferences')->nullable();
             $table->string('status', 24)->default('active');
             $table->rememberToken();
             $table->timestamps();
@@ -105,6 +107,67 @@ final class PlatformAuthenticationTest extends TestCase
             ->assertOk()
             ->assertSeeText('Choose a new password')
             ->assertSee('value="person@example.test"', false);
+    }
+
+    public function test_signed_in_shared_theme_is_rendered_from_core_preferences(): void
+    {
+        $user = $this->createPlatformUser('theme@example.test', 'correct horse battery staple');
+        $user->forceFill(['preferences' => ['theme' => 'dark', 'locale' => 'en']])->save();
+        $this->actingAs($user, 'platform');
+
+        $html = Blade::render(<<<'BLADE'
+            <x-signal.layouts.core title="Theme preference" :livewire="false">
+                <main>Theme preference proof</main>
+            </x-signal.layouts.core>
+            BLADE);
+
+        $this->assertStringContainsString('data-theme-user-appearance="dark"', $html);
+        $this->assertStringContainsString('data-default-appearance="dark"', $html);
+        $this->assertStringContainsString('data-theme-preference-url="/__platform/preferences/theme"', $html);
+    }
+
+    public function test_signed_in_user_can_update_shared_theme_without_replacing_other_preferences(): void
+    {
+        $user = $this->createPlatformUser('theme-write@example.test', 'correct horse battery staple');
+        $user->forceFill(['preferences' => ['theme' => 'light', 'locale' => 'en']])->save();
+
+        $this->actingAs($user, 'platform')
+            ->putJson('/__platform/preferences/theme', ['appearance' => 'dark'])
+            ->assertOk()
+            ->assertExactJson(['appearance' => 'dark']);
+
+        $this->assertSame([
+            'theme' => 'dark',
+            'locale' => 'en',
+        ], $user->fresh()->preferences);
+
+        $this->putJson('/__platform/preferences/theme', ['appearance' => 'system'])
+            ->assertOk()
+            ->assertExactJson(['appearance' => 'system']);
+
+        $this->assertSame([
+            'theme' => 'system',
+            'locale' => 'en',
+        ], $user->fresh()->preferences);
+    }
+
+    public function test_shared_theme_update_rejects_invalid_appearance_values(): void
+    {
+        $user = $this->createPlatformUser('invalid-theme@example.test', 'correct horse battery staple');
+        $user->forceFill(['preferences' => ['theme' => 'light']])->save();
+
+        $this->actingAs($user, 'platform')
+            ->putJson('/__platform/preferences/theme', ['appearance' => 'ultraviolet'])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('appearance');
+
+        $this->assertSame(['theme' => 'light'], $user->fresh()->preferences);
+    }
+
+    public function test_guest_cannot_update_shared_theme_preferences(): void
+    {
+        $this->putJson('/__platform/preferences/theme', ['appearance' => 'dark'])
+            ->assertUnauthorized();
     }
 
     public function test_core_login_authenticates_by_the_normalized_platform_email(): void

@@ -242,3 +242,56 @@ test('one shared Signal token change reaches every product, public, and auth doc
 
     expect([...stylesheetPaths]).toHaveLength(1);
 });
+
+test('Core appearance preference overrides stale host storage and saves across product hosts', async ({ page }) => {
+    let savedAppearance = 'dark';
+    const themeInit = fs.readFileSync(path.join(root, 'resources/js/signal-theme-init.js'), 'utf8');
+    const themeController = fs.readFileSync(path.join(root, 'resources/js/signal-theme.js'), 'utf8');
+
+    await page.addInitScript(() => {
+        const staleAppearance = location.hostname === 'deployer.signal-theme.test' ? 'light' : 'dark';
+        localStorage.setItem('buildpusher-signal-appearance', staleAppearance);
+    });
+
+    await page.route('**/*', async (route) => {
+        const request = route.request();
+        const url = new URL(request.url());
+
+        if (url.pathname === '/__platform/preferences/theme' && request.method() === 'PUT') {
+            savedAppearance = request.postDataJSON().appearance;
+
+            return route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({ appearance: savedAppearance }),
+            });
+        }
+
+        if (url.pathname === '/theme-preference-demo') {
+            const html = `<!doctype html>
+                <html lang="en" data-storage-namespace="buildpusher-signal" data-theme-user-appearance="${savedAppearance}" data-default-appearance="system" data-theme-preference-url="/__platform/preferences/theme" data-theme-saving-label="Saving appearance preference." data-theme-saved-label="Appearance preference saved to your account." data-theme-save-failed-label="Appearance could not be saved.">
+                    <head><meta name="csrf-token" content="fixture-csrf-token"><script>${themeInit}</script><script>${themeController}</script></head>
+                    <body><button type="button" data-theme-toggle>Change appearance</button><span data-theme-status aria-live="polite"></span></body>
+                </html>`;
+
+            return route.fulfill({ status: 200, contentType: 'text/html', body: html });
+        }
+
+        return route.fulfill({ status: 204, body: '' });
+    });
+
+    await page.goto('http://deployer.signal-theme.test/theme-preference-demo', { waitUntil: 'load' });
+    await expect(page.locator('html')).toHaveAttribute('data-appearance', 'dark');
+    await expect(page.locator('html')).toHaveClass(/dark/);
+
+    const saveRequest = page.waitForRequest((request) => request.url().endsWith('/__platform/preferences/theme') && request.method() === 'PUT');
+    await page.getByRole('button', { name: 'Use light theme' }).click();
+    const saved = await saveRequest;
+    expect(saved.postDataJSON()).toEqual({ appearance: 'light' });
+    expect(saved.headers()['x-csrf-token']).toBe('fixture-csrf-token');
+    await expect(page.locator('[data-theme-status]')).toHaveText('Appearance preference saved to your account.');
+
+    await page.goto('http://monitor.signal-theme.test/theme-preference-demo', { waitUntil: 'load' });
+    await expect(page.locator('html')).toHaveAttribute('data-appearance', 'light');
+    await expect(page.locator('html')).toHaveClass(/light/);
+});

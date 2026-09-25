@@ -9,8 +9,9 @@
 ])
 
 @php($pageTitle = $title ? $title.' · '.config('app.name') : config('app.name'))
-@php($userPreferences = auth()->user()?->preferences ?? [])
-@php($defaultAppearance = in_array($userPreferences['theme'] ?? null, ['light', 'dark'], true) ? $userPreferences['theme'] : 'system')
+@php($userPreferences = auth('platform')->user()?->preferences ?? [])
+@php($userThemeAppearance = in_array($userPreferences['theme'] ?? null, ['system', 'light', 'dark'], true) ? $userPreferences['theme'] : null)
+@php($defaultAppearance = $userThemeAppearance ?? 'system')
 
 <!DOCTYPE html>
 <html
@@ -18,6 +19,13 @@
     class="min-h-full"
     style="--vh:8px;"
     data-storage-namespace="buildpusher-signal"
+    data-theme-user-appearance="{{ $userThemeAppearance ?? '' }}"
+    @if (auth('platform')->check())
+        data-theme-preference-url="/__platform/preferences/theme"
+        data-theme-saving-label="{{ __('Saving appearance preference.') }}"
+        data-theme-saved-label="{{ __('Appearance preference saved to your account.') }}"
+        data-theme-save-failed-label="{{ __('Appearance could not be saved. Your previous preference was restored.') }}"
+    @endif
     data-default-preset="modern"
     data-default-appearance="{{ $defaultAppearance }}"
     data-default-palette="graphite"
@@ -31,6 +39,7 @@
     <head>
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="theme-color" content="#f4f7fb" data-theme-color>
         <meta name="robots" content="{{ $indexable ? 'index, follow' : 'noindex, nofollow' }}">
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
@@ -85,6 +94,10 @@
 
                     if (allowed[name]?.includes(shared)) {
                         return shared;
+                    }
+
+                    if (name === 'appearance' && allowed.appearance.includes(root.dataset.themeUserAppearance)) {
+                        return root.dataset.themeUserAppearance;
                     }
 
                     try {
@@ -143,6 +156,7 @@
     </head>
     <body class="antialiased transition-colors">
         {{ $slot }}
+        <span class="sr-only" data-theme-status aria-live="polite" aria-atomic="true"></span>
 
         <script>
             (() => {
