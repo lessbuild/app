@@ -20,6 +20,8 @@ class AdminAccessRequestController extends Controller
     public function index(Request $request): View
     {
         $this->authorize('platform-admin');
+        $coreAdmin = $request->routeIs('core.admin.access-requests.*');
+        $routePrefix = $coreAdmin ? 'core.admin.access-requests' : 'admin.access-requests';
         $status = in_array($request->query('status'), AccessRequest::STATUSES, true) ? $request->query('status') : null;
         $requests = AccessRequest::query()
             ->with('reviewer:id,name')
@@ -43,12 +45,17 @@ class AdminAccessRequestController extends Controller
             ? null
             : 'review-access-request-'.$editingRequest->id;
 
-        return view('admin.access-requests', [
+        return view($coreAdmin ? 'core::admin.access-requests' : 'admin.access-requests', [
             'requests' => $requests,
             'status' => $status,
             'counts' => AccessRequest::query()->selectRaw('status, count(*) as aggregate')->groupBy('status')->pluck('aggregate', 'status'),
             'editingRequest' => $editingRequest,
             'reviewDialogId' => $reviewDialogId,
+            'routeNames' => [
+                'index' => $routePrefix.'.index',
+                'export' => $routePrefix.'.export',
+                'update' => $routePrefix.'.update',
+            ],
             'reviewDialogOpen' => $reviewDialogId !== null
                 && (($dialog === $reviewDialogId && ! session()->has('success'))
                     || (old('_access_request_review') !== null

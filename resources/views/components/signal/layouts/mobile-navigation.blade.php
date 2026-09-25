@@ -12,6 +12,7 @@
     'workspaceSwitchRoute' => 'organizations.switch',
     'workspaceManageUrl' => null,
     'showProjectContext' => true,
+    'showProjectsLink' => true,
     'contextLabel' => 'Project',
     'contextIndexLabel' => 'All projects',
     'contextIndexUrl' => null,
@@ -51,7 +52,9 @@
         @if (\Illuminate\Support\Facades\Route::has('core.help'))
             <x-signal.layouts.navigation-link :item="['label' => __('Help and guides'), 'href' => route('core.help'), 'active' => request()->routeIs('core.help')]" class="w-full justify-start" />
         @endif
-        <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="w-full justify-start" />
+        @if ($showProjectsLink)
+            <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="w-full justify-start" />
+        @endif
         @foreach (['deployer', 'monitor', 'analytics'] as $productKeyOption)
             @php
                 $productConfig = $products[$productKeyOption] ?? [];

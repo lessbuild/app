@@ -28,6 +28,8 @@
     'sharedContextUnavailable' => false,
     'showProjectContext' => true,
     'showEnvironmentContext' => true,
+    'showWorkspaceSwitcher' => true,
+    'showProjectsLink' => true,
 ])
 
 @php
@@ -149,7 +151,9 @@
                 @if ($activeProduct === 'core' && \Illuminate\Support\Facades\Route::has('core.help'))
                     <x-signal.layouts.navigation-link :item="['label' => __('Help'), 'href' => route('core.help'), 'active' => request()->routeIs('core.help')]" class="topbar-nav-link" />
                 @endif
-                <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="topbar-nav-link" />
+                @if ($showProjectsLink)
+                    <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="topbar-nav-link" />
+                @endif
                 @foreach (['deployer' => ['label' => __('Deployer'), 'route' => 'dashboard', 'active' => ['dashboard', 'projects.show', 'projects.create', 'projects.configuration.*', 'servers.*', 'websites.*', 'builds.*', 'providers.*', 'repositories.*', 'environments.*']], 'monitor' => ['label' => __('Monitor'), 'route' => 'monitor.dashboard'], 'analytics' => ['label' => __('Analytics'), 'route' => 'analytics.dashboard']] as $key => $product)
                     @php
                         $label = $product['label'];
@@ -174,12 +178,14 @@
             </nav>
 
             <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-                <x-signal.layouts.workspace-switcher
-                    :current-workspace="$currentWorkspace"
-                    :workspace-options="$workspaceOptions"
-                    :switch-route="$workspaceSwitchRoute"
-                    :manage-url="$workspaceManageUrl"
-                />
+                @if ($showWorkspaceSwitcher)
+                    <x-signal.layouts.workspace-switcher
+                        :current-workspace="$currentWorkspace"
+                        :workspace-options="$workspaceOptions"
+                        :switch-route="$workspaceSwitchRoute"
+                        :manage-url="$workspaceManageUrl"
+                    />
+                @endif
 
                 @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
                     <x-signal.ui.button type="button" class="ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
@@ -326,6 +332,7 @@
         :workspace-switch-route="$workspaceSwitchRoute"
         :workspace-manage-url="$workspaceManageUrl"
         :show-project-context="$showProjectContext"
+        :show-projects-link="$showProjectsLink"
         :context-label="$contextLabel"
         :context-index-label="$contextIndexLabel"
         :context-index-url="$contextIndexUrl"

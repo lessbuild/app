@@ -1,6 +1,11 @@
 @props([
     'accessRequest',
     'open' => false,
+    'routeNames' => [
+        'index' => 'admin.access-requests.index',
+        'export' => 'admin.access-requests.export',
+        'update' => 'admin.access-requests.update',
+    ],
 ])
 
 <x-signal.overlays.modal
@@ -20,7 +25,7 @@
     @if ($accessRequest->accepted_at)
         <p class="text-sm font-semibold text-muted">{{ __('Invitation accepted; this onboarding record is now read-only.') }}</p>
     @else
-        <form method="POST" action="{{ route('admin.access-requests.update', $accessRequest) }}" class="space-y-5">
+        <form method="POST" action="{{ route($routeNames['update'], $accessRequest) }}" class="space-y-5">
             @csrf
             @method('PATCH')
             <x-signal.ui.input type="hidden" name="_access_request_review" value="{{ $accessRequest->id }}" :restore="false" />
