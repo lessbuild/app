@@ -4,6 +4,6 @@ Core Help now derives Deployer's endpoint list and required token scopes from th
 
 The reference preserves product ownership: Deployer owns the contract, machine endpoints, token issuance, authorization, and execution; Core hosts the shared help page and workspace credential inventory. The Deployer page continues to explain bearer-token scopes, workspace/project restrictions, legacy-token rotation, and its request example.
 
-Regression coverage is authored to check the expanded configuration/retry operations, OpenAPI version, and configured server origin. Tests remain intentionally unrun until the unified plan is complete. PHP syntax checks and Pint passed, the Core help and Deployer OpenAPI routes are registered, and Blade cache compilation succeeded and was cleared.
+Regression coverage is authored to check the expanded configuration/retry operations, route-to-OpenAPI parity, contract version, and configured server origin. Tests remain intentionally unrun until the unified plan is complete. PHP syntax checks and Pint passed, the Core help and Deployer OpenAPI routes are registered, and Blade cache compilation succeeded and was cleared.
 
 I13 remains incomplete. Endpoint-by-endpoint route/payload compatibility fixtures, callback/signature review, documented error/rate-limit/revocation/expiry behavior, broader authorized retry controls, and representative real-client rehearsal remain open.

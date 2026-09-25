@@ -53,6 +53,30 @@ final class CoreHelpRoutesTest extends TestCase
             ->assertJsonPath('paths./projects/{project}/configuration/plan.post.x-required-scope', 'manage');
     }
 
+    public function test_deployer_openapi_documents_each_versioned_control_plane_route(): void
+    {
+        $document = json_decode((string) file_get_contents(public_path('openapi.json')), true, 512, JSON_THROW_ON_ERROR);
+        $versionedMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+        $documentedOperations = collect($document['paths'])
+            ->flatMap(fn (array $operations, string $path) => collect($operations)
+                ->filter(fn (mixed $operation, string $method): bool => in_array(strtoupper($method), $versionedMethods, true))
+                ->keys()
+                ->map(fn (string $method): string => strtoupper($method).' /api/v1'.$path))
+            ->sort()
+            ->values()
+            ->all();
+        $registeredOperations = collect(app('router')->getRoutes())
+            ->filter(fn ($route): bool => str_contains($route->getActionName(), 'ControlPlaneController@'))
+            ->flatMap(fn ($route) => collect($route->methods())
+                ->filter(fn (string $method): bool => in_array($method, $versionedMethods, true))
+                ->map(fn (string $method): string => $method.' /'.$route->uri()))
+            ->sort()
+            ->values()
+            ->all();
+
+        $this->assertSame($registeredOperations, $documentedOperations);
+    }
+
     public function test_monitor_api_reference_is_rendered_on_core_with_monitor_host_endpoints(): void
     {
         config([
