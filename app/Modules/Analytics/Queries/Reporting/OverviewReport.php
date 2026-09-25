@@ -33,10 +33,7 @@ final class OverviewReport
 
         $events = AnalyticsEvent::query()
             ->where('site_id', $site->id)
-            ->where(function ($query): void {
-                $query->whereNull('ingestion_batch_id')
-                    ->orWhereHas('ingestionBatch', fn ($batchQuery) => $batchQuery->where('status', 'processed'));
-            })
+            ->reportEligible()
             ->whereBetween('occurred_at', [$comparisonStart->utc(), $end->utc()])
             ->when($filters['path'] ?? null, fn ($query, string $path) => $query->where('path', $path))
             ->when($filters['source'] ?? null, fn ($query, string $source) => $query->where(function ($query) use ($source): void {

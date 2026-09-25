@@ -93,10 +93,10 @@
                 />
             </div>
             <p class="px-1 text-xs leading-5 text-muted dark:text-subtle">
-                @if($trafficContext->incidentWindow->processedAt)
-                    Analytics processed through {{ $trafficContext->incidentWindow->processedAt->utc()->format('Y-m-d H:i:s') }} UTC.
+                @if($trafficContext->incidentWindow->latestBatchProcessedAt)
+                    Analytics' latest successful batch for this site completed at {{ $trafficContext->incidentWindow->latestBatchProcessedAt->utc()->format('Y-m-d H:i:s') }} UTC; this site-wide activity time is not a coverage watermark.
                 @else
-                    Analytics has not processed traffic for this site yet.
+                    Analytics has no successful batch completion time recorded for this site.
                 @endif
                 Aggregated data only; this is investigation context, not proof of causation.
             </p>

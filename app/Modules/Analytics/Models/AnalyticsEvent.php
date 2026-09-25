@@ -3,6 +3,8 @@
 namespace App\Modules\Analytics\Models;
 
 use App\Modules\Analytics\Database\AnalyticsModel;
+use App\Modules\Analytics\Enums\IngestionStatus;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -32,5 +34,20 @@ class AnalyticsEvent extends AnalyticsModel
     public function ingestionBatch(): BelongsTo
     {
         return $this->belongsTo(IngestionBatch::class);
+    }
+
+    /**
+     * Scope events to the records Analytics includes in its customer reports.
+     * Unbatched legacy events remain reportable; accepted events remain hidden until processing succeeds.
+     *
+     * @param  Builder<AnalyticsEvent>  $query
+     * @return Builder<AnalyticsEvent>
+     */
+    public function scopeReportEligible(Builder $query): Builder
+    {
+        return $query->where(function (Builder $eligible): void {
+            $eligible->whereNull('ingestion_batch_id')
+                ->orWhereHas('ingestionBatch', fn (Builder $batch): Builder => $batch->where('status', IngestionStatus::Processed->value));
+        });
     }
 }

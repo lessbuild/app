@@ -43,10 +43,7 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
             ->where('type', 'pageview')
             ->where('occurred_at', '>=', $from->utc())
             ->where('occurred_at', '<', $until->utc())
-            ->whereNotNull('ingestion_batch_id')
-            ->whereHas('ingestionBatch', fn ($batch) => $batch
-                ->where('status', 'processed')
-                ->whereNotNull('processed_at'));
+            ->reportEligible();
 
         $pageviews = (clone $events)->count();
         $visitors = (clone $events)
@@ -57,17 +54,15 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
             ->where('site_id', $site->getKey())
             ->where('converted_at', '>=', $from->utc())
             ->where('converted_at', '<', $until->utc())
-            ->whereHas('event', fn ($event) => $event
-                ->whereNotNull('ingestion_batch_id')
-                ->whereHas('ingestionBatch', fn ($batch) => $batch
-                    ->where('status', 'processed')
-                    ->whereNotNull('processed_at')));
+            ->whereHas('event', fn ($event) => $event->reportEligible());
         $conversionCount = (clone $conversions)->count();
         $convertedVisits = (clone $conversions)->whereNotNull('visit_id')->distinct()->count('visit_id');
         $batches = IngestionBatch::query()
             ->where('site_id', $site->getKey())
             ->where('accepted_at', '>=', $from->utc())
             ->where('accepted_at', '<', $until->utc());
+        $acceptedBatches = (clone $batches)->count();
+        $processedBatches = (clone $batches)->where('status', IngestionStatus::Processed->value)->count();
         $unprocessedBatches = (clone $batches)
             ->whereIn('status', [IngestionStatus::Pending->value, IngestionStatus::Processing->value])
             ->count();
@@ -78,7 +73,7 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
             visitors: $visitors,
             conversions: $conversionCount,
             convertedVisits: $convertedVisits,
-            processedAt: $site->last_processed_at === null
+            latestBatchProcessedAt: $site->last_processed_at === null
                 ? null
                 : CarbonImmutable::instance($site->last_processed_at)->utc(),
             sourceUrl: Route::has('analytics.dashboard')
@@ -86,6 +81,8 @@ final class AnalyticsTrafficContextProvider implements ProjectTrafficContextProv
                 : null,
             unprocessedBatches: $unprocessedBatches,
             failedBatches: $failedBatches,
+            acceptedBatches: $acceptedBatches,
+            processedBatches: $processedBatches,
         );
     }
 }

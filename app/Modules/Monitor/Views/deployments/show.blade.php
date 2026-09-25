@@ -57,7 +57,7 @@
                     <p class="text-sm font-semibold">{{ $trafficContext->siteName }}</p>
                     <p class="mt-1 text-xs text-muted dark:text-subtle">Project: {{ $trafficContext->projectName }} · {{ number_format($trafficContext->windowSeconds) }}-second windows · {{ $trafficContext->deployedAt->format('Y-m-d H:i:s.u') }} UTC</p>
                 </div>
-                <x-monitor::ui.traffic-comparison :before="$trafficContext->before" :after="$trafficContext->after" :expected-through="$trafficContext->deployedAt->addSeconds($trafficContext->windowSeconds)" />
+                <x-monitor::ui.traffic-comparison :before="$trafficContext->before" :after="$trafficContext->after" />
             </div>
         @empty
             <p class="p-5 text-sm text-muted dark:text-subtle">No connected Analytics traffic is available for this deployment under the current workspace access and plan settings.</p>
