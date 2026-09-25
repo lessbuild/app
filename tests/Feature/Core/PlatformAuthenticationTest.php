@@ -39,6 +39,26 @@ final class PlatformAuthenticationTest extends TestCase
             $table->rememberToken();
             $table->timestamps();
         });
+        Schema::connection('core')->create('passkeys', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('user_id', 26)->index();
+            $table->string('name');
+            $table->string('credential_id')->unique();
+            $table->json('credential');
+            $table->timestamp('last_used_at')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('core')->create('user_identities', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('user_id', 26)->index();
+            $table->string('provider', 48);
+            $table->string('provider_user_id', 191);
+            $table->string('provider_email')->nullable();
+            $table->timestamp('verified_at')->nullable();
+            $table->string('status', 24)->default('active');
+            $table->json('metadata')->nullable();
+            $table->timestamps();
+        });
         Schema::connection('core')->create('password_reset_tokens', function (Blueprint $table): void {
             $table->string('email')->primary();
             $table->string('token');
@@ -49,6 +69,9 @@ final class PlatformAuthenticationTest extends TestCase
             $table->char('user_id', 26)->index();
             $table->string('remember_token_hash', 64)->nullable()->index();
             $table->boolean('remembered')->default(false);
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamp('last_seen_at')->nullable()->index();
             $table->timestamp('revoked_at')->nullable()->index();
             $table->timestamps();
         });
@@ -79,6 +102,8 @@ final class PlatformAuthenticationTest extends TestCase
         Schema::connection('core')->dropIfExists('platform_auth_sessions');
         Schema::connection('core')->dropIfExists('platform_registration_mutexes');
         Schema::connection('core')->dropIfExists('password_reset_tokens');
+        Schema::connection('core')->dropIfExists('user_identities');
+        Schema::connection('core')->dropIfExists('passkeys');
         Schema::connection('core')->dropIfExists('users');
 
         parent::tearDown();
@@ -86,6 +111,9 @@ final class PlatformAuthenticationTest extends TestCase
 
     public function test_platform_authentication_pages_render_with_the_shared_signal_components(): void
     {
+        $this->get(route('platform.home'))
+            ->assertRedirect(route('platform.login'));
+
         $this->get(route('platform.login'))
             ->assertOk()
             ->assertSeeText('Sign in')
@@ -394,6 +422,228 @@ final class PlatformAuthenticationTest extends TestCase
             ->where('id', $authSessionId)
             ->value('revoked_at'));
         $this->assertGuest('platform');
+    }
+
+    public function test_account_security_uses_signal_controls_and_shows_core_browser_sessions(): void
+    {
+        $user = $this->createPlatformUser('account-security@example.test', 'correct horse battery staple');
+
+        $this->withHeader('User-Agent', 'Buildpusher Security Test Browser')
+            ->post(route('platform.login.store'), [
+                'email' => 'account-security@example.test',
+                'password' => 'correct horse battery staple',
+            ])
+            ->assertRedirect(route('core.home'));
+
+        $this->get(route('platform.account.security'))
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'private, no-store, max-age=0')
+            ->assertHeader('Referrer-Policy', 'no-referrer')
+            ->assertSee('class="ui-skip-link"', false)
+            ->assertSeeText('Account security')
+            ->assertSeeText('Buildpusher Security Test Browser')
+            ->assertSee('name="current_password"', false)
+            ->assertSee('name="password"', false);
+
+        $session = $user->platformAuthSessions()->sole();
+        $this->assertNotNull($session->last_seen_at);
+        $this->assertSame('Buildpusher Security Test Browser', $session->user_agent);
+    }
+
+    public function test_passkey_sign_in_is_available_and_issues_a_session_bound_challenge(): void
+    {
+        $this->get(route('platform.login'))
+            ->assertOk()
+            ->assertSeeText('Sign in with a passkey');
+
+        $this->postJson(route('platform.passkey.login.options'))
+            ->assertOk()
+            ->assertJsonStructure(['options' => ['challenge', 'rpId', 'timeout', 'userVerification']]);
+    }
+
+    public function test_account_security_displays_passkey_metadata_without_credential_material(): void
+    {
+        $user = $this->createPlatformUser('passkey-account@example.test', 'correct horse battery staple');
+        $this->post(route('platform.login.store'), [
+            'email' => 'passkey-account@example.test',
+            'password' => 'correct horse battery staple',
+        ])->assertRedirect(route('core.home'));
+
+        DB::connection('core')->table('passkeys')->insert([
+            'id' => (string) Str::ulid(),
+            'user_id' => $user->getKey(),
+            'name' => 'Work laptop',
+            'credential_id' => 'credential-id-for-test',
+            'credential' => json_encode(['credential_secret_sentinel' => 'do-not-render'], JSON_THROW_ON_ERROR),
+            'last_used_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('platform.account.security'))
+            ->assertOk()
+            ->assertSeeText('Work laptop')
+            ->assertSeeText('Authenticator details unavailable')
+            ->assertDontSee('do-not-render', false);
+    }
+
+    public function test_passkey_registration_options_require_a_platform_session(): void
+    {
+        $this->post(route('platform.account.passkeys.options'), ['name' => 'Work laptop'])
+            ->assertRedirect(route('platform.login'));
+    }
+
+    public function test_imported_password_hash_still_requires_the_current_password_when_its_set_date_is_unknown(): void
+    {
+        $user = $this->createPlatformUser('imported-password@example.test', 'source account password', [
+            'password_set_at' => null,
+        ]);
+        $this->post(route('platform.login.store'), [
+            'email' => 'imported-password@example.test',
+            'password' => 'source account password',
+        ])->assertRedirect(route('core.home'));
+
+        $this->get(route('platform.account.security'))
+            ->assertOk()
+            ->assertSeeText('Change your password')
+            ->assertSee('name="current_password"', false)
+            ->assertDontSeeText('Set a password');
+
+        $this->post(route('platform.account.password.update'), [
+            'current_password' => 'incorrect source password',
+            'password' => 'a newly selected secure password',
+            'password_confirmation' => 'a newly selected secure password',
+        ])->assertSessionHasErrorsIn('password', 'current_password');
+
+        $this->assertTrue(Hash::check('source account password', $user->fresh()->password));
+    }
+
+    public function test_account_security_can_confirm_and_cancel_a_pending_authenticator_setup(): void
+    {
+        $user = $this->createPlatformUser('authenticator-setup@example.test', 'correct horse battery staple');
+        $this->post(route('platform.login.store'), [
+            'email' => 'authenticator-setup@example.test',
+            'password' => 'correct horse battery staple',
+        ])->assertRedirect(route('core.home'));
+
+        $this->get(route('platform.account.security'))->assertOk();
+        $this->post(route('platform.account.two-factor.begin'), [
+            'current_password' => 'correct horse battery staple',
+        ])->assertRedirect();
+
+        $pendingSecret = Crypt::decrypt($user->fresh()->two_factor_secret);
+        $this->assertIsString($pendingSecret);
+        $this->get(route('platform.account.security'))
+            ->assertOk()
+            ->assertSeeText('Cancel setup')
+            ->assertSeeText($pendingSecret);
+
+        $this->post(route('platform.account.two-factor.confirm'), [
+            'code' => $this->totpCode($pendingSecret),
+        ])->assertRedirect();
+
+        $user->refresh();
+        $this->assertTrue($user->twoFactorEnabled());
+        $recoveryHashes = json_decode(Crypt::decrypt($user->two_factor_recovery_codes), true, 512, JSON_THROW_ON_ERROR);
+        $this->assertCount(8, $recoveryHashes);
+        $this->assertNotContains('ABCD-1234-EFGH', $recoveryHashes);
+
+        $recoveryCodes = session('platform.auth.recovery_codes');
+        $this->assertIsArray($recoveryCodes);
+        $this->get(route('platform.account.security'))
+            ->assertOk()
+            ->assertSeeText('Save these now')
+            ->assertSeeText($recoveryCodes[0]);
+        $this->get(route('platform.account.security'))
+            ->assertOk()
+            ->assertDontSee($recoveryCodes[0], false);
+
+        $this->post(route('platform.account.two-factor.begin'), [
+            'current_password' => 'correct horse battery staple',
+        ])->assertSessionHasErrorsIn('twoFactor', 'code');
+
+        $this->delete(route('platform.account.two-factor.disable'), [
+            'current_password' => 'correct horse battery staple',
+            'code' => $this->totpCode($pendingSecret),
+        ])->assertRedirect();
+        $this->assertFalse($user->fresh()->twoFactorEnabled());
+
+        $this->post(route('platform.account.two-factor.begin'), [
+            'current_password' => 'correct horse battery staple',
+        ])->assertRedirect();
+        $this->assertNotNull($user->fresh()->two_factor_secret);
+        $this->post(route('platform.account.two-factor.cancel'))->assertRedirect();
+        $this->assertNull($user->fresh()->two_factor_secret);
+        $this->assertNull($user->fresh()->two_factor_confirmed_at);
+    }
+
+    public function test_password_update_revokes_other_platform_browsers_and_keeps_the_current_one(): void
+    {
+        $user = $this->createPlatformUser('password-update@example.test', 'correct horse battery staple');
+        $this->get(route('platform.login'));
+        $this->post(route('platform.login.store'), [
+            'email' => 'password-update@example.test',
+            'password' => 'correct horse battery staple',
+            'remember' => true,
+        ])->assertRedirect(route('core.home'));
+
+        $currentSessionId = session('platform.auth.session_id');
+        $otherSessionId = (string) Str::ulid();
+        $oldRememberToken = $user->fresh()->getRememberToken();
+        $this->assertIsString($oldRememberToken);
+        DB::connection('core')->table('platform_auth_sessions')->insert([
+            'id' => $otherSessionId,
+            'user_id' => $user->getKey(),
+            'remember_token_hash' => hash('sha256', $oldRememberToken),
+            'remembered' => true,
+            'ip_address' => '192.0.2.10',
+            'user_agent' => 'Another browser',
+            'last_seen_at' => now(),
+            'revoked_at' => null,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('platform.account.security'))->assertOk();
+        $this->post(route('platform.account.password.update'), [
+            'current_password' => 'correct horse battery staple',
+            'password' => 'a different long secure password',
+            'password_confirmation' => 'a different long secure password',
+        ])->assertRedirect();
+
+        $this->assertTrue(Hash::check('a different long secure password', $user->fresh()->password));
+        $this->assertNotSame($oldRememberToken, $user->fresh()->getRememberToken());
+        $this->assertNull(DB::connection('core')->table('platform_auth_sessions')->where('id', $currentSessionId)->value('revoked_at'));
+        $this->assertNull(DB::connection('core')->table('platform_auth_sessions')->where('id', $currentSessionId)->value('remember_token_hash'));
+        $this->assertNotNull(DB::connection('core')->table('platform_auth_sessions')->where('id', $otherSessionId)->value('revoked_at'));
+    }
+
+    private function totpCode(string $secret): string
+    {
+        $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+        $bits = '';
+        foreach (str_split($secret) as $character) {
+            $position = strpos($alphabet, $character);
+            $this->assertNotFalse($position);
+            $bits .= str_pad(decbin($position), 5, '0', STR_PAD_LEFT);
+        }
+
+        $key = '';
+        foreach (str_split($bits, 8) as $byte) {
+            if (strlen($byte) === 8) {
+                $key .= chr(bindec($byte));
+            }
+        }
+
+        $counter = intdiv(time(), 30);
+        $hash = hash_hmac('sha1', pack('N2', 0, $counter), $key, true);
+        $offset = ord($hash[19]) & 0x0F;
+        $binary = ((ord($hash[$offset]) & 0x7F) << 24)
+            | ((ord($hash[$offset + 1]) & 0xFF) << 16)
+            | ((ord($hash[$offset + 2]) & 0xFF) << 8)
+            | (ord($hash[$offset + 3]) & 0xFF);
+
+        return str_pad((string) ($binary % 1_000_000), 6, '0', STR_PAD_LEFT);
     }
 
     /** @param array<string, mixed> $overrides */

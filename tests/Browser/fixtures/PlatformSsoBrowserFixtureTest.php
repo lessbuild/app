@@ -41,6 +41,9 @@ final class PlatformSsoBrowserFixtureTest extends TestCase
             $table->char('user_id', 26)->index();
             $table->string('remember_token_hash', 64)->nullable()->index();
             $table->boolean('remembered')->default(false);
+            $table->string('ip_address', 45)->nullable();
+            $table->text('user_agent')->nullable();
+            $table->timestamp('last_seen_at')->nullable()->index();
             $table->timestamp('revoked_at')->nullable()->index();
             $table->timestamps();
         });

@@ -94,6 +94,11 @@ class PlatformUser extends Authenticatable implements MustVerifyEmailContract, P
         return filled($this->two_factor_secret) && $this->two_factor_confirmed_at !== null;
     }
 
+    public function hasPassword(): bool
+    {
+        return filled($this->password);
+    }
+
     public function sendEmailVerificationNotification(): void
     {
         $this->notify(new PlatformVerifyEmail);

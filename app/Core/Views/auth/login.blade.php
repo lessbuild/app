@@ -34,6 +34,23 @@
                     <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">
                         {{ __('Sign in') }}
                     </x-signal.ui.button>
+                    <div data-passkey-surface class="grid gap-3">
+                        <x-signal.ui.button
+                            type="button"
+                            variant="secondary"
+                            class="w-full justify-center"
+                            data-passkey-login
+                            data-options-url="{{ route('platform.passkey.login.options') }}"
+                            data-login-url="{{ route('platform.passkey.login') }}"
+                            data-return-to="{{ $returnTo }}"
+                            data-working-message="{{ __('Waiting for your passkey…') }}"
+                            data-failed-message="{{ __('Passkey sign-in could not be completed. Please try again.') }}"
+                            data-unsupported-message="{{ __('This browser does not support passkeys.') }}"
+                        >
+                            {{ __('Sign in with a passkey') }}
+                        </x-signal.ui.button>
+                        <p data-passkey-status role="status" aria-live="polite" class="min-h-5 text-sm text-muted"></p>
+                    </div>
                 </form>
             </x-signal.ui.card>
 
@@ -46,4 +63,5 @@
             @endif
         </div>
     </main>
+    @vite('resources/js/platform-passkeys.js')
 </x-signal.layouts.core>

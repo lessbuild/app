@@ -22,6 +22,9 @@ final class PlatformAuthSession extends Model
         'user_id',
         'remember_token_hash',
         'remembered',
+        'ip_address',
+        'user_agent',
+        'last_seen_at',
         'revoked_at',
     ];
 
@@ -29,6 +32,7 @@ final class PlatformAuthSession extends Model
     {
         return [
             'remembered' => 'boolean',
+            'last_seen_at' => 'datetime',
             'revoked_at' => 'datetime',
         ];
     }

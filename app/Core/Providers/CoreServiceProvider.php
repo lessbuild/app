@@ -5,6 +5,7 @@ namespace App\Core\Providers;
 use App\Core\Auth\PlatformUserProvider;
 use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Http\Controllers\CorePlatformStatusController;
+use App\Core\Http\Middleware\EnsurePlatformPasskeyRegistrationConfirmed;
 use App\Core\Http\Middleware\RedirectProductGuestToPlatform;
 use App\Core\Http\Middleware\ResolveProductPrincipal;
 use App\Core\Models\Passkey;
@@ -76,6 +77,8 @@ final class CoreServiceProvider extends ModuleServiceProvider
 
         Passkeys::useUserModel(PlatformUser::class);
         Passkeys::usePasskeyModel(Passkey::class);
+        Passkeys::ignoreRoutes();
+        $this->configurePasskeyOrigins();
     }
 
     public function boot(): void
@@ -104,6 +107,11 @@ final class CoreServiceProvider extends ModuleServiceProvider
 
         $this->app['router']->aliasMiddleware('platform.principal', ResolveProductPrincipal::class);
         $this->app['router']->aliasMiddleware('platform.product-guest', RedirectProductGuestToPlatform::class);
+        $this->app['router']->aliasMiddleware('platform.passkey-registration-confirmed', EnsurePlatformPasskeyRegistrationConfirmed::class);
+
+        RateLimiter::for('platform.passkey', static fn (Request $request): Limit => Limit::perMinute(12)->by(
+            'platform-passkey:'.$request->ip(),
+        ));
 
         Auth::provider('core-platform', static fn ($app, array $config): PlatformUserProvider => new PlatformUserProvider(
             $app['hash'],
@@ -217,5 +225,63 @@ final class CoreServiceProvider extends ModuleServiceProvider
         }
 
         return array_values(array_unique($hosts));
+    }
+
+    private function configurePasskeyOrigins(): void
+    {
+        $configuredOrigins = config('passkeys.allowed_origins', []);
+        $origins = is_array($configuredOrigins) ? array_values(array_filter($configuredOrigins, 'is_string')) : [];
+
+        if ($origins === []) {
+            $configuredUrls = [
+                config('app.url'),
+                config('platform.auth_url'),
+                config('platform.dashboard_url'),
+            ];
+
+            foreach (config('platform.products', []) as $product) {
+                $configuredUrls[] = $product['url'] ?? null;
+                $configuredUrls[] = $product['host'] ?? null;
+            }
+
+            foreach ($configuredUrls as $value) {
+                if (! is_string($value) || trim($value) === '') {
+                    continue;
+                }
+
+                $parts = parse_url(str_contains($value, '://') ? $value : 'https://'.$value);
+                if (! is_array($parts) || ! isset($parts['host'])) {
+                    continue;
+                }
+
+                $origin = strtolower((string) ($parts['scheme'] ?? 'https')).'://'.strtolower((string) $parts['host']);
+                if (isset($parts['port'])) {
+                    $origin .= ':'.$parts['port'];
+                }
+
+                $origins[] = $origin;
+            }
+        }
+
+        $relyingPartyValue = config('passkeys.relying_party_id')
+            ?: config('platform.dashboard_host')
+            ?: config('platform.dashboard_url')
+            ?: config('platform.auth_host')
+            ?: config('platform.auth_url')
+            ?: config('app.url');
+        $relyingPartyParts = is_string($relyingPartyValue)
+            ? parse_url(str_contains($relyingPartyValue, '://') ? $relyingPartyValue : 'https://'.$relyingPartyValue)
+            : false;
+        $relyingPartyId = is_array($relyingPartyParts) && isset($relyingPartyParts['host'])
+            ? strtolower((string) $relyingPartyParts['host'])
+            : 'localhost';
+
+        config([
+            'passkeys.relying_party_id' => $relyingPartyId,
+            'passkeys.allowed_origins' => array_values(array_unique($origins)),
+            'passkeys.user_handle_secret' => config('passkeys.user_handle_secret') ?: config('app.key'),
+            'passkeys.timeout' => (int) config('passkeys.timeout', 60000),
+            'passkeys.guard' => 'platform',
+        ]);
     }
 }

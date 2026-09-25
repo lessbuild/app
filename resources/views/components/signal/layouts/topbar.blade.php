@@ -90,6 +90,18 @@
         : null;
     $notificationsUrl ??= $navigation['notifications_url'] ?? (\Illuminate\Support\Facades\Route::has('notifications.index') ? route('notifications.index') : null);
     $logoutUrl = \Illuminate\Support\Facades\Route::has($logoutRoute) ? route($logoutRoute) : null;
+
+    if (\Illuminate\Support\Facades\Route::has('platform.account.security')) {
+        $securityItem = [
+            'label' => __('Account security'),
+            'href' => $platformSsoHref(route('platform.account.security')),
+            'active' => request()->routeIs('platform.account.security'),
+        ];
+        $profileItems = $navigation['profile'] ?? [];
+        if (! collect($profileItems)->contains(fn ($item): bool => is_array($item) && ($item['label'] ?? null) === $securityItem['label'])) {
+            $navigation['profile'] = [$securityItem, ...$profileItems];
+        }
+    }
 @endphp
 
 <header class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur" data-mobile-header data-topbar-shell>

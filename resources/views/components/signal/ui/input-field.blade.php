@@ -5,6 +5,7 @@
     'type' => 'text',
     'value' => null,
     'errorKey' => null,
+    'errorBag' => 'default',
     'description' => null,
     'hideLabel' => false,
     'required' => false,
@@ -15,10 +16,10 @@
 
 @php($controlId = $id ?: $name)
 @php($validationKey = $errorKey === false ? null : ($errorKey ?? $name))
-@php($hasError = $validationKey !== null && $errors->has($validationKey))
+@php($hasError = $validationKey !== null && $errors->getBag($errorBag)->has($validationKey))
 @php($describedBy = trim(($attributes->get('aria-describedby') ?? '').($description !== null ? ' '.$controlId.'-help' : '').($hasError ? ' '.$controlId.'-error' : '')))
 
-<x-signal.ui.field :id="$controlId" :name="$name" :label="$label" :error-key="$errorKey === false ? false : $validationKey" :description="$description" :hide-label="$hideLabel" :required="$required" :show-errors="$showErrors && $validationKey !== null" :class="$fieldClass">
+<x-signal.ui.field :id="$controlId" :name="$name" :label="$label" :error-key="$errorKey === false ? false : $validationKey" :error-bag="$errorBag" :description="$description" :hide-label="$hideLabel" :required="$required" :show-errors="$showErrors && $validationKey !== null" :class="$fieldClass">
     @if (isset($prefix) || isset($suffix))
         <div class="flex min-w-0">
             @if (isset($prefix)){{ $prefix }}@endif

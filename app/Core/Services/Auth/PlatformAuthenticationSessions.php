@@ -19,6 +19,9 @@ final class PlatformAuthenticationSessions
                 ? hash('sha256', $user->getRememberToken())
                 : null,
             'remembered' => $remember,
+            'ip_address' => $request->ip(),
+            'user_agent' => mb_substr((string) $request->userAgent(), 0, 1000),
+            'last_seen_at' => now(),
         ]);
 
         $request->session()->put('platform.auth.session_id', $session->getKey());
@@ -36,6 +39,10 @@ final class PlatformAuthenticationSessions
                 ->where('user_id', $user->getKey())
                 ->whereNull('revoked_at')
                 ->first();
+
+            if ($session !== null) {
+                $this->touch($session);
+            }
 
             return $session;
         }
@@ -61,6 +68,7 @@ final class PlatformAuthenticationSessions
                 return null;
             }
 
+            $this->touch($session);
             $request->session()->put('platform.auth.session_id', $session->getKey());
 
             return $session;
@@ -90,5 +98,60 @@ final class PlatformAuthenticationSessions
             ->where('user_id', $user->getKey())
             ->whereNull('revoked_at')
             ->update(['revoked_at' => now(), 'updated_at' => now()]);
+    }
+
+    public function revokeOthers(PlatformUser $user, ?string $currentSessionId): bool
+    {
+        if (! is_string($currentSessionId) || $currentSessionId === '') {
+            return false;
+        }
+
+        $currentSessionExists = PlatformAuthSession::query()
+            ->whereKey($currentSessionId)
+            ->where('user_id', $user->getKey())
+            ->whereNull('revoked_at')
+            ->exists();
+
+        if (! $currentSessionExists) {
+            return false;
+        }
+
+        PlatformAuthSession::query()
+            ->where('user_id', $user->getKey())
+            ->whereNull('revoked_at')
+            ->where('id', '!=', $currentSessionId)
+            ->update(['revoked_at' => now(), 'updated_at' => now()]);
+
+        return true;
+    }
+
+    /** Return revoked, current, or inactive without allowing a caller to affect another account. */
+    public function revokeOne(PlatformUser $user, string $sessionId, ?string $currentSessionId): string
+    {
+        if ($sessionId === $currentSessionId) {
+            return 'current';
+        }
+
+        $affected = PlatformAuthSession::query()
+            ->whereKey($sessionId)
+            ->where('user_id', $user->getKey())
+            ->whereNull('revoked_at')
+            ->update(['revoked_at' => now(), 'updated_at' => now()]);
+
+        return $affected > 0 ? 'revoked' : 'inactive';
+    }
+
+    private function touch(PlatformAuthSession $session): void
+    {
+        if ($session->last_seen_at !== null && $session->last_seen_at->gt(now()->subMinutes(5))) {
+            return;
+        }
+
+        $lastSeenAt = now();
+        PlatformAuthSession::query()
+            ->whereKey($session->getKey())
+            ->whereNull('revoked_at')
+            ->update(['last_seen_at' => $lastSeenAt]);
+        $session->setAttribute('last_seen_at', $lastSeenAt);
     }
 }
