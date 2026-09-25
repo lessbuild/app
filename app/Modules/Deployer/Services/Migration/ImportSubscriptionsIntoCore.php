@@ -26,6 +26,8 @@ final class ImportSubscriptionsIntoCore
 
     private const BATCH_KEY = 'deployer-subscription-import-v1';
 
+    public function __construct(private readonly DeployerSubscriptionSeatBilling $seatBilling) {}
+
     /**
      * Preview or import Deployer's owner-billed subscriptions into workspace product slots.
      * Owners whose subscription is shared by multiple organizations are held for review.
@@ -600,6 +602,12 @@ final class ImportSubscriptionsIntoCore
 
         $planKey = $this->planKeyForPrice($sourceSubscription, $sourceItems);
         $priceId = $this->providerPriceId($sourceSubscription, $sourceItems, $planKey);
+        $seatBilling = $this->seatBilling->fromCashierItems(
+            $sourceItems,
+            $planKey,
+            $priceId,
+            $sourceSubscription->quantity ?? 1,
+        );
         $endsAt = $sourceSubscription->ends_at ?? null;
         $isInCashierGracePeriod = $endsAt !== null && Carbon::parse($endsAt)->isFuture();
         $sourceStatus = (string) $sourceSubscription->stripe_status;
@@ -631,6 +639,7 @@ final class ImportSubscriptionsIntoCore
                 'source_ends_at' => $endsAt,
                 'source_quantity' => $sourceSubscription->quantity,
                 'plan_snapshot' => $planKey === null ? null : config('billing.plans.'.$planKey, []),
+                'seat_billing' => $seatBilling,
                 'items' => $sourceItems->map(fn (object $item): array => [
                     'source_item_id' => (string) $item->id,
                     'stripe_item_id' => (string) $item->stripe_id,

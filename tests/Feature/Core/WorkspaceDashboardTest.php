@@ -415,6 +415,7 @@ final class WorkspaceDashboardTest extends TestCase
     public function test_workspace_subscriptions_keep_each_product_plan_and_seat_count_separate(): void
     {
         $this->seedSubscriptionsForWorkspace();
+        $this->setDeployerSeatBilling(2);
 
         $response = $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
             ->get(route('core.workspace.subscriptions', $this->workspaceId));
@@ -428,6 +429,7 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertSeeText('Analytics Growth')
             ->assertSeeText('1 of 5 active app seats')
             ->assertSeeText('1 of 3 active app seats')
+            ->assertSeeText('Deployer seat add-on quantity: 2')
             ->assertSeeText('Current period ends')
             ->assertDontSeeText('sub_deployer_private')
             ->assertDontSeeText('sub_monitor_private')
@@ -437,6 +439,7 @@ final class WorkspaceDashboardTest extends TestCase
     public function test_workspace_members_can_see_app_access_but_not_subscription_details(): void
     {
         $this->seedSubscriptionsForWorkspace();
+        $this->setDeployerSeatBilling(2);
         DB::connection('core')->table('workspace_memberships')
             ->where('id', $this->membershipId)
             ->update(['role' => 'member']);
@@ -459,6 +462,7 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertDontSeeText('Monitor Team')
             ->assertDontSeeText('Analytics Growth')
             ->assertDontSeeText('Current period ends')
+            ->assertDontSeeText('Deployer seat add-on quantity: 2')
             ->assertDontSeeText('sub_deployer_private');
     }
 
@@ -1551,5 +1555,25 @@ final class WorkspaceDashboardTest extends TestCase
                 'updated_at' => now(),
             ]);
         }
+    }
+
+    private function setDeployerSeatBilling(int $additionalSeats): void
+    {
+        $subscriptionId = DB::connection('core')->table('current_product_subscriptions')
+            ->where('workspace_id', $this->workspaceId)
+            ->where('product', 'deployer')
+            ->value('product_subscription_id');
+        $subscription = DB::connection('core')->table('product_subscriptions')->where('id', $subscriptionId)->first();
+        $metadata = json_decode($subscription->metadata, true, 512, JSON_THROW_ON_ERROR);
+        $metadata['seat_billing'] = [
+            'additional_seats' => $additionalSeats,
+            'verified' => true,
+            'source' => 'stripe_subscription_items',
+        ];
+
+        DB::connection('core')->table('product_subscriptions')->where('id', $subscriptionId)->update([
+            'metadata' => json_encode($metadata, JSON_THROW_ON_ERROR),
+            'updated_at' => now(),
+        ]);
     }
 }

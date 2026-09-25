@@ -48,6 +48,9 @@
                 $activeProductAccess = (int) $productAccessCounts->get($key, 0);
                 $planLimits = $resolution?->limits ?? [];
                 $planSnapshot = $resolution?->snapshot ?? [];
+                $seatBilling = $key === 'deployer' && is_array($subscription?->metadata['seat_billing'] ?? null)
+                    ? $subscription->metadata['seat_billing']
+                    : null;
                 $seatLimitIsKnown = array_key_exists('seats', $planLimits)
                     || array_key_exists('included_seats', $planSnapshot)
                     || array_key_exists('members', $planLimits);
@@ -104,6 +107,14 @@
                             </p>
                         @else
                             <p class="mt-4 text-sm font-semibold text-ink">{{ __(':count active app seats', ['count' => $activeProductAccess]) }}</p>
+                        @endif
+
+                        @if ($key === 'deployer' && $subscription?->provider === 'stripe')
+                            @if (($seatBilling['verified'] ?? false) === true && is_int($seatBilling['additional_seats'] ?? null))
+                                <p class="mt-2 text-xs leading-5 text-muted">{{ __('Deployer seat add-on quantity: :count', ['count' => $seatBilling['additional_seats']]) }}</p>
+                            @else
+                                <p class="mt-2 text-xs leading-5 text-muted">{{ __('Deployer seat add-on quantity is not verified from the subscription items yet.') }}</p>
+                            @endif
                         @endif
 
                         @if ($resolution !== null && ! $resolution->available)

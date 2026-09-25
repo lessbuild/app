@@ -22,6 +22,7 @@ final class SyncDeployerBillingEventIntoCore
     public function __construct(
         private readonly DeployerStripeBillingClient $stripe,
         private readonly DeployerPlanSnapshot $snapshots,
+        private readonly DeployerSubscriptionSeatBilling $seatBilling,
     ) {}
 
     /** @param array<string, mixed> $event */
@@ -331,6 +332,9 @@ final class SyncDeployerBillingEventIntoCore
             'billing_interval' => $interval ?? $this->intervalForPrice($planKey, $priceId) ?? $subscription?->metadata['billing_interval'] ?? null,
             'status' => $status,
             'quantity' => max(1, $quantity ?: (int) ($object['quantity'] ?? $subscription?->quantity ?? 1)),
+            'seat_billing' => in_array($eventType, ['customer.subscription.created', 'customer.subscription.updated'], true)
+                ? $this->seatBilling->fromStripeItems(is_array($items) ? $items : [], $planKey)
+                : null,
             'trial_ends_at' => $this->timestamp($object['trial_end'] ?? null) ?? $subscription?->trial_ends_at,
             'current_period_starts_at' => $this->timestamp($object['current_period_start'] ?? null) ?? $subscription?->current_period_starts_at,
             'current_period_ends_at' => $this->timestamp($object['current_period_end'] ?? null) ?? $subscription?->current_period_ends_at,
@@ -450,6 +454,9 @@ final class SyncDeployerBillingEventIntoCore
         $metadata['plan_snapshot'] = $projection['plan_snapshot'];
         if ($projection['billing_interval'] !== null) {
             $metadata['billing_interval'] = $projection['billing_interval'];
+        }
+        if (is_array($projection['seat_billing'] ?? null)) {
+            $metadata['seat_billing'] = $projection['seat_billing'];
         }
         $metadata['billing_state'] = array_merge($billingState, [
             'event_position' => ['created_at' => $createdAt, 'event_id' => $eventId],

@@ -24,6 +24,7 @@ final class SyncDeployerBillingEventIntoCoreTest extends TestCase
                 'name' => 'Pro',
                 'monthly_price_id' => 'price_deployer_pro_monthly',
                 'yearly_price_id' => 'price_deployer_pro_yearly',
+                'yearly_seat_price_id' => 'price_deployer_pro_seat_yearly',
                 'entitlements' => ['deployments', 'previews'],
                 'limits' => ['servers' => 5, 'api_requests_per_minute' => 300],
             ],
@@ -69,6 +70,40 @@ final class SyncDeployerBillingEventIntoCoreTest extends TestCase
         $this->assertSame('applied', $billingEvent->processing_status);
         $this->assertFalse(app(SyncDeployerBillingEventIntoCore::class)->handle($event));
         $this->assertSame(1, DB::connection('core')->table('product_billing_events')->where('provider_event_id', 'evt_deployer_active')->count());
+    }
+
+    public function test_subscription_events_project_only_recognized_deployer_seat_addons(): void
+    {
+        $workspaceId = $this->addWorkspaceMapping(15);
+        $freeSubscription = $this->addFreeSubscription($workspaceId);
+        $this->assignCurrentSubscription($workspaceId, $freeSubscription->getKey());
+        $subscription = $this->subscriptionObject(15);
+        $subscription['items']['data'][] = [
+            'quantity' => 3,
+            'price' => ['id' => 'price_deployer_pro_seat_yearly'],
+        ];
+
+        app(SyncDeployerBillingEventIntoCore::class)->handle(
+            $this->event('evt_deployer_seat_items', 'customer.subscription.created', 1_800_000_100, $subscription),
+        );
+
+        $projected = ProductSubscription::query()->where('provider_subscription_id', 'sub_deployer_1')->firstOrFail();
+        $this->assertSame([
+            'additional_seats' => 3,
+            'verified' => true,
+            'source' => 'stripe_subscription_items',
+        ], $projected->metadata['seat_billing']);
+
+        $subscription['items']['data'][1]['price']['id'] = 'price_unrecognized_addon';
+        app(SyncDeployerBillingEventIntoCore::class)->handle(
+            $this->event('evt_deployer_unrecognized_seat_items', 'customer.subscription.updated', 1_800_000_200, $subscription),
+        );
+
+        $this->assertSame([
+            'additional_seats' => null,
+            'verified' => false,
+            'source' => 'stripe_subscription_items',
+        ], $projected->fresh()->metadata['seat_billing']);
     }
 
     public function test_cancellation_keeps_paid_history_and_restores_the_deployer_free_slot(): void

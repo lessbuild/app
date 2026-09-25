@@ -92,6 +92,7 @@ final class DeployerSubscriptionImportTest extends TestCase
         $this->assertSame('si_base', $metadata['items'][0]['stripe_item_id']);
         $this->assertSame('price_team_seat_yearly', $metadata['items'][1]['stripe_price_id']);
         $this->assertSame(4, $metadata['items'][1]['quantity']);
+        $this->assertSame(['additional_seats' => 4, 'verified' => true, 'source' => 'cashier_subscription_items'], $metadata['seat_billing']);
         $this->assertSame('4242', $customerMetadata['payment_method_last_four']);
         $this->assertSame($subscription->id, $assignment->product_subscription_id);
         $this->assertSame('current_product_subscription', $currentMap->canonical_entity);
