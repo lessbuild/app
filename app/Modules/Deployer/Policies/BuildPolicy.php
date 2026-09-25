@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class BuildPolicy
 {
@@ -16,6 +17,10 @@ class BuildPolicy
      */
     public function view(User $user, Build $build): bool
     {
+        if (! app(DeployerProjectAccess::class)->build($user, $build)) {
+            return false;
+        }
+
         $repository = $build->repository;
 
         return $repository?->organization

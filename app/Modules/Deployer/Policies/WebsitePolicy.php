@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class WebsitePolicy
 {
@@ -24,6 +25,10 @@ class WebsitePolicy
      */
     public function view(User $user, Website $website): bool
     {
+        if (! app(DeployerProjectAccess::class)->website($user, $website)) {
+            return false;
+        }
+
         return $website->organization
             ? (int) $website->organization_id === (int) $user->current_organization_id
                 && $website->organization->permits($user, 'view')
@@ -61,7 +66,8 @@ class WebsitePolicy
      */
     public function backup(User $user, Website $website): bool
     {
-        return (int) $website->organization_id === (int) $user->current_organization_id
+        return $this->view($user, $website)
+            && (int) $website->organization_id === (int) $user->current_organization_id
             && ($website->organization?->permits($user, 'manage') ?? false);
     }
 }

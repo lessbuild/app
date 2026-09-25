@@ -12,6 +12,8 @@ use App\Core\Services\Search\WorkspaceSearchPattern;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Route;
 
 final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
@@ -48,8 +50,22 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
             return [];
         }
 
+        $contexts = [];
+        $sourceUsers = User::query()->whereKey($sourceUserIds)->get();
+        foreach (Organization::query()->whereKey($organizationIds)->get() as $organization) {
+            foreach ($sourceUsers as $sourceUser) {
+                if ($organization->permits($sourceUser, 'view')) {
+                    $context = clone $sourceUser;
+                    $context->setAttribute('current_organization_id', $organization->getKey());
+                    $context->setRelation('currentOrganization', $organization);
+                    $contexts[] = $context;
+                }
+            }
+        }
+
         $pattern = WorkspaceSearchPattern::contains($query);
         $servers = Server::query()
+            ->tap(fn ($builder) => $this->restrict($builder, $contexts, 'servers'))
             ->whereIn('organization_id', $organizationIds)
             ->where(fn ($servers) => $servers
                 ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
@@ -68,6 +84,7 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
             ));
 
         $builds = Build::query()
+            ->tap(fn ($builder) => $this->restrict($builder, $contexts, 'builds'))
             ->where(function ($builds) use ($organizationIds): void {
                 $builds->whereHas('repository', fn ($repository) => $repository->whereIn('organization_id', $organizationIds))
                     ->orWhereHas('environment.project', fn ($project) => $project->whereIn('organization_id', $organizationIds));
@@ -140,5 +157,26 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
             ->values();
 
         return $servers->concat($builds)->values()->all();
+    }
+
+    /** @param list<User> $contexts */
+    private function restrict(Builder $query, array $contexts, string $resource): void
+    {
+        $query->where(function (Builder $allowed) use ($contexts, $resource): void {
+            $allowed->whereRaw('1 = 0');
+            foreach ($contexts as $context) {
+                $allowed->orWhere(function (Builder $scope) use ($context, $resource): void {
+                    if ($resource === 'servers') {
+                        $scope->where('organization_id', $context->current_organization_id);
+                    } else {
+                        $scope->where(function (Builder $owned) use ($context): void {
+                            $owned->whereHas('repository', fn (Builder $repository) => $repository->where('organization_id', $context->current_organization_id))
+                                ->orWhereHas('environment.project', fn (Builder $project) => $project->where('organization_id', $context->current_organization_id));
+                        });
+                    }
+                    app(DeployerProjectAccess::class)->{$resource}($scope, $context);
+                });
+            }
+        });
     }
 }

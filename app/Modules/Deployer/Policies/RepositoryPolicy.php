@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class RepositoryPolicy
 {
@@ -27,6 +28,10 @@ class RepositoryPolicy
      */
     public function view(User $user, Repository $repository): bool
     {
+        if (! app(DeployerProjectAccess::class)->repository($user, $repository)) {
+            return false;
+        }
+
         return $repository->organization
             ? (int) $repository->organization_id === (int) $user->current_organization_id
                 && $repository->organization->permits($user, 'view')

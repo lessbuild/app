@@ -6,6 +6,7 @@ use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\Deployment;
 use App\Modules\Monitor\Models\Incident;
 use App\Modules\Monitor\Models\Workspace;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -14,7 +15,7 @@ final class IncidentDeploymentContext
     public function __construct(private readonly WorkspacePlanLimits $limits) {}
 
     /** @return Collection<int, Deployment> */
-    public function recent(Workspace $workspace, Incident $incident): Collection
+    public function recent(Workspace $workspace, Incident $incident, ?Authenticatable $principal = null): Collection
     {
         $minutes = $this->limits->deploymentContextMinutes($workspace);
         if ($minutes === 0) {
@@ -29,7 +30,7 @@ final class IncidentDeploymentContext
 
         $service = $source instanceof AlertRule ? $source->service : null;
 
-        return Deployment::forWorkspace($workspace)
+        return Deployment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))
             ->with(['environment.application', 'release', 'actor:id,name'])
             ->where('environment_id', $environment->id)
             ->whereBetween('deployed_at', [$incident->opened_at->subMinutes($minutes), $incident->opened_at])

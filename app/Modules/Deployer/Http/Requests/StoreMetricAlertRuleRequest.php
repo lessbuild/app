@@ -36,7 +36,7 @@ class StoreMetricAlertRuleRequest extends FormRequest
 
         return [
             'name' => ['required', 'string', 'max:100'],
-            'server_id' => ['nullable', Rule::exists('servers', 'id')->where('organization_id', $organizationId)],
+            'server_id' => ['nullable', Rule::exists('deployer.servers', 'id')->whereIn('id', $this->user()->workspaceServers()->pluck('servers.id'))->where('organization_id', $organizationId)],
             'metric' => ['required', Rule::in(MetricAlertRule::METRICS)],
             'operator' => ['required', Rule::in(['gte', 'lte'])],
             'threshold' => ['required', 'numeric', 'between:0,999999999'],

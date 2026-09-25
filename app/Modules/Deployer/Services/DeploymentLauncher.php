@@ -6,6 +6,7 @@ use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Support\Facades\DB;
 
 class DeploymentLauncher
@@ -38,7 +39,9 @@ class DeploymentLauncher
         $build = DB::connection('deployer')->transaction(function () use ($repository, $requester, $source): ?Build {
             $website = Website::query()->lockForUpdate()->findOrFail($repository->website_id);
             $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
-            if ((int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
+            if (($requester !== null && in_array($source, [Build::TRIGGER_MANUAL, Build::TRIGGER_API], true)
+                && ! app(DeployerProjectAccess::class)->repository($requester, $locked))
+                || (int) $locked->website_id !== (int) $website->id || $website->hasActiveDeployment()) {
                 return null;
             }
             $locked->update(['setup_stage' => 0]);

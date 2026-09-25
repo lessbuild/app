@@ -3,13 +3,14 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\DeploymentFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
+use App\Modules\Monitor\Models\Concerns\HasProjectVisibility;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['environment_id', 'release_id', 'actor_id', 'ingest_token_id', 'deployment_key', 'payload_hash', 'source', 'commit_sha', 'note', 'deployed_at'])]
@@ -19,6 +20,8 @@ class Deployment extends Model
 {
     /** @use HasFactory<DeploymentFactory> */
     use HasFactory;
+
+    use HasProjectVisibility;
 
     /** @param Builder<Deployment> $query */
     #[Scope]

@@ -8,6 +8,7 @@ use App\Core\Data\Projects\ProjectResourceDestinationState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\MappedProjectResourceAccess;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Models\Environment;
@@ -139,6 +140,7 @@ final class DeployerResourceDestinationProvider implements ProjectResourceDestin
                     || $membershipPairs->has($sourceProject->organization_id.':'.$sourceUser->getKey());
 
                 return $hasLocalMembership
+                    && app(MappedProjectResourceAccess::class)->allows($user, 'deployer', 'project', $sourceProject->getKey(), 'organization', $sourceProject->organization_id)
                     && (! $usesCoreAuthority || $this->workspaceAccess->allows($user, 'deployer', 'organization', $sourceProject->organization_id));
             });
 
@@ -146,6 +148,9 @@ final class DeployerResourceDestinationProvider implements ProjectResourceDestin
             if ($usesCoreAuthority) {
                 $destinationParameters['organization_id'] = $sourceProject->organization_id;
             }
+
+            $canView = $canView && ($sourceEnvironment === null
+                || app(MappedProjectResourceAccess::class)->allows($user, 'deployer', 'environment', $sourceEnvironment->getKey(), 'organization', $sourceProject->organization_id));
 
             $destinations[$mappingId] = $canView
                 ? new ProjectResourceDestination(

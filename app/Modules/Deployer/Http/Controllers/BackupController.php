@@ -51,12 +51,12 @@ class BackupController extends Controller
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
-        $backups = $this->recoveryEvidence->recentBackups($organization);
-        $recoverySummary = $this->recoveryEvidence->summary($organization);
+        $backups = $this->recoveryEvidence->recentBackups($organization, $request->user());
+        $recoverySummary = $this->recoveryEvidence->summary($organization, $request->user());
 
         return view('backups.index', [
             'destinations' => $organization->backupDestinations()->latest()->get(),
-            'websites' => $organization->websites()->with(['backupSchedules.destination', 'server'])->orderBy('name')->get(),
+            'websites' => $request->user()->workspaceWebsites()->with(['backupSchedules.destination', 'server'])->orderBy('name')->get(),
             'backups' => $backups,
             'recoverySummary' => $recoverySummary,
             'destinationCatalog' => $this->destinationCatalog,
@@ -176,7 +176,7 @@ class BackupController extends Controller
         /** @var Organization $organization */
         $organization = $request->user()->currentOrganization;
         $data = $request->validated();
-        $website = $organization->websites()->findOrFail($data['website_id']);
+        $website = $request->user()->workspaceWebsites()->findOrFail($data['website_id']);
         $destination = $organization->backupDestinations()->findOrFail($data['backup_destination_id']);
         $saveSchedule->handle($website, $destination, $data);
 

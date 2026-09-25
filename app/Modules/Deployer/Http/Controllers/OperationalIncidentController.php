@@ -74,6 +74,6 @@ class OperationalIncidentController extends Controller
     {
         $this->authorize('export', OperationalIncident::class);
 
-        return $exporter->stream($request->user()->currentOrganization);
+        return $exporter->stream($request->user()->currentOrganization, $request->user());
     }
 }

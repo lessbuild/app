@@ -13,7 +13,7 @@ class RotateQueueTokenRequest extends FormRequest
     {
         $monitor = $this->route('monitor');
         abort_unless($monitor instanceof Monitor && $monitor->type === 'queue'
-            && Monitor::forWorkspace($workspace->get())->whereKey($monitor->id)->exists(), 404);
+            && Monitor::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($monitor->id)->exists(), 404);
         Gate::authorize('update', $monitor);
 
         return true;

@@ -13,7 +13,7 @@ class SearchMonitorsRequest extends FormRequest
     public function authorize(CurrentWorkspace $workspace): bool
     {
         if ($monitor = $this->route('monitor')) {
-            abort_unless($monitor instanceof Monitor && Monitor::withTrashed()->forWorkspace($workspace->get())->whereKey($monitor->id)->exists(), 404);
+            abort_unless($monitor instanceof Monitor && Monitor::withTrashed()->forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($monitor->id)->exists(), 404);
             Gate::authorize($this->routeIs('monitor.monitors.edit') ? 'update' : 'view', $monitor);
         } elseif ($this->routeIs('monitor.monitors.create')) {
             Gate::authorize('create', [Monitor::class, $workspace->get()]);

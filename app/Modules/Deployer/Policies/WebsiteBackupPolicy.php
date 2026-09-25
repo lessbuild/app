@@ -28,6 +28,7 @@ class WebsiteBackupPolicy
         $website = $backup->website;
 
         return $website !== null
+            && $user->can('view', $website)
             && (int) $website->organization_id === (int) $user->current_organization_id
             && ($website->organization?->permits($user, 'manage') ?? false);
     }

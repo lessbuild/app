@@ -22,7 +22,7 @@ final class ChangeStatusPage
 
             $page = $statusPage === null
                 ? new StatusPage(['workspace_id' => $workspace->id])
-                : $workspace->statusPages()->lockForUpdate()->findOrFail($statusPage->id);
+                : $workspace->statusPages()->visibleTo($actor, $workspace)->lockForUpdate()->findOrFail($statusPage->id);
             $slug = $this->slug($page, $data);
 
             if (StatusPage::query()->where('slug', $slug)->when($page->exists, fn ($query) => $query->whereKeyNot($page->id))->exists()) {
@@ -30,7 +30,7 @@ final class ChangeStatusPage
             }
 
             $monitorIds = array_values(array_unique(array_map('intval', $data['monitor_ids'] ?? [])));
-            $monitors = Monitor::query()->forWorkspace($workspace)->whereKey($monitorIds)->orderBy('id')->get();
+            $monitors = Monitor::query()->forWorkspace($workspace)->visibleTo($actor, $workspace)->whereKey($monitorIds)->orderBy('id')->get();
             if ($monitors->count() !== count($monitorIds)) {
                 throw ValidationException::withMessages(['monitor_ids' => 'Choose monitors from the current workspace only.']);
             }
@@ -63,7 +63,7 @@ final class ChangeStatusPage
         DB::connection('monitor')->transaction(function () use ($workspace, $actor, $statusPage): void {
             $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->id);
             Gate::forUser($actor)->authorize('update', $workspace);
-            $workspace->statusPages()->lockForUpdate()->findOrFail($statusPage->id)->delete();
+            $workspace->statusPages()->visibleTo($actor, $workspace)->lockForUpdate()->findOrFail($statusPage->id)->delete();
         }, attempts: 3);
     }
 

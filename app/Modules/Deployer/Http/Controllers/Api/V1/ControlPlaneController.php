@@ -32,6 +32,7 @@ use App\Modules\Deployer\Services\ApplicationConfigurationResults;
 use App\Modules\Deployer\Services\ApplicationConfigurationRetries;
 use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
 use App\Modules\Deployer\Services\ControlPlaneAccess;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\DeploymentLauncher;
 use App\Modules\Deployer\Services\WorkflowConfiguration;
 use Illuminate\Http\JsonResponse;
@@ -67,7 +68,7 @@ class ControlPlaneController extends Controller
     {
         $this->api($request, 'read');
         $projectIds = $this->controlPlaneAccess->projectIds($request);
-        $projects = $request->user()->currentOrganization->projects()
+        $projects = $request->user()->workspaceProjects()
             ->when($projectIds !== null, fn ($query) => $query->whereIn('id', $projectIds))
             ->with('environments:id,project_id,name,slug,type,branch,desired_replicas,hibernated_at')
             ->get();
@@ -94,6 +95,7 @@ class ControlPlaneController extends Controller
         $this->api($request, 'read');
         $projectIds = $this->controlPlaneAccess->projectIds($request);
         $builds = Build::query()
+            ->tap(fn ($query) => app(DeployerProjectAccess::class)->builds($query, $request->user()))
             ->whereHas('repository', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
             ->when($projectIds !== null, fn ($query) => $query->whereHas('environment', fn ($environment) => $environment->whereIn('project_id', $projectIds)))
             ->latest()->limit(100)->get();

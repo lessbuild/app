@@ -22,7 +22,7 @@ class ServiceLevelObjectiveController extends Controller
     public function index(CurrentWorkspace $currentWorkspace): Response
     {
         $workspace = $currentWorkspace->get();
-        $objectives = ServiceLevelObjective::forWorkspace($workspace)->with('environment.application')
+        $objectives = ServiceLevelObjective::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('environment.application')
             ->orderByDesc('enabled')->orderBy('name')->orderBy('id')->paginate(25);
 
         return response()->view('monitor::objectives.index', [
@@ -49,7 +49,7 @@ class ServiceLevelObjectiveController extends Controller
     public function show(ServiceLevelObjective $serviceLevelObjective, CurrentWorkspace $currentWorkspace, ServiceObjectiveReport $reports, ServiceObjectiveBurnRate $burnRates, WorkspacePlanLimits $limits): Response
     {
         $workspace = $currentWorkspace->get();
-        $objective = ServiceLevelObjective::forWorkspace($workspace)->with('environment.application')->findOrFail($serviceLevelObjective->id);
+        $objective = ServiceLevelObjective::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('environment.application')->findOrFail($serviceLevelObjective->id);
 
         return response()->view('monitor::objectives.show', [
             'objective' => $objective,
@@ -65,7 +65,7 @@ class ServiceLevelObjectiveController extends Controller
         $workspace = $currentWorkspace->get();
         Gate::authorize('view', $workspace);
         abort_unless($limits->sloReportsEnabled($workspace), 403, 'SLO reports and exports are available on Team and Scale plans.');
-        $objective = ServiceLevelObjective::forWorkspace($workspace)->with('environment.application')->findOrFail($serviceLevelObjective->id);
+        $objective = ServiceLevelObjective::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('environment.application')->findOrFail($serviceLevelObjective->id);
         $report = $reports->forObjective($objective);
         $filename = $exporter->filename($objective, $report['until']);
 
@@ -80,7 +80,7 @@ class ServiceLevelObjectiveController extends Controller
     {
         $workspace = $currentWorkspace->get();
         Gate::authorize('update', $workspace);
-        $objective = ServiceLevelObjective::forWorkspace($workspace)->findOrFail($serviceLevelObjective->id);
+        $objective = ServiceLevelObjective::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->findOrFail($serviceLevelObjective->id);
 
         return $this->form($workspace, $objective);
     }
@@ -101,7 +101,7 @@ class ServiceLevelObjectiveController extends Controller
 
     private function form(Workspace $workspace, ?ServiceLevelObjective $objective = null): Response
     {
-        $environments = Environment::forWorkspace($workspace)->with('application:id,name')
+        $environments = Environment::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('application:id,name')
             ->orderBy('application_id')->orderBy('name')->orderBy('id')->get(['id', 'application_id', 'name', 'status']);
         $environmentOptions = $environments->mapWithKeys(fn (Environment $environment): array => [
             $environment->id => $environment->application->name.' / '.$environment->name.($environment->status !== 'active' ? ' (paused)' : ''),

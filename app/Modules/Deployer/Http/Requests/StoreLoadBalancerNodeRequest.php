@@ -38,7 +38,7 @@ class StoreLoadBalancerNodeRequest extends FormRequest
         return [
             'server_id' => [
                 'required',
-                Rule::exists('servers', 'id')->where('organization_id', $loadBalancer->organization_id),
+                Rule::exists('deployer.servers', 'id')->whereIn('id', $this->user()->workspaceServers()->pluck('servers.id')),
                 Rule::unique('load_balancer_nodes')->where('load_balancer_id', $loadBalancer->id),
             ],
             'upstream_port' => ['required', 'integer', 'between:1,65535'],

@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Models;
 
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\PersonalOrganization;
 use Database\Factories\UserFactory;
 use Illuminate\Auth\MustVerifyEmail;
@@ -172,6 +173,12 @@ class User extends Authenticatable implements MustVerifyEmailContract
         return $this->belongsToMany(Organization::class)->withPivot('role')->withTimestamps();
     }
 
+    /** @return HasMany<Project, Organization> */
+    public function workspaceProjects(): HasMany
+    {
+        return app(DeployerProjectAccess::class)->projects($this->currentOrganization()->firstOrFail()->projects(), $this);
+    }
+
     /** @return HasMany<Provider, Organization> */
     public function workspaceProviders(): HasMany
     {
@@ -181,19 +188,19 @@ class User extends Authenticatable implements MustVerifyEmailContract
     /** @return HasMany<Server, Organization> */
     public function workspaceServers(): HasMany
     {
-        return $this->currentOrganization()->firstOrFail()->servers();
+        return app(DeployerProjectAccess::class)->servers($this->currentOrganization()->firstOrFail()->servers(), $this);
     }
 
     /** @return HasMany<Website, Organization> */
     public function workspaceWebsites(): HasMany
     {
-        return $this->currentOrganization()->firstOrFail()->websites();
+        return app(DeployerProjectAccess::class)->websites($this->currentOrganization()->firstOrFail()->websites(), $this);
     }
 
     /** @return HasMany<Repository, Organization> */
     public function workspaceRepositories(): HasMany
     {
-        return $this->currentOrganization()->firstOrFail()->repositories();
+        return app(DeployerProjectAccess::class)->repositories($this->currentOrganization()->firstOrFail()->repositories(), $this);
     }
 
     /** @return HasMany<Recipe, Organization> */

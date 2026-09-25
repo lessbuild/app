@@ -37,6 +37,6 @@ class MonitorPolicy
 
         return $application === null || $environment->trashed() || $application->trashed()
             ? Response::denyAsNotFound()
-            : Gate::forUser($user)->inspect($ability, $application->workspace);
+            : Gate::forUser($user)->inspect($ability, $monitor->environment);
     }
 }

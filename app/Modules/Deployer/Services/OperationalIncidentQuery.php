@@ -4,6 +4,8 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\OperationalIncident;
 use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class OperationalIncidentQuery
@@ -13,9 +15,10 @@ class OperationalIncidentQuery
      *
      * @return HasMany<OperationalIncident, Organization> The organization-scoped export query.
      */
-    public function forExport(Organization $organization): HasMany
+    public function forExport(Organization $organization, ?User $actor = null): HasMany
     {
         return $organization->operationalIncidents()
+            ->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->incidents($query, $actor))
             ->with('assignee')
             ->latest('detected_at');
     }

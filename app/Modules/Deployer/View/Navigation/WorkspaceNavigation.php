@@ -51,10 +51,10 @@ final class WorkspaceNavigation
             'workspace',
         );
         $workspaces = $user->organizations()->orderBy('name')->get(['organizations.id', 'organizations.name']);
-        $projects = $workspace?->projects()
+        $projects = $workspace === null ? collect() : $user->workspaceProjects()
             ->orderBy('name')
             ->limit(30)
-            ->get(['projects.id', 'projects.name', 'projects.slug']) ?? collect();
+            ->get(['projects.id', 'projects.name', 'projects.slug']);
         $fallbackProjectsUrl = Route::has('projects.index') ? route('projects.index') : url('/projects');
         $projectsUrl = $workspace
             ? $this->projectNavigation->directoryUrl('deployer', 'organization', $workspace->getKey(), $fallbackProjectsUrl)

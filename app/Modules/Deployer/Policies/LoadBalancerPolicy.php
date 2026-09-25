@@ -20,7 +20,9 @@ class LoadBalancerPolicy
      */
     public function manage(User $user, LoadBalancer $loadBalancer): bool
     {
-        return (int) $loadBalancer->organization_id === (int) $user->current_organization_id
+        return $loadBalancer->environment !== null
+            && $user->can('view', $loadBalancer->environment)
+            && (int) $loadBalancer->organization_id === (int) $user->current_organization_id
             && ($loadBalancer->organization?->permits($user, 'manage') ?? false);
     }
 }

@@ -22,7 +22,7 @@ class DeploymentController extends Controller
     public function index(SearchReleasesRequest $request, Application $application, Environment $environment): Response
     {
         $filters = $request->filters();
-        $deployments = $environment->deployments()->with('release')->latest('deployed_at')->latest('id')
+        $deployments = $environment->deployments()->visibleTo($request->user(), $environment->application->workspace)->with('release')->latest('deployed_at')->latest('id')
             ->paginate(25, ['*'], 'page', (int) ($filters['page'] ?? 1));
 
         return response()->view('monitor::deployments.index', compact('application', 'environment', 'deployments'))->header('Cache-Control', 'private, no-store');
@@ -60,9 +60,9 @@ class DeploymentController extends Controller
             $trafficContexts = $trafficContext->forDeployment($request->user(), $deployment, $comparisonSeconds);
         }
 
-        $comparison = $metrics->aroundDeploymentWindow($workspace->get(), $deployment, $comparisonSeconds, $requestedMinutes);
-        $nearbyDeployments = $metrics->otherDeploymentsInWindow($workspace->get(), $deployment, $comparison['from'], $comparison['until']);
-        $overlappingIncidents = $metrics->incidentsOverlappingWindow($workspace->get(), $deployment, $comparison['from'], $comparison['until']);
+        $comparison = $metrics->aroundDeploymentWindow($workspace->get(), $deployment, $comparisonSeconds, $requestedMinutes, $request->user());
+        $nearbyDeployments = $metrics->otherDeploymentsInWindow($workspace->get(), $deployment, $comparison['from'], $comparison['until'], $request->user());
+        $overlappingIncidents = $metrics->incidentsOverlappingWindow($workspace->get(), $deployment, $comparison['from'], $comparison['until'], $request->user());
 
         return response()->view('monitor::deployments.show', [
             ...compact('application', 'environment', 'deployment', 'filters', 'nearbyDeployments', 'overlappingIncidents'),

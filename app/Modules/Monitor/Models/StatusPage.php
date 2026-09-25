@@ -3,10 +3,11 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\StatusPageFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
+use App\Modules\Monitor\Models\Concerns\HasProjectVisibility;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -16,6 +17,8 @@ class StatusPage extends Model
 {
     /** @use HasFactory<StatusPageFactory> */
     use HasFactory;
+
+    use HasProjectVisibility;
 
     /** @return BelongsTo<Workspace, $this> */
     public function workspace(): BelongsTo

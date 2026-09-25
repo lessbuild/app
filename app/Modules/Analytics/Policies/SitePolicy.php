@@ -16,17 +16,20 @@ class SitePolicy
     {
         $role = $this->access->roleFor($user, $site->workspace);
 
-        return $role?->canManageSites() === true || $role === WorkspaceRole::Viewer;
+        return ($role?->canManageSites() === true || $role === WorkspaceRole::Viewer)
+            && $this->access->hasSiteAccess($user, $site);
     }
 
     public function manage(Authenticatable $user, Site $site): bool
     {
-        return $this->access->roleFor($user, $site->workspace)?->canManageSites() === true;
+        return $this->access->roleFor($user, $site->workspace)?->canManageSites() === true
+            && $this->access->hasSiteAccess($user, $site);
     }
 
     public function delete(Authenticatable $user, Site $site): bool
     {
-        return $this->access->roleFor($user, $site->workspace) === WorkspaceRole::Owner;
+        return $this->access->roleFor($user, $site->workspace) === WorkspaceRole::Owner
+            && $this->access->hasSiteAccess($user, $site);
     }
 
     public function create(Authenticatable $user, Workspace $workspace): bool

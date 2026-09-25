@@ -18,7 +18,7 @@ class SaveServiceLevelObjectiveRequest extends FormRequest
         $workspace = $currentWorkspace->get();
         $objective = $this->route('serviceLevelObjective');
         if ($objective instanceof ServiceLevelObjective) {
-            abort_unless(ServiceLevelObjective::forWorkspace($workspace)->whereKey($objective->id)->exists(), 404);
+            abort_unless(ServiceLevelObjective::forWorkspace($workspace)->visibleTo($this->user(), $workspace)->whereKey($objective->id)->exists(), 404);
         }
         Gate::authorize('update', $workspace);
 
@@ -28,7 +28,7 @@ class SaveServiceLevelObjectiveRequest extends FormRequest
     /** @return array<string, array<mixed>|string> */
     public function rules(CurrentWorkspace $currentWorkspace): array
     {
-        $environmentIds = Environment::forWorkspace($currentWorkspace->get())->select('id');
+        $environmentIds = Environment::forWorkspace($currentWorkspace->get())->visibleTo($this->user(), $currentWorkspace->get())->select('id');
         $indicator = is_string($this->input('indicator')) ? $this->input('indicator') : null;
 
         return [

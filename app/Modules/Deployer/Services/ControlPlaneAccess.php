@@ -2,11 +2,13 @@
 
 namespace App\Modules\Deployer\Services;
 
+use App\Core\Services\Identity\MappedProjectResourceAccess;
 use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Http\Request;
 use Laravel\Sanctum\PersonalAccessToken;
 
@@ -28,6 +30,9 @@ class ControlPlaneAccess
         /** @var User $user */
         $user = $request->user();
         $scope = $this->scopedTokenClaims($user);
+        abort_unless(app(MappedProjectResourceAccess::class)->deniedResourceIds(
+            $user, 'deployer', 'project', 'organization', (string) $user->current_organization_id, [],
+        ) !== null, 403, 'This Buildpusher workspace is not available to this token.');
 
         if ($scope !== null) {
             abort_unless((string) $user->current_organization_id === $scope['workspace_id'], 403, 'This token is scoped to another workspace.');
@@ -65,6 +70,9 @@ class ControlPlaneAccess
     {
         $user = $request->user();
         $projectIds = $user instanceof User ? $this->scopedTokenClaims($user)['project_ids'] ?? null : null;
+        $project = Project::query()->find($projectId);
+        abort_unless($user instanceof User && $project !== null
+            && app(DeployerProjectAccess::class)->project($user, $project), 403, 'This project is not available to this token.');
 
         if ($projectIds !== null) {
             abort_unless(in_array((int) $projectId, $projectIds, true), 403, 'This token is scoped to other projects.');

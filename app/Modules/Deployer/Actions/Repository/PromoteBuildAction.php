@@ -9,6 +9,7 @@ use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Notifications\PromotionApprovalRequestedNotification;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\DeploymentRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -37,7 +38,9 @@ class PromoteBuildAction
             $lockedSource = Build::query()->with(['repository.provider', 'environment.project'])->lockForUpdate()->findOrFail($source->id);
             $lockedTarget = Environment::query()->with('project')->lockForUpdate()->findOrFail($target->id);
 
-            if ((int) $requester->current_organization_id !== (int) $lockedTarget->project->organization_id
+            if (! app(DeployerProjectAccess::class)->build($requester, $lockedSource)
+                || ! app(DeployerProjectAccess::class)->environment($requester, $lockedTarget)
+                || (int) $requester->current_organization_id !== (int) $lockedTarget->project->organization_id
                 || ! $lockedTarget->project->organization->permits($requester, 'deploy')
                 || $lockedSource->status !== Build::STATUS_SUCCEEDED
                 || ! preg_match('/\A[0-9a-f]{40,64}\z/D', (string) $lockedSource->revision)

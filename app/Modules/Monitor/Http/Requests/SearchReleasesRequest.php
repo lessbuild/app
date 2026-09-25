@@ -19,15 +19,15 @@ class SearchReleasesRequest extends FormRequest
     public function authorize(CurrentWorkspace $workspace): bool
     {
         if ($release = $this->route('release')) {
-            abort_unless($release instanceof Release && Release::forWorkspace($workspace->get())->whereKey($release->id)->exists(), 404);
+            abort_unless($release instanceof Release && Release::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($release->id)->exists(), 404);
             Gate::authorize('view', $release);
         }
         if ($deployment = $this->route('deployment')) {
-            abort_unless($deployment instanceof Deployment && Deployment::forWorkspace($workspace->get())->whereKey($deployment->id)->exists(), 404);
+            abort_unless($deployment instanceof Deployment && Deployment::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($deployment->id)->exists(), 404);
             Gate::authorize('view', $deployment);
         }
         if ($environment = $this->route('environment')) {
-            abort_unless($environment instanceof Environment && Environment::forWorkspace($workspace->get())->whereKey($environment->id)->exists(), 404);
+            abort_unless($environment instanceof Environment && Environment::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($environment->id)->exists(), 404);
             Gate::authorize('view', $environment);
         }
 

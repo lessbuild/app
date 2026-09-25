@@ -3,9 +3,10 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\ApplicationFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
+use App\Modules\Monitor\Models\Concerns\HasProjectVisibility;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
@@ -13,6 +14,8 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 #[Fillable(['name', 'slug', 'framework', 'framework_version', 'accent'])]
 class Application extends Model
 {
+    use HasProjectVisibility;
+
     public const ACCENTS = ['violet', 'sky', 'amber', 'emerald'];
 
     public const FRAMEWORK_PRESETS = ['Laravel', 'Node.js', 'Python', 'Go', 'Java', '.NET', 'Ruby', 'PHP', 'Other'];

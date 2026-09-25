@@ -14,6 +14,7 @@ use App\Modules\Deployer\Http\Requests\StoreDatabaseUserRequest;
 use App\Modules\Deployer\Models\DatabaseClone;
 use App\Modules\Deployer\Models\DatabaseUser;
 use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -32,6 +33,7 @@ class DatabaseController extends Controller
     public function index(Request $request): View
     {
         $resources = EnvironmentResource::query()
+            ->whereHas('environment', fn ($query) => app(DeployerProjectAccess::class)->environments($query, $request->user()))
             ->whereIn('type', ['mysql', 'postgresql'])
             ->whereHas('environment.project', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
             ->with(['environment.project', 'snapshots' => fn ($query) => $query->latest('collected_at')->limit(20), 'databaseUsers'])
@@ -39,7 +41,10 @@ class DatabaseController extends Controller
 
         return view('databases.index', [
             'resources' => $resources,
-            'clones' => DatabaseClone::query()->whereHas('source.environment.project', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))->with(['source', 'target'])->latest()->limit(30)->get(),
+            'clones' => DatabaseClone::query()
+                ->whereHas('source.environment', fn ($query) => app(DeployerProjectAccess::class)->environments($query, $request->user()))
+                ->whereHas('target.environment', fn ($query) => app(DeployerProjectAccess::class)->environments($query, $request->user()))
+                ->whereHas('source.environment.project', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))->with(['source', 'target'])->latest()->limit(30)->get(),
             'canManage' => $request->user()->currentOrganization->permits($request->user(), 'manage')
                 && $this->entitlements->allows($request->user()->currentOrganization, 'resources'),
             'featureAvailable' => $this->entitlements->allows($request->user()->currentOrganization, 'resources'),

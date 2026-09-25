@@ -34,7 +34,7 @@ class StoreBackupScheduleRequest extends FormRequest
         $organizationId = $this->user()->current_organization_id;
 
         return [
-            'website_id' => ['required', Rule::exists('websites', 'id')->where('organization_id', $organizationId)],
+            'website_id' => ['required', Rule::exists('deployer.websites', 'id')->whereIn('id', $this->user()->workspaceWebsites()->pluck('websites.id'))->where('organization_id', $organizationId)],
             'backup_destination_id' => ['required', Rule::exists('backup_destinations', 'id')->where('organization_id', $organizationId)],
             'frequency' => ['required', Rule::in(['daily', 'weekly'])],
             'weekday' => ['nullable', 'integer', 'between:0,6', 'required_if:frequency,weekly'],

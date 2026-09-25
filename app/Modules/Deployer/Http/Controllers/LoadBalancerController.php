@@ -36,9 +36,9 @@ class LoadBalancerController extends Controller
         $organization = $request->user()->currentOrganization;
 
         return view('load-balancers.index', [
-            'loadBalancers' => $organization->loadBalancers()->with(['environment.project', 'server', 'nodes.server'])->get(),
-            'environments' => $organization->projects()->with('environments')->get()->pluck('environments')->flatten(),
-            'servers' => $organization->servers()->where('provisioning_status', 'active')->orderBy('name')->get(),
+            'loadBalancers' => $organization->loadBalancers()->whereIn('environment_id', $request->user()->workspaceProjects()->with('environments')->get()->pluck('environments')->flatten()->pluck('id'))->with(['environment.project', 'server', 'nodes.server'])->get(),
+            'environments' => $request->user()->workspaceProjects()->with('environments')->get()->pluck('environments')->flatten(),
+            'servers' => $request->user()->workspaceServers()->where('provisioning_status', 'active')->orderBy('name')->get(),
             'canManage' => $organization->permits($request->user(), 'manage')
                 && $this->entitlements->allows($organization, 'high_availability'),
             'featureAvailable' => $this->entitlements->allows($organization, 'high_availability'),
@@ -58,6 +58,8 @@ class LoadBalancerController extends Controller
         $data = $request->validated();
         $environment = Environment::findOrFail($data['environment_id']);
         $server = Server::findOrFail($data['server_id']);
+        $this->authorize('view', $environment);
+        $this->authorize('view', $server);
         try {
             $createLoadBalancer->handle($organization, $request->user(), $environment, $server, $data);
         } catch (LoadBalancerOperationException $exception) {

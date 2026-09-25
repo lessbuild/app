@@ -17,17 +17,20 @@ use App\Modules\Analytics\Models\Visit;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Models\WorkspaceUsagePeriod;
 use Generator;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use RuntimeException;
 
 final class ExportWorkspaceData
 {
+    public function __construct(private readonly AnalyticsWorkspaceAccess $access) {}
+
     /**
      * @param  resource  $output
      */
-    public function write(Workspace $workspace, mixed $output): void
+    public function write(Workspace $workspace, mixed $output, Authenticatable $actor): void
     {
-        foreach ($this->records($workspace) as $record) {
+        foreach ($this->records($workspace, $actor) as $record) {
             $line = json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
             $written = 0;
             $length = strlen($line);
@@ -47,11 +50,12 @@ final class ExportWorkspaceData
     /**
      * @return Generator<int, array{type: string, data: array<string, mixed>}>
      */
-    private function records(Workspace $workspace): Generator
+    private function records(Workspace $workspace, Authenticatable $actor): Generator
     {
         yield $this->record('export', [
             'format' => 'buildpusher-analytics-workspace-export',
             'version' => 1,
+            'site_scope' => 'currently_authorized_sites',
             'exported_at' => now('UTC')->toIso8601String(),
             'record_types' => [
                 'workspace',
@@ -112,7 +116,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (Site::withTrashed()->where('workspace_id', $workspace->getKey())->orderBy('id')->cursor() as $site) {
+        foreach ($this->access->sitesQuery($actor, $workspace, withTrashed: true)->orderBy('id')->cursor() as $site) {
             yield $this->record('site', [
                 'id' => $site->getKey(),
                 'name' => $site->name,
@@ -140,7 +144,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (Goal::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $goal) {
+        foreach (Goal::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $goal) {
             yield $this->record('goal', [
                 'id' => $goal->getKey(),
                 'site_id' => $goal->site_id,
@@ -155,7 +159,7 @@ final class ExportWorkspaceData
         }
 
         foreach (GoalVersion::query()
-            ->whereIn('goal_id', Goal::query()->whereIn('site_id', $this->siteIds($workspace))->select('id'))
+            ->whereIn('goal_id', Goal::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->select('id'))
             ->orderBy('id')
             ->cursor() as $version) {
             yield $this->record('goal_version', [
@@ -171,7 +175,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (IngestionBatch::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $batch) {
+        foreach (IngestionBatch::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $batch) {
             yield $this->record('ingestion_batch', [
                 'id' => $batch->getKey(),
                 'site_id' => $batch->site_id,
@@ -185,7 +189,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (AnalyticsEvent::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $event) {
+        foreach (AnalyticsEvent::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $event) {
             yield $this->record('event', [
                 'id' => $event->getKey(),
                 'site_id' => $event->site_id,
@@ -210,7 +214,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (Visit::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $visit) {
+        foreach (Visit::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $visit) {
             yield $this->record('visit', [
                 'id' => $visit->getKey(),
                 'site_id' => $visit->site_id,
@@ -232,7 +236,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (GoalConversion::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $conversion) {
+        foreach (GoalConversion::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $conversion) {
             yield $this->record('goal_conversion', [
                 'id' => $conversion->getKey(),
                 'site_id' => $conversion->site_id,
@@ -246,7 +250,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (ReportDailyAggregate::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $aggregate) {
+        foreach (ReportDailyAggregate::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $aggregate) {
             yield $this->record('report_daily_aggregate', [
                 'id' => $aggregate->getKey(),
                 'site_id' => $aggregate->site_id,
@@ -265,7 +269,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (SiteReleaseAnnotation::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $annotation) {
+        foreach (SiteReleaseAnnotation::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $annotation) {
             yield $this->record('release_annotation', [
                 'id' => $annotation->getKey(),
                 'site_id' => $annotation->site_id,
@@ -281,7 +285,7 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (SiteIncidentAnnotation::query()->whereIn('site_id', $this->siteIds($workspace))->orderBy('id')->cursor() as $annotation) {
+        foreach (SiteIncidentAnnotation::query()->whereIn('site_id', $this->siteIds($workspace, $actor))->orderBy('id')->cursor() as $annotation) {
             yield $this->record('incident_annotation', [
                 'id' => $annotation->getKey(),
                 'site_id' => $annotation->site_id,
@@ -295,7 +299,10 @@ final class ExportWorkspaceData
             ]);
         }
 
-        foreach (ReportExport::query()->where('workspace_id', $workspace->getKey())->orderBy('id')->cursor() as $report) {
+        foreach (ReportExport::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->whereIn('site_id', $this->siteIds($workspace, $actor))
+            ->orderBy('id')->cursor() as $report) {
             yield $this->record('report_export', [
                 'id' => $report->getKey(),
                 'site_id' => $report->site_id,
@@ -311,9 +318,9 @@ final class ExportWorkspaceData
     }
 
     /** @return Builder<Site> */
-    private function siteIds(Workspace $workspace): Builder
+    private function siteIds(Workspace $workspace, Authenticatable $actor): Builder
     {
-        return Site::withTrashed()->where('workspace_id', $workspace->getKey())->select('id');
+        return $this->access->sitesQuery($actor, $workspace, withTrashed: true)->select('id');
     }
 
     /** @param array<string, mixed> $data

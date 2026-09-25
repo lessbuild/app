@@ -8,6 +8,7 @@ use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Validation\ValidationException;
 
@@ -27,7 +28,8 @@ class ApplicationConfigurationBindings
      */
     public function resolve(Project $project, User $user, array $document, array $bindings): array
     {
-        if ((int) $user->current_organization_id !== (int) $project->organization_id
+        if (! app(DeployerProjectAccess::class)->project($user, $project)
+            || (int) $user->current_organization_id !== (int) $project->organization_id
             || ! $project->organization->permits($user, 'manage')) {
             throw new AuthorizationException;
         }
@@ -55,7 +57,8 @@ class ApplicationConfigurationBindings
             $website = Website::query()->where('organization_id', $project->organization_id)
                 ->whereHas('server', fn ($query) => $query->where('organization_id', $project->organization_id))
                 ->find($id);
-            if (! $website) {
+            if (! $website || ! app(DeployerProjectAccess::class)->website($user, $website)
+                || ! app(DeployerProjectAccess::class)->server($user, $website->server)) {
                 $this->invalid();
             }
             if (PreviewDeployment::query()->where('website_id', $website->id)
@@ -76,7 +79,7 @@ class ApplicationConfigurationBindings
                 }
                 $repository = Repository::query()->where('organization_id', $project->organization_id)
                     ->where('website_id', $website->id)->find($id);
-                if (! $repository || ! $repository->isDeploymentReady()
+                if (! $repository || ! app(DeployerProjectAccess::class)->repository($user, $repository) || ! $repository->isDeploymentReady()
                     || (int) $repository->provider?->organization_id !== (int) $project->organization_id) {
                     $this->invalid();
                 }
@@ -98,6 +101,7 @@ class ApplicationConfigurationBindings
                 }
                 $secret = EnvironmentVariable::query()->where('is_secret', true)
                     ->whereHas('environment.project', fn ($query) => $query->where('organization_id', $project->organization_id))
+                    ->whereHas('environment', fn ($query) => app(DeployerProjectAccess::class)->environments($query, $user))
                     ->find($id, ['id', 'environment_id', 'current_version', 'scope']);
                 if (! $secret || ($secret->scope !== 'all' && $secret->scope !== $variable['scope'])) {
                     $this->invalid();

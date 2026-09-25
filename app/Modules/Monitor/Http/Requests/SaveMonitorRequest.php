@@ -25,7 +25,7 @@ class SaveMonitorRequest extends FormRequest
     public function authorize(CurrentWorkspace $workspace): bool
     {
         if ($monitor = $this->route('monitor')) {
-            abort_unless($monitor instanceof Monitor && Monitor::forWorkspace($workspace->get())->whereKey($monitor->id)->exists(), 404);
+            abort_unless($monitor instanceof Monitor && Monitor::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($monitor->id)->exists(), 404);
             Gate::authorize('update', $monitor);
         } else {
             Gate::authorize('create', [Monitor::class, $workspace->get()]);
@@ -43,7 +43,7 @@ class SaveMonitorRequest extends FormRequest
     /** @return array<string, array<mixed>> */
     public function rules(CurrentWorkspace $workspace): array
     {
-        $environments = Environment::forWorkspace($workspace->get())->select('id');
+        $environments = Environment::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->select('id');
         $type = $this->checkType();
         $http = $type === 'http';
         $dns = $type === 'dns';

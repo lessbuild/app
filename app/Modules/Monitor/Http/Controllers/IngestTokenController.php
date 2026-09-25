@@ -42,6 +42,7 @@ class IngestTokenController extends Controller
         Gate::authorize('update', $environment);
         DB::connection('monitor')->transaction(function () use ($application, $environment, $ingestToken, $audit): void {
             $workspace = $application->workspace()->lockForUpdate()->firstOrFail();
+            Gate::authorize('update', $environment);
             $token = $environment->ingestTokens()->lockForUpdate()->findOrFail($ingestToken->id);
             if ($token->revoked_at === null) {
                 $token->forceFill(['revoked_at' => now()])->save();

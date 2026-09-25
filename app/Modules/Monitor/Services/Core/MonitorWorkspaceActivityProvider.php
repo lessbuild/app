@@ -101,7 +101,9 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
                     ->whereColumn('alert_destinations.workspace_id', 'alert_deliveries.workspace_id'))
                 ->whereHas('incident', fn ($query) => $query->where(fn ($incident) => $incident
                     ->whereIn('monitor_id', array_keys($mappedMonitors))
-                    ->orWhereIn('alert_rule_id', $mappedRuleIds)))
+                    ->orWhereIn('alert_rule_id', $mappedRuleIds))
+                    ->where(fn ($incident) => $incident->whereNull('alert_rule_id')->orWhereIn('alert_rule_id', $mappedRuleIds))
+                    ->where(fn ($incident) => $incident->whereNull('monitor_id')->orWhereIn('monitor_id', array_keys($mappedMonitors))))
                 ->with([
                     'incident:id,monitor_id,alert_rule_id',
                     'incident.monitor:id,environment_id',
@@ -130,9 +132,7 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
                         return null;
                     }
 
-                    $mapping = $incident->monitor_id !== null
-                        ? ($mappedMonitors[(string) $incident->monitor?->environment_id] ?? null)
-                        : ($mappedEnvironments[(string) $incident->alertRule?->environment_id] ?? null);
+                    $mapping = $this->incidentMapping($incident, $mappedEnvironments, $mappedMonitors);
 
                     if ($mapping === null
                         || (string) $delivery->workspace_id !== (string) $mapping['workspace_id']
@@ -603,7 +603,9 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
                     ->where('updated_at', '>=', $cutoff)))
             ->whereHas('incident', fn ($query) => $query->where(fn ($incident) => $incident
                 ->whereIn('monitor_id', array_keys($mappedMonitors))
-                ->orWhereIn('alert_rule_id', $mappedRuleIds)))
+                ->orWhereIn('alert_rule_id', $mappedRuleIds))
+                ->where(fn ($incident) => $incident->whereNull('alert_rule_id')->orWhereIn('alert_rule_id', $mappedRuleIds))
+                ->where(fn ($incident) => $incident->whereNull('monitor_id')->orWhereIn('monitor_id', array_keys($mappedMonitors))))
             ->with([
                 'incident:id,monitor_id,alert_rule_id',
                 'incident.monitor:id,environment_id',
@@ -631,9 +633,7 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
                     return null;
                 }
 
-                $mapping = $incident->monitor_id !== null
-                    ? ($mappedMonitors[(string) $incident->monitor?->environment_id] ?? null)
-                    : ($mappedEnvironments[(string) $incident->alertRule?->environment_id] ?? null);
+                $mapping = $this->incidentMapping($incident, $mappedEnvironments, $mappedMonitors);
 
                 if ($mapping === null
                     || (string) $delivery->workspace_id !== (string) $mapping['workspace_id']
@@ -679,6 +679,8 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
             ->where(fn ($query) => $query
                 ->whereIn('alert_rule_id', $ruleIds)
                 ->orWhereIn('monitor_id', $monitorIds))
+            ->where(fn ($query) => $query->whereNull('alert_rule_id')->orWhereIn('alert_rule_id', $ruleIds))
+            ->where(fn ($query) => $query->whereNull('monitor_id')->orWhereIn('monitor_id', $monitorIds))
             ->where(fn ($query) => $query
                 ->whereIn('status', ['open', 'acknowledged'])
                 ->orWhere(fn ($resolved) => $resolved
@@ -713,6 +715,19 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
      * @param  array<string, array{project: CoreProject, environment: Environment, label: string, workspace_id: int, canonical_environment_id: ?string, canonical_environment_name: ?string}>  $mappedEnvironments
      * @param  array<string, array{project: CoreProject, environment: Environment, label: string, workspace_id: int, canonical_environment_id: ?string, canonical_environment_name: ?string, monitor?: Monitor}>  $mappedMonitors
      */
+    private function incidentMapping(Incident $incident, array $mappedEnvironments, array $mappedMonitors): ?array
+    {
+        $monitor = $incident->monitor_id === null ? null : ($mappedMonitors[(string) $incident->monitor_id] ?? null);
+        $rule = $incident->alert_rule_id === null ? null : ($mappedEnvironments[(string) $incident->alertRule?->environment_id] ?? null);
+        if (($incident->monitor_id !== null && $monitor === null)
+            || ($incident->alert_rule_id !== null && $rule === null)
+            || ($monitor !== null && $rule !== null && (string) $monitor['workspace_id'] !== (string) $rule['workspace_id'])) {
+            return null;
+        }
+
+        return $monitor ?? $rule;
+    }
+
     private function runForIncident(
         Incident $incident,
         CoreWorkspace $workspace,
@@ -722,9 +737,7 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
         $environmentId = $incident->monitor_id !== null
             ? (string) $incident->monitor?->environment_id
             : (string) $incident->alertRule?->environment_id;
-        $mapping = $incident->monitor_id !== null
-            ? ($mappedMonitors[(string) $incident->monitor_id] ?? null)
-            : ($mappedEnvironments[$environmentId] ?? null);
+        $mapping = $this->incidentMapping($incident, $mappedEnvironments, $mappedMonitors);
 
         if ($mapping === null || $environmentId === '') {
             return null;

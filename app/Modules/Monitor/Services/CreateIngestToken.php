@@ -9,6 +9,7 @@ use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
 
 final class CreateIngestToken
@@ -21,6 +22,7 @@ final class CreateIngestToken
             $application = Application::query()->lockForUpdate()->findOrFail($environment->application_id);
             $workspace = Workspace::query()->lockForUpdate()->findOrFail($application->workspace_id);
             $environment = Environment::query()->lockForUpdate()->findOrFail($environment->id);
+            Gate::forUser($creator)->authorize('update', $environment);
             $secret = 'bcn_'.Str::random(64);
             $token = $environment->ingestTokens()->make([
                 'name' => $name,

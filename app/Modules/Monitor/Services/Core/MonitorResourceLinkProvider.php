@@ -12,7 +12,10 @@ use App\Modules\Monitor\Models\Environment;
 
 final class MonitorResourceLinkProvider implements ProjectResourceLinkProvider
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly MonitorProjectAccess $projects,
+    ) {}
 
     public function candidates(PlatformUser $user): array
     {
@@ -34,7 +37,8 @@ final class MonitorResourceLinkProvider implements ProjectResourceLinkProvider
             ->with('workspace:id,name')
             ->orderBy('name')
             ->limit(100)
-            ->get(['id', 'workspace_id', 'name']);
+            ->get(['id', 'workspace_id', 'name'])
+            ->filter(fn (Application $application): bool => $this->projects->application($user, $application));
 
         $applicationCandidates = $applications->map(fn (Application $application): ProjectResourceCandidate => new ProjectResourceCandidate(
             id: (string) $application->getKey(),
@@ -54,7 +58,8 @@ final class MonitorResourceLinkProvider implements ProjectResourceLinkProvider
             ->with(['application:id,workspace_id,name', 'application.workspace:id,name'])
             ->orderBy('name')
             ->limit(100)
-            ->get(['id', 'application_id', 'name']);
+            ->get(['id', 'application_id', 'name'])
+            ->filter(fn (Environment $environment): bool => $this->projects->environment($user, $environment));
         $environmentCandidates = $environments->map(fn (Environment $environment): ProjectResourceCandidate => new ProjectResourceCandidate(
             id: (string) $environment->getKey(),
             resourceType: 'environment',

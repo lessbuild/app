@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\User;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class OperationalIncidentExporter
@@ -12,9 +13,9 @@ class OperationalIncidentExporter
     /**
      * Stream current-workspace operational incidents as the existing private CSV evidence export.
      */
-    public function stream(Organization $organization): StreamedResponse
+    public function stream(Organization $organization, ?User $actor = null): StreamedResponse
     {
-        $incidents = $this->incidents->forExport($organization)->get();
+        $incidents = $this->incidents->forExport($organization, $actor)->get();
 
         return response()->streamDownload(function () use ($incidents): void {
             $out = fopen('php://output', 'w');

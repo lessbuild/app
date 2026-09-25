@@ -43,7 +43,7 @@ class StorePersonalAccessTokenRequest extends FormRequest
                 'required',
                 'integer',
                 'distinct',
-                Rule::exists('deployer.projects', 'id')->where('organization_id', $organizationId),
+                Rule::exists('deployer.projects', 'id')->whereIn('id', $this->user()->workspaceProjects()->pluck('projects.id')),
             ],
             'expires_in_days' => ['required', 'integer', Rule::in([30, 90, 180, 365])],
         ];

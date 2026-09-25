@@ -8,7 +8,6 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Models\Workspace as CoreWorkspace;
-use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\AnalyticsEvent;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
@@ -155,7 +154,7 @@ final class AnalyticsTrafficContextProviderTest extends TestCase
             'converted_at' => '2026-04-02 11:59:00',
         ]);
 
-        $provider = new AnalyticsTrafficContextProvider(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
+        $provider = new AnalyticsTrafficContextProvider(app(AnalyticsProjectLink::class));
         $current = $provider->aggregate(
             $platformUser,
             $project,

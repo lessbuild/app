@@ -14,14 +14,14 @@ class DependencyMapController extends Controller
     {
         $workspace = $currentWorkspace->get();
         $filters = $request->filters();
-        $environments = Environment::forWorkspace($workspace)
+        $environments = Environment::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)
             ->with('application:id,name')
             ->orderBy('application_id')
             ->orderBy('name')
             ->orderBy('id')
             ->get(['id', 'application_id', 'name']);
         abort_if(isset($filters['environment']) && ! $environments->contains('id', (int) $filters['environment']), 404);
-        $map = $dependencyMap->forWorkspace($workspace, $filters['range'], isset($filters['environment']) ? (int) $filters['environment'] : null);
+        $map = $dependencyMap->forWorkspace($workspace, $filters['range'], isset($filters['environment']) ? (int) $filters['environment'] : null, $request->user());
         $environmentOptions = $environments->mapWithKeys(fn (Environment $environment): array => [
             $environment->id => $environment->application->name.' / '.$environment->name,
         ])->all();

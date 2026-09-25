@@ -22,7 +22,7 @@ class IssueController extends Controller
     {
         $workspace = $currentWorkspace->get();
         $filters = $request->filters();
-        $applications = $workspace->applications()->select(['id', 'name'])->orderBy('name')->orderBy('id')->get();
+        $applications = $workspace->applications()->visibleTo(request()->user(), $workspace)->select(['id', 'name'])->orderBy('name')->orderBy('id')->get();
 
         if (isset($filters['application'])) {
             abort_unless($applications->contains('id', (int) $filters['application']), 404);
@@ -34,7 +34,7 @@ class IssueController extends Controller
             ->orderByDesc('last_seen_at')->orderByDesc('id')->paginate(20, ['*'], 'page', (int) ($filters['page'] ?? 1))
             ->appends($request->safe()->except(['page', 'events_page', 'activity_page']));
         $issues->each(fn (Issue $issue): Issue => $issue->forceFill($redactor->redact($issue->only(['title', 'location']))));
-        $totals = Issue::forWorkspace($workspace)->toBase()
+        $totals = Issue::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->toBase()
             ->selectRaw("status, count(*) as total, sum(case when severity = 'critical' then 1 else 0 end) as critical")
             ->groupBy('status')->get()->keyBy('status');
 
@@ -52,7 +52,7 @@ class IssueController extends Controller
         $workspace = $currentWorkspace->get();
         $filters = $request->validated();
         $issue->load(['application', 'environment:id,name', 'assignee:id,name']);
-        $events = TelemetryEvent::forWorkspace($workspace)->where('issue_id', $issue->id)->summary()
+        $events = TelemetryEvent::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->where('issue_id', $issue->id)->summary()
             ->with(['environment:id,application_id,name', 'environment.application:id,name'])
             ->orderByDesc('occurred_at')->orderByDesc('id')->paginate(20, ['*'], 'events_page', (int) ($filters['events_page'] ?? 1))
             ->appends(array_intersect_key($filters, ['activity_page' => true]));

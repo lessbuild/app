@@ -8,6 +8,7 @@ use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
@@ -15,7 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 final class AnalyticsProjectLink implements ProjectProductLink
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly AnalyticsWorkspaceAccess $access,
+    ) {}
 
     public function resolve(PlatformUser $user, Project $project): ?string
     {
@@ -74,6 +78,7 @@ final class AnalyticsProjectLink implements ProjectProductLink
             ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $legacyUserIds))
             ->with('workspace')
             ->get()
+            ->filter(fn (Site $site): bool => $this->access->hasSiteAccess($user, $site))
             ->values();
     }
 }

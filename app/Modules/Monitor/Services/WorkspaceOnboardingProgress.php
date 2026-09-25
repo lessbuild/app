@@ -7,6 +7,7 @@ use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\StatusPage;
 use App\Modules\Monitor\Models\Workspace;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Collection;
 
 final class WorkspaceOnboardingProgress
@@ -14,23 +15,23 @@ final class WorkspaceOnboardingProgress
     /**
      * @return array{completed: int, total: int, percentage: int, items: Collection<int, array{key: string, label: string, description: string, route: string, complete: bool}>}
      */
-    public function forWorkspace(Workspace $workspace): array
+    public function forWorkspace(Workspace $workspace, ?Authenticatable $principal = null): array
     {
         $items = collect([
             [
                 'key' => 'application', 'label' => 'Connect an application',
                 'description' => 'Create a service and get a private collector token.',
-                'route' => 'applications.create', 'complete' => $workspace->applications()->exists(),
+                'route' => 'applications.create', 'complete' => $workspace->applications()->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->exists(),
             ],
             [
                 'key' => 'event', 'label' => 'Send your first event',
                 'description' => 'Verify telemetry collection from any stack.',
-                'route' => 'settings.integrations', 'complete' => Environment::forWorkspace($workspace)->where('event_count', '>', 0)->exists(),
+                'route' => 'settings.integrations', 'complete' => Environment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->where('event_count', '>', 0)->exists(),
             ],
             [
                 'key' => 'monitor', 'label' => 'Add a health monitor',
                 'description' => 'Watch HTTP, DNS, TLS, heartbeat, or queue health.',
-                'route' => 'monitors.create', 'complete' => Monitor::forWorkspace($workspace)->exists(),
+                'route' => 'monitors.create', 'complete' => Monitor::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->exists(),
             ],
             [
                 'key' => 'alerts', 'label' => 'Configure alert delivery',

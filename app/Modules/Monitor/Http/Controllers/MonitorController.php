@@ -23,7 +23,7 @@ class MonitorController extends Controller
     {
         $state = $request->validated('state') ?? 'all';
         $checkType = $request->validated('check_type');
-        $query = Monitor::forWorkspace($workspace->get())->with('environment.application');
+        $query = Monitor::forWorkspace($workspace->get())->visibleTo(request()->user(), $workspace->get())->with('environment.application');
         if ($checkType !== null) {
             $query->where('type', $checkType);
         }
@@ -54,7 +54,7 @@ class MonitorController extends Controller
     private function form(CurrentWorkspace $workspace, ?Monitor $monitor = null, string $checkType = 'http'): Response
     {
         $checkType = $monitor?->type ?? $checkType;
-        $environments = Environment::forWorkspace($workspace->get())->with('application:id,name')
+        $environments = Environment::forWorkspace($workspace->get())->visibleTo(request()->user(), $workspace->get())->with('application:id,name')
             ->orderBy('application_id')->orderBy('name')->orderBy('id')->get(['id', 'application_id', 'name', 'status']);
         $environmentOptions = $environments->mapWithKeys(fn (Environment $environment): array => [
             $environment->id => $environment->application->name.' / '.$environment->name.($environment->status !== 'active' ? ' (paused)' : ''),
@@ -80,7 +80,7 @@ class MonitorController extends Controller
         $successRate = $measured > 0 ? round((int) $summary->passed / $measured * 100, 2) : null;
         $chart = (clone $recent)->latest('scheduled_at')->latest('id')->limit(40)->get(['id', 'scheduled_at', 'duration_ms', 'outcome'])->reverse()->values();
         $chartMaximum = max(1, (float) $chart->max('duration_ms'));
-        $incidents = $monitor->incidents()->latest('opened_at')->latest('id')
+        $incidents = $monitor->incidents()->visibleTo($request->user(), $monitor->environment->application->workspace)->latest('opened_at')->latest('id')
             ->paginate(10, ['*'], 'incidents_page', (int) ($request->validated('incidents_page') ?? 1));
         $runs = $monitor->type === 'heartbeat' ? $monitor->heartbeatRuns()->latest('id')
             ->paginate(25, ['*'], 'runs_page', (int) ($request->validated('runs_page') ?? 1)) : null;
@@ -112,7 +112,7 @@ class MonitorController extends Controller
         $chartMaximum = max(1, (int) $chart->max('pending'));
         $checks = $monitor->checks()->latest('scheduled_at')->latest('id')
             ->paginate(25, ['*'], 'page', (int) ($request->validated('page') ?? 1));
-        $incidents = $monitor->incidents()->latest('opened_at')->latest('id')
+        $incidents = $monitor->incidents()->visibleTo($request->user(), $monitor->environment->application->workspace)->latest('opened_at')->latest('id')
             ->paginate(10, ['*'], 'incidents_page', (int) ($request->validated('incidents_page') ?? 1));
         $queueSecret = null;
         $issued = $request->session()->get('issued_queue_key');

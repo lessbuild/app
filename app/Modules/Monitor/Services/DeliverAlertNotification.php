@@ -89,7 +89,7 @@ final class DeliverAlertNotification
         DB::connection('monitor')->transaction(function () use ($workspace, $actor, $delivery, $generation): void {
             $delivery = $this->queue->lock($delivery->id);
             abort_unless($delivery !== null && $delivery->workspace_id === $workspace->id, 404);
-            Gate::forUser($actor)->authorize('update', $delivery->workspace);
+            Gate::forUser($actor)->authorize('update', $delivery);
             abort_unless($delivery->generation === $generation && $delivery->status->retryable(), 409, 'This delivery changed or cannot be retried.');
             $delivery->forceFill(['target_revision' => $delivery->destination?->target_revision]);
             abort_if($this->cancellation($delivery) !== null, 409, 'This destination or incident route is no longer active.');

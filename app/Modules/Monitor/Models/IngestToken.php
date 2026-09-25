@@ -3,12 +3,13 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\IngestTokenFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
+use App\Modules\Monitor\Models\Concerns\HasProjectVisibility;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable(['name', 'token_hash', 'prefix', 'expires_at'])]
@@ -17,6 +18,8 @@ class IngestToken extends Model
 {
     /** @use HasFactory<IngestTokenFactory> */
     use HasFactory;
+
+    use HasProjectVisibility;
 
     /** @return BelongsTo<Environment, $this> */
     public function environment(): BelongsTo

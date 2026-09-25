@@ -21,7 +21,7 @@ class StatusPageController extends Controller
 
         return view('monitor::status-pages.index', [
             'workspace' => $workspace,
-            'statusPages' => $workspace->statusPages()->withCount('components')->latest('id')->paginate(12),
+            'statusPages' => $workspace->statusPages()->visibleTo(request()->user(), $workspace)->withCount('components')->latest('id')->paginate(12),
             'canManage' => Gate::allows('update', $workspace),
         ]);
     }
@@ -41,7 +41,7 @@ class StatusPageController extends Controller
     public function edit(StatusPage $statusPage, CurrentWorkspace $currentWorkspace): View
     {
         $workspace = $currentWorkspace->get();
-        $statusPage = $workspace->statusPages()->with('components')->findOrFail($statusPage->id);
+        $statusPage = $workspace->statusPages()->visibleTo(request()->user(), $workspace)->with('components')->findOrFail($statusPage->id);
 
         return $this->form($currentWorkspace, $statusPage);
     }
@@ -64,7 +64,7 @@ class StatusPageController extends Controller
     {
         $workspace = $currentWorkspace->get();
         Gate::authorize('update', $workspace);
-        $monitors = Monitor::query()->forWorkspace($workspace)->with('environment.application')->orderBy('name')->orderBy('id')->get();
+        $monitors = Monitor::query()->forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('environment.application')->orderBy('name')->orderBy('id')->get();
         $selectedMonitorIds = $statusPage->components->pluck('monitor_id')->map(fn (int $id): int => $id)->all();
 
         return view('monitor::status-pages.form', compact('statusPage', 'monitors', 'selectedMonitorIds'));

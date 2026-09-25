@@ -9,12 +9,16 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
 final class AnalyticsResourceDestinationProvider implements ProjectResourceDestinationProvider
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly AnalyticsWorkspaceAccess $access,
+    ) {}
 
     public function destinations(PlatformUser $user, Collection $resources): array
     {
@@ -51,12 +55,13 @@ final class AnalyticsResourceDestinationProvider implements ProjectResourceDesti
             return $destinations;
         }
 
-        $sites = Site::withTrashed()->whereKey($mappingIdsByProductResource->keys())->get(['id', 'deleted_at'])->keyBy(fn (Site $site): string => (string) $site->getKey());
-        $accessibleSiteIds = Site::withTrashed()
-            ->whereKey($mappingIdsByProductResource->keys())
-            ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $sourceUserIds))
-            ->pluck('id')
-            ->map(static fn ($id): string => (string) $id);
+        $sites = Site::withTrashed()->whereKey($mappingIdsByProductResource->keys())
+            ->with('workspace')
+            ->get(['id', 'workspace_id', 'deleted_at'])
+            ->keyBy(fn (Site $site): string => (string) $site->getKey());
+        $accessibleSiteIds = $sites
+            ->filter(fn (Site $site): bool => $this->access->hasSiteAccess($user, $site))
+            ->keys()->map(static fn ($id): string => (string) $id);
 
         foreach ($resources->where('resource_type', 'site') as $resource) {
             $mappingId = (string) $resource->getKey();

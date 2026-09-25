@@ -23,7 +23,7 @@ class IntegrationController extends Controller
                 route('monitor.api.otlp', 'logs'),
                 route('monitor.api.otlp', 'metrics'),
             ),
-            'applications' => $workspace->applications()->with(['environments' => fn ($query) => $query->orderBy('name')])
+            'applications' => $workspace->applications()->visibleTo(request()->user(), $workspace)->with(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace)->orderBy('name')])
                 ->orderBy('name')->orderBy('id')->paginate(12),
         ]);
     }

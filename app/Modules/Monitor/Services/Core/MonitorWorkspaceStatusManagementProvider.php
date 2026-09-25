@@ -36,12 +36,12 @@ final class MonitorWorkspaceStatusManagementProvider implements WorkspaceMonitor
 
             [$monitorWorkspace, $productUser] = $context;
             $monitors = Monitor::query()
-                ->forWorkspace($monitorWorkspace)
+                ->forWorkspace($monitorWorkspace)->visibleTo($productUser, $monitorWorkspace)
                 ->with('environment.application')
                 ->orderBy('name')
                 ->orderBy('id')
                 ->get();
-            $pages = $monitorWorkspace->statusPages()
+            $pages = $monitorWorkspace->statusPages()->visibleTo($productUser, $monitorWorkspace)
                 ->with('components.monitor')
                 ->latest('id')
                 ->get();
@@ -93,7 +93,7 @@ final class MonitorWorkspaceStatusManagementProvider implements WorkspaceMonitor
         }
 
         [$monitorWorkspace, $productUser] = $context;
-        $page = $monitorWorkspace->statusPages()->whereKey($pageId)->first();
+        $page = $monitorWorkspace->statusPages()->visibleTo($productUser, $monitorWorkspace)->whereKey($pageId)->first();
         if (! $page instanceof StatusPage) {
             return false;
         }
@@ -111,7 +111,7 @@ final class MonitorWorkspaceStatusManagementProvider implements WorkspaceMonitor
         }
 
         [$monitorWorkspace, $productUser] = $context;
-        $page = $monitorWorkspace->statusPages()->whereKey($pageId)->first();
+        $page = $monitorWorkspace->statusPages()->visibleTo($productUser, $monitorWorkspace)->whereKey($pageId)->first();
         if (! $page instanceof StatusPage) {
             return false;
         }

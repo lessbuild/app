@@ -32,7 +32,9 @@ final class MonitorProjectSummary implements ProjectEnvironmentAwareSummaryProvi
         $environments = Environment::query()
             ->whereIn('application_id', $applicationIds)
             ->where('status', 'active')
-            ->get(['id', 'application_id', 'last_seen_at']);
+            ->with('application.workspace')
+            ->get(['id', 'application_id', 'last_seen_at'])
+            ->filter(fn (Environment $environment): bool => $this->applications->environmentAllowed($user, $environment));
         $environmentIds = $environments->modelKeys();
         $monitors = $environmentIds === []
             ? collect()
@@ -45,10 +47,17 @@ final class MonitorProjectSummary implements ProjectEnvironmentAwareSummaryProvi
             ? []
             : AlertRule::query()->whereIn('environment_id', $environmentIds)->select('id');
         $incidents = Incident::query()
+            ->where(function ($incidents) use ($authorizedApplications, $user): void {
+                foreach ($authorizedApplications->pluck('workspace')->unique('id') as $sourceWorkspace) {
+                    $incidents->orWhereIn('id', Incident::query()->visibleTo($user, $sourceWorkspace)->select('id'));
+                }
+            })
             ->whereIn('status', ['open', 'acknowledged'])
             ->where(fn ($query) => $query
                 ->whereIn('alert_rule_id', $ruleIds ?: [0])
                 ->orWhereIn('monitor_id', $monitorIds ?: [0]))
+            ->where(fn ($query) => $query->whereNull('alert_rule_id')->orWhereIn('alert_rule_id', $ruleIds ?: [0]))
+            ->where(fn ($query) => $query->whereNull('monitor_id')->orWhereIn('monitor_id', $monitorIds ?: [0]))
             ->get(['id', 'opened_at', 'updated_at']);
 
         $healthCounts = $monitors
@@ -124,7 +133,9 @@ final class MonitorProjectSummary implements ProjectEnvironmentAwareSummaryProvi
             ->whereIn('id', $mappings->pluck('resource_id'))
             ->whereIn('application_id', $authorizedApplications->modelKeys())
             ->where('status', 'active')
-            ->get(['id', 'application_id', 'last_seen_at']);
+            ->with('application.workspace')
+            ->get(['id', 'application_id', 'last_seen_at'])
+            ->filter(fn (Environment $environment): bool => $this->applications->environmentAllowed($user, $environment));
         $environmentIds = $environments->modelKeys();
 
         if ($environmentIds === []) {
@@ -138,10 +149,17 @@ final class MonitorProjectSummary implements ProjectEnvironmentAwareSummaryProvi
         $monitorIds = $monitors->modelKeys();
         $ruleIds = AlertRule::query()->whereIn('environment_id', $environmentIds)->select('id');
         $incidents = Incident::query()
+            ->where(function ($incidents) use ($authorizedApplications, $user): void {
+                foreach ($authorizedApplications->pluck('workspace')->unique('id') as $sourceWorkspace) {
+                    $incidents->orWhereIn('id', Incident::query()->visibleTo($user, $sourceWorkspace)->select('id'));
+                }
+            })
             ->whereIn('status', ['open', 'acknowledged'])
             ->where(fn ($query) => $query
                 ->whereIn('alert_rule_id', $ruleIds ?: [0])
                 ->orWhereIn('monitor_id', $monitorIds ?: [0]))
+            ->where(fn ($query) => $query->whereNull('alert_rule_id')->orWhereIn('alert_rule_id', $ruleIds ?: [0]))
+            ->where(fn ($query) => $query->whereNull('monitor_id')->orWhereIn('monitor_id', $monitorIds ?: [0]))
             ->get(['id', 'opened_at', 'updated_at']);
 
         $healthCounts = $monitors

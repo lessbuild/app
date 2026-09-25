@@ -6,6 +6,7 @@ use App\Modules\Monitor\Data\Telemetry\CollectionHealthState;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Workspace;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -21,11 +22,11 @@ final class CollectionHealthSummary
      *     stale_after_minutes: int,
      * }
      */
-    public function forWorkspace(Workspace $workspace): array
+    public function forWorkspace(Workspace $workspace, ?Authenticatable $principal = null): array
     {
         $now = CarbonImmutable::now('UTC');
         $staleAfterMinutes = max(1, (int) config('monitor.beacon.telemetry.collection_stale_after_minutes', self::DEFAULT_STALE_AFTER_MINUTES));
-        $environments = Environment::forWorkspace($workspace)
+        $environments = Environment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))
             ->with('application:id,name')
             ->withCount(['ingestTokens as active_token_count' => fn (Builder $query): Builder => $query->active()])
             ->orderBy('application_id')->orderBy('name')->orderBy('id')

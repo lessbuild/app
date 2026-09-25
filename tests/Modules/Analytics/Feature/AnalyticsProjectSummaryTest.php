@@ -9,7 +9,6 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectResource;
 use App\Core\Models\Workspace as CoreWorkspace;
-use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\ReportDailyAggregate;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
@@ -131,7 +130,7 @@ final class AnalyticsProjectSummaryTest extends TestCase
         Route::get('/analytics/dashboard/{site?}', static fn () => null)->name('analytics.dashboard');
         Route::getRoutes()->refreshNameLookups();
 
-        $setupProvider = new AnalyticsProjectSetup(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
+        $setupProvider = new AnalyticsProjectSetup(app(AnalyticsProjectLink::class));
         $pendingSteps = collect($setupProvider->steps($platformUser, $project));
         $this->assertCount(4, $pendingSteps);
         $firstSiteVerification = $pendingSteps->firstWhere('id', 'analytics.site.'.$site->getKey());
@@ -165,7 +164,7 @@ final class AnalyticsProjectSummaryTest extends TestCase
         $this->aggregate($site, $today->subDays(7), 900, 900);
         $this->aggregate($privateSite, $today, 5000, 4000);
 
-        $summary = (new AnalyticsProjectSummary(new AnalyticsProjectLink(app(LegacyIdentityResolver::class))))
+        $summary = (new AnalyticsProjectSummary(app(AnalyticsProjectLink::class)))
             ->summarize($platformUser, $project);
 
         $this->assertNotNull($summary);
@@ -177,7 +176,7 @@ final class AnalyticsProjectSummaryTest extends TestCase
             'environment_type' => 'production',
             'status' => 'active',
         ]);
-        $summaryProvider = new AnalyticsProjectSummary(new AnalyticsProjectLink(app(LegacyIdentityResolver::class)));
+        $summaryProvider = new AnalyticsProjectSummary(app(AnalyticsProjectLink::class));
         $unmappedSummary = $summaryProvider
             ->summarizeForEnvironment($platformUser, $project, $environment);
         $unmappedSteps = $setupProvider->stepsForEnvironment($platformUser, $project, $environment);

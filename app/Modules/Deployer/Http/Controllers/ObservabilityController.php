@@ -31,6 +31,7 @@ use App\Modules\Deployer\Models\OperationalIncident;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\StatusIncident;
 use App\Modules\Deployer\Models\StatusPage;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\ObservabilityDashboardQuery;
 use App\Modules\Deployer\Services\ObservabilityEnvironmentContextQuery;
 use App\Modules\Deployer\Services\ObservabilityInvestigationViewQuery;
@@ -55,6 +56,7 @@ class ObservabilityController extends Controller
             abort_if($incidentId === false, 404);
 
             $incident = $organization->operationalIncidents()
+                ->tap(fn ($query) => app(DeployerProjectAccess::class)->incidents($query, $request->user()))
                 ->with(['assignee', 'events.actor'])
                 ->whereKey($incidentId)
                 ->first();
@@ -65,7 +67,7 @@ class ObservabilityController extends Controller
             ]);
         }
 
-        $data = $dashboard->for($organization);
+        $data = $dashboard->for($organization, $request->user());
 
         return view('observability.index', [
             ...$data,
@@ -85,6 +87,7 @@ class ObservabilityController extends Controller
         }
 
         return $organization->operationalIncidents()
+            ->tap(fn ($query) => app(DeployerProjectAccess::class)->incidents($query, $request->user()))
             ->with(['assignee', 'events.actor'])
             ->whereKey((int) $matches[1])
             ->first();

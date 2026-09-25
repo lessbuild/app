@@ -12,7 +12,7 @@ class TraceEventController extends Controller
 {
     public function show(ShowTraceRequest $request, string $trace, string $event, CurrentWorkspace $currentWorkspace, EventDetails $details): Response
     {
-        $record = TelemetryEvent::forWorkspace($currentWorkspace->get())
+        $record = TelemetryEvent::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())
             ->with(['environment:id,application_id,name', 'environment.application:id,name'])
             ->where('trace_id', $trace)
             ->when($request->filled('environment'), fn ($query) => $query->where('environment_id', $request->integer('environment')))

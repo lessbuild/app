@@ -31,7 +31,9 @@ final class WorkspaceDataController extends Controller
     ): StreamedResponse {
         $this->authorizeManager($request, $workspace, $access);
 
-        return response()->streamDownload(function () use ($workspace, $export): void {
+        $actor = $request->user();
+
+        return response()->streamDownload(function () use ($workspace, $export, $actor): void {
             $output = fopen('php://output', 'wb');
 
             if ($output === false) {
@@ -39,7 +41,7 @@ final class WorkspaceDataController extends Controller
             }
 
             try {
-                $export->write($workspace, $output);
+                $export->write($workspace, $output, $actor);
             } finally {
                 fclose($output);
             }

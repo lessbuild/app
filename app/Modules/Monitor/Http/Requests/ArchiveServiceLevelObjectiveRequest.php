@@ -13,7 +13,7 @@ class ArchiveServiceLevelObjectiveRequest extends FormRequest
     {
         $workspace = $currentWorkspace->get();
         $objective = $this->route('serviceLevelObjective');
-        abort_unless($objective instanceof ServiceLevelObjective && ServiceLevelObjective::forWorkspace($workspace)->whereKey($objective->id)->exists(), 404);
+        abort_unless($objective instanceof ServiceLevelObjective && ServiceLevelObjective::forWorkspace($workspace)->visibleTo($this->user(), $workspace)->whereKey($objective->id)->exists(), 404);
         Gate::authorize('update', $workspace);
 
         return true;

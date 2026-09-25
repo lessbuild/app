@@ -44,7 +44,8 @@ class ApplicationConfigurationReviews
     public function inspect(ConfigurationReview $review, User $user): array
     {
         $review = ConfigurationReview::query()->findOrFail($review->id);
-        if ((int) $review->requested_by !== (int) $user->id
+        if (! $user->can('view', $review)
+            || (int) $review->requested_by !== (int) $user->id
             || (int) $review->project->organization_id !== (int) $user->current_organization_id
             || ! $review->project->organization->permits($user, 'manage')) {
             throw new AuthorizationException;

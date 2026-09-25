@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\OperationalIncident;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class OperationalIncidentPolicy
 {
@@ -54,7 +55,8 @@ class OperationalIncidentPolicy
 
     private function operates(User $user, OperationalIncident $incident): bool
     {
-        return (int) $incident->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->incidents(OperationalIncident::query()->whereKey($incident->getKey()), $user)->exists()
+            && (int) $incident->organization_id === (int) $user->current_organization_id
             && $incident->organization->permits($user, 'operate');
     }
 }

@@ -13,6 +13,6 @@ class ReleasePolicy
     {
         return $release->application === null || $release->application->trashed()
             ? Response::denyAsNotFound()
-            : Gate::forUser($user)->inspect('view', $release->application->workspace);
+            : Gate::forUser($user)->inspect('view', $release->application);
     }
 }

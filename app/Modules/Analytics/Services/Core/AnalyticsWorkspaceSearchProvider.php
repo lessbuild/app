@@ -10,11 +10,16 @@ use App\Core\Models\Workspace;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\Search\WorkspaceSearchPattern;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Models\Workspace as AnalyticsWorkspace;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Illuminate\Support\Facades\Route;
 
 final class AnalyticsWorkspaceSearchProvider implements WorkspaceSearchProvider
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly AnalyticsWorkspaceAccess $access,
+    ) {}
 
     public function search(PlatformUser $user, Workspace $workspace, string $query): array
     {
@@ -36,15 +41,19 @@ final class AnalyticsWorkspaceSearchProvider implements WorkspaceSearchProvider
 
         $pattern = WorkspaceSearchPattern::contains($query);
 
-        return Site::query()
-            ->whereIn('workspace_id', $sourceWorkspaceIds)
-            ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $sourceUserIds))
-            ->where(fn ($sites) => $sites
-                ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
-                ->orWhereRaw("slug LIKE ? ESCAPE '!'", [$pattern]))
-            ->orderBy('name')
-            ->limit(5)
-            ->get(['id', 'name', 'domains'])
+        return AnalyticsWorkspace::query()
+            ->whereKey($sourceWorkspaceIds)
+            ->get()
+            ->flatMap(fn (AnalyticsWorkspace $sourceWorkspace) => $this->access->sitesQuery($user, $sourceWorkspace)
+                ->where(fn ($sites) => $sites
+                    ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
+                    ->orWhereRaw("slug LIKE ? ESCAPE '!'", [$pattern]))
+                ->orderBy('name')
+                ->limit(5)
+                ->get(['id', 'workspace_id', 'name', 'domains']))
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->take(5)
+            ->values()
             ->map(fn (Site $site): WorkspaceSearchResult => new WorkspaceSearchResult(
                 type: __('Analytics site'),
                 title: $site->name,

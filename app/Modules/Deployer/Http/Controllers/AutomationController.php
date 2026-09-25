@@ -48,7 +48,7 @@ class AutomationController extends Controller
     public function index(Request $request): View
     {
         $organization = $request->user()->currentOrganization;
-        $projects = $organization->projects()
+        $projects = $request->user()->workspaceProjects()
             ->with(['environments.deploymentSchedules', 'environments.scalingSchedules', 'environments.scheduledTasks.runs' => fn ($query) => $query->latest()->limit(10)])
             ->orderBy('name')
             ->get();

@@ -3,11 +3,12 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\MonitorFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
+use App\Modules\Monitor\Models\Concerns\HasProjectVisibility;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -18,6 +19,8 @@ class Monitor extends Model
 {
     /** @use HasFactory<MonitorFactory> */
     use HasFactory, SoftDeletes;
+
+    use HasProjectVisibility;
 
     protected $hidden = ['request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_token_hash', 'queue_token_hash'];
 

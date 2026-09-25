@@ -20,7 +20,8 @@ class MetricAlertRulePolicy
      */
     public function delete(User $user, MetricAlertRule $rule): bool
     {
-        return (int) $rule->organization_id === (int) $user->current_organization_id
+        return ($rule->server_id === null || ($rule->server !== null && $user->can('view', $rule->server)))
+            && (int) $rule->organization_id === (int) $user->current_organization_id
             && $rule->organization->permits($user, 'manage');
     }
 }

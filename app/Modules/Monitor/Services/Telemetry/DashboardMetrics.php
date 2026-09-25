@@ -6,6 +6,7 @@ use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\TelemetryEvent;
 use App\Modules\Monitor\Models\Workspace;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use stdClass;
@@ -30,7 +31,7 @@ final class DashboardMetrics
      *     chartMaxDuration: float, chartMaxRequests: int
      * }
      */
-    public function forWorkspace(Workspace $workspace, string $range): array
+    public function forWorkspace(Workspace $workspace, string $range, ?Authenticatable $principal = null): array
     {
         [$minutes, $bucketMinutes] = match ($range) {
             '7d' => [10_080, 1_440],
@@ -50,7 +51,7 @@ final class DashboardMetrics
         }
         $bucketCase .= ' ELSE '.($bucketCount - 1).' END';
 
-        $rows = $this->events($workspace, $previousFrom, $until)->toBase()
+        $rows = $this->events($workspace, $previousFrom, $until, $principal)->toBase()
             ->selectRaw($bucketCase.' AS time_bucket', $bindings)
             ->selectRaw("CASE type WHEN 'request' THEN 'request' WHEN 'query' THEN 'query' WHEN 'job' THEN 'job' WHEN 'exception' THEN 'exception' WHEN 'log' THEN 'log' WHEN 'metric' THEN 'metric' ELSE 'other' END AS event_type")
             ->selectRaw('COUNT(*) AS event_count')
@@ -102,10 +103,10 @@ final class DashboardMetrics
     }
 
     /** @return Builder<TelemetryEvent> */
-    public function events(Workspace $workspace, CarbonImmutable $from, CarbonImmutable $until): Builder
+    public function events(Workspace $workspace, CarbonImmutable $from, CarbonImmutable $until, ?Authenticatable $principal = null): Builder
     {
         return TelemetryEvent::query()
-            ->whereIn('environment_id', Environment::forWorkspace($workspace)->select('id'))
+            ->whereIn('environment_id', Environment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->select('id'))
             ->where('occurred_at', '>=', $this->boundary($from))
             ->where('occurred_at', '<=', $until->format('Y-m-d H:i:s.u'));
     }

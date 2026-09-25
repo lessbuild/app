@@ -46,7 +46,7 @@ class RepositoryRequest extends FormRequest
             'website_id' => [
                 'required',
                 'integer',
-                Rule::exists('websites', 'id')->where(fn (Builder $query): Builder => $query
+                Rule::exists('deployer.websites', 'id')->whereIn('id', $this->user()->workspaceWebsites()->pluck('websites.id'))->where(fn (Builder $query): Builder => $query
                     ->where('organization_id', $this->user()->current_organization_id)
                     ->where('provisioning_status', Website::STATUS_ACTIVE)
                     ->whereExists(fn (Builder $servers): Builder => $servers

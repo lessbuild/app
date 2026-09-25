@@ -6,6 +6,7 @@ use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\TelemetryEvent;
 use App\Modules\Monitor\Models\Workspace;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 
 final class ServiceDependencyMap
@@ -32,7 +33,7 @@ final class ServiceDependencyMap
      *     truncated: bool
      * }
      */
-    public function forWorkspace(Workspace $workspace, string $range, ?int $environmentId = null): array
+    public function forWorkspace(Workspace $workspace, string $range, ?int $environmentId = null, ?Authenticatable $principal = null): array
     {
         [$minutes] = match ($range) {
             '1h' => [60],
@@ -42,7 +43,7 @@ final class ServiceDependencyMap
         };
         $until = CarbonImmutable::now('UTC');
         $from = $until->subMinutes($minutes);
-        $environmentIds = Environment::forWorkspace($workspace)->select('id');
+        $environmentIds = Environment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->select('id');
         if ($environmentId !== null) {
             $environmentIds->whereKey($environmentId);
         }

@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class ServerPolicy
 {
@@ -24,6 +25,10 @@ class ServerPolicy
      */
     public function view(User $user, Server $server): bool
     {
+        if (! app(DeployerProjectAccess::class)->server($user, $server)) {
+            return false;
+        }
+
         return $server->organization
             ? (int) $server->organization_id === (int) $user->current_organization_id
                 && $server->organization->permits($user, 'view')

@@ -21,7 +21,7 @@ class AlertDestinationController extends Controller
     public function index(SearchAlertDestinationsRequest $request, CurrentWorkspace $workspace, AlertNotificationTransport $transport, TelemetryRedactor $redactor): Response
     {
         $state = $request->validated('state') ?? 'all';
-        $query = AlertDestination::forWorkspace($workspace->get())->with('recipient:id,name')->withCount(['alertRules', 'monitors']);
+        $query = AlertDestination::forWorkspace($workspace->get())->with('recipient:id,name')->withCount(['alertRules' => fn ($query) => $query->visibleTo($request->user(), $workspace->get()), 'monitors' => fn ($query) => $query->visibleTo($request->user(), $workspace->get())]);
         if ($state === 'archived') {
             $query->onlyTrashed();
         } elseif ($state !== 'all') {
@@ -73,7 +73,7 @@ class AlertDestinationController extends Controller
     {
         $alertDestination->load('recipient:id,name');
         $alertDestination->forceFill($redactor->redact($alertDestination->only('name')));
-        $deliveries = $alertDestination->deliveries()->where('workspace_id', $alertDestination->workspace_id)
+        $deliveries = $alertDestination->deliveries()->visibleTo($request->user(), $alertDestination->workspace)->where('workspace_id', $alertDestination->workspace_id)
             ->latest('created_at')->latest('id')->paginate(25, ['*'], 'deliveries_page', (int) ($request->validated('deliveries_page') ?? 1));
         $flash = $request->session()->get('issued_alert_key');
         $issuedSecret = is_array($flash) && ($flash['destination_id'] ?? null) === $alertDestination->id

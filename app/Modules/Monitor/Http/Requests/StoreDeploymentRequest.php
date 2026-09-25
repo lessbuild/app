@@ -16,7 +16,7 @@ class StoreDeploymentRequest extends FormRequest
     public function authorize(CurrentWorkspace $workspace): bool
     {
         $environment = $this->route('environment');
-        abort_unless($environment instanceof Environment && Environment::forWorkspace($workspace->get())->whereKey($environment->id)->exists(), 404);
+        abort_unless($environment instanceof Environment && Environment::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($environment->id)->exists(), 404);
         Gate::authorize('create', [Deployment::class, $environment]);
 
         return true;

@@ -5,7 +5,9 @@ namespace Tests\Modules\Analytics\Feature;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace as CoreWorkspace;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\MappedProjectResourceAccess;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
+use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Enums\WorkspaceRole;
@@ -93,12 +95,25 @@ class WorkspaceAccessTest extends TestCase
             'created_at' => now(),
             'updated_at' => now(),
         ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'analytics',
+            'source_entity' => 'user',
+            'source_id' => (string) $productUserId,
+            'canonical_entity' => 'user',
+            'canonical_id' => $platformUser->getKey(),
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         $principal = User::query()->findOrFail($productUserId);
         $access = new AnalyticsWorkspaceAccess(
             app(LegacyIdentityResolver::class),
             app(ProductAuthentication::class),
             app(ProductWorkspaceAccess::class),
+            app(MappedProjectResourceAccess::class),
+            app(ResolvePlatformUser::class),
         );
 
         $this->assertTrue($access->hasAccess($principal, $analyticsWorkspace));

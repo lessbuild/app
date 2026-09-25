@@ -7,7 +7,6 @@ use App\Core\Services\PlatformCoreRouteLinks;
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -21,14 +20,8 @@ class WorkspaceController extends Controller
         ProductAuthentication $authentication,
         PlatformCoreRouteLinks $coreLinks,
     ): View {
-        $productUserIds = $access->productUserIds($request->user());
-        $workspaces = $productUserIds === []
-            ? collect()
-            : Workspace::query()
-                ->whereHas('users', fn (Builder $query) => $query->whereIn('users.id', $productUserIds))
-                ->withCount('sites')
-                ->orderBy('name')
-                ->get();
+        $workspaces = $access->workspacesFor($request->user())
+            ->each(fn (Workspace $workspace) => $workspace->setAttribute('sites_count', $workspace->sites->count()));
 
         $usesCoreAuthority = $authentication->usesCoreAuthority('analytics');
 

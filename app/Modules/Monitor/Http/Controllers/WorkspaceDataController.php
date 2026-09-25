@@ -22,8 +22,9 @@ class WorkspaceDataController extends Controller
     {
         $workspace = $currentWorkspace->get();
         Gate::authorize('update', $workspace);
+        $principal = request()->user();
 
-        return response()->streamDownload(function () use ($workspace, $export): void {
+        return response()->streamDownload(function () use ($workspace, $export, $principal): void {
             $output = fopen('php://output', 'wb');
 
             if ($output === false) {
@@ -31,7 +32,7 @@ class WorkspaceDataController extends Controller
             }
 
             try {
-                $export->write($workspace, $output);
+                $export->write($workspace, $output, $principal);
             } finally {
                 fclose($output);
             }

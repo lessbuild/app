@@ -2,7 +2,10 @@
 
 namespace App\Modules\Analytics\Jobs;
 
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Modules\Analytics\Models\ReportExport;
+use App\Modules\Analytics\Policies\SitePolicy;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
@@ -30,6 +33,12 @@ class GenerateReportExport implements ShouldQueue
         $export = ReportExport::query()->with('site')->find($this->exportId);
 
         if (! $export || $export->status === 'completed' || CarbonImmutable::parse($export->expires_at)->isPast()) {
+            return;
+        }
+
+        if (! $this->requesterCanAccess($export)) {
+            $export->update(['status' => 'failed', 'failure_message' => 'The requester no longer has access to this Analytics site.']);
+
             return;
         }
 
@@ -70,8 +79,18 @@ class GenerateReportExport implements ShouldQueue
                 fclose($handle);
             }
 
+            if (! $this->requesterCanAccess($export)) {
+                throw new RuntimeException('The requester no longer has access to this Analytics site.');
+            }
+
             if ($contents === false || ! Storage::disk('analytics-local')->put($path, $contents)) {
                 throw new RuntimeException('The report export file could not be saved.');
+            }
+
+            if (! $this->requesterCanAccess($export)) {
+                Storage::disk('analytics-local')->delete($path);
+
+                throw new RuntimeException('The requester no longer has access to this Analytics site.');
             }
 
             $export->update(['status' => 'completed', 'file_path' => $path, 'completed_at' => now()]);
@@ -87,5 +106,20 @@ class GenerateReportExport implements ShouldQueue
             'status' => 'failed',
             'failure_message' => str($exception?->getMessage())->limit(500)->toString(),
         ]);
+    }
+
+    private function requesterCanAccess(ReportExport $export): bool
+    {
+        if (! app(ProductAuthentication::class)->usesCoreAuthority('analytics')) {
+            return true;
+        }
+
+        $requester = $export->requester()->first();
+        $site = $export->site()->first();
+        $principal = $requester === null ? null : app(ResolvePlatformUser::class)->resolve($requester, 'analytics');
+
+        return $principal !== null && $site !== null
+            && (string) $site->workspace_id === (string) $export->workspace_id
+            && app(SitePolicy::class)->manage($principal, $site);
     }
 }

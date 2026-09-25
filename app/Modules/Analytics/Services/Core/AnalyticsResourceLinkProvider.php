@@ -8,10 +8,15 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Models\Workspace;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 
 final class AnalyticsResourceLinkProvider implements ProjectResourceLinkProvider
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly AnalyticsWorkspaceAccess $access,
+    ) {}
 
     public function candidates(PlatformUser $user): array
     {
@@ -27,13 +32,13 @@ final class AnalyticsResourceLinkProvider implements ProjectResourceLinkProvider
             ->pluck('resource_id')
             ->map(static fn ($id): string => (string) $id)
             ->all();
-        $sites = Site::query()
-            ->when($linkedIds !== [], fn ($query) => $query->whereNotIn('id', $linkedIds))
-            ->whereHas('workspace.users', fn ($users) => $users->whereIn('users.id', $sourceUserIds))
-            ->with('workspace:id,name')
-            ->orderBy('name')
-            ->limit(100)
-            ->get(['id', 'workspace_id', 'name']);
+        $sites = $this->access->workspacesFor($user)
+            ->flatMap(fn (Workspace $workspace) => $workspace->sites
+                ->each(fn (Site $site) => $site->setRelation('workspace', $workspace)))
+            ->reject(fn (Site $site): bool => in_array((string) $site->getKey(), $linkedIds, true))
+            ->sortBy('name', SORT_NATURAL | SORT_FLAG_CASE)
+            ->take(100)
+            ->values();
 
         return $sites->map(fn (Site $site): ProjectResourceCandidate => new ProjectResourceCandidate(
             id: (string) $site->getKey(),

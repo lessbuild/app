@@ -37,7 +37,7 @@ class StoreStatusPageRequest extends FormRequest
             'description' => ['nullable', 'string', 'max:1000'],
             'is_published' => ['required', 'boolean'],
             'website_ids' => ['required', 'array', 'min:1'],
-            'website_ids.*' => ['integer', Rule::exists('websites', 'id')->where('organization_id', $this->user()?->current_organization_id)],
+            'website_ids.*' => ['integer', Rule::exists('deployer.websites', 'id')->whereIn('id', $this->user()->workspaceWebsites()->pluck('websites.id'))->where('organization_id', $this->user()?->current_organization_id)],
         ];
     }
 }

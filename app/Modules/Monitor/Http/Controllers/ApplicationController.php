@@ -28,8 +28,8 @@ class ApplicationController extends Controller
         $applicationCapacity = $limits->applicationCapacity($workspace);
 
         return view('monitor::applications.index', [
-            'applications' => $workspace->applications()->when($archived, fn ($query) => $query->onlyTrashed())
-                ->withCount('environments')->withSum('environments', 'event_count')
+            'applications' => $workspace->applications()->visibleTo(request()->user(), $workspace)->when($archived, fn ($query) => $query->onlyTrashed())
+                ->withCount(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace)])->withSum(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace)], 'event_count')
                 ->orderBy('name')->orderBy('id')->paginate(12)->withQueryString(),
             'archived' => $archived,
             'canManage' => Gate::allows('update', $workspace),
@@ -70,7 +70,7 @@ class ApplicationController extends Controller
 
         return view('monitor::applications.show', [
             'application' => $application,
-            'environments' => $application->environments()->withTrashed()
+            'environments' => $application->environments()->withTrashed()->visibleTo($request->user(), $application->workspace)
                 ->withCount(['ingestTokens as active_token_count' => fn ($query) => $query->active()])
                 ->orderBy('name')->orderBy('id')->get(),
             'canManage' => Gate::allows('update', $application->workspace),
@@ -95,7 +95,7 @@ class ApplicationController extends Controller
     {
         Gate::authorize('delete', $application);
         $request->validate(['confirmation' => ['required', Rule::in([$application->name])]]);
-        $archive->archive($application);
+        $archive->archive($application, $request->user());
 
         return to_route('monitor.applications.index')->with('status', 'Application archived and its ingestion tokens revoked. Telemetry has been preserved.');
     }

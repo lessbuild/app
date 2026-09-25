@@ -18,7 +18,7 @@ class ArchiveAlertRuleRequest extends FormRequest
     public function authorize(CurrentWorkspace $currentWorkspace): bool
     {
         $rule = $this->route('alertRule');
-        abort_unless($rule instanceof AlertRule && AlertRule::forWorkspace($currentWorkspace->get())->whereKey($rule->id)->exists(), 404);
+        abort_unless($rule instanceof AlertRule && AlertRule::forWorkspace($currentWorkspace->get())->visibleTo($this->user(), $currentWorkspace->get())->whereKey($rule->id)->exists(), 404);
         Gate::authorize('delete', $rule);
 
         return true;

@@ -8,6 +8,7 @@ use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\MappedProjectResourceAccess;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Models\Environment;
@@ -95,6 +96,17 @@ final class DeployerResourceLinkProvider implements ProjectResourceLinkProvider
             return [];
         }
 
+        $accessibleProjectIds = [];
+        foreach ($visibleOrganizationIds as $organizationId) {
+            $candidates = Project::query()->where('organization_id', $organizationId)->pluck('id')->all();
+            $denied = app(MappedProjectResourceAccess::class)->deniedResourceIds(
+                $user, 'deployer', 'project', 'organization', $organizationId, $candidates,
+            );
+            if ($denied !== null) {
+                $accessibleProjectIds = [...$accessibleProjectIds, ...array_diff(array_map('strval', $candidates), $denied)];
+            }
+        }
+
         $linkedProjectIds = ProjectResource::query()
             ->where('product', 'deployer')
             ->where('resource_type', 'project')
@@ -108,14 +120,14 @@ final class DeployerResourceLinkProvider implements ProjectResourceLinkProvider
             ->map(static fn ($id): string => (string) $id)
             ->all();
         $projects = Project::query()
-            ->whereIn('organization_id', $visibleOrganizationIds)
+            ->whereIn('id', $accessibleProjectIds)
             ->when($linkedProjectIds !== [], fn ($query) => $query->whereNotIn('id', $linkedProjectIds))
             ->with('organization:id,name')
             ->orderBy('name')
             ->limit(100)
             ->get(['id', 'organization_id', 'name']);
         $environments = Environment::query()
-            ->whereHas('project', fn ($query) => $query->whereIn('organization_id', $visibleOrganizationIds))
+            ->whereIn('project_id', $accessibleProjectIds)
             ->when($linkedEnvironmentIds !== [], fn ($query) => $query->whereNotIn('id', $linkedEnvironmentIds))
             ->with('project:id,organization_id,name')
             ->orderBy('name')

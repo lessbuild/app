@@ -42,7 +42,7 @@ final class MonitorProjectSetup implements ProjectEnvironmentAwareSetupProvider
             )];
         }
 
-        $environmentSteps = $this->stepsForMappedEnvironments($project, $authorizedApplications, $applicationIndexUrl);
+        $environmentSteps = $this->stepsForMappedEnvironments($user, $project, $authorizedApplications, $applicationIndexUrl);
 
         if ($environmentSteps !== null) {
             $applicationStep = new ProjectSetupStep(
@@ -61,6 +61,9 @@ final class MonitorProjectSetup implements ProjectEnvironmentAwareSetupProvider
         $environmentIds = Environment::query()
             ->whereIn('application_id', $authorizedApplications->modelKeys())
             ->where('status', 'active')
+            ->with('application.workspace')
+            ->get(['id', 'application_id'])
+            ->filter(fn (Environment $environment): bool => $this->applications->environmentAllowed($user, $environment))
             ->pluck('id');
         $hasActiveEnvironment = $environmentIds->isNotEmpty();
         $hasReceivedData = $hasActiveEnvironment && (
@@ -151,6 +154,7 @@ final class MonitorProjectSetup implements ProjectEnvironmentAwareSetupProvider
         }
 
         $environmentSteps = $this->stepsForMappedEnvironments(
+            $user,
             $project,
             $authorizedApplications,
             $applicationIndexUrl,
@@ -178,6 +182,7 @@ final class MonitorProjectSetup implements ProjectEnvironmentAwareSetupProvider
      * @return ?list<ProjectSetupStep> Null when the project has no explicit Monitor environment mappings.
      */
     private function stepsForMappedEnvironments(
+        PlatformUser $user,
         Project $project,
         Collection $authorizedApplications,
         ?string $applicationIndexUrl,
@@ -206,7 +211,9 @@ final class MonitorProjectSetup implements ProjectEnvironmentAwareSetupProvider
         $sourceEnvironments = Environment::query()
             ->whereIn('id', $mappings->pluck('resource_id')->unique())
             ->whereIn('application_id', $authorizedApplications->modelKeys())
+            ->with('application.workspace')
             ->get(['id', 'application_id', 'name', 'status'])
+            ->filter(fn (Environment $environment): bool => $this->applications->environmentAllowed($user, $environment))
             ->keyBy(fn (Environment $environment): string => (string) $environment->getKey());
 
         return $mappings->map(function (ProjectResource $mapping) use ($canonicalEnvironments, $applicationsById, $sourceEnvironments, $applicationIndexUrl): ProjectSetupStep {

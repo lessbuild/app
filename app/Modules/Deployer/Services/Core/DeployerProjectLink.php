@@ -7,6 +7,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project as CoreProject;
 use App\Core\Models\ProjectResource;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\MappedProjectResourceAccess;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Models\Environment;
@@ -96,7 +97,8 @@ final class DeployerProjectLink implements ProjectProductLink
             ? null
             : $this->accessibleLocalProject($user, (string) $mappedEnvironment->project_id, (string) $project->workspace_id);
 
-        if ($legacyProject === null) {
+        if ($legacyProject === null
+            || ! app(MappedProjectResourceAccess::class)->allows($user, 'deployer', 'environment', $mappedEnvironment->getKey(), 'organization', $legacyProject->organization_id)) {
             return null;
         }
 
@@ -155,7 +157,8 @@ final class DeployerProjectLink implements ProjectProductLink
                 continue;
             }
 
-            if ($this->workspaceAccess->allows($user, 'deployer', 'organization', $legacyProject->organization_id)) {
+            if ($this->workspaceAccess->allows($user, 'deployer', 'organization', $legacyProject->organization_id)
+                && app(MappedProjectResourceAccess::class)->allows($user, 'deployer', 'project', $legacyProject->getKey(), 'organization', $legacyProject->organization_id)) {
                 return $legacyProject;
             }
         }

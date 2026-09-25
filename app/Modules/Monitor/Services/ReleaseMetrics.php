@@ -11,6 +11,7 @@ use App\Modules\Monitor\Models\Release;
 use App\Modules\Monitor\Models\TelemetryEvent;
 use App\Modules\Monitor\Models\Workspace;
 use Carbon\CarbonImmutable;
+use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -27,10 +28,10 @@ final class ReleaseMetrics
     }
 
     /** @return Builder<TelemetryEvent> */
-    public function events(Workspace $workspace, Release $release, ?int $environmentId, CarbonImmutable $from, CarbonImmutable $until): Builder
+    public function events(Workspace $workspace, Release $release, ?int $environmentId, CarbonImmutable $from, CarbonImmutable $until, ?Authenticatable $principal = null): Builder
     {
         return TelemetryEvent::query()->where('release_id', $release->id)
-            ->whereIn('environment_id', Environment::forWorkspace($workspace)->where('application_id', $release->application_id)->select('id'))
+            ->whereIn('environment_id', Environment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->where('application_id', $release->application_id)->select('id'))
             ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
             ->where('occurred_at', '>=', $this->boundary($from))
             ->where('occurred_at', '<=', $until->format('Y-m-d H:i:s.u'));
@@ -62,27 +63,27 @@ final class ReleaseMetrics
     /** Equal observed windows, narrowed for deployments less than a full window old.
      * @return array{before: array<string, int|float|null>|null, after: array<string, int|float|null>|null, from: CarbonImmutable, deployedAt: CarbonImmutable, until: CarbonImmutable, seconds: int, requestedMinutes: int}
      */
-    public function aroundDeployment(Workspace $workspace, Deployment $deployment, int $minutes): array
+    public function aroundDeployment(Workspace $workspace, Deployment $deployment, int $minutes, ?Authenticatable $principal = null): array
     {
-        return $this->compareAroundDeployment($workspace, $deployment, $minutes * 60, $minutes);
+        return $this->compareAroundDeployment($workspace, $deployment, $minutes * 60, $minutes, $principal);
     }
 
     /** @return array{before: array<string, int|float|null>|null, after: array<string, int|float|null>|null, from: CarbonImmutable, deployedAt: CarbonImmutable, until: CarbonImmutable, seconds: int, requestedMinutes: int} */
-    public function aroundDeploymentWindow(Workspace $workspace, Deployment $deployment, int $requestedSeconds, int $requestedMinutes): array
+    public function aroundDeploymentWindow(Workspace $workspace, Deployment $deployment, int $requestedSeconds, int $requestedMinutes, ?Authenticatable $principal = null): array
     {
-        return $this->compareAroundDeployment($workspace, $deployment, $requestedSeconds, $requestedMinutes);
+        return $this->compareAroundDeployment($workspace, $deployment, $requestedSeconds, $requestedMinutes, $principal);
     }
 
     /** @return array{before: array<string, int|float|null>|null, after: array<string, int|float|null>|null, from: CarbonImmutable, deployedAt: CarbonImmutable, until: CarbonImmutable, seconds: int, requestedMinutes: int} */
-    private function compareAroundDeployment(Workspace $workspace, Deployment $deployment, int $requestedSeconds, int $requestedMinutes): array
+    private function compareAroundDeployment(Workspace $workspace, Deployment $deployment, int $requestedSeconds, int $requestedMinutes, ?Authenticatable $principal = null): array
     {
         $at = $deployment->deployed_at;
         $seconds = (int) max(0, min($requestedSeconds, $at->diffInSeconds(CarbonImmutable::now('UTC'), false)));
         $from = $at->subSeconds($seconds);
         $until = $at->addSeconds($seconds);
         $query = TelemetryEvent::query()
-            ->whereIn('environment_id', Environment::forWorkspace($workspace)->whereKey($deployment->environment_id)->select('id'))
-            ->whereIn('release_id', Release::forWorkspace($workspace)
+            ->whereIn('environment_id', Environment::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->whereKey($deployment->environment_id)->select('id'))
+            ->whereIn('release_id', Release::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))
                 ->where('application_id', $deployment->release->application_id)
                 ->where('service_hash', $deployment->release->service_hash)->select('id'));
         $before = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', $this->boundary($from))->where('occurred_at', '<', $this->boundary($at))) : null;
@@ -92,9 +93,9 @@ final class ReleaseMetrics
     }
 
     /** @return Collection<int, Deployment> */
-    public function otherDeploymentsInWindow(Workspace $workspace, Deployment $deployment, CarbonImmutable $from, CarbonImmutable $until): Collection
+    public function otherDeploymentsInWindow(Workspace $workspace, Deployment $deployment, CarbonImmutable $from, CarbonImmutable $until, ?Authenticatable $principal = null): Collection
     {
-        return Deployment::query()->forWorkspace($workspace)
+        return Deployment::query()->forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))
             ->where('environment_id', $deployment->environment_id)
             ->where('id', '!=', $deployment->getKey())
             ->where('deployed_at', '>=', $this->boundary($from))
@@ -107,7 +108,7 @@ final class ReleaseMetrics
     }
 
     /** @return Collection<int, Incident> */
-    public function incidentsOverlappingWindow(Workspace $workspace, Deployment $deployment, CarbonImmutable $from, CarbonImmutable $until): Collection
+    public function incidentsOverlappingWindow(Workspace $workspace, Deployment $deployment, CarbonImmutable $from, CarbonImmutable $until, ?Authenticatable $principal = null): Collection
     {
         if ($from >= $until) {
             return collect();
@@ -115,7 +116,7 @@ final class ReleaseMetrics
 
         $environmentId = $deployment->environment_id;
 
-        return Incident::query()->forWorkspace($workspace)
+        return Incident::query()->forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))
             ->where(function (Builder $query) use ($environmentId): void {
                 $query->whereIn('monitor_id', Monitor::withTrashed()->where('environment_id', $environmentId)->select('id'))
                     ->orWhereIn('alert_rule_id', AlertRule::withTrashed()->where('environment_id', $environmentId)->select('id'));

@@ -26,6 +26,8 @@ final class EnsurePersonalWorkspace
             $siteWorkspace = $site === null ? null : $workspaces->firstWhere('id', (int) $site->workspace_id);
 
             if ($siteWorkspace !== null) {
+                abort_unless($this->access->hasSiteAccess($user, $site), 403);
+
                 return $siteWorkspace;
             }
         }

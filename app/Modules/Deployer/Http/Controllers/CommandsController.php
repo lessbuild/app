@@ -158,7 +158,7 @@ class CommandsController extends Controller
     private function filteredExecutions(Request $request, array $filters): Builder
     {
         return ServerCommandExecution::query()
-            ->whereHas('server', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
+            ->whereIn('server_id', $request->user()->workspaceServers()->select('servers.id'))
             ->when($filters['server_id'], fn ($query, int $serverId) => $query->where('server_id', $serverId))
             ->when($filters['status'], fn ($query, string $status) => $query->where('status', $status))
             ->when($filters['output'] === 'available', fn ($query) => $query->whereNotNull('output'))

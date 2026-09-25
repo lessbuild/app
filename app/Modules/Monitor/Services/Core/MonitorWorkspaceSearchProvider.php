@@ -48,7 +48,13 @@ final class MonitorWorkspaceSearchProvider implements WorkspaceSearchProvider
         $authorizedWorkspaceIds = $workspaceIds
             ->map(static fn ($id): string => (string) $id)
             ->all();
+        $sourceWorkspaces = MonitorWorkspace::query()->whereKey($workspaceIds)->get();
         $incidents = Incident::query()
+            ->where(function ($incidents) use ($sourceWorkspaces, $user): void {
+                foreach ($sourceWorkspaces as $sourceWorkspace) {
+                    $incidents->orWhereIn('id', Incident::query()->visibleTo($user, $sourceWorkspace)->select('id'));
+                }
+            })
             ->where(function ($incidents) use ($workspaceIds): void {
                 $incidents
                     ->whereHas('alertRule.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds))

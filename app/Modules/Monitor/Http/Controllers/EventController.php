@@ -17,8 +17,8 @@ class EventController extends Controller
     {
         $workspace = $currentWorkspace->get();
         $filters = $request->filters();
-        $applications = $workspace->applications()->select(['id', 'name'])
-            ->with(['environments' => fn ($query) => $query->select(['id', 'application_id', 'name'])->orderBy('name')->orderBy('id')])
+        $applications = $workspace->applications()->visibleTo(request()->user(), $workspace)->select(['id', 'name'])
+            ->with(['environments' => fn ($query) => $query->visibleTo($request->user(), $workspace)->select(['id', 'application_id', 'name'])->orderBy('name')->orderBy('id')])
             ->orderBy('name')->orderBy('id')->get();
         if (isset($filters['application'])) {
             abort_unless($applications->contains('id', (int) $filters['application']), 404);
@@ -31,11 +31,11 @@ class EventController extends Controller
         }
 
         $window = $search->window($filters);
-        $release = isset($filters['release']) ? Release::forWorkspace($workspace)
+        $release = isset($filters['release']) ? Release::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)
             ->when(isset($filters['application']), fn ($query) => $query->where('application_id', $filters['application']))
             ->when(isset($filters['environment']), fn ($query) => $query->where('application_id', $environments->firstWhere('id', (int) $filters['environment'])->application_id))
             ->findOrFail($filters['release']) : null;
-        $events = $search->ordered($search->query($workspace, $filters, $window), $filters['sort'])
+        $events = $search->ordered($search->query($workspace, $filters, $window)->visibleTo($request->user(), $workspace), $filters['sort'])
             ->summary()
             ->with(['environment:id,application_id,name', 'environment.application:id,name'])
             ->paginate(50, ['*'], 'page', (int) ($filters['page'] ?? 1))
@@ -59,7 +59,7 @@ class EventController extends Controller
 
     public function show(SearchEventsRequest $request, string $event, CurrentWorkspace $currentWorkspace, EventDetails $details): Response
     {
-        $record = TelemetryEvent::forWorkspace($currentWorkspace->get())
+        $record = TelemetryEvent::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())
             ->with(['environment:id,application_id,name', 'environment.application:id,name'])
             ->whereKey($event)->firstOrFail();
 

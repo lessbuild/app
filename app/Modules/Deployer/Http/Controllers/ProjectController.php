@@ -16,6 +16,7 @@ use App\Modules\Deployer\Models\PreviewStackCleanup;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Rules\Hostname;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\Entitlements;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -30,7 +31,7 @@ class ProjectController extends Controller
     public function index(Request $request, ApplicationTemplateCatalog $templates): View
     {
         return view('scenes.projects.index', [
-            'projects' => $request->user()->currentOrganization->projects()->withCount('environments')->latest()->get(),
+            'projects' => $request->user()->workspaceProjects()->withCount('environments')->latest()->get(),
             'templates' => $templates->all(),
         ]);
     }
@@ -69,6 +70,7 @@ class ProjectController extends Controller
         return view('scenes.projects.show', [
             'project' => $project->load([
                 'environments.server',
+                'environments.website.repositories' => fn ($query) => app(DeployerProjectAccess::class)->repositories($query, $request->user()),
                 'environments.website.repositories.provider',
                 'environments.website.repositories.latestBuild',
                 'environments.website.repositories.latestSuccessfulBuild',

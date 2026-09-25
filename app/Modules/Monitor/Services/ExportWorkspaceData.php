@@ -10,6 +10,7 @@ use App\Modules\Monitor\Models\Issue;
 use App\Modules\Monitor\Models\TelemetryEvent;
 use App\Modules\Monitor\Models\Workspace;
 use Generator;
+use Illuminate\Contracts\Auth\Authenticatable;
 use RuntimeException;
 
 final class ExportWorkspaceData
@@ -17,9 +18,9 @@ final class ExportWorkspaceData
     /**
      * @param  resource  $output
      */
-    public function write(Workspace $workspace, mixed $output): void
+    public function write(Workspace $workspace, mixed $output, ?Authenticatable $principal = null): void
     {
-        foreach ($this->records($workspace) as $record) {
+        foreach ($this->records($workspace, $principal) as $record) {
             $line = json_encode($record, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE)."\n";
 
             if (fwrite($output, $line) === false) {
@@ -31,7 +32,7 @@ final class ExportWorkspaceData
     /**
      * @return Generator<int, array{type: string, data: array<string, mixed>}>
      */
-    private function records(Workspace $workspace): Generator
+    private function records(Workspace $workspace, ?Authenticatable $principal): Generator
     {
         yield [
             'type' => 'export',
@@ -65,9 +66,9 @@ final class ExportWorkspaceData
             ];
         }
 
-        $applicationIds = Application::withTrashed()->whereBelongsTo($workspace)->select('id');
+        $applicationIds = Application::withTrashed()->whereBelongsTo($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->select('id');
 
-        foreach (Application::withTrashed()->whereBelongsTo($workspace)->orderBy('id')->cursor() as $application) {
+        foreach (Application::withTrashed()->whereBelongsTo($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->orderBy('id')->cursor() as $application) {
             yield [
                 'type' => 'application',
                 'data' => [
@@ -82,9 +83,9 @@ final class ExportWorkspaceData
             ];
         }
 
-        $environmentIds = Environment::withTrashed()->whereIn('application_id', $applicationIds)->select('id');
+        $environmentIds = Environment::withTrashed()->whereIn('application_id', $applicationIds)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->select('id');
 
-        foreach (Environment::withTrashed()->whereIn('application_id', $applicationIds)->orderBy('id')->cursor() as $environment) {
+        foreach (Environment::withTrashed()->whereIn('application_id', $applicationIds)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->orderBy('id')->cursor() as $environment) {
             yield [
                 'type' => 'environment',
                 'data' => [
@@ -100,7 +101,7 @@ final class ExportWorkspaceData
             ];
         }
 
-        foreach (Issue::query()->whereIn('application_id', $applicationIds)->orderBy('id')->cursor() as $issue) {
+        foreach (Issue::query()->whereIn('application_id', $applicationIds)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->orderBy('id')->cursor() as $issue) {
             yield [
                 'type' => 'issue',
                 'data' => [
@@ -123,7 +124,7 @@ final class ExportWorkspaceData
             ];
         }
 
-        foreach (Incident::forWorkspace($workspace)->orderBy('id')->cursor() as $incident) {
+        foreach (Incident::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->orderBy('id')->cursor() as $incident) {
             yield [
                 'type' => 'incident',
                 'data' => [
@@ -143,7 +144,7 @@ final class ExportWorkspaceData
             ];
         }
 
-        foreach (AuditLog::forWorkspace($workspace)->orderBy('id')->cursor() as $log) {
+        foreach (AuditLog::forWorkspace($workspace)->when($principal !== null, fn ($query) => $query->visibleTo($principal, $workspace))->orderBy('id')->cursor() as $log) {
             yield [
                 'type' => 'audit_log',
                 'data' => [

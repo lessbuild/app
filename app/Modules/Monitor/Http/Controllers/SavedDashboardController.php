@@ -50,7 +50,7 @@ class SavedDashboardController extends Controller
 
         return view('monitor::dashboards.show', [
             'dashboard' => $dashboard,
-            'report' => $reports->forDashboard($dashboard, $workspace),
+            'report' => $reports->forDashboard($dashboard, $workspace, request()->user()),
             'canManage' => Gate::allows('update', $workspace),
         ]);
     }

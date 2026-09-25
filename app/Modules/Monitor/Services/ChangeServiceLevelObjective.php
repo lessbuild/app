@@ -22,12 +22,13 @@ final class ChangeServiceLevelObjective
             $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->id);
             Gate::forUser($actor)->authorize('update', $workspace);
             abort_unless($actor->hasVerifiedEmail(), 403);
-            $environment = Environment::forWorkspace($workspace)->findOrFail((int) $data['environment_id']);
+            $environment = Environment::forWorkspace($workspace)->visibleTo($actor, $workspace)->findOrFail((int) $data['environment_id']);
             $application = Application::query()->whereBelongsTo($workspace)->lockForUpdate()->findOrFail($environment->application_id);
             $environment = Environment::query()->whereBelongsTo($application)->lockForUpdate()->findOrFail($environment->id);
+            Gate::forUser($actor)->authorize('update', $environment);
             $isNew = $objective === null;
             if (! $isNew) {
-                $objective = ServiceLevelObjective::forWorkspace($workspace)->lockForUpdate()->findOrFail($objective->id);
+                $objective = ServiceLevelObjective::forWorkspace($workspace)->visibleTo($actor, $workspace)->lockForUpdate()->findOrFail($objective->id);
                 abort_unless($objective->environment_id === $environment->id, 422, 'The environment cannot be changed. Create a separate objective.');
             }
             $objective ??= new ServiceLevelObjective;
@@ -60,7 +61,7 @@ final class ChangeServiceLevelObjective
             $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->id);
             Gate::forUser($actor)->authorize('update', $workspace);
             abort_unless($actor->hasVerifiedEmail(), 403);
-            $objective = ServiceLevelObjective::forWorkspace($workspace)->lockForUpdate()->findOrFail($objective->id);
+            $objective = ServiceLevelObjective::forWorkspace($workspace)->visibleTo($actor, $workspace)->lockForUpdate()->findOrFail($objective->id);
             $objective->delete();
         }, attempts: 3);
     }

@@ -23,8 +23,8 @@ class IncidentController extends Controller
         $workspace = $currentWorkspace->get();
         $filters = $request->validated();
         $status = $filters['status'] ?? 'active';
-        $query = Incident::forWorkspace($workspace)->with(['alertRule.environment.application', 'monitor.environment.application', 'assignee:id,name']);
-        $selectedRule = isset($filters['rule']) ? AlertRule::withTrashed()->forWorkspace($workspace)->findOrFail($filters['rule']) : null;
+        $query = Incident::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with(['alertRule.environment.application', 'monitor.environment.application', 'assignee:id,name']);
+        $selectedRule = isset($filters['rule']) ? AlertRule::withTrashed()->forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->findOrFail($filters['rule']) : null;
         if ($selectedRule !== null) {
             $query->where('alert_rule_id', $selectedRule->id);
             $selectedRule->forceFill($redactor->redact($selectedRule->only('name')));
@@ -37,7 +37,7 @@ class IncidentController extends Controller
         $incidents = $query->latest('opened_at')->latest('id')->paginate(25, ['*'], 'page', (int) ($filters['page'] ?? 1))
             ->appends($request->safe()->except('page'));
         $incidents->each(fn (Incident $incident): Incident => $incident->forceFill($redactor->redact($incident->only('title'))));
-        $totals = Incident::forWorkspace($workspace)->toBase()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
+        $totals = Incident::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->toBase()->selectRaw('status, COUNT(*) AS total')->groupBy('status')->pluck('total', 'status');
 
         return response()->view('monitor::incidents.index', compact('incidents', 'status', 'selectedRule', 'totals'))->header('Cache-Control', 'private, no-store');
     }
@@ -52,7 +52,7 @@ class IncidentController extends Controller
         $activities = $incident->activities()->with('actor:id,name')->latest('id')
             ->paginate(25, ['*'], 'page', (int) ($request->validated('page') ?? 1));
         $activities->each(fn (IncidentActivity $activity): IncidentActivity => $activity->forceFill($redactor->redact($activity->only('note'))));
-        $recentDeployments = $deploymentContext->recent($workspace, $incident);
+        $recentDeployments = $deploymentContext->recent($workspace, $incident, $request->user());
         $analyticsTrafficContexts = $trafficContext->forIncident($request->user(), $incident);
 
         return response()->view('monitor::incidents.show', [

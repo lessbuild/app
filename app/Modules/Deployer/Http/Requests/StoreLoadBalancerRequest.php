@@ -34,8 +34,8 @@ class StoreLoadBalancerRequest extends FormRequest
         $organization = $this->user()->currentOrganization;
 
         return [
-            'environment_id' => ['required', Rule::exists('environments', 'id')->whereIn('project_id', $organization->projects()->pluck('id'))],
-            'server_id' => ['required', Rule::exists('servers', 'id')->where('organization_id', $organization->id)],
+            'environment_id' => ['required', Rule::exists('environments', 'id')->whereIn('project_id', $this->user()->workspaceProjects()->pluck('projects.id'))],
+            'server_id' => ['required', Rule::exists('deployer.servers', 'id')->whereIn('id', $this->user()->workspaceServers()->pluck('servers.id'))],
             'hostname' => ['required', 'string', 'max:253', 'lowercase', 'regex:/\A(?=.{1,253}\z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/', 'unique:load_balancers,hostname'],
             'health_path' => ['required', 'string', 'max:255', 'regex:#\A/[A-Za-z0-9._~!$&\'()*+,;=:@%/-]*\z#'],
         ];

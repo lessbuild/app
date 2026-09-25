@@ -16,7 +16,10 @@ use Illuminate\Support\Facades\Route;
 
 final class MonitorProjectLink implements ProjectProductLink
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly MonitorProjectAccess $projects,
+    ) {}
 
     public function resolve(PlatformUser $user, Project $project): ?string
     {
@@ -75,6 +78,7 @@ final class MonitorProjectLink implements ProjectProductLink
             ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds))
             ->with('workspace')
             ->get()
+            ->filter(fn (Application $application): bool => $this->projects->application($user, $application))
             ->values();
     }
 
@@ -119,7 +123,7 @@ final class MonitorProjectLink implements ProjectProductLink
             return null;
         }
 
-        return Environment::query()
+        $environment = Environment::query()
             ->whereKey($currentMapping->resource_id)
             ->where('status', 'active')
             ->whereHas('application', fn ($application) => $application
@@ -127,5 +131,12 @@ final class MonitorProjectLink implements ProjectProductLink
                 ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds)))
             ->with('application.workspace')
             ->first(['id', 'application_id', 'name', 'last_seen_at']);
+
+        return $environment !== null && $this->projects->environment($user, $environment) ? $environment : null;
+    }
+
+    public function environmentAllowed(PlatformUser $user, Environment $environment): bool
+    {
+        return $this->projects->environment($user, $environment);
     }
 }

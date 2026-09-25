@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\ConfigurationReview;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class ConfigurationReviewPolicy
 {
@@ -15,6 +16,7 @@ class ConfigurationReviewPolicy
         $project = $review->project;
 
         return $project !== null
+            && app(DeployerProjectAccess::class)->project($user, $project)
             && (int) $project->organization_id === (int) $user->current_organization_id
             && $project->organization->permits($user, 'manage');
     }

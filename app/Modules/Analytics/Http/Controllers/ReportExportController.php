@@ -28,7 +28,7 @@ class ReportExportController extends Controller
             'device' => ['nullable', 'string', 'max:32'],
         ]);
         $token = Str::random(64);
-        $productUserId = $access->productUserIds($request->user())[0] ?? null;
+        $productUserId = $this->requestingProductUserId($request, $site, $access);
         abort_if($productUserId === null, 403, 'Analytics access is not yet reconciled for this account.');
         $export = ReportExport::create([
             'workspace_id' => $site->workspace_id,
@@ -84,12 +84,14 @@ class ReportExportController extends Controller
         return $this->downloadExport($export);
     }
 
-    public function retry(Site $site, ReportExport $export): RedirectResponse
+    public function retry(Request $request, Site $site, ReportExport $export, AnalyticsWorkspaceAccess $access): RedirectResponse
     {
         $this->assertExportBelongsToSite($export, $site);
         $this->authorize('manage', $site);
+        $productUserId = $this->requestingProductUserId($request, $site, $access);
+        abort_if($productUserId === null, 403, 'Analytics access is not yet reconciled for this account.');
 
-        $updatedExport = DB::connection('analytics')->transaction(function () use ($site, $export): ReportExport {
+        $updatedExport = DB::connection('analytics')->transaction(function () use ($site, $export, $productUserId): ReportExport {
             $lockedExport = ReportExport::query()
                 ->whereKey($export->getKey())
                 ->where('site_id', $site->getKey())
@@ -101,6 +103,7 @@ class ReportExportController extends Controller
 
             $lockedExport->update([
                 'status' => 'pending',
+                'requested_by' => $productUserId,
                 'failure_message' => null,
                 'file_path' => null,
                 'completed_at' => null,
@@ -119,6 +122,14 @@ class ReportExportController extends Controller
     {
         abort_unless((string) $export->site_id === (string) $site->getKey(), 404);
         abort_unless((string) $export->workspace_id === (string) $site->workspace_id, 404);
+    }
+
+    private function requestingProductUserId(Request $request, Site $site, AnalyticsWorkspaceAccess $access): string|int|null
+    {
+        return $site->workspace->users()
+            ->whereIn('users.id', $access->productUserIds($request->user()))
+            ->orderBy('users.id')
+            ->value('users.id');
     }
 
     private function downloadExport(ReportExport $export): StreamedResponse

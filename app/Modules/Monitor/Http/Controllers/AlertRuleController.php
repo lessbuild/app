@@ -26,7 +26,7 @@ class AlertRuleController extends Controller
     {
         $filters = $request->validated();
         $state = $filters['state'] ?? 'all';
-        $query = AlertRule::forWorkspace($currentWorkspace->get())->with(['environment.application', 'metricSeries', 'serviceLevelObjective']);
+        $query = AlertRule::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())->with(['environment.application', 'metricSeries', 'serviceLevelObjective']);
         if ($state === 'archived') {
             $query->onlyTrashed();
         } elseif ($state !== 'all') {
@@ -45,7 +45,7 @@ class AlertRuleController extends Controller
     public function create(SearchAlertsRequest $request, CurrentWorkspace $currentWorkspace): Response
     {
         $selectedSeries = $request->validated('series') !== null
-            ? MetricSeries::forWorkspace($currentWorkspace->get())->findOrFail($request->validated('series')) : null;
+            ? MetricSeries::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())->findOrFail($request->validated('series')) : null;
 
         return $this->form($currentWorkspace, selectedSeries: $selectedSeries);
     }
@@ -57,17 +57,17 @@ class AlertRuleController extends Controller
 
     private function form(CurrentWorkspace $currentWorkspace, ?AlertRule $alertRule = null, ?MetricSeries $selectedSeries = null): Response
     {
-        $environments = Environment::forWorkspace($currentWorkspace->get())->with('application:id,name')
+        $environments = Environment::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())->with('application:id,name')
             ->orderBy('application_id')->orderBy('name')->orderBy('id')->get(['id', 'application_id', 'name', 'status']);
         $environmentOptions = $environments->mapWithKeys(fn (Environment $environment): array => [
             $environment->id => $environment->application->name.' / '.$environment->name.($environment->status === 'paused' ? ' (source paused)' : ''),
         ])->all();
-        $metricSeriesOptions = MetricSeries::forWorkspace($currentWorkspace->get())->with('environment.application')
+        $metricSeriesOptions = MetricSeries::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())->with('environment.application')
             ->orderBy('environment_id')->orderBy('name')->orderBy('resource_label')->orderBy('id')->limit(500)->get()
             ->mapWithKeys(fn (MetricSeries $series): array => [
                 $series->id => $series->environment->application->name.' / '.$series->environment->name.' · '.$series->name.' · '.$series->resource_label,
             ])->all();
-        $objectiveOptions = ServiceLevelObjective::forWorkspace($currentWorkspace->get())->where('enabled', true)->with('environment.application')
+        $objectiveOptions = ServiceLevelObjective::forWorkspace($currentWorkspace->get())->visibleTo(request()->user(), $currentWorkspace->get())->where('enabled', true)->with('environment.application')
             ->orderBy('environment_id')->orderBy('name')->orderBy('id')->get()
             ->mapWithKeys(fn (ServiceLevelObjective $objective): array => [
                 $objective->id => $objective->environment->application->name.' / '.$objective->environment->name.' · '.$objective->name.' · '.$objective->scopeLabel(),
@@ -85,7 +85,7 @@ class AlertRuleController extends Controller
     {
         $alertRule->load(['environment.application', 'metricSeries', 'serviceLevelObjective']);
         $alertRule->forceFill($redactor->redact($alertRule->only(['name', 'service', 'match_text'])));
-        $incidents = $alertRule->incidents()->latest('opened_at')->latest('id')
+        $incidents = $alertRule->incidents()->visibleTo($request->user(), $workspace->get())->latest('opened_at')->latest('id')
             ->paginate(20, ['*'], 'page', (int) ($request->validated('page') ?? 1));
         $incidents->each(fn (Incident $incident): Incident => $incident->forceFill($redactor->redact($incident->only('title'))));
 

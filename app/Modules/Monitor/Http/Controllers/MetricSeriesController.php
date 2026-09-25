@@ -20,9 +20,9 @@ class MetricSeriesController extends Controller
     {
         $workspace = $currentWorkspace->get();
         $filters = $request->filters();
-        $environments = Environment::forWorkspace($workspace)->with('application:id,name')->orderBy('application_id')->orderBy('name')->orderBy('id')->get(['id', 'application_id', 'name']);
+        $environments = Environment::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('application:id,name')->orderBy('application_id')->orderBy('name')->orderBy('id')->get(['id', 'application_id', 'name']);
         abort_if(isset($filters['environment']) && ! $environments->contains('id', (int) $filters['environment']), 404);
-        $query = MetricSeries::forWorkspace($workspace)->with('environment.application')
+        $query = MetricSeries::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('environment.application')
             ->when(isset($filters['environment']), fn (Builder $query): Builder => $query->where('environment_id', $filters['environment']))
             ->when(isset($filters['kind']), fn (Builder $query): Builder => $query->where('kind', $filters['kind']));
         if (isset($filters['q'])) {

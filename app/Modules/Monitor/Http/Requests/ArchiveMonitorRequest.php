@@ -12,7 +12,7 @@ class ArchiveMonitorRequest extends FormRequest
     public function authorize(CurrentWorkspace $workspace): bool
     {
         $monitor = $this->route('monitor');
-        abort_unless($monitor instanceof Monitor && Monitor::forWorkspace($workspace->get())->whereKey($monitor->id)->exists(), 404);
+        abort_unless($monitor instanceof Monitor && Monitor::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($monitor->id)->exists(), 404);
         Gate::authorize('delete', $monitor);
 
         return true;

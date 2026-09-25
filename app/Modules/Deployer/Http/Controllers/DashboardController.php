@@ -12,6 +12,7 @@ use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\ServerCommandExecution;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
 use App\Modules\Deployer\Services\PlanLimits;
 use App\Modules\Deployer\Services\PublicPlatformStatus;
@@ -51,11 +52,12 @@ class DashboardController extends Controller
             $this->authorize('update', $editingDashboardRecipe);
         }
         $workspaceBuilds = Build::query()
+            ->tap(fn ($query) => app(DeployerProjectAccess::class)->builds($query, $user))
             ->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id));
         $workspaceCommands = ServerCommandExecution::query()
-            ->whereHas('server', fn ($query) => $query->where('organization_id', $organization->id));
+            ->whereIn('server_id', $user->workspaceServers()->select('servers.id'));
         $workspaceWebhookDeliveries = RepositoryWebhookDelivery::query()
-            ->whereHas('repository', fn ($query) => $query->where('organization_id', $organization->id));
+            ->whereIn('repository_id', $user->workspaceRepositories()->select('repositories.id'));
         $canManageSystemHealth = $user->currentOrganization?->permits($user, 'manage') ?? false;
         $attentionWebsites = $user->workspaceWebsites()->where(function ($query): void {
             $query

@@ -17,7 +17,7 @@ class SearchIssuesRequest extends FormRequest
     public function authorize(CurrentWorkspace $currentWorkspace): bool
     {
         if ($issue = $this->route('issue')) {
-            abort_unless($issue instanceof Issue && Issue::forWorkspace($currentWorkspace->get())->whereKey($issue->id)->exists(), 404);
+            abort_unless($issue instanceof Issue && Issue::forWorkspace($currentWorkspace->get())->visibleTo($this->user(), $currentWorkspace->get())->whereKey($issue->id)->exists(), 404);
             Gate::authorize('view', $issue);
         }
 

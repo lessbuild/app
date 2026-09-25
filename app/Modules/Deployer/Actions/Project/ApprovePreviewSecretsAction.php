@@ -8,6 +8,7 @@ use App\Modules\Deployer\Models\PreviewDeployment;
 use App\Modules\Deployer\Models\PreviewSecretApproval;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -34,7 +35,7 @@ class ApprovePreviewSecretsAction
             }
 
             $project = Project::query()->with('organization')->lockForUpdate()->find($locked->project_id);
-            if (! $project || (int) $project->organization_id !== (int) $approver->current_organization_id
+            if (! $project || ! app(DeployerProjectAccess::class)->project($approver, $project) || (int) $project->organization_id !== (int) $approver->current_organization_id
                 || ! $project->organization->permits($approver, 'manage')) {
                 return null;
             }
@@ -49,7 +50,7 @@ class ApprovePreviewSecretsAction
                 ->where('project_id', $locked->project_id)
                 ->where('website_id', $sourceWebsiteId)
                 ->first();
-            if (! $environment) {
+            if (! $environment || ! app(DeployerProjectAccess::class)->environment($approver, $environment)) {
                 return null;
             }
 

@@ -39,7 +39,7 @@ final class ChangeAlertRule
             $data['service'] = $data['service'] ?? null;
             $data['match_text'] = $data['match_text'] ?? null;
             if ($data['metric'] === AlertMetric::SloBurnRate->value) {
-                $objective = ServiceLevelObjective::forWorkspace($workspace)->where('environment_id', $environment->id)
+                $objective = ServiceLevelObjective::forWorkspace($workspace)->visibleTo($actor, $workspace)->where('environment_id', $environment->id)
                     ->where('enabled', true)->findOrFail($data['service_level_objective_id']);
                 $data['service_level_objective_id'] = $objective->id;
                 $data['service'] = null;
@@ -113,9 +113,10 @@ final class ChangeAlertRule
     {
         $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->id);
         Gate::forUser($actor)->authorize('update', $workspace);
-        $environment = Environment::forWorkspace($workspace)->findOrFail($environmentId);
+        $environment = Environment::forWorkspace($workspace)->visibleTo($actor, $workspace)->findOrFail($environmentId);
         $application = Application::query()->whereBelongsTo($workspace)->lockForUpdate()->findOrFail($environment->application_id);
         $environment = Environment::query()->whereBelongsTo($application)->lockForUpdate()->findOrFail($environmentId);
+        Gate::forUser($actor)->authorize('update', $environment);
 
         return [$workspace, $environment];
     }

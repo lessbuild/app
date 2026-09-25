@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\EnvironmentResource;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class EnvironmentResourcePolicy
 {
@@ -15,6 +16,7 @@ class EnvironmentResourcePolicy
         $organization = $resource->environment?->project?->organization;
 
         return $organization !== null
+            && app(DeployerProjectAccess::class)->environment($user, $resource->environment)
             && (int) $organization->id === (int) $user->current_organization_id
             && $organization->permits($user, 'view');
     }
@@ -27,6 +29,7 @@ class EnvironmentResourcePolicy
         $organization = $resource->environment?->project?->organization;
 
         return $organization !== null
+            && app(DeployerProjectAccess::class)->environment($user, $resource->environment)
             && (int) $organization->id === (int) $user->current_organization_id
             && $organization->permits($user, 'manage');
     }

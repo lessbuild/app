@@ -11,6 +11,7 @@ use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceProductAccess;
 use DateTimeInterface;
+use Illuminate\Database\Eloquent\Builder;
 
 /**
  * Central, fail-closed checks for canonical workspace, project, and product access.
@@ -112,6 +113,24 @@ final class WorkspaceProjectAccess
             ->where('product', $product)
             ->where('status', 'active')
             ->exists();
+    }
+
+    /** @return Builder<Project> */
+    public function accessibleProductProjects(PlatformUser $user, Workspace $workspace, ProductKey|string $product): Builder
+    {
+        $query = Project::query()->where('workspace_id', $workspace->getKey());
+        $product = $this->productKey($product);
+        $membership = $this->activeMembership($user, $workspace);
+
+        if ($product === null || $membership === null || ! $this->hasProductAccess($membership, $product)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $query->where('status', 'active')->whereNull('archived_at')
+            ->whereHas('memberships', fn (Builder $members) => $members
+                ->where('user_id', $user->getKey())->where('status', 'active')->whereNull('revoked_at'))
+            ->whereHas('products', fn (Builder $products) => $products
+                ->where('product', $product)->where('status', 'active'));
     }
 
     /**

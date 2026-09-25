@@ -182,10 +182,13 @@ final class ChangeMonitor
         $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->id);
         Gate::forUser($actor)->authorize('update', $workspace);
         abort_unless($actor->hasVerifiedEmail(), 403);
-        $environment = Environment::forWorkspace($workspace)->findOrFail($environmentId);
+        $environment = Environment::forWorkspace($workspace)->visibleTo($actor, $workspace)->findOrFail($environmentId);
         $application = Application::query()->whereBelongsTo($workspace)->lockForUpdate()->findOrFail($environment->application_id);
 
-        return Environment::query()->whereBelongsTo($application)->lockForUpdate()->findOrFail($environmentId);
+        $environment = Environment::query()->whereBelongsTo($application)->lockForUpdate()->findOrFail($environmentId);
+        Gate::forUser($actor)->authorize('update', $environment);
+
+        return $environment;
     }
 
     private function version(Monitor $monitor, int $version): void

@@ -44,7 +44,7 @@ class WebsiteRequest extends FormRequest
             'server_id' => [
                 'required',
                 'integer',
-                Rule::exists('servers', 'id')->where(fn (Builder $query): Builder => $query
+                Rule::exists('deployer.servers', 'id')->whereIn('id', $this->user()->workspaceServers()->pluck('servers.id'))->where(fn (Builder $query): Builder => $query
                     ->where('organization_id', $this->user()->current_organization_id)
                     ->where('provisioning_status', Server::STATUS_ACTIVE)
                     ->whereIn('type', ServerTypeEnum::websiteHostingValues())

@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class EnvironmentPolicy
 {
@@ -16,7 +17,8 @@ class EnvironmentPolicy
      */
     public function view(User $user, Environment $environment): bool
     {
-        return (int) $environment->project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->environment($user, $environment)
+            && (int) $environment->project->organization_id === (int) $user->current_organization_id
             && $environment->project->organization->permits($user, 'view');
     }
 
@@ -31,7 +33,8 @@ class EnvironmentPolicy
     {
         $ability = $environment->is_protected ? 'manage' : 'deploy';
 
-        return (int) $environment->project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->environment($user, $environment)
+            && (int) $environment->project->organization_id === (int) $user->current_organization_id
             && $environment->project->organization->permits($user, $ability);
     }
 
@@ -44,7 +47,8 @@ class EnvironmentPolicy
      */
     public function delete(User $user, Environment $environment): bool
     {
-        return (int) $environment->project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->environment($user, $environment)
+            && (int) $environment->project->organization_id === (int) $user->current_organization_id
             && $environment->project->organization->permits($user, 'manage');
     }
 }

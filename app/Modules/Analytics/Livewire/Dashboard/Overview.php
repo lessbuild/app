@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Livewire\Dashboard;
 
 use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Queries\Reporting\OverviewReport;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Illuminate\Contracts\View\View;
 use Livewire\Attributes\Url;
 use Livewire\Component;
@@ -31,7 +32,7 @@ class Overview extends Component
     public function mount(EnsurePersonalWorkspace $ensureWorkspace): void
     {
         $workspace = $ensureWorkspace->handle(auth()->user(), $this->selectedSiteId);
-        $this->selectedSiteId ??= $workspace->sites()->value('id');
+        $this->selectedSiteId ??= app(AnalyticsWorkspaceAccess::class)->sitesQuery(auth()->user(), $workspace)->value('id');
     }
 
     public function updatedDays(): void
@@ -50,7 +51,7 @@ class Overview extends Component
     public function render(OverviewReport $report): View
     {
         $workspace = app(EnsurePersonalWorkspace::class)->handle(auth()->user(), $this->selectedSiteId);
-        $sites = $workspace?->sites()->orderBy('name')->get() ?? collect();
+        $sites = app(AnalyticsWorkspaceAccess::class)->sitesQuery(auth()->user(), $workspace)->orderBy('name')->get();
         $site = $sites->firstWhere('id', $this->selectedSiteId) ?? $sites->first();
 
         if ($site && $this->selectedSiteId !== $site->id) {

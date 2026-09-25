@@ -15,14 +15,14 @@ class TraceController extends Controller
     {
         $workspace = $currentWorkspace->get();
         $environmentId = $request->filled('environment') ? $request->integer('environment') : null;
-        $environments = Environment::forWorkspace($workspace)
+        $environments = Environment::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)
             ->select(['id', 'application_id', 'name'])
             ->with('application:id,name')
             ->whereHas('telemetryEvents', fn ($query) => $query->where('trace_id', $trace))
             ->orderBy('name')->orderBy('id')->get();
         abort_if($environments->isEmpty() || ($environmentId !== null && ! $environments->contains('id', $environmentId)), 404);
 
-        $events = TelemetryEvent::forWorkspace($workspace)
+        $events = TelemetryEvent::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)
             ->summary()
             ->with(['environment:id,application_id,name', 'environment.application:id,name'])
             ->where('trace_id', $trace)

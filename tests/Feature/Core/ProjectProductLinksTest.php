@@ -806,7 +806,7 @@ final class ProjectProductLinksTest extends TestCase
             'updated_at' => now(),
         ]);
 
-        $provider = new MonitorResourceLinkProvider(app(LegacyIdentityResolver::class));
+        $provider = app(MonitorResourceLinkProvider::class);
         $candidates = $provider->candidates($this->platformUser());
 
         $this->assertCount(2, $candidates);
@@ -912,7 +912,7 @@ final class ProjectProductLinksTest extends TestCase
         $this->addIdentity('analytics', '23');
         $this->addAnalyticsWorkspacesAndSite(memberId: 23, firstWorkspaceId: 100, secondWorkspaceId: 200, siteId: 71);
 
-        $provider = new AnalyticsResourceLinkProvider(app(LegacyIdentityResolver::class));
+        $provider = app(AnalyticsResourceLinkProvider::class);
         $candidates = $provider->candidates($this->platformUser());
 
         $this->assertCount(1, $candidates);

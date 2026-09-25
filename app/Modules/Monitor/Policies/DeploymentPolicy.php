@@ -20,7 +20,7 @@ class DeploymentPolicy
             return Response::denyAsNotFound();
         }
 
-        return Gate::forUser($user)->inspect('view', $environment->application->workspace);
+        return Gate::forUser($user)->inspect('view', $environment);
     }
 
     public function create(User $user, Environment $environment): Response
@@ -29,7 +29,7 @@ class DeploymentPolicy
             return Response::denyAsNotFound();
         }
 
-        $permission = Gate::forUser($user)->inspect('contribute', $environment->application->workspace);
+        $permission = Gate::forUser($user)->inspect('contribute', $environment);
 
         return $permission->denied() ? $permission : ($environment->status === 'active'
             ? Response::allow() : Response::deny('Resume this environment before recording a deployment.'));

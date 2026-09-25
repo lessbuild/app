@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\PreviewDeployment;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class PreviewDeploymentPolicy
 {
@@ -12,7 +13,8 @@ class PreviewDeploymentPolicy
      */
     public function view(User $user, PreviewDeployment $preview): bool
     {
-        return (int) $preview->project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->project($user, $preview->project)
+            && (int) $preview->project->organization_id === (int) $user->current_organization_id
             && $preview->project->organization->permits($user, 'view');
     }
 

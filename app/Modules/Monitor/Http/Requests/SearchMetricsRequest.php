@@ -15,7 +15,7 @@ class SearchMetricsRequest extends FormRequest
     public function authorize(CurrentWorkspace $workspace): bool
     {
         if ($series = $this->route('metricSeries')) {
-            abort_unless($series instanceof MetricSeries && MetricSeries::forWorkspace($workspace->get())->whereKey($series->id)->exists(), 404);
+            abort_unless($series instanceof MetricSeries && MetricSeries::forWorkspace($workspace->get())->visibleTo($this->user(), $workspace->get())->whereKey($series->id)->exists(), 404);
             Gate::authorize('view', $series);
         }
 

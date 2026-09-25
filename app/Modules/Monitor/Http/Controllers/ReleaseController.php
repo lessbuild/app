@@ -18,9 +18,9 @@ class ReleaseController extends Controller
     {
         $workspace = $workspace->get();
         $filters = $request->filters();
-        $applications = $workspace->applications()->select(['id', 'name'])->orderBy('name')->orderBy('id')->get();
+        $applications = $workspace->applications()->visibleTo(request()->user(), $workspace)->select(['id', 'name'])->orderBy('name')->orderBy('id')->get();
         abort_if(isset($filters['application']) && ! $applications->contains('id', (int) $filters['application']), 404);
-        $query = Release::forWorkspace($workspace)->with('application:id,name')
+        $query = Release::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('application:id,name')
             ->when(isset($filters['application']), fn (Builder $query): Builder => $query->where('application_id', $filters['application']));
 
         if (isset($filters['q'])) {
@@ -41,31 +41,31 @@ class ReleaseController extends Controller
     {
         $workspace = $workspace->get();
         $filters = $request->filters();
-        $environments = $release->application->environments()->select(['id', 'name'])->orderBy('name')->orderBy('id')->get();
+        $environments = $release->application->environments()->visibleTo($request->user(), $workspace)->select(['id', 'name'])->orderBy('name')->orderBy('id')->get();
         $environmentId = isset($filters['environment']) ? (int) $filters['environment'] : null;
         abort_if($environmentId !== null && ! $environments->contains('id', $environmentId), 404);
-        $baseline = isset($filters['baseline']) ? Release::forWorkspace($workspace)
+        $baseline = isset($filters['baseline']) ? Release::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)
             ->where('application_id', $release->application_id)->where('service_hash', $release->service_hash)
             ->where('id', '!=', $release->id)->findOrFail($filters['baseline']) : null;
-        $baselineOptions = Release::forWorkspace($workspace)->where('application_id', $release->application_id)
+        $baselineOptions = Release::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->where('application_id', $release->application_id)
             ->where('service_hash', $release->service_hash)->where('id', '!=', $release->id)
             ->latest('created_at')->latest('id')->limit(100)->get(['id', 'version']);
         if ($baseline !== null && ! $baselineOptions->contains('id', $baseline->id)) {
             $baselineOptions->push($baseline);
         }
         [$from, $until] = $metrics->window($filters['range']);
-        $query = $metrics->events($workspace, $release, $environmentId, $from, $until);
+        $query = $metrics->events($workspace, $release, $environmentId, $from, $until, $request->user());
         $currentMetrics = $metrics->summarize($query);
-        $baselineMetrics = $baseline !== null ? $metrics->summarize($metrics->events($workspace, $baseline, $environmentId, $from, $until)) : null;
+        $baselineMetrics = $baseline !== null ? $metrics->summarize($metrics->events($workspace, $baseline, $environmentId, $from, $until, $request->user())) : null;
         $events = (clone $query)->summary()->with('environment:id,name')->latest('occurred_at')->latest('id')
             ->paginate(20, ['*'], 'events_page', (int) ($filters['events_page'] ?? 1))->appends($request->safe()->except('events_page'));
         $events->each(fn (TelemetryEvent $event): TelemetryEvent => $event->forceFill($redactor->redact($event->only(['name', 'route']))));
-        $issues = Issue::forWorkspace($workspace)->where('application_id', $release->application_id)
+        $issues = Issue::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->where('application_id', $release->application_id)
             ->whereIn('id', (clone $query)->where('type', 'exception')->select('issue_id'))
             ->select(['id', 'application_id', 'title', 'status', 'severity'])->latest('id')
             ->paginate(20, ['*'], 'issues_page', (int) ($filters['issues_page'] ?? 1))->appends($request->safe()->except('issues_page'));
         $issues->each(fn (Issue $issue): Issue => $issue->forceFill($redactor->redact($issue->only(['title']))));
-        $deployments = $release->deployments()->forWorkspace($workspace)->with('environment:id,application_id,name')
+        $deployments = $release->deployments()->forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->with('environment:id,application_id,name')
             ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
             ->latest('deployed_at')->latest('id')->paginate(20, ['*'], 'deployments_page', (int) ($filters['deployments_page'] ?? 1))
             ->appends($request->safe()->except('deployments_page'));

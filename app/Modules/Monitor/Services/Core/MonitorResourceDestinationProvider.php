@@ -15,7 +15,10 @@ use Illuminate\Support\Facades\Route;
 
 final class MonitorResourceDestinationProvider implements ProjectResourceDestinationProvider
 {
-    public function __construct(private readonly LegacyIdentityResolver $identities) {}
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly MonitorProjectAccess $projects,
+    ) {}
 
     public function destinations(PlatformUser $user, Collection $resources): array
     {
@@ -63,6 +66,8 @@ final class MonitorResourceDestinationProvider implements ProjectResourceDestina
             : Application::withTrashed()
                 ->whereKey($applicationsBySourceId->keys())
                 ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $sourceUserIds))
+                ->get()
+                ->filter(fn (Application $application): bool => $this->projects->application($user, $application))
                 ->pluck('id')
                 ->map(static fn ($id): string => (string) $id);
         $environments = $environmentsBySourceId->isEmpty()
@@ -73,6 +78,9 @@ final class MonitorResourceDestinationProvider implements ProjectResourceDestina
             : Environment::withTrashed()
                 ->whereKey($environmentsBySourceId->keys())
                 ->whereHas('application.workspace.members', fn ($members) => $members->whereIn('users.id', $sourceUserIds))
+                ->with('application.workspace')
+                ->get()
+                ->filter(fn (Environment $environment): bool => $this->projects->environment($user, $environment))
                 ->pluck('id')
                 ->map(static fn ($id): string => (string) $id);
 

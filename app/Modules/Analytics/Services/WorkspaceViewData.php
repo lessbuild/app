@@ -25,7 +25,7 @@ final class WorkspaceViewData
         $requestedSiteWorkspaceRecord = $requestedSite?->workspace;
         $requestedSiteWorkspace = $requestedSite !== null && $user !== null
             && $requestedSiteWorkspaceRecord !== null
-            && $access->hasAccess($user, $requestedSiteWorkspaceRecord)
+            && $access->hasSiteAccess($user, $requestedSite)
                 ? $workspaces->firstWhere('id', (int) $requestedSite->workspace_id)
                 : null;
         $currentWorkspace = $requestedSiteWorkspace

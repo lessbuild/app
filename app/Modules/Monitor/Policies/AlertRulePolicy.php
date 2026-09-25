@@ -36,6 +36,6 @@ class AlertRulePolicy
 
         return $application === null || $rule->environment->trashed() || $application->trashed()
             ? Response::denyAsNotFound()
-            : Gate::forUser($user)->inspect($ability, $application->workspace);
+            : Gate::forUser($user)->inspect($ability, $rule->environment);
     }
 }

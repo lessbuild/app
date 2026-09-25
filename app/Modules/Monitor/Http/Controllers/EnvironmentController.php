@@ -90,7 +90,7 @@ class EnvironmentController extends Controller
     {
         Gate::authorize('delete', $environment);
         $request->validate(['confirmation' => ['required', Rule::in([$environment->name])]]);
-        $archive->archive($environment);
+        $archive->archive($environment, $request->user());
 
         return to_route('monitor.applications.show', $application)->with('status', 'Environment archived and tokens revoked. Its telemetry is preserved.');
     }

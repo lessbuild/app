@@ -6,6 +6,7 @@ use App\Modules\Deployer\Data\BackupRecoverySummary;
 use App\Modules\Deployer\Models\BackupRestore;
 use App\Modules\Deployer\Models\BackupRestoreVerification;
 use App\Modules\Deployer\Models\Organization;
+use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\WebsiteBackup;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -17,9 +18,10 @@ class BackupRecoveryEvidenceQuery
      * @return Collection<int, WebsiteBackup> Recent workspace backup records with
      *                                        related website, destination and restore history.
      */
-    public function recentBackups(Organization $organization): Collection
+    public function recentBackups(Organization $organization, ?User $actor = null): Collection
     {
         return WebsiteBackup::query()
+            ->when($actor !== null, fn ($query) => $query->whereIn('website_id', $actor->workspaceWebsites()->select('websites.id')))
             ->whereHas('website', fn ($query) => $query->where('organization_id', $organization->id))
             ->with(['website', 'destination', 'restores', 'verifications'])
             ->latest()
@@ -35,9 +37,10 @@ class BackupRecoveryEvidenceQuery
      * remain in-place restore evidence, and isolated verification is reported
      * separately only after its integrity, smoke, and cleanup checks succeed.
      */
-    public function summary(Organization $organization): BackupRecoverySummary
+    public function summary(Organization $organization, ?User $actor = null): BackupRecoverySummary
     {
         $backupScope = WebsiteBackup::query()
+            ->when($actor !== null, fn ($query) => $query->whereIn('website_id', $actor->workspaceWebsites()->select('websites.id')))
             ->whereHas('website', fn ($query) => $query->where('organization_id', $organization->id))
             ->where('status', WebsiteBackup::STATUS_SUCCEEDED)
             ->whereNotNull('snapshot_id')
@@ -55,6 +58,7 @@ class BackupRecoveryEvidenceQuery
             ->first(['https_verified_at']);
 
         $latestRestore = BackupRestore::query()
+            ->when($actor !== null, fn ($query) => $query->whereHas('backup', fn ($backup) => $backup->whereIn('website_id', $actor->workspaceWebsites()->select('websites.id'))))
             ->whereHas('backup', function ($query) use ($organization): void {
                 $query
                     ->whereHas('website', fn ($websiteQuery) => $websiteQuery->where('organization_id', $organization->id))
@@ -69,6 +73,7 @@ class BackupRecoveryEvidenceQuery
             ->first(['started_at', 'completed_at']);
 
         $latestVerification = BackupRestoreVerification::query()
+            ->when($actor !== null, fn ($query) => $query->whereHas('backup', fn ($backup) => $backup->whereIn('website_id', $actor->workspaceWebsites()->select('websites.id'))))
             ->whereHas('backup', function ($query) use ($organization): void {
                 $query
                     ->whereHas('website', fn ($websiteQuery) => $websiteQuery->where('organization_id', $organization->id))

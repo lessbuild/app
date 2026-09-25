@@ -24,18 +24,18 @@ class DashboardController extends Controller
             $range = '24h';
         }
 
-        $metrics = $dashboardMetrics->forWorkspace($workspace, $range);
+        $metrics = $dashboardMetrics->forWorkspace($workspace, $range, $request->user());
 
-        $applications = $workspace->applications()
+        $applications = $workspace->applications()->visibleTo(request()->user(), $workspace)
             ->select(['id', 'workspace_id', 'name', 'framework', 'framework_version', 'accent'])
-            ->withCount('environments')
-            ->withMax('environments as last_receipt_at', 'last_seen_at')
+            ->withCount(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace)])
+            ->withMax(['environments as last_receipt_at' => fn ($query) => $query->visibleTo(request()->user(), $workspace)], 'last_seen_at')
             ->withCasts(['last_receipt_at' => 'datetime'])
             ->orderBy('name')
             ->orderBy('id')
             ->limit(6)
             ->get();
-        $issueQuery = Issue::forWorkspace($workspace)->where('status', 'open');
+        $issueQuery = Issue::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->where('status', 'open');
         $issueCounts = (clone $issueQuery)->toBase()
             ->selectRaw("COUNT(*) AS total, COUNT(CASE WHEN severity = 'critical' THEN 1 END) AS critical")
             ->first();
@@ -46,7 +46,7 @@ class DashboardController extends Controller
             ->orderByDesc('id')
             ->limit(6)
             ->get();
-        $latestEvents = $dashboardMetrics->events($workspace, $metrics['from'], $metrics['until'])
+        $latestEvents = $dashboardMetrics->events($workspace, $metrics['from'], $metrics['until'], $request->user())
             ->select(['id', 'environment_id', 'type', 'severity', 'name', 'route', 'service', 'duration_ms', 'trace_id', 'occurred_at'])
             ->with(['environment:id,application_id,name', 'environment.application:id,name'])
             ->orderByDesc('occurred_at')
@@ -55,7 +55,7 @@ class DashboardController extends Controller
             ->limit(8)
             ->get();
         $canManageApplications = Gate::allows('update', $workspace);
-        $onboarding = $canManageApplications ? $onboardingProgress->forWorkspace($workspace) : null;
+        $onboarding = $canManageApplications ? $onboardingProgress->forWorkspace($workspace, $request->user()) : null;
         if ($onboarding !== null && $onboarding['completed'] === $onboarding['total']) {
             $onboarding = null;
         }
@@ -64,7 +64,7 @@ class DashboardController extends Controller
             ...$metrics,
             'range' => $range,
             'rangeOptions' => $rangeOptions,
-            'collectionHealth' => $collectionHealthSummary->forWorkspace($workspace),
+            'collectionHealth' => $collectionHealthSummary->forWorkspace($workspace, $request->user()),
             'applications' => $applications,
             'canManageApplications' => $canManageApplications,
             'onboarding' => $onboarding,
@@ -72,8 +72,8 @@ class DashboardController extends Controller
             'openIssueCount' => (int) $issueCounts->total,
             'criticalIssueCount' => (int) $issueCounts->critical,
             'latestEvents' => $latestEvents,
-            'applicationCount' => $workspace->applications()->count(),
-            'activeEnvironmentCount' => Environment::forWorkspace($workspace)->where('status', 'active')->count(),
+            'applicationCount' => $workspace->applications()->visibleTo(request()->user(), $workspace)->count(),
+            'activeEnvironmentCount' => Environment::forWorkspace($workspace)->visibleTo(request()->user(), $workspace)->where('status', 'active')->count(),
         ])->header('Cache-Control', 'private, no-store');
     }
 }

@@ -52,6 +52,17 @@ final class OrganizationDataController extends Controller
         $organization = $user->currentOrganization;
         abort_unless($organization instanceof Organization, 404);
         abort_unless($organization->permits($user, 'manage'), 403);
+        // A complete workspace export requires access to every included resource.
+        foreach (['projects', 'servers', 'websites', 'repositories'] as $relation) {
+            $visible = 'workspace'.ucfirst($relation);
+            $owned = $organization->{$relation}();
+            $allowed = $user->{$visible}();
+            if (in_array($relation, ['websites', 'repositories'], true)) {
+                $owned->withTrashed();
+                $allowed->withTrashed();
+            }
+            abort_if($owned->whereNotIn($relation.'.id', $allowed->select($relation.'.id'))->exists(), 403);
+        }
 
         return $organization;
     }

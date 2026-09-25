@@ -22,9 +22,10 @@ class ChangeAlertEscalations
         DB::connection('monitor')->transaction(function () use ($workspace, $actor, $rule, $data): void {
             $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->id);
             Gate::forUser($actor)->authorize('update', $workspace);
-            $environment = Environment::forWorkspace($workspace)->findOrFail($rule->environment_id);
+            $environment = Environment::forWorkspace($workspace)->visibleTo($actor, $workspace)->findOrFail($rule->environment_id);
             $application = Application::query()->whereBelongsTo($workspace)->lockForUpdate()->findOrFail($environment->application_id);
             $environment = Environment::query()->whereBelongsTo($application)->lockForUpdate()->findOrFail($environment->id);
+            Gate::forUser($actor)->authorize('update', $environment);
             $rule = AlertRule::query()->whereBelongsTo($environment)->lockForUpdate()->findOrFail($rule->id);
             abort_unless($rule->state_version === (int) $data['version'], 409, 'This alert rule changed. Refresh before trying again.');
 

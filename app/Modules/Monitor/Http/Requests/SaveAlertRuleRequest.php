@@ -30,7 +30,7 @@ class SaveAlertRuleRequest extends FormRequest
     {
         $workspace = $currentWorkspace->get();
         if ($rule = $this->route('alertRule')) {
-            abort_unless($rule instanceof AlertRule && AlertRule::forWorkspace($workspace)->whereKey($rule->id)->exists(), 404);
+            abort_unless($rule instanceof AlertRule && AlertRule::forWorkspace($workspace)->visibleTo($this->user(), $workspace)->whereKey($rule->id)->exists(), 404);
             Gate::authorize('update', $rule);
         } else {
             Gate::authorize('create', [AlertRule::class, $workspace]);
@@ -42,7 +42,7 @@ class SaveAlertRuleRequest extends FormRequest
     /** @return array<string, array<mixed>> */
     public function rules(CurrentWorkspace $currentWorkspace): array
     {
-        $environmentIds = Environment::forWorkspace($currentWorkspace->get())->select('id');
+        $environmentIds = Environment::forWorkspace($currentWorkspace->get())->visibleTo($this->user(), $currentWorkspace->get())->select('id');
         $metric = is_string($this->input('metric')) ? AlertMetric::tryFrom($this->input('metric')) : null;
         $thresholdMinimum = match ($metric) {
             AlertMetric::NumericMetric => 'min:-1000000000000000',
@@ -91,7 +91,7 @@ class SaveAlertRuleRequest extends FormRequest
                 $validator->errors()->add('metric', 'Log pattern alerts are available on Pro and above.');
             }
             if ($metric?->isSloBurnRate() && ! $validator->errors()->hasAny(['environment_id', 'service_level_objective_id'])) {
-                $objective = ServiceLevelObjective::forWorkspace($currentWorkspace->get())->find($this->input('service_level_objective_id'));
+                $objective = ServiceLevelObjective::forWorkspace($currentWorkspace->get())->visibleTo($this->user(), $currentWorkspace->get())->find($this->input('service_level_objective_id'));
                 if ($objective === null || ! $objective->enabled) {
                     $validator->errors()->add('service_level_objective_id', 'Choose an enabled SLO from the selected environment.');
                 } elseif ((int) $this->input('environment_id') !== $objective->environment_id) {

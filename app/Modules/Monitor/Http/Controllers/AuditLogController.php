@@ -20,7 +20,7 @@ class AuditLogController extends Controller
         $auditLogs = null;
 
         if ($limits->auditLogEnabled($workspace)) {
-            $query = AuditLog::forWorkspace($workspace)->with('actor:id,name')->latest('created_at')->latest('id');
+            $query = AuditLog::forWorkspace($workspace)->visibleTo($request->user(), $workspace)->with('actor:id,name')->latest('created_at')->latest('id');
             if (isset($filters['action'])) {
                 $query->where('action', $filters['action']);
             }

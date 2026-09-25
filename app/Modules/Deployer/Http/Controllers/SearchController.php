@@ -11,6 +11,7 @@ use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Support\SqlLike;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -123,7 +124,7 @@ class SearchController extends Controller
         $user = $request->user();
         $pattern = SqlLike::contains($query);
 
-        $projects = $user->currentOrganization->projects()
+        $projects = $user->workspaceProjects()
             ->where(function ($builder) use ($pattern): void {
                 $builder
                     ->whereRaw("name LIKE ? ESCAPE '!'", [$pattern])
@@ -229,6 +230,7 @@ class SearchController extends Controller
             ]);
 
         $builds = Build::query()
+            ->tap(fn ($query) => app(DeployerProjectAccess::class)->builds($query, $user))
             ->whereHas('repository', fn ($repository) => $repository->where('organization_id', $user->current_organization_id))
             ->select(['builds.id', 'builds.repository_id', 'builds.status', 'builds.revision', 'builds.commit_message'])
             ->with('repository:id,name')

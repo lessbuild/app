@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Policies;
 
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 
 class ProjectPolicy
 {
@@ -22,7 +23,8 @@ class ProjectPolicy
      */
     public function createEnvironment(User $user, Project $project, array $attributes = []): bool
     {
-        if ((int) $project->organization_id !== (int) $user->current_organization_id
+        if (! app(DeployerProjectAccess::class)->project($user, $project)
+            || (int) $project->organization_id !== (int) $user->current_organization_id
             || ! $project->organization->permits($user, 'deploy')) {
             return false;
         }
@@ -36,7 +38,8 @@ class ProjectPolicy
      */
     public function viewConfiguration(User $user, Project $project): bool
     {
-        return (int) $project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->project($user, $project)
+            && (int) $project->organization_id === (int) $user->current_organization_id
             && $project->organization->permits($user, 'manage');
     }
 
@@ -57,7 +60,8 @@ class ProjectPolicy
      */
     public function view(User $user, Project $project): bool
     {
-        return (int) $project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->project($user, $project)
+            && (int) $project->organization_id === (int) $user->current_organization_id
             && $project->organization->permits($user, 'view');
     }
 
@@ -70,7 +74,8 @@ class ProjectPolicy
      */
     public function update(User $user, Project $project): bool
     {
-        return (int) $project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->project($user, $project)
+            && (int) $project->organization_id === (int) $user->current_organization_id
             && $project->organization->permits($user, 'deploy');
     }
 
@@ -83,7 +88,8 @@ class ProjectPolicy
      */
     public function delete(User $user, Project $project): bool
     {
-        return (int) $project->organization_id === (int) $user->current_organization_id
+        return app(DeployerProjectAccess::class)->project($user, $project)
+            && (int) $project->organization_id === (int) $user->current_organization_id
             && $project->organization->permits($user, 'manage');
     }
 }

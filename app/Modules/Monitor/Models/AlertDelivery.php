@@ -4,12 +4,13 @@ namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Data\Telemetry\AlertDeliveryStatus;
 use App\Modules\Monitor\Database\Factories\AlertDeliveryFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
+use App\Modules\Monitor\Models\Concerns\HasProjectVisibility;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
@@ -18,6 +19,8 @@ class AlertDelivery extends Model
 {
     /** @use HasFactory<AlertDeliveryFactory> */
     use HasFactory, HasUlids;
+
+    use HasProjectVisibility;
 
     protected $hidden = ['payload', 'processing_token', 'queue_job_uuid'];
 

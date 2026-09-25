@@ -11,7 +11,15 @@ class AlertDeliveryPolicy
 {
     public function view(User $user, AlertDelivery $delivery): Response
     {
-        return Gate::forUser($user)->inspect('update', $delivery->workspace);
+        $permission = Gate::forUser($user)->inspect('update', $delivery->workspace);
+        if ($permission->denied() || $delivery->incident_id === null) {
+            return $permission;
+        }
+
+        return $delivery->incident === null
+            || (string) $delivery->incident->source()?->environment?->application?->workspace_id !== (string) $delivery->workspace_id
+            ? Response::denyAsNotFound()
+            : Gate::forUser($user)->inspect('view', $delivery->incident);
     }
 
     public function update(User $user, AlertDelivery $delivery): Response

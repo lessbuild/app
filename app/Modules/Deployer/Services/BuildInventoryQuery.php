@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Support\SqlLike;
 use Carbon\CarbonInterface;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,6 +20,7 @@ class BuildInventoryQuery
     public function for(User $user, array $filters): Builder
     {
         return Build::query()
+            ->tap(fn ($query) => app(DeployerProjectAccess::class)->builds($query, $user))
             ->whereHas('repository', fn ($query) => $query->where('organization_id', $user->current_organization_id))
             ->with('repository.website.server')
             ->when($filters['repository_id'], fn ($query, int $id) => $query

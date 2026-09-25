@@ -15,7 +15,7 @@ final class SearchIssues
      */
     public function query(Workspace $workspace, User $user, array $filters): Builder
     {
-        $query = Issue::forWorkspace($workspace);
+        $query = Issue::forWorkspace($workspace)->visibleTo($user, $workspace);
         $query->when($filters['status'] !== 'all', fn (Builder $query): Builder => $query->where('status', $filters['status']));
         $query->when($filters['application'] ?? null, fn (Builder $query, mixed $id): Builder => $query->where('application_id', $id));
         $query->when($filters['severity'] ?? null, fn (Builder $query, string $severity): Builder => $query->where('severity', $severity));

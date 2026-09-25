@@ -4,14 +4,16 @@ namespace App\Modules\Analytics\Services;
 
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\Identity\MappedProjectResourceAccess;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
+use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Analytics\Enums\WorkspaceRole;
+use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Analytics\Models\Workspace;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 final class AnalyticsWorkspaceAccess
@@ -20,6 +22,8 @@ final class AnalyticsWorkspaceAccess
         private readonly LegacyIdentityResolver $identities,
         private readonly ProductAuthentication $authentication,
         private readonly ProductWorkspaceAccess $productWorkspaceAccess,
+        private readonly MappedProjectResourceAccess $projectResources,
+        private readonly ResolvePlatformUser $platformUsers,
     ) {}
 
     /** @return list<string> */
@@ -45,11 +49,48 @@ final class AnalyticsWorkspaceAccess
 
         return Workspace::query()
             ->whereHas('users', fn (Builder $query) => $query->whereIn('users.id', $productUserIds))
-            ->with(['sites' => fn (HasMany $query) => $query->orderBy('name')])
             ->orderBy('name')
             ->get()
             ->filter(fn (Workspace $workspace): bool => $this->hasAccess($user, $workspace))
+            ->each(fn (Workspace $workspace) => $workspace->setRelation(
+                'sites',
+                $this->sitesQuery($user, $workspace)->orderBy('name')->get(),
+            ))
             ->values();
+    }
+
+    public function hasSiteAccess(Authenticatable $user, Site $site): bool
+    {
+        $workspace = $site->workspace;
+
+        return $workspace instanceof Workspace
+            && $this->hasAccess($user, $workspace)
+            && $this->projectResources->allows(
+                $user, 'analytics', 'site', $site->getKey(), 'workspace', $workspace->getKey(),
+            );
+    }
+
+    /** @return Builder<Site> */
+    public function sitesQuery(Authenticatable $user, Workspace $workspace, bool $withTrashed = false): Builder
+    {
+        $query = Site::query()->where('workspace_id', $workspace->getKey());
+
+        if ($withTrashed) {
+            $query->withTrashed();
+        }
+
+        if (! $this->hasAccess($user, $workspace)) {
+            return $query->whereRaw('1 = 0');
+        }
+
+        $deniedIds = $this->projectResources->deniedResourceIds(
+            $user, 'analytics', 'site', 'workspace', $workspace->getKey(),
+            (clone $query)->pluck('id')->all(),
+        );
+
+        return $deniedIds === null
+            ? $query->whereRaw('1 = 0')
+            : $query->when($deniedIds !== [], fn (Builder $sites) => $sites->whereNotIn('id', $deniedIds));
     }
 
     public function hasAccess(Authenticatable $user, Workspace $workspace): bool
@@ -64,9 +105,7 @@ final class AnalyticsWorkspaceAccess
             return true;
         }
 
-        $platformUser = $user instanceof PlatformUser
-            ? $user
-            : PlatformUser::query()->find(data_get($user, 'platform_user_id'));
+        $platformUser = $this->platformUsers->resolve($user, 'analytics');
 
         return $platformUser instanceof PlatformUser
             && $this->productWorkspaceAccess->allows($platformUser, 'analytics', 'workspace', $workspace->getKey());
