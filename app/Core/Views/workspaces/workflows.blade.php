@@ -16,6 +16,9 @@
             <x-signal.ui.button :href="route('core.projects.index', $workspace)">
                 {{ __('All projects') }}
             </x-signal.ui.button>
+            <x-signal.ui.button :href="route('core.workspace.deliveries', $workspace)" variant="secondary">
+                {{ __('Delivery history') }}
+            </x-signal.ui.button>
             <x-signal.ui.button variant="primary" :href="route('core.workspace.dashboard', $workspace)">
                 {{ __('Workspace overview') }}
             </x-signal.ui.button>

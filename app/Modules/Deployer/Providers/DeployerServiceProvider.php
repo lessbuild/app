@@ -23,6 +23,7 @@ use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
+use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
 use App\Modules\Deployer\Http\Livewire\RepositoryDeploymentTimeline;
@@ -80,6 +81,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(WorkspaceActivityProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
+        app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
         app(WorkspaceCostBreakdownProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCostBreakdownProvider::class));
         app(WorkspaceCustomerStatusManagementProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCustomerStatusManagementProvider::class));
         app(WorkspaceFeedbackHistoryProviderRegistry::class)->register('deployer', app(DeployerWorkspaceFeedbackHistoryProvider::class));

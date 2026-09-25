@@ -22,6 +22,7 @@ use App\Core\Http\Controllers\WorkspaceProjectsController;
 use App\Core\Http\Controllers\WorkspaceSearchController;
 use App\Core\Http\Controllers\WorkspaceSubscriptionsController;
 use App\Core\Http\Controllers\WorkspaceTeamController;
+use App\Core\Http\Controllers\WorkspaceWebhookDeliveryHistoryController;
 use App\Core\Http\Controllers\WorkspaceWorkflowActivityController;
 use Illuminate\Support\Facades\Route;
 
@@ -116,6 +117,9 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::get('/workspaces/{workspace}/workflows', WorkspaceWorkflowActivityController::class)
         ->name('core.workspace.workflows');
+
+    Route::get('/workspaces/{workspace}/deliveries', WorkspaceWebhookDeliveryHistoryController::class)
+        ->name('core.workspace.deliveries');
 
     Route::get('/workspaces/{workspace}/notifications', WorkspaceNotificationInboxController::class)
         ->name('core.workspace.notifications');

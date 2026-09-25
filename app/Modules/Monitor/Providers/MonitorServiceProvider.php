@@ -21,6 +21,7 @@ use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
 use App\Modules\Monitor\Contracts\DnsResolver;
 use App\Modules\Monitor\Contracts\TcpConnector;
@@ -133,6 +134,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProjectSetupRegistry::class)->register('monitor', app(MonitorProjectSetup::class));
         app(WorkspaceSearchProviderRegistry::class)->register('monitor', app(MonitorWorkspaceSearchProvider::class));
         app(WorkspaceActivityProviderRegistry::class)->register('monitor', app(MonitorWorkspaceActivityProvider::class));
+        app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('monitor', app(MonitorWorkspaceActivityProvider::class));
         app(ProductPrincipalRegistry::class)->register(
             'monitor',
             new MappedProductPrincipalAdapter('monitor', User::class, app(LegacyIdentityResolver::class)),

@@ -3,9 +3,11 @@
 namespace App\Modules\Deployer\Services\Core;
 
 use App\Core\Contracts\WorkspaceActivityProvider;
+use App\Core\Contracts\WorkspaceWebhookDeliveryProvider;
 use App\Core\Data\Projects\ProjectWorkflowRun;
 use App\Core\Data\Projects\ProjectWorkflowStep;
 use App\Core\Data\Projects\WorkspaceActivitySnapshot;
+use App\Core\Data\Projects\WorkspaceWebhookDeliverySnapshot;
 use App\Core\Enums\ProjectWorkflowStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project as CoreProject;
@@ -23,7 +25,7 @@ use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Route;
 
-final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvider
+final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvider, WorkspaceWebhookDeliveryProvider
 {
     public function __construct(
         private readonly DeployerProjectLink $projectLinks,
@@ -31,8 +33,37 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
         private readonly DeployerProvisioningActivity $provisioningActivity,
         private readonly DeployerBackupActivity $backupActivity,
         private readonly DeployerOperationalActivity $operationalActivity,
+        private readonly DeployerRepositoryWebhookActivity $repositoryWebhookActivity,
         private readonly RepositoryDeploymentPlan $deploymentPlan,
     ) {}
+
+    /**
+     * @param  Collection<int, CoreProject>  $projects
+     */
+    public function recentWebhookDeliveriesForWorkspace(
+        PlatformUser $user,
+        Workspace $workspace,
+        Collection $projects,
+        int $limit,
+    ): WorkspaceWebhookDeliverySnapshot {
+        $projects = $projects
+            ->filter(fn (CoreProject $project): bool => (string) $project->workspace_id === (string) $workspace->getKey())
+            ->values();
+
+        if ($projects->isEmpty()) {
+            return new WorkspaceWebhookDeliverySnapshot(collect());
+        }
+
+        try {
+            $mappedEnvironments = $this->mappedEnvironments($user, $projects);
+
+            return new WorkspaceWebhookDeliverySnapshot(
+                $this->repositoryWebhookActivity->deliveryHistoryForMappedEnvironments($mappedEnvironments, $limit),
+            );
+        } catch (LostConnectionException|QueryException) {
+            return new WorkspaceWebhookDeliverySnapshot(collect(), available: false);
+        }
+    }
 
     /**
      * @param  Collection<int, CoreProject>  $projects

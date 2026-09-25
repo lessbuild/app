@@ -3,8 +3,11 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\ProjectResourceDestinationProvider;
+use App\Core\Contracts\WorkspaceWebhookDeliveryProvider;
 use App\Core\Data\Projects\ProjectResourceDestination;
 use App\Core\Data\Projects\ProjectResourceDestinationState;
+use App\Core\Data\Projects\WorkspaceWebhookDelivery;
+use App\Core\Data\Projects\WorkspaceWebhookDeliverySnapshot;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project as CoreProject;
 use App\Core\Models\ProjectResource;
@@ -12,8 +15,10 @@ use App\Core\Models\Workspace;
 use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceProjectAccess;
+use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Auth;
@@ -489,6 +494,55 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             ->assertSeeText('Retry this step')
             ->assertDontSeeText('provider_secret_must_not_render');
         $response->assertSee(route('core.projects.show', [$this->workspaceId, $this->projectId]));
+    }
+
+    public function test_workspace_delivery_history_aggregates_safe_product_owned_records_and_filters_them(): void
+    {
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'monitor')
+            ->update(['revoked_at' => now()]);
+
+        app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('deployer', new class implements WorkspaceWebhookDeliveryProvider
+        {
+            public function recentWebhookDeliveriesForWorkspace(
+                PlatformUser $user,
+                Workspace $workspace,
+                Collection $projects,
+                int $limit,
+            ): WorkspaceWebhookDeliverySnapshot {
+                return new WorkspaceWebhookDeliverySnapshot(collect([
+                    new WorkspaceWebhookDelivery(
+                        key: 'deployer:webhook:fixture',
+                        product: 'deployer',
+                        productLabel: 'Buildpusher Deploy',
+                        projectName: 'Checkout app',
+                        title: 'Repository webhook',
+                        status: 'unavailable',
+                        statusLabel: 'Unavailable',
+                        attemptCount: null,
+                        recordedAt: CarbonImmutable::parse('2026-09-25 10:00:00 UTC'),
+                        resultUrl: 'https://deployer.example.test/repositories/91?organization_id=50',
+                    ),
+                ]));
+            }
+        });
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($user, 'platform')
+            ->get(route('core.workspace.deliveries', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('Webhook delivery history')
+            ->assertSeeText('Repository webhook')
+            ->assertSeeText('Unavailable')
+            ->assertSeeText('Checkout app')
+            ->assertSee('https://deployer.example.test/repositories/91?organization_id=50', false)
+            ->assertDontSeeText('webhook-secret-must-not-render');
+
+        $this->get(route('core.workspace.deliveries', ['workspace' => $this->workspaceId, 'status' => 'failed']))
+            ->assertOk()
+            ->assertSeeText('No webhook deliveries match these filters')
+            ->assertDontSeeText('Repository webhook');
     }
 
     public function test_workflow_activity_disappears_when_product_or_local_resource_access_is_lost(): void
@@ -1319,6 +1373,20 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             $runsByKey['deployer:webhook-delivery:1101']->steps[0]->resultUrl,
         );
 
+        $deliveryHistory = app(WorkspaceWebhookDeliveryProviderRegistry::class)
+            ->get('deployer')
+            ?->recentWebhookDeliveriesForWorkspace($user, $workspace, collect([$project]), 30);
+
+        $this->assertNotNull($deliveryHistory);
+        $this->assertTrue($deliveryHistory->available);
+        $this->assertCount(6, $deliveryHistory->deliveries);
+        $this->assertTrue($deliveryHistory->deliveries->every(fn ($delivery): bool => $delivery->product === 'deployer'
+            && $delivery->projectName === 'Checkout app'
+            && $delivery->title === 'Repository webhook'
+            && $delivery->attemptCount === null));
+        $this->assertFalse($deliveryHistory->deliveries->contains(fn ($delivery): bool => str_contains($delivery->key, '1107')
+            || str_contains($delivery->key, '1108')));
+
         foreach ($webhookRuns as $run) {
             $this->assertSame((string) $project->getKey(), $run->projectId);
             $this->assertSame(route('core.projects.show', [$workspace, $project]), $run->projectUrl);
@@ -1973,10 +2041,10 @@ final class WorkspaceWorkflowActivityTest extends TestCase
             ['id' => 99, 'alert_rule_id' => 95, 'monitor_id' => null, 'title' => 'recovered_incident_title_secret', 'status' => 'resolved', 'opened_at' => now()->subMinutes(10), 'acknowledged_at' => null, 'resolved_at' => now()->subMinute(), 'closure_reason' => 'recovered', 'created_at' => now()->subMinutes(10), 'updated_at' => now()->subMinute()],
         ]);
         DB::connection('monitor')->table('alert_destinations')->insert([
-            ['id' => 101, 'workspace_id' => 81, 'endpoint_url' => 'https://destination-secret.example', 'signing_secret' => 'destination_signing_secret'],
-            ['id' => 102, 'workspace_id' => 81, 'endpoint_url' => null, 'signing_secret' => null],
-            ['id' => 103, 'workspace_id' => 81, 'endpoint_url' => null, 'signing_secret' => null],
-            ['id' => 104, 'workspace_id' => 999, 'endpoint_url' => 'https://other-workspace-secret.example', 'signing_secret' => null],
+            ['id' => 101, 'workspace_id' => 81, 'type' => 'webhook', 'endpoint_url' => 'https://destination-secret.example', 'signing_secret' => 'destination_signing_secret'],
+            ['id' => 102, 'workspace_id' => 81, 'type' => 'email', 'endpoint_url' => null, 'signing_secret' => null],
+            ['id' => 103, 'workspace_id' => 81, 'type' => 'webhook', 'endpoint_url' => null, 'signing_secret' => null],
+            ['id' => 104, 'workspace_id' => 999, 'type' => 'webhook', 'endpoint_url' => 'https://other-workspace-secret.example', 'signing_secret' => null],
         ]);
         $failedDeliveryId = (string) Str::ulid();
         $queuedDeliveryId = (string) Str::ulid();
@@ -2036,6 +2104,19 @@ final class WorkspaceWorkflowActivityTest extends TestCase
         $this->assertSame($canonicalEnvironmentId, $openIncident->steps[0]->environmentId);
         $this->assertSame('Core Production', $openIncident->steps[0]->environmentName);
         $this->assertSame($this->projectId, $openIncident->projectId);
+        $deliveryHistory = app(MonitorWorkspaceActivityProvider::class)
+            ->recentWebhookDeliveriesForWorkspace($user, $workspace, collect([$project]), 30);
+
+        $this->assertTrue($deliveryHistory->available);
+        $this->assertCount(2, $deliveryHistory->deliveries);
+        $this->assertSame(
+            ['accepted', 'failed'],
+            $deliveryHistory->deliveries->pluck('status')->sort()->values()->all(),
+        );
+        $this->assertSame([1, 1], $deliveryHistory->deliveries->pluck('attemptCount')->sort()->values()->all());
+        $this->assertTrue($deliveryHistory->deliveries->every(fn ($delivery): bool => $delivery->product === 'monitor'
+            && ! str_contains($delivery->title, 'secret')
+            && ! str_contains((string) $delivery->resultUrl, 'destination-secret')));
         $this->assertStringContainsString('/incidents/96?workspace_id=81', $openIncident->steps[0]->resultUrl);
         $this->assertStringNotContainsString('incident_title_secret', $openIncident->steps[0]->title.$openIncident->steps[0]->detail);
         $this->assertStringNotContainsString('another_incident_title_secret', $acknowledgedIncident->steps[0]->title.$acknowledgedIncident->steps[0]->detail);
@@ -2268,6 +2349,7 @@ final class WorkspaceWorkflowActivityTest extends TestCase
         Schema::connection('monitor')->create('alert_destinations', function (Blueprint $table): void {
             $table->id();
             $table->unsignedBigInteger('workspace_id');
+            $table->string('type')->nullable();
             $table->text('endpoint_url')->nullable();
             $table->text('signing_secret')->nullable();
         });

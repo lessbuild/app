@@ -3,9 +3,12 @@
 namespace App\Modules\Monitor\Services\Core;
 
 use App\Core\Contracts\WorkspaceActivityProvider;
+use App\Core\Contracts\WorkspaceWebhookDeliveryProvider;
 use App\Core\Data\Projects\ProjectWorkflowRun;
 use App\Core\Data\Projects\ProjectWorkflowStep;
 use App\Core\Data\Projects\WorkspaceActivitySnapshot;
+use App\Core\Data\Projects\WorkspaceWebhookDelivery;
+use App\Core\Data\Projects\WorkspaceWebhookDeliverySnapshot;
 use App\Core\Enums\ProjectWorkflowStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project as CoreProject;
@@ -15,6 +18,7 @@ use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Modules\Monitor\Data\Telemetry\AlertDeliveryStatus;
+use App\Modules\Monitor\Data\Telemetry\AlertDestinationType;
 use App\Modules\Monitor\Data\Telemetry\IngestStatus;
 use App\Modules\Monitor\Models\AlertDelivery;
 use App\Modules\Monitor\Models\AlertRule;
@@ -33,7 +37,7 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 
 /** Read authorized telemetry processing state for the Core project activity feed. */
-final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvider
+final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvider, WorkspaceWebhookDeliveryProvider
 {
     public function __construct(
         private readonly MonitorProjectLink $projectLinks,
@@ -41,6 +45,136 @@ final class MonitorWorkspaceActivityProvider implements WorkspaceActivityProvide
         private readonly ProductWorkspaceAccess $workspaceAccess,
         private readonly LegacyIdentityResolver $identities,
     ) {}
+
+    /**
+     * @param  Collection<int, CoreProject>  $projects
+     */
+    public function recentWebhookDeliveriesForWorkspace(
+        PlatformUser $user,
+        CoreWorkspace $workspace,
+        Collection $projects,
+        int $limit,
+    ): WorkspaceWebhookDeliverySnapshot {
+        if ($projects->isEmpty()) {
+            return new WorkspaceWebhookDeliverySnapshot(collect());
+        }
+
+        try {
+            $mappedEnvironments = $this->mappedEnvironments($user, $workspace, $projects);
+            if ($mappedEnvironments === []
+                || ! Schema::connection('monitor')->hasTable('alert_deliveries')
+                || ! Schema::connection('monitor')->hasTable('alert_destinations')
+                || ! Schema::connection('monitor')->hasTable('incidents')
+                || ! Schema::connection('monitor')->hasTable('alert_rules')) {
+                return new WorkspaceWebhookDeliverySnapshot(collect());
+            }
+
+            $mappedMonitors = $this->mappedMonitors($mappedEnvironments);
+            $environmentIds = array_keys($mappedEnvironments);
+            $workspaceIds = collect($mappedEnvironments)
+                ->map(fn (array $mapping): string => (string) $mapping['workspace_id'])
+                ->unique()
+                ->values()
+                ->all();
+            $managerWorkspaceIds = $this->managerWorkspaceIds($user, $workspaceIds);
+            $cutoff = CarbonImmutable::now('UTC')->subDays(30);
+            $mappedRuleIds = AlertRule::withTrashed()
+                ->whereIn('environment_id', $environmentIds)
+                ->select('id');
+            $activeStatuses = [
+                AlertDeliveryStatus::Queued->value,
+                AlertDeliveryStatus::Sending->value,
+                AlertDeliveryStatus::Retrying->value,
+                AlertDeliveryStatus::Failed->value,
+                AlertDeliveryStatus::Uncertain->value,
+            ];
+
+            $deliveries = AlertDelivery::query()
+                ->whereIn('workspace_id', $workspaceIds)
+                ->where(fn ($query) => $query
+                    ->whereIn('status', $activeStatuses)
+                    ->orWhere(fn ($terminal) => $terminal
+                        ->whereIn('status', [AlertDeliveryStatus::Accepted->value, AlertDeliveryStatus::Cancelled->value])
+                        ->where('updated_at', '>=', $cutoff)))
+                ->whereHas('destination', fn ($query) => $query
+                    ->where('type', AlertDestinationType::Webhook->value)
+                    ->whereColumn('alert_destinations.workspace_id', 'alert_deliveries.workspace_id'))
+                ->whereHas('incident', fn ($query) => $query->where(fn ($incident) => $incident
+                    ->whereIn('monitor_id', array_keys($mappedMonitors))
+                    ->orWhereIn('alert_rule_id', $mappedRuleIds)))
+                ->with([
+                    'incident:id,monitor_id,alert_rule_id',
+                    'incident.monitor:id,environment_id',
+                    'incident.alertRule:id,environment_id',
+                    'destination:id,workspace_id,type',
+                ])
+                ->orderByDesc('created_at')
+                ->orderByDesc('id')
+                ->limit(max(1, min(100, $limit)))
+                ->get([
+                    'id',
+                    'workspace_id',
+                    'alert_destination_id',
+                    'incident_id',
+                    'status',
+                    'attempt_count',
+                    'created_at',
+                    'updated_at',
+                ]);
+
+            $rows = $deliveries
+                ->map(function (AlertDelivery $delivery) use ($mappedEnvironments, $mappedMonitors, $managerWorkspaceIds): ?WorkspaceWebhookDelivery {
+                    $incident = $delivery->incident;
+                    if ($incident === null
+                        || $delivery->destination?->type !== AlertDestinationType::Webhook) {
+                        return null;
+                    }
+
+                    $mapping = $incident->monitor_id !== null
+                        ? ($mappedMonitors[(string) $incident->monitor?->environment_id] ?? null)
+                        : ($mappedEnvironments[(string) $incident->alertRule?->environment_id] ?? null);
+
+                    if ($mapping === null
+                        || (string) $delivery->workspace_id !== (string) $mapping['workspace_id']
+                        || (string) $delivery->destination?->workspace_id !== (string) $delivery->workspace_id) {
+                        return null;
+                    }
+
+                    $status = $delivery->status;
+                    $canManage = in_array((string) $mapping['workspace_id'], $managerWorkspaceIds, true);
+                    $detailUrl = $canManage && Route::has('monitor.alert-deliveries.show')
+                        ? route('monitor.alert-deliveries.show', [
+                            'alertDelivery' => $delivery->getKey(),
+                            'workspace_id' => $mapping['workspace_id'],
+                        ])
+                        : (Route::has('monitor.incidents.show') ? route('monitor.incidents.show', [
+                            'incident' => $incident->getKey(),
+                            'workspace_id' => $mapping['workspace_id'],
+                        ]) : null);
+
+                    return new WorkspaceWebhookDelivery(
+                        key: 'monitor:webhook-delivery:'.$delivery->getKey(),
+                        product: 'monitor',
+                        productLabel: (string) config('platform.products.monitor.label', __('Monitor')),
+                        projectName: $mapping['project']->name,
+                        title: __('Signed alert webhook'),
+                        status: $status->value,
+                        statusLabel: $status->label(),
+                        attemptCount: (int) $delivery->attempt_count,
+                        recordedAt: $delivery->created_at?->toImmutable()->utc()
+                            ?? $delivery->updated_at?->toImmutable()->utc()
+                            ?? CarbonImmutable::now('UTC'),
+                        resultUrl: $detailUrl,
+                    );
+                })
+                ->filter()
+                ->values();
+
+            return new WorkspaceWebhookDeliverySnapshot($rows);
+        } catch (LostConnectionException|QueryException) {
+            return new WorkspaceWebhookDeliverySnapshot(collect(), available: false);
+        }
+    }
 
     /**
      * @param  Collection<int, CoreProject>  $projects

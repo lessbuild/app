@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Services\Core;
 
 use App\Core\Data\Projects\ProjectWorkflowRun;
 use App\Core\Data\Projects\ProjectWorkflowStep;
+use App\Core\Data\Projects\WorkspaceWebhookDelivery;
 use App\Core\Enums\ProjectWorkflowStepState;
 use App\Core\Models\Project as CoreProject;
 use App\Core\Models\Workspace;
@@ -85,6 +86,102 @@ final class DeployerRepositoryWebhookActivity
                 }
 
                 return $this->run($delivery, $repository, $mapping, $workspace);
+            })
+            ->filter()
+            ->values();
+    }
+
+    /**
+     * @param  array<string, array{project: CoreProject, environment: Environment, label: string, organization_id: int}>  $mappedEnvironments
+     * @return Collection<int, WorkspaceWebhookDelivery>
+     */
+    public function deliveryHistoryForMappedEnvironments(array $mappedEnvironments, int $limit): Collection
+    {
+        if ($mappedEnvironments === []
+            || ! Schema::connection('deployer')->hasTable('repository_webhook_deliveries')
+            || ! Schema::connection('deployer')->hasTable('repositories')
+            || ! Schema::connection('deployer')->hasTable('websites')) {
+            return collect();
+        }
+
+        $websiteMappings = $this->resourceMap->websites($mappedEnvironments);
+        if ($websiteMappings === []) {
+            return collect();
+        }
+
+        $cutoff = CarbonImmutable::now('UTC')->subDays(90);
+
+        return RepositoryWebhookDelivery::query()
+            ->where(function ($query) use ($cutoff): void {
+                $query->whereIn('status', [
+                    RepositoryWebhookDelivery::STATUS_RECEIVED,
+                    RepositoryWebhookDelivery::STATUS_QUEUED,
+                    RepositoryWebhookDelivery::STATUS_PENDING,
+                ])->orWhere(function ($terminal) use ($cutoff): void {
+                    $terminal
+                        ->whereIn('status', [
+                            RepositoryWebhookDelivery::STATUS_UNAVAILABLE,
+                            RepositoryWebhookDelivery::STATUS_SUPERSEDED,
+                            RepositoryWebhookDelivery::STATUS_SKIPPED,
+                        ])
+                        ->where('updated_at', '>=', $cutoff);
+                });
+            })
+            ->whereHas('repository', function ($repositories) use ($websiteMappings): void {
+                $repositories->where(function ($mappedRepositories) use ($websiteMappings): void {
+                    foreach ($websiteMappings as $websiteId => $mapping) {
+                        $mappedRepositories->orWhere(function ($repository) use ($websiteId, $mapping): void {
+                            $repository
+                                ->where('website_id', $websiteId)
+                                ->where('organization_id', $mapping['organization_id'])
+                                ->whereHas('website', fn ($website) => $website
+                                    ->where('websites.organization_id', $mapping['organization_id'])
+                                    ->whereNull('websites.deleted_at'));
+                        });
+                    }
+                });
+            })
+            ->with('repository:id,website_id,organization_id')
+            ->orderByDesc('created_at')
+            ->orderByDesc('id')
+            ->limit(max(1, min(100, $limit)))
+            ->get(['id', 'repository_id', 'status', 'created_at'])
+            ->map(function (RepositoryWebhookDelivery $delivery) use ($websiteMappings): ?WorkspaceWebhookDelivery {
+                $repository = $delivery->repository;
+                $mapping = $repository === null ? null : ($websiteMappings[(string) $repository->website_id] ?? null);
+
+                if ($mapping === null || (int) $repository->organization_id !== $mapping['organization_id']) {
+                    return null;
+                }
+
+                $status = (string) $delivery->status;
+                $statusLabel = match ($status) {
+                    RepositoryWebhookDelivery::STATUS_RECEIVED => __('Received'),
+                    RepositoryWebhookDelivery::STATUS_QUEUED => __('Queued'),
+                    RepositoryWebhookDelivery::STATUS_PENDING => __('Processing'),
+                    RepositoryWebhookDelivery::STATUS_UNAVAILABLE => __('Unavailable'),
+                    RepositoryWebhookDelivery::STATUS_SUPERSEDED => __('Superseded'),
+                    RepositoryWebhookDelivery::STATUS_SKIPPED => __('Skipped'),
+                    default => __('Unknown'),
+                };
+
+                return new WorkspaceWebhookDelivery(
+                    key: 'deployer:repository-webhook:'.$delivery->getKey(),
+                    product: 'deployer',
+                    productLabel: (string) config('platform.products.deployer.label', __('Deployer')),
+                    projectName: $mapping['project']->name,
+                    title: __('Repository webhook'),
+                    status: $status,
+                    statusLabel: $statusLabel,
+                    attemptCount: null,
+                    recordedAt: $delivery->created_at?->toImmutable()->utc() ?? CarbonImmutable::now('UTC'),
+                    resultUrl: Route::has('repositories.show')
+                        ? route('repositories.show', [
+                            'repository' => $repository->getKey(),
+                            'organization_id' => $mapping['organization_id'],
+                        ])
+                        : null,
+                );
             })
             ->filter()
             ->values();

@@ -30,6 +30,7 @@ use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -58,6 +59,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
         $this->app->singleton(WorkspaceCustomerStatusManagementProviderRegistry::class);
         $this->app->singleton(WorkspaceMonitorStatusManagementProviderRegistry::class);
         $this->app->singleton(WorkspaceFeedbackHistoryProviderRegistry::class);
+        $this->app->singleton(WorkspaceWebhookDeliveryProviderRegistry::class);
         $this->app->singleton(ProductPrincipalRegistry::class);
         $this->app->singleton(ProductPrincipalProvisionerRegistry::class);
         $this->app->singleton(ProductWorkspaceMembershipProjectorRegistry::class);
