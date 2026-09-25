@@ -119,6 +119,7 @@ final class WorkspaceNotificationInboxTest extends TestCase
         Auth::forgetGuards();
 
         foreach ([
+            'workspace_notification_saved_filters',
             'workspace_notification_preferences',
             'workspace_notification_reads',
             'project_products',
@@ -287,6 +288,109 @@ final class WorkspaceNotificationInboxTest extends TestCase
         $this->assertDatabaseCount('workspace_notification_preferences', 0, 'core');
     }
 
+    public function test_saved_filters_are_private_to_the_current_user_and_replace_names_case_insensitively(): void
+    {
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($user, 'platform')
+            ->post(route('core.workspace.notifications.saved-filters.store', $this->workspaceId), [
+                'name' => 'Critical monitor',
+                'state' => 'unread',
+                'product' => 'monitor',
+                'severity' => 'critical',
+                'project' => $this->projectId,
+            ])
+            ->assertRedirect(route('core.workspace.notifications', [
+                'workspace' => $this->workspaceId,
+                'state' => 'unread',
+                'product' => 'monitor',
+                'severity' => 'critical',
+                'project' => $this->projectId,
+            ]));
+
+        $this->post(route('core.workspace.notifications.saved-filters.store', $this->workspaceId), [
+            'name' => 'critical monitor',
+            'state' => 'read',
+            'product' => 'deployer',
+            'severity' => 'warning',
+            'project' => 'all',
+        ])->assertRedirect(route('core.workspace.notifications', [
+            'workspace' => $this->workspaceId,
+            'state' => 'read',
+            'product' => 'deployer',
+            'severity' => 'warning',
+        ]));
+
+        $savedFilter = DB::connection('core')->table('workspace_notification_saved_filters')->first();
+        $this->assertSame(1, DB::connection('core')->table('workspace_notification_saved_filters')->count());
+        $this->assertSame($this->userId, $savedFilter->user_id);
+        $this->assertSame('critical monitor', $savedFilter->name);
+        $this->assertSame([
+            'state' => 'read',
+            'product' => 'deployer',
+            'severity' => 'warning',
+            'project' => 'all',
+        ], json_decode($savedFilter->filters, true));
+
+        $otherUserId = (string) Str::ulid();
+        DB::connection('core')->table('users')->insert([
+            'id' => $otherUserId,
+            'name' => 'Another user',
+            'email' => 'another@example.test',
+            'email_normalized' => 'another@example.test',
+            'password' => 'hashed-password',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $otherFilterId = (string) Str::ulid();
+        DB::connection('core')->table('workspace_notification_saved_filters')->insert([
+            'id' => $otherFilterId,
+            'workspace_id' => $this->workspaceId,
+            'user_id' => $otherUserId,
+            'name' => 'Private to another user',
+            'filters' => json_encode(['state' => 'all', 'product' => 'all', 'severity' => 'all', 'project' => 'all']),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->get(route('core.workspace.notifications', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('critical monitor')
+            ->assertDontSeeText('Private to another user');
+
+        $this->delete(route('core.workspace.notifications.saved-filters.destroy', [
+            'workspace' => $this->workspaceId,
+            'savedFilter' => $otherFilterId,
+        ]))->assertNotFound();
+        $this->assertDatabaseHas('workspace_notification_saved_filters', ['id' => $otherFilterId], 'core');
+
+        $this->delete(route('core.workspace.notifications.saved-filters.destroy', [
+            'workspace' => $this->workspaceId,
+            'savedFilter' => $savedFilter->id,
+        ]))->assertRedirect(route('core.workspace.notifications', $this->workspaceId));
+        $this->assertDatabaseMissing('workspace_notification_saved_filters', ['id' => $savedFilter->id], 'core');
+    }
+
+    public function test_notification_export_uses_the_authorized_product_filters_and_private_headers(): void
+    {
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $response = $this->actingAs($user, 'platform')->get(route('core.workspace.notifications.export', [
+            'workspace' => $this->workspaceId,
+            'product' => 'monitor',
+            'severity' => 'critical',
+        ]));
+
+        $response
+            ->assertOk()
+            ->assertHeader('Cache-Control', 'no-store, private')
+            ->assertHeader('Content-Type', 'text/csv; charset=UTF-8');
+
+        $csv = $response->streamedContent();
+        $this->assertStringContainsString('Monitor incident', $csv);
+        $this->assertStringNotContainsString('Deployer release', $csv);
+        $this->assertStringContainsString('Checkout app', $csv);
+    }
+
     private function createTables(): void
     {
         Schema::connection('core')->create('users', function (Blueprint $table): void {
@@ -380,6 +484,15 @@ final class WorkspaceNotificationInboxTest extends TestCase
             $table->boolean('enabled')->default(true);
             $table->timestamps();
             $table->unique(['workspace_id', 'user_id', 'scope_key']);
+        });
+        Schema::connection('core')->create('workspace_notification_saved_filters', function (Blueprint $table): void {
+            $table->char('id', 26)->primary();
+            $table->char('workspace_id', 26);
+            $table->char('user_id', 26);
+            $table->string('name', 80);
+            $table->json('filters');
+            $table->timestamps();
+            $table->unique(['workspace_id', 'user_id', 'name']);
         });
     }
 

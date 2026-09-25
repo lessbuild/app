@@ -19,6 +19,7 @@
         :description="__('Follow deployment, incident, recovery, and product updates grouped by project and environment.')"
     >
         <x-slot:actions>
+            <x-signal.ui.button :href="route('core.workspace.notifications.export', ['workspace' => $workspace, ...$filterQuery])" variant="secondary">{{ __('Export CSV') }}</x-signal.ui.button>
             @if ($hasVisibleUnread)
                 <form method="POST" action="{{ route('core.workspace.notifications.read-all', ['workspace' => $workspace, ...$filterQuery]) }}">
                     @csrf
@@ -60,6 +61,46 @@
                 <x-signal.ui.button type="submit" variant="secondary">{{ __('Apply filters') }}</x-signal.ui.button>
             </div>
         </x-signal.ui.card>
+    </section>
+
+    <section class="mt-5" aria-labelledby="notification-saved-filters-heading">
+        <x-signal.ui.card class="grid gap-4 p-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+            <div>
+                <p class="ui-eyebrow">{{ __('Personal shortcuts') }}</p>
+                <h2 id="notification-saved-filters-heading" class="mt-1 text-base font-extrabold text-ink">{{ __('Saved filters') }}</h2>
+                <p class="mt-1 text-sm text-muted">{{ __('Save this view for your account in this workspace. Saved filters do not change product alert delivery.') }}</p>
+            </div>
+            <form method="POST" action="{{ route('core.workspace.notifications.saved-filters.store', ['workspace' => $workspace, ...$filterQuery]) }}" class="grid gap-3 sm:grid-cols-[minmax(12rem,1fr)_auto] sm:items-end">
+                @csrf
+                <input type="hidden" name="state" value="{{ $filters['state'] }}">
+                <input type="hidden" name="product" value="{{ $filters['product'] }}">
+                <input type="hidden" name="severity" value="{{ $filters['severity'] }}">
+                <input type="hidden" name="project" value="{{ $filters['project'] }}">
+                <x-signal.ui.input-field name="name" id="notification-saved-filter-name" :label="__('Filter name')" :value="old('name')" maxlength="80" required />
+                <x-signal.ui.button type="submit" variant="secondary">{{ __('Save current view') }}</x-signal.ui.button>
+            </form>
+        </x-signal.ui.card>
+        @error('name')
+            <x-signal.ui.alert tone="danger" class="mt-3" role="alert">{{ $message }}</x-signal.ui.alert>
+        @enderror
+
+        @if ($savedFilters->isNotEmpty())
+            <div class="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
+                @foreach ($savedFilters as $savedFilter)
+                    @php
+                        $savedFilterQuery = array_filter(array_merge(['state' => 'all', 'product' => 'all', 'severity' => 'all', 'project' => 'all'], $savedFilter->filters ?? []), fn (string $value): bool => $value !== 'all');
+                    @endphp
+                    <x-signal.ui.card class="flex flex-wrap items-center justify-between gap-3 p-3">
+                        <x-signal.ui.link :href="route('core.workspace.notifications', ['workspace' => $workspace, ...$savedFilterQuery])" class="font-semibold">{{ $savedFilter->name }}</x-signal.ui.link>
+                        <form method="POST" action="{{ route('core.workspace.notifications.saved-filters.destroy', ['workspace' => $workspace, 'savedFilter' => $savedFilter, ...$filterQuery]) }}">
+                            @csrf
+                            @method('DELETE')
+                            <x-signal.ui.button type="submit" variant="ghost" class="ui-btn-sm">{{ __('Remove') }}</x-signal.ui.button>
+                        </form>
+                    </x-signal.ui.card>
+                @endforeach
+            </div>
+        @endif
     </section>
 
     @if ($unavailableProducts->isNotEmpty())

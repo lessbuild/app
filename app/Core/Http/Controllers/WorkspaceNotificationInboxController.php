@@ -6,12 +6,14 @@ use App\Core\Data\Notifications\WorkspaceNotification;
 use App\Core\Data\Notifications\WorkspaceNotificationSeverity;
 use App\Core\Enums\ProductKey;
 use App\Core\Http\Requests\FilterWorkspaceNotificationsRequest;
+use App\Core\Http\Requests\SaveWorkspaceNotificationFilterRequest;
 use App\Core\Http\Requests\UpdateWorkspaceNotificationPreferenceRequest;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\Workspace;
 use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceNotificationPreference;
+use App\Core\Models\WorkspaceNotificationSavedFilter;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\WorkspaceNotifications;
 use App\Core\Services\WorkspaceProjectAccess;
@@ -21,7 +23,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class WorkspaceNotificationInboxController
 {
@@ -52,6 +56,11 @@ final class WorkspaceNotificationInboxController
             ->orderBy('product')
             ->orderBy('severity')
             ->get();
+        $savedFilters = WorkspaceNotificationSavedFilter::query()
+            ->where('workspace_id', $workspace->getKey())
+            ->where('user_id', $user->getKey())
+            ->orderBy('name')
+            ->get();
 
         return view('core::workspaces.notifications', [
             'user' => $user,
@@ -70,6 +79,7 @@ final class WorkspaceNotificationInboxController
             'unreadCount' => $visibleUnreadCount,
             'visibleUnreadCount' => $visibleUnreadCount,
             'preferences' => $preferences,
+            'savedFilters' => $savedFilters,
             'filters' => [
                 'state' => $filters['state'] ?? 'all',
                 'product' => $filters['product'] ?? 'all',
@@ -77,6 +87,121 @@ final class WorkspaceNotificationInboxController
                 'project' => $selectedProject ?? 'all',
             ],
         ]);
+    }
+
+    public function export(
+        FilterWorkspaceNotificationsRequest $request,
+        Workspace $workspace,
+        WorkspaceProjectAccess $access,
+        WorkspaceNotifications $notifications,
+    ): StreamedResponse {
+        $user = $this->user($request);
+        $membership = $this->membership($user, $workspace, $access);
+        $products = $this->products($membership);
+        $projects = $this->projects($workspace, $user, $products);
+        $filters = $request->validated();
+        $selectedProject = $filters['project'] ?? 'all';
+
+        if ($selectedProject !== 'all' && $selectedProject !== null) {
+            abort_unless($projects->contains(fn (Project $project): bool => (string) $project->getKey() === $selectedProject), 404);
+        }
+
+        $items = $this->visibleItems(
+            $notifications->forWorkspace($user, $workspace, $projects, $products, 100)->notifications,
+            $filters,
+            $selectedProject,
+        );
+
+        return response()->streamDownload(function () use ($items): void {
+            $output = fopen('php://output', 'wb');
+            fputcsv($output, ['Project', 'Environment', 'Product', 'Severity', 'Title', 'Detail', 'Occurred at', 'Read', 'Result URL'], ',', '"', '');
+
+            foreach ($items as $item) {
+                fputcsv($output, array_map([$this, 'csvCell'], [
+                    $item->projectName,
+                    $item->environmentName,
+                    $item->productLabel,
+                    $item->severity->value,
+                    $item->title,
+                    $item->detail,
+                    $item->occurredAt->toIso8601String(),
+                    $item->read ? 'yes' : 'no',
+                    $item->resultUrl,
+                ]), ',', '"', '');
+            }
+
+            fclose($output);
+        }, 'buildpusher-notifications-'.now()->format('Y-m-d').'.csv', [
+            'Cache-Control' => 'no-store, private',
+            'Pragma' => 'no-cache',
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function storeSavedFilter(
+        SaveWorkspaceNotificationFilterRequest $request,
+        Workspace $workspace,
+        WorkspaceProjectAccess $access,
+    ): RedirectResponse {
+        $user = $this->user($request);
+        $membership = $this->membership($user, $workspace, $access);
+        $products = $this->products($membership);
+        $filters = $request->filterValues();
+
+        if ($filters['product'] !== 'all') {
+            abort_unless(in_array($filters['product'], $products, true), 403);
+        }
+
+        if ($filters['project'] !== 'all') {
+            abort_unless($this->projects($workspace, $user, $products)->contains(
+                fn (Project $project): bool => (string) $project->getKey() === $filters['project'],
+            ), 404);
+        }
+
+        $name = trim((string) $request->validated('name'));
+        $savedFilter = DB::connection('core')->transaction(function () use ($filters, $name, $user, $workspace): WorkspaceNotificationSavedFilter {
+            $query = WorkspaceNotificationSavedFilter::query()
+                ->where('workspace_id', $workspace->getKey())
+                ->where('user_id', $user->getKey());
+            $existing = (clone $query)
+                ->whereRaw('LOWER(name) = ?', [mb_strtolower($name)])
+                ->lockForUpdate()
+                ->first();
+
+            if ($existing === null && $query->count() >= 10) {
+                throw ValidationException::withMessages([
+                    'name' => __('You can save up to ten notification filters per workspace.'),
+                ]);
+            }
+
+            $filter = $existing ?? new WorkspaceNotificationSavedFilter([
+                'workspace_id' => $workspace->getKey(),
+                'user_id' => $user->getKey(),
+                'name' => $name,
+            ]);
+            $filter->forceFill(['name' => $name, 'filters' => $filters])->save();
+
+            return $filter;
+        });
+
+        return $this->redirectToInbox($request, $workspace)
+            ->with('success', __('Saved filter :name.', ['name' => $savedFilter->name]));
+    }
+
+    public function destroySavedFilter(
+        Request $request,
+        Workspace $workspace,
+        WorkspaceNotificationSavedFilter $savedFilter,
+        WorkspaceProjectAccess $access,
+    ): RedirectResponse {
+        $user = $this->user($request);
+        $this->membership($user, $workspace, $access);
+        abort_unless((string) $savedFilter->workspace_id === (string) $workspace->getKey()
+            && (string) $savedFilter->user_id === (string) $user->getKey(), 404);
+
+        $savedFilter->delete();
+
+        return $this->redirectToInbox($request, $workspace)->with('success', __('Saved filter removed.'));
     }
 
     public function markRead(
@@ -246,6 +371,13 @@ final class WorkspaceNotificationInboxController
             'created_at' => $now,
             'updated_at' => $now,
         ]], ['workspace_id', 'user_id', 'notification_key'], ['read_at', 'updated_at']);
+    }
+
+    private function csvCell(?string $value): string
+    {
+        $cell = str_replace(["\0", "\r", "\n"], ' ', trim((string) $value));
+
+        return preg_match('/\A[ \t]*[=+\-@]/u', $cell) === 1 ? "'".$cell : $cell;
     }
 
     private function redirectToInbox(Request $request, Workspace $workspace): RedirectResponse

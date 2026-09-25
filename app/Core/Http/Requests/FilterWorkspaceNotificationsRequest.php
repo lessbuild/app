@@ -17,6 +17,12 @@ final class FilterWorkspaceNotificationsRequest extends FormRequest
     /** @return array<string, array<int, mixed>> */
     public function rules(): array
     {
+        return self::filterRules();
+    }
+
+    /** @return array<string, array<int, mixed>> */
+    public static function filterRules(): array
+    {
         return [
             'state' => ['nullable', Rule::in(['all', 'unread', 'read'])],
             'product' => ['nullable', Rule::in(['all', ...ProductKey::values()])],

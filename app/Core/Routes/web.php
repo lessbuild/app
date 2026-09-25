@@ -159,9 +159,18 @@ Route::middleware('auth:platform')->group(function (): void {
 
     Route::get('/workspaces/{workspace}/notifications', WorkspaceNotificationInboxController::class)
         ->name('core.workspace.notifications');
+    Route::get('/workspaces/{workspace}/notifications/export', [WorkspaceNotificationInboxController::class, 'export'])
+        ->middleware('throttle:10,1')
+        ->name('core.workspace.notifications.export');
     Route::post('/workspaces/{workspace}/notifications/read-all', [WorkspaceNotificationInboxController::class, 'markAllRead'])
         ->middleware('throttle:30,1')
         ->name('core.workspace.notifications.read-all');
+    Route::post('/workspaces/{workspace}/notifications/saved-filters', [WorkspaceNotificationInboxController::class, 'storeSavedFilter'])
+        ->middleware('throttle:10,1')
+        ->name('core.workspace.notifications.saved-filters.store');
+    Route::delete('/workspaces/{workspace}/notifications/saved-filters/{savedFilter}', [WorkspaceNotificationInboxController::class, 'destroySavedFilter'])
+        ->middleware('throttle:30,1')
+        ->name('core.workspace.notifications.saved-filters.destroy');
     Route::post('/workspaces/{workspace}/notifications/{notificationKey}/read', [WorkspaceNotificationInboxController::class, 'markRead'])
         ->where('notificationKey', '[a-f0-9]{64}')
         ->middleware('throttle:60,1')
