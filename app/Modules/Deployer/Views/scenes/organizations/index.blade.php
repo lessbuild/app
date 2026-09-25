@@ -7,6 +7,9 @@
     >
         @if ($canManage)
             <x-slot:actions>
+                <x-signal.ui.button href="{{ route('organizations.data') }}" variant="secondary">
+                    {{ __('Data & privacy') }}
+                </x-signal.ui.button>
                 <x-signal.ui.button
                     href="{{ route('organizations.index', ['dialog' => 'invite-member']) }}"
                     data-modal-trigger="organization-invite"

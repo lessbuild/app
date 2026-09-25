@@ -28,6 +28,7 @@ denial, tenant isolation, soft-deleted site history, relationship data, and
 secret exclusion. It remains unrun under the plan-wide test deferral. PHP lint,
 Pint, Blade compilation, route registration with Analytics enabled, the module
 boundary scanner, and `git diff --check` pass. This closes the Analytics
-workspace-export gap but does not complete full product-data portability:
-Deployer's account export still includes only the selected workspace's limited
-resource metadata, and Monitor's export remains scoped to its current workspace.
+workspace-export gap but does not complete full product-data portability.
+Deployer now has a separate owner/admin-only workspace export; remaining
+operational and billing records still need review, and Monitor's export remains
+scoped to its current workspace. See [Deployer workspace data export progress](deployer-workspace-data-export-progress-2026-09-25.md).

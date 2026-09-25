@@ -36,6 +36,7 @@ use App\Modules\Deployer\Http\Controllers\NotificationsController;
 use App\Modules\Deployer\Http\Controllers\ObservabilityController;
 use App\Modules\Deployer\Http\Controllers\OperationalIncidentController;
 use App\Modules\Deployer\Http\Controllers\OrganizationController;
+use App\Modules\Deployer\Http\Controllers\OrganizationDataController;
 use App\Modules\Deployer\Http\Controllers\PlatformStatusController;
 use App\Modules\Deployer\Http\Controllers\ProductFeedbackController;
 use App\Modules\Deployer\Http\Controllers\ProjectController;
@@ -122,6 +123,10 @@ Route::middleware([
     EnforceOrganizationSecurity::class,
 ])->group(function () {
     Route::get('organization', [OrganizationController::class, 'index'])->name('organizations.index');
+    Route::get('organization/data', [OrganizationDataController::class, 'index'])->name('organizations.data');
+    Route::get('organization/data/export', [OrganizationDataController::class, 'export'])
+        ->middleware('throttle:sensitive-account')
+        ->name('organizations.data.export');
     Route::get('github-app/connect', [GitHubAppController::class, 'connect'])->name('github-app.connect');
     Route::get('github-app/callback', [GitHubAppController::class, 'callback'])->name('github-app.callback');
     Route::get('github-app/providers/{provider}/repositories', [GitHubAppController::class, 'repositories'])->name('github-app.repositories');
