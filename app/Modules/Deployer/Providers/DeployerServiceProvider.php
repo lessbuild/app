@@ -70,6 +70,7 @@ use App\Modules\Deployer\Services\Core\DeployerWorkspaceCredentialMutationProvid
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceCredentialProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceCustomerStatusManagementProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceDeploymentControlsProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceConfigurationProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceFeedbackHistoryProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
@@ -123,6 +124,9 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(WorkspaceCredentialProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCredentialProvider::class));
         app(WorkspaceDeployerAdministrationProviderRegistry::class)->registerDeploymentControls(
             app(DeployerWorkspaceDeploymentControlsProvider::class),
+        );
+        app(WorkspaceDeployerAdministrationProviderRegistry::class)->registerConfiguration(
+            app(DeployerWorkspaceConfigurationProvider::class),
         );
         app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
         app(WorkspaceCostBreakdownProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCostBreakdownProvider::class));
