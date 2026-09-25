@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs\Web;
 
 use App\Modules\Deployer\Models\BackupRestore;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\WebsiteBackup;
 use App\Modules\Deployer\Services\ResticRepository;
 use App\Modules\Deployer\Services\Runner;
@@ -38,6 +39,11 @@ class RestoreWebsiteBackupJob implements ShouldQueue
     {
         $restore = BackupRestore::query()->with(['backup.website.server', 'backup.destination'])->find($this->restoreId);
         if (! $restore || $restore->status !== BackupRestore::STATUS_QUEUED) {
+            return;
+        }
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $restore->backup->website->organization_id)->exists()) {
+            $restore->update(['status' => BackupRestore::STATUS_FAILED, 'completed_at' => now(), 'error' => 'Restore canceled because its workspace is being deleted.']);
+
             return;
         }
         $backup = $restore->backup;

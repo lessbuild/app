@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs\Web;
 
 use App\Modules\Deployer\Models\BackupRestoreVerification;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\WebsiteBackup;
 use App\Modules\Deployer\Services\ResticRepository;
 use App\Modules\Deployer\Services\Runner;
@@ -46,6 +47,15 @@ class VerifyWebsiteBackupJob implements ShouldQueue
             ->with(['backup.website.server', 'backup.destination'])
             ->find($this->verificationId);
         if (! $verification || $verification->status !== BackupRestoreVerification::STATUS_QUEUED) {
+            return;
+        }
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $verification->backup->website->organization_id)->exists()) {
+            $verification->update([
+                'status' => BackupRestoreVerification::STATUS_FAILED,
+                'completed_at' => now(),
+                'failure_stage' => 'workspace_deletion',
+            ]);
+
             return;
         }
 

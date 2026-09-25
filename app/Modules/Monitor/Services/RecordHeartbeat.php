@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Services;
 use App\Modules\Monitor\Data\Telemetry\MonitorObservation;
 use App\Modules\Monitor\Models\HeartbeatRun;
 use App\Modules\Monitor\Models\Monitor;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -26,6 +27,7 @@ final class RecordHeartbeat
             abort_unless($this->queue->eligible($monitor) && $monitor->type === 'heartbeat'
                 && is_string($monitor->heartbeat_token_hash) && hash_equals($monitor->heartbeat_token_hash, $tokenHash),
                 401, 'The heartbeat key is invalid or the source is unavailable.');
+            abort_if(MonitorDeletionFence::lockWorkspace($monitor->environment->application->workspace_id), 410, 'This Monitor workspace is being deleted.');
             $run = $monitor->heartbeatRuns()->where('run_id', $runId)->lockForUpdate()->first();
             if ($run !== null) {
                 abort_unless($run->config_revision === $monitor->config_revision && $run->status !== 'cancelled',

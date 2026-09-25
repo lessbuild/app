@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Jobs\Database;
 
 use App\Modules\Deployer\Models\DatabaseOperationRun;
 use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -71,6 +72,14 @@ class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
                 ->first();
 
         abort_unless($this->operationRunId === null || $operationRun !== null, 404);
+
+        $resource = EnvironmentResource::query()->with('environment.project')->find($this->resourceId);
+        $workspaceId = $resource?->environment?->project?->organization_id;
+        if ($workspaceId !== null && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $workspaceId)->exists()) {
+            $operationRun?->markFailed();
+
+            return;
+        }
 
         if ($operationRun !== null && ! $operationRun->claim()) {
             return;

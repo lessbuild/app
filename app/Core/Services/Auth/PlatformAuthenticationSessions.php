@@ -5,6 +5,7 @@ namespace App\Core\Services\Auth;
 use App\Core\Models\PlatformAuthSession;
 use App\Core\Models\PlatformUser;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 /** Keeps a single Core login revocable across host-only browser sessions. */
@@ -12,17 +13,22 @@ final class PlatformAuthenticationSessions
 {
     public function begin(PlatformUser $user, Request $request, bool $remember): PlatformAuthSession
     {
-        $session = PlatformAuthSession::query()->create([
-            'id' => (string) Str::ulid(),
-            'user_id' => $user->getKey(),
-            'remember_token_hash' => $remember && filled($user->getRememberToken())
-                ? hash('sha256', $user->getRememberToken())
-                : null,
-            'remembered' => $remember,
-            'ip_address' => $request->ip(),
-            'user_agent' => mb_substr((string) $request->userAgent(), 0, 1000),
-            'last_seen_at' => now(),
-        ]);
+        $session = DB::connection('core')->transaction(function () use ($user, $request, $remember): PlatformAuthSession {
+            $user = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($user->status === 'active', 403);
+
+            return PlatformAuthSession::query()->create([
+                'id' => (string) Str::ulid(),
+                'user_id' => $user->getKey(),
+                'remember_token_hash' => $remember && filled($user->getRememberToken())
+                    ? hash('sha256', $user->getRememberToken())
+                    : null,
+                'remembered' => $remember,
+                'ip_address' => $request->ip(),
+                'user_agent' => mb_substr((string) $request->userAgent(), 0, 1000),
+                'last_seen_at' => now(),
+            ]);
+        }, attempts: 3);
 
         $request->session()->put('platform.auth.session_id', $session->getKey());
 
@@ -31,6 +37,9 @@ final class PlatformAuthenticationSessions
 
     public function ensure(PlatformUser $user, Request $request): ?PlatformAuthSession
     {
+        if (! PlatformUser::query()->whereKey($user->getKey())->where('status', 'active')->exists()) {
+            return null;
+        }
         $sessionId = $request->session()->get('platform.auth.session_id');
 
         if (is_string($sessionId)) {

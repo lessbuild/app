@@ -7,6 +7,7 @@ use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
+use App\Core\Services\Deletion\ProductDeletionRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -15,6 +16,7 @@ use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\PlatformStatusProviderRegistry;
 use App\Core\Services\ProductApiDocumentationRegistry;
+use App\Core\Services\ProjectInfrastructureProviderRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -27,7 +29,9 @@ use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
 use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
+use App\Core\Services\WorkspaceNativeNotificationProviderRegistry;
 use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
+use App\Modules\Deployer\Console\Commands\ResolveDeletionActivityClaimsCommand;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
 use App\Modules\Deployer\Http\Livewire\RepositoryDeploymentTimeline;
@@ -42,12 +46,15 @@ use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Core\DeployerApiDocumentationProvider;
 use App\Modules\Deployer\Services\Core\DeployerCustomerStatusPageProvider;
+use App\Modules\Deployer\Services\Core\DeployerNativeNotificationProvider;
 use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerPlatformStatusProvider;
+use App\Modules\Deployer\Services\Core\DeployerProductDeletionProvider;
 use App\Modules\Deployer\Services\Core\DeployerProductWorkspaceProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionDiagnosticProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionOutboxDispatcher;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionOutboxSource;
+use App\Modules\Deployer\Services\Core\DeployerProjectInfrastructureProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
 use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
@@ -78,6 +85,9 @@ final class DeployerServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         parent::boot();
+        if ($this->app->runningInConsole() && ! config('platform.products.deployer.enabled', false)) {
+            $this->commands([ResolveDeletionActivityClaimsCommand::class]);
+        }
 
         app(ProjectConnectionOutboxSourceRegistry::class)->register(
             'deployer',
@@ -87,6 +97,7 @@ final class DeployerServiceProvider extends ModuleServiceProvider
             'deployer',
             app(DeployerProjectConnectionOutboxDispatcher::class),
         );
+        app(ProductDeletionRegistry::class)->register(app(DeployerProductDeletionProvider::class));
 
         if (! config('platform.products.deployer.enabled', false)) {
             return;
@@ -99,6 +110,8 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(WorkspaceActivityProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
+        app(WorkspaceNativeNotificationProviderRegistry::class)->register('deployer', app(DeployerNativeNotificationProvider::class));
+        app(ProjectInfrastructureProviderRegistry::class)->register('deployer', app(DeployerProjectInfrastructureProvider::class));
         app(WorkspaceCredentialProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCredentialProvider::class));
         app(WorkspaceWebhookDeliveryProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
         app(WorkspaceCostBreakdownProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCostBreakdownProvider::class));

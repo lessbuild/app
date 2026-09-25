@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Console\Commands;
 
 use App\Modules\Deployer\Jobs\Web\CreateWebsiteBackupJob;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Models\WebsiteBackup;
 use App\Modules\Deployer\Models\WebsiteBackupSchedule;
@@ -30,7 +31,8 @@ class RunWebsiteBackupsCommand extends Command
             ->whereHas('website', fn ($query) => $query->where('provisioning_status', Website::STATUS_ACTIVE))
             ->orderBy('id')
             ->eachById(function (WebsiteBackupSchedule $schedule) use (&$queued): void {
-                if (! $this->due($schedule)) {
+                if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $schedule->website->organization_id)->exists()
+                    || ! $this->due($schedule)) {
                     return;
                 }
                 $backup = DB::connection('deployer')->transaction(function () use ($schedule): ?WebsiteBackup {

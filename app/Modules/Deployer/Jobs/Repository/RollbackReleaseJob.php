@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Jobs\Repository;
 
 use App\Modules\Deployer\Actions\Repository\SwitchReleaseAction;
 use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\Integration\RecordDeploymentSucceededOutboxEvent;
 use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Illuminate\Bus\Queueable;
@@ -31,6 +32,16 @@ class RollbackReleaseJob implements ShouldQueue
      */
     public function handle(SwitchReleaseAction $releases, RecordDeploymentSucceededOutboxEvent $integrationEvents): void
     {
+        $this->build->loadMissing('repository');
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $this->build->repository->organization_id)->exists()) {
+            Build::query()->whereKey($this->build->id)->where('status', Build::STATUS_QUEUED)->update([
+                'status' => Build::STATUS_CANCELED,
+                'finished_at' => now(),
+                'failure_message' => 'Rollback canceled because its workspace is being deleted.',
+            ]);
+
+            return;
+        }
         $started = Build::query()
             ->whereKey($this->build->id)
             ->where('status', Build::STATUS_QUEUED)

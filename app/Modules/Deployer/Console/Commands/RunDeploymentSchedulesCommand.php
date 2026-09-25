@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Console\Commands;
 
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\DeploymentSchedule;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\DeploymentLauncher;
 use App\Modules\Deployer\Services\Entitlements;
 use Cron\CronExpression;
@@ -28,6 +29,7 @@ class RunDeploymentSchedulesCommand extends Command
             ->each(function (DeploymentSchedule $schedule) use ($launcher, $entitlements): void {
                 $now = now($schedule->timezone);
                 if (! CronExpression::isValidExpression($schedule->cron_expression)
+                    || ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $schedule->environment->project->organization_id)->exists()
                     || ! (new CronExpression($schedule->cron_expression))->isDue($now)
                     || $schedule->last_run_at?->gte(now()->startOfMinute())
                     || ! $entitlements->allows($schedule->environment->project->organization, 'scheduled_deployments')) {

@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Services;
 
 use App\Core\Models\ProductBillingEvent;
+use App\Modules\Monitor\Models\BillingEvent as MonitorBillingEvent;
 use Illuminate\Support\Collection;
 use Throwable;
 
@@ -26,6 +27,11 @@ final readonly class ReconcileMonitorCoreBillingEvents
     {
         $limit = max(1, min(100, $limit));
         $summary = ['attempted' => 0, 'completed' => 0, 'pending' => 0, 'needs_review' => 0, 'failed' => 0, 'skipped' => 0];
+        // Source persistence and Core acknowledgement are separate commits. Recover
+        // either crash gap without waiting for Stripe to redeliver the webhook.
+        $acknowledged = $this->recoverSourceReceipts($limit, $eventId);
+        $summary['attempted'] += $acknowledged;
+        $summary['completed'] += $acknowledged;
         $events = $this->eventsToRetry($limit, $eventId, $includeReview);
 
         foreach ($events as $billingEvent) {
@@ -58,6 +64,43 @@ final readonly class ReconcileMonitorCoreBillingEvents
         }
 
         return $summary;
+    }
+
+    private function recoverSourceReceipts(int $limit, ?string $eventId): int
+    {
+        $query = MonitorBillingEvent::query()->where('processing_status', MonitorBillingEvent::STATUS_PENDING)
+            ->whereNull('processed_at');
+        if ($eventId !== null) {
+            $query->where('stripe_event_id', $eventId);
+        } else {
+            $query->where('updated_at', '<=', now('UTC')->subMinutes(15));
+        }
+        $acknowledged = 0;
+        foreach ($query->orderBy('updated_at')->orderBy('id')->limit($limit)->get() as $source) {
+            if ($this->projection->acknowledgePendingSourceEvent($source->stripe_event_id)) {
+                $acknowledged++;
+
+                continue;
+            }
+            // A placeholder contains only a verified native event identity. The normal
+            // reconciler retrieves its payload from Stripe and rechecks ownership.
+            ProductBillingEvent::query()->firstOrCreate([
+                'provider' => 'stripe', 'provider_account_key' => self::PROVIDER_ACCOUNT,
+                'provider_event_id' => $source->stripe_event_id,
+            ], [
+                'product' => 'monitor', 'event_type' => $source->event_type,
+                'provider_created_at' => $source->stripe_created_at,
+                'processing_status' => 'pending_reconciliation', 'ignored_reason' => 'source_projection_interrupted',
+                'processed_at' => now('UTC')->subMinutes(15),
+            ]);
+            // Rotate the bounded scan fairly; this never clears the deletion barrier
+            // or treats an old pending/review event as a completed financial change.
+            MonitorBillingEvent::query()->whereKey($source->getKey())
+                ->where('processing_status', MonitorBillingEvent::STATUS_PENDING)->whereNull('processed_at')
+                ->update(['updated_at' => now('UTC')]);
+        }
+
+        return $acknowledged;
     }
 
     /** @return Collection<int, ProductBillingEvent> */

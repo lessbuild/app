@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Services;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Models\WorkspaceInvitation;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Illuminate\Support\Facades\DB;
 
 final class AcceptWorkspaceInvitation
@@ -21,6 +22,7 @@ final class AcceptWorkspaceInvitation
             abort_unless($user->hasVerifiedEmail() && $user->email === $invitation->email, 404);
 
             $workspace = Workspace::query()->lockForUpdate()->findOrFail($invitation->workspace_id);
+            MonitorDeletionFence::assertWorkspaceActive($workspace->getKey());
             $invitation = WorkspaceInvitation::query()->lockForUpdate()->findOrFail($invitation->id);
             abort_if($invitation->accepted_at !== null || ! $invitation->expires_at->isFuture(), 410, 'This invitation is no longer available.');
 

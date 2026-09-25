@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Actions\Automation;
 
 use App\Modules\Deployer\Jobs\RunScheduledTaskJob;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\ScheduledTask;
 use App\Modules\Deployer\Models\ScheduledTaskRun;
 use App\Modules\Deployer\Services\Entitlements;
@@ -22,6 +23,11 @@ class QueueScheduledTaskRunAction
      */
     public function handle(ScheduledTask $task): ?ScheduledTaskRun
     {
+        $workspaceId = $task->environment->project->organization_id;
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $workspaceId)->exists()) {
+            return null;
+        }
+
         $this->entitlements->enforce($task->environment->project->organization, 'scheduled_deployments');
         if ($task->without_overlapping && $task->runs()->whereIn('status', ['queued', 'running'])->exists()) {
             return null;

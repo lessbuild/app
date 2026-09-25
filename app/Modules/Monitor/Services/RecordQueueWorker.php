@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Services;
 
 use App\Modules\Monitor\Models\QueueWorker;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -19,6 +20,7 @@ final class RecordQueueWorker
             $monitor = $this->queue->lockMonitor($monitorId);
             abort_unless($this->queue->eligible($monitor) && $monitor->type === 'queue' && is_string($monitor->queue_token_hash)
                 && hash_equals($monitor->queue_token_hash, $tokenHash), 401, 'The queue key is invalid or the source is unavailable.');
+            abort_if(MonitorDeletionFence::lockWorkspace($monitor->environment->application->workspace_id), 410, 'This Monitor workspace is being deleted.');
             $workerId = strtolower($data['worker_id']);
             $jobId = isset($data['job_id']) ? strtolower($data['job_id']) : null;
             $worker = $monitor->queueWorkers()->where('worker_id', $workerId)->lockForUpdate()->first();

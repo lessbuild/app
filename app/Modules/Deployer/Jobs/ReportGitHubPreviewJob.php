@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs;
 
 use App\Modules\Deployer\Models\PreviewDeployment;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\GitHubPreviewReporter;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -41,9 +42,11 @@ class ReportGitHubPreviewJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(GitHubPreviewReporter $reporter): void
     {
-        $preview = PreviewDeployment::find($this->previewId);
-        if ($preview) {
-            $reporter->report($preview);
+        $preview = PreviewDeployment::query()->with('project')->find($this->previewId);
+        if ($preview?->project?->organization_id !== null) {
+            app(DeployerMutationClaimManager::class)->runWorkspace($preview->project->organization_id, 'preview.report_github_state', function () use ($reporter, $preview): void {
+                $reporter->report($preview);
+            });
         }
     }
 }

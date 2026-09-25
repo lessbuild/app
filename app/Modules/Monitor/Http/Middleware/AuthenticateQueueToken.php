@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Http\Middleware;
 
 use App\Modules\Monitor\Models\Monitor;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use App\Modules\Monitor\Services\MonitorQueue;
 use Closure;
 use Illuminate\Http\Request;
@@ -27,6 +28,7 @@ class AuthenticateQueueToken
         $hash = hash('sha256', $secret);
         abort_unless($this->queue->eligible($monitor) && is_string($monitor->queue_token_hash)
             && hash_equals($monitor->queue_token_hash, $hash), 401, 'The queue key is invalid or the source is unavailable.');
+        MonitorDeletionFence::assertWorkspaceActive($monitor->environment->application->workspace_id);
         $request->attributes->set('queue_monitor_id', $monitor->id);
         $request->attributes->set('queue_token_hash', $hash);
 

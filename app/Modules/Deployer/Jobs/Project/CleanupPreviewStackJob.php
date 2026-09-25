@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Jobs\Project;
 
 use App\Modules\Deployer\Actions\Project\CleanupPreviewStackAction;
 use App\Modules\Deployer\Models\PreviewStackCleanup;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\PreviewStackCleanupScript;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -56,6 +57,19 @@ class CleanupPreviewStackJob implements ShouldBeUnique, ShouldQueue
         Runner $runner,
         PreviewStackCleanupScript $script,
     ): void {
+        $candidate = PreviewStackCleanup::query()->with('website')->find($this->cleanupId);
+        $workspaceId = $candidate?->website?->organization_id;
+        if ($workspaceId !== null && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $workspaceId)->exists()) {
+            PreviewStackCleanup::query()->whereKey($this->cleanupId)->whereIn('status', [PreviewStackCleanup::STATUS_QUEUED, PreviewStackCleanup::STATUS_RUNNING])->update([
+                'status' => PreviewStackCleanup::STATUS_FAILED,
+                'claim_token' => null,
+                'lease_expires_at' => null,
+                'error' => 'Preview cleanup canceled because its workspace is being deleted.',
+                'completed_at' => now(),
+            ]);
+
+            return;
+        }
         $record = $this->claim();
         if (! $record) {
             return;

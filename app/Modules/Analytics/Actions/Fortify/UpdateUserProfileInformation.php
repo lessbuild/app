@@ -3,6 +3,7 @@
 namespace App\Modules\Analytics\Actions\Fortify;
 
 use App\Modules\Analytics\Models\User;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +20,8 @@ class UpdateUserProfileInformation implements UpdatesUserProfileInformation
      */
     public function update(User $user, array $input): void
     {
+        app(AnalyticsDeletionFence::class)->assertAccountOpen($user->getKey());
+
         Validator::make($input, [
             'name' => ['required', 'string', 'max:255'],
 

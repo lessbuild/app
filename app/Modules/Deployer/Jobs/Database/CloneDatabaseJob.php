@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs\Database;
 
 use App\Modules\Deployer\Models\DatabaseClone;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -34,6 +35,15 @@ class CloneDatabaseJob implements ShouldQueue
     {
         $clone = DatabaseClone::query()->with(['source.environment.website.server', 'target.environment.website.server'])->find($this->cloneId);
         if (! $clone) {
+            return;
+        }
+        $workspaceIds = array_filter([
+            $clone->source->environment?->project?->organization_id,
+            $clone->target->environment?->project?->organization_id,
+        ]);
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->whereIn('source_id', array_map('strval', $workspaceIds))->exists()) {
+            $clone->update(['status' => 'failed', 'finished_at' => now(), 'error' => 'Database clone canceled because a workspace is being deleted.']);
+
             return;
         }
         $clone->update(['status' => 'running', 'started_at' => now(), 'error' => null]);

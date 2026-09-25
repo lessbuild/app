@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs;
 
 use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\Entitlements;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -44,18 +45,24 @@ class WakeHibernatedEnvironmentJob implements ShouldBeUnique, ShouldQueue
     public function handle(Runner $runner, Entitlements $entitlements): void
     {
         $environment = Environment::query()->with(['project.organization.owner', 'website.server'])->find($this->environmentId);
-        if (! $environment?->hibernated_at || ! $environment->website?->server
-            || ! $entitlements->allows($environment->project->organization, 'hibernation')) {
+        $workspaceId = $environment?->project?->organization_id;
+        if ($workspaceId === null) {
             return;
         }
+        app(DeployerMutationClaimManager::class)->runWorkspace($workspaceId, 'environment.wake_probe', function () use ($environment, $runner, $entitlements): void {
+            if (! $environment->hibernated_at || ! $environment->website?->server
+                || ! $entitlements->allows($environment->project->organization, 'hibernation')) {
+                return;
+            }
 
-        $path = escapeshellarg('/var/log/caddy/'.$environment->website->deployment_slug.'.access.log');
-        $result = $runner->server($environment->website->server)->create()->execute("stat -c %Y {$path} 2>/dev/null || echo 0");
-        $lastRequestAt = (int) trim($result->getOutput());
-        if ($lastRequestAt <= $environment->hibernated_at->getTimestamp()) {
-            return;
-        }
+            $path = escapeshellarg('/var/log/caddy/'.$environment->website->deployment_slug.'.access.log');
+            $result = $runner->server($environment->website->server)->create()->execute("stat -c %Y {$path} 2>/dev/null || echo 0");
+            $lastRequestAt = (int) trim($result->getOutput());
+            if ($lastRequestAt <= $environment->hibernated_at->getTimestamp()) {
+                return;
+            }
 
-        ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, false);
+            ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, false);
+        });
     }
 }

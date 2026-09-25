@@ -101,12 +101,12 @@ final class PlatformPasskeyController
         $name = $request->session()->get('platform.auth.passkey_registration_name');
         abort_unless(is_string($name) && $name !== '', 419);
 
-        $passkey = DB::connection('core')->transaction(fn (): Passkey => $storePasskey(
-            $user,
-            $name,
-            $request->credential(),
-            $request->registrationOptions(),
-        ));
+        $passkey = DB::connection('core')->transaction(function () use ($user, $name, $request, $storePasskey): Passkey {
+            $user = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($user->status === 'active', 403);
+
+            return $storePasskey($user, $name, $request->credential(), $request->registrationOptions());
+        });
 
         $request->session()->forget([
             'platform.auth.passkey_registration_user_id',
@@ -131,6 +131,7 @@ final class PlatformPasskeyController
         $this->verifySecondFactor($request, $user, $verifyCode);
         DB::connection('core')->transaction(function () use ($user, $passkeyId, $deletePasskey): void {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             $passkeyModel = $lockedUser->passkeys()->lockForUpdate()->whereKey($passkeyId)->firstOrFail();
             $remaining = $lockedUser->passkeys()->where('id', '!=', $passkeyModel->getKey())->count();
             $hasOtherSignInMethod = $lockedUser->hasPassword()

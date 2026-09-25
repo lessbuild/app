@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Jobs\Web;
 
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\WebsiteBackup;
 use App\Modules\Deployer\Services\ResticRepository;
 use App\Modules\Deployer\Services\Runner;
@@ -38,6 +39,11 @@ class CreateWebsiteBackupJob implements ShouldQueue
     {
         $backup = WebsiteBackup::query()->with(['website.server', 'destination', 'schedule'])->find($this->backupId);
         if (! $backup || $backup->status !== WebsiteBackup::STATUS_QUEUED) {
+            return;
+        }
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $backup->website->organization_id)->exists()) {
+            $backup->update(['status' => WebsiteBackup::STATUS_FAILED, 'completed_at' => now(), 'error' => 'Backup canceled because its workspace is being deleted.']);
+
             return;
         }
         $backup->update(['status' => WebsiteBackup::STATUS_RUNNING, 'started_at' => now(), 'error' => null]);

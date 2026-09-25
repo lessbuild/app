@@ -334,6 +334,7 @@
             :connections="$projectConnections"
             :resource-destinations="$resourceDestinations"
             :hidden-connection-count="$hiddenConnectionCount"
+            :infrastructure="$projectInfrastructure"
             class="mb-4"
         />
 

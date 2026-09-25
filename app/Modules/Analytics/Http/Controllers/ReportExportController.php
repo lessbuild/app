@@ -6,6 +6,7 @@ use App\Modules\Analytics\Jobs\GenerateReportExport;
 use App\Modules\Analytics\Models\ReportExport;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,7 +18,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportExportController extends Controller
 {
-    public function store(Request $request, Site $site, AnalyticsWorkspaceAccess $access): RedirectResponse
+    public function store(Request $request, Site $site, AnalyticsWorkspaceAccess $access, AnalyticsDeletionFence $deletionFence): RedirectResponse
     {
         $this->authorize('manage', $site);
         $validated = $request->validate([
@@ -30,31 +31,38 @@ class ReportExportController extends Controller
         $token = Str::random(64);
         $productUserId = $this->requestingProductUserId($request, $site, $access);
         abort_if($productUserId === null, 403, 'Analytics access is not yet reconciled for this account.');
-        $export = ReportExport::create([
-            'workspace_id' => $site->workspace_id,
-            'site_id' => $site->id,
-            'requested_by' => $productUserId,
-            'token_hash' => hash('sha256', $token),
-            'filters' => $validated,
-            'expires_at' => now()->addHours(config('analytics.export_retention_hours')),
-        ]);
+        $export = DB::connection('analytics')->transaction(function () use ($site, $productUserId, $token, $validated, $deletionFence): ReportExport {
+            $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+            $deletionFence->assertWorkspaceOpen($workspace->getKey());
+
+            return ReportExport::create([
+                'workspace_id' => $workspace->getKey(),
+                'site_id' => $site->id,
+                'requested_by' => $productUserId,
+                'token_hash' => hash('sha256', $token),
+                'filters' => $validated,
+                'expires_at' => now()->addHours(config('analytics.export_retention_hours')),
+            ]);
+        }, attempts: 3);
         GenerateReportExport::dispatch($export->id)->afterCommit();
 
         return back()->with('status', 'Your CSV export is being generated.')->with('export_token', $token);
     }
 
-    public function download(Request $request, string $token): StreamedResponse
+    public function download(Request $request, string $token, AnalyticsDeletionFence $deletionFence): StreamedResponse
     {
         $export = ReportExport::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
         $this->authorize('view', $export->site);
+        $deletionFence->assertWorkspaceOpen($export->workspace_id);
 
         return $this->downloadExport($export);
     }
 
-    public function show(Request $request, string $token): View
+    public function show(Request $request, string $token, AnalyticsDeletionFence $deletionFence): View
     {
         $export = ReportExport::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
         $this->authorize('view', $export->site);
+        $deletionFence->assertWorkspaceOpen($export->workspace_id);
 
         return view('analytics::exports.show', [
             'export' => $export,
@@ -63,10 +71,11 @@ class ReportExportController extends Controller
         ]);
     }
 
-    public function record(Request $request, Site $site, ReportExport $export): View
+    public function record(Request $request, Site $site, ReportExport $export, AnalyticsDeletionFence $deletionFence): View
     {
         $this->assertExportBelongsToSite($export, $site);
         $this->authorize('view', $site);
+        $deletionFence->assertWorkspaceOpen($site->workspace_id);
 
         return view('analytics::exports.record', [
             'export' => $export,
@@ -76,22 +85,25 @@ class ReportExportController extends Controller
         ]);
     }
 
-    public function downloadRecord(Request $request, Site $site, ReportExport $export): StreamedResponse
+    public function downloadRecord(Request $request, Site $site, ReportExport $export, AnalyticsDeletionFence $deletionFence): StreamedResponse
     {
         $this->assertExportBelongsToSite($export, $site);
         $this->authorize('view', $site);
+        $deletionFence->assertWorkspaceOpen($site->workspace_id);
 
         return $this->downloadExport($export);
     }
 
-    public function retry(Request $request, Site $site, ReportExport $export, AnalyticsWorkspaceAccess $access): RedirectResponse
+    public function retry(Request $request, Site $site, ReportExport $export, AnalyticsWorkspaceAccess $access, AnalyticsDeletionFence $deletionFence): RedirectResponse
     {
         $this->assertExportBelongsToSite($export, $site);
         $this->authorize('manage', $site);
         $productUserId = $this->requestingProductUserId($request, $site, $access);
         abort_if($productUserId === null, 403, 'Analytics access is not yet reconciled for this account.');
 
-        $updatedExport = DB::connection('analytics')->transaction(function () use ($site, $export, $productUserId): ReportExport {
+        $updatedExport = DB::connection('analytics')->transaction(function () use ($site, $export, $productUserId, $deletionFence): ReportExport {
+            $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+            $deletionFence->assertWorkspaceOpen($workspace->getKey());
             $lockedExport = ReportExport::query()
                 ->whereKey($export->getKey())
                 ->where('site_id', $site->getKey())

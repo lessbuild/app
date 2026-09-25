@@ -66,6 +66,7 @@ use App\Modules\Deployer\Http\Livewire\ServerShow;
 use App\Modules\Deployer\Http\Middleware\EnforceOrganizationSecurity;
 use App\Modules\Deployer\Http\Middleware\EnsureCoreProductWorkspaceAccess;
 use App\Modules\Deployer\Http\Middleware\EnsureCurrentOrganization;
+use App\Modules\Deployer\Http\Middleware\EnsureDeployerDeletionFence;
 use App\Modules\Deployer\Http\Middleware\PreventProductLocalDeletion;
 use App\Modules\Deployer\Http\Middleware\ResolveDeployerOrganizationContext;
 use App\Modules\Deployer\Http\Middleware\VerifyCsrfToken;
@@ -121,6 +122,7 @@ Route::middleware([
     ResolveDeployerOrganizationContext::class,
     EnsureCoreProductWorkspaceAccess::class,
     EnforceOrganizationSecurity::class,
+    EnsureDeployerDeletionFence::class,
 ])->group(function () {
     Route::get('organization', [OrganizationController::class, 'index'])->name('organizations.index');
     Route::get('organization/data', [OrganizationDataController::class, 'index'])->name('organizations.data');
@@ -559,26 +561,26 @@ Route::middleware([
     });
 });
 
-Route::post('servers/{server}/provisioning/callback/status', [ServerCallbackController::class, 'status'])->middleware('signed')->name('callbacks.server');
+Route::post('servers/{server}/provisioning/callback/status', [ServerCallbackController::class, 'status'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.server');
 
-Route::post('websites/{website}/provisioning/callback/status', [WebsiteCallbackController::class, 'status'])->middleware('signed')->name('callbacks.website');
+Route::post('websites/{website}/provisioning/callback/status', [WebsiteCallbackController::class, 'status'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.website');
 
-Route::post('servers/{server}/provisioning/callback/failed', [ServerCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.server.failed');
+Route::post('servers/{server}/provisioning/callback/failed', [ServerCallbackController::class, 'failed'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.server.failed');
 
-Route::post('servers/{server}/provisioning/callback/log', [ServerCallbackController::class, 'log'])->middleware('signed')->name('callbacks.server.log');
+Route::post('servers/{server}/provisioning/callback/log', [ServerCallbackController::class, 'log'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.server.log');
 
-Route::post('websites/{website}/provisioning/callback/failed', [WebsiteCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.website.failed');
+Route::post('websites/{website}/provisioning/callback/failed', [WebsiteCallbackController::class, 'failed'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.website.failed');
 
-Route::post('websites/{website}/provisioning/callback/log', [WebsiteCallbackController::class, 'log'])->middleware('signed')->name('callbacks.website.log');
+Route::post('websites/{website}/provisioning/callback/log', [WebsiteCallbackController::class, 'log'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.website.log');
 
-Route::post('builds/{build}/deployment/callback/status', [BuildCallbackController::class, 'status'])->middleware('signed')->name('callbacks.build.status');
+Route::post('builds/{build}/deployment/callback/status', [BuildCallbackController::class, 'status'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.build.status');
 
 Route::post('builds/{build}/deployment/callback/revision', BuildRevisionCallbackController::class)
-    ->middleware('signed')
+    ->middleware(['signed', EnsureDeployerDeletionFence::class])
     ->name('callbacks.build.revision');
 
-Route::post('builds/{build}/deployment/callback/failed', [BuildCallbackController::class, 'failed'])->middleware('signed')->name('callbacks.build.failed');
+Route::post('builds/{build}/deployment/callback/failed', [BuildCallbackController::class, 'failed'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.build.failed');
 
-Route::post('builds/{build}/deployment/callback/log', [BuildCallbackController::class, 'log'])->middleware('signed')->name('callbacks.build.log');
+Route::post('builds/{build}/deployment/callback/log', [BuildCallbackController::class, 'log'])->middleware(['signed', EnsureDeployerDeletionFence::class])->name('callbacks.build.log');
 
 require __DIR__.'/auth.php';

@@ -7,6 +7,7 @@ use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Incident;
 use App\Modules\Monitor\Services\Connections\RecordProjectConnectionIncidentOutboxEvent;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -41,6 +42,9 @@ final class EvaluateAlertRules
         return DB::connection('monitor')->transaction(function () use ($candidate, $now): bool {
             $application = Application::query()->lockForUpdate()->find($candidate->environment->application_id);
             if ($application === null) {
+                return false;
+            }
+            if (MonitorDeletionFence::lockWorkspace($application->workspace_id)) {
                 return false;
             }
             $environment = Environment::query()->whereBelongsTo($application)->lockForUpdate()->find($candidate->environment_id);

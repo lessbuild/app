@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs\Server;
 
 use App\Modules\Deployer\Actions\Server\RetryRemoteServerProvisioningAction;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -42,6 +43,20 @@ class RetryRemoteServerProvisioningJob implements ShouldQueue
      */
     public function handle(Runner $runner): void
     {
+        $candidate = $this->attemptQuery()->first();
+        if ($candidate && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $candidate->organization_id)->exists()) {
+            $this->attemptQuery()->whereIn('provisioning_status', [Server::STATUS_QUEUED, Server::STATUS_PROVISIONING])
+                ->whereNull('provisioning_process_id')->update([
+                    'password' => null,
+                    'provisioning_status' => Server::STATUS_FAILED,
+                    'provisioning_error' => 'Provisioning stopped because its workspace is being deleted.',
+                    'provisioning_failure_phase' => Server::FAILURE_REMOTE,
+                    'provisioning_process_id' => null,
+                    'provisioning_process_path' => null,
+                ]);
+
+            return;
+        }
         $started = $this->attemptQuery()
             ->where('provisioning_status', Server::STATUS_QUEUED)
             ->whereNull('provisioning_process_id')

@@ -7,6 +7,7 @@ use App\Core\Services\PlatformCoreRouteLinks;
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -37,6 +38,7 @@ class WorkspaceController extends Controller
         AnalyticsWorkspaceAccess $access,
         ProductAuthentication $authentication,
         PlatformCoreRouteLinks $coreLinks,
+        AnalyticsDeletionFence $deletionFence,
     ): RedirectResponse {
         if ($authentication->usesCoreAuthority('analytics')) {
             $managementUrl = $coreLinks->to('core.workspaces.index');
@@ -47,6 +49,9 @@ class WorkspaceController extends Controller
 
         $productUserIds = $access->productUserIds($request->user());
         abort_if($productUserIds === [], 403, 'Analytics access is not yet reconciled for this account.');
+        foreach ($productUserIds as $productUserId) {
+            $deletionFence->assertAccountOpen($productUserId);
+        }
 
         $validated = $request->validate(['name' => ['required', 'string', 'max:120']]);
         $workspace = Workspace::create(['name' => $validated['name'], 'slug' => Str::slug($validated['name']).'-'.Str::lower(Str::random(5))]);

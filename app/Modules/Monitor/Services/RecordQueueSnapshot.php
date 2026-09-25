@@ -4,6 +4,7 @@ namespace App\Modules\Monitor\Services;
 
 use App\Modules\Monitor\Data\Telemetry\QueueMonitorSettings;
 use App\Modules\Monitor\Models\QueueSnapshot;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -20,6 +21,7 @@ final class RecordQueueSnapshot
             $monitor = $this->queue->lockMonitor($monitorId);
             abort_unless($this->queue->eligible($monitor) && $monitor->type === 'queue' && is_string($monitor->queue_token_hash)
                 && hash_equals($monitor->queue_token_hash, $tokenHash), 401, 'The queue key is invalid or the source is unavailable.');
+            abort_if(MonitorDeletionFence::lockWorkspace($monitor->environment->application->workspace_id), 410, 'This Monitor workspace is being deleted.');
             $observed = CarbonImmutable::parse($data['observed_at'], 'UTC');
             $values = ['observed_at' => $observed->format('Y-m-d H:i:s.u')];
             foreach (QueueMonitorSettings::METRICS as $metric) {

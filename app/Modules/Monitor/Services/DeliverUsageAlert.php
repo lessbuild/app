@@ -6,6 +6,7 @@ use App\Modules\Monitor\Models\UsageAlertDelivery;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Notifications\UsageAlertNotification;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -24,7 +25,14 @@ final class DeliverUsageAlert
      */
     public function deliver(Workspace $workspace, User $recipient, array $summary, int $threshold): string
     {
+        if (MonitorDeletionFence::workspaceIsFenced($workspace->getKey())) {
+            return 'skipped';
+        }
+
         $delivery = DB::connection('monitor')->transaction(function () use ($workspace, $recipient, $summary, $threshold): ?UsageAlertDelivery {
+            if (MonitorDeletionFence::lockWorkspace($workspace->getKey())) {
+                return null;
+            }
             $now = CarbonImmutable::now('UTC');
             $delivery = UsageAlertDelivery::query()
                 ->forWorkspace($workspace)

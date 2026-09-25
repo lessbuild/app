@@ -328,8 +328,9 @@
 
         <x-signal.ui.panel as="section" class="space-y-2 border-l-4 border-l-warning p-6" aria-labelledby="account-deletion-heading">
             <p class="ui-eyebrow">{{ __('Data and privacy') }}</p>
-            <h2 id="account-deletion-heading" class="text-lg font-extrabold text-ink">{{ __('Account deletion is not available yet') }}</h2>
-            <p class="text-sm leading-6 text-muted">{{ __('Buildpusher accounts can own projects and data across Deployer, Monitor, and Analytics. Deletion must coordinate cleanup and retention rules with all three products before any records are removed. Until that workflow is ready, your account remains active and unchanged. Product-local deletion is blocked while shared authentication is enabled.') }}</p>
+            <h2 id="account-deletion-heading" class="text-lg font-extrabold text-ink">{{ __('Delete your account') }}</h2>
+            <p class="text-sm leading-6 text-muted">{{ __('Review your account, owned workspaces, and connected app data before requesting permanent deletion. The review lists any billing or team changes needed first.') }}</p>
+            <x-signal.ui.button :href="route('platform.deletions.account.create')" variant="danger">{{ __('Review account deletion') }}</x-signal.ui.button>
         </x-signal.ui.panel>
     </main>
     @vite('resources/js/platform-passkeys.js')

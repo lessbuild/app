@@ -26,6 +26,7 @@ final class UpdatePlatformPassword
     ): void {
         DB::connection('core')->transaction(function () use ($user, $password, $currentSessionId, $currentPassword, $code): void {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             $currentSession = PlatformAuthSession::query()
                 ->whereKey($currentSessionId)
                 ->where('user_id', $lockedUser->getKey())

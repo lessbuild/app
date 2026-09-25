@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs\Server;
 
 use App\Modules\Deployer\Actions\Server\UpdateServerIpAction;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Server;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -54,6 +55,16 @@ class InitialiseServerJob implements ShouldQueue
      */
     public function handle(UpdateServerIpAction $updateServerIp): void
     {
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $this->server->organization_id)->exists()) {
+            $this->attemptQuery()->whereIn('provisioning_status', [Server::STATUS_QUEUED, Server::STATUS_WAITING_FOR_IP])->update([
+                'provisioning_status' => Server::STATUS_FAILED,
+                'provisioning_error' => 'Provisioning stopped because its workspace is being deleted.',
+                'provisioning_failure_phase' => Server::FAILURE_INITIALIZATION,
+                'initialization_token' => null,
+            ]);
+
+            return;
+        }
         $started = $this->attemptQuery()
             ->whereIn('provisioning_status', [Server::STATUS_QUEUED, Server::STATUS_WAITING_FOR_IP])
             ->update([

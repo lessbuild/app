@@ -24,6 +24,7 @@ final class ConnectPlatformSocialIdentity
 
         return DB::connection('core')->transaction(function () use ($actor, $provider, $providerUserId, $providerEmail): PlatformSocialIdentityResult {
             $user = PlatformUser::query()->lockForUpdate()->findOrFail($actor->getKey());
+            abort_unless($user->status === 'active', 403);
             $existingProvider = UserIdentity::query()
                 ->where('user_id', $user->getKey())
                 ->where('provider', $provider)

@@ -22,7 +22,7 @@ final class MonitorCustomerStatusPageProvider implements CustomerStatusPageProvi
             ->where('slug', $slug)
             ->where('published', true)
             ->first();
-        if (! $page instanceof StatusPage || $page->workspace === null) {
+        if (! $page instanceof StatusPage || $page->workspace === null || MonitorDeletionFence::workspaceIsFenced($page->workspace_id)) {
             return null;
         }
 

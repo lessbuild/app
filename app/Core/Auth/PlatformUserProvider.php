@@ -109,6 +109,26 @@ final class PlatformUserProvider extends EloquentUserProvider implements UserPro
             && $this->hasher->check($password, $hashedPassword);
     }
 
+    public function updateRememberToken(Authenticatable $user, #[\SensitiveParameter] $token)
+    {
+        $updated = PlatformUser::query()->whereKey($user->getAuthIdentifier())->where('status', 'active')
+            ->toBase()->update([$user->getRememberTokenName() => $token]);
+        $user->setRememberToken($updated > 0 ? $token : null);
+    }
+
+    public function rehashPasswordIfRequired(Authenticatable $user, #[\SensitiveParameter] array $credentials, bool $force = false)
+    {
+        if (! $this->hasher->needsRehash($user->getAuthPassword()) && ! $force) {
+            return;
+        }
+        $password = $this->hasher->make($credentials['password']);
+        $updated = PlatformUser::query()->whereKey($user->getAuthIdentifier())->where('status', 'active')
+            ->where($user->getAuthPasswordName(), $user->getAuthPassword())->update([$user->getAuthPasswordName() => $password]);
+        if ($updated > 0) {
+            $user->setAttribute($user->getAuthPasswordName(), $password);
+        }
+    }
+
     private function normalizeEmail(mixed $email): ?string
     {
         if (! is_string($email)) {

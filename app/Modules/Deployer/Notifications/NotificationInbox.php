@@ -21,6 +21,8 @@ final class NotificationInbox
         'website',
         'server',
         'provider',
+        'metric',
+        'scheduled_task',
         'recipe',
         'gallery',
         'account',
@@ -49,6 +51,8 @@ final class NotificationInbox
             'website' => route('websites.show', $resourceId),
             'server' => route('servers.show', $resourceId),
             'provider' => route('providers.show', $resourceId),
+            'metric' => route('observability.index'),
+            'scheduled_task' => route('automation.index'),
             'recipe' => route('gallery.reports.index', ['status' => 'all', 'report' => $resourceId])."#report-{$resourceId}",
             'gallery' => $reportId
                 ? route('gallery.report.status', $reportId)

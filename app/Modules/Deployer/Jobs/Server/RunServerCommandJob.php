@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Jobs\Server;
 
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\ServerCommandExecution;
 use App\Modules\Deployer\Services\Runner;
@@ -42,6 +43,16 @@ class RunServerCommandJob implements ShouldQueue
      */
     public function handle(Runner $runner): void
     {
+        $candidate = ServerCommandExecution::query()->with('server')->find($this->executionId);
+        if ($candidate?->server && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $candidate->server->organization_id)->exists()) {
+            ServerCommandExecution::query()->whereKey($this->executionId)->where('status', ServerCommandExecution::STATUS_QUEUED)->update([
+                'status' => ServerCommandExecution::STATUS_CANCELED,
+                'finished_at' => now(),
+                'output' => 'Command canceled because its workspace is being deleted.',
+            ]);
+
+            return;
+        }
         $started = ServerCommandExecution::query()
             ->whereKey($this->executionId)
             ->where('status', ServerCommandExecution::STATUS_QUEUED)

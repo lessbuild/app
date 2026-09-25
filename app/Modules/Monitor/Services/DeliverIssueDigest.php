@@ -6,6 +6,7 @@ use App\Modules\Monitor\Models\IssueDigestDelivery;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Notifications\IssueDigestNotification;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -20,6 +21,10 @@ final class DeliverIssueDigest
 
     public function deliver(Workspace $workspace, User $recipient, CarbonImmutable $from, CarbonImmutable $until): string
     {
+        if (MonitorDeletionFence::workspaceIsFenced($workspace->getKey())) {
+            return 'skipped';
+        }
+
         $workspace = $workspace->fresh();
         $recipient = $workspace === null ? null : $this->eligibleRecipient($workspace, $recipient);
         if ($recipient === null) {
@@ -31,6 +36,9 @@ final class DeliverIssueDigest
         }
 
         $delivery = DB::connection('monitor')->transaction(function () use ($workspace, $recipient, $digest, $from, $until): ?IssueDigestDelivery {
+            if (MonitorDeletionFence::lockWorkspace($workspace->getKey())) {
+                return null;
+            }
             $now = CarbonImmutable::now('UTC');
             $delivery = IssueDigestDelivery::query()
                 ->forWorkspace($workspace)

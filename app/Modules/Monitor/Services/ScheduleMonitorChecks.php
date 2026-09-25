@@ -4,6 +4,7 @@ namespace App\Modules\Monitor\Services;
 
 use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\MonitorCheck;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -31,6 +32,9 @@ final class ScheduleMonitorChecks
             $monitor = $this->queue->lockMonitor($id);
             if (! $this->queue->eligible($monitor) || $monitor->next_check_at === null || $monitor->next_check_at->gt($now)
                 || $monitor->checks()->whereIn('status', ['queued', 'running'])->exists()) {
+                return false;
+            }
+            if (MonitorDeletionFence::lockWorkspace($monitor->environment->application->workspace_id)) {
                 return false;
             }
             if ($monitor->type === 'heartbeat') {

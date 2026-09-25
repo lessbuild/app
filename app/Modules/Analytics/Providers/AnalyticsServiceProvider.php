@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Connections\ProjectConnectionDeliveryConsumerRegistry;
+use App\Core\Services\Deletion\ProductDeletionRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -40,6 +41,7 @@ use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceActivityProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceMembershipProjector;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceSearchProvider;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceUsageProvider;
+use App\Modules\Analytics\Services\Deletion\AnalyticsProductDeletionProvider;
 use App\Modules\Analytics\Services\WorkspaceViewData;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -90,6 +92,7 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         );
         app(ProjectConnectionDeliveryConsumerRegistry::class)->register(app(ConsumeDeployerReleaseAnnotation::class));
         app(ProjectConnectionDeliveryConsumerRegistry::class)->register(app(ConsumeMonitorIncidentAnnotation::class));
+        app(ProductDeletionRegistry::class)->register(app(AnalyticsProductDeletionProvider::class));
 
         if (! config('platform.products.analytics.enabled', false)
             || ! filled(config('platform.products.analytics.host'))) {

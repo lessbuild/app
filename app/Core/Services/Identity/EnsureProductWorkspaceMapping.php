@@ -4,6 +4,7 @@ namespace App\Core\Services\Identity;
 
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\Workspace;
+use App\Core\Services\LegacyIdentityResolver;
 use Illuminate\Support\Facades\DB;
 
 /** Ensures a Core workspace has one durable mapping to its module-owned workspace projection. */
@@ -17,6 +18,13 @@ final class EnsureProductWorkspaceMapping
 
     public function handle(string $product, Workspace $workspace): string
     {
+        return app(CoordinateIdentityProjection::class)->run($product, $workspace, fn (): string => $this->project($product, $workspace));
+    }
+
+    private function project(string $product, Workspace $workspace): string
+    {
+        $workspace = Workspace::query()->findOrFail($workspace->getKey());
+        abort_unless($workspace->status === 'active' && $workspace->archived_at === null, 409, 'The workspace is not active.');
         $sourceEntity = match ($product) {
             'deployer' => 'organization',
             'monitor', 'analytics' => 'workspace',
@@ -83,6 +91,8 @@ final class EnsureProductWorkspaceMapping
         }
 
         DB::connection('core')->transaction(function () use ($product, $sourceEntity, $productWorkspaceId, $workspace): void {
+            $workspace = Workspace::query()->lockForUpdate()->findOrFail($workspace->getKey());
+            abort_unless($workspace->status === 'active' && $workspace->archived_at === null, 409, 'The workspace is not active.');
             LegacyIdentityMap::query()->create([
                 'source_product' => $product,
                 'source_entity' => $sourceEntity,

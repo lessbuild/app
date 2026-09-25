@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Http\Middleware;
 
 use App\Modules\Monitor\Models\Monitor;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use App\Modules\Monitor\Services\MonitorQueue;
 use Closure;
 use Illuminate\Http\Request;
@@ -23,6 +24,7 @@ class AuthenticateHeartbeatToken
         $hash = hash('sha256', $secret);
         abort_unless($this->queue->eligible($monitor) && is_string($monitor->heartbeat_token_hash)
             && hash_equals($monitor->heartbeat_token_hash, $hash), 401, 'The heartbeat key is invalid or the source is unavailable.');
+        MonitorDeletionFence::assertWorkspaceActive($monitor->environment->application->workspace_id);
         $request->attributes->set('heartbeat_monitor_id', $monitor->id);
         $request->attributes->set('heartbeat_token_hash', $hash);
 

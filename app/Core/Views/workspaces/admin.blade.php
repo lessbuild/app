@@ -88,4 +88,11 @@
     @if (! $canManageWorkspace)
         <x-signal.ui.alert class="mt-6" tone="info">{{ __('Some shared workspace changes are reserved for owners and administrators. App-specific permissions still apply inside each app.') }}</x-signal.ui.alert>
     @endif
+    @if ((string) $workspace->owner_user_id === (string) $user->getKey())
+        <x-signal.ui.panel as="section" class="mt-6 space-y-3 p-6">
+            <h2 class="text-lg font-extrabold text-ink">{{ __('Delete workspace') }}</h2>
+            <p class="text-sm leading-6 text-muted">{{ __('Review permanent deletion of this workspace and its connected app data. Your shared account stays active.') }}</p>
+            <x-signal.ui.button :href="route('platform.deletions.workspace.create', $workspace)" variant="danger">{{ __('Review workspace deletion') }}</x-signal.ui.button>
+        </x-signal.ui.panel>
+    @endif
 </x-signal.layouts.platform>

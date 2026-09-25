@@ -8,6 +8,7 @@ use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
+use App\Core\Services\Deletion\ProductDeletionRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
@@ -35,6 +36,7 @@ use App\Modules\Monitor\Contracts\TelemetryPayloadMapper;
 use App\Modules\Monitor\Contracts\TlsCertificateInspector;
 use App\Modules\Monitor\Http\Middleware\AuthenticateIngestToken;
 use App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace;
+use App\Modules\Monitor\Http\Middleware\EnsureMonitorAccountActive;
 use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
@@ -43,6 +45,7 @@ use App\Modules\Monitor\Services\Core\MonitorApiDocumentationProvider;
 use App\Modules\Monitor\Services\Core\MonitorCustomerStatusPageProvider;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
+use App\Modules\Monitor\Services\Core\MonitorProductDeletionProvider;
 use App\Modules\Monitor\Services\Core\MonitorProductWorkspaceProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionOutboxDispatcher;
@@ -115,6 +118,8 @@ final class MonitorServiceProvider extends ModuleServiceProvider
     {
         parent::boot();
 
+        app(ProductDeletionRegistry::class)->register(app(MonitorProductDeletionProvider::class));
+
         app(ProductResourceRestorationRegistry::class)->register(app(MonitorResourceRestorationProvider::class));
 
         app(ProductApiDocumentationRegistry::class)->register(
@@ -178,6 +183,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app('router')->aliasMiddleware('monitor.ingest.token', AuthenticateIngestToken::class);
         app('router')->aliasMiddleware('monitor.workspace', RequireWorkspace::class);
         app('router')->aliasMiddleware('monitor.application.workspace', EnsureApplicationWorkspace::class);
+        app('router')->aliasMiddleware('monitor.account.active', EnsureMonitorAccountActive::class);
 
         foreach (glob(app_path('Modules/Monitor/Models/*.php')) ?: [] as $modelFile) {
             $model = 'App\\Modules\\Monitor\\Models\\'.pathinfo($modelFile, PATHINFO_FILENAME);

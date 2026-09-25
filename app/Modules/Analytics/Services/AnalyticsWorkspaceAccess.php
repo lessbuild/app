@@ -13,6 +13,7 @@ use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Analytics\Models\Workspace;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -25,6 +26,7 @@ final class AnalyticsWorkspaceAccess
         private readonly ProductWorkspaceAccess $productWorkspaceAccess,
         private readonly MappedProjectResourceAccess $projectResources,
         private readonly ResolvePlatformUser $platformUsers,
+        private readonly AnalyticsDeletionFence $deletionFence,
     ) {}
 
     /** @return list<string> */
@@ -144,10 +146,20 @@ final class AnalyticsWorkspaceAccess
 
     public function hasAccess(Authenticatable $user, Workspace $workspace): bool
     {
+        if ($this->deletionFence->isFenced('workspace', (string) $workspace->getKey())) {
+            return false;
+        }
+
         $productUserIds = $this->productUserIds($user);
 
         if ($productUserIds === [] || ! $workspace->users()->whereIn('users.id', $productUserIds)->exists()) {
             return false;
+        }
+
+        foreach ($productUserIds as $productUserId) {
+            if ($this->deletionFence->isFenced('account', $productUserId)) {
+                return false;
+            }
         }
 
         if (! $this->authentication->usesCoreAuthority('analytics')) {

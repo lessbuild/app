@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Jobs\Database;
 
 use App\Modules\Deployer\Models\DatabaseOperationRun;
 use App\Modules\Deployer\Models\DatabaseUser;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -76,6 +77,13 @@ class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
 
         if ($operationRun !== null && $record !== null) {
             abort_unless((string) $operationRun->environment_resource_id === (string) $record->environment_resource_id, 404);
+        }
+
+        $workspaceId = $record?->resource?->environment?->project?->organization_id;
+        if ($workspaceId !== null && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $workspaceId)->exists()) {
+            $operationRun?->markFailed();
+
+            return;
         }
 
         if ($operationRun !== null && ! $operationRun->claim()) {

@@ -9,6 +9,7 @@ use App\Core\Exceptions\Connections\ProjectConnectionDeliveryBlocked;
 use App\Core\Services\Connections\ProjectConnectionDeliveryAuthorization;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\SiteIncidentAnnotation;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -76,6 +77,8 @@ final class ConsumeMonitorIncidentAnnotation implements ProjectConnectionDeliver
             );
 
             $site = Site::query()->lockForUpdate()->findOrFail($payload['target_site_id']);
+            $workspace = $site->workspace()->lockForUpdate()->firstOrFail();
+            app(AnalyticsDeletionFence::class)->assertWorkspaceOpen($workspace->getKey());
 
             return SiteIncidentAnnotation::query()->create([
                 'site_id' => $site->getKey(),

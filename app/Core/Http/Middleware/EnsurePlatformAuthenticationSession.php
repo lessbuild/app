@@ -45,6 +45,10 @@ final class EnsurePlatformAuthenticationSession
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
+        if ($request->routeIs('platform.deletions.progress', 'platform.deletions.recover', 'platform.deletions.retry')) {
+            return $next($request);
+        }
+
         return redirect()->route('platform.login', [
             'return_to' => $request->fullUrl(),
         ])->withHeaders([

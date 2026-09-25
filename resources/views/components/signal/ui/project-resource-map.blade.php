@@ -4,6 +4,7 @@
     'connections',
     'resourceDestinations' => [],
     'hiddenConnectionCount' => 0,
+    'infrastructure' => [],
 ])
 
 @php
@@ -177,4 +178,8 @@
             @endif
         </div>
     </x-signal.ui.card>
+
+    @if ($infrastructure !== [])
+        <x-signal.blocks.project-infrastructure :snapshots="$infrastructure" :products="$products" />
+    @endif
 </div>

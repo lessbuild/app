@@ -4,6 +4,7 @@ namespace App\Modules\Monitor\Services;
 
 use App\Modules\Monitor\Models\BillingEvent;
 use App\Modules\Monitor\Models\Workspace;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -37,13 +38,30 @@ final class ProcessStripeBillingEvent
         }
 
         $processedLocally = DB::connection('monitor')->transaction(function () use ($eventId, $eventType, $object, $stripeCreatedAt): bool {
-            if (BillingEvent::query()->where('stripe_event_id', $eventId)->lockForUpdate()->exists()) {
+            $existing = BillingEvent::query()->where('stripe_event_id', $eventId)->lockForUpdate()->first();
+            if ($existing !== null) {
                 return false;
             }
 
             $workspace = $this->resolveWorkspace($object);
             if ($workspace !== null) {
                 $workspace = Workspace::query()->lockForUpdate()->find($workspace->id);
+            }
+            if ($workspace !== null && MonitorDeletionFence::workspaceIsFenced($workspace->getKey())) {
+                BillingEvent::query()->create([
+                    'stripe_event_id' => $eventId,
+                    'event_type' => $eventType,
+                    'workspace_id' => $workspace->getKey(),
+                    'stripe_created_at' => $stripeCreatedAt,
+                    // Keep the source identity so Core can reconcile late financial state
+                    // and block deletion when an active or unsettled obligation arrives.
+                    // The native workspace itself remains fenced and is not changed here.
+                    'processing_status' => BillingEvent::STATUS_PENDING,
+                    'ignored_reason' => 'awaiting_core_reconciliation',
+                    'processed_at' => null,
+                ]);
+
+                return true;
             }
             $billingEvent = BillingEvent::query()->create([
                 'stripe_event_id' => $eventId,

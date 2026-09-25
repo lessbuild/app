@@ -3,6 +3,7 @@
 namespace App\Modules\Analytics\Actions\Fortify;
 
 use App\Modules\Analytics\Models\User;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -21,6 +22,8 @@ class UpdateUserPassword implements UpdatesUserPasswords
      */
     public function update(User $user, array $input): void
     {
+        app(AnalyticsDeletionFence::class)->assertAccountOpen($user->getKey());
+
         Validator::make($input, [
             'current_password' => ['required', 'string', 'current_password:web'],
             'password' => $this->passwordRules(),

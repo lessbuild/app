@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Http\Controllers;
 
 use App\Modules\Deployer\Actions\Repository\HandleRepositoryWebhookAction;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Services\GitHubAppWebhookVerifier;
@@ -45,6 +46,8 @@ class GitHubAppWebhookController extends Controller
                 ->where('credential_type', 'app')
                 ->where('external_id', (string) $webhook->installationId))
             ->firstOrFail();
+
+        abort_if(ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $repository->organization_id)->exists(), 409, 'This workspace is being deleted.');
 
         return $webhooks($request, $repository, $verifier, $handle, $previews);
     }

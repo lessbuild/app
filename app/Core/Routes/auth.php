@@ -2,6 +2,7 @@
 
 use App\Core\Http\Controllers\Auth\PlatformAccountDataExportController;
 use App\Core\Http\Controllers\Auth\PlatformAccountSecurityController;
+use App\Core\Http\Controllers\Auth\PlatformDeletionController;
 use App\Core\Http\Controllers\Auth\PlatformEmailVerificationController;
 use App\Core\Http\Controllers\Auth\PlatformPasskeyController;
 use App\Core\Http\Controllers\Auth\PlatformPasswordResetController;
@@ -10,6 +11,13 @@ use App\Core\Http\Controllers\Auth\PlatformSessionController;
 use App\Core\Http\Controllers\Auth\PlatformSocialAuthController;
 use App\Core\Http\Controllers\Auth\PlatformWorkspaceInvitationController;
 use App\Core\Services\Auth\PlatformSocialProviders;
+
+Route::get('/deletions/progress/{receiptKey}', [PlatformDeletionController::class, 'progress'])
+    ->whereUuid('receiptKey')->name('deletions.progress');
+Route::post('/deletions/progress/{receiptKey}/recover', [PlatformDeletionController::class, 'recover'])
+    ->whereUuid('receiptKey')->middleware('throttle:6,1')->name('deletions.recover');
+Route::post('/deletions/progress/{receiptKey}/retry', [PlatformDeletionController::class, 'retry'])
+    ->whereUuid('receiptKey')->middleware('throttle:6,1')->name('deletions.retry');
 
 Route::get('/invitations/{token}', [PlatformWorkspaceInvitationController::class, 'show'])
     ->where('token', '[a-f0-9]{64}')
@@ -74,6 +82,12 @@ Route::post('/logout', [PlatformSessionController::class, 'destroy'])
     ->name('logout');
 
 Route::middleware('auth:platform')->group(function (): void {
+    Route::get('/deletions/account', [PlatformDeletionController::class, 'account'])->name('deletions.account.create');
+    Route::get('/deletions/workspaces/{workspace}', [PlatformDeletionController::class, 'workspace'])->name('deletions.workspace.create');
+    Route::post('/deletions/account', [PlatformDeletionController::class, 'storeAccount'])
+        ->middleware('throttle:sensitive-account')->name('deletions.account.store');
+    Route::post('/deletions/workspaces/{workspace}', [PlatformDeletionController::class, 'storeWorkspace'])
+        ->middleware('throttle:sensitive-account')->name('deletions.workspace.store');
     Route::get('/account/security', [PlatformAccountSecurityController::class, 'index'])
         ->name('account.security');
     Route::get('/account/export', PlatformAccountDataExportController::class)

@@ -3,6 +3,9 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\WorkspaceActivityProvider;
+use App\Core\Contracts\WorkspaceNativeNotificationProvider;
+use App\Core\Data\Notifications\WorkspaceNativeNotificationSnapshot;
+use App\Core\Data\Notifications\WorkspaceNotification;
 use App\Core\Data\Notifications\WorkspaceNotificationSeverity;
 use App\Core\Data\Projects\ProjectWorkflowRun;
 use App\Core\Data\Projects\ProjectWorkflowStep;
@@ -12,6 +15,7 @@ use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\Workspace;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceNativeNotificationProviderRegistry;
 use App\Core\Services\WorkspaceNotifications;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
@@ -193,6 +197,86 @@ final class WorkspaceNotificationsTest extends TestCase
         $this->assertSame(['Monitor'], $feed->unavailableProducts->all());
     }
 
+    public function test_native_read_state_is_preserved_and_security_items_bypass_inbox_mutes_without_a_product_grant(): void
+    {
+        DB::connection('core')->table('workspace_notification_preferences')->insert([
+            'id' => (string) Str::ulid(),
+            'workspace_id' => $this->workspace->getKey(),
+            'user_id' => $this->user->getKey(),
+            'project_id' => null,
+            'product' => 'deployer',
+            'severity' => 'information',
+            'scope_key' => WorkspaceNotifications::preferenceScopeKey(null, 'deployer', WorkspaceNotificationSeverity::Information),
+            'enabled' => false,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $native = $this->nativeNotification(
+            key: hash('sha256', 'account-security'),
+            security: true,
+            read: true,
+            sourceReference: 'opaque-native-reference',
+        );
+        $foreignWorkspace = $this->nativeNotification(
+            key: hash('sha256', 'foreign-workspace-security'),
+            security: true,
+            read: false,
+            sourceReference: 'foreign-workspace-reference',
+            workspaceId: (string) Str::ulid(),
+        );
+        $foreignProject = $this->nativeNotification(
+            key: hash('sha256', 'foreign-project'),
+            security: false,
+            read: false,
+            sourceReference: 'foreign-project-reference',
+            projectId: (string) Str::ulid(),
+        );
+        $ungrantedOperational = $this->nativeNotification(
+            key: hash('sha256', 'ungranted-operational'),
+            security: false,
+            read: false,
+            sourceReference: 'ungranted-reference',
+        );
+        $wrongProviderProduct = $this->nativeNotification(
+            key: hash('sha256', 'wrong-provider-product'),
+            security: false,
+            read: false,
+            sourceReference: 'wrong-provider-product-reference',
+            product: 'monitor',
+        );
+        $registry = new WorkspaceNativeNotificationProviderRegistry;
+        $registry->register('deployer', $this->nativeProvider(new WorkspaceNativeNotificationSnapshot(collect([
+            $native, $foreignWorkspace, $foreignProject, $ungrantedOperational, $wrongProviderProduct,
+        ]))));
+        $service = new WorkspaceNotifications(new WorkspaceActivityProviderRegistry, $registry);
+
+        $feed = $service->forWorkspace($this->user, $this->workspace, collect(), []);
+
+        $this->assertCount(1, $feed->notifications);
+        $this->assertTrue($feed->notifications->sole()->security);
+        $this->assertTrue($feed->notifications->sole()->read);
+        $this->assertSame(0, $feed->unreadCount);
+        $this->assertSame(0, DB::connection('core')->table('workspace_notification_reads')->count());
+    }
+
+    public function test_native_read_mutation_is_delegated_to_its_provider(): void
+    {
+        $provider = $this->nativeProvider(new WorkspaceNativeNotificationSnapshot(collect()), mutationResult: false);
+        $registry = new WorkspaceNativeNotificationProviderRegistry;
+        $registry->register('deployer', $provider);
+        $service = new WorkspaceNotifications(new WorkspaceActivityProviderRegistry, $registry);
+        $notification = $this->nativeNotification(
+            key: hash('sha256', 'native'),
+            security: false,
+            read: false,
+            sourceReference: 'opaque-native-reference',
+        );
+
+        $this->assertFalse($service->setRead($this->user, $this->workspace, collect([$this->project]), ['deployer'], $notification, true));
+        $this->assertTrue($provider->called);
+    }
+
     private function provider(WorkspaceActivitySnapshot $snapshot): WorkspaceActivityProvider
     {
         return new class($snapshot) implements WorkspaceActivityProvider
@@ -204,6 +288,60 @@ final class WorkspaceNotificationsTest extends TestCase
                 return $this->snapshot;
             }
         };
+    }
+
+    private function nativeProvider(WorkspaceNativeNotificationSnapshot $snapshot, bool $mutationResult = true): WorkspaceNativeNotificationProvider
+    {
+        return new class($snapshot, $mutationResult) implements WorkspaceNativeNotificationProvider
+        {
+            public bool $called = false;
+
+            public function __construct(private readonly WorkspaceNativeNotificationSnapshot $snapshot, private readonly bool $mutationResult) {}
+
+            public function forWorkspace(PlatformUser $user, Workspace $workspace, Collection $projects, array $products, int $limit): WorkspaceNativeNotificationSnapshot
+            {
+                return $this->snapshot;
+            }
+
+            public function setRead(PlatformUser $user, Workspace $workspace, Collection $projects, array $products, string $sourceReference, bool $read): bool
+            {
+                $this->called = $sourceReference === 'opaque-native-reference' && $read;
+
+                return $this->mutationResult;
+            }
+        };
+    }
+
+    private function nativeNotification(
+        string $key,
+        bool $security,
+        bool $read,
+        string $sourceReference,
+        ?string $workspaceId = null,
+        ?string $projectId = null,
+        string $product = 'deployer',
+    ): WorkspaceNotification {
+        return new WorkspaceNotification(
+            key: $key,
+            threadKey: $security ? 'account-security' : 'resource',
+            workspaceId: $workspaceId ?? (string) $this->workspace->getKey(),
+            projectId: $projectId,
+            projectName: $projectId === null ? null : 'Untrusted project',
+            projectUrl: $projectId === null ? null : 'https://attacker.example.test/project',
+            environmentName: null,
+            product: $product,
+            productLabel: str($product)->headline()->toString(),
+            severity: WorkspaceNotificationSeverity::Information,
+            title: $security ? 'Account security changed' : 'Update',
+            detail: 'Safe detail',
+            occurredAt: CarbonImmutable::now('UTC'),
+            resultUrl: null,
+            read: $read,
+            sourceProvider: 'deployer',
+            sourceReference: $sourceReference,
+            security: $security,
+            sourceCategory: $security ? 'account' : 'website',
+        );
     }
 
     private function incidentRun(string $projectId, string $product = 'monitor'): ProjectWorkflowRun

@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Console\Commands;
 
 use App\Modules\Deployer\Jobs\RunScheduledTaskJob;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\ScheduledTask;
 use Cron\CronExpression;
 use Illuminate\Console\Command;
@@ -23,6 +24,7 @@ class RunScheduledTasksCommand extends Command
         ScheduledTask::query()->where('is_enabled', true)->with('environment.website')->each(function (ScheduledTask $task): void {
             $now = now($task->timezone);
             if (! $task->environment->website
+                || ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $task->environment->project->organization_id)->exists()
                 || ! CronExpression::isValidExpression($task->cron_expression)
                 || ! (new CronExpression($task->cron_expression))->isDue($now)
                 || $task->last_queued_at?->gte(now()->startOfMinute())) {

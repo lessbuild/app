@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Jobs;
 
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\ScheduledTaskRun;
 use App\Modules\Deployer\Services\IncidentNotifier;
 use App\Modules\Deployer\Services\Runner;
@@ -50,6 +51,12 @@ class RunScheduledTaskJob implements ShouldBeUnique, ShouldQueue
         $task = $run?->task;
         $website = $task?->environment?->website;
         if (! $run || ! $task || ! $website?->server) {
+            return;
+        }
+        $workspaceId = $task->environment?->project?->organization_id;
+        if ($workspaceId !== null && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $workspaceId)->exists()) {
+            $run->update(['status' => 'cancelled', 'finished_at' => now()]);
+
             return;
         }
         $run->update(['status' => 'running', 'started_at' => now()]);

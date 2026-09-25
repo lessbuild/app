@@ -16,6 +16,7 @@ use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Notifications\WorkspaceInvitation;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
@@ -114,6 +115,7 @@ class WorkspaceAccessTest extends TestCase
             app(ProductWorkspaceAccess::class),
             app(MappedProjectResourceAccess::class),
             app(ResolvePlatformUser::class),
+            app(AnalyticsDeletionFence::class),
         );
 
         $this->assertTrue($access->hasAccess($principal, $analyticsWorkspace));

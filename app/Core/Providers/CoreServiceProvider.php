@@ -16,12 +16,14 @@ use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxDispatcherRegistry;
 use App\Core\Services\Connections\ProjectConnectionOutboxSourceRegistry;
 use App\Core\Services\CustomerStatusPageProviderRegistry;
+use App\Core\Services\Deletion\ProductDeletionRegistry;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
 use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\PlatformStatusProviderRegistry;
 use App\Core\Services\ProductApiDocumentationRegistry;
+use App\Core\Services\ProjectInfrastructureProviderRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -36,6 +38,7 @@ use App\Core\Services\WorkspaceCredentialProviderRegistry;
 use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
 use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
 use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceNativeNotificationProviderRegistry;
 use App\Core\Services\WorkspaceProductUsageProviderRegistry;
 use App\Core\Services\WorkspaceWebhookDeliveryProviderRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
@@ -51,6 +54,9 @@ final class CoreServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(ProjectProductLinkRegistry::class);
+        $this->app->singleton(ProjectInfrastructureProviderRegistry::class);
+        $this->app->singleton(WorkspaceNativeNotificationProviderRegistry::class);
+        $this->app->singleton(ProductDeletionRegistry::class);
         $this->app->singleton(ProductResourceRestorationRegistry::class);
         $this->app->singleton(ProjectConnectionDiagnosticRegistry::class);
         $this->app->singleton(ProjectConnectionDeliveryConsumerRegistry::class);

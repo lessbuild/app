@@ -5,6 +5,7 @@ namespace App\Modules\Analytics\Actions\Sites;
 use App\Core\Data\Billing\ProductPlanResolution;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\Workspace;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -19,6 +20,7 @@ final class CreateSiteForWorkspace
 
         return DB::connection('analytics')->transaction(function () use ($workspace, $plan, $attributes): Site {
             $lockedWorkspace = Workspace::query()->whereKey($workspace->getKey())->lockForUpdate()->firstOrFail();
+            app(AnalyticsDeletionFence::class)->assertWorkspaceOpen($lockedWorkspace->getKey());
             $siteLimit = $plan->limit('sites');
             $currentSites = $lockedWorkspace->sites()->count();
 

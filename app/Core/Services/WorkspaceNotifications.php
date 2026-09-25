@@ -17,11 +17,15 @@ use Illuminate\Database\LostConnectionException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Str;
 use PDOException;
+use Throwable;
 
 /** Build a redacted cross-product inbox from each module's authorized workflow summaries. */
 final class WorkspaceNotifications
 {
-    public function __construct(private readonly WorkspaceActivityProviderRegistry $providers) {}
+    public function __construct(
+        private readonly WorkspaceActivityProviderRegistry $providers,
+        private readonly WorkspaceNativeNotificationProviderRegistry $nativeProviders,
+    ) {}
 
     /**
      * @param  Collection<int, Project>  $projects
@@ -34,16 +38,81 @@ final class WorkspaceNotifications
         array $products,
         int $limit = 100,
     ): WorkspaceNotificationFeed {
-        if ($projects->isEmpty() || $products === []) {
-            return new WorkspaceNotificationFeed(collect(), collect(), 0);
-        }
-
         $resultLimit = max(1, min(100, $limit));
         $notifications = collect();
         $unavailableProducts = collect();
         $projectsById = $projects->keyBy(fn (Project $project): string => (string) $project->getKey());
 
+        foreach ($this->nativeProviders->all() as $product => $provider) {
+            try {
+                $snapshot = $provider->forWorkspace($user, $workspace, $projects, $products, $resultLimit);
+            } catch (Throwable) {
+                $unavailableProducts->push((string) config('platform.products.'.$product.'.label', str($product)->headline()));
+
+                continue;
+            }
+
+            if (! $snapshot->available) {
+                $unavailableProducts->push((string) config('platform.products.'.$product.'.label', str($product)->headline()));
+
+                continue;
+            }
+
+            foreach ($snapshot->notifications as $notification) {
+                if (! $notification instanceof WorkspaceNotification
+                    || $notification->sourceProvider !== $product
+                    || $notification->product !== $product
+                    || $notification->sourceReference === null
+                    || preg_match('/\A[a-f0-9]{64}\z/', $notification->key) !== 1
+                    || (string) $notification->workspaceId !== (string) $workspace->getKey()) {
+                    continue;
+                }
+
+                $security = $product === 'deployer'
+                    && $notification->security
+                    && $notification->sourceCategory === 'account'
+                    && $notification->projectId === null;
+                if (! $security && ! in_array($product, $products, true)) {
+                    continue;
+                }
+
+                $project = $notification->projectId === null
+                    ? null
+                    : $projectsById->get((string) $notification->projectId);
+                if ($notification->projectId !== null
+                    && (! $project instanceof Project || (string) $project->workspace_id !== (string) $workspace->getKey())) {
+                    continue;
+                }
+
+                $notifications->put($notification->key, new WorkspaceNotification(
+                    key: $notification->key,
+                    threadKey: $notification->threadKey,
+                    workspaceId: (string) $workspace->getKey(),
+                    projectId: $project === null ? null : (string) $project->getKey(),
+                    projectName: $project?->name,
+                    projectUrl: $project === null ? null : route('core.projects.show', [$workspace, $project]),
+                    environmentName: $this->text($notification->environmentName),
+                    product: $product,
+                    productLabel: (string) config('platform.products.'.$product.'.label', str($product)->headline()),
+                    severity: $notification->severity,
+                    title: $this->text($notification->title, 180) ?? __('Product update'),
+                    detail: $this->text($notification->detail, 500) ?? __('Open :product for details.', ['product' => config('platform.products.'.$product.'.label', str($product)->headline())]),
+                    occurredAt: $notification->occurredAt,
+                    resultUrl: $this->productUrl($product, $notification->resultUrl),
+                    read: $notification->read,
+                    sourceProvider: $product,
+                    sourceReference: $notification->sourceReference,
+                    security: $security,
+                    sourceCategory: $notification->sourceCategory,
+                ));
+            }
+        }
+
         foreach (array_unique($products) as $product) {
+            if ($projects->isEmpty()) {
+                continue;
+            }
+
             $provider = $this->providers->get($product);
 
             if ($provider === null) {
@@ -90,13 +159,16 @@ final class WorkspaceNotifications
             }
         }
 
-        $notificationKeys = $notifications->keys()->all();
-        $reads = $notificationKeys === []
+        $workflowKeys = $notifications
+            ->filter(fn (WorkspaceNotification $notification): bool => $notification->sourceProvider === null)
+            ->keys()
+            ->all();
+        $reads = $workflowKeys === []
             ? collect()
             : WorkspaceNotificationRead::query()
                 ->where('workspace_id', $workspace->getKey())
                 ->where('user_id', $user->getKey())
-                ->whereIn('notification_key', $notificationKeys)
+                ->whereIn('notification_key', $workflowKeys)
                 ->get(['notification_key'])
                 ->keyBy('notification_key');
         $preferences = WorkspaceNotificationPreference::query()
@@ -107,6 +179,9 @@ final class WorkspaceNotifications
 
         $notifications = $notifications
             ->filter(function (WorkspaceNotification $notification) use ($preferences): bool {
+                if ($notification->security) {
+                    return true;
+                }
                 $projectScope = self::preferenceScopeKey($notification->projectId, $notification->product, $notification->severity);
                 $globalScope = self::preferenceScopeKey(null, $notification->product, $notification->severity);
                 $preference = $preferences->get($projectScope) ?? $preferences->get($globalScope);
@@ -114,6 +189,10 @@ final class WorkspaceNotifications
                 return $preference === null || $preference->enabled;
             })
             ->map(function (WorkspaceNotification $notification) use ($reads): WorkspaceNotification {
+                $read = $notification->sourceProvider !== null
+                    ? $notification->read
+                    : $reads->has($notification->key);
+
                 return new WorkspaceNotification(
                     key: $notification->key,
                     threadKey: $notification->threadKey,
@@ -129,10 +208,15 @@ final class WorkspaceNotifications
                     detail: $notification->detail,
                     occurredAt: $notification->occurredAt,
                     resultUrl: $notification->resultUrl,
-                    read: $reads->has($notification->key),
+                    read: $read,
+                    sourceProvider: $notification->sourceProvider,
+                    sourceReference: $notification->sourceReference,
+                    security: $notification->security,
+                    sourceCategory: $notification->sourceCategory,
                 );
             })
-            ->sortByDesc(fn (WorkspaceNotification $notification): int => $notification->occurredAt->getTimestamp())
+            ->sort(fn (WorkspaceNotification $left, WorkspaceNotification $right): int => $right->occurredAt->getTimestamp() <=> $left->occurredAt->getTimestamp()
+                    ?: strcmp($right->key, $left->key))
             ->take($resultLimit)
             ->values();
 
@@ -141,6 +225,38 @@ final class WorkspaceNotifications
             unavailableProducts: $unavailableProducts->unique()->values(),
             unreadCount: $notifications->where('read', false)->count(),
         );
+    }
+
+    public function setRead(
+        PlatformUser $user,
+        Workspace $workspace,
+        Collection $projects,
+        array $products,
+        WorkspaceNotification $notification,
+        bool $read,
+    ): bool {
+        if ($notification->sourceProvider === null || $notification->sourceReference === null) {
+            return false;
+        }
+
+        $provider = $this->nativeProviders->get($notification->sourceProvider);
+
+        if ($provider === null) {
+            return false;
+        }
+
+        try {
+            return $provider->setRead(
+                $user,
+                $workspace,
+                $projects,
+                $products,
+                $notification->sourceReference,
+                $read,
+            );
+        } catch (Throwable) {
+            return false;
+        }
     }
 
     public static function preferenceScopeKey(?string $projectId, string $product, WorkspaceNotificationSeverity $severity): string

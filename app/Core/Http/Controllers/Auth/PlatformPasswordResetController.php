@@ -8,6 +8,7 @@ use Illuminate\Auth\Events\PasswordReset;
 use Illuminate\Contracts\Auth\PasswordBroker;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Password;
 use Illuminate\Support\Str;
@@ -54,12 +55,16 @@ final class PlatformPasswordResetController
                 'token' => $data['token'],
             ],
             function (PlatformUser $user, string $password) use ($sessions): void {
-                $sessions->revokeAll($user);
-                $user->forceFill([
-                    'password' => Hash::make($password),
-                    'password_set_at' => now(),
-                    'remember_token' => Str::random(60),
-                ])->save();
+                DB::connection('core')->transaction(function () use ($user, $password, $sessions): void {
+                    $user = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+                    abort_unless($user->status === 'active', 403);
+                    $sessions->revokeAll($user);
+                    $user->forceFill([
+                        'password' => Hash::make($password),
+                        'password_set_at' => now(),
+                        'remember_token' => Str::random(60),
+                    ])->save();
+                }, attempts: 3);
 
                 event(new PasswordReset($user));
             },

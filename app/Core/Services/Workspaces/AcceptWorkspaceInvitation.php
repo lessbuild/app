@@ -16,6 +16,8 @@ final class AcceptWorkspaceInvitation
     public function handle(PlatformUser $user, string $token): Workspace
     {
         return DB::connection('core')->transaction(function () use ($user, $token): Workspace {
+            $user = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($user->status === 'active', 403);
             $invitation = $this->invitations->findValid($token, lockForUpdate: true);
             abort_unless($invitation !== null, 404);
 

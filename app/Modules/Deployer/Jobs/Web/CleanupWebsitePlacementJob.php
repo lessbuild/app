@@ -5,6 +5,7 @@ namespace App\Modules\Deployer\Jobs\Web;
 use App\Modules\Deployer\Actions\Web\DeleteWebsitePlacementAction;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -43,18 +44,25 @@ class CleanupWebsitePlacementJob implements ShouldQueue
      */
     public function handle(Runner $runner): void
     {
-        $server = Server::find($this->serverId);
-        if ($server) {
-            (new DeleteWebsitePlacementAction($server, $this->deploymentSlug, $runner))->handle();
+        $website = Website::withTrashed()->find($this->websiteId);
+        if (! $website) {
+            return;
         }
 
-        Website::withTrashed()
-            ->whereKey($this->websiteId)
-            ->where('previous_server_id', $this->serverId)
-            ->update([
-                'previous_server_id' => null,
-                'placement_cleanup_error' => null,
-            ]);
+        app(DeployerMutationClaimManager::class)->runWorkspace($website->organization_id, 'website.cleanup_previous_placement', function () use ($runner): void {
+            $server = Server::find($this->serverId);
+            if ($server) {
+                (new DeleteWebsitePlacementAction($server, $this->deploymentSlug, $runner))->handle();
+            }
+
+            Website::withTrashed()
+                ->whereKey($this->websiteId)
+                ->where('previous_server_id', $this->serverId)
+                ->update([
+                    'previous_server_id' => null,
+                    'placement_cleanup_error' => null,
+                ]);
+        });
     }
 
     /**

@@ -10,6 +10,7 @@ use App\Modules\Monitor\Models\AlertDeliveryAttempt;
 use App\Modules\Monitor\Models\AlertRule;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -25,6 +26,11 @@ final class DeliverAlertNotification
             $delivery = $this->queue->lock($id);
             if ($delivery === null || $delivery->generation !== $generation
                 || ! in_array($delivery->status, [AlertDeliveryStatus::Queued, AlertDeliveryStatus::Retrying], true)) {
+                return null;
+            }
+            if (MonitorDeletionFence::workspaceIsFenced($delivery->workspace_id)) {
+                $this->terminal($delivery, AlertDeliveryStatus::Cancelled, 'workspace_deleting');
+
                 return null;
             }
             if ($delivery->next_attempt_at?->isFuture()) {
@@ -86,6 +92,7 @@ final class DeliverAlertNotification
 
     public function retry(Workspace $workspace, User $actor, AlertDelivery $delivery, int $generation): void
     {
+        MonitorDeletionFence::assertWorkspaceActive($workspace->getKey());
         DB::connection('monitor')->transaction(function () use ($workspace, $actor, $delivery, $generation): void {
             $delivery = $this->queue->lock($delivery->id);
             abort_unless($delivery !== null && $delivery->workspace_id === $workspace->id, 404);

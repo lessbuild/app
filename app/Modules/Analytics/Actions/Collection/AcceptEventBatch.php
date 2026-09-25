@@ -6,6 +6,7 @@ use App\Modules\Analytics\Data\NormalizedEvent;
 use App\Modules\Analytics\Jobs\ProcessEventBatch;
 use App\Modules\Analytics\Models\IngestionBatch;
 use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use App\Modules\Analytics\Services\MonthlyEventUsageMeter;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -13,7 +14,10 @@ use Illuminate\Support\Str;
 
 final class AcceptEventBatch
 {
-    public function __construct(private readonly MonthlyEventUsageMeter $usageMeter) {}
+    public function __construct(
+        private readonly MonthlyEventUsageMeter $usageMeter,
+        private readonly AnalyticsDeletionFence $deletionFence,
+    ) {}
 
     /**
      * @param  list<NormalizedEvent>  $events
@@ -29,8 +33,12 @@ final class AcceptEventBatch
         $receivedAt = CarbonImmutable::now();
 
         $result = DB::connection('analytics')->transaction(function () use ($site, $events, $batchId, $receivedAt, $monthlyEventLimit): array {
+            $lockedSite = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
+            $workspace = $lockedSite->workspace()->lockForUpdate()->firstOrFail();
+            $this->deletionFence->assertWorkspaceOpen($workspace->getKey());
+
             $usagePeriod = $this->usageMeter->lockPeriod($site->workspace_id, $receivedAt);
-            $batch = $site->ingestionBatches()->create([
+            $batch = $lockedSite->ingestionBatches()->create([
                 'batch_id' => $batchId,
                 'event_count' => count($events),
                 'status' => 'pending',
@@ -56,8 +64,8 @@ final class AcceptEventBatch
 
             $this->usageMeter->recordAccepted($usagePeriod, $accepted, $monthlyEventLimit, $receivedAt);
 
-            if ($site->last_event_at === null || $receivedAt->greaterThan($site->last_event_at)) {
-                $site->forceFill(['last_event_at' => $receivedAt])->save();
+            if ($lockedSite->last_event_at === null || $receivedAt->greaterThan($lockedSite->last_event_at)) {
+                $lockedSite->forceFill(['last_event_at' => $receivedAt])->save();
             }
 
             return ['batch' => $batch, 'accepted' => $accepted];

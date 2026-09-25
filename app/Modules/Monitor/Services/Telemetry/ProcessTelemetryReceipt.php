@@ -8,6 +8,7 @@ use App\Modules\Monitor\Models\IngestReceipt;
 use App\Modules\Monitor\Models\TelemetryEventIdentity;
 use App\Modules\Monitor\Models\TelemetryUsageEntry;
 use App\Modules\Monitor\Models\Workspace;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use App\Modules\Monitor\Services\RecordReleases;
 use App\Modules\Monitor\Services\WorkspaceUsage;
 use Carbon\CarbonImmutable;
@@ -36,6 +37,13 @@ final class ProcessTelemetryReceipt
 
             if ($receipt === null || $receipt->generation !== $generation
                 || in_array($receipt->status, [IngestStatus::Completed, IngestStatus::Failed], true)) {
+                return null;
+            }
+
+            if (MonitorDeletionFence::lockWorkspace($receipt->workspace_id)) {
+                $this->queue->markFailed($receipt, 'workspace_deleting');
+                $receipt->ingestPayload()->delete();
+
                 return null;
             }
 
@@ -91,7 +99,7 @@ final class ProcessTelemetryReceipt
                 }
 
                 $workspace = Workspace::query()->lockForUpdate()->find($receipt->workspace_id);
-                if ($workspace === null) {
+                if ($workspace === null || MonitorDeletionFence::workspaceIsFenced($receipt->workspace_id)) {
                     $this->queue->markFailed($receipt, 'source_removed');
                     $receipt->ingestPayload()->delete();
 

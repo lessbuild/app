@@ -13,7 +13,11 @@ final class MonitorProductWorkspaceProvisioner implements ProductWorkspaceProvis
 {
     public function ensure(string $ownerProductPrincipalId, CoreWorkspace $coreWorkspace, ?string $mappedProductWorkspaceId = null): string
     {
+        abort_if(MonitorDeletionFence::canonicalWorkspaceIsFenced($coreWorkspace->getKey()), 410, 'This Monitor workspace is being deleted.');
+
         if ($mappedProductWorkspaceId !== null) {
+            MonitorDeletionFence::assertWorkspaceActive($mappedProductWorkspaceId);
+
             return (string) Workspace::query()->findOrFail($mappedProductWorkspaceId)->getKey();
         }
 
@@ -21,6 +25,10 @@ final class MonitorProductWorkspaceProvisioner implements ProductWorkspaceProvis
             $owner = User::query()->findOrFail($ownerProductPrincipalId);
             $slug = $this->projectionSlug((string) $coreWorkspace->getKey());
             $workspace = Workspace::query()->where('slug', $slug)->lockForUpdate()->first();
+
+            if ($workspace !== null) {
+                MonitorDeletionFence::assertWorkspaceActive($workspace->getKey());
+            }
 
             if ($workspace === null) {
                 $workspace = new Workspace(['name' => $coreWorkspace->name, 'slug' => $slug]);

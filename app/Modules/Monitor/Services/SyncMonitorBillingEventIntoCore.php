@@ -41,7 +41,7 @@ final class SyncMonitorBillingEventIntoCore
 
         $sourceEvent = MonitorBillingEvent::query()->where('stripe_event_id', $eventId)->first();
 
-        return DB::connection('core')->transaction(function () use ($eventId, $eventType, $createdAt, $object, $sourceEvent): bool {
+        $processed = DB::connection('core')->transaction(function () use ($eventId, $eventType, $createdAt, $object, $sourceEvent): bool {
             $billingEvent = ProductBillingEvent::query()
                 ->where('provider', 'stripe')
                 ->where('provider_account_key', self::PROVIDER_ACCOUNT)
@@ -60,7 +60,8 @@ final class SyncMonitorBillingEventIntoCore
                 return true;
             }
 
-            if ($sourceEvent?->processing_status === MonitorBillingEvent::STATUS_IGNORED) {
+            if ($sourceEvent?->processing_status === MonitorBillingEvent::STATUS_IGNORED
+                && $sourceEvent->ignored_reason !== 'workspace_deleting') {
                 $this->saveEvent(
                     $billingEvent,
                     $billingEvent?->workspace_id,
@@ -94,6 +95,23 @@ final class SyncMonitorBillingEventIntoCore
             $workspace = CoreWorkspace::query()->whereKey($workspace->getKey())->lockForUpdate()->first();
             if ($workspace === null) {
                 $this->saveEvent($billingEvent, null, $eventId, $eventType, $createdAt, 'pending_reconciliation', 'workspace_missing', $this->safeMetadata($object));
+
+                return true;
+            }
+
+            // A deleted Core tombstone is final. Preserve webhook deduplication and audit
+            // status, but never recreate subscription assignments for a completed deletion.
+            if ($workspace->status === 'deleted') {
+                $this->saveEvent(
+                    $billingEvent,
+                    (string) $workspace->getKey(),
+                    $eventId,
+                    $eventType,
+                    $createdAt,
+                    'ignored',
+                    'workspace_deleted',
+                    $this->safeMetadata($object),
+                );
 
                 return true;
             }
@@ -215,6 +233,36 @@ final class SyncMonitorBillingEventIntoCore
 
             return true;
         }, attempts: 3);
+
+        $this->acknowledgePendingSourceEvent($eventId);
+
+        return $processed;
+    }
+
+    /** Complete a source receipt only after its Core result is durable. Safe to call after a worker crash. */
+    public function acknowledgePendingSourceEvent(string $eventId): bool
+    {
+        $billingEvent = ProductBillingEvent::query()
+            ->where('provider', 'stripe')
+            ->where('provider_account_key', self::PROVIDER_ACCOUNT)
+            ->where('provider_event_id', $eventId)
+            ->first();
+
+        if ($billingEvent === null || ! in_array($billingEvent->processing_status, ['applied', 'ignored'], true)) {
+            return false;
+        }
+
+        return MonitorBillingEvent::query()->where('stripe_event_id', $eventId)
+            ->where('processing_status', MonitorBillingEvent::STATUS_PENDING)
+            ->whereNull('processed_at')
+            ->update([
+                'processing_status' => $billingEvent->processing_status === 'ignored'
+                    ? MonitorBillingEvent::STATUS_IGNORED
+                    : MonitorBillingEvent::STATUS_APPLIED,
+                'ignored_reason' => $billingEvent->processing_status === 'ignored' ? $billingEvent->ignored_reason : null,
+                'processed_at' => now('UTC'),
+                'updated_at' => now('UTC'),
+            ]) > 0;
     }
 
     private function supported(string $eventType): bool
@@ -248,8 +296,12 @@ final class SyncMonitorBillingEventIntoCore
                 ->where('source_id', trim((string) $sourceWorkspaceId))
                 ->first();
 
-            if ($map !== null && ($map->status !== 'reconciled' || $map->canonical_entity !== 'workspace' || $map->canonical_id === null)) {
-                return [null, 'workspace_mapping_not_reconciled'];
+            if ($map !== null) {
+                $reconciled = $map->status === 'reconciled' && $map->canonical_entity === 'workspace' && $map->canonical_id !== null;
+                $deletedTombstone = $map->status === 'deleted' && $map->canonical_entity === 'workspace' && $map->canonical_id !== null;
+                if (! $reconciled && ! $deletedTombstone) {
+                    return [null, 'workspace_mapping_not_reconciled'];
+                }
             }
 
             $mappedWorkspaceId = $map?->canonical_id;

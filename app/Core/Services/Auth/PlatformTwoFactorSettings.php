@@ -15,6 +15,7 @@ final class PlatformTwoFactorSettings
     {
         DB::connection('core')->transaction(function () use ($user): void {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             if ($lockedUser->twoFactorEnabled()) {
                 throw $this->invalidState(__('Two-factor authentication is already enabled.'));
             }
@@ -40,6 +41,7 @@ final class PlatformTwoFactorSettings
     {
         return DB::connection('core')->transaction(function () use ($user): bool {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             if ($lockedUser->twoFactorEnabled() || $this->credentials->decryptSecret($lockedUser->two_factor_secret) === null) {
                 return false;
             }
@@ -59,6 +61,7 @@ final class PlatformTwoFactorSettings
     {
         return DB::connection('core')->transaction(function () use ($user, $code): array {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             $secret = $this->credentials->decryptSecret($lockedUser->two_factor_secret);
 
             if ($lockedUser->twoFactorEnabled() || $secret === null || ! $this->credentials->validTotp($secret, $code)) {
@@ -81,6 +84,7 @@ final class PlatformTwoFactorSettings
     {
         DB::connection('core')->transaction(function () use ($user, $code): void {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             if (! $lockedUser->twoFactorEnabled()) {
                 throw $this->invalidState(__('Two-factor authentication is not enabled.'));
             }
@@ -103,6 +107,7 @@ final class PlatformTwoFactorSettings
     {
         return DB::connection('core')->transaction(function () use ($user, $code): array {
             $lockedUser = PlatformUser::query()->lockForUpdate()->findOrFail($user->getKey());
+            abort_unless($lockedUser->status === 'active', 403);
             if (! $lockedUser->twoFactorEnabled()) {
                 throw $this->invalidState(__('Enable two-factor authentication before regenerating recovery codes.'));
             }

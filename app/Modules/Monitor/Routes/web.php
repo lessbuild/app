@@ -65,7 +65,7 @@ Route::middleware($guestMiddleware)->group(function (): void {
 
 Route::get('/status/{statusPage:slug}', [PublicStatusPageController::class, 'show'])->name('status-pages.public');
 
-Route::middleware([...$authenticatedMiddleware, 'auth.session'])->group(function () use ($logoutAction): void {
+Route::middleware([...$authenticatedMiddleware, 'auth.session', 'monitor.account.active'])->group(function () use ($logoutAction): void {
     Route::post('/logout', $logoutAction)->name('logout');
     Route::get('/email/verify', [EmailVerificationController::class, 'show'])->name('verification.notice');
     Route::get('/email/verify/{id}/{hash}', [EmailVerificationController::class, 'update'])->middleware(['signed', 'throttle:6,1'])->name('verification.verify');

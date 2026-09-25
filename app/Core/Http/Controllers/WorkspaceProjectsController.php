@@ -18,6 +18,7 @@ use App\Core\Services\BuildProjectContextNavigation;
 use App\Core\Services\Connections\ProjectConnectionDiagnostics;
 use App\Core\Services\Connections\ProjectConnectionEntitlementPolicy;
 use App\Core\Services\Identity\ResolvePlatformUser;
+use App\Core\Services\ProjectInfrastructure;
 use App\Core\Services\ProjectProductLinks;
 use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\ProjectResourceDestinations;
@@ -236,6 +237,7 @@ final class WorkspaceProjectsController
         ProjectWorkflowProgress $workflowProgress,
         ResolveProjectEnvironmentContext $environmentContexts,
         BuildProjectContextNavigation $contextNavigation,
+        ProjectInfrastructure $infrastructure,
     ): View {
         $user = $this->platformUser($request, $platformUsers);
         abort_unless($project->workspace_id === $workspace->getKey(), 404);
@@ -335,6 +337,7 @@ final class WorkspaceProjectsController
             'environmentContext' => $environmentContext,
             'projectSetupSteps' => $projectSetupSteps,
             'resourceDestinations' => $resourceDestinationsForProject,
+            'projectInfrastructure' => $infrastructure->forProject($user, $project, $visibleProducts, $environmentContext),
             'connectionDiagnostics' => $connectionDiagnostics->forConnections($projectConnections, $user),
             'projectConnections' => $projectConnections,
             'projectWorkflowRuns' => $projectWorkflowRuns,

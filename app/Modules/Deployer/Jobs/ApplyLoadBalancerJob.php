@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs;
 
 use App\Modules\Deployer\Models\LoadBalancer;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -64,6 +65,14 @@ class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(Runner $runner): void
     {
+        $candidate = LoadBalancer::query()->find($this->loadBalancerId);
+        if ($candidate && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $candidate->organization_id)->exists()) {
+            LoadBalancer::query()->whereKey($this->loadBalancerId)->whereIn('status', ['pending', 'failed'])->update([
+                'status' => 'failed', 'last_error' => 'Apply canceled because its workspace is being deleted.',
+            ]);
+
+            return;
+        }
         $balancer = LoadBalancer::query()
             ->with(['server', 'nodes.server'])
             ->whereKey($this->loadBalancerId)

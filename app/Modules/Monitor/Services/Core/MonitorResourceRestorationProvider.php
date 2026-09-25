@@ -129,6 +129,9 @@ final class MonitorResourceRestorationProvider implements ProductResourceRestora
         if ($application === null || (string) $application->workspace_id !== $target->sourceWorkspaceId) {
             throw new ResourceRestorationBlocked('source_mapping_changed');
         }
+        if (MonitorDeletionFence::workspaceIsFenced($application->workspace_id)) {
+            throw new ResourceRestorationBlocked('source_deleting');
+        }
         $workspace = Workspace::query()->whereKey($application->workspace_id)->lockForUpdate()->first();
         if ($workspace === null) {
             throw new ResourceRestorationBlocked('source_mapping_changed');

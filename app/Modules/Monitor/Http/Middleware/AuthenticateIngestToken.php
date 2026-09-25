@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Http\Middleware;
 
 use App\Modules\Monitor\Models\IngestToken;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Closure;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
@@ -28,6 +29,8 @@ class AuthenticateIngestToken
         if ($token === null) {
             return response()->json(['message' => 'The ingestion token is invalid.'], Response::HTTP_UNAUTHORIZED);
         }
+
+        MonitorDeletionFence::assertWorkspaceActive($token->environment->application->workspace_id);
 
         IngestToken::query()->whereKey($token->id)
             ->where(fn (Builder $used) => $used->whereNull('last_used_at')->orWhere('last_used_at', '<', now()->subMinute()))

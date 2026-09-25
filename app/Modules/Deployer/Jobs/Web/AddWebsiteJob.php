@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs\Web;
 
 use App\Modules\Deployer\Actions\Web\AddWebsiteAction;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Website;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -47,6 +48,17 @@ class AddWebsiteJob implements ShouldQueue
      */
     public function handle(): void
     {
+        $website = Website::query()->find($this->website->id);
+        if ($website && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $website->organization_id)->exists()) {
+            $query = Website::query()->whereKey($this->website->id)->where('provisioning_status', Website::STATUS_QUEUED);
+            $this->attemptToken === null ? $query->whereNull('provisioning_token') : $query->where('provisioning_token', $this->attemptToken);
+            $query->update([
+                'provisioning_status' => Website::STATUS_FAILED,
+                'provisioning_error' => 'Provisioning stopped because its workspace is being deleted.',
+            ]);
+
+            return;
+        }
         $query = Website::query()
             ->whereKey($this->website->id)
             ->where('provisioning_status', Website::STATUS_QUEUED);

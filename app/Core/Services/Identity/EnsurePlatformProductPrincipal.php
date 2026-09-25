@@ -12,6 +12,13 @@ final class EnsurePlatformProductPrincipal
 
     public function handle(string $product, PlatformUser $platformUser): void
     {
+        app(CoordinateIdentityProjection::class)->run($product, $platformUser, fn () => $this->project($product, $platformUser));
+    }
+
+    private function project(string $product, PlatformUser $platformUser): void
+    {
+        $platformUser = PlatformUser::query()->findOrFail($platformUser->getKey());
+        abort_unless($platformUser->status === 'active', 403);
         $provisioner = $this->provisioners->get($product);
         abort_if($provisioner === null, 404);
 

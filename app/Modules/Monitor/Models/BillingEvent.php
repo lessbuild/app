@@ -3,9 +3,9 @@
 namespace App\Modules\Monitor\Models;
 
 use App\Modules\Monitor\Database\Factories\BillingEventFactory;
+use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use App\Modules\Monitor\Database\MonitorModel as Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 #[Fillable([
@@ -22,6 +22,8 @@ class BillingEvent extends Model
     public const STATUS_APPLIED = 'applied';
 
     public const STATUS_IGNORED = 'ignored';
+
+    public const STATUS_PENDING = 'pending';
 
     /** @use HasFactory<BillingEventFactory> */
     use HasFactory;

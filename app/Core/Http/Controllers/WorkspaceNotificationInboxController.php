@@ -72,6 +72,7 @@ final class WorkspaceNotificationInboxController
                 'href' => route('core.projects.show', [$workspace, $project]),
             ]),
             'products' => $products,
+            'notificationProducts' => collect($products)->merge($feed->notifications->pluck('product'))->unique()->values(),
             'projects' => $projects,
             'items' => $items,
             'threads' => $items->groupBy('threadKey'),
@@ -142,6 +143,7 @@ final class WorkspaceNotificationInboxController
         SaveWorkspaceNotificationFilterRequest $request,
         Workspace $workspace,
         WorkspaceProjectAccess $access,
+        WorkspaceNotifications $notifications,
     ): RedirectResponse {
         $user = $this->user($request);
         $membership = $this->membership($user, $workspace, $access);
@@ -149,7 +151,11 @@ final class WorkspaceNotificationInboxController
         $filters = $request->filterValues();
 
         if ($filters['product'] !== 'all') {
-            abort_unless(in_array($filters['product'], $products, true), 403);
+            $visibleProducts = collect($products)->merge(
+                $notifications->forWorkspace($user, $workspace, $this->projects($workspace, $user, $products), $products)
+                    ->notifications->pluck('product'),
+            )->unique();
+            abort_unless($visibleProducts->contains($filters['product']), 403);
         }
 
         if ($filters['project'] !== 'all') {
@@ -213,6 +219,15 @@ final class WorkspaceNotificationInboxController
     ): RedirectResponse {
         $notification = $this->currentNotification($request, $workspace, $notificationKey, $access, $notifications);
         $user = $this->user($request);
+
+        if ($notification->sourceProvider !== null) {
+            if (! $this->setNativeRead($user, $workspace, $access, $notifications, $notification, true)) {
+                return $this->redirectToInbox($request, $workspace)->with('error', __('The product could not confirm the read-state change. Refresh the inbox to check its current state.'));
+            }
+
+            return $this->redirectToInbox($request, $workspace)->with('success', __('Notification marked as read.'));
+        }
+
         $this->storeReadState($user, $workspace, $notification);
 
         return $this->redirectToInbox($request, $workspace)->with('success', __('Notification marked as read.'));
@@ -227,6 +242,14 @@ final class WorkspaceNotificationInboxController
     ): RedirectResponse {
         $user = $this->user($request);
         $notification = $this->currentNotification($request, $workspace, $notificationKey, $access, $notifications);
+
+        if ($notification->sourceProvider !== null) {
+            if (! $this->setNativeRead($user, $workspace, $access, $notifications, $notification, false)) {
+                return $this->redirectToInbox($request, $workspace)->with('error', __('The product could not confirm the read-state change. Refresh the inbox to check its current state.'));
+            }
+
+            return $this->redirectToInbox($request, $workspace)->with('success', __('Notification marked as unread.'));
+        }
 
         DB::connection('core')->table('workspace_notification_reads')
             ->where('workspace_id', $workspace->getKey())
@@ -263,15 +286,26 @@ final class WorkspaceNotificationInboxController
             ->values();
 
         $now = now();
-        $rows = $visibleItems->map(fn (WorkspaceNotification $notification): array => [
-            'id' => (string) Str::ulid(),
-            'workspace_id' => $workspace->getKey(),
-            'user_id' => $user->getKey(),
-            'notification_key' => $notification->key,
-            'read_at' => $now,
-            'created_at' => $now,
-            'updated_at' => $now,
-        ])->all();
+        $nativeFailures = 0;
+        $visibleItems
+            ->filter(fn (WorkspaceNotification $notification): bool => $notification->sourceProvider !== null)
+            ->each(function (WorkspaceNotification $notification) use ($access, $notifications, $user, $workspace, &$nativeFailures): void {
+                if (! $this->setNativeRead($user, $workspace, $access, $notifications, $notification, true)) {
+                    $nativeFailures++;
+                }
+            });
+
+        $rows = $visibleItems
+            ->filter(fn (WorkspaceNotification $notification): bool => $notification->sourceProvider === null)
+            ->map(fn (WorkspaceNotification $notification): array => [
+                'id' => (string) Str::ulid(),
+                'workspace_id' => $workspace->getKey(),
+                'user_id' => $user->getKey(),
+                'notification_key' => $notification->key,
+                'read_at' => $now,
+                'created_at' => $now,
+                'updated_at' => $now,
+            ])->all();
 
         if ($rows !== []) {
             DB::connection('core')->table('workspace_notification_reads')->upsert(
@@ -279,6 +313,14 @@ final class WorkspaceNotificationInboxController
                 ['workspace_id', 'user_id', 'notification_key'],
                 ['read_at', 'updated_at'],
             );
+        }
+
+        if ($nativeFailures > 0) {
+            return $this->redirectToInbox($request, $workspace)->with('error', trans_choice(
+                ':count native notification could not be updated; other visible read-state changes may already have been saved.|:count native notifications could not be updated; other visible read-state changes may already have been saved.',
+                $nativeFailures,
+                ['count' => $nativeFailures],
+            ));
         }
 
         return $this->redirectToInbox($request, $workspace)->with('success', __('Visible notifications marked as read.'));
@@ -371,6 +413,26 @@ final class WorkspaceNotificationInboxController
             'created_at' => $now,
             'updated_at' => $now,
         ]], ['workspace_id', 'user_id', 'notification_key'], ['read_at', 'updated_at']);
+    }
+
+    private function setNativeRead(
+        PlatformUser $user,
+        Workspace $workspace,
+        WorkspaceProjectAccess $access,
+        WorkspaceNotifications $notifications,
+        WorkspaceNotification $notification,
+        bool $read,
+    ): bool {
+        $membership = $this->membership($user, $workspace, $access);
+
+        return $notifications->setRead(
+            $user,
+            $workspace,
+            $this->projects($workspace, $user, $this->products($membership)),
+            $this->products($membership),
+            $notification,
+            $read,
+        );
     }
 
     private function csvCell(?string $value): string

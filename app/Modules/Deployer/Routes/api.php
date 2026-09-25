@@ -4,6 +4,7 @@ use App\Modules\Deployer\Http\Controllers\Api\V1\ControlPlaneController;
 use App\Modules\Deployer\Http\Controllers\GitHubAppWebhookController;
 use App\Modules\Deployer\Http\Controllers\HealthController;
 use App\Modules\Deployer\Http\Controllers\RepositoryWebhookController;
+use App\Modules\Deployer\Http\Middleware\EnsureDeployerDeletionFence;
 use Illuminate\Support\Facades\Route;
 
 /*
@@ -20,7 +21,7 @@ use Illuminate\Support\Facades\Route;
 Route::get('health', HealthController::class)->name('health');
 Route::post('github-app/webhook', GitHubAppWebhookController::class)->name('github-app.webhook');
 
-Route::prefix('v1')->middleware('auth:sanctum')->group(function (): void {
+Route::prefix('v1')->middleware(['auth:sanctum', EnsureDeployerDeletionFence::class])->group(function (): void {
     Route::get('me', [ControlPlaneController::class, 'me']);
     Route::get('projects', [ControlPlaneController::class, 'projects']);
     Route::get('projects/{project}', [ControlPlaneController::class, 'project']);
@@ -43,4 +44,5 @@ Route::prefix('v1')->middleware('auth:sanctum')->group(function (): void {
 });
 
 Route::post('repositories/{repository}/webhook', RepositoryWebhookController::class)
+    ->middleware(EnsureDeployerDeletionFence::class)
     ->name('webhooks.repositories.receive');

@@ -5,6 +5,7 @@ namespace App\Modules\Deployer\Jobs\Repository;
 use App\Modules\Deployer\Actions\Repository\PublishRepositoryAction;
 use App\Modules\Deployer\Exceptions\DeploymentScriptUploadException;
 use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Services\ApplicationConfigurationExecution;
 use App\Modules\Deployer\Services\AutomaticDeploymentRollback;
 use App\Modules\Deployer\Services\PreviewDeploymentLifecycle;
@@ -16,6 +17,7 @@ use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class PublishRepositoryJob implements ShouldQueue
 {
@@ -53,6 +55,20 @@ class PublishRepositoryJob implements ShouldQueue
     public function handle(Runner $runner): void
     {
         $this->build->refresh();
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $this->build->repository->organization_id)->exists()) {
+            Build::query()->whereKey($this->build->id)->where('status', Build::STATUS_QUEUED)->update([
+                'status' => Build::STATUS_CANCELED,
+                'finished_at' => now(),
+                'failure_message' => 'Deployment canceled because its workspace is being deleted.',
+            ]);
+            if (Schema::connection('deployer')->hasTable('configuration_operations')) {
+                DB::connection('deployer')->table('configuration_operations')->where('build_id', $this->build->id)
+                    ->whereIn('status', ['pending', 'queued', 'running', 'applying', 'awaiting_dispatch'])
+                    ->update(['status' => 'failed', 'failure_code' => 'workspace_deletion_fence', 'completed_at' => now(), 'updated_at' => now()]);
+            }
+
+            return;
+        }
         $started = app(ApplicationConfigurationExecution::class)->claim($this->build);
         if ($started === null) {
             $releaseName = $this->build->releaseIdentifier();

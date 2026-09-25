@@ -22,7 +22,8 @@ final class WorkspaceProjectAccess
 {
     public function activeMembership(PlatformUser $user, Workspace $workspace): ?WorkspaceMembership
     {
-        if ($workspace->status !== 'active' || $workspace->archived_at !== null) {
+        if (! PlatformUser::query()->whereKey($user->getKey())->where('status', 'active')->exists()
+            || ! Workspace::query()->whereKey($workspace->getKey())->where('status', 'active')->whereNull('archived_at')->exists()) {
             return null;
         }
 
@@ -52,7 +53,9 @@ final class WorkspaceProjectAccess
         ProductKey|string $product,
         ?DateTimeInterface $at = null,
     ): bool {
-        if (! $membership->currentlyActive()) {
+        if (! WorkspaceMembership::query()->whereKey($membership->getKey())->currentlyActive()
+            ->whereHas('user', fn (Builder $query) => $query->where('status', 'active'))
+            ->whereHas('workspace', fn (Builder $query) => $query->where('status', 'active')->whereNull('archived_at'))->exists()) {
             return false;
         }
 

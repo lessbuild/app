@@ -10,6 +10,7 @@ use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\IngestReceipt;
 use App\Modules\Monitor\Models\TelemetryEventIdentity;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use App\Modules\Monitor\Services\Telemetry\IngestIdentity;
 use App\Modules\Monitor\Services\Telemetry\LegacyEventReplay;
 use App\Modules\Monitor\Services\Telemetry\MetricProjection;
@@ -57,6 +58,7 @@ final class DatabaseTelemetryIngestor implements TelemetryIngestor
             $application = Application::query()->lockForUpdate()->find($environment->application_id);
             $environment = Environment::query()->lockForUpdate()->find($environment->id);
             abort_if($application === null || $environment === null || $environment->status !== 'active', 401, 'The ingestion token is invalid.');
+            abort_if(MonitorDeletionFence::lockWorkspace($application->workspace_id), 410, 'This Monitor workspace is being deleted.');
 
             if ($context->tokenId !== null) {
                 $token = $environment->ingestTokens()->active()->lockForUpdate()->find($context->tokenId);

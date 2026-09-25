@@ -5,6 +5,7 @@ namespace App\Modules\Deployer\Jobs;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\Runner;
 use App\Modules\Deployer\Services\WebsiteCaddyConfiguration;
 use Illuminate\Bus\Queueable;
@@ -48,25 +49,30 @@ class ApplyWebsiteDomainsJob implements ShouldBeUnique, ShouldQueue
     {
         $caddy ??= new WebsiteCaddyConfiguration;
         $website = Website::query()->with(['server', 'domains'])->find($this->websiteId);
-        if (! $website?->server || $website->provisioning_status !== Website::STATUS_ACTIVE) {
+        if (! $website || $website->organization_id === null) {
             return;
         }
+        app(DeployerMutationClaimManager::class)->runWorkspace($website->organization_id, 'website.apply_domains', function () use ($website, $runner, $caddy): void {
+            if (! $website->server || $website->provisioning_status !== Website::STATUS_ACTIVE) {
+                return;
+            }
 
-        $environment = Environment::query()->where('website_id', $website->id)->latest('id')->first();
-        $runtime = $environment?->runtime_type ?: 'php';
-        $build = $environment ? Build::query()->where('environment_id', $environment->id)->where('status', Build::STATUS_SUCCEEDED)->latest('id')->first() : null;
-        $documentRoot = $build
-            ? $build->deploymentPath('current').'/public'
-            : $website->deploymentPath('current').'/public';
-        $config = in_array($runtime, ['node', 'python', 'docker'], true) && $build
-            ? $caddy->reverseProxy($website, 20000 + (($website->id * 997 + $build->id) % 30000))
-            : $caddy->php($website, $documentRoot);
-        $encoded = escapeshellarg(base64_encode($config));
-        $path = escapeshellarg("/etc/caddy/websites/{$website->deployment_slug}.conf");
-        $script = "set -Eeuo pipefail\nprintf '%s' {$encoded} | base64 --decode > {$path}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy";
-        $result = $runner->server($website->server)->create()->execute($script);
-        if (! $result->isSuccessful()) {
-            throw new RuntimeException(trim($result->getErrorOutput()) ?: 'Unable to apply domain routing.');
-        }
+            $environment = Environment::query()->where('website_id', $website->id)->latest('id')->first();
+            $runtime = $environment?->runtime_type ?: 'php';
+            $build = $environment ? Build::query()->where('environment_id', $environment->id)->where('status', Build::STATUS_SUCCEEDED)->latest('id')->first() : null;
+            $documentRoot = $build
+                ? $build->deploymentPath('current').'/public'
+                : $website->deploymentPath('current').'/public';
+            $config = in_array($runtime, ['node', 'python', 'docker'], true) && $build
+                ? $caddy->reverseProxy($website, 20000 + (($website->id * 997 + $build->id) % 30000))
+                : $caddy->php($website, $documentRoot);
+            $encoded = escapeshellarg(base64_encode($config));
+            $path = escapeshellarg("/etc/caddy/websites/{$website->deployment_slug}.conf");
+            $script = "set -Eeuo pipefail\nprintf '%s' {$encoded} | base64 --decode > {$path}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy";
+            $result = $runner->server($website->server)->create()->execute($script);
+            if (! $result->isSuccessful()) {
+                throw new RuntimeException(trim($result->getErrorOutput()) ?: 'Unable to apply domain routing.');
+            }
+        });
     }
 }

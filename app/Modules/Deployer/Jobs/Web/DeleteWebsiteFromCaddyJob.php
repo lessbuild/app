@@ -4,9 +4,11 @@ namespace App\Modules\Deployer\Jobs\Web;
 
 use App\Modules\Deployer\Actions\Web\DeleteWebsitePlacementAction;
 use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Repository;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -55,33 +57,38 @@ class DeleteWebsiteFromCaddyJob implements ShouldQueue
         if (! $website) {
             return;
         }
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $website->organization_id)->exists()) {
+            return;
+        }
 
-        // Remove the stale source first so a failure never takes the active
-        // placement offline before the deletion can be finalized.
-        collect([$website->previous_server_id, $website->server_id])
-            ->filter()
-            ->unique()
-            ->each(function (int $serverId) use ($runner, $website): void {
-                $server = Server::find($serverId);
-                if ($server) {
-                    (new DeleteWebsitePlacementAction($server, $website->deployment_slug, $runner))->handle();
-                }
-            });
-
-        DB::connection('deployer')->transaction(function () use ($website): void {
-            Repository::withTrashed()
-                ->where('website_id', $website->id)
-                ->each(function (Repository $repository): void {
-                    $repository->builds()->each(function (Build $build): void {
-                        $build->logs()->delete();
-                        $build->delete();
-                    });
-                    $repository->forceDelete();
+        app(DeployerMutationClaimManager::class)->runWorkspace($website->organization_id, 'website.delete_remote_and_local', function () use ($runner, $website): void {
+            // Remove the stale source first so a failure never takes the active
+            // placement offline before the deletion can be finalized.
+            collect([$website->previous_server_id, $website->server_id])
+                ->filter()
+                ->unique()
+                ->each(function (int $serverId) use ($runner, $website): void {
+                    $server = Server::find($serverId);
+                    if ($server) {
+                        (new DeleteWebsitePlacementAction($server, $website->deployment_slug, $runner))->handle();
+                    }
                 });
 
-            $website->logs()->delete();
+            DB::connection('deployer')->transaction(function () use ($website): void {
+                Repository::withTrashed()
+                    ->where('website_id', $website->id)
+                    ->each(function (Repository $repository): void {
+                        $repository->builds()->each(function (Build $build): void {
+                            $build->logs()->delete();
+                            $build->delete();
+                        });
+                        $repository->forceDelete();
+                    });
 
-            Website::withoutEvents(fn () => $website->forceDelete());
+                $website->logs()->delete();
+
+                Website::withoutEvents(fn () => $website->forceDelete());
+            });
         });
     }
 

@@ -4,6 +4,7 @@ namespace App\Modules\Deployer\Jobs;
 
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\Entitlements;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -45,18 +46,24 @@ class EvaluateEnvironmentHibernationJob implements ShouldBeUnique, ShouldQueue
     public function handle(Runner $runner, Entitlements $entitlements): void
     {
         $environment = Environment::query()->with(['project.organization.owner', 'website.server'])->find($this->environmentId);
-        if (! $environment?->hibernate_after_minutes || $environment->hibernated_at || ! $environment->website?->server
-            || ! $entitlements->allows($environment->project->organization, 'hibernation') || $environment->builds()->whereIn('status', Build::ACTIVE_STATUSES)->exists()) {
+        $workspaceId = $environment?->project?->organization_id;
+        if ($workspaceId === null) {
             return;
         }
-        $log = escapeshellarg('/var/log/caddy/'.$environment->website->deployment_slug.'.access.log');
-        $minutes = max(5, (int) $environment->hibernate_after_minutes);
-        $result = $runner->server($environment->website->server)->create()->execute("find {$log} -mmin -{$minutes} -print 2>/dev/null || true");
-        if (trim($result->getOutput()) !== '') {
-            $environment->update(['last_activity_at' => now()]);
+        app(DeployerMutationClaimManager::class)->runWorkspace($workspaceId, 'environment.evaluate_hibernation', function () use ($environment, $runner, $entitlements): void {
+            if (! $environment->hibernate_after_minutes || $environment->hibernated_at || ! $environment->website?->server
+                || ! $entitlements->allows($environment->project->organization, 'hibernation') || $environment->builds()->whereIn('status', Build::ACTIVE_STATUSES)->exists()) {
+                return;
+            }
+            $log = escapeshellarg('/var/log/caddy/'.$environment->website->deployment_slug.'.access.log');
+            $minutes = max(5, (int) $environment->hibernate_after_minutes);
+            $result = $runner->server($environment->website->server)->create()->execute("find {$log} -mmin -{$minutes} -print 2>/dev/null || true");
+            if (trim($result->getOutput()) !== '') {
+                $environment->update(['last_activity_at' => now()]);
 
-            return;
-        }
-        ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, true);
+                return;
+            }
+            ApplyEnvironmentRuntimeStateJob::dispatch($environment->id, true);
+        });
     }
 }

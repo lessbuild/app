@@ -5,6 +5,7 @@ namespace App\Modules\Monitor\Services;
 use App\Modules\Monitor\Data\Telemetry\MonitorObservation;
 use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\MonitorCheck;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -22,6 +23,11 @@ final class RunMonitorCheck
         $claimed = DB::connection('monitor')->transaction(function () use ($id): ?array {
             [$monitor, $check] = $this->lock($id);
             if ($check === null || $check->status !== 'queued') {
+                return null;
+            }
+            if (MonitorDeletionFence::workspaceIsFenced($monitor?->environment?->application?->workspace_id)) {
+                $this->cancel($check);
+
                 return null;
             }
             if (! $this->eligible($monitor, $check)) {
@@ -52,6 +58,11 @@ final class RunMonitorCheck
             if ($check === null || $check->status !== 'running' || $check->processing_token !== $token) {
                 return;
             }
+            if (MonitorDeletionFence::workspaceIsFenced($monitor?->environment?->application?->workspace_id)) {
+                $this->cancel($check);
+
+                return;
+            }
             if (! $this->eligible($monitor, $check)) {
                 $this->cancel($check);
 
@@ -68,6 +79,11 @@ final class RunMonitorCheck
             [$monitor, $check] = $this->lock($id);
             if ($check === null || ! in_array($check->status, ['queued', 'running'], true)
                 || ($expiredOnly && $check->lease_until?->isFuture())) {
+                return;
+            }
+            if (MonitorDeletionFence::workspaceIsFenced($monitor?->environment?->application?->workspace_id)) {
+                $this->cancel($check);
+
                 return;
             }
             if (! $this->eligible($monitor, $check)) {

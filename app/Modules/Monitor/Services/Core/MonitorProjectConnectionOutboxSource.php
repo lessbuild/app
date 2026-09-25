@@ -6,6 +6,7 @@ use App\Core\Contracts\ProjectConnectionOutboxSource;
 use App\Core\Data\Connections\ProjectConnectionOutboxEvent as OutboxEventData;
 use App\Modules\Monitor\Models\ProjectConnectionIncidentOutboxEvent;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 
@@ -35,6 +36,7 @@ final class MonitorProjectConnectionOutboxSource implements ProjectConnectionOut
         $query = ProjectConnectionIncidentOutboxEvent::query()
             ->where('status', 'pending')
             ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()));
+        $this->excludeFencedWorkspaces($query);
 
         if ($eventId !== null) {
             $query->whereKey($eventId);
@@ -50,10 +52,26 @@ final class MonitorProjectConnectionOutboxSource implements ProjectConnectionOut
                 ->where('status', 'pending')
                 ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
                 ->whereKey($eventId)
+                ->whereNotExists(function ($query): void {
+                    $query->selectRaw('1')->from('environments as source_environments')
+                        ->join('applications as source_applications', 'source_applications.id', '=', 'source_environments.application_id')
+                        ->join('product_deletion_fences as source_fences', function ($join): void {
+                            $join->on('source_fences.source_id', '=', 'source_applications.workspace_id')
+                                ->where('source_fences.kind', '=', 'workspace');
+                        })
+                        ->whereColumn('source_environments.id', 'project_connection_incident_outbox_events.source_environment_id');
+                })
                 ->lockForUpdate()
                 ->first();
 
             if ($event === null) {
+                return null;
+            }
+
+            $workspaceId = DB::connection('monitor')->table('environments')
+                ->join('applications', 'applications.id', '=', 'environments.application_id')
+                ->where('environments.id', $event->source_environment_id)->value('applications.workspace_id');
+            if ($workspaceId === null || MonitorDeletionFence::lockWorkspace($workspaceId)) {
                 return null;
             }
 
@@ -113,6 +131,7 @@ final class MonitorProjectConnectionOutboxSource implements ProjectConnectionOut
     public function reconciliationEvents(?string $eventId, int $limit): array
     {
         $query = ProjectConnectionIncidentOutboxEvent::query()->whereIn('status', ['dispatched', 'failed']);
+        $this->excludeFencedWorkspaces($query);
 
         if ($eventId !== null) {
             $query->whereKey($eventId);
@@ -139,5 +158,18 @@ final class MonitorProjectConnectionOutboxSource implements ProjectConnectionOut
             attempts: (int) $event->attempts,
             createdAt: CarbonImmutable::instance($event->created_at),
         );
+    }
+
+    private function excludeFencedWorkspaces(Builder $query): void
+    {
+        $query->whereNotExists(function ($query): void {
+            $query->selectRaw('1')->from('environments as source_environments')
+                ->join('applications as source_applications', 'source_applications.id', '=', 'source_environments.application_id')
+                ->join('product_deletion_fences as source_fences', function ($join): void {
+                    $join->on('source_fences.source_id', '=', 'source_applications.workspace_id')
+                        ->where('source_fences.kind', '=', 'workspace');
+                })
+                ->whereColumn('source_environments.id', 'project_connection_incident_outbox_events.source_environment_id');
+        });
     }
 }

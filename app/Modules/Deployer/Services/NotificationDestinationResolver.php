@@ -3,9 +3,12 @@
 namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\MetricAlertRule;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Recipe;
 use App\Modules\Deployer\Models\RecipeReport;
+use App\Modules\Deployer\Models\ScheduledTask;
 use App\Modules\Deployer\Models\Server;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
@@ -136,6 +139,8 @@ class NotificationDestinationResolver
         );
         $available['recipe'] = $this->reportIdsForContributor($user, $identifiers['recipe'] ?? []);
         $available['gallery_reports'] = $this->reportIdsForReporter($user, $identifiers['gallery_report'] ?? []);
+        $available['metric'] = $this->metricRuleIds($user, $identifiers['metric'] ?? [], $organizationId, $canViewWorkspace);
+        $available['scheduled_task'] = $this->scheduledTaskIds($user, $identifiers['scheduled_task'] ?? [], $organizationId);
 
         $accountId = (int) $user->getKey();
         $available['account'] = in_array($accountId, $identifiers['account'] ?? [], true) ? [$accountId] : [];
@@ -193,22 +198,53 @@ class NotificationDestinationResolver
             return [];
         }
 
-        return app(DeployerProjectAccess::class)->builds(Build::query(), $user)
+        $builds = app(DeployerProjectAccess::class)->builds(Build::query(), $user)
             ->whereKey(array_values(array_unique($ids)))
-            ->whereHas('repository', function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {
-                $query->where(function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {
+            ->where(function (Builder $build) use ($user, $organizationId, $canViewWorkspace): void {
+                $build->whereHas('repository', function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {
+                    $query->where(function (Builder $query) use ($user, $organizationId, $canViewWorkspace): void {
+                        if ($canViewWorkspace && $organizationId !== null) {
+                            $query->where('organization_id', $organizationId);
+                        }
+
+                        $query->orWhere(function (Builder $query) use ($user): void {
+                            $query->whereNull('organization_id')->where('user_id', $user->getKey());
+                        });
+                    });
+                })->orWhereHas('environment.project', function (Builder $query) use ($organizationId, $canViewWorkspace): void {
                     if ($canViewWorkspace && $organizationId !== null) {
                         $query->where('organization_id', $organizationId);
+                    } else {
+                        $query->whereRaw('1 = 0');
                     }
-
-                    $query->orWhere(function (Builder $query) use ($user): void {
-                        $query->whereNull('organization_id')->where('user_id', $user->getKey());
-                    });
                 });
             })
-            ->pluck('id')
-            ->map(static fn (mixed $id): int => (int) $id)
-            ->all();
+            ->with(['repository:id,organization_id,user_id', 'environment.project:id,organization_id'])
+            ->get();
+
+        return $builds->filter(function (Build $build) use ($user, $organizationId, $canViewWorkspace): bool {
+            $repositoryOrganization = $build->repository?->organization_id;
+            $environmentOrganization = $build->environment?->project?->organization_id;
+
+            if ($repositoryOrganization !== null
+                && $environmentOrganization !== null
+                && (string) $repositoryOrganization !== (string) $environmentOrganization) {
+                return false;
+            }
+
+            $repositoryAllowed = $build->repository !== null
+                && ($repositoryOrganization !== null
+                    ? $canViewWorkspace && $organizationId !== null && (string) $repositoryOrganization === (string) $organizationId
+                    : (string) $build->repository->user_id === (string) $user->getKey());
+            $environmentAllowed = $environmentOrganization !== null
+                && $canViewWorkspace
+                && $organizationId !== null
+                && (string) $environmentOrganization === (string) $organizationId;
+
+            return ($repositoryAllowed || $environmentAllowed)
+                && ($repositoryOrganization === null || ($canViewWorkspace && $organizationId !== null && (string) $repositoryOrganization === (string) $organizationId))
+                && ($environmentOrganization === null || ($canViewWorkspace && $organizationId !== null && (string) $environmentOrganization === (string) $organizationId));
+        })->map(static fn (Build $build): int => (int) $build->getKey())->values()->all();
     }
 
     /**
@@ -251,6 +287,45 @@ class NotificationDestinationResolver
             ->all();
     }
 
+    /** @param list<int> $ids
+     * @return list<int>
+     */
+    private function metricRuleIds(User $user, array $ids, ?int $organizationId, bool $canViewWorkspace): array
+    {
+        if ($ids === [] || $organizationId === null) {
+            return [];
+        }
+
+        $rules = MetricAlertRule::query()->whereIn('id', array_values(array_unique($ids)))
+            ->where('organization_id', $organizationId)->get();
+
+        return $rules->filter(function (MetricAlertRule $rule) use ($canViewWorkspace, $user): bool {
+            if ($rule->server_id === null) {
+                return $canViewWorkspace && app(DeployerProjectAccess::class)->canAccessWorkspaceResources($user);
+            }
+
+            return app(DeployerProjectAccess::class)->servers(Server::query()->whereKey($rule->server_id), $user)->exists();
+        })->map(fn (MetricAlertRule $rule): int => (int) $rule->getKey())->values()->all();
+    }
+
+    /** @param list<int> $ids
+     * @return list<int>
+     */
+    private function scheduledTaskIds(User $user, array $ids, ?int $organizationId): array
+    {
+        if ($ids === [] || $organizationId === null) {
+            return [];
+        }
+
+        $tasks = ScheduledTask::query()->whereIn('id', array_values(array_unique($ids)))
+            ->whereHas('environment.project', fn (Builder $project) => $project->where('organization_id', $organizationId))
+            ->get(['id', 'environment_id']);
+
+        return $tasks->filter(fn (ScheduledTask $task): bool => app(DeployerProjectAccess::class)
+            ->environments(Environment::query()->whereKey($task->environment_id), $user)->exists())
+            ->map(fn (ScheduledTask $task): int => (int) $task->getKey())->values()->all();
+    }
+
     /**
      * Resolve public gallery destinations without exposing unpublished recipes.
      *
@@ -287,6 +362,8 @@ class NotificationDestinationResolver
             'website' => route('websites.index'),
             'server' => route('servers.index'),
             'provider' => route('providers.index'),
+            'metric' => route('observability.index'),
+            'scheduled_task' => route('automation.index'),
             'recipe' => route('gallery.reports.index'),
             'gallery' => route('gallery.index'),
             default => route('account.index'),

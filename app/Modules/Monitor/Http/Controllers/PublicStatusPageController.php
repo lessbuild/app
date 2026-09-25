@@ -3,6 +3,7 @@
 namespace App\Modules\Monitor\Http\Controllers;
 
 use App\Modules\Monitor\Models\StatusPage;
+use App\Modules\Monitor\Services\Core\MonitorDeletionFence;
 use App\Modules\Monitor\Services\StatusPageReport;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Response;
@@ -13,6 +14,7 @@ class PublicStatusPageController extends Controller
     public function show(StatusPage $statusPage, StatusPageReport $report): Response|RedirectResponse
     {
         abort_unless($statusPage->published, 404);
+        abort_if(MonitorDeletionFence::workspaceIsFenced($statusPage->workspace_id), 404);
 
         if (config('platform.products.monitor.enabled', false) && Route::has('core.status-pages.show')) {
             return redirect()->to(route('core.status-pages.show', [

@@ -2,19 +2,17 @@
 
 This checklist separates missing source behavior from pending validation in the unified application plan. It does not narrow the approved plan or authorize skipping product features. Automated tests remain deferred until source implementation is complete; test execution, browser acceptance, migration rehearsal, and production configuration remain subsequent acceptance work.
 
-## Access and lifecycle preservation
-
-- Implement coordinated shared account/workspace deletion. Core security currently states that deletion is unavailable, and Deployer blocks its local deletion routes under Core authority. The replacement must track per-module cleanup/retention outcomes durably, support retry, preserve ownership/billing safeguards, and prevent partial local deletion from stranding other apps. `SetCanonicalProjectArchiveState` is a Core metadata operation, not this workflow.
-
 ## Remaining approved shared capabilities
 
 1. **Core administration.** Replace remaining administration catalog handoffs with actual Core pages/actions backed by module-owned operations. Shared team/status/cost/feedback and Deployer analytics/access-request administration already exist. Remaining areas include Monitor alert/integration administration and Analytics sites/goals/data controls, along with the remaining catalog capabilities. Inventory the catalog before claiming coverage.
 2. **Versioned project blueprints (I11).** Add definitions, preview of resources/environment bindings/plan impact, durable apply/resume, and idempotent module provisioning. Reuse deployment recipes and module operations. Keep secrets separate, subscription changes explicit, and domain/tracker verification real. No blueprint implementation currently exists.
-3. **Native notification projection (I3).** Bridge native notifications and their existing read/preference state into the Core inbox without losing actionable or account/security notifications. The Core inbox currently projects workflow summaries and has its own read/preferences/filter records; that does not reconcile the native Deployer inbox. Retain delivery channels and per-recipient access checks.
-4. **Complete resource-map inventory (I12).** Add authorized module-provided repository/server/deployment relationships and destinations to the existing canonical project map. Deployer's destination adapter currently supports only project/environment mappings. Keep shared-resource edge/count filtering and the existing accessible list alternative.
-5. **Scoped credential management (I13).** Add Core create/rotate/revoke actions through product contracts. The current Core credential route/provider is read-only inventory. Retain native secret ownership, one-time secret display, native scope restrictions, current-role checks, and audit history.
+3. **Scoped credential management (I13).** Add Core create/rotate/revoke actions through product contracts. The current Core credential route/provider is read-only inventory. Retain native secret ownership, one-time secret display, native scope restrictions, current-role checks, and audit history.
 
 ## Items that are not missing source features
+
+- Coordinated account/workspace deletion now has a source implementation with immutable Core requests, two-phase module preparation/purge, source fences and receipts, identity-projection and native activity barriers, receipt-based recovery after logout, billing reconciliation, and retained tombstones. Deployer's product-local deletion hands off to Core. Source review is complete; additive migrations, concurrent worker/fault-injection tests, and browser/customer-data acceptance are deferred. See [deletion design and recovery limits](coordinated-deletion-design-2026-09-25.md).
+
+- I3 native notification projection now merges Deployer recipient notifications into Core without replacing native read state or delivery channels. I12 now adds authorized Deployer infrastructure and recent deployment relationships, bounded and filtered by current access, alongside the existing Monitor/Analytics resource mappings. Both have reusable Signal presentation and authored, unrun regression coverage; see [inbox and infrastructure progress](verification/native-inbox-infrastructure-progress-2026-09-25.md).
 
 - Monitor application/environment restoration is now implemented through durable Core requests and native receipts, retained archive views, current manager authorization, explicit shared-project restoration, and fenced recovery. Native child archive/pause states and revoked credentials/checks are preserved. The additive migrations and deferred acceptance remain pending; see [restoration progress](verification/monitor-restoration-progress-2026-09-25.md). Analytics has no native restore action; collection pause/resume remains supported. Deployer backup restoration and release rollback remain ordinary authorized operations.
 

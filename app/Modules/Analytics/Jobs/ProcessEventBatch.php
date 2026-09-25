@@ -7,6 +7,9 @@ use App\Modules\Analytics\Actions\Goals\RebuildGoalConversions;
 use App\Modules\Analytics\Actions\Reporting\RebuildReportAggregates;
 use App\Modules\Analytics\Enums\IngestionStatus;
 use App\Modules\Analytics\Models\IngestionBatch;
+use App\Modules\Analytics\Models\Site;
+use App\Modules\Analytics\Models\Workspace;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
@@ -32,9 +35,33 @@ class ProcessEventBatch implements ShouldQueue
         RebuildReportAggregates $rebuildReportAggregates,
     ): void {
         DB::connection('analytics')->transaction(function () use ($rebuildSiteVisits, $rebuildGoalConversions, $rebuildReportAggregates): void {
+            $candidate = IngestionBatch::query()->find($this->batchId);
+            if (! $candidate) {
+                return;
+            }
+            $site = Site::query()->withTrashed()->find($candidate->site_id);
+            if (! $site) {
+                IngestionBatch::query()->whereKey($this->batchId)->where('status', IngestionStatus::Pending->value)->update([
+                    'status' => IngestionStatus::Failed->value,
+                    'failure_message' => 'The Analytics site is no longer available.',
+                    'updated_at' => now(),
+                ]);
+
+                return;
+            }
+            DB::connection('analytics')->table('workspaces')->where('id', $site->workspace_id)->update(['id' => DB::raw('id')]);
+            $workspace = Workspace::query()->whereKey($site->workspace_id)->lockForUpdate()->first();
             $batch = IngestionBatch::query()->lockForUpdate()->find($this->batchId);
 
-            if (! $batch || $batch->status === IngestionStatus::Processed->value) {
+            if (! $batch || in_array($batch->status, [IngestionStatus::Processed->value, IngestionStatus::Failed->value], true)) {
+                return;
+            }
+            if (! $workspace || app(AnalyticsDeletionFence::class)->isFenced('workspace', (string) $workspace->getKey())) {
+                $batch->update([
+                    'status' => IngestionStatus::Failed->value,
+                    'failure_message' => 'The Analytics workspace is being deleted.',
+                ]);
+
                 return;
             }
 

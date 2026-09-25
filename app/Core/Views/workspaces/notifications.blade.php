@@ -40,7 +40,7 @@
             </x-signal.ui.select-field>
             <x-signal.ui.select-field name="product" id="notification-product" :label="__('Product')">
                 <option value="all" @selected($filters['product'] === 'all')>{{ __('All products') }}</option>
-                @foreach ($products as $product)
+                @foreach ($notificationProducts as $product)
                     <option value="{{ $product }}" @selected($filters['product'] === $product)>{{ config('platform.products.'.$product.'.label', str($product)->headline()) }}</option>
                 @endforeach
             </x-signal.ui.select-field>
@@ -132,13 +132,15 @@
             <div class="grid gap-4">
                 @foreach ($threads as $thread)
                     @php($threadFirst = $thread->first())
-                    <x-signal.ui.card as="section" class="p-4 sm:p-5" aria-label="{{ __('Updates for :project', ['project' => $threadFirst->projectName]) }}">
+                    <x-signal.ui.card as="section" class="p-4 sm:p-5" aria-label="{{ $threadFirst->projectName ? __('Updates for :project', ['project' => $threadFirst->projectName]) : ($threadFirst->security ? __('Account and security notifications') : __('Workspace notifications')) }}">
                         <header class="flex flex-wrap items-start justify-between gap-3 border-b border-line pb-3">
                             <div class="min-w-0">
-                                <p class="ui-eyebrow">{{ $threadFirst->environmentName ?: __('Project thread') }}</p>
-                                <h3 class="mt-1 truncate text-base font-extrabold text-ink">{{ $threadFirst->projectName }}</h3>
+                                <p class="ui-eyebrow">{{ $threadFirst->environmentName ?: ($threadFirst->security ? __('Account security') : __('Workspace thread')) }}</p>
+                                <h3 class="mt-1 truncate text-base font-extrabold text-ink">{{ $threadFirst->projectName ?: ($threadFirst->security ? __('Account notification') : str($threadFirst->sourceCategory ?? 'workspace update')->replace('_', ' ')->headline()) }}</h3>
                             </div>
-                            <x-signal.ui.link :href="$threadFirst->projectUrl" size="sm">{{ __('Open project') }}</x-signal.ui.link>
+                            @if ($threadFirst->projectUrl)
+                                <x-signal.ui.link :href="$threadFirst->projectUrl" size="sm">{{ __('Open project') }}</x-signal.ui.link>
+                            @endif
                         </header>
 
                         <ol class="divide-y divide-line" aria-label="{{ __('Updates in this project thread') }}">
@@ -179,7 +181,7 @@
             </div>
         @endif
 
-        <p class="mt-3 text-xs leading-5 text-subtle">{{ __('Showing up to 100 recent updates from projects and products you can currently access. Product records and delivery channels remain authoritative.') }}</p>
+        <p class="mt-3 text-xs leading-5 text-subtle">{{ __('Showing up to 100 recent updates and recipient-owned account notices. Product records and delivery channels remain authoritative.') }}</p>
     </section>
 
     <section class="mt-10" aria-labelledby="inbox-preferences-heading">

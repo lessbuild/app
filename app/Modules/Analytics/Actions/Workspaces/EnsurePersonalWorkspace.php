@@ -7,6 +7,7 @@ use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\Workspace;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Contracts\Auth\Authenticatable;
 use Illuminate\Support\Str;
 
@@ -43,6 +44,9 @@ final class EnsurePersonalWorkspace
 
         $productUserIds = $this->access->productUserIds($user);
         abort_if($productUserIds === [], 403, 'Analytics access is not yet reconciled for this account.');
+        foreach ($productUserIds as $productUserId) {
+            app(AnalyticsDeletionFence::class)->assertAccountOpen($productUserId);
+        }
         abort_if(
             $this->authentication->usesCoreAuthority('analytics'),
             409,

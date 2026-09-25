@@ -3,6 +3,12 @@
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\Facades\Schema;
 
+Schedule::command('deletions:process --limit=100')
+    ->everyMinute()
+    ->when(fn (): bool => Schema::connection('core')->hasTable('deletion_requests'))
+    ->withoutOverlapping(15)
+    ->onOneServer();
+
 Schedule::command('project-connections:deliver')
     ->everyMinute()
     ->when(fn (): bool => Schema::connection('core')->hasTable('project_connection_deliveries')

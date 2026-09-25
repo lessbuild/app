@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Core;
 
+use App\Core\Data\Notifications\WorkspaceNotification;
 use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
@@ -24,6 +25,7 @@ use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ActivityQuery;
 use App\Modules\Deployer\Services\ControlPlaneAccess;
 use App\Modules\Deployer\Services\Core\DeployerHistoryAccess;
+use App\Modules\Deployer\Services\Core\DeployerNativeNotificationProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceCustomerStatusManagementProvider;
 use App\Modules\Deployer\Services\ExportOrganizationData;
@@ -35,6 +37,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Notifications\DatabaseNotification;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;
 use Mockery;
@@ -378,6 +381,19 @@ final class DeployerMappedProjectAccessTest extends TestCase
         $history = app(DeployerHistoryAccess::class);
         $access = app(DeployerProjectAccess::class);
         $this->assertSame(3, $history->notifications($this->actor->notifications(), $this->actor)->count());
+        config(['platform.products.deployer.url' => 'https://deployer.example.test']);
+        $nativeFeed = app(DeployerNativeNotificationProvider::class)->forWorkspace(
+            $this->platformUser,
+            $this->workspace,
+            collect(),
+            ['deployer'],
+            100,
+        );
+        $this->assertEqualsCanonicalizing(['metric', 'metric', 'scheduled_task'], $nativeFeed->notifications->pluck('sourceCategory')->all());
+        $this->assertSame(
+            ['https://deployer.example.test/automation', 'https://deployer.example.test/observability', 'https://deployer.example.test/observability'],
+            $nativeFeed->notifications->pluck('resultUrl')->sort()->values()->all(),
+        );
         $this->assertTrue($this->actor->can('delete', $globalRule));
         $this->assertSame([$incident->id], $access->incidents($organization->operationalIncidents(), $this->actor)->pluck('id')->all());
         $resource['membership']->update(['status' => 'revoked', 'revoked_at' => now()]);
@@ -389,6 +405,92 @@ final class DeployerMappedProjectAccessTest extends TestCase
         config(['platform.products.deployer.auth_authority' => 'legacy']);
         $this->assertSame(3, $history->notifications($this->actor->notifications(), $this->actor)->count());
         $this->assertTrue($this->actor->can('delete', $globalRule));
+    }
+
+    public function test_deployment_history_accepts_environment_owned_builds_and_rejects_conflicting_owners(): void
+    {
+        $resource = $this->resources('environment-build-history');
+        $environmentOnlyBuild = $resource['build'];
+        $environmentOnlyBuild->update(['repository_id' => null]);
+        $visible = $this->notification('deployment', $environmentOnlyBuild->getKey());
+
+        $otherOrganization = $this->actor->currentOrganization->replicate();
+        $otherOrganization->name = 'Conflicting build owner';
+        $otherOrganization->slug = 'conflicting-build-owner';
+        $otherOrganization->save();
+        $resource['repository']->update(['organization_id' => $otherOrganization->getKey()]);
+        $conflictingBuild = $resource['repository']->builds()->create([
+            'environment_id' => $resource['environment']->getKey(),
+            'status' => Build::STATUS_SUCCEEDED,
+        ]);
+        $hidden = $this->notification('deployment', $conflictingBuild->getKey());
+
+        $feed = app(DeployerNativeNotificationProvider::class)->forWorkspace(
+            $this->platformUser,
+            $this->workspace,
+            collect(),
+            ['deployer'],
+            100,
+        );
+        $sourceIds = collect($feed->notifications)
+            ->map(fn (WorkspaceNotification $item): string => Crypt::decryptString($item->sourceReference))
+            ->all();
+
+        $this->assertContains((string) $visible->getKey(), $sourceIds);
+        $this->assertNotContains((string) $hidden->getKey(), $sourceIds);
+    }
+
+    public function test_newer_notifications_from_another_authorized_workspace_do_not_crowd_out_current_workspace_items(): void
+    {
+        $target = $this->resources('target-workspace-notification');
+        $targetNotification = $this->notification('website', $target['website']->id);
+        $targetNotification->forceFill(['created_at' => now()->subHour()])->save();
+
+        $otherOrganization = $this->actor->currentOrganization->replicate();
+        $otherOrganization->name = 'Other team';
+        $otherOrganization->slug = 'other-team-notifications';
+        $otherOrganization->save();
+        $otherWorkspace = Workspace::query()->create([
+            'owner_user_id' => $this->platformUser->getKey(),
+            'name' => 'Other team',
+            'slug' => 'other-team-notifications',
+            'status' => 'active',
+        ]);
+        $otherMembership = WorkspaceMembership::query()->create([
+            'workspace_id' => $otherWorkspace->getKey(),
+            'user_id' => $this->platformUser->getKey(),
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+        WorkspaceProductAccess::query()->create([
+            'membership_id' => $otherMembership->getKey(),
+            'product' => 'deployer',
+            'role' => 'owner',
+            'status' => 'active',
+        ]);
+        $this->map('organization', $otherOrganization->getKey(), 'workspace', (string) $otherWorkspace->getKey());
+        $this->actor->forceFill(['current_organization_id' => $otherOrganization->getKey()])->save();
+        $this->actor->setRelation('currentOrganization', $otherOrganization);
+        $targetWorkspace = $this->workspace;
+        $this->workspace = $otherWorkspace;
+        $otherResource = $this->resources('other-workspace-notification');
+        $this->workspace = $targetWorkspace;
+
+        for ($index = 0; $index < 105; $index++) {
+            $this->notification('website', $otherResource['website']->getKey());
+        }
+
+        $feed = app(DeployerNativeNotificationProvider::class)->forWorkspace(
+            $this->platformUser,
+            $this->workspace,
+            collect(),
+            ['deployer'],
+            100,
+        );
+
+        $this->assertSame([(string) $targetNotification->getKey()], collect($feed->notifications)
+            ->map(fn (WorkspaceNotification $item): string => Crypt::decryptString($item->sourceReference))
+            ->values()->all());
     }
 
     public function test_full_workspace_export_preserves_archived_history_but_requires_current_membership(): void

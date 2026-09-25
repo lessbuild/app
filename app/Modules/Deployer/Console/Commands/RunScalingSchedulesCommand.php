@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Console\Commands;
 
 use App\Modules\Deployer\Jobs\ApplyEnvironmentRuntimeStateJob;
+use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\ScalingSchedule;
 use App\Modules\Deployer\Services\Entitlements;
 use Cron\CronExpression;
@@ -25,6 +26,7 @@ class RunScalingSchedulesCommand extends Command
         ScalingSchedule::query()->where('is_enabled', true)->with('environment.project.organization.owner')->each(function (ScalingSchedule $schedule) use ($entitlements): void {
             $environment = $schedule->environment;
             if (! CronExpression::isValidExpression($schedule->cron_expression)
+                || ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $environment->project->organization_id)->exists()
                 || ! (new CronExpression($schedule->cron_expression))->isDue(now($schedule->timezone))
                 || $schedule->last_run_at?->gte(now()->startOfMinute())
                 || ! $entitlements->allows($environment->project->organization, 'scheduled_scaling')) {

@@ -3,6 +3,10 @@
 namespace Tests\Feature\Core;
 
 use App\Core\Contracts\WorkspaceActivityProvider;
+use App\Core\Contracts\WorkspaceNativeNotificationProvider;
+use App\Core\Data\Notifications\WorkspaceNativeNotificationSnapshot;
+use App\Core\Data\Notifications\WorkspaceNotification;
+use App\Core\Data\Notifications\WorkspaceNotificationSeverity;
 use App\Core\Data\Projects\ProjectWorkflowRun;
 use App\Core\Data\Projects\ProjectWorkflowStep;
 use App\Core\Data\Projects\WorkspaceActivitySnapshot;
@@ -10,6 +14,7 @@ use App\Core\Enums\ProjectWorkflowStepState;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceNativeNotificationProviderRegistry;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Collection;
@@ -173,6 +178,62 @@ final class WorkspaceNotificationInboxTest extends TestCase
             'user_id' => $this->userId,
             'notification_key' => $deployerKey,
         ], 'core');
+    }
+
+    public function test_projectless_account_security_notification_is_visible_without_a_deployer_product_grant(): void
+    {
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'deployer')
+            ->delete();
+        $provider = new class implements WorkspaceNativeNotificationProvider
+        {
+            public function forWorkspace(PlatformUser $user, Workspace $workspace, Collection $projects, array $products, int $limit): WorkspaceNativeNotificationSnapshot
+            {
+                return new WorkspaceNativeNotificationSnapshot(collect([new WorkspaceNotification(
+                    key: hash('sha256', 'security-row'),
+                    threadKey: 'account-security',
+                    workspaceId: (string) $workspace->getKey(),
+                    projectId: null,
+                    projectName: null,
+                    projectUrl: null,
+                    environmentName: null,
+                    product: 'deployer',
+                    productLabel: 'Deployer',
+                    severity: WorkspaceNotificationSeverity::Information,
+                    title: 'Account security changed',
+                    detail: 'A sign-in from a new device was recorded.',
+                    occurredAt: CarbonImmutable::now('UTC'),
+                    resultUrl: 'https://deployer.example.test/account',
+                    read: false,
+                    sourceProvider: 'deployer',
+                    sourceReference: 'opaque-security-row',
+                    security: true,
+                    sourceCategory: 'account',
+                )]));
+            }
+
+            public function setRead(PlatformUser $user, Workspace $workspace, Collection $projects, array $products, string $sourceReference, bool $read): bool
+            {
+                return false;
+            }
+        };
+        $registry = new WorkspaceNativeNotificationProviderRegistry;
+        $registry->register('deployer', $provider);
+        app()->instance(WorkspaceNativeNotificationProviderRegistry::class, $registry);
+
+        $user = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($user, 'platform')
+            ->get(route('core.workspace.notifications', ['workspace' => $this->workspaceId]))
+            ->assertOk()
+            ->assertSeeText('Account security changed')
+            ->assertSeeText('A sign-in from a new device was recorded.')
+            ->assertDontSeeText('Open project');
+
+        $this->post(route('core.workspace.notifications.read-all', ['workspace' => $this->workspaceId]))
+            ->assertRedirect()
+            ->assertSessionHas('error')
+            ->assertSessionMissing('success');
     }
 
     public function test_unread_totals_and_filters_follow_the_visible_project_and_severity_items(): void

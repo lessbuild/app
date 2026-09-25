@@ -48,6 +48,11 @@ final class ProcessProjectConnectionDelivery
                 return null;
             }
 
+            if ($connection->status === 'disconnected' || $connection->disconnected_at !== null) {
+                $delivery->forceFill(['status' => 'discarded', 'available_at' => null, 'last_error_code' => 'connection_disconnected'])->save();
+
+                return 'discarded';
+            }
             if ($connection->automation_paused_at !== null) {
                 return 'paused';
             }
@@ -61,8 +66,8 @@ final class ProcessProjectConnectionDelivery
             return $delivery->refresh();
         });
 
-        if ($delivery === 'paused') {
-            return 'paused';
+        if (is_string($delivery)) {
+            return $delivery;
         }
 
         if (! $delivery instanceof ProjectConnectionDelivery) {

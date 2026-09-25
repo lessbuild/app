@@ -3,6 +3,7 @@
 namespace App\Modules\Deployer\Jobs;
 
 use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Services\DeployerMutationClaimManager;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
@@ -43,16 +44,21 @@ class ApplyEnvironmentRuntimeStateJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(Runner $runner): void
     {
-        $environment = Environment::query()->with(['website.server', 'processes'])->find($this->environmentId);
-        if (! $environment?->website?->server || ! $environment->website->deployment_slug) {
+        $environment = Environment::query()->with(['project', 'website.server', 'processes'])->find($this->environmentId);
+        $workspaceId = $environment?->project?->organization_id;
+        if ($workspaceId === null) {
             return;
         }
-        $slug = $environment->website->deployment_slug;
-        $root = escapeshellarg($environment->deploymentPath('current'));
-        $prefix = escapeshellarg('buildpusher-'.$slug.'-');
-        $replicas = max($environment->minimum_replicas, min($environment->maximum_replicas, $environment->desired_replicas));
-        $hibernate = $this->hibernate ? '1' : '0';
-        $script = <<<BASH
+        app(DeployerMutationClaimManager::class)->runWorkspace($workspaceId, 'environment.apply_runtime_state', function () use ($environment, $runner): void {
+            if (! $environment->website?->server || ! $environment->website->deployment_slug) {
+                return;
+            }
+            $slug = $environment->website->deployment_slug;
+            $root = escapeshellarg($environment->deploymentPath('current'));
+            $prefix = escapeshellarg('buildpusher-'.$slug.'-');
+            $replicas = max($environment->minimum_replicas, min($environment->maximum_replicas, $environment->desired_replicas));
+            $hibernate = $this->hibernate ? '1' : '0';
+            $script = <<<BASH
         set -Eeuo pipefail
         ROOT={$root}
         PREFIX={$prefix}
@@ -74,13 +80,14 @@ class ApplyEnvironmentRuntimeStateJob implements ShouldBeUnique, ShouldQueue
             fi
         done
         BASH;
-        $result = $runner->server($environment->website->server)->create()->execute($script);
-        if (! $result->isSuccessful()) {
-            throw new RuntimeException(trim($result->getErrorOutput()) ?: 'Unable to apply environment runtime state.');
-        }
-        $environment->forceFill([
-            'hibernated_at' => $this->hibernate ? now() : null,
-            'last_activity_at' => $this->hibernate ? $environment->last_activity_at : now(),
-        ])->save();
+            $result = $runner->server($environment->website->server)->create()->execute($script);
+            if (! $result->isSuccessful()) {
+                throw new RuntimeException(trim($result->getErrorOutput()) ?: 'Unable to apply environment runtime state.');
+            }
+            $environment->forceFill([
+                'hibernated_at' => $this->hibernate ? now() : null,
+                'last_activity_at' => $this->hibernate ? $environment->last_activity_at : now(),
+            ])->save();
+        });
     }
 }

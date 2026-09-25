@@ -10,9 +10,9 @@ final readonly class WorkspaceNotification
         public string $key,
         public string $threadKey,
         public string $workspaceId,
-        public string $projectId,
-        public string $projectName,
-        public string $projectUrl,
+        public ?string $projectId,
+        public ?string $projectName,
+        public ?string $projectUrl,
         public ?string $environmentName,
         public string $product,
         public string $productLabel,
@@ -22,5 +22,9 @@ final readonly class WorkspaceNotification
         public CarbonImmutable $occurredAt,
         public ?string $resultUrl,
         public bool $read = false,
+        public ?string $sourceProvider = null,
+        public ?string $sourceReference = null,
+        public bool $security = false,
+        public ?string $sourceCategory = null,
     ) {}
 }

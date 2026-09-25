@@ -2,12 +2,16 @@
 
 namespace Tests\Feature\Monitor;
 
+use App\Core\Contracts\ProductPlanResolver;
 use App\Core\Models\ProductSubscription;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Monitor\Models\BillingEvent;
 use App\Modules\Monitor\Models\Workspace as MonitorWorkspace;
 use App\Modules\Monitor\Services\MonitorPlanAuthority;
 use App\Modules\Monitor\Services\MonitorPlanSnapshot;
+use App\Modules\Monitor\Services\ProcessStripeBillingEvent;
 use App\Modules\Monitor\Services\ReconcileMonitorCoreBillingEvents;
+use App\Modules\Monitor\Services\StripeBillingClient;
 use App\Modules\Monitor\Services\SyncMonitorBillingEventIntoCore;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\DB;
@@ -73,6 +77,13 @@ final class SyncMonitorBillingEventIntoCoreTest extends TestCase
     public function test_unknown_price_is_held_for_review_without_replacing_current_entitlements(): void
     {
         $workspaceId = $this->addWorkspaceMapping(20);
+        BillingEvent::query()->create([
+            'stripe_event_id' => 'evt_monitor_unknown_price',
+            'event_type' => 'customer.subscription.updated',
+            'workspace_id' => 20,
+            'processing_status' => BillingEvent::STATUS_PENDING,
+            'ignored_reason' => 'awaiting_core_reconciliation',
+        ]);
         app(SyncMonitorBillingEventIntoCore::class)->handle(
             $this->event('evt_monitor_known', 'customer.subscription.created', 1_800_000_000, $this->subscriptionObject(20)),
         );
@@ -96,6 +107,50 @@ final class SyncMonitorBillingEventIntoCoreTest extends TestCase
         $this->assertSame($subscription->getKey(), $currentId);
         $this->assertSame('needs_review', $billingEvent->processing_status);
         $this->assertSame('plan_or_subscription_unrecognized', $billingEvent->ignored_reason);
+        $sourceEvent = BillingEvent::query()->where('stripe_event_id', 'evt_monitor_unknown_price')->firstOrFail();
+        $this->assertSame(BillingEvent::STATUS_PENDING, $sourceEvent->processing_status);
+        $this->assertNull($sourceEvent->processed_at);
+    }
+
+    public function test_reconciliation_acknowledges_a_source_receipt_after_a_crash_following_the_core_commit(): void
+    {
+        $this->addWorkspaceMapping(21);
+        $event = $this->event('evt_lost_source_ack', 'customer.subscription.created', 1_800_000_000, $this->subscriptionObject(21));
+        app(SyncMonitorBillingEventIntoCore::class)->handle($event);
+        $source = BillingEvent::query()->create([
+            'stripe_event_id' => $event['id'], 'event_type' => $event['type'], 'workspace_id' => 21,
+            'processing_status' => BillingEvent::STATUS_PENDING, 'ignored_reason' => 'awaiting_core_reconciliation',
+        ]);
+        $source->forceFill(['updated_at' => now()->subHour()])->save();
+        Http::preventStrayRequests();
+
+        $summary = app(ReconcileMonitorCoreBillingEvents::class)->handle();
+
+        $this->assertSame(1, $summary['completed']);
+        $this->assertSame(BillingEvent::STATUS_APPLIED, $source->refresh()->processing_status);
+        $this->assertNotNull($source->processed_at);
+        Http::assertNothingSent();
+    }
+
+    public function test_reconciliation_recovers_a_native_event_that_never_reached_core(): void
+    {
+        config(['monitor.beacon.billing.stripe.secret' => 'sk_test_fixture']);
+        $this->addWorkspaceMapping(22);
+        $event = $this->event('evt_source_before_core', 'customer.subscription.created', 1_800_000_000, $this->subscriptionObject(22));
+        $source = BillingEvent::query()->create([
+            'stripe_event_id' => $event['id'], 'event_type' => $event['type'], 'workspace_id' => 22,
+            'stripe_created_at' => $event['created'], 'processing_status' => BillingEvent::STATUS_PENDING,
+            'ignored_reason' => 'awaiting_core_reconciliation',
+        ]);
+        $source->forceFill(['updated_at' => now()->subHour()])->save();
+        Http::fake(['https://api.stripe.com/v1/events/evt_source_before_core' => Http::response($event, 200)]);
+
+        $summary = app(ReconcileMonitorCoreBillingEvents::class)->handle();
+
+        $this->assertSame(1, $summary['completed']);
+        $this->assertSame(BillingEvent::STATUS_APPLIED, $source->refresh()->processing_status);
+        $this->assertNotNull($source->processed_at);
+        $this->assertSame('active', ProductSubscription::query()->where('provider_subscription_id', 'sub_monitor_1')->value('status'));
     }
 
     public function test_late_cancellation_for_historical_subscription_does_not_remove_a_newer_current_plan(): void
@@ -227,8 +282,106 @@ final class SyncMonitorBillingEventIntoCoreTest extends TestCase
         $this->assertSame(0, DB::connection('core')->table('product_subscriptions')->count());
     }
 
+    public function test_billing_event_ignored_during_workspace_deletion_is_reconciled_into_core(): void
+    {
+        $workspaceId = $this->addWorkspaceMapping(70);
+        DB::connection('core')->table('workspaces')->where('id', $workspaceId)->update(['status' => 'deleting']);
+        BillingEvent::query()->create([
+            'stripe_event_id' => 'evt_monitor_deleting',
+            'event_type' => 'customer.subscription.created',
+            'workspace_id' => 70,
+            'stripe_created_at' => 1_800_000_000,
+            'processing_status' => BillingEvent::STATUS_PENDING,
+            'ignored_reason' => 'awaiting_core_reconciliation',
+            'processed_at' => null,
+        ]);
+
+        app(SyncMonitorBillingEventIntoCore::class)->handle(
+            $this->event('evt_monitor_deleting', 'customer.subscription.created', 1_800_000_000, $this->subscriptionObject(70)),
+        );
+
+        $billingEvent = DB::connection('core')->table('product_billing_events')->where('provider_event_id', 'evt_monitor_deleting')->first();
+        $subscription = ProductSubscription::query()->where('provider_subscription_id', 'sub_monitor_1')->firstOrFail();
+
+        $this->assertSame('applied', $billingEvent->processing_status);
+        $this->assertSame('active', $subscription->status);
+        $this->assertSame('deleting', DB::connection('core')->table('workspaces')->where('id', $workspaceId)->value('status'));
+        $this->assertSame($subscription->getKey(), DB::connection('core')->table('current_product_subscriptions')
+            ->where('workspace_id', $workspaceId)->where('product', 'monitor')->value('product_subscription_id'));
+        $sourceEvent = BillingEvent::query()->where('stripe_event_id', 'evt_monitor_deleting')->firstOrFail();
+        $this->assertSame(BillingEvent::STATUS_APPLIED, $sourceEvent->processing_status);
+        $this->assertNotNull($sourceEvent->processed_at);
+    }
+
+    public function test_billing_event_for_deleted_workspace_is_deduplicated_without_recreating_subscription(): void
+    {
+        $workspaceId = $this->addWorkspaceMapping(80);
+        DB::connection('core')->table('workspaces')->where('id', $workspaceId)->update(['status' => 'deleted']);
+        DB::connection('core')->table('legacy_identity_maps')->where('source_product', 'monitor')
+            ->where('source_entity', 'workspace')->where('source_id', '80')->update(['status' => 'deleted']);
+        BillingEvent::query()->create([
+            'stripe_event_id' => 'evt_monitor_deleted_workspace',
+            'event_type' => 'customer.subscription.created',
+            'workspace_id' => 80,
+            'stripe_created_at' => 1_800_000_000,
+            'processing_status' => BillingEvent::STATUS_PENDING,
+            'ignored_reason' => 'awaiting_core_reconciliation',
+            'processed_at' => null,
+        ]);
+
+        app(SyncMonitorBillingEventIntoCore::class)->handle(
+            $this->event('evt_monitor_deleted_workspace', 'customer.subscription.created', 1_800_000_000, $this->subscriptionObject(80)),
+        );
+
+        $billingEvent = DB::connection('core')->table('product_billing_events')->where('provider_event_id', 'evt_monitor_deleted_workspace')->first();
+
+        $this->assertSame('ignored', $billingEvent->processing_status);
+        $this->assertSame('workspace_deleted', $billingEvent->ignored_reason);
+        $this->assertSame(0, DB::connection('core')->table('product_subscriptions')->count());
+        $this->assertSame(0, DB::connection('core')->table('current_product_subscriptions')->count());
+        $this->assertSame('deleted', DB::connection('core')->table('workspaces')->where('id', $workspaceId)->value('status'));
+        $sourceEvent = BillingEvent::query()->where('stripe_event_id', 'evt_monitor_deleted_workspace')->firstOrFail();
+        $this->assertSame(BillingEvent::STATUS_IGNORED, $sourceEvent->processing_status);
+        $this->assertNotNull($sourceEvent->processed_at);
+    }
+
+    public function test_verified_stripe_event_during_native_deletion_is_still_forwarded_to_core(): void
+    {
+        config(['monitor.beacon.plan_authority' => 'core']);
+        $this->addWorkspaceMapping(90);
+        DB::connection('monitor')->table('product_deletion_fences')->insert([
+            'kind' => 'workspace',
+            'source_id' => '90',
+            'request_id' => (string) Str::ulid(),
+            'step_id' => (string) Str::ulid(),
+            'payload_hash' => hash('sha256', 'target'),
+            'target' => '{}',
+            'status' => 'prepared',
+            'prepared_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $event = $this->event('evt_monitor_native_deleting', 'customer.subscription.created', 1_800_000_000, $this->subscriptionObject(90));
+        $coreBilling = \Mockery::mock(SyncMonitorBillingEventIntoCore::class);
+        $coreBilling->shouldReceive('handle')->once()->with($event)->andReturn(true);
+        $authority = new MonitorPlanAuthority(
+            new LegacyIdentityResolver,
+            \Mockery::mock(ProductPlanResolver::class),
+        );
+        $processor = new ProcessStripeBillingEvent(app(StripeBillingClient::class), $authority, $coreBilling);
+
+        $this->assertTrue($processor->handle($event));
+        $stored = BillingEvent::query()->where('stripe_event_id', 'evt_monitor_native_deleting')->firstOrFail();
+        $this->assertSame(90, (int) $stored->workspace_id);
+        $this->assertSame(BillingEvent::STATUS_PENDING, $stored->processing_status);
+        $this->assertSame('awaiting_core_reconciliation', $stored->ignored_reason);
+        $this->assertNull($stored->processed_at);
+        $this->assertSame('Monitor workspace 90', DB::connection('monitor')->table('workspaces')->where('id', 90)->value('name'));
+    }
+
     private function dropTables(): void
     {
+        Schema::connection('monitor')->dropIfExists('product_deletion_fences');
         Schema::connection('monitor')->dropIfExists('billing_events');
         Schema::connection('monitor')->dropIfExists('workspaces');
 
@@ -341,6 +494,19 @@ final class SyncMonitorBillingEventIntoCoreTest extends TestCase
             $table->unsignedBigInteger('stripe_created_at')->nullable();
             $table->string('processing_status', 16)->default('applied');
             $table->string('ignored_reason', 64)->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('product_deletion_fences', function (Blueprint $table): void {
+            $table->id();
+            $table->string('kind', 24);
+            $table->string('source_id', 191);
+            $table->string('request_id', 26);
+            $table->string('step_id', 26);
+            $table->char('payload_hash', 64);
+            $table->text('target');
+            $table->string('status', 24);
+            $table->timestamp('prepared_at')->nullable();
+            $table->timestamp('completed_at')->nullable();
             $table->timestamps();
         });
     }

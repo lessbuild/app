@@ -7,12 +7,16 @@ use App\Core\Data\Billing\ProductPlanResolution;
 use App\Core\Enums\ProductKey;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\ProductSubscription;
+use App\Core\Models\Workspace;
 use Illuminate\Support\Carbon;
 
 final class ResolveProductPlan implements ProductPlanResolver
 {
     public function resolve(string $workspaceId, ProductKey $product): ProductPlanResolution
     {
+        if (! Workspace::query()->whereKey($workspaceId)->where('status', 'active')->whereNull('archived_at')->exists()) {
+            return ProductPlanResolution::unavailable($product, $workspaceId, 'workspace_not_active');
+        }
         $current = CurrentProductSubscription::query()
             ->with('subscription')
             ->where('workspace_id', $workspaceId)

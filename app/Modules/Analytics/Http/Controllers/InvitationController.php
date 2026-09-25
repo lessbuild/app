@@ -4,6 +4,7 @@ namespace App\Modules\Analytics\Http\Controllers;
 
 use App\Modules\Analytics\Models\Invitation;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\Deletion\AnalyticsDeletionFence;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -19,7 +20,7 @@ class InvitationController extends Controller
         return view('analytics::workspaces.invitation', compact('invitation', 'token'));
     }
 
-    public function accept(Request $request, string $token, AnalyticsWorkspaceAccess $access): RedirectResponse
+    public function accept(Request $request, string $token, AnalyticsWorkspaceAccess $access, AnalyticsDeletionFence $deletionFence): RedirectResponse
     {
         $invitation = Invitation::query()->where('token_hash', hash('sha256', $token))->firstOrFail();
         abort_unless($invitation->isPending(), 410, 'This invitation has expired.');
@@ -28,12 +29,14 @@ class InvitationController extends Controller
         $productUserIds = $access->productUserIds($request->user());
         abort_if($productUserIds === [], 403, 'Analytics access is not yet reconciled for this account.');
 
-        DB::connection('analytics')->transaction(function () use ($invitation, $productUserIds): void {
+        DB::connection('analytics')->transaction(function () use ($invitation, $productUserIds, $deletionFence): void {
+            $workspace = $invitation->workspace()->lockForUpdate()->firstOrFail();
+            $deletionFence->assertWorkspaceOpen($workspace->getKey());
             $memberships = collect($productUserIds)->mapWithKeys(
                 fn (string $productUserId): array => [$productUserId => ['role' => $invitation->role]],
             )->all();
 
-            $invitation->workspace->users()->syncWithoutDetaching($memberships);
+            $workspace->users()->syncWithoutDetaching($memberships);
             $invitation->forceFill(['accepted_at' => now()])->save();
         });
         $request->session()->put('analytics_workspace_id', $invitation->workspace_id);
