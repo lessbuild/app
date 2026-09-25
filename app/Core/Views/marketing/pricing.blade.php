@@ -76,7 +76,7 @@
                         <p class="mt-2 min-h-20 text-sm leading-6 text-muted">{{ $plan['description'] }}</p>
                         <p class="mt-6 flex items-baseline gap-1 text-ink">
                             @if ((float) $plan['price'] > 0)
-                                <span class="text-4xl font-extrabold" x-text="interval === 'yearly' ? '$' + {{ number_format((float) ($plan['yearly_price'] ?? $plan['price']), 0) }} : '$' + {{ number_format((float) $plan['price'], 0) }}">{{ '$'.number_format((float) ($plan['yearly_price'] ?? $plan['price']), 0) }}</span>
+                                <span class="text-4xl font-extrabold" x-text="interval === 'yearly' ? {{ Illuminate\Support\Js::from('$'.number_format((float) ($plan['yearly_price'] ?? $plan['price']), 0)) }} : {{ Illuminate\Support\Js::from('$'.number_format((float) $plan['price'], 0)) }}">{{ '$'.number_format((float) ($plan['yearly_price'] ?? $plan['price']), 0) }}</span>
                                 <span class="text-sm text-muted" x-text="interval === 'yearly' ? '/year' : '/month'">{{ __(' /year') }}</span>
                             @else
                                 <span class="text-4xl font-extrabold">$0</span>
