@@ -73,7 +73,7 @@
                 @foreach ($plans as $plan => $count)
                     <div>
                         <div class="flex justify-between text-xs"><span class="font-bold capitalize text-ink">{{ $plan }}</span><span class="text-muted">{{ $count }}</span></div>
-                        <div class="ui-progress mt-1.5"><span style="width: {{ ($count / $planMax) * 100 }}%"></span></div>
+                        <x-signal.ui.progress class="mt-1.5" :label="__('Workspace share for :plan', ['plan' => $plan])" :value="($count / max(1, $planMax)) * 100" />
                     </div>
                 @endforeach
             </div>

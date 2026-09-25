@@ -89,26 +89,26 @@
         </div>
 
         <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="#automation-tokens" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="tokens">
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#automation-tokens" style="border-left-color: var(--ui-primary)" data-automation-summary="tokens">
                 <p class="ui-eyebrow">{{ __('API access') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $tokens->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count token|:count tokens', $tokens->count(), ['count' => $tokens->count()]) }}</p>
-            </a>
-            <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="applications">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#automation-workflows" style="border-left-color: var(--ui-primary)" data-automation-summary="applications">
                 <p class="ui-eyebrow">{{ __('Applications') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $projects->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count workflow|:count workflows', $projects->count(), ['count' => $projects->count()]) }}</p>
-            </a>
-            <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="environments">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#automation-workflows" style="border-left-color: var(--ui-primary)" data-automation-summary="environments">
                 <p class="ui-eyebrow">{{ __('Environments') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $environmentCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('Available for runtime controls') }}</p>
-            </a>
-            <a href="#automation-workflows" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)" data-automation-summary="operations">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#automation-workflows" style="border-left-color: var(--ui-primary)" data-automation-summary="operations">
                 <p class="ui-eyebrow">{{ __('Scheduled operations') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $scheduledOperationCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ __('Deploys, scaling and tasks') }}</p>
-            </a>
+            </x-signal.ui.panel>
         </div>
 
         <x-signal.ui.local-nav class="mt-5" :label="__('Automation sections')">
@@ -217,7 +217,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
 
         <div class="space-y-4">
             @forelse ($projects as $project)
-                <details id="automation-project-{{ $project->id }}" class="ui-panel group overflow-hidden" data-automation-project>
+                <x-signal.ui.panel as="details" class="group overflow-hidden" id="automation-project-{{ $project->id }}" data-automation-project>
                     <summary class="flex cursor-pointer list-none items-center justify-between gap-4 p-5">
                         <div>
                             <p class="font-extrabold text-ink">{{ $project->name }}</p>
@@ -387,7 +387,7 @@ curl -X POST -H "Authorization: Bearer $BUILDPUSHER_TOKEN" \
                             @endforeach
                         </div>
                     </div>
-                </details>
+                </x-signal.ui.panel>
             @empty
                 <x-signal.ui.empty-state
                     :title="__('No applications')"

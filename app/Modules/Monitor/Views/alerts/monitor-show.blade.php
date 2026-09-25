@@ -21,7 +21,7 @@
 <p class="text-xs leading-5 text-muted dark:text-subtle">Success rate counts observed passes and failures, not time-based availability or an SLO. Unknown, cancelled and pending checks are excluded. Gaps are not backfilled. Checks run from one configured location; regional redundancy is not yet available.</p>
 @endif
 <div class="grid items-start gap-6 xl:grid-cols-3">
-    <section class="ui-panel space-y-4 p-6 xl:col-span-2">
+    <x-signal.ui.panel as="section" class="space-y-4 p-6 xl:col-span-2">
         <h2 class="text-lg font-bold">{{ $monitor->type === 'heartbeat' ? 'Recent run durations' : 'Recent response times' }}</h2>
         @if($chart->whereNotNull('duration_ms')->isNotEmpty())
         <svg viewBox="0 0 600 160" class="h-40 w-full" role="img" aria-label="{{ $monitor->type === 'heartbeat' ? 'Run durations' : 'Response times' }} for up to forty recent checks, oldest to newest. Details in the check history table.">
@@ -37,8 +37,8 @@
         @else<p class="py-10 text-center text-sm text-muted dark:text-subtle">The chart will appear after a measured check.</p>@endif
         <x-monitor::ui.monitor-observation :observation="$monitor->observation" />
         <p class="text-xs text-muted dark:text-subtle">Last observation {{ $monitor->checked_at ? $monitor->checked_at->format('Y-m-d H:i:s').' UTC' : 'not yet collected' }}. Latest-result status can become unknown when observations are stale.</p>
-    </section>
-    <aside class="ui-card space-y-4 p-6">
+    </x-signal.ui.panel>
+    <x-signal.ui.card as="aside" class="space-y-4 p-6">
         <h2 class="font-bold">Check conditions</h2>
         <dl class="space-y-3 text-sm">
             <div><dt class="text-muted dark:text-subtle">Type</dt><dd>{{ $monitor->typeLabel() }}</dd></div>
@@ -59,12 +59,12 @@
             <div><dt class="text-muted dark:text-subtle">{{ $monitor->type === 'heartbeat' ? 'Next heartbeat deadline' : 'Next scheduled check' }}</dt><dd>{{ $monitor->enabled && !$monitor->trashed() && $monitor->environment->status === 'active' ? ($monitor->next_check_at ? $monitor->next_check_at->format('Y-m-d H:i:s').' UTC' : 'Awaiting a new run after the missed deadline') : 'Paused' }}</dd></div>
         </dl>
         @if($monitor->type === 'dns')<p class="text-xs text-muted dark:text-subtle">Results are from the system resolver and its cache, not global propagation or DNSSEC verification. Record values below are private to your workspace and are not sent in notifications.</p>@elseif($monitor->type === 'tls')<p class="text-xs text-muted dark:text-subtle">Direct TLS 1.2+ handshake; no HTTP request or STARTTLS. Expiry is for the leaf certificate only. Failed verification may prevent reading expiry metadata. Revocation is not checked.</p>@elseif($monitor->type === 'tcp')<p class="text-xs text-muted dark:text-subtle">A successful result means this checker completed a TCP handshake to the public resolved address. It does not prove that a protocol is healthy or that the service accepted an application request.</p>@endif
-        @can('delete', $monitor)<form method="POST" action="{{ route('monitor.monitors.destroy', $monitor) }}" class="space-y-3 border-t border-line pt-4 dark:border-line">@csrf @method('DELETE')<input type="hidden" name="version" value="{{ $monitor->state_version }}"><p class="text-xs text-muted dark:text-subtle">Archiving stops checks and closes active incidents without claiming recovery. History remains available.</p><x-monitor::ui.button variant="secondary">Archive monitor</x-monitor::ui.button></form>@endcan
-    </aside>
+        @can('delete', $monitor)<form method="POST" action="{{ route('monitor.monitors.destroy', $monitor) }}" class="space-y-3 border-t border-line pt-4 dark:border-line">@csrf @method('DELETE')<x-signal.ui.input type="hidden" name="version" value="{{ $monitor->state_version }}" :restore="false" /><p class="text-xs text-muted dark:text-subtle">Archiving stops checks and closes active incidents without claiming recovery. History remains available.</p><x-monitor::ui.button variant="secondary">Archive monitor</x-monitor::ui.button></form>@endcan
+    </x-signal.ui.card>
 </div>
 <section class="space-y-4">
     <h2 class="text-lg font-bold">Check history</h2>
-    <div class="ui-card overflow-x-auto"><x-monitor::ui.table caption="Monitor check history" :framed="false">
+    <x-signal.ui.card as="div" class="overflow-x-auto"><x-monitor::ui.table caption="Monitor check history" :framed="false">
         <x-slot:head><tr><th scope="col">Scheduled (UTC)</th><th scope="col">Outcome / reason</th><th scope="col">Response</th><th scope="col">Location / revision</th></tr></x-slot:head>
 @forelse($checks as $check)<tr>
             <td class="whitespace-nowrap">{{ $check->scheduled_at->format('Y-m-d H:i:s') }}</td>
@@ -81,7 +81,7 @@
             </td>
             <td>{{ $check->location }} · {{ $check->config_revision }}</td>
         </tr>@empty<tr><td colspan="4" class="py-10 text-center text-muted dark:text-subtle">No checks recorded yet.</td></tr>@endforelse
-    </x-monitor::ui.table></div>
+    </x-monitor::ui.table></x-signal.ui.card>
     {{ $checks->links() }}
 </section>
 <section class="space-y-4"><h2 class="text-lg font-bold">Monitor incidents</h2><x-monitor::ui.incident-list :incidents="$incidents" /></section>

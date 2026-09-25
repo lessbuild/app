@@ -140,7 +140,7 @@
                 <a href="{{ route('observability.index') }}" class="ui-link text-sm">{{ __('Open observability') }}</a>
             </div>
         <div class="grid gap-4 xl:grid-cols-[1fr_1fr_.8fr]">
-            <article class="ui-card p-5" aria-labelledby="deployment-volume-title">
+            <x-signal.ui.card as="article" class="p-5" aria-labelledby="deployment-volume-title">
                 <div class="flex items-start justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Activity') }}</p><h3 id="deployment-volume-title" class="mt-2 font-extrabold text-ink">{{ __('Deployment volume') }}</h3><p class="mt-1 text-xs text-muted">{{ trans_choice(':count release|:count releases', $trendSummary['deployments'], ['count' => $trendSummary['deployments']]) }}</p></div><div class="text-right"><p class="text-2xl font-extrabold text-ink">{{ $trendSummary['success_rate'] === null ? '—' : $trendSummary['success_rate'].'%' }}</p><p class="text-xs text-muted">{{ __('success') }}</p></div></div>
                 <div class="ui-chart ui-dashboard-trend mt-5" role="img" aria-label="{{ __('Deployment counts for each of the last fourteen days') }}">
                     @foreach($deploymentTrend as $day)
@@ -154,9 +154,9 @@
                 </div>
                 <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-subtle"><span>{{ $deploymentTrend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
                 <p class="mt-4 border-t border-line pt-3 text-xs text-muted">{{ __('Median completed deployment') }}: <strong class="text-ink">{{ $trendSummary['median_duration'] ?? '—' }}</strong></p>
-            </article>
+            </x-signal.ui.card>
 
-            <article class="ui-card p-5" aria-labelledby="health-reliability-title">
+            <x-signal.ui.card as="article" class="p-5" aria-labelledby="health-reliability-title">
                 <div class="flex items-start justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Reliability') }}</p><h3 id="health-reliability-title" class="mt-2 font-extrabold text-ink">{{ __('Health reliability') }}</h3><p class="mt-1 text-xs text-muted">{{ trans_choice(':count retained check|:count retained checks', $trendSummary['health_checks'], ['count' => $trendSummary['health_checks']]) }}</p></div><div class="text-right"><p class="text-2xl font-extrabold text-ink">{{ $trendSummary['health_rate'] === null ? '—' : $trendSummary['health_rate'].'%' }}</p><p class="text-xs text-muted">{{ __('passing') }}</p></div></div>
                 <div class="ui-chart ui-dashboard-trend mt-5" role="img" aria-label="{{ __('Website health success rate for each of the last fourteen days') }}">
                     @foreach($healthTrend as $day)
@@ -167,20 +167,20 @@
                 </div>
                 <div class="mt-2 flex justify-between text-[10px] font-bold uppercase text-subtle"><span>{{ $healthTrend->first()['date'] }}</span><span>{{ __('Today') }}</span></div>
                 <p class="mt-4 border-t border-line pt-3 text-xs text-muted">{{ __('No-data days are shown as a short neutral bar and are excluded from the rate.') }}</p>
-            </article>
+            </x-signal.ui.card>
 
-            <article class="ui-card p-5" aria-labelledby="plan-capacity-title">
+            <x-signal.ui.card as="article" class="p-5" aria-labelledby="plan-capacity-title">
                 <div class="flex items-start justify-between gap-3"><div><p class="ui-eyebrow">{{ __('Capacity') }}</p><h3 id="plan-capacity-title" class="mt-2 font-extrabold text-ink">{{ __('Plan capacity') }}</h3><p class="mt-1 text-xs text-muted">{{ __(':plan workspace', ['plan' => $billingPlan['name']]) }}</p></div><a href="{{ route('billing.index') }}" class="ui-link text-xs">{{ __('Manage') }}</a></div>
                 <div class="mt-5 space-y-5">
                     @foreach($billingPlan['usage'] as $resource => $usage)
                         @php
                             $percentage = $usage['limit'] === null ? 0 : min(100, (int) round(($usage['used'] / max(1, $usage['limit'])) * 100));
                         @endphp
-                        <div><div class="flex items-center justify-between gap-3 text-xs"><span class="font-bold capitalize text-ink">{{ __($resource) }}</span><span class="text-muted">{{ $usage['used'] }} / {{ $usage['limit'] ?? __('Unlimited') }}</span></div><div class="ui-progress mt-2"><span @class(['bg-danger' => !$usage['allowed']]) style="width: {{ $usage['limit'] === null ? 100 : $percentage }}%"></span></div></div>
+                        <div><div class="flex items-center justify-between gap-3 text-xs"><span class="font-bold capitalize text-ink">{{ __($resource) }}</span><span class="text-muted">{{ $usage['used'] }} / {{ $usage['limit'] ?? __('Unlimited') }}</span></div><x-signal.ui.progress class="mt-2" :label="__('Usage for :resource', ['resource' => __($resource)])" :value="$usage['limit'] === null ? 100 : $percentage" :bar-class="! $usage['allowed'] ? 'bg-danger' : null" /></div>
                     @endforeach
                 </div>
                 <p class="mt-5 border-t border-line pt-3 text-xs leading-5 text-muted">{{ __('Limits are checked again on the server for create, import, invitation, preview, and paid-feature actions.') }}</p>
-            </article>
+            </x-signal.ui.card>
         </div>
         </div>
     </x-signal.ui.panel>
@@ -246,10 +246,10 @@
                 ['status' => \App\Modules\Deployer\Models\Provider::CONNECTION_FAILED, 'label' => __('Failed'), 'count' => $providerHealthCounts['failed'], 'tone' => 'danger'],
                 ['status' => \App\Modules\Deployer\Models\Provider::CONNECTION_UNCHECKED, 'label' => __('Unchecked'), 'count' => $providerHealthCounts['unchecked'], 'tone' => 'neutral'],
             ] as $health)
-                <a href="{{ route('providers.index', ['connection' => $health['status']]) }}" class="ui-card ui-card--interactive flex items-center justify-between gap-3 p-4">
+                <x-signal.ui.card as="a" tone="interactive" class="flex items-center justify-between gap-3 p-4" href="{{ route('providers.index', ['connection' => $health['status']]) }}">
                     <span class="text-2xl font-extrabold tracking-tight text-ink">{{ $health['count'] }}</span>
                     <x-signal.ui.badge :tone="$health['tone']">{{ $health['label'] }}</x-signal.ui.badge>
-                </a>
+                </x-signal.ui.card>
             @endforeach
         </div>
     </x-signal.ui.panel>
@@ -287,22 +287,21 @@
             </div>
 
             <div class="mt-4 grid grid-cols-2 gap-3">
-                <div class="ui-stat p-3">
+                <x-signal.ui.stat as="div" :slot-mode="true" class="p-3">
                     <span class="block text-xl font-extrabold text-ink">{{ $provisioningCounts['servers'] }}</span>
                     <span class="text-xs font-semibold uppercase text-muted">{{ __('Servers') }}</span>
-                </div>
-                <div class="ui-stat p-3">
+                </x-signal.ui.stat>
+                <x-signal.ui.stat as="div" :slot-mode="true" class="p-3">
                     <span class="block text-xl font-extrabold text-ink">{{ $provisioningCounts['websites'] }}</span>
                     <span class="text-xs font-semibold uppercase text-muted">{{ __('Websites') }}</span>
-                </div>
+                </x-signal.ui.stat>
             </div>
 
             <div class="mt-5 grid gap-3 lg:grid-cols-2">
                 @foreach ($provisioningResources as $resource)
                     @php($isServer = $resource instanceof \App\Modules\Deployer\Models\Server)
-                    <a
+                    <x-signal.ui.card as="a" tone="interactive" class="flex items-center justify-between gap-4 p-4"
                         href="{{ $isServer ? route('servers.show', $resource) : route('websites.show', $resource) }}"
-                        class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4"
                     >
                         <div>
                             <span class="block font-bold text-ink">{{ $isServer ? $resource->label : $resource->name }}</span>
@@ -312,7 +311,7 @@
                             <span class="block font-semibold uppercase">{{ str($resource->provisioning_status)->replace('_', ' ') }}</span>
                             <span class="mt-1 block">{{ $resource->created_at->diffForHumans() }}</span>
                         </div>
-                    </a>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
 
@@ -353,16 +352,16 @@
                     \App\Modules\Deployer\Models\Build::STATUS_RUNNING => __('Running'),
                     \App\Modules\Deployer\Models\Build::STATUS_TIMING_OUT => __('Timing out'),
                 ] as $status => $label)
-                    <div class="ui-stat p-3">
+                    <x-signal.ui.stat as="div" :slot-mode="true" class="p-3">
                         <span class="block text-xl font-extrabold text-ink">{{ $activeDeploymentCounts[$status] }}</span>
                         <span class="text-xs font-semibold uppercase text-muted">{{ $label }}</span>
-                    </div>
+                    </x-signal.ui.stat>
                 @endforeach
             </div>
 
             <div class="ui-timeline mt-5 space-y-3" aria-label="{{ __('Deployment timeline') }}">
                 @foreach ($activeDeployments as $build)
-                    <a href="{{ route('builds.show', $build) }}" class="ui-timeline-item ui-card ui-card--interactive flex items-center justify-between gap-4 p-4">
+                    <x-signal.ui.card as="a" tone="interactive" class="ui-timeline-item flex items-center justify-between gap-4 p-4" href="{{ route('builds.show', $build) }}">
                         <div>
                             <span class="block font-bold text-ink">{{ $build->repository->name }}</span>
                             <span class="mt-1 block text-sm text-muted">
@@ -376,7 +375,7 @@
                             <span class="block font-semibold uppercase">{{ str($build->status)->replace('_', ' ') }}</span>
                             <span class="mt-1 block">{{ $build->created_at->diffForHumans() }}</span>
                         </div>
-                    </a>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
 
@@ -429,18 +428,17 @@
                     \App\Modules\Deployer\Models\RepositoryWebhookDelivery::STATUS_SUPERSEDED => __('Superseded'),
                     \App\Modules\Deployer\Models\RepositoryWebhookDelivery::STATUS_RECEIVED => __('Received'),
                 ] as $status => $label)
-                    <div class="ui-stat p-3">
+                    <x-signal.ui.stat as="div" :slot-mode="true" class="p-3">
                         <span class="block text-xl font-extrabold text-ink">{{ $webhookDeliveryCounts[$status] }}</span>
                         <span class="text-xs font-semibold uppercase text-muted">{{ $label }}</span>
-                    </div>
+                    </x-signal.ui.stat>
                 @endforeach
             </div>
 
             <div class="mt-5 grid gap-3 lg:grid-cols-2">
                 @foreach ($recentWebhookDeliveries as $delivery)
-                    <a
+                    <x-signal.ui.card as="a" tone="interactive" class="flex items-center justify-between gap-4 p-4"
                         href="{{ route('repositories.show', ['repository' => $delivery->repository, 'delivery_status' => $delivery->status]) }}#webhook-deliveries"
-                        class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4"
                     >
                         <div>
                             <span class="block font-bold text-ink">{{ $delivery->repository->name }}</span>
@@ -450,7 +448,7 @@
                             <span class="block font-semibold uppercase">{{ $delivery->status }}</span>
                             <span class="mt-1 block">{{ $delivery->created_at->diffForHumans() }}</span>
                         </div>
-                    </a>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
 
@@ -491,18 +489,17 @@
                     \App\Modules\Deployer\Models\ServerCommandExecution::STATUS_QUEUED => __('Queued'),
                     \App\Modules\Deployer\Models\ServerCommandExecution::STATUS_RUNNING => __('Running'),
                 ] as $status => $label)
-                    <div class="ui-stat p-3">
+                    <x-signal.ui.stat as="div" :slot-mode="true" class="p-3">
                         <span class="block text-xl font-extrabold text-ink">{{ $activeCommandCounts[$status] }}</span>
                         <span class="text-xs font-semibold uppercase text-muted">{{ $label }}</span>
-                    </div>
+                    </x-signal.ui.stat>
                 @endforeach
             </div>
 
             <div class="mt-5 grid gap-3 lg:grid-cols-2">
                 @foreach ($activeCommands as $execution)
-                    <a
+                    <x-signal.ui.card as="a" tone="interactive" class="flex items-center justify-between gap-4 p-4"
                         href="{{ route('servers.commands.index', ['server' => $execution->server, 'status' => $execution->status]) }}"
-                        class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4"
                     >
                         <div>
                             <span class="block font-bold text-ink">{{ $execution->server->label }}</span>
@@ -512,7 +509,7 @@
                             <span class="block font-semibold uppercase">{{ $execution->status }}</span>
                             <span class="mt-1 block">{{ $execution->created_at->diffForHumans() }}</span>
                         </div>
-                    </a>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
 
@@ -550,31 +547,31 @@
             </div>
 
             <div class="mt-4 grid gap-3 sm:grid-cols-3">
-                <a href="{{ route('gallery.reports.index') }}" class="ui-stat ui-card--interactive p-3">
+                <x-signal.ui.card as="a" tone="interactive" class="ui-stat p-3" href="{{ route('gallery.reports.index') }}">
                     <span class="block text-xl font-extrabold text-ink">{{ $communityReportCount }}</span>
                     <span class="text-xs font-semibold uppercase text-muted">{{ __('All needing review') }}</span>
-                </a>
-                <a href="{{ route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']) }}" class="ui-stat ui-card--interactive p-3">
+                </x-signal.ui.card>
+                <x-signal.ui.card as="a" tone="interactive" class="ui-stat p-3" href="{{ route('gallery.reports.index', ['reason' => 'security', 'sort' => 'priority']) }}">
                     <span class="block text-xl font-extrabold text-ink">{{ $communityReportAttention['security'] }}</span>
                     <span class="text-xs font-semibold uppercase text-muted">{{ __('Security reports') }}</span>
-                </a>
-                <a href="{{ route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']) }}" class="ui-stat ui-card--interactive p-3">
+                </x-signal.ui.card>
+                <x-signal.ui.card as="a" tone="interactive" class="ui-stat p-3" href="{{ route('gallery.reports.index', ['age' => '7d', 'sort' => 'oldest']) }}">
                     <span class="block text-xl font-extrabold text-ink">{{ $communityReportAttention['stale'] }}</span>
                     <span class="text-xs font-semibold uppercase text-muted">{{ __('Open at least 7 days') }}</span>
-                </a>
+                </x-signal.ui.card>
             </div>
 
             <div class="mt-5 grid gap-3 lg:grid-cols-2">
                 @foreach ($reportedGalleryRecipes as $recipe)
-                    <a href="{{ route('gallery.reports.index', ['recipe' => $recipe->id]) }}" class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-4">
+                    <x-signal.ui.card as="a" tone="interactive" class="flex items-center justify-between gap-4 p-4" href="{{ route('gallery.reports.index', ['recipe' => $recipe->id]) }}">
                         <div>
                             <span class="block font-bold text-ink">{{ $recipe->name }}</span>
                             <span class="mt-1 block text-sm text-muted">{{ str($recipe->category)->headline() }}</span>
                         </div>
-                        <span class="ui-badge ui-badge-danger">
+                        <x-signal.ui.badge tone="danger">
                             {{ trans_choice(':count report|:count reports', $recipe->reports_count, ['count' => $recipe->reports_count]) }}
-                        </span>
-                    </a>
+                        </x-signal.ui.badge>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
 
@@ -605,7 +602,7 @@
                 @foreach ($recipeUpdates as $recipe)
                     @php($installedRecipe = $recipe->installs->first(fn ($copy) => $copy->hasGalleryUpdate($recipe)))
                     @continue($installedRecipe === null)
-                    <div class="ui-card p-4">
+                    <x-signal.ui.card class="p-4">
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <span class="block font-bold text-ink">{{ $recipe->name }}</span>
@@ -642,7 +639,7 @@
                         field-prefix="dashboard-recipe-edit-"
                     />
                 </div>
-                    </div>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
 
@@ -662,13 +659,13 @@
             </div>
 
             @forelse ($recentWebsites as $website)
-                <a href="{{ route('websites.show', $website) }}" class="ui-card ui-card--interactive mb-3 flex items-center justify-between p-4">
+                <x-signal.ui.card as="a" tone="interactive" class="mb-3 flex items-center justify-between p-4" href="{{ route('websites.show', $website) }}">
                     <div>
                         <p class="font-bold text-ink">{{ $website->name }}</p>
                         <p class="text-sm text-muted">{{ $website->url }}</p>
                     </div>
                     <span class="text-sm text-muted">{{ $website->server?->label ?? __('No server') }}</span>
-                </a>
+                </x-signal.ui.card>
             @empty
                 <x-lists.empty
                     :title="__('No websites yet')"
@@ -694,7 +691,7 @@
             </div>
 
             @forelse ($recentBuilds as $build)
-                <a href="{{ route('builds.show', $build) }}" class="ui-card ui-card--interactive mb-3 flex items-center justify-between p-4">
+                <x-signal.ui.card as="a" tone="interactive" class="mb-3 flex items-center justify-between p-4" href="{{ route('builds.show', $build) }}">
                     <div>
                         <p class="font-bold text-ink">{{ $build->repository->name }}</p>
                         <p class="text-sm text-muted">{{ $build->repository->website?->name }}</p>
@@ -703,7 +700,7 @@
                         <span class="block uppercase">{{ $build->status }}</span>
                         <span>{{ ($build->built_at ?? $build->created_at)->diffForHumans() }}</span>
                     </div>
-                </a>
+                </x-signal.ui.card>
             @empty
                 <x-lists.empty
                     :title="__('No builds yet')"

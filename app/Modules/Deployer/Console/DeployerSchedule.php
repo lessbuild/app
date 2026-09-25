@@ -50,6 +50,11 @@ final class DeployerSchedule
             ->when(fn (): bool => Schema::connection('deployer')->hasTable('server_troubleshooting_frames'))
             ->withoutOverlapping()
             ->runInBackground();
+        $schedule->command('deployer:billing:reconcile-core-events')
+            ->everyFifteenMinutes()
+            ->when(fn (): bool => config('billing.plan_authority') !== 'legacy')
+            ->withoutOverlapping()
+            ->runInBackground();
         $schedule->command('lessbuild:webhooks:prune')->daily()->withoutOverlapping()->runInBackground();
         $schedule->command('lessbuild:commands:prune')->daily()->withoutOverlapping()->runInBackground();
         $schedule->command('lessbuild:notifications:prune')->daily()->withoutOverlapping()->runInBackground();
@@ -60,5 +65,15 @@ final class DeployerSchedule
         $schedule->command('buildpusher:domains:check')->dailyAt('03:20')->withoutOverlapping()->runInBackground();
         $schedule->command('buildpusher:database-users:expire')->everyFiveMinutes()->withoutOverlapping()->runInBackground();
         $schedule->command('buildpusher:load-balancers:check')->everyMinute()->withoutOverlapping()->runInBackground();
+        $schedule->command('buildpusher:load-balancers:reconcile-removals')
+            ->everyFiveMinutes()
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('load_balancers'))
+            ->withoutOverlapping()
+            ->runInBackground();
+        $schedule->command('buildpusher:databases:reconcile-operations')
+            ->everyFiveMinutes()
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('database_operation_runs'))
+            ->withoutOverlapping()
+            ->runInBackground();
     }
 }

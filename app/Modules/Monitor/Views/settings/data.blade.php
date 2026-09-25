@@ -38,7 +38,7 @@
             </x-monitor::ui.card>
         </div>
 
-        <section class="ui-panel p-6">
+        <x-signal.ui.panel as="section" class="p-6">
             <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
                 <div>
                     <h2 class="font-bold">NDJSON export format</h2>
@@ -50,7 +50,7 @@
                     @endif
                 @endcan
             </div>
-            <p class="ui-card shadow-none mt-5 bg-surface-muted p-4 text-xs leading-5 text-muted dark:bg-surface-muted dark:text-muted">Exports are generated on demand and are not retained by {{ config('app.name') }}. Treat the downloaded file as sensitive because it contains workspace members and telemetry context.</p>
-        </section>
+            <x-signal.ui.card as="p" class="shadow-none mt-5 bg-surface-muted p-4 text-xs leading-5 text-muted dark:bg-surface-muted dark:text-muted">Exports are generated on demand and are not retained by {{ config('app.name') }}. Treat the downloaded file as sensitive because it contains workspace members and telemetry context.</x-signal.ui.card>
+        </x-signal.ui.panel>
     </div>
 @endsection

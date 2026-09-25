@@ -29,39 +29,39 @@
             <x-monitor::ui.button variant="secondary">Apply filter</x-monitor::ui.button>
         </form>
         @if($environments->count() > 1 && $environmentId === null)
-            <p class="ui-alert border-info/30 bg-info-soft block p-4 text-xs leading-5 text-info dark:text-info">
+            <x-signal.ui.alert as="p" tone="info" class="border-info/30 bg-info-soft block p-4 text-xs leading-5 text-info dark:text-info">
                 This trace ID appears in {{ $environments->count() }} environments. Cross-service spans are shown together; filter an environment if unrelated applications reuse trace IDs.
-            </p>
+            </x-signal.ui.alert>
         @endif
         @if($events->hasPages())
-            <p class="ui-alert ui-alert-warning block p-4 text-xs leading-5 text-warning dark:text-warning" role="status">
+            <x-signal.ui.alert as="p" tone="warning" class="block p-4 text-xs leading-5 text-warning dark:text-warning" role="status">
                 Partial trace view: showing records {{ number_format($events->firstItem()) }}–{{ number_format($events->lastItem()) }} of {{ number_format($events->total()) }}.
                 Timing, counts, services and parent links below describe this page only. Use the page links to investigate the remaining records.
-            </p>
+            </x-signal.ui.alert>
         @endif
         <section aria-label="Trace summary" class="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            <div class="ui-card p-5">
+            <x-signal.ui.card as="div" class="p-5">
                 <h2 class="text-xs font-semibold text-muted dark:text-subtle">Recorded window{{ $events->hasPages() ? ' · this page' : '' }}</h2>
                 <p class="mt-2 wrap-anywhere text-2xl font-bold">{{ \App\Modules\Monitor\Data\Telemetry\TraceRecord::formatDuration($timeline['duration']) }}</p>
                 <p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">Earliest start to latest reported end. Overlapping durations are not added together.</p>
-            </div>
-            <div class="ui-card p-5">
+            </x-signal.ui.card>
+            <x-signal.ui.card as="div" class="p-5">
                 <h2 class="text-xs font-semibold text-muted dark:text-subtle">Span records in view</h2>
                 <p class="mt-2 text-2xl font-bold">{{ number_format($timeline['spanCount']) }}</p>
                 <p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">{{ number_format($timeline['eventCount']) }} correlated {{ Str::plural('event', $timeline['eventCount']) }} · {{ $timeline['serviceCount'] }} named {{ Str::plural('service', $timeline['serviceCount']) }}</p>
-            </div>
-            <div class="ui-card p-5">
+            </x-signal.ui.card>
+            <x-signal.ui.card as="div" class="p-5">
                 <h2 class="text-xs font-semibold text-muted dark:text-subtle">Records matching filter</h2>
                 <p class="mt-2 text-2xl font-bold">{{ number_format($events->total()) }}</p>
                 <p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">Only received data is available. Missing or sampled spans may not appear.</p>
-            </div>
-            <div class="ui-card p-5">
+            </x-signal.ui.card>
+            <x-signal.ui.card as="div" class="p-5">
                 <h2 class="text-xs font-semibold text-muted dark:text-subtle">First timestamp in view</h2>
                 <p class="mt-2 text-sm font-bold">{{ $timeline['first']->event->occurred_at->copy()->utc()->format('M j, Y · H:i:s.u') }} UTC</p>
                 <p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">Offsets use source nanoseconds when supplied; otherwise the stored timestamp.</p>
-            </div>
+            </x-signal.ui.card>
         </section>
-        <section aria-labelledby="waterfall-title" class="ui-panel overflow-hidden">
+        <x-signal.ui.panel as="section" aria-labelledby="waterfall-title" class="overflow-hidden">
             <div class="border-b border-line p-5 sm:px-6 dark:border-line">
                 <h2 id="waterfall-title" class="text-base font-bold">Trace waterfall</h2>
                 <p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">Select a record to inspect its attributes and payload. Indentation shows parent links. Thin markers indicate zero or unreported duration.</p>
@@ -114,21 +114,21 @@
                 @endif
                 <p class="text-xs leading-5 text-muted dark:text-subtle">Times follow source clocks. Clock skew, missing spans and older data with lower timestamp precision can affect the picture. This is not a service health assessment.</p>
             </div>
-        </section>
+        </x-signal.ui.panel>
         {{ $events->links() }}
-        <section aria-labelledby="services-title" class="ui-panel p-5 sm:p-6">
+        <x-signal.ui.panel as="section" aria-labelledby="services-title" class="p-5 sm:p-6">
             <h2 id="services-title" class="text-base font-bold">Services in this view</h2>
             <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
                 @foreach($timeline['services'] as $service => $records)
-                    <div class="ui-card shadow-none flex items-center gap-3 p-4">
+                    <x-signal.ui.card as="div" class="shadow-none flex items-center gap-3 p-4">
                         <x-monitor::icon name="server" class="h-5 w-5 shrink-0 text-primary" />
                         <div class="min-w-0">
                             <p class="truncate text-xs font-semibold">{{ $service }}</p>
                             <p class="mt-1 text-[11px] text-muted dark:text-subtle">{{ $records->count() }} {{ Str::plural('record', $records->count()) }} · {{ $records->filter(fn ($record) => $record->hasError)->count() }} errors reported</p>
                         </div>
-                    </div>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
-        </section>
+        </x-signal.ui.panel>
     </div>
 @endsection

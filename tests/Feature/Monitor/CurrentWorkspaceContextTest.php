@@ -9,6 +9,7 @@ use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\CurrentWorkspace;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route as RoutingRoute;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -209,6 +210,110 @@ final class CurrentWorkspaceContextTest extends TestCase
                 app(ProductWorkspaceAccess::class),
             ))->get();
             $this->fail('A revoked product grant must deny the workspace.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+    }
+
+    public function test_core_billing_manager_can_open_monitor_billing_without_a_product_grant_or_local_membership(): void
+    {
+        Artisan::call('platform:migrate', ['module' => 'core']);
+        config(['platform.products.monitor.auth_authority' => 'core']);
+
+        $billingManager = PlatformUser::query()->forceCreate([
+            'id' => (string) Str::ulid(),
+            'name' => 'Billing manager',
+            'email' => 'monitor-billing-manager@example.test',
+            'email_normalized' => 'monitor-billing-manager@example.test',
+            'password' => 'hashed-password',
+            'status' => 'active',
+        ]);
+        $owner = PlatformUser::query()->forceCreate([
+            'id' => (string) Str::ulid(),
+            'name' => 'Workspace owner',
+            'email' => 'monitor-workspace-owner@example.test',
+            'email_normalized' => 'monitor-workspace-owner@example.test',
+            'password' => 'hashed-password',
+            'status' => 'active',
+        ]);
+        $workspaceId = (string) Str::ulid();
+        $membershipId = (string) Str::ulid();
+        DB::connection('core')->table('workspaces')->insert([
+            'id' => $workspaceId,
+            'owner_user_id' => $owner->getKey(),
+            'name' => 'Billing workspace',
+            'slug' => 'monitor-billing-'.Str::lower(Str::random(5)),
+            'status' => 'active',
+            'settings' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('workspace_memberships')->insert([
+            'id' => $membershipId,
+            'workspace_id' => $workspaceId,
+            'user_id' => $billingManager->getKey(),
+            'role' => 'billing',
+            'status' => 'active',
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $productUserId = DB::connection('monitor')->table('users')->insertGetId([
+            'name' => 'Local Monitor principal',
+            'email' => 'local-monitor@example.test',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $sourceWorkspaceId = DB::connection('monitor')->table('workspaces')->insertGetId([
+            'owner_id' => $productUserId,
+            'name' => 'Billing workspace',
+            'slug' => 'monitor-billing-workspace',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'monitor',
+            'source_entity' => 'workspace',
+            'source_id' => (string) $sourceWorkspaceId,
+            'canonical_entity' => 'workspace',
+            'canonical_id' => $workspaceId,
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $billingRoute = new RoutingRoute(['GET', 'HEAD'], 'settings/billing', ['as' => 'monitor.settings.billing']);
+        $request = Request::create('/settings/billing?workspace_id='.$sourceWorkspaceId);
+        $request->setLaravelSession(app('session.store'));
+        $request->setUserResolver(static fn (): User => User::query()->findOrFail($productUserId));
+        $request->attributes->set('platform_user', $billingManager);
+        $request->setRouteResolver(static fn () => $billingRoute);
+
+        $currentWorkspace = new CurrentWorkspace(
+            $request,
+            app(ProductAuthentication::class),
+            app(ProductWorkspaceAccess::class),
+        );
+        $workspace = $currentWorkspace->get();
+        $currentWorkspace->authorizeBilling($workspace);
+
+        $this->assertSame($sourceWorkspaceId, $workspace->getKey());
+        $this->assertFalse($workspace->members()->whereKey($productUserId)->exists());
+        $this->assertSame($sourceWorkspaceId, $request->session()->get('monitor_billing_workspace_id'));
+
+        DB::connection('core')->table('workspace_memberships')
+            ->where('id', $membershipId)
+            ->update(['role' => 'member']);
+
+        try {
+            (new CurrentWorkspace(
+                $request,
+                app(ProductAuthentication::class),
+                app(ProductWorkspaceAccess::class),
+            ))->get();
+            $this->fail('A regular Core workspace member cannot use Monitor billing without an app grant.');
         } catch (HttpException $exception) {
             $this->assertSame(403, $exception->getStatusCode());
         }

@@ -9,6 +9,7 @@ return [
     'enforce_limits' => (bool) env('BILLING_ENFORCE_LIMITS', true),
     'enforce_entitlements' => (bool) env('BILLING_ENFORCE_ENTITLEMENTS', true),
     'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
+    'portal_enabled' => (bool) env('DEPLOYER_STRIPE_PORTAL_ENABLED', true),
 
     'plans' => [
         'free' => [

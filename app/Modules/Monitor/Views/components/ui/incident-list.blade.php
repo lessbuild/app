@@ -1,5 +1,5 @@
 @props(['incidents'])
-<div class="ui-card overflow-x-auto">
+<x-signal.ui.card as="div" class="overflow-x-auto">
     <x-monitor::ui.table caption="Incidents, ownership and recovery history" :framed="false">
         <x-slot:head><tr><th scope="col">Incident</th><th scope="col">Status</th><th scope="col">Owner</th><th scope="col">Opened (UTC)</th><th scope="col">Closed (UTC)</th></tr></x-slot:head>
             @forelse($incidents as $incident)
@@ -8,5 +8,5 @@
                 <tr><td colspan="5" class="py-12 text-center text-muted dark:text-subtle">No incidents match this view.</td></tr>
             @endforelse
     </x-monitor::ui.table>
-</div>
+</x-signal.ui.card>
 <div>{{ $incidents->links() }}</div>

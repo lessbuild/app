@@ -13,7 +13,7 @@ class RequireWorkspace
 
     public function handle(Request $request, Closure $next): Response
     {
-        if (! $request->user()->workspaces()->exists()) {
+        if (! $request->routeIs('monitor.settings.billing*') && ! $request->user()->workspaces()->exists()) {
             return to_route('monitor.workspaces.create');
         }
 

@@ -10,6 +10,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
 use RuntimeException;
 use Throwable;
@@ -19,6 +20,14 @@ class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
     public int $uniqueFor = 300;
+
+    public int $tries = 18;
+
+    public int $maxExceptions = 3;
+
+    public int $timeout = 75;
+
+    public array $backoff = [10, 30, 60];
 
     /**
      * Capture the load balancer whose current nodes will be rendered at execution time.
@@ -37,6 +46,17 @@ class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
         return (string) $this->loadBalancerId;
     }
 
+    /** @return array<int, WithoutOverlapping> Serialize apply and removal commands for one remote route. */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('load-balancer:'.$this->loadBalancerId))
+                ->shared()
+                ->releaseAfter(5)
+                ->expireAfter(90),
+        ];
+    }
+
     /**
      * Render weighted active upstreams, validate and reload Caddy, and record the applied state; skip unavailable servers and record then rethrow application failures.
      *
@@ -44,7 +64,11 @@ class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(Runner $runner): void
     {
-        $balancer = LoadBalancer::query()->with(['server', 'nodes.server'])->find($this->loadBalancerId);
+        $balancer = LoadBalancer::query()
+            ->with(['server', 'nodes.server'])
+            ->whereKey($this->loadBalancerId)
+            ->whereIn('status', ['pending', 'failed'])
+            ->first();
         if (! $balancer?->server || $balancer->server->provisioning_status !== Server::STATUS_ACTIVE) {
             return;
         }
@@ -69,9 +93,19 @@ class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
             if (! $result->isSuccessful()) {
                 throw new RuntimeException(trim($result->getErrorOutput()) ?: 'Caddy rejected the load-balancer configuration.');
             }
-            $balancer->update(['status' => 'active', 'last_error' => null, 'applied_at' => now()]);
+            LoadBalancer::query()
+                ->whereKey($balancer->id)
+                ->whereIn('status', ['pending', 'failed'])
+                ->update(['status' => 'active', 'last_error' => null, 'applied_at' => now(), 'updated_at' => now()]);
         } catch (Throwable $exception) {
-            $balancer->update(['status' => 'failed', 'last_error' => mb_substr($exception->getMessage(), 0, 2000)]);
+            LoadBalancer::query()
+                ->whereKey($balancer->id)
+                ->whereIn('status', ['pending', 'failed'])
+                ->update([
+                    'status' => 'failed',
+                    'last_error' => mb_substr($exception->getMessage(), 0, 2000),
+                    'updated_at' => now(),
+                ]);
             throw $exception;
         }
     }

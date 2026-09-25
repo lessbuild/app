@@ -5,6 +5,7 @@ namespace App\Modules\Deployer\Http\Controllers;
 use App\Modules\Deployer\Actions\Database\CreateDatabaseUserAction;
 use App\Modules\Deployer\Actions\Database\QueueDatabaseCloneAction;
 use App\Modules\Deployer\Actions\Database\QueueDatabaseInspectionAction;
+use App\Modules\Deployer\Actions\Database\QueueDatabaseUserApplyAction;
 use App\Modules\Deployer\Actions\Database\QueueDatabaseUserRemovalAction;
 use App\Modules\Deployer\Data\DatabaseCloneResult;
 use App\Modules\Deployer\Exceptions\DatabaseCloneException;
@@ -71,6 +72,22 @@ class DatabaseController extends Controller
         $result = $createUser->handle($resource, $request->user(), $request->validated());
 
         return back()->with('success', __('Database user queued. Copy the password now; it will not be shown again.'))->with('databasePassword', $result->password);
+    }
+
+    /**
+     * Retry a failed or still-unapplied credential setup using its encrypted stored password.
+     */
+    public function retryUser(DatabaseUser $databaseUser, QueueDatabaseUserApplyAction $queueApply): RedirectResponse
+    {
+        $resource = $databaseUser->resource;
+        $this->loadResource($resource);
+        $this->authorize('manage', $resource);
+        $this->entitlements->enforce($resource->environment->project->organization, 'resources');
+        $queued = $queueApply->handle($databaseUser);
+
+        return back()->with('success', $queued
+            ? __('Database user setup queued.')
+            : __('Database user setup is already underway.'));
     }
 
     /**

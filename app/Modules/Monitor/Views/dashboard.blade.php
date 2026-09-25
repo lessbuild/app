@@ -29,20 +29,20 @@
                     </div>
                     <x-monitor::ui.badge tone="violet">{{ $onboarding['completed'] }} of {{ $onboarding['total'] }} complete</x-monitor::ui.badge>
                 </div>
-                <div class="ui-progress mt-5" role="progressbar" aria-label="Workspace setup progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ $onboarding['percentage'] }}"><span style="width: {{ $onboarding['percentage'] }}%"></span></div>
+                <x-signal.ui.progress class="mt-5" label="Workspace setup progress" :value="$onboarding['percentage']" />
                 <div class="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                     @foreach($onboarding['items'] as $item)
-                        <a href="{{ route($item['route']) }}" @class(['ui-card group p-4 transition hover:-translate-y-0.5 hover:shadow-soft', 'border-success bg-success-soft dark:border-success dark:bg-success-soft' => $item['complete'], 'border-line bg-surface-muted/70 dark:border-line dark:bg-surface/30' => ! $item['complete']])>
+                        <x-signal.ui.card as="a" href="{{ route($item['route']) }}" @class(['group p-4 transition hover:-translate-y-0.5 hover:shadow-soft', 'border-success bg-success-soft dark:border-success dark:bg-success-soft' => $item['complete'], 'border-line bg-surface-muted/70 dark:border-line dark:bg-surface/30' => ! $item['complete']])>
                             <span @class(['flex h-8 w-8 items-center justify-center rounded-control text-xs font-bold', 'bg-success-soft text-success' => $item['complete'], 'bg-surface text-primary shadow-soft dark:bg-surface dark:text-primary' => ! $item['complete']])>@if($item['complete'])<x-monitor::icon name="check" class="h-4 w-4" />@else{{ $loop->iteration }}@endif</span>
                             <p class="mt-3 text-xs font-bold text-ink group-hover:text-primary dark:text-ink dark:group-hover:text-primary">{{ $item['label'] }}</p>
                             <p class="mt-1 text-[11px] leading-5 text-muted dark:text-subtle">{{ $item['description'] }}</p>
-                        </a>
+                        </x-signal.ui.card>
                     @endforeach
                 </div>
             </x-monitor::ui.panel>
         @endif
 
-        <section aria-labelledby="workspace-summary" class="ui-panel px-6 py-6 sm:px-8 sm:py-7">
+        <x-signal.ui.panel as="section" aria-labelledby="workspace-summary" class="px-6 py-6 sm:px-8 sm:py-7">
             <div class="relative flex flex-col justify-between gap-7 lg:flex-row lg:items-center">
                 <div class="max-w-xl">
                     <p class="text-[11px] font-bold uppercase tracking-[0.16em] text-primary">Recorded activity</p>
@@ -55,12 +55,12 @@
                         @endif
                     </div>
                 </div>
-                <dl class="ui-card shadow-none flex shrink-0 flex-col gap-4 bg-surface-muted px-5 py-4 sm:px-6">
+                <x-signal.ui.card as="dl" class="shadow-none flex shrink-0 flex-col gap-4 bg-surface-muted px-5 py-4 sm:px-6">
                     <div><dt class="text-xs text-muted">Unarchived applications</dt><dd class="mt-1 text-2xl font-bold">{{ number_format($applicationCount) }}</dd></div>
                     <div><dt class="text-xs text-muted">Environments with ingestion enabled</dt><dd class="mt-1 text-xl font-bold">{{ number_format($activeEnvironmentCount) }}</dd></div>
-                </dl>
+                </x-signal.ui.card>
             </div>
-        </section>
+        </x-signal.ui.panel>
 
         @php
             $statCards = [
@@ -144,7 +144,7 @@
         </x-monitor::ui.accordion>
 
         <section class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-            <div class="ui-panel min-w-0 p-5 sm:p-6">
+            <x-signal.ui.panel as="div" class="min-w-0 p-5 sm:p-6">
                 <h2 class="text-base font-bold text-ink dark:text-ink">Request activity</h2>
                 <p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">{{ number_format($bucketMinutes / 60) }}-hour buckets · UTC · duration and volume use separate scales</p>
                 @if($requestCount > 0)
@@ -180,11 +180,11 @@
                         </div>
                     </div>
                 @else
-                    <div class="ui-card shadow-none mt-6 flex min-h-48 flex-col items-center justify-center gap-2 border-dashed p-5 text-center">
+                    <x-signal.ui.card as="div" class="shadow-none mt-6 flex min-h-48 flex-col items-center justify-center gap-2 border-dashed p-5 text-center">
                         <x-monitor::icon name="activity" class="h-6 w-6 text-subtle" />
                         <p class="text-sm font-semibold">No request records in this window.</p>
                         <p class="text-xs text-muted dark:text-subtle">Other signal types still appear in the event mix.</p>
-                    </div>
+                    </x-signal.ui.card>
                 @endif
                 <x-monitor::ui.accordion title="View exact bucket values">
                     <p class="mt-3 leading-5 text-muted dark:text-subtle">Bucket starts are inclusive, ends exclusive; the final bucket includes the snapshot time. Missing durations are not plotted as zero.</p>
@@ -197,9 +197,9 @@
                         </x-monitor::ui.table>
                     </div>
                 </x-monitor::ui.accordion>
-            </div>
+            </x-signal.ui.panel>
 
-            <div class="ui-panel min-w-0 p-5 sm:p-6">
+            <x-signal.ui.panel as="div" class="min-w-0 p-5 sm:p-6">
                 <h2 class="text-base font-bold text-ink dark:text-ink">Event mix</h2>
                 <p class="mt-1 text-xs text-muted dark:text-subtle">{{ number_format($eventCount) }} stored events in this window</p>
                 @php($eventTypes = ['request' => 'Requests', 'query' => 'Queries', 'job' => 'Jobs', 'exception' => 'Exceptions', 'log' => 'Logs', 'metric' => 'Metrics', 'other' => 'Other event types'])
@@ -214,11 +214,11 @@
                     @endforeach
                 </dl>
                 <p class="mt-6 rounded-control bg-surface-muted p-3.5 text-xs leading-5 text-muted dark:bg-surface-muted dark:text-muted">{{ $eventCount === 0 ? 'No events match this window. Try a longer range or check your integration.' : 'Shares reflect record counts, not bytes or billed usage. Each metric data point is one record.' }}</p>
-            </div>
+            </x-signal.ui.panel>
         </section>
 
         <section class="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
-            <div class="ui-panel min-w-0 overflow-hidden">
+            <x-signal.ui.panel as="div" class="min-w-0 overflow-hidden">
                 <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6 dark:border-line">
                     <div><h2 class="text-base font-bold">Applications</h2><p class="mt-1 text-xs text-muted dark:text-subtle">Showing {{ $applications->count() }} of {{ number_format($applicationCount) }} · inventory, not uptime</p></div>
                     <a href="{{ route('monitor.applications.index') }}" class="shrink-0 text-xs font-bold text-primary dark:text-primary">View all →</a>
@@ -238,8 +238,8 @@
                         <p class="px-6 py-10 text-center text-sm text-muted dark:text-subtle">No applications configured.</p>
                     @endforelse
                 </div>
-            </div>
-            <div class="ui-panel min-w-0 overflow-hidden">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="div" class="min-w-0 overflow-hidden">
                 <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-4 sm:px-6 dark:border-line">
                     <div><h2 class="text-base font-bold">Open issues</h2><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $openIssues->count() }} latest of {{ number_format($openIssueCount) }} · all time, not filtered by range</p></div>
                     <a href="{{ route('monitor.issues.index') }}" class="shrink-0 text-xs font-bold text-primary dark:text-primary">View all →</a>
@@ -255,10 +255,10 @@
                         <p class="px-6 py-10 text-center text-sm text-muted dark:text-subtle">No open issues recorded.</p>
                     @endforelse
                 </div>
-            </div>
+            </x-signal.ui.panel>
         </section>
 
-        <section class="ui-panel overflow-hidden">
+        <x-signal.ui.panel as="section" class="overflow-hidden">
             <div class="flex flex-col justify-between gap-3 border-b border-line px-5 py-4 sm:flex-row sm:items-center sm:px-6 dark:border-line">
                 <div><h2 class="text-base font-bold">Recent events</h2><p class="mt-1 text-xs text-muted dark:text-subtle">Latest {{ $latestEvents->count() }} in the selected window, ordered by source event time</p></div>
                 <div class="flex items-center gap-2"><a href="{{ route('monitor.events.index', ['range' => $range]) }}" class="ui-btn ui-btn-secondary ui-btn-sm"><x-monitor::icon name="filter" class="h-3.5 w-3.5" />Filter</a><a href="{{ route('monitor.events.index', ['range' => $range]) }}" class="ui-btn ui-btn-secondary ui-btn-sm">View all <x-monitor::icon name="arrow-up-right" class="h-3.5 w-3.5" /></a></div>
@@ -278,6 +278,6 @@
                     <p class="px-6 py-10 text-center text-sm text-muted dark:text-subtle">No events match this window.</p>
                 @endforelse
             </div>
-        </section>
+        </x-signal.ui.panel>
     </div>
 @endsection

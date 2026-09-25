@@ -13,8 +13,7 @@ final class SignalViewArchitectureTest extends TestCase
         $viewsPath = base_path('app/Modules/Analytics/Views');
         $views = collect(File::allFiles($viewsPath))
             ->filter(fn (\SplFileInfo $view): bool => $view->getExtension() === 'php')
-            ->reject(fn (\SplFileInfo $view): bool => str_contains($view->getPath(), DIRECTORY_SEPARATOR.'components'))
-            ->reject(fn (\SplFileInfo $view): bool => $view->getFilename() === 'welcome.blade.php');
+            ->reject(fn (\SplFileInfo $view): bool => str_contains($view->getPath(), DIRECTORY_SEPARATOR.'components'));
 
         $this->assertNotEmpty($views);
 

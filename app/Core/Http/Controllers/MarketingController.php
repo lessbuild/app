@@ -10,6 +10,8 @@ final class MarketingController
     {
         return view('core::marketing.home', [
             'products' => config('marketing.products', []),
+            'workspaceCapabilities' => config('marketing.workspace_capabilities', []),
+            'connections' => config('marketing.connections', []),
         ]);
     }
 
@@ -22,6 +24,11 @@ final class MarketingController
         return view('core::marketing.product', [
             'productKey' => $product,
             'product' => $products[$product],
+            'products' => $products,
+            'connections' => collect(config('marketing.connections', []))
+                ->filter(fn (array $connection): bool => in_array($product, [$connection['source'], $connection['target']], true))
+                ->values()
+                ->all(),
         ]);
     }
 }

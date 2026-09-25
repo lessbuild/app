@@ -142,7 +142,7 @@
                     <p class="mt-1 text-xs text-muted">{{ __('Run a connection check to verify this credential.') }}</p>
                 @endif
             </div>
-            <div class="ui-card p-4">
+            <x-signal.ui.card class="p-4">
                 <p class="ui-eyebrow text-[0.65rem]">{{ __('Monitoring') }}</p>
                 <p class="mt-2 font-bold {{ $provider->connection_monitoring_enabled ? 'text-success' : 'text-warning' }}">
                     {{ $provider->connection_monitoring_enabled ? __('Automatic monitoring enabled') : __('Automatic monitoring paused') }}
@@ -150,8 +150,8 @@
                 <p class="mt-1 text-xs text-muted">
                     {{ trans_choice('every :count hour|every :count hours', intdiv($provider->connection_check_interval_minutes, 60), ['count' => intdiv($provider->connection_check_interval_minutes, 60)]) }}
                 </p>
-            </div>
-            <div class="ui-card p-4">
+            </x-signal.ui.card>
+            <x-signal.ui.card class="p-4">
                 <p class="ui-eyebrow text-[0.65rem]">{{ __('Failure confirmation') }}</p>
                 <p class="mt-2 font-bold text-ink">
                     {{ trans_choice('after :count consecutive failure|after :count consecutive failures', $provider->connection_failure_threshold, ['count' => $provider->connection_failure_threshold]) }}
@@ -161,12 +161,12 @@
                         {{ trans_choice(':count failure recorded|:count failures recorded', $provider->connection_failure_count, ['count' => $provider->connection_failure_count]) }}
                     </p>
                 @endif
-            </div>
-            <div class="ui-card p-4">
+            </x-signal.ui.card>
+            <x-signal.ui.card class="p-4">
                 <p class="ui-eyebrow text-[0.65rem]">{{ __('Credential safety') }}</p>
                 <p class="mt-2 font-bold text-ink">{{ __('Encrypted at rest') }}</p>
                 <p class="mt-1 text-xs text-muted">{{ __('Secrets are excluded from retained check evidence.') }}</p>
-            </div>
+            </x-signal.ui.card>
         </div>
     </x-signal.ui.panel>
 
@@ -238,19 +238,19 @@
         @if ($connectionChecks->isEmpty())
             <x-signal.ui.empty-state class="mt-4" :title="__('No connection checks have been recorded yet.')" />
         @else
-            <details id="provider-connection-history" class="group ui-card mt-4 overflow-hidden" @if ($connectionMetrics['failure_streak'] > 0) open @endif>
+            <x-signal.ui.card as="details" class="group mt-4 overflow-hidden" id="provider-connection-history" @if ($connectionMetrics['failure_streak'] > 0) open @endif>
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-4 py-3 font-bold text-ink [&::-webkit-details-marker]:hidden">
                     <span>{{ __('Latest check results') }}</span>
                     <span class="text-xl font-normal text-muted transition group-open:rotate-45" aria-hidden="true">+</span>
                 </summary>
                 <div class="ui-timeline space-y-3 border-t border-line p-4 sm:p-5">
                     @foreach ($connectionChecks as $check)
-                        <div class="ui-timeline-item ui-card">
+                        <x-signal.ui.card class="ui-timeline-item">
                             @include('scenes.providers._connection-check-card', ['check' => $check])
-                        </div>
+                        </x-signal.ui.card>
                     @endforeach
                 </div>
-            </details>
+            </x-signal.ui.card>
         @endif
     </x-signal.ui.panel>
 
@@ -276,7 +276,7 @@
         <div class="mt-5 grid gap-4 lg:grid-cols-2">
 
         @if($provider->isSourceControl())
-            <div class="ui-card p-4 sm:p-5">
+            <x-signal.ui.card class="p-4 sm:p-5">
                 <div class="flex min-w-0 items-center justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-2">
                         <h3 class="truncate font-extrabold text-ink">{{ __('Repositories') }}</h3>
@@ -295,14 +295,14 @@
                 <ul role="list" class="mt-4 grid gap-3">
                     @forelse($repositories as $repository)
                         <li>
-                            <a href="{{ route('repositories.show', $repository) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
+                            <x-signal.ui.card as="a" tone="interactive" class="flex min-w-0 items-center gap-3 p-3" href="{{ route('repositories.show', $repository) }}">
                                 <x-signal.ui.avatar :name="$repository->name" class="ui-avatar-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $repository->name }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">{{ $repository->url }}</span>
                                 </span>
                                 <span class="hidden shrink-0 text-xs font-semibold text-muted sm:block">{{ $repository->created_at->diffForHumans() }}</span>
-                            </a>
+                            </x-signal.ui.card>
                         </li>
                     @empty
                         <li class="pt-3">
@@ -313,11 +313,11 @@
                 @if ($repositories->hasPages())
                     <div class="mt-4 border-t border-line pt-4">{{ $repositories->links() }}</div>
                 @endif
-            </div>
+            </x-signal.ui.card>
         @endif
 
         @if(str($provider->provider)->contains(['digitalocean']))
-            <div class="ui-card p-4 sm:p-5">
+            <x-signal.ui.card class="p-4 sm:p-5">
                 <div class="flex min-w-0 items-center justify-between gap-3">
                     <div class="flex min-w-0 items-center gap-2">
                         <h3 class="truncate font-extrabold text-ink">{{ __('Servers') }}</h3>
@@ -336,14 +336,14 @@
                 <ul role="list" class="mt-4 grid gap-3">
                     @forelse($servers as $server)
                         <li>
-                            <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive flex min-w-0 items-center gap-3 p-3">
+                            <x-signal.ui.card as="a" tone="interactive" class="flex min-w-0 items-center gap-3 p-3" href="{{ route('servers.show', $server) }}">
                                 <x-signal.ui.avatar :name="$server->label" class="ui-avatar-md text-xs" />
                                 <span class="min-w-0 flex-1">
                                     <span class="ui-link block truncate text-sm">{{ $server->label }}</span>
                                     <span class="mt-0.5 block truncate text-xs text-muted">#{{ $server->identifier }}</span>
                                 </span>
                                 <span class="hidden shrink-0 text-xs font-semibold text-muted sm:block">{{ $server->created_at->diffForHumans() }}</span>
-                            </a>
+                            </x-signal.ui.card>
                         </li>
                     @empty
                         <li class="pt-3">
@@ -354,7 +354,7 @@
                 @if ($servers->hasPages())
                     <div class="mt-4 border-t border-line pt-4">{{ $servers->links() }}</div>
                 @endif
-            </div>
+            </x-signal.ui.card>
         @endif
 
         </div>

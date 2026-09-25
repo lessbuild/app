@@ -26,7 +26,7 @@ class AccountLifecycleTest extends TestCase
             ->assertSee('Acceptable use');
         $this->get('/')
             ->assertOk()
-            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Ship. Monitor. Understand.')
             ->assertSee(route('privacy'))
             ->assertSee(route('terms'));
     }

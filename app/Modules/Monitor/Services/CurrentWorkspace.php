@@ -9,6 +9,8 @@ use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\Workspace;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\URL;
 
 final class CurrentWorkspace
 {
@@ -22,6 +24,10 @@ final class CurrentWorkspace
     {
         $user = $this->request->user();
         abort_unless($user, 401);
+
+        if ($this->isCoreBillingRoute()) {
+            return $this->billingWorkspace();
+        }
 
         $application = $this->request->route('application');
         $environment = $this->request->route('environment');
@@ -71,6 +77,58 @@ final class CurrentWorkspace
         $this->request->session()->put('workspace_id', $workspace->id);
 
         return $this->ensureProductAccess($workspace);
+    }
+
+    public function authorizeBilling(Workspace $workspace): void
+    {
+        if ($this->authentication->usesCoreAuthority('monitor')) {
+            $platformUser = $this->request->attributes->get('platform_user');
+
+            abort_unless(
+                $platformUser instanceof PlatformUser
+                    && $this->workspaceAccess->canManageBilling($platformUser, 'monitor', 'workspace', $workspace->getKey()),
+                403,
+            );
+
+            return;
+        }
+
+        Gate::authorize('billing', $workspace);
+    }
+
+    private function isCoreBillingRoute(): bool
+    {
+        return $this->authentication->usesCoreAuthority('monitor')
+            && $this->request->routeIs('monitor.settings.billing*');
+    }
+
+    private function billingWorkspace(): Workspace
+    {
+        $requestedId = $this->request->query('workspace_id');
+        $workspaceId = $requestedId
+            ?? $this->request->session()->get('monitor_billing_workspace_id')
+            ?? $this->request->session()->get('workspace_id');
+
+        abort_unless(
+            (is_string($workspaceId) || is_int($workspaceId)) && ctype_digit((string) $workspaceId),
+            404,
+        );
+
+        $workspace = Workspace::query()->find($workspaceId);
+        abort_unless($workspace instanceof Workspace, 404);
+        $platformUser = $this->request->attributes->get('platform_user');
+
+        abort_unless(
+            $platformUser instanceof PlatformUser
+                && $this->workspaceAccess->canManageBilling($platformUser, 'monitor', 'workspace', $workspace->getKey()),
+            403,
+            'Only a Buildpusher workspace owner or billing manager can manage this Monitor plan.',
+        );
+
+        $this->request->session()->put('monitor_billing_workspace_id', $workspace->getKey());
+        URL::defaults(['workspace_id' => $workspace->getKey()]);
+
+        return $workspace;
     }
 
     private function ensureProductAccess(Workspace $workspace): Workspace

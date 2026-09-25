@@ -69,10 +69,10 @@
         />
 
         <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="ui-layout-gutter mx-auto w-full max-w-content py-7 sm:py-9">
-            <x-alerts.flash />
+            <x-signal.ui.flash-messages />
             {{ $slot }}
         </main>
-        <x-layouts.mobile-quick-navigation
+        <x-signal.layouts.mobile-quick-navigation
             :create-url="$applicationCreateDialogUrl"
             :create-open="$applicationCreateDialogOpen"
         />
@@ -102,7 +102,7 @@
         @endif
 
         @if ($providerCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="provider-create-dialog"
                 :title="__('Add provider')"
                 :description="__('Connect an infrastructure or source-control credential to this workspace.')"
@@ -118,11 +118,11 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading provider form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
         @if ($serverCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="server-create-dialog"
                 :title="__('Add server')"
                 :description="__('Choose a provider and infrastructure profile, then start server provisioning.')"
@@ -148,11 +148,11 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading server form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
         @if ($websiteCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="website-create-dialog"
                 :title="__('Add website')"
                 :description="__('Choose a server, configure deployment health checks, and create a new deployment target.')"
@@ -175,11 +175,11 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading website form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
         @if ($repositoryCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="repository-create-dialog"
                 :title="__('Add repository')"
                 :description="__('Connect a source repository to an active website and deployment branch.')"
@@ -201,7 +201,7 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading repository form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
     </div>

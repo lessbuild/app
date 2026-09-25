@@ -9,13 +9,13 @@
     </x-monitor::ui.page-header>
     <div class="grid grid-cols-2 gap-3 lg:grid-cols-5">
         @foreach($statuses as $status)
-            <a href="{{ route('monitor.environments.ingestion', [$application, $environment, 'status' => $status->value]) }}" class="ui-card p-5 transition hover:border-primary dark:hover:border-primary">
+            <x-signal.ui.card as="a" href="{{ route('monitor.environments.ingestion', [$application, $environment, 'status' => $status->value]) }}" class="p-5 transition hover:border-primary dark:hover:border-primary">
                 <x-monitor::ui.badge :tone="$status->tone()">{{ $status->label() }}</x-monitor::ui.badge>
                 <p class="mt-3 text-2xl font-bold tabular-nums">{{ number_format($totals->get($status->value, 0)) }}</p>
-            </a>
+            </x-signal.ui.card>
         @endforeach
     </div>
-    <section class="ui-panel overflow-hidden">
+    <x-signal.ui.panel as="section" class="overflow-hidden">
         <div class="flex flex-col justify-between gap-4 border-b border-line p-6 lg:flex-row lg:items-end dark:border-line">
             <div><h2 class="font-bold">Delivery history</h2><p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">Status totals cover all retained receipts in this environment. This page refreshes manually.</p></div>
             <form method="GET" action="{{ route('monitor.environments.ingestion', [$application, $environment]) }}" class="flex flex-wrap items-end gap-3">
@@ -57,7 +57,7 @@
         @else
             <div class="flex flex-col gap-2 p-8 text-center"><h3 class="text-sm font-semibold">No matching deliveries</h3><p class="text-sm text-muted dark:text-subtle">Send telemetry or choose another status. Rejected requests and empty OTLP exports do not create receipts.</p></div>
         @endif
-    </section>
+    </x-signal.ui.panel>
     <p class="text-xs leading-6 text-muted dark:text-subtle">Temporary failures retry automatically with backoff, up to five processing attempts. Failed deliveries retain their encrypted payload for investigation and manual retry. Successfully processed payloads are removed from the pending store. Pausing or archiving a source blocks new deliveries; already accepted deliveries still finish processing.</p>
 </div>
 @endsection

@@ -2,6 +2,8 @@
 
 namespace App\Modules\Deployer\View\Navigation;
 
+use App\Core\Services\LegacyIdentityResolver;
+use App\Core\Services\PlatformCoreRouteLinks;
 use App\Core\Services\WorkspaceProjectNavigation;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\Project;
@@ -18,7 +20,11 @@ use Illuminate\Support\Facades\Route;
  */
 final class WorkspaceNavigation
 {
-    public function __construct(private readonly WorkspaceProjectNavigation $projectNavigation) {}
+    public function __construct(
+        private readonly WorkspaceProjectNavigation $projectNavigation,
+        private readonly LegacyIdentityResolver $identities,
+        private readonly PlatformCoreRouteLinks $coreLinks,
+    ) {}
 
     /**
      * @return array{
@@ -38,6 +44,12 @@ final class WorkspaceNavigation
     {
         $unreadNotifications = $user->unreadNotifications()->count();
         $workspace = $user->currentOrganization;
+        $coreWorkspaceId = $workspace === null ? null : $this->identities->canonicalIdForSource(
+            'deployer',
+            'organization',
+            (string) $workspace->getKey(),
+            'workspace',
+        );
         $workspaces = $user->organizations()->orderBy('name')->get(['organizations.id', 'organizations.name']);
         $projects = $workspace?->projects()
             ->orderBy('name')
@@ -102,21 +114,40 @@ final class WorkspaceNavigation
             $groups[] = $this->group(__('Administration'), $administrationItems);
         }
 
+        $centralSubscriptionsUrl = $coreWorkspaceId === null ? null : $this->coreLinks->to(
+            'core.workspace.subscriptions',
+            ['workspace' => $coreWorkspaceId],
+        );
+        $centralCostsUrl = $coreWorkspaceId === null ? null : $this->coreLinks->to(
+            'core.workspace.costs',
+            ['workspace' => $coreWorkspaceId],
+        );
+        $centralFeedbackUrl = $coreWorkspaceId === null ? null : $this->coreLinks->to(
+            'core.workspace.feedback.index',
+            ['workspace' => $coreWorkspaceId],
+        );
+
         $profile = [
             $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
-            $this->item(__('Billing and usage'), 'billing.index', 'information-circle', ['billing.*', 'costs.*']),
+            [...$this->item(__('Billing and usage'), 'billing.index', 'information-circle', ['billing.*', 'costs.*']), 'href' => $centralSubscriptionsUrl],
             $this->item(__('Account and security'), 'account.index', 'user-circle', ['account.*']),
+        ];
+
+        $profile[] = [...$this->item(__('Cost breakdown'), 'costs.index', 'chip', ['costs.*']), 'href' => $centralCostsUrl ?? route('costs.index')];
+
+        $support = [
+            [...$this->item(__('Help and guides'), 'docs', 'information-circle', ['docs']), 'href' => $this->coreLinks->to('core.help') ?? route('docs')],
+            $centralFeedbackUrl === null
+                ? $this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*'])
+                : [...$this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*']), 'href' => $centralFeedbackUrl],
         ];
 
         return [
             'groups' => $groups,
-            'support' => [
-                $this->item(__('Help and guides'), 'docs', 'information-circle', ['docs']),
-                $this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*']),
-            ],
+            'support' => $support,
             'profile' => $profile,
             'mobile' => [
-                'groups' => $this->mobileGroups($groups),
+                'groups' => $this->mobileGroups($groups, $profile, $support),
             ],
             'unread_notifications' => $unreadNotifications,
             'workspaces' => $workspaces,
@@ -130,9 +161,11 @@ final class WorkspaceNavigation
      * desktop sidebar's consolidated sections.
      *
      * @param  list<array{label: string, mobile_expanded: bool, items: list<array<string, mixed>>}>  $groups
+     * @param  list<array<string, mixed>>  $profile
+     * @param  list<array<string, mixed>>  $support
      * @return list<list<array<string, mixed>>>
      */
-    private function mobileGroups(array $groups): array
+    private function mobileGroups(array $groups, array $profile, array $support): array
     {
         $primary = [
             $this->item(__('Dashboard'), 'dashboard', 'view-grid', ['dashboard']),
@@ -156,13 +189,9 @@ final class WorkspaceNavigation
         ];
 
         $secondary = [
-            $this->item(__('Workspace'), 'organizations.index', 'user-circle', ['organizations.*']),
-            $this->item(__('Costs'), 'costs.index', 'chip', ['costs.*']),
-            $this->item(__('Billing'), 'billing.index', 'information-circle', ['billing.*']),
-            $this->item(__('Account'), 'account.index', 'user-circle', ['account.*']),
+            ...$profile,
             $this->item(__('Settings'), 'account.index', 'cog', []),
-            $this->item(__('Help and guides'), 'docs', 'information-circle', ['docs']),
-            $this->item(__('Send feedback'), 'feedback.index', 'information-circle', ['feedback.*']),
+            ...$support,
         ];
 
         $administration = [];

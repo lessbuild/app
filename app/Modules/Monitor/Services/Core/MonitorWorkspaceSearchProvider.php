@@ -45,10 +45,23 @@ final class MonitorWorkspaceSearchProvider implements WorkspaceSearchProvider
         }
 
         $pattern = WorkspaceSearchPattern::contains($query);
+        $authorizedWorkspaceIds = $workspaceIds
+            ->map(static fn ($id): string => (string) $id)
+            ->all();
         $incidents = Incident::query()
             ->where(function ($incidents) use ($workspaceIds): void {
                 $incidents
                     ->whereHas('alertRule.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds))
+                    ->orWhereHas('monitor.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds));
+            })
+            ->where(function ($incidents) use ($workspaceIds): void {
+                $incidents
+                    ->whereNull('alert_rule_id')
+                    ->orWhereHas('alertRule.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds));
+            })
+            ->where(function ($incidents) use ($workspaceIds): void {
+                $incidents
+                    ->whereNull('monitor_id')
                     ->orWhereHas('monitor.environment.application', fn ($applications) => $applications->whereIn('workspace_id', $workspaceIds));
             })
             ->where(function ($incidents) use ($pattern, $query): void {
@@ -75,9 +88,8 @@ final class MonitorWorkspaceSearchProvider implements WorkspaceSearchProvider
             ->get(['id', 'alert_rule_id', 'monitor_id', 'status', 'opened_at']);
 
         return $incidents
-            ->map(function (Incident $incident): ?WorkspaceSearchResult {
-                $sourceWorkspaceId = $incident->alertRule?->environment?->application?->workspace_id
-                    ?? $incident->monitor?->environment?->application?->workspace_id;
+            ->map(function (Incident $incident) use ($authorizedWorkspaceIds): ?WorkspaceSearchResult {
+                $sourceWorkspaceId = $this->sourceWorkspaceIdFor($incident, $authorizedWorkspaceIds);
 
                 if ($sourceWorkspaceId === null) {
                     return null;
@@ -96,5 +108,22 @@ final class MonitorWorkspaceSearchProvider implements WorkspaceSearchProvider
             ->filter()
             ->values()
             ->all();
+    }
+
+    /** @param list<string> $authorizedWorkspaceIds */
+    private function sourceWorkspaceIdFor(Incident $incident, array $authorizedWorkspaceIds): ?int
+    {
+        $sourceWorkspaceId = $incident->monitor?->environment?->application?->workspace_id
+            ?? $incident->alertRule?->environment?->application?->workspace_id;
+
+        if ($sourceWorkspaceId === null) {
+            return null;
+        }
+
+        $sourceWorkspaceId = (string) $sourceWorkspaceId;
+
+        return in_array($sourceWorkspaceId, $authorizedWorkspaceIds, true)
+            ? (int) $sourceWorkspaceId
+            : null;
     }
 }

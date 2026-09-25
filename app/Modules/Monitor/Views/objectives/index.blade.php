@@ -11,9 +11,9 @@
             @endif
         </x-monitor::ui.page-header>
 
-        <p class="ui-alert border-primary/30 bg-primary-soft block p-4 text-xs leading-5 text-primary dark:text-primary">SLOs are calculated on demand from request records in one environment. Missing status codes or durations are reported as unknown and do not count as healthy; sampling and incomplete instrumentation can make the result look better or worse than the customer experience.</p>
+        <x-signal.ui.alert as="p" tone="info" class="border-primary/30 bg-primary-soft block p-4 text-xs leading-5 text-primary dark:text-primary">SLOs are calculated on demand from request records in one environment. Missing status codes or durations are reported as unknown and do not count as healthy; sampling and incomplete instrumentation can make the result look better or worse than the customer experience.</x-signal.ui.alert>
 
-        <section class="ui-panel overflow-hidden">
+        <x-signal.ui.panel as="section" class="overflow-hidden">
             <div class="flex items-center justify-between gap-3 border-b border-line px-5 py-4 dark:border-line"><div><h2 class="text-base font-bold text-ink dark:text-ink">Configured objectives</h2><p class="mt-1 text-xs text-muted dark:text-subtle">{{ number_format($objectives->total()) }} {{ Str::plural('objective', $objectives->total()) }} · open one to calculate its current budget</p></div></div>
             <div class="overflow-x-auto">
                 <x-monitor::ui.table caption="Configured service level objectives" :framed="false" table-class="min-w-[720px]">
@@ -32,6 +32,6 @@
                 </x-monitor::ui.table>
             </div>
             @if($objectives->hasPages())<div class="border-t border-line p-5 dark:border-line">{{ $objectives->links() }}</div>@endif
-        </section>
+        </x-signal.ui.panel>
     </div>
 @endsection

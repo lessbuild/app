@@ -96,20 +96,19 @@
     <div class="ui-layout-gutter mx-auto max-w-content">
         <div class="flex min-h-16 items-center gap-3">
             @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
-                <button
-                    type="button"
-                    class="ui-icon-btn shrink-0 lg:hidden"
+                <x-signal.ui.icon-button
+                    label="{{ __('Open application navigation') }}"
+                    class="shrink-0 xl:hidden"
                     data-mobile-toggle
-                    aria-label="{{ __('Open application navigation') }}"
                     aria-controls="signal-mobile-product-navigation-drawer"
                     aria-expanded="false"
                 >
                     <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
-                </button>
+                </x-signal.ui.icon-button>
             @else
-                <button type="button" x-ref="navigationToggle" class="ui-icon-btn shrink-0 lg:hidden" aria-label="{{ __('Open navigation') }}" aria-controls="app-mobile-nav" :aria-expanded="menu.toString()" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())">
+                <x-signal.ui.icon-button label="{{ __('Open navigation') }}" x-ref="navigationToggle" class="shrink-0 lg:hidden" aria-controls="app-mobile-nav" :aria-expanded="menu.toString()" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())">
                     <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
-                </button>
+                </x-signal.ui.icon-button>
             @endif
 
             <a href="{{ $brandUrl }}" data-auth-brand class="flex min-w-0 shrink-0 items-center gap-2.5 text-sm font-extrabold tracking-tight text-ink" aria-label="{{ config('app.name') }} home">
@@ -119,9 +118,24 @@
                 <span class="hidden truncate sm:inline">{{ config('app.name') }}</span>
             </a>
 
-            <nav class="hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto pl-2 lg:flex" aria-label="{{ __('Products') }}">
+            <nav class="ui-horizontal-scroll hidden min-w-0 flex-1 items-center gap-1 overflow-x-auto pl-2 xl:flex" aria-label="{{ __('Products') }}">
                 @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
                     <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" class="topbar-nav-link" />
+                @endif
+                @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.subscriptions'))
+                    <x-signal.layouts.navigation-link :item="['label' => __('Plans'), 'href' => route('core.workspace.subscriptions', $currentWorkspace), 'active' => request()->routeIs('core.workspace.subscriptions')]" class="topbar-nav-link" />
+                @endif
+                @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.admin'))
+                    <x-signal.layouts.navigation-link :item="['label' => __('Manage'), 'href' => route('core.workspace.admin', $currentWorkspace), 'active' => request()->routeIs('core.workspace.admin')]" class="topbar-nav-link" />
+                @endif
+                @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.costs'))
+                    <x-signal.layouts.navigation-link :item="['label' => __('Costs'), 'href' => route('core.workspace.costs', $currentWorkspace), 'active' => request()->routeIs('core.workspace.costs')]" class="topbar-nav-link" />
+                @endif
+                @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.feedback.index'))
+                    <x-signal.layouts.navigation-link :item="['label' => __('Feedback'), 'href' => route('core.workspace.feedback.index', $currentWorkspace), 'active' => request()->routeIs('core.workspace.feedback.*')]" class="topbar-nav-link" />
+                @endif
+                @if ($activeProduct === 'core' && \Illuminate\Support\Facades\Route::has('core.help'))
+                    <x-signal.layouts.navigation-link :item="['label' => __('Help'), 'href' => route('core.help'), 'active' => request()->routeIs('core.help')]" class="topbar-nav-link" />
                 @endif
                 <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="topbar-nav-link" />
                 @foreach (['deployer' => ['label' => __('Deployer'), 'route' => 'dashboard', 'active' => ['dashboard', 'projects.show', 'projects.create', 'projects.configuration.*', 'servers.*', 'websites.*', 'builds.*', 'providers.*', 'repositories.*', 'environments.*']], 'monitor' => ['label' => __('Monitor'), 'route' => 'monitor.dashboard'], 'analytics' => ['label' => __('Analytics'), 'route' => 'analytics.dashboard']] as $key => $product)
@@ -148,30 +162,12 @@
             </nav>
 
             <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
-                <details data-signal-menu class="ui-topbar-menu group relative hidden max-w-52 md:block" @click.outside="$el.open = false" @keydown.escape.stop="$el.open = false; $el.querySelector('summary')?.focus()">
-                    <summary class="inline-flex min-h-10 max-w-52 cursor-pointer list-none items-center gap-2 rounded-control border border-line bg-surface px-3 text-sm font-bold text-ink marker:hidden hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden">
-                        <svg class="h-4 w-4 shrink-0 stroke-2 text-primary" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#user-circle"></use></svg>
-                        <span class="max-w-32 truncate">{{ $currentWorkspace?->name ?? __('Workspace') }}</span>
-                        <svg class="h-3.5 w-3.5 shrink-0 rotate-90 stroke-2 text-muted transition-transform group-open:-rotate-90" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>
-                    </summary>
-                    <div class="absolute right-0 top-full z-40 mt-2 grid min-w-64 gap-1 rounded-panel border border-line bg-surface p-2 shadow-panel">
-                        <p class="px-3 py-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Switch workspace') }}</p>
-                        @foreach ($workspaceOptions as $workspace)
-                            <form method="POST" action="{{ route($workspaceSwitchRoute, $workspace) }}">
-                                @csrf
-                                <button type="submit" @class([
-                                    'flex min-h-10 w-full items-center gap-2 rounded-control px-3 text-left text-sm font-bold',
-                                    'bg-primary-soft text-primary' => $currentWorkspace?->id === $workspace->id,
-                                    'text-muted hover:bg-surface-muted hover:text-ink' => $currentWorkspace?->id !== $workspace->id,
-                                ]) @if($currentWorkspace?->id === $workspace->id) aria-current="true" @endif>
-                                    <span class="min-w-0 flex-1 truncate">{{ $workspace->name }}</span>
-                                    @if ($currentWorkspace?->id === $workspace->id)<span aria-hidden="true">✓</span>@endif
-                                </button>
-                            </form>
-                        @endforeach
-                        @if ($workspaceManageUrl)<a href="{{ $workspaceManageUrl }}" class="mt-1 rounded-control border-t border-line px-3 py-3 text-sm font-bold text-primary hover:bg-surface-muted">{{ __('Manage workspace') }}</a>@endif
-                    </div>
-                </details>
+                <x-signal.layouts.workspace-switcher
+                    :current-workspace="$currentWorkspace"
+                    :workspace-options="$workspaceOptions"
+                    :switch-route="$workspaceSwitchRoute"
+                    :manage-url="$workspaceManageUrl"
+                />
 
                 @if (in_array($activeProduct, ['core', 'deployer', 'monitor', 'analytics'], true))
                     <x-signal.ui.button type="button" class="ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
@@ -193,10 +189,10 @@
                     </x-signal.ui.icon-button>
                 @endif
                 @if ($showNotifications && $notificationsUrl)
-                    <x-signal.ui.icon-button label="{{ __('Notifications') }}" href="{{ $notificationsUrl }}" class="relative" :aria-current="request()->routeIs('notifications.*', 'monitor.settings.notifications') ? 'page' : null">
-                        <svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg>
+                    <x-signal.ui.icon-button label="{{ __('Notifications') }}" href="{{ $notificationsUrl }}" class="relative" :aria-current="request()->routeIs('notifications.*', 'monitor.settings.notifications', 'core.workspace.notifications*') ? 'page' : null">
+                        <x-signal.ui.icon name="bell" class="h-[18px] w-[18px] stroke-2" />
                         @if (($navigation['unread_notifications'] ?? 0) > 0)
-                            <span class="ui-status-dot absolute right-2 top-2" style="--ui-status-dot: var(--ui-danger)" aria-label="{{ __('Unread notifications') }}"></span>
+                            <x-signal.ui.status-dot class="absolute right-2 top-2" color="var(--ui-danger)" aria-label="{{ __('Unread notifications') }}" />
                         @endif
                     </x-signal.ui.icon-button>
                 @endif
@@ -225,7 +221,7 @@
                         @if ($logoutUrl)
                             <form action="{{ $logoutUrl }}" method="post" class="mt-1 border-t border-line pt-1">
                                 @csrf
-                                <button type="submit" class="flex min-h-10 w-full items-center rounded-control px-3 text-left text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Log out') }}</button>
+                                <x-signal.ui.button type="submit" variant="quiet" class="min-h-10 w-full justify-start rounded-control px-3 text-left text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Log out') }}</x-signal.ui.button>
                             </form>
                         @endif
                     </div>
@@ -294,7 +290,7 @@
             </details>
             @endif
             </div>
-            <nav id="signal-product-navigation" class="hidden min-w-0 flex-1 flex-wrap items-center justify-end gap-1 overflow-x-auto lg:flex" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
+            <nav id="signal-product-navigation" class="ui-horizontal-scroll hidden min-w-0 flex-1 items-center justify-end gap-1 overflow-x-auto xl:flex" aria-label="{{ __(':product sections', ['product' => $activeProductLabel]) }}">
                 @foreach ($navigation['groups'] ?? [] as $group)
                     <x-signal.layouts.navigation-group :group="$group" />
                 @endforeach

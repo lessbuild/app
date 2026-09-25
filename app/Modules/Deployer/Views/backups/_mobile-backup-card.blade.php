@@ -23,7 +23,7 @@
         </dl>
 
         @if ($backup->error)
-            <p class="ui-alert ui-alert--danger text-xs">{{ $backup->error }}</p>
+            <x-signal.ui.alert as="p" tone="danger" class="text-xs">{{ $backup->error }}</x-signal.ui.alert>
         @endif
 
         <x-signal.ui.panel as="section" class="ui-panel p-3" aria-labelledby="backup-mobile-verification-{{ $backup->id }}">

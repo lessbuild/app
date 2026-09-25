@@ -291,7 +291,7 @@ final class ProductPrincipalMiddlewareTest extends TestCase
         ], 'analytics');
     }
 
-    public function test_core_authority_provisions_deployers_personal_workspace(): void
+    public function test_core_authority_provisions_only_the_deployer_identity_until_a_core_workspace_is_mapped(): void
     {
         config(['platform.products.deployer.auth_authority' => 'core']);
         $this->actingAs($this->platformUser, 'platform');
@@ -303,15 +303,12 @@ final class ProductPrincipalMiddlewareTest extends TestCase
             ->assertJsonPath('platform_id', $this->platformUser->getAuthIdentifier());
 
         $productUser = DeployerUser::query()->where('platform_user_id', $this->platformUser->getKey())->sole();
-        $this->assertNotNull($productUser->current_organization_id);
-        $this->assertDatabaseHas('organization_user', [
-            'organization_id' => $productUser->current_organization_id,
-            'user_id' => $productUser->getKey(),
-            'role' => 'owner',
-        ], 'deployer');
+        $this->assertNull($productUser->current_organization_id);
+        $this->assertSame(0, DB::connection('deployer')->table('organizations')->count());
+        $this->assertSame(0, DB::connection('deployer')->table('organization_user')->count());
     }
 
-    public function test_core_authority_provisions_a_monitor_workspace_for_a_new_platform_account(): void
+    public function test_core_authority_provisions_only_the_monitor_identity_until_a_core_workspace_is_mapped(): void
     {
         config(['platform.products.monitor.auth_authority' => 'core']);
         $this->actingAs($this->platformUser, 'platform');
@@ -323,9 +320,7 @@ final class ProductPrincipalMiddlewareTest extends TestCase
             ->assertJsonPath('platform_id', $this->platformUser->getAuthIdentifier());
 
         $productUser = MonitorUser::query()->where('platform_user_id', $this->platformUser->getKey())->sole();
-        $workspace = $productUser->workspaces()->sole();
-        $this->assertSame($productUser->getKey(), $workspace->owner_id);
-        $this->assertSame('owner', $workspace->pivot->role);
+        $this->assertSame(0, $productUser->workspaces()->count());
     }
 
     /** Insert one reconciled legacy identity mapping for this test account. */

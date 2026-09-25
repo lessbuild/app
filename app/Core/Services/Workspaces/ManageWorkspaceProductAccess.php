@@ -10,6 +10,7 @@ use App\Core\Models\WorkspaceMembership;
 use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\EnsurePlatformProductPrincipal;
+use App\Core\Services\Identity\EnsureProductWorkspaceMapping;
 use App\Core\Services\Identity\ProjectProductWorkspaceMembership;
 use App\Core\Services\LegacyIdentityResolver;
 use Illuminate\Database\LostConnectionException;
@@ -29,6 +30,7 @@ final class ManageWorkspaceProductAccess
     public function __construct(
         private readonly ProductPlanResolver $plans,
         private readonly EnsurePlatformProductPrincipal $principals,
+        private readonly EnsureProductWorkspaceMapping $productWorkspaces,
         private readonly LegacyIdentityResolver $identities,
         private readonly ProjectProductWorkspaceMembership $productMemberships,
     ) {}
@@ -134,6 +136,7 @@ final class ManageWorkspaceProductAccess
             $this->assertSeatAvailable($lockedWorkspace, $target, $product, $currentlyGranted);
 
             $this->principals->handle($product->value, $subject);
+            $this->productWorkspaces->handle($product->value, $lockedWorkspace);
             $projection = $this->productMemberships->grant(
                 product: $product->value,
                 user: $subject,

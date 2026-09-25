@@ -41,15 +41,29 @@ final class ResolveDeployerOrganizationContext
         );
 
         $organization = Organization::query()->find($organizationId);
-        abort_unless($organization?->roleFor($user) !== null, 404);
+        abort_unless($organization instanceof Organization, 404);
 
-        if ($this->authentication->usesCoreAuthority('deployer')) {
+        $coreAuthority = $this->authentication->usesCoreAuthority('deployer');
+        $coreBillingRoute = $coreAuthority && $request->routeIs('billing.*');
+
+        if ($coreBillingRoute) {
             $platformUser = $request->attributes->get('platform_user');
             abort_unless(
                 $platformUser instanceof PlatformUser
-                    && $this->workspaceAccess->allows($platformUser, 'deployer', 'organization', $organization->getKey()),
-                404,
+                    && $this->workspaceAccess->canManageBilling($platformUser, 'deployer', 'organization', $organization->getKey()),
+                403,
             );
+        } else {
+            abort_unless($organization->roleFor($user) !== null, 404);
+
+            if ($coreAuthority) {
+                $platformUser = $request->attributes->get('platform_user');
+                abort_unless(
+                    $platformUser instanceof PlatformUser
+                        && $this->workspaceAccess->allows($platformUser, 'deployer', 'organization', $organization->getKey()),
+                    404,
+                );
+            }
         }
 
         // This principal is request-local. Do not persist a search destination as the user's default workspace.

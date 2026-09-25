@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Controllers;
 
+use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Modules\Deployer\Models\StatusPage;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Presenters\StatusComponentPresenter;
@@ -16,15 +17,18 @@ class PublicStatusPageController extends Controller
      */
     public function __construct(private readonly StatusComponentPresenter $presenter) {}
 
-    /** @return Response The published page and subscription form, with shared caching disabled. */
-    public function show(string $slug): Response
+    /** @return Response The Core-owned public view on the established Deployer URL. */
+    public function show(string $slug, CustomerStatusPageProviderRegistry $providers): Response
     {
-        $page = $this->page($slug);
+        $statusPage = $providers->findPublished('deployer', $slug);
+        abort_if($statusPage === null, 404);
 
-        return response()->view('status.show', [
-            'page' => $page,
-            'components' => $this->components($page),
-            'incidents' => $page->incidents()->latest('starts_at')->limit(20)->get(),
+        return response()->view('core::status-pages.show', [
+            'statusPage' => $statusPage,
+            'canonical' => route('status.show', $slug),
+            'indexable' => true,
+            'subscriptionAction' => route('status.subscriptions.store', $slug),
+            'reportUrl' => route('status.report', $slug),
         ])
             // The page includes a CSRF-protected subscription form and session
             // feedback, so it must never be stored by a shared cache.

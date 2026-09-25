@@ -5,7 +5,7 @@
 <div class="mx-auto max-w-3xl space-y-6">
     <a href="{{ $application->exists ? route('monitor.applications.show', $application) : route('monitor.applications.index') }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">← Back to applications</a>
     <x-monitor::ui.page-header :title="$application->exists ? 'Application settings' : 'Meet your next application.'" :description="$application->exists ? 'Update the details your team sees in '.config('app.name').'.' : 'Start with a production environment and a private ingestion token. Add other environments whenever you need them.'" />
-    <form method="POST" action="{{ $application->exists ? route('monitor.applications.update', $application) : route('monitor.applications.store') }}" class="ui-panel space-y-6 p-6 sm:p-8">
+    <x-signal.ui.panel as="form" method="POST" action="{{ $application->exists ? route('monitor.applications.update', $application) : route('monitor.applications.store') }}" class="space-y-6 p-6 sm:p-8">
         @csrf
         @if($application->exists) @method('PATCH') @endif
         <x-monitor::ui.input name="name" label="Application name" :value="$application->name" placeholder="Payments API" maxlength="120" required autofocus />
@@ -24,6 +24,6 @@
             @error('accent')<p id="accent-error" class="ui-error">{{ $message }}</p>@enderror
         </fieldset>
         <div class="flex items-center justify-between gap-4 border-t border-line pt-5 dark:border-line"><p class="text-xs text-muted dark:text-subtle">Works with the JSON API or compatible OpenTelemetry exporters.</p><x-monitor::ui.button>{{ $application->exists ? 'Save changes' : 'Create application' }}</x-monitor::ui.button></div>
-    </form>
+    </x-signal.ui.panel>
 </div>
 @endsection

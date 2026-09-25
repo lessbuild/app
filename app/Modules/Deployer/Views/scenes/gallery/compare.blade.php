@@ -40,7 +40,7 @@
         </dl>
     </x-signal.ui.insights>
 
-    <div class="ui-card mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Gallery comparison metadata') }}">
+    <x-signal.ui.card class="mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Gallery comparison metadata') }}">
         @foreach ([
             ['label' => __('Name'), 'copy' => $copy->name, 'gallery' => $recipe->name],
             ['label' => __('Description'), 'copy' => $copy->description ?: __('No description'), 'gallery' => $recipe->description ?: __('No description'), 'long' => true],
@@ -61,7 +61,7 @@
                 </dl>
             </section>
         @endforeach
-    </div>
+    </x-signal.ui.card>
 
     <div class="mt-6 grid gap-4 xl:grid-cols-2">
         <x-signal.ui.card class="min-w-0 p-5" aria-labelledby="private-script-heading">

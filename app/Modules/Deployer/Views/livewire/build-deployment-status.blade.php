@@ -218,12 +218,12 @@
         <x-signal.ui.panel as="aside" class="ui-panel mt-4 border-l-4 border-line bg-surface-muted p-4" style="border-left-color: var(--ui-primary)" role="status"><p class="font-bold text-ink">{{ __('Promoted release') }}</p><p class="mt-1 text-sm text-muted">{{ __('This deployment rebuilds revision :revision from :source for :target.', ['revision'=>$build->shortRevision(), 'source'=>$build->promotedFrom->environment?->name ?? __('another environment'), 'target'=>$build->environment?->name ?? __('this environment')]) }} <a href="{{ route('builds.show',$build->promotedFrom) }}" class="ui-link font-bold">{{ __('View source evidence') }}</a></p>@if($build->promotion_note)<p class="mt-2 text-sm text-muted">{{ $build->promotion_note }}</p>@endif</x-signal.ui.panel>
     @endif
     @if($build->promotions->isNotEmpty())
-        <x-signal.ui.panel as="aside" class="ui-panel mt-4 p-4"><p class="font-bold text-ink">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<a href="{{ route('builds.show',$promotion) }}" class="ui-card ui-card--interactive px-3 py-2 text-sm text-ink">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</a>@endforeach</div></x-signal.ui.panel>
+        <x-signal.ui.panel as="aside" class="ui-panel mt-4 p-4"><p class="font-bold text-ink">{{ __('Promotion history') }}</p><div class="mt-2 flex flex-wrap gap-2">@foreach($build->promotions->sortByDesc('id') as $promotion)<x-signal.ui.card as="a" tone="interactive" class="px-3 py-2 text-sm text-ink" href="{{ route('builds.show',$promotion) }}">{{ $promotion->environment?->name ?? __('Target') }} · {{ str($promotion->status)->replace('_',' ')->headline() }} · #{{ $promotion->id }}</x-signal.ui.card>@endforeach</div></x-signal.ui.panel>
     @endif
 
     <nav class="mt-4 grid gap-3 sm:grid-cols-2" aria-label="{{ __('Deployment history') }}">
         @if ($previousBuild)
-            <a href="{{ route('builds.show', $previousBuild) }}" class="ui-card ui-card--interactive p-4">
+            <x-signal.ui.card as="a" tone="interactive" class="p-4" href="{{ route('builds.show', $previousBuild) }}">
                 <span class="ui-eyebrow block">{{ __('Previous deployment') }}</span>
                 <span class="mt-1 block font-medium text-ink">
                     {{ __('Build #:id', ['id' => $previousBuild->id]) }}
@@ -235,16 +235,16 @@
                         &middot; <span class="font-mono">{{ $previousBuild->shortRevision() }}</span>
                     @endif
                 </span>
-            </a>
+            </x-signal.ui.card>
         @else
-            <div class="ui-card p-4 text-muted">
+            <x-signal.ui.card class="p-4 text-muted">
                 <span class="ui-eyebrow block">{{ __('Previous deployment') }}</span>
                 <span class="mt-1 block text-sm">{{ __('This is the first recorded deployment for this repository.') }}</span>
-            </div>
+            </x-signal.ui.card>
         @endif
 
         @if ($nextBuild)
-            <a href="{{ route('builds.show', $nextBuild) }}" class="ui-card ui-card--interactive p-4 text-right">
+            <x-signal.ui.card as="a" tone="interactive" class="p-4 text-right" href="{{ route('builds.show', $nextBuild) }}">
                 <span class="ui-eyebrow block">{{ __('Next deployment') }}</span>
                 <span class="mt-1 block font-medium text-ink">
                     {{ __('Build #:id', ['id' => $nextBuild->id]) }}
@@ -256,12 +256,12 @@
                         &middot; <span class="font-mono">{{ $nextBuild->shortRevision() }}</span>
                     @endif
                 </span>
-            </a>
+            </x-signal.ui.card>
         @else
-            <div class="ui-card p-4 text-right text-muted">
+            <x-signal.ui.card class="p-4 text-right text-muted">
                 <span class="ui-eyebrow block">{{ __('Next deployment') }}</span>
                 <span class="mt-1 block text-sm">{{ __('This is the latest recorded deployment for this repository.') }}</span>
-            </div>
+            </x-signal.ui.card>
         @endif
     </nav>
 
@@ -563,10 +563,10 @@
             @if ($deploymentLog)
                 <pre class="ui-console ui-console-output max-h-[36rem] whitespace-pre-wrap break-words p-5 font-mono text-xs leading-5">{{ $deploymentLog->log }}</pre>
             @elseif ($shouldPoll)
-                <div class="ui-card p-6 text-center">
+                <x-signal.ui.card class="p-6 text-center">
                     <p class="font-medium text-ink">{{ __('Waiting for deployment output…') }}</p>
                     <p class="mt-1 text-sm text-muted">{{ __('This view updates automatically while the deployment runs.') }}</p>
-                </div>
+                </x-signal.ui.card>
             @else
                 <x-lists.empty
                     :title="__('No deployment log yet')"

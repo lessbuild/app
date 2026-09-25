@@ -12,15 +12,15 @@
         @endforeach
     </nav>
     @endif
-    @if(!request()->isSecure())<p class="ui-alert ui-alert-warning block p-4 text-sm text-warning dark:text-warning">This preview uses HTTP. Do not enter production credentials or secret URLs until HTTPS is configured.</p>@endif
+    @if(!request()->isSecure())<x-signal.ui.alert as="p" tone="warning" class="block p-4 text-sm text-warning dark:text-warning">This preview uses HTTP. Do not enter production credentials or secret URLs until HTTPS is configured.</x-signal.ui.alert>@endif
     @if($environmentOptions === [])
         <p>Create an application and environment first. <a href="{{ route('monitor.applications.index') }}" class="font-bold text-primary dark:text-primary">Manage applications →</a></p>
     @else
-    <form method="POST" action="{{ $monitor ? route('monitor.monitors.update', $monitor) : route('monitor.monitors.store') }}" class="ui-panel space-y-6 p-6">
+    <x-signal.ui.panel as="form" method="POST" action="{{ $monitor ? route('monitor.monitors.update', $monitor) : route('monitor.monitors.store') }}" class="space-y-6 p-6">
         @csrf
-        <input type="hidden" name="check_type" value="{{ $checkType }}">
+        <x-signal.ui.input type="hidden" name="check_type" value="{{ $checkType }}" :restore="false" />
         <p class="text-sm font-bold">{{ \App\Modules\Monitor\Http\Requests\SaveMonitorRequest::TYPES[$checkType] }}{{ $monitor ? ' · Type cannot be changed' : '' }}</p>
-        @if($monitor) @method('PATCH') <input type="hidden" name="version" value="{{ $monitor->state_version }}"> @endif
+        @if($monitor) @method('PATCH') <x-signal.ui.input type="hidden" name="version" value="{{ $monitor->state_version }}" :restore="false" /> @endif
         <x-monitor::ui.input name="name" label="Monitor name (no secrets)" :value="$monitor?->name" maxlength="120" required />
         <x-monitor::ui.select name="environment_id" label="Environment" :value="$monitor?->environment_id" :options="$monitor ? [$monitor->environment_id => $environmentOptions[$monitor->environment_id]] : $environmentOptions" required />
         @if($checkType === 'queue')
@@ -92,7 +92,7 @@
         </div>
         @endif
         <x-monitor::ui.select name="enabled" label="Monitoring" :value="$monitor ? (int) $monitor->enabled : 1" :options="[1 => 'Enabled', 0 => 'Paused']" />
-        <fieldset class="ui-card shadow-none space-y-3 p-4">
+        <x-signal.ui.card as="fieldset" class="shadow-none space-y-3 p-4">
             <legend class="px-2 text-sm font-bold">Alert destinations (up to five)</legend>
             @php($selectedDestinations = old('environment_id') !== null ? (array) old('destinations', []) : $routes->pluck('id')->all())
             @forelse($destinations as $destination)
@@ -101,10 +101,10 @@
             <x-monitor::ui.select name="opened" label="Notify when an incident opens" :value="(int) ($routes->first()?->pivot->opened ?? true)" :options="[1 => 'Yes', 0 => 'No']" />
             <x-monitor::ui.select name="recovered" label="Notify when an incident recovers" :value="(int) ($routes->first()?->pivot->recovered ?? true)" :options="[1 => 'Yes', 0 => 'No']" />
             <p class="text-xs text-muted dark:text-subtle">Routing changes apply to future transitions; existing incidents are not backfilled.</p>
-        </fieldset>
+        </x-signal.ui.card>
         <p class="text-xs leading-5 text-muted dark:text-subtle">Pausing retains active incidents. Changing check conditions closes active incidents as “monitor changed”, never as recovered. Resuming a signal-based monitor starts fresh deadline windows and requires new run or worker IDs.</p>
         <x-monitor::ui.button>{{ $monitor ? 'Save monitor' : 'Create monitor' }}</x-monitor::ui.button>
-    </form>
+    </x-signal.ui.panel>
     @endif
 </div>
 @endsection

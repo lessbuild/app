@@ -31,7 +31,7 @@
                     \App\Modules\Deployer\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
                     default => 'accent',
                 })
-                <article data-command-execution class="ui-card p-4">
+                <x-signal.ui.card as="article" class="p-4" data-command-execution>
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0 flex-1">
                             <p class="ui-eyebrow text-[0.65rem]">{{ __('Command execution #:id', ['id' => $execution->id]) }}</p>
@@ -51,7 +51,7 @@
                             <x-signal.ui.button :href="route('servers.commands.output', ['server' => $server, 'execution' => $execution])" variant="secondary" class="ui-btn-sm">{{ __('Download output') }}</x-signal.ui.button>
                         </div>
                     @endif
-                </article>
+                </x-signal.ui.card>
             @endforeach
         </div>
         @if ($executions->hasPages())

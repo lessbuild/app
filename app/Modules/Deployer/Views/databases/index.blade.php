@@ -15,10 +15,10 @@
     @endunless
 
     @if (session('databasePassword'))
-        <div class="ui-alert ui-alert--warning mt-6" role="status">
+        <x-signal.ui.alert tone="warning" class="mt-6" role="status">
             <p class="font-bold text-ink">{{ __('Copy this password now') }}</p>
             <code class="library-code mt-2">{{ session('databasePassword') }}</code>
-        </div>
+        </x-signal.ui.alert>
     @endif
 
     @php
@@ -71,7 +71,7 @@
                 ]);
             @endphp
 
-            <section class="ui-card p-5">
+            <x-signal.ui.card as="section" class="p-5">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <x-signal.ui.badge tone="accent">{{ strtoupper($resource->type) }}</x-signal.ui.badge>
@@ -98,23 +98,23 @@
                 </div>
 
                 <dl class="mt-5 grid grid-cols-2 gap-3">
-                        <div class="ui-card ui-card--muted p-3">
+                        <x-signal.ui.card tone="muted" class="p-3">
                         <dt class="text-xs font-semibold uppercase text-muted">{{ __('Size') }}</dt>
                         <dd class="mt-1 font-bold text-ink">{{ $latest?->size_bytes ? number_format($latest->size_bytes / 1048576, 1).' MB' : '—' }}</dd>
-                    </div>
-                    <div class="ui-card ui-card--muted p-3">
+                    </x-signal.ui.card>
+                    <x-signal.ui.card tone="muted" class="p-3">
                         <dt class="text-xs font-semibold uppercase text-muted">{{ __('Connections') }}</dt>
                         <dd class="mt-1 font-bold text-ink">{{ $latest?->active_connections ?? '—' }}</dd>
-                    </div>
+                    </x-signal.ui.card>
                 </dl>
 
                 @if ($latest?->schema_tables)
-                    <details class="ui-card ui-card--muted mt-4 px-3 py-2">
+                    <x-signal.ui.card as="details" tone="muted" class="mt-4 px-3 py-2">
                         <summary class="cursor-pointer text-sm font-bold text-muted">
                             {{ count($latest->schema_tables) }} {{ __('tables') }}
                         </summary>
                         <p class="mt-2 break-words font-mono text-xs text-muted">{{ implode(' · ', $latest->schema_tables) }}</p>
-                    </details>
+                    </x-signal.ui.card>
                 @endif
 
                 @if ($canManage)
@@ -127,7 +127,7 @@
                             || $errors->has('target_resource_id')
                             || $errors->has('confirmation');
                     @endphp
-                    <details id="database-management-{{ $resource->id }}" class="ui-card group mt-5 overflow-hidden" @if ($databaseManagementOpen) open @endif>
+                    <x-signal.ui.card as="details" class="group mt-5 overflow-hidden" id="database-management-{{ $resource->id }}" @if ($databaseManagementOpen) open @endif>
                         <summary class="flex cursor-pointer list-none items-center justify-between gap-3 p-4 font-bold text-ink [&::-webkit-details-marker]:hidden">
                             <span>
                                 <span class="ui-eyebrow text-[0.65rem]">{{ __('Operations') }}</span>
@@ -142,19 +142,27 @@
                         <div class="space-y-5 border-t border-line p-4">
                     <div class="mt-4 space-y-2" aria-label="{{ __('Database credentials') }}">
                         @foreach ($resource->databaseUsers as $databaseUser)
-                            <div class="ui-card ui-card--muted flex items-center justify-between gap-3 p-3">
+                            <x-signal.ui.card tone="muted" class="flex items-center justify-between gap-3 p-3">
                                 <div class="min-w-0">
                                     <p class="truncate text-sm font-bold text-ink">{{ $databaseUser->username }}</p>
                                     <p class="text-xs text-muted">
                                         {{ ucfirst($databaseUser->privilege) }} · {{ $databaseUser->expires_at ? __('expires').' '.$databaseUser->expires_at->diffForHumans() : __('permanent') }}
                                     </p>
                                 </div>
-                                <form method="POST" action="{{ route('databases.users.destroy', $databaseUser) }}" class="shrink-0">
-                                    @csrf
-                                    @method('DELETE')
-                                    <x-signal.ui.button type="submit" variant="danger">{{ __('Revoke') }}</x-signal.ui.button>
-                                </form>
-                            </div>
+                                <div class="ml-auto flex shrink-0 flex-wrap justify-end gap-2">
+                                    @if (! $databaseUser->applied_at)
+                                        <form method="POST" action="{{ route('databases.users.retry', $databaseUser) }}">
+                                            @csrf
+                                            <x-signal.ui.button type="submit" variant="secondary">{{ __('Retry setup') }}</x-signal.ui.button>
+                                        </form>
+                                    @endif
+                                    <form method="POST" action="{{ route('databases.users.destroy', $databaseUser) }}">
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-signal.ui.button type="submit" variant="danger">{{ __('Revoke') }}</x-signal.ui.button>
+                                    </form>
+                                </div>
+                            </x-signal.ui.card>
                         @endforeach
                     </div>
 
@@ -180,14 +188,14 @@
                         <x-signal.ui.button type="submit" variant="danger">{{ __('Queue destructive clone') }}</x-signal.ui.button>
                     </form>
                         </div>
-                    </details>
+                    </x-signal.ui.card>
 
                     <x-scenes.databases.credential-dialog
                         :resource="$resource"
                         :open="$databaseCredentialDialogOpen"
                     />
                 @endif
-            </section>
+            </x-signal.ui.card>
         @empty
             <x-signal.ui.empty-state
                 class="xl:col-span-2"
@@ -199,7 +207,7 @@
     </div>
 
     @if ($clones->isNotEmpty())
-        <section class="ui-card mt-6 p-5">
+        <x-signal.ui.card as="section" class="mt-6 p-5">
             <div class="flex items-center justify-between gap-3">
                 <div>
                     <h2 class="font-extrabold text-ink">{{ __('Clone history') }}</h2>
@@ -209,12 +217,12 @@
             </div>
             <div class="mt-4 space-y-2">
                 @foreach ($clones as $clone)
-                    <div class="ui-card ui-card--muted flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
+                    <x-signal.ui.card tone="muted" class="flex flex-wrap items-center justify-between gap-3 p-3 text-sm">
                         <span class="text-ink">{{ $clone->source->name }} → {{ $clone->target->name }}</span>
                         <x-signal.ui.badge tone="{{ in_array($clone->status, ['completed', 'succeeded'], true) ? 'success' : 'neutral' }}">{{ ucfirst($clone->status) }}</x-signal.ui.badge>
-                    </div>
+                    </x-signal.ui.card>
                 @endforeach
             </div>
-        </section>
+        </x-signal.ui.card>
     @endif
 </x-layouts.app>

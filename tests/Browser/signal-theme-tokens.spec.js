@@ -9,6 +9,7 @@ const fixtures = fs.mkdtempSync(path.join(os.tmpdir(), 'buildpusher-signal-theme
 const products = ['core', 'deployer', 'monitor', 'analytics', 'public', 'auth'];
 const viewports = [
     { name: 'mobile', width: 390, height: 844 },
+    { name: 'compact desktop', width: 1279, height: 900 },
     { name: 'desktop', width: 1280, height: 900 },
 ];
 const contentTypes = {
@@ -182,7 +183,8 @@ test('one shared Signal token change reaches every product, public, and auth doc
                 await expect(shell).toHaveCount(1);
                 await expect(shell.locator('nav[aria-label="Products"]')).toHaveCount(1);
 
-                if (viewport.width < 1024) {
+                if (viewport.width < 1280) {
+                    await expect(shell.locator('nav[aria-label="Products"]')).toBeHidden();
                     const mobileMenu = page.locator('#signal-mobile-product-navigation-drawer');
                     const trigger = shell.getByRole('button', { name: 'Open application navigation' });
                     await expect(trigger).toHaveAttribute('aria-expanded', 'false');
@@ -207,9 +209,10 @@ test('one shared Signal token change reaches every product, public, and auth doc
                 }
 
                 if (product === 'deployer') {
-                    if (viewport.width < 1024) {
+                    if (viewport.width < 1280) {
                         await expect(page.locator('#signal-mobile-product-navigation-drawer a[href="/theme-token-demo/deployer"]')).toHaveAttribute('aria-current', 'page');
                     } else {
+                        await expect(shell.locator('nav[aria-label="Products"]')).toBeVisible();
                         await expect(shell.locator('a[href="/theme-token-demo/deployer"]')).toHaveAttribute('aria-current', 'page');
                     }
                 }

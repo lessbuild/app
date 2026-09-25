@@ -101,5 +101,14 @@
         @case('users')
             <path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20M10 11a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM16 4.5a3.5 3.5 0 0 1 0 6.8M17 15h1.5a3.5 3.5 0 0 1 3.5 3.5V20" />
             @break
+        @case('layers')
+            <path d="m12 3 9 5-9 5-9-5 9-5ZM3 12l9 5 9-5M3 16l9 5 9-5" />
+            @break
+        @case('pulse')
+            <path d="M3 12h4l2.4-6L13 18l2.2-6H21" />
+            @break
+        @case('chart')
+            <path d="M4 19V5M4 19h16M7 15l4-4 3 2 6-7" />
+            @break
     @endswitch
 </svg>

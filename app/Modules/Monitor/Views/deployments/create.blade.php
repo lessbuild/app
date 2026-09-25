@@ -5,7 +5,7 @@
 <div class="mx-auto max-w-3xl space-y-6">
     <a href="{{ route('monitor.deployments.index', [$application, $environment]) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">← Deployment history</a>
     <x-monitor::ui.page-header title="Record deployment" :description="$application->name.' / '.$environment->name.' · Record what has already shipped. This does not deploy code.'" />
-    <form method="POST" action="{{ route('monitor.deployments.store', [$application, $environment]) }}" class="ui-panel space-y-5 p-6">
+    <x-signal.ui.panel as="form" method="POST" action="{{ route('monitor.deployments.store', [$application, $environment]) }}" class="space-y-5 p-6">
         @csrf
         <x-monitor::ui.input name="version" label="Version" maxlength="128" placeholder="build-42 or a commit SHA" required />
         <div class="grid gap-5 sm:grid-cols-2"><x-monitor::ui.input name="service" label="Service (optional)" maxlength="100" placeholder="api" /><x-monitor::ui.input name="service_namespace" label="Service namespace (optional)" maxlength="100" placeholder="shop" /></div>
@@ -16,6 +16,6 @@
         <x-monitor::ui.input name="note" label="Note (optional, no secrets)" maxlength="1000" />
         <x-monitor::ui.input name="deployment_id" label="Deployment UUID (reuse unchanged for retries)" :value="$deploymentId" required readonly />
         <x-monitor::ui.button>Record completed deployment</x-monitor::ui.button>
-    </form>
+    </x-signal.ui.panel>
 </div>
 @endsection

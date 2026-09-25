@@ -5,10 +5,10 @@
 <div class="mx-auto max-w-3xl space-y-6">
     <a href="{{ $destination ? route('monitor.alert-destinations.show', $destination) : route('monitor.alert-destinations.index') }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">← Alert destinations</a>
     <x-monitor::ui.page-header :title="$destination ? 'Edit destination' : 'Add destination'" />
-    @if(parse_url(config('app.url'), PHP_URL_SCHEME) !== 'https')<p class="ui-alert ui-alert-warning block p-4 text-xs leading-5 text-warning dark:text-warning">This preview uses HTTP. Configure HTTPS before entering production webhook URLs or other secrets.</p>@endif
-    <form method="POST" action="{{ $destination ? route('monitor.alert-destinations.update', $destination) : route('monitor.alert-destinations.store') }}" class="ui-panel space-y-5 p-6">
+    @if(parse_url(config('app.url'), PHP_URL_SCHEME) !== 'https')<x-signal.ui.alert as="p" tone="warning" class="block p-4 text-xs leading-5 text-warning dark:text-warning">This preview uses HTTP. Configure HTTPS before entering production webhook URLs or other secrets.</x-signal.ui.alert>@endif
+    <x-signal.ui.panel as="form" method="POST" action="{{ $destination ? route('monitor.alert-destinations.update', $destination) : route('monitor.alert-destinations.store') }}" class="space-y-5 p-6">
         @csrf
-        @if($destination) @method('PATCH') <input type="hidden" name="version" value="{{ $destination->state_version }}"> @endif
+        @if($destination) @method('PATCH') <x-signal.ui.input type="hidden" name="version" value="{{ $destination->state_version }}" :restore="false" /> @endif
         <x-monitor::ui.input name="name" label="Destination name (no secrets)" :value="$destination?->name" maxlength="120" required />
         <x-monitor::ui.select name="type" label="Channel" :value="$destination?->type->value ?? 'webhook'" :options="$destination ? [$destination->type->value => $destination->type->label()] : $types" required />
         <x-monitor::ui.select name="recipient_user_id" label="Email recipient — email destinations only" :value="$destination?->recipient_user_id" :options="$recipients" placeholder="Choose a verified workspace member" />
@@ -19,6 +19,6 @@
         <x-monitor::ui.select name="enabled" label="Delivery" :value="$destination ? (int) $destination->enabled : 1" :options="[1 => 'Enabled', 0 => 'Paused']" required />
         <p class="rounded-control bg-surface-muted p-4 text-xs leading-5 text-muted dark:bg-surface-muted dark:text-muted">Creating a destination sends nothing automatically. Select it on an alert rule or send an explicit test. Changing the target, pausing or rotating its key invalidates queued deliveries; a request already in flight may still finish.</p>
         <x-monitor::ui.button>{{ $destination ? 'Save destination' : 'Create destination' }}</x-monitor::ui.button>
-    </form>
+    </x-signal.ui.panel>
 </div>
 @endsection

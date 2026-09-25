@@ -42,6 +42,7 @@
   --color-disabled: var(--ui-disabled);
   --color-disabled-ink: var(--ui-disabled-ink);
   --color-focus: var(--ui-focus);
+  --color-product-navy: var(--product-navy);
   --radius-control: var(--radius-control-value);
   --radius-panel: var(--radius-panel-value);
   --radius-card: var(--radius-card-value);
@@ -107,6 +108,14 @@
   --ui-disabled: #e7ecf3;
   --ui-disabled-ink: #97a3b6;
   --ui-focus: var(--brand-400);
+  --product-navy: #172a4b;
+  --product-deploy: #2563eb;
+  --product-deploy-soft: #eaf1ff;
+  --product-monitor: #129b78;
+  --product-monitor-soft: #e8f7f2;
+  --product-analytics: #7050df;
+  --product-analytics-soft: #f0edff;
+  --product-terminal: #0b1426;
   --radius-control-value: 0.8rem;
   --radius-panel-value: 1.35rem;
   --radius-card-value: 1rem;
@@ -134,6 +143,12 @@
   --ui-primary-hover: var(--brand-300);
   --ui-primary-soft: color-mix(in srgb, var(--brand-500) 17%, var(--ui-surface));
   --ui-on-primary: var(--brand-950);
+  --product-deploy: #8ab4ff;
+  --product-deploy-soft: color-mix(in srgb, #2563eb 20%, var(--ui-surface));
+  --product-monitor: #5dd6b4;
+  --product-monitor-soft: color-mix(in srgb, #129b78 20%, var(--ui-surface));
+  --product-analytics: #b5a0ff;
+  --product-analytics-soft: color-mix(in srgb, #7050df 20%, var(--ui-surface));
   --ui-success: #6ee7b7;
   --ui-success-soft: #1d493a;
   --ui-warning: #f4c16e;

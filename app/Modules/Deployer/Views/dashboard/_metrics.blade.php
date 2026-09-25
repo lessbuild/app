@@ -6,11 +6,11 @@
             [__('Builds'), $stats['builds'], __('Recorded releases')],
             [__('Repositories'), $stats['repositories'], __('Connected sources')],
         ] as [$label, $value, $description])
-            <div class="ui-stat">
+            <x-signal.ui.stat as="div" :slot-mode="true">
                 <dt class="text-xs font-bold text-muted">{{ $label }}</dt>
                 <dd class="ui-stat__value">{{ $value }}</dd>
                 <dd class="ui-stat__description">{{ $description }}</dd>
-            </div>
+            </x-signal.ui.stat>
         @endforeach
     </dl>
 @endif

@@ -275,7 +275,7 @@
                     <x-signal.ui.card class="p-5">
                         <form method="POST" action="{{ route('core.projects.resources.store', [$workspace, $project]) }}" class="grid gap-4">
                             @csrf
-                            <input type="hidden" name="product" value="{{ $productKey }}">
+                            <x-signal.ui.input type="hidden" name="product" :value="$productKey" :restore="false" />
                             <x-signal.ui.field
                                 :label="__('Choose :product resource', ['product' => $products[$productKey] ?? str($productKey)->headline()])"
                                 name="resource_id"
@@ -550,7 +550,7 @@
                                             @if (collect((array) $connection->capabilities)->contains(fn (string $capability): bool => \App\Core\Enums\ProjectConnectionCapability::tryFrom($capability)?->hasDeliveryHandler() ?? false))
                                                 <form method="POST" action="{{ route('core.projects.connections.automation', [$workspace, $project, $connection]) }}">
                                                     @csrf
-                                                    <input type="hidden" name="paused" value="{{ $connection->automation_paused_at ? '0' : '1' }}">
+                                                    <x-signal.ui.input type="hidden" name="paused" :value="$connection->automation_paused_at ? '0' : '1'" :restore="false" />
                                                     <x-signal.ui.button type="submit" class="min-h-8 px-3 text-xs">{{ $connection->automation_paused_at ? __('Resume automation') : __('Pause automation') }}</x-signal.ui.button>
                                                 </form>
                                             @endif

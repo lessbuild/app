@@ -34,7 +34,7 @@
         @if ($run->output !== null && $run->output !== '')
             <pre class="ui-console ui-console-output mt-3 max-h-[28rem] overflow-auto whitespace-pre-wrap break-words p-4" data-task-run-output-text>{{ $run->output }}</pre>
         @else
-            <p class="ui-panel mt-3 bg-surface-muted p-4 text-sm text-muted">{{ __('No output was recorded.') }}</p>
+            <x-signal.ui.panel as="p" class="mt-3 bg-surface-muted p-4 text-sm text-muted">{{ __('No output was recorded.') }}</x-signal.ui.panel>
         @endif
     </div>
 </div>

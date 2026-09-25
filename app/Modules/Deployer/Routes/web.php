@@ -90,8 +90,8 @@ Route::get('request-access', [AccessRequestController::class, 'create'])->name('
 Route::post('request-access', [AccessRequestController::class, 'store'])->middleware('throttle:access-requests')->name('access-request.store');
 Route::view('privacy', 'legal.privacy')->name('privacy');
 Route::view('terms', 'legal.terms')->name('terms');
-Route::view('api-docs', 'api-docs')->name('api-docs');
-Route::view('docs', 'docs')->name('docs');
+Route::get('api-docs', static fn () => to_route('core.help.deployer.api'))->name('api-docs');
+Route::get('docs', static fn () => to_route('core.help.deployer'))->name('docs');
 Route::get('openapi.json', [PublicPageController::class, 'openapi'])->name('openapi');
 Route::middleware([])->withoutMiddleware([
     VerifyCsrfToken::class,
@@ -266,6 +266,7 @@ Route::middleware([
         Route::delete('load-balancer-nodes/{node}', [LoadBalancerController::class, 'destroyNode'])->name('load-balancers.nodes.destroy');
         Route::post('databases/{resource}/inspect', [DatabaseController::class, 'inspect'])->name('databases.inspect');
         Route::post('databases/{resource}/users', [DatabaseController::class, 'storeUser'])->name('databases.users.store');
+        Route::post('databases/users/{databaseUser}/retry', [DatabaseController::class, 'retryUser'])->name('databases.users.retry');
         Route::delete('databases/users/{databaseUser}', [DatabaseController::class, 'destroyUser'])->name('databases.users.destroy');
         Route::post('databases/{resource}/clone', [DatabaseController::class, 'clone'])->name('databases.clone');
         Route::post('domains', [DomainController::class, 'store'])->name('domains.store');

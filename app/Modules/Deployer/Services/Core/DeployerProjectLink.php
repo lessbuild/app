@@ -49,7 +49,7 @@ final class DeployerProjectLink implements ProjectProductLink
             ->first(['resource_id']);
 
         return $resource !== null
-            ? $this->accessibleLocalProject($user, (string) $resource->resource_id)
+            ? $this->accessibleLocalProject($user, (string) $resource->resource_id, (string) $project->workspace_id)
             : null;
     }
 
@@ -94,7 +94,7 @@ final class DeployerProjectLink implements ProjectProductLink
             ->first(['id']);
         $legacyProject = $projectMapping === null
             ? null
-            : $this->accessibleLocalProject($user, (string) $mappedEnvironment->project_id);
+            : $this->accessibleLocalProject($user, (string) $mappedEnvironment->project_id, (string) $project->workspace_id);
 
         if ($legacyProject === null) {
             return null;
@@ -116,7 +116,7 @@ final class DeployerProjectLink implements ProjectProductLink
             ->first(['id', 'project_id', 'server_id', 'website_id']);
     }
 
-    private function accessibleLocalProject(PlatformUser $user, string $projectId): ?Project
+    private function accessibleLocalProject(PlatformUser $user, string $projectId, string $coreWorkspaceId): ?Project
     {
         $legacyProject = Project::query()->with('organization')->find($projectId);
 
@@ -141,6 +141,17 @@ final class DeployerProjectLink implements ProjectProductLink
                     return $legacyProject;
                 }
 
+                continue;
+            }
+
+            $mappedWorkspaceId = $this->identities->canonicalIdForSource(
+                'deployer',
+                'organization',
+                (string) $legacyProject->organization_id,
+                'workspace',
+            );
+
+            if ($mappedWorkspaceId !== $coreWorkspaceId) {
                 continue;
             }
 

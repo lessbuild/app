@@ -8,11 +8,7 @@
     @endif
 
     @if ($recipe->source)
-        <div @class([
-            'ui-alert my-4 p-4',
-            'ui-alert--warning' => $recipe->hasGalleryUpdate(),
-            'ui-alert--info' => ! $recipe->hasGalleryUpdate(),
-        ])>
+        <x-signal.ui.alert :tone="$recipe->hasGalleryUpdate() ? 'warning' : 'info'" class="my-4 p-4">
             <p class="font-semibold">
                 {{ __('Imported from :recipe by :author', ['recipe' => $recipe->source->name, 'author' => $recipe->source->user->name]) }}
             </p>
@@ -33,12 +29,12 @@
                 <p class="mt-1">{{ __('Your private snapshot matches the current gallery revision.') }}</p>
                 <a href="{{ route('gallery.show', $recipe->source) }}" class="mt-3 inline-block font-medium underline">{{ __('View gallery source') }}</a>
             @endif
-        </div>
+        </x-signal.ui.alert>
     @elseif ($recipe->source_recipe_id)
-        <div class="ui-alert ui-alert--info my-4 p-4">
+        <x-signal.ui.alert tone="info" class="my-4 p-4">
             <p class="font-semibold text-ink">{{ __('Gallery source unavailable') }}</p>
             <p class="mt-1">{{ __('The contributor removed or unpublished the source. Your encrypted private snapshot is unchanged and remains editable.') }}</p>
-        </div>
+        </x-signal.ui.alert>
     @endif
 
     <x-scenes.recipes.edit-dialog :recipe="$recipe" :open="true" field-prefix="" />

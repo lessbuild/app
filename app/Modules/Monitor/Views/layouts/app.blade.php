@@ -29,10 +29,10 @@
     <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto max-w-content space-y-6 py-8 pb-24 sm:py-10 lg:pb-10">
         <x-monitor::ui.feedback />
         @unless($accountUser->hasVerifiedEmail())
-            <div class="ui-alert ui-alert-warning flex-col text-xs sm:flex-row sm:items-center sm:justify-between">
+            <x-signal.ui.alert as="div" tone="warning" class="flex-col text-xs sm:flex-row sm:items-center sm:justify-between">
                 <p>Verify {{ $accountUser->email }} to invite teammates or accept invitations.</p>
                 <a href="{{ route('monitor.verification.notice') }}" class="shrink-0 font-bold underline">Verify email</a>
-            </div>
+            </x-signal.ui.alert>
         @endunless
         <x-monitor::ui.usage-banner :summary="$workspaceUsageSummary" :workspace="$currentWorkspace" />
         @yield('content')

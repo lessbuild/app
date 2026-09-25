@@ -175,7 +175,7 @@
     @if(!$builds->isEmpty())
         <x-signal.ui.panel id="deployment-history" class="ui-panel ui-inventory-list mt-6 divide-y divide-line overflow-hidden" aria-label="{{ __('Deployment history') }}">
             @foreach($builds as $build)
-                <a data-build-card href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}" class="ui-card--interactive block p-4 sm:p-5">
+                <x-signal.ui.card as="a" tone="interactive" class="block p-4 sm:p-5" data-build-card href="{{ route('builds.show', $build) }}" aria-label="{{ __('View build #:id', ['id' => $build->id]) }}">
                     <div class="flex flex-wrap items-start justify-between gap-4">
                         <div class="flex min-w-0 items-center gap-3">
                             <x-signal.ui.avatar :name="$build->repository->name" class="ui-avatar-md shrink-0" />
@@ -217,7 +217,7 @@
                             {{ __('Note: :note', ['note' => str($build->operator_note)->limit(120)]) }}
                         </p>
                     @endif
-                </a>
+                </x-signal.ui.card>
             @endforeach
         </x-signal.ui.panel>
         <div class="py-4">

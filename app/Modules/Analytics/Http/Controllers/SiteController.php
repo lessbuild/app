@@ -2,9 +2,11 @@
 
 namespace App\Modules\Analytics\Http\Controllers;
 
+use App\Modules\Analytics\Actions\Sites\CreateSiteForWorkspace;
 use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use App\Modules\Analytics\Services\AnalyticsPlanAuthority;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -12,14 +14,41 @@ use Illuminate\View\View;
 
 class SiteController extends Controller
 {
-    public function create(EnsurePersonalWorkspace $ensureWorkspace): View
+    public function create(
+        EnsurePersonalWorkspace $ensureWorkspace,
+        AnalyticsWorkspaceAccess $access,
+        AnalyticsPlanAuthority $plans,
+    ): View
     {
-        $workspace = $ensureWorkspace->handle(request()->user());
+        $user = request()->user();
+        $workspace = $ensureWorkspace->handle($user);
+        abort_unless($access->roleFor($user, $workspace)?->canManageSites() === true, 403);
+        $plan = $plans->resolve($workspace);
+        $siteCount = $workspace->sites()->count();
+        $siteLimitKnown = $plan->hasLimit('sites');
+        $siteLimit = $plan->limit('sites');
+        $canCreateSite = $plan->available
+            && $plan->allows('site_management')
+            && $siteLimitKnown
+            && ($siteLimit === null || $siteCount < $siteLimit);
 
-        return view('analytics::sites.create', compact('workspace'));
+        return view('analytics::sites.create', compact(
+            'workspace',
+            'siteCount',
+            'siteLimit',
+            'siteLimitKnown',
+            'canCreateSite',
+            'plan',
+        ));
     }
 
-    public function store(Request $request, EnsurePersonalWorkspace $ensureWorkspace, AnalyticsWorkspaceAccess $access): RedirectResponse
+    public function store(
+        Request $request,
+        EnsurePersonalWorkspace $ensureWorkspace,
+        AnalyticsWorkspaceAccess $access,
+        AnalyticsPlanAuthority $plans,
+        CreateSiteForWorkspace $createSite,
+    ): RedirectResponse
     {
         $workspace = $ensureWorkspace->handle($request->user());
         abort_unless($access->roleFor($request->user(), $workspace)?->canManageSites() === true, 403);
@@ -38,7 +67,7 @@ class SiteController extends Controller
             return back()->withErrors(['domain' => 'Enter a domain such as example.com.'])->withInput();
         }
 
-        $site = $workspace->sites()->create([
+        $site = $createSite->handle($workspace, $plans->resolve($workspace), [
             'name' => $validated['name'],
             'slug' => Str::slug($validated['name']).'-'.Str::lower(Str::random(5)),
             'domains' => [$domain],

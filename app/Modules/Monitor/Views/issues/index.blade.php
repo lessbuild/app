@@ -8,15 +8,15 @@
     </x-monitor::ui.page-header>
     <section aria-label="Workspace issue totals" class="grid grid-cols-2 gap-4 lg:grid-cols-4">
         @foreach($statuses as $status)
-            <a href="{{ route('monitor.issues.index', ['status' => $status->value]) }}" class="ui-card p-5 transition hover:border-primary dark:hover:border-primary">
+            <x-signal.ui.card as="a" href="{{ route('monitor.issues.index', ['status' => $status->value]) }}" class="p-5 transition hover:border-primary dark:hover:border-primary">
                 <x-monitor::ui.badge :tone="$status->tone()">{{ $status->label() }}</x-monitor::ui.badge>
                 <p class="mt-3 text-2xl font-bold tabular-nums">{{ number_format($totals->get($status->value)?->total ?? 0) }}</p>
                 <p class="mt-1 text-xs text-muted dark:text-subtle">{{ number_format($totals->get($status->value)?->critical ?? 0) }} critical</p>
-            </a>
+            </x-signal.ui.card>
         @endforeach
     </section>
     <p class="text-xs text-muted dark:text-subtle">Totals cover all issues in this workspace’s unarchived applications, independently of the filters below.</p>
-    <section class="ui-panel overflow-hidden">
+    <x-signal.ui.panel as="section" class="overflow-hidden">
         <form method="GET" action="{{ route('monitor.issues.index') }}" class="grid gap-4 border-b border-line p-5 sm:grid-cols-2 lg:grid-cols-3 dark:border-line">
             <x-monitor::ui.input name="q" label="Search title or location" type="search" :value="$filters['q'] ?? ''" maxlength="255" placeholder="Search issues…" />
             <x-monitor::ui.select name="status" label="Status" :value="$filters['status']" :options="['all' => 'All statuses', ...collect($statuses)->mapWithKeys(fn ($status) => [$status->value => $status->label()])->all()]" />
@@ -49,6 +49,6 @@
             </x-monitor::ui.table>
         </div>
         @if($issues->hasPages())<div class="border-t border-line p-5 dark:border-line">{{ $issues->links() }}</div>@endif
-    </section>
+    </x-signal.ui.panel>
 </div>
 @endsection

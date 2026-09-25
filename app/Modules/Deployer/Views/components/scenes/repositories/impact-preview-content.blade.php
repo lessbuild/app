@@ -103,7 +103,7 @@
                     :title="__('No repositories with enabled push webhooks are available in this workspace.')"
                 />
             @else
-                <div class="ui-card mt-4 divide-y divide-line overflow-hidden" aria-label="{{ __('Read-only automatic deployment impact results') }}">
+                <x-signal.ui.card class="mt-4 divide-y divide-line overflow-hidden" aria-label="{{ __('Read-only automatic deployment impact results') }}">
                     @foreach ($preview->targets as $target)
                         @php
                             $repository = $target->repository;
@@ -154,7 +154,7 @@
                                     } }}</dd>
                                 </div>
                             </dl>
-                            <div class="ui-card ui-card--muted mt-4 p-3">
+                            <x-signal.ui.card tone="muted" class="mt-4 p-3">
                                 <h3 class="text-xs font-bold uppercase tracking-wide text-muted">{{ __('Matched paths') }}</h3>
                                 @if ($impact->matchedPaths === [])
                                     <p class="mt-2 text-sm text-muted">&mdash;</p>
@@ -168,10 +168,10 @@
                                         <span class="mt-2 block text-xs text-muted">{{ __(':count more matched paths', ['count' => count($impact->matchedPaths) - 5]) }}</span>
                                     @endif
                                 @endif
-                            </div>
+                            </x-signal.ui.card>
                         </article>
                     @endforeach
-                </div>
+                </x-signal.ui.card>
             @endif
         </section>
     @endif

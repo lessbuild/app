@@ -13,7 +13,7 @@
 
         <x-monitor::ui.filter-panel :action="route('monitor.events.index')">
             @if($release)
-                <input type="hidden" name="release" value="{{ $release->id }}">
+                <x-signal.ui.input type="hidden" name="release" value="{{ $release->id }}" :restore="false" />
                 <p class="text-xs text-primary dark:text-primary">Release: <a href="{{ route('monitor.releases.show', $release) }}" class="font-bold hover:underline">{{ $release->version }} · {{ $release->serviceLabel() }}</a> · <a href="{{ route('monitor.events.index', array_diff_key($filters, ['release' => true, 'page' => true])) }}" class="underline">Remove release filter</a></p>
             @endif
             <div class="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(180px,1fr)]">
@@ -51,7 +51,7 @@
             </div>
         </x-monitor::ui.filter-panel>
 
-        <section aria-labelledby="results-heading" class="ui-panel overflow-hidden">
+        <x-signal.ui.panel as="section" aria-labelledby="results-heading" class="overflow-hidden">
             <div class="flex flex-col justify-between gap-2 border-b border-line p-5 sm:flex-row sm:items-center dark:border-line">
                 <div>
                     <h2 id="results-heading" class="text-base font-bold">{{ number_format($events->total()) }} matching {{ Str::plural('record', $events->total()) }}</h2>
@@ -104,7 +104,7 @@
                     </x-monitor::ui.table>
                 </div>
             @endif
-        </section>
+        </x-signal.ui.panel>
         {{ $events->links() }}
     </div>
 @endsection

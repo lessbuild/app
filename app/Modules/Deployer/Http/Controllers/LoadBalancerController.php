@@ -8,6 +8,7 @@ use App\Modules\Deployer\Actions\LoadBalancer\DeleteLoadBalancerAction;
 use App\Modules\Deployer\Actions\LoadBalancer\DeleteLoadBalancerNodeAction;
 use App\Modules\Deployer\Actions\LoadBalancer\QueueLoadBalancerApplyAction;
 use App\Modules\Deployer\Exceptions\LoadBalancerOperationException;
+use App\Modules\Deployer\Exceptions\LoadBalancerRemovalConflictException;
 use App\Modules\Deployer\Http\Requests\StoreLoadBalancerNodeRequest;
 use App\Modules\Deployer\Http\Requests\StoreLoadBalancerRequest;
 use App\Modules\Deployer\Models\Environment;
@@ -76,6 +77,8 @@ class LoadBalancerController extends Controller
         $server = $loadBalancer->organization->servers()->findOrFail($data['server_id']);
         try {
             $addNode->handle($loadBalancer, $server, $data);
+        } catch (LoadBalancerRemovalConflictException $exception) {
+            abort(409, $exception->getMessage());
         } catch (LoadBalancerOperationException $exception) {
             abort(422, $exception->getMessage());
         }
@@ -89,7 +92,11 @@ class LoadBalancerController extends Controller
     public function apply(LoadBalancer $loadBalancer, QueueLoadBalancerApplyAction $queueApply): RedirectResponse
     {
         $this->manage($loadBalancer);
-        $queueApply->handle($loadBalancer);
+        try {
+            $queueApply->handle($loadBalancer);
+        } catch (LoadBalancerOperationException $exception) {
+            abort(409, $exception->getMessage());
+        }
 
         return back()->with('success', __('Load-balancer configuration queued.'));
     }
@@ -101,20 +108,24 @@ class LoadBalancerController extends Controller
     {
         $balancer = $node->loadBalancer;
         $this->manage($balancer);
-        $deleteNode->handle($node);
+        try {
+            $deleteNode->handle($node);
+        } catch (LoadBalancerOperationException $exception) {
+            abort(409, $exception->getMessage());
+        }
 
         return back()->with('success', __('Node removed.'));
     }
 
     /**
-     * Authorize the bound balancer, queue remote removal, delete its record, and redirect with DNS cleanup guidance.
+     * Authorize the bound balancer, queue remote removal, and retain its record until cleanup completes.
      */
     public function destroy(LoadBalancer $loadBalancer, DeleteLoadBalancerAction $deleteLoadBalancer): RedirectResponse
     {
         $this->manage($loadBalancer);
         $deleteLoadBalancer->handle($loadBalancer);
 
-        return back()->with('success', __('Load balancer removed. Remove its DNS record if it is no longer used.'));
+        return back()->with('success', __('Load-balancer removal queued. The route will disappear after remote cleanup succeeds. Remove its DNS record separately if it is no longer used.'));
     }
 
     /**

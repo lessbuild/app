@@ -53,6 +53,17 @@ final class MonitorProjectLink implements ProjectProductLink
             return collect();
         }
 
+        $workspaceIds = $this->identities->sourceIdsForCanonical(
+            'monitor',
+            'workspace',
+            (string) $project->workspace_id,
+            'workspace',
+        );
+
+        if ($workspaceIds === []) {
+            return collect();
+        }
+
         $legacyUserIds = $this->identities->sourceIdsFor($user, 'monitor');
         if ($legacyUserIds === []) {
             return collect();
@@ -60,6 +71,7 @@ final class MonitorProjectLink implements ProjectProductLink
 
         return Application::query()
             ->whereKey($resourceIds)
+            ->whereIn('workspace_id', $workspaceIds)
             ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds))
             ->with('workspace')
             ->get()
@@ -86,6 +98,22 @@ final class MonitorProjectLink implements ProjectProductLink
             return null;
         }
 
+        $project = Project::query()->find($currentMapping->project_id);
+        if ($project === null) {
+            return null;
+        }
+
+        $workspaceIds = $this->identities->sourceIdsForCanonical(
+            'monitor',
+            'workspace',
+            (string) $project->workspace_id,
+            'workspace',
+        );
+
+        if ($workspaceIds === []) {
+            return null;
+        }
+
         $legacyUserIds = $this->identities->sourceIdsFor($user, 'monitor');
         if ($legacyUserIds === []) {
             return null;
@@ -94,7 +122,9 @@ final class MonitorProjectLink implements ProjectProductLink
         return Environment::query()
             ->whereKey($currentMapping->resource_id)
             ->where('status', 'active')
-            ->whereHas('application.workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds))
+            ->whereHas('application', fn ($application) => $application
+                ->whereIn('workspace_id', $workspaceIds)
+                ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds)))
             ->with('application.workspace')
             ->first(['id', 'application_id', 'last_seen_at']);
     }

@@ -6,10 +6,12 @@ use App\Core\Models\PlatformUser;
 use App\Core\Services\Auth\ProductAuthentication;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Modules\Deployer\Http\Middleware\EnsureCoreProductWorkspaceAccess;
+use App\Modules\Deployer\Http\Middleware\ResolveDeployerOrganizationContext;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\User as DeployerUser;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Http\Request;
+use Illuminate\Routing\Route as RoutingRoute;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -143,6 +145,51 @@ final class DeployerProductWorkspaceAccessTest extends TestCase
         try {
             $middleware->handle($request, static fn (): Response => new Response('unexpected'));
             $this->fail('A revoked Deployer grant must deny the current organization.');
+        } catch (HttpException $exception) {
+            $this->assertSame(403, $exception->getStatusCode());
+        }
+
+        $billingManager = PlatformUser::query()->forceCreate([
+            'id' => (string) Str::ulid(),
+            'name' => 'Billing manager',
+            'email' => 'billing-manager@example.test',
+            'email_normalized' => 'billing-manager@example.test',
+            'password' => 'hashed-password',
+            'status' => 'active',
+        ]);
+        DB::connection('core')->table('workspace_memberships')->insert([
+            'id' => (string) Str::ulid(),
+            'workspace_id' => $canonicalWorkspaceId,
+            'user_id' => $billingManager->getKey(),
+            'role' => 'billing',
+            'status' => 'active',
+            'joined_at' => now(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $billingRoute = new RoutingRoute(['GET', 'HEAD'], 'billing', ['as' => 'billing.index']);
+        $billingRequest = Request::create('/billing?organization_id='.$organizationId);
+        $billingRequest->setUserResolver(static fn (): DeployerUser => $user);
+        $billingRequest->attributes->set('platform_user', $billingManager);
+        $billingRequest->setRouteResolver(static fn () => $billingRoute);
+
+        $resolveContext = app(ResolveDeployerOrganizationContext::class);
+        $ensureWorkspaceAccess = app(EnsureCoreProductWorkspaceAccess::class);
+        $response = $resolveContext->handle($billingRequest, fn () => $ensureWorkspaceAccess->handle(
+            $billingRequest,
+            static fn (): Response => new Response('billing access granted'),
+        ));
+
+        $this->assertSame('billing access granted', $response->getContent());
+
+        DB::connection('core')->table('workspace_memberships')
+            ->where('user_id', $billingManager->getKey())
+            ->update(['role' => 'member']);
+
+        try {
+            $resolveContext->handle($billingRequest, static fn (): Response => new Response('unexpected'));
+            $this->fail('A regular Core workspace member without Deployer access cannot open Deployer billing.');
         } catch (HttpException $exception) {
             $this->assertSame(403, $exception->getStatusCode());
         }

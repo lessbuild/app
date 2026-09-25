@@ -67,6 +67,12 @@ class Workspace extends CoreModel
         return $this->hasMany(ProductBillingEvent::class);
     }
 
+    /** @return HasMany<WorkspaceFeedback, $this> */
+    public function feedback(): HasMany
+    {
+        return $this->hasMany(WorkspaceFeedback::class);
+    }
+
     /** @return HasMany<WorkspaceDashboardView, $this> */
     public function views(): HasMany
     {

@@ -21,11 +21,11 @@
                 <x-monitor::ui.select name="stack" label="Choose your stack" :value="$selectedStack" :options="$stackOptions" />
                 <x-monitor::ui.button>Show setup guide</x-monitor::ui.button>
             </form>
-            <div class="ui-alert border-primary/30 bg-primary-soft block p-4">
+            <x-signal.ui.alert as="div" tone="info" class="border-primary/30 bg-primary-soft block p-4">
                 <p class="text-xs font-bold text-primary dark:text-primary">Selected guide</p>
                 <p class="mt-2 text-sm font-semibold text-primary dark:text-primary">{{ $setupGuide['label'] }}</p>
                 <p class="mt-1 text-xs leading-5 text-primary dark:text-primary">{{ $setupGuide['install'] }}</p>
-            </div>
+            </x-signal.ui.alert>
         </div>
     </x-monitor::ui.card>
 

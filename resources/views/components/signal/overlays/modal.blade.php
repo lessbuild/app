@@ -27,17 +27,16 @@
                 @endif
             </div>
             <form method="dialog">
-                <button
+                <x-signal.ui.icon-button
                     type="submit"
-                    class="ui-icon-btn"
+                    label="{{ __('Close :title', ['title' => $title]) }}"
                     data-modal-close
                     autofocus
-                    aria-label="{{ __('Close :title', ['title' => $title]) }}"
                 >
                     <svg class="h-5 w-5 stroke-2" aria-hidden="true">
                         <use xlink:href="/assets/images/icons.svg#close"></use>
                     </svg>
-                </button>
+                </x-signal.ui.icon-button>
             </form>
         </header>
         <div data-modal-body class="{{ $bodyClass }}">

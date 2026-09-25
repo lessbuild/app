@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Core\Http\Controllers;
+
+use App\Core\Services\PlatformProductRouteLinks;
+use App\Core\Services\ProductApiDocumentationRegistry;
+use Illuminate\View\View;
+
+final class CoreHelpController
+{
+    public function index(PlatformProductRouteLinks $links, ProductApiDocumentationRegistry $references): View
+    {
+        $documents = [
+            'deployer' => collect([
+                ['label' => __('Deployer guides'), 'description' => __('Projects, infrastructure, deployments, automation, and recovery.'), 'href' => route('core.help.deployer')],
+                ['label' => __('Deployer API reference'), 'description' => __('API endpoints and request examples.'), 'href' => route('core.help.deployer.api')],
+                ['label' => __('OpenAPI specification'), 'description' => __('Download the machine-readable Deployer API specification.'), 'href' => $links->to('deployer', 'openapi')],
+            ])->filter(fn (array $item): bool => filled($item['href'] ?? null))->values(),
+            'monitor' => collect([
+                ['label' => __('Monitor API reference'), 'description' => __('Ingestion, checks, incidents, and alerting API guidance.'), 'href' => $references->reference('monitor') === null ? null : route('core.help.monitor.api')],
+            ])->filter(fn (array $item): bool => filled($item['href'] ?? null))->values(),
+            'analytics' => collect(),
+        ];
+
+        return view('core::help.index', [
+            'documents' => $documents,
+        ]);
+    }
+
+    public function deployerGuide(): View
+    {
+        return view('core::help.deployer-guide', [
+            'apiUrl' => route('core.help.deployer.api'),
+        ]);
+    }
+
+    public function deployerApi(PlatformProductRouteLinks $links): View
+    {
+        return view('core::help.deployer-api', [
+            'apiBaseUrl' => rtrim((string) (config('platform.products.deployer.url') ?: 'https://deployer.buildpusher.com'), '/'),
+            'openApiUrl' => $links->to('deployer', 'openapi'),
+        ]);
+    }
+
+    public function monitorApi(ProductApiDocumentationRegistry $references): View
+    {
+        $reference = $references->reference('monitor');
+        abort_if($reference === null, 404);
+
+        $curlExample = implode("\n", [
+            "curl --request POST '{$reference->ingestUrl}' \\",
+            "  --header 'Authorization: Bearer YOUR_ENVIRONMENT_TOKEN' \\",
+            "  --header 'Content-Type: application/json' \\",
+            "  --data '{\"batch_id\":\"connection-test-1\",\"events\":[{\"id\":\"connection-test-1\",\"type\":\"log\",\"name\":\"Connection test\",\"service\":\"my-service\",\"severity\":\"info\"}]}'",
+        ]);
+
+        return view('core::help.monitor-api', [
+            'reference' => $reference,
+            'curlExample' => $curlExample,
+        ]);
+    }
+}

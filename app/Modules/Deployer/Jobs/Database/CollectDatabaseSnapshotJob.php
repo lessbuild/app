@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Jobs\Database;
 
+use App\Modules\Deployer\Models\DatabaseOperationRun;
 use App\Modules\Deployer\Models\EnvironmentResource;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -9,21 +10,29 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $uniqueFor = 240;
+    public int $uniqueFor = 7200;
+
+    public int $tries = 5;
+
+    public int $timeout = 600;
 
     /**
      * Capture the database resource whose inspection snapshot should be collected.
      *
      * @param  int  $resourceId  Managed database resource identifier to inspect.
+     * @param  int|null  $operationRunId  Durable operation record created by the authorized request, when available.
      */
-    public function __construct(public readonly int $resourceId) {}
+    public function __construct(public readonly int $resourceId, public readonly ?int $operationRunId = null) {}
 
     /**
      * Coalesce queued instances of this job for the same database resource.
@@ -32,7 +41,18 @@ class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
      */
     public function uniqueId(): string
     {
-        return (string) $this->resourceId;
+        return (string) ($this->operationRunId ?? $this->resourceId);
+    }
+
+    /** @return array<int, WithoutOverlapping> Serialize remote inspection work for one database resource. */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('database-inspection:'.$this->resourceId))
+                ->shared()
+                ->releaseAfter(10)
+                ->expireAfter(900),
+        ];
     }
 
     /**
@@ -41,6 +61,31 @@ class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
      * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
      */
     public function handle(Runner $runner): void
+    {
+        $operationRun = $this->operationRunId === null
+            ? null
+            : DatabaseOperationRun::query()
+                ->whereKey($this->operationRunId)
+                ->where('environment_resource_id', $this->resourceId)
+                ->where('operation', 'inspection')
+                ->first();
+
+        abort_unless($this->operationRunId === null || $operationRun !== null, 404);
+
+        if ($operationRun !== null && ! $operationRun->claim()) {
+            return;
+        }
+
+        try {
+            $this->collectSnapshot($runner, $operationRun);
+        } catch (Throwable $exception) {
+            $operationRun?->queueForRetry();
+
+            throw $exception;
+        }
+    }
+
+    private function collectSnapshot(Runner $runner, ?DatabaseOperationRun $operationRun): void
     {
         $resource = EnvironmentResource::query()->with('environment.website.server')->find($this->resourceId);
         $server = $resource?->environment?->website?->server;
@@ -66,14 +111,31 @@ class CollectDatabaseSnapshotJob implements ShouldBeUnique, ShouldQueue
                 $values[$match[1]] = (int) $match[2];
             }
         }
-        $resource->snapshots()->create([
-            'size_bytes' => $values['size_bytes'] ?? null,
-            'active_connections' => $values['active_connections'] ?? null,
-            'slow_queries' => 0,
-            'schema_tables' => $values['tables'],
-            'collected_at' => now(),
-        ]);
-        $resource->snapshots()->where('collected_at', '<', now()->subDays(30))->delete();
+        DB::connection('deployer')->transaction(function () use ($resource, $values, $operationRun): void {
+            $resource->snapshots()->create([
+                'size_bytes' => $values['size_bytes'] ?? null,
+                'active_connections' => $values['active_connections'] ?? null,
+                'slow_queries' => 0,
+                'schema_tables' => $values['tables'],
+                'collected_at' => now(),
+            ]);
+            $resource->snapshots()->where('collected_at', '<', now()->subDays(30))->delete();
+            $operationRun?->markSucceeded();
+        });
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        if ($this->operationRunId === null) {
+            return;
+        }
+
+        DatabaseOperationRun::query()
+            ->whereKey($this->operationRunId)
+            ->where('environment_resource_id', $this->resourceId)
+            ->where('operation', 'inspection')
+            ->first()
+            ?->markFailed();
     }
 
     /**

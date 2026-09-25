@@ -12,7 +12,7 @@
 </div>
 <form method="GET" action="{{ route('monitor.incidents.index') }}" class="flex flex-wrap items-end gap-3">
     <x-monitor::ui.select name="status" label="Status" :value="$status" :options="['active' => 'Active incidents', 'all' => 'All incidents', 'open' => 'Open', 'acknowledged' => 'Acknowledged', 'resolved' => 'Closed']" />
-    @if($selectedRule)<input type="hidden" name="rule" value="{{ $selectedRule->id }}"><p class="py-2 text-xs">Rule: {{ $selectedRule->name }}</p>@endif
+    @if($selectedRule)<x-signal.ui.input type="hidden" name="rule" value="{{ $selectedRule->id }}" :restore="false" /><p class="py-2 text-xs">Rule: {{ $selectedRule->name }}</p>@endif
     <x-monitor::ui.button variant="secondary">Filter</x-monitor::ui.button>
 </form>
 <p class="text-xs text-muted dark:text-subtle">Acknowledgement does not indicate recovery. Closed incidents include configuration changes and archived rules; see each incident’s closure reason.</p>

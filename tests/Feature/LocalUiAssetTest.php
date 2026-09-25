@@ -149,7 +149,7 @@ class LocalUiAssetTest extends TestCase
 
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Ship. Monitor. Understand.')
             ->assertSee('The Buildpusher apps')
             ->assertSee('Projects carry across apps')
             ->assertSee('Deployer')
@@ -834,10 +834,10 @@ class LocalUiAssetTest extends TestCase
             ->assertSee('id="main-content" tabindex="-1"', false)
             ->assertSee('aria-label="Product navigation"', false)
             ->assertSee('aria-label="Mobile product navigation"', false)
-            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Ship. Monitor. Understand.')
             ->assertSee('The Buildpusher apps')
             ->assertSee('Projects carry across apps')
-            ->assertSee('Independent app plans')
+            ->assertSee('App-specific access')
             ->assertSee('Each app keeps its own operational database')
             ->assertSee(route('platform.login'))
             ->assertSee(route('platform.register'))
@@ -850,7 +850,7 @@ class LocalUiAssetTest extends TestCase
             $this->get(route('core.marketing.product', $slug))
                 ->assertSuccessful()
                 ->assertSee($product['name'])
-                ->assertSee('Separate app plan')
+                ->assertSee('Product-specific access')
                 ->assertSee('What you can do')
                 ->assertSee('Open '.$product['name']);
         }

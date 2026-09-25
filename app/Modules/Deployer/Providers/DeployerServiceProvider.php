@@ -4,11 +4,14 @@ namespace App\Modules\Deployer\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
+use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\LegacyIdentityResolver;
+use App\Core\Services\PlatformStatusProviderRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -17,6 +20,9 @@ use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ResolveSharedProjectContextForRequest;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
+use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
 use App\Modules\Deployer\Contracts\ServerTroubleshootingTransport;
 use App\Modules\Deployer\Http\Livewire\BuildDeploymentStatus;
 use App\Modules\Deployer\Http\Livewire\RepositoryDeploymentTimeline;
@@ -29,7 +35,10 @@ use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Services\Core\DeployerCustomerStatusPageProvider;
 use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
+use App\Modules\Deployer\Services\Core\DeployerPlatformStatusProvider;
+use App\Modules\Deployer\Services\Core\DeployerProductWorkspaceProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerProjectConnectionDiagnosticProvider;
 use App\Modules\Deployer\Services\Core\DeployerProjectLink;
 use App\Modules\Deployer\Services\Core\DeployerProjectSetup;
@@ -37,6 +46,9 @@ use App\Modules\Deployer\Services\Core\DeployerProjectSummary;
 use App\Modules\Deployer\Services\Core\DeployerResourceDestinationProvider;
 use App\Modules\Deployer\Services\Core\DeployerResourceLinkProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceActivityProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceCostBreakdownProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceCustomerStatusManagementProvider;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceFeedbackHistoryProvider;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
 use App\Modules\Deployer\Services\DashboardCreationDialogData;
@@ -68,6 +80,11 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProjectResourceDestinationRegistry::class)->register('deployer', app(DeployerResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('deployer', app(DeployerProjectSummary::class));
         app(WorkspaceActivityProviderRegistry::class)->register('deployer', app(DeployerWorkspaceActivityProvider::class));
+        app(WorkspaceCostBreakdownProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCostBreakdownProvider::class));
+        app(WorkspaceCustomerStatusManagementProviderRegistry::class)->register('deployer', app(DeployerWorkspaceCustomerStatusManagementProvider::class));
+        app(WorkspaceFeedbackHistoryProviderRegistry::class)->register('deployer', app(DeployerWorkspaceFeedbackHistoryProvider::class));
+        app(CustomerStatusPageProviderRegistry::class)->register('deployer', app(DeployerCustomerStatusPageProvider::class));
+        app(PlatformStatusProviderRegistry::class)->register('deployer', app(DeployerPlatformStatusProvider::class));
         app(ProjectResourceLinkRegistry::class)->register('deployer', app(DeployerResourceLinkProvider::class));
         app(ProjectSetupRegistry::class)->register('deployer', app(DeployerProjectSetup::class));
         app(WorkspaceSearchProviderRegistry::class)->register('deployer', app(DeployerWorkspaceSearchProvider::class));
@@ -82,6 +99,10 @@ final class DeployerServiceProvider extends ModuleServiceProvider
         app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
             'deployer',
             app(DeployerWorkspaceMembershipProjector::class),
+        );
+        app(ProductWorkspaceProvisionerRegistry::class)->register(
+            'deployer',
+            app(DeployerProductWorkspaceProvisioner::class),
         );
 
         Livewire::component('build-deployment-status', BuildDeploymentStatus::class);

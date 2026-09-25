@@ -600,8 +600,12 @@ final class ImportSubscriptionsIntoCore
 
         $planKey = $this->planKeyForPrice($sourceSubscription, $sourceItems);
         $priceId = $this->providerPriceId($sourceSubscription, $sourceItems, $planKey);
-        $status = (string) $sourceSubscription->stripe_status;
         $endsAt = $sourceSubscription->ends_at ?? null;
+        $isInCashierGracePeriod = $endsAt !== null && Carbon::parse($endsAt)->isFuture();
+        $sourceStatus = (string) $sourceSubscription->stripe_status;
+        // Cashier stores a period-end cancellation as `canceled` plus a future ends_at.
+        // Core expresses that same still-entitled period as active with cancel_at set.
+        $status = $sourceStatus === 'canceled' && $isInCashierGracePeriod ? 'active' : $sourceStatus;
         $subscription = ProductSubscription::query()->create([
             'workspace_id' => $workspace->getKey(),
             'billing_customer_id' => $billingCustomerId,
@@ -615,8 +619,8 @@ final class ImportSubscriptionsIntoCore
             'quantity' => (int) ($sourceSubscription->quantity ?? 1),
             'trial_ends_at' => $sourceSubscription->trial_ends_at ?? null,
             'current_period_starts_at' => null,
-            'current_period_ends_at' => null,
-            'cancel_at' => $endsAt !== null && Carbon::parse($endsAt)->isFuture() ? $endsAt : null,
+            'current_period_ends_at' => $isInCashierGracePeriod ? $endsAt : null,
+            'cancel_at' => $isInCashierGracePeriod ? $endsAt : null,
             'canceled_at' => $status === 'canceled' && $endsAt !== null && Carbon::parse($endsAt)->isPast() ? $endsAt : null,
             'metadata' => [
                 'migration_source' => 'deployer',

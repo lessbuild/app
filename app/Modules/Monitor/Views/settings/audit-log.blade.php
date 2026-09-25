@@ -12,7 +12,7 @@
         </x-monitor::ui.page-header>
 
         @unless($auditLogEnabled)
-            <section class="ui-panel overflow-hidden p-6 sm:p-8">
+            <x-signal.ui.panel as="section" class="overflow-hidden p-6 sm:p-8">
                 <div class="relative flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
                     <div class="max-w-2xl">
                         <div class="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-primary"><x-monitor::icon name="shield" class="h-4 w-4" />Paid team control</div>
@@ -23,17 +23,17 @@
                         <x-monitor::ui.button :href="route('monitor.settings.billing')" class="shrink-0">View plans <x-monitor::icon name="arrow-up-right" class="h-3.5 w-3.5" /></x-monitor::ui.button>
                     @endcan
                 </div>
-            </section>
+            </x-signal.ui.panel>
         @else
-            <section class="ui-panel p-5">
+            <x-signal.ui.panel as="section" class="p-5">
                 <form method="GET" action="{{ route('monitor.settings.audit-log') }}" class="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
                     <x-monitor::ui.select name="action" label="Change type" :value="$selectedAction" :options="$actions" placeholder="All changes" />
                     <x-monitor::ui.select name="actor_id" label="Actor" :value="$selectedActor" :options="$actors->mapWithKeys(fn ($actor) => [$actor->id => $actor->name])->all()" placeholder="Everyone" />
                     <div class="flex gap-2"><x-monitor::ui.button type="submit">Filter</x-monitor::ui.button><x-monitor::ui.button :href="route('monitor.settings.audit-log')" variant="secondary">Reset</x-monitor::ui.button></div>
                 </form>
-            </section>
+            </x-signal.ui.panel>
 
-            <section class="ui-panel overflow-hidden">
+            <x-signal.ui.panel as="section" class="overflow-hidden">
                 <div class="border-b border-line px-5 py-4 dark:border-line"><h2 class="font-bold">Workspace activity</h2><p class="mt-1 text-xs text-muted dark:text-subtle">Configuration changes are retained with the workspace and never include raw secrets.</p></div>
                 <div class="divide-y divide-line dark:divide-line">
                     @forelse($auditLogs as $log)
@@ -55,7 +55,7 @@
                     @endforelse
                 </div>
                 @if($auditLogs?->hasPages())<div class="border-t border-line p-5 dark:border-line">{{ $auditLogs->links() }}</div>@endif
-            </section>
+            </x-signal.ui.panel>
         @endunless
     </div>
 @endsection

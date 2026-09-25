@@ -1,16 +1,16 @@
-<section class="ui-panel space-y-5 p-6">
+<x-signal.ui.panel as="section" class="space-y-5 p-6">
     <div><h2 class="text-lg font-bold">Connect a queue collector and workers</h2><p class="mt-2 text-sm text-muted dark:text-subtle">Language-neutral JSON endpoints for one logical queue. Integrate with your existing collector or worker instrumentation; no automatic broker discovery or job control is performed.</p></div>
-    @if(!request()->isSecure())<p class="ui-alert ui-alert-warning block p-4 text-sm text-warning dark:text-warning">This preview uses HTTP. Use disposable test keys only. Configure HTTPS before sending production credentials, then rotate preview-created keys.</p>@endif
+    @if(!request()->isSecure())<x-signal.ui.alert as="p" tone="warning" class="block p-4 text-sm text-warning dark:text-warning">This preview uses HTTP. Use disposable test keys only. Configure HTTPS before sending production credentials, then rotate preview-created keys.</x-signal.ui.alert>@endif
     @if($queueSecret !== null)
-    <div class="ui-alert border-primary/30 bg-primary-soft block space-y-2 p-4">
+    <x-signal.ui.alert as="div" tone="info" class="border-primary/30 bg-primary-soft block space-y-2 p-4">
         <p class="text-sm font-bold">Copy your queue key now</p><code class="block break-all text-sm">{{ $queueSecret }}</code>
         <p class="text-xs">This is its only display. Store it in a secret manager as BEACON_QUEUE_KEY. Never put it in a URL, job payload or repository.</p>
-    </div>
+    </x-signal.ui.alert>
     @endif
     @can('update', $monitor)
     <div class="flex flex-wrap gap-3">
-        <form method="POST" action="{{ route('monitor.monitors.queue-key.store', $monitor) }}">@csrf<input type="hidden" name="version" value="{{ $monitor->state_version }}"><x-monitor::ui.button variant="secondary">{{ $monitor->queue_token_hash ? 'Rotate queue key' : 'Generate queue key' }}</x-monitor::ui.button></form>
-        @if($monitor->queue_token_hash)<form method="POST" action="{{ route('monitor.monitors.queue-key.destroy', $monitor) }}">@csrf @method('DELETE')<input type="hidden" name="version" value="{{ $monitor->state_version }}"><x-monitor::ui.button variant="secondary">Revoke key and pause</x-monitor::ui.button></form>@endif
+        <form method="POST" action="{{ route('monitor.monitors.queue-key.store', $monitor) }}">@csrf<x-signal.ui.input type="hidden" name="version" value="{{ $monitor->state_version }}" :restore="false" /><x-monitor::ui.button variant="secondary">{{ $monitor->queue_token_hash ? 'Rotate queue key' : 'Generate queue key' }}</x-monitor::ui.button></form>
+        @if($monitor->queue_token_hash)<form method="POST" action="{{ route('monitor.monitors.queue-key.destroy', $monitor) }}">@csrf @method('DELETE')<x-signal.ui.input type="hidden" name="version" value="{{ $monitor->state_version }}" :restore="false" /><x-monitor::ui.button variant="secondary">Revoke key and pause</x-monitor::ui.button></form>@endif
     </div>
     <p class="text-xs text-muted dark:text-subtle">Rotation immediately invalidates the old key without resetting deadlines or worker state. Revocation pauses the monitor and retains active incidents.</p>
     @endcan
@@ -43,4 +43,4 @@ Content-Type: application/json
         <p class="text-xs leading-5 text-muted dark:text-subtle">Keep heartbeats running during long jobs, using a background heartbeat or sidecar. Before/after hooks alone cannot establish liveness while a job is running. Reporting failures must not change job outcomes. Durations start at server receipt of the first busy signal; no client runtime, payload, stack trace or hostname is collected.</p>
     </x-monitor::ui.accordion>
     <p class="text-xs leading-5 text-muted dark:text-subtle">Limits: 2 KiB JSON, no compression, 60 snapshot requests and 600 worker requests per minute per monitor, up to 100 live workers. Share this key only with trusted reporting processes. Pausing the environment also pauses its queue monitors; resume each monitor explicitly. Source archiving revokes queue keys. This feature does not retry, delete or inspect customer jobs.</p>
-</section>
+</x-signal.ui.panel>

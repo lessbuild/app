@@ -42,20 +42,20 @@ Accept: application/json</code></pre>
                 ];
             @endphp
 
-            <details id="api-contents" class="ui-card group mt-6 overflow-hidden">
+            <x-signal.ui.card as="details" class="group mt-6 overflow-hidden" id="api-contents">
                 <summary class="flex cursor-pointer list-none items-center justify-between gap-4 px-5 py-4 font-bold text-ink sm:px-6 [&::-webkit-details-marker]:hidden">
                     <span>{{ __('API operations') }}</span>
                     <span class="flex items-center gap-2 text-sm font-normal text-muted"><span>{{ count($apiOperations) }} {{ __('endpoints') }}</span><span class="text-lg leading-none transition group-open:rotate-45" aria-hidden="true">+</span></span>
                 </summary>
                 <nav class="grid gap-2 border-t border-line p-4 sm:grid-cols-2" aria-label="{{ __('API operations') }}">
                     @foreach ($apiOperations as [$anchor, $method, $path, $scope, $description])
-                        <a href="#api-operation-{{ $anchor }}" class="ui-card ui-card--interactive block px-4 py-3">
+                        <x-signal.ui.card as="a" tone="interactive" class="block px-4 py-3" href="#api-operation-{{ $anchor }}">
                             <x-signal.ui.badge tone="accent" class="font-mono">{{ $method }}</x-signal.ui.badge>
                             <code class="mt-1 block break-all text-sm text-ink">{{ $path }}</code>
-                        </a>
+                        </x-signal.ui.card>
                     @endforeach
                 </nav>
-            </details>
+            </x-signal.ui.card>
 
             <x-signal.ui.card class="mt-6 overflow-hidden">
                 <div class="border-b border-line p-5 sm:p-6">

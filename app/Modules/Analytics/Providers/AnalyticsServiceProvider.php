@@ -7,7 +7,9 @@ use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
+use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\LegacyIdentityResolver;
+use App\Core\Services\PlatformStatusProviderRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -20,6 +22,8 @@ use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\User;
 use App\Modules\Analytics\Policies\SitePolicy;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
+use App\Modules\Analytics\Services\Core\AnalyticsPlatformStatusProvider;
+use App\Modules\Analytics\Services\Core\AnalyticsProductWorkspaceProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectLink;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSetup;
 use App\Modules\Analytics\Services\Core\AnalyticsProjectSummary;
@@ -68,6 +72,11 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
     {
         parent::boot();
 
+        app(PlatformStatusProviderRegistry::class)->register(
+            'analytics',
+            app(AnalyticsPlatformStatusProvider::class),
+        );
+
         if (! config('platform.products.analytics.enabled', false)
             || ! filled(config('platform.products.analytics.host'))) {
             return;
@@ -92,6 +101,10 @@ final class AnalyticsServiceProvider extends ModuleServiceProvider
         app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
             'analytics',
             app(AnalyticsWorkspaceMembershipProjector::class),
+        );
+        app(ProductWorkspaceProvisionerRegistry::class)->register(
+            'analytics',
+            app(AnalyticsProductWorkspaceProvisioner::class),
         );
 
         Gate::policy(Site::class, SitePolicy::class);

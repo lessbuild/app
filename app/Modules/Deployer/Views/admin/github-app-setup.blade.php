@@ -30,9 +30,9 @@
                 <li>{{ __('After installation, start a fresh GitHub App connection from the Providers page.') }}</li>
             </ol>
 
-            <p class="ui-alert ui-alert--warning mt-4 text-sm leading-6">
+            <x-signal.ui.alert as="p" tone="warning" class="mt-4 text-sm leading-6">
                 {{ __('The private key is never displayed, flashed into the session, written to logs, or included in a response. Do not upload a GitHub token, App ID, slug, webhook secret, or fingerprint.') }}
-            </p>
+            </x-signal.ui.alert>
 
             <form method="POST" action="{{ route('admin.github-app.setup.store') }}" enctype="multipart/form-data" class="mt-6 space-y-4">
                 @csrf

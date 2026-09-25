@@ -16,7 +16,7 @@
         <x-signal.ui.badge :tone="$incidentTone">{{ str($incident->status)->headline() }}</x-signal.ui.badge>
     </div>
 
-    <p class="ui-panel bg-surface-muted p-4 text-sm leading-6 text-ink">{{ $incident->summary }}</p>
+    <x-signal.ui.panel as="p" class="bg-surface-muted p-4 text-sm leading-6 text-ink">{{ $incident->summary }}</x-signal.ui.panel>
 
     <section aria-labelledby="operational-incident-timeline-heading">
         <h4 id="operational-incident-timeline-heading" class="ui-eyebrow">{{ __('Timeline') }}</h4>

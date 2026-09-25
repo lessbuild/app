@@ -8,9 +8,9 @@
 @endphp
 
 <div data-build-comparison-content class="space-y-6">
-    <div class="ui-alert ui-alert--info p-4">
+    <x-signal.ui.alert tone="info" class="p-4">
         {{ __('Compare recorded deployment outcomes and operator context. This view does not fetch source code or contact the repository provider.') }}
-    </div>
+    </x-signal.ui.alert>
 
     <x-signal.ui.insights
         id="build-comparison-insights"
@@ -45,7 +45,7 @@
         </dl>
     </x-signal.ui.insights>
 
-    <div class="ui-card divide-y divide-line overflow-hidden" aria-label="{{ __('Deployment comparison') }}">
+    <x-signal.ui.card class="divide-y divide-line overflow-hidden" aria-label="{{ __('Deployment comparison') }}">
         @foreach ([
             ['label' => __('Status'), 'baseline' => str($baseline->status)->replace('_', ' ')->title(), 'current' => str($build->status)->replace('_', ' ')->title()],
             ['label' => __('Revision'), 'baseline' => $baseline->shortRevision(), 'current' => $build->shortRevision(), 'revision' => true],
@@ -95,5 +95,5 @@
                 </dl>
             </section>
         @endforeach
-    </div>
+    </x-signal.ui.card>
 </div>

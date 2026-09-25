@@ -6,11 +6,11 @@
     <a href="{{ $alertRule ? route('monitor.alerts.show', $alertRule) : route('monitor.alerts.index') }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">← Alert rules</a>
     <x-monitor::ui.page-header :title="$alertRule ? 'Edit alert rule' : 'Create alert rule'" description="A rule monitors one environment and optionally one exact service label." />
     @if($environmentOptions === [])
-        <p class="ui-card shadow-none p-6">Create an application and environment before adding a rule. <a href="{{ route('monitor.applications.index') }}" class="font-semibold text-primary dark:text-primary">Manage applications →</a></p>
+        <x-signal.ui.card as="p" class="shadow-none p-6">Create an application and environment before adding a rule. <a href="{{ route('monitor.applications.index') }}" class="font-semibold text-primary dark:text-primary">Manage applications →</a></x-signal.ui.card>
     @else
-    <form method="POST" action="{{ $alertRule ? route('monitor.alerts.update', $alertRule) : route('monitor.alerts.store') }}" class="ui-panel space-y-5 p-6">
+    <x-signal.ui.panel as="form" method="POST" action="{{ $alertRule ? route('monitor.alerts.update', $alertRule) : route('monitor.alerts.store') }}" class="space-y-5 p-6">
         @csrf
-        @if($alertRule) @method('PATCH') <input type="hidden" name="version" value="{{ $alertRule->state_version }}"> @endif
+        @if($alertRule) @method('PATCH') <x-signal.ui.input type="hidden" name="version" value="{{ $alertRule->state_version }}" :restore="false" /> @endif
         <x-monitor::ui.input name="name" label="Rule name (no secrets)" :value="$alertRule?->name" maxlength="120" required />
         <x-monitor::ui.select name="environment_id" label="Environment" :value="$alertRule?->environment_id" :options="$alertRule ? [$alertRule->environment_id => $environmentOptions[$alertRule->environment_id]] : $environmentOptions" required />
         @php($metricValue = old('metric', $alertRule?->metric->value ?? ($selectedSeries ? 'numeric_metric' : 'request_error_rate')))
@@ -31,7 +31,7 @@
             @if($alertRule)<p>Changing monitoring conditions closes any active incident as “rule changed” and starts a new warm-up. Pausing retains active incidents; resuming starts a full new observation window.</p>@endif
         </div>
         <x-monitor::ui.button>{{ $alertRule ? 'Save rule' : 'Create rule' }}</x-monitor::ui.button>
-    </form>
+    </x-signal.ui.panel>
     @endif
 </div>
 @endsection

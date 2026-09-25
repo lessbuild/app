@@ -7,6 +7,7 @@ use App\Core\Models\Workspace as CoreWorkspace;
 use App\Core\Services\Auth\ProductAuthentication;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
+use App\Modules\Analytics\Actions\Workspaces\EnsurePersonalWorkspace;
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Invitation;
 use App\Modules\Analytics\Models\User;
@@ -16,6 +17,7 @@ use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Str;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tests\Modules\Analytics\RefreshAnalyticsDatabase;
 use Tests\TestCase;
 
@@ -106,6 +108,48 @@ class WorkspaceAccessTest extends TestCase
         $this->assertFalse($access->hasAccess($principal, $analyticsWorkspace));
         $this->assertNull($access->roleFor($principal, $analyticsWorkspace));
         $this->assertCount(0, $access->workspacesFor($principal));
+    }
+
+    public function test_core_authority_does_not_auto_create_an_unlinked_analytics_workspace(): void
+    {
+        config(['platform.products.analytics.auth_authority' => 'core']);
+
+        $platformUser = PlatformUser::query()->forceCreate([
+            'id' => (string) Str::ulid(),
+            'name' => 'Core Analytics member',
+            'email' => 'core-no-workspace@example.test',
+            'email_normalized' => 'core-no-workspace@example.test',
+            'password' => 'hashed-password',
+            'status' => 'active',
+        ]);
+        $productUserId = DB::connection('analytics')->table('users')->insertGetId([
+            'name' => 'Analytics member',
+            'email' => 'analytics-no-workspace@example.test',
+            'password' => 'hashed-password',
+            'platform_user_id' => $platformUser->getKey(),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('core')->table('legacy_identity_maps')->insert([
+            'id' => (string) Str::ulid(),
+            'source_product' => 'analytics',
+            'source_entity' => 'user',
+            'source_id' => (string) $productUserId,
+            'canonical_entity' => 'user',
+            'canonical_id' => $platformUser->getKey(),
+            'status' => 'reconciled',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        try {
+            app(EnsurePersonalWorkspace::class)->handle($platformUser);
+            $this->fail('Core authority must require a Core workspace grant.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(409, $exception->getStatusCode());
+        }
+
+        $this->assertSame(0, Workspace::query()->count());
     }
 
     public function test_owner_can_invite_and_recipient_can_join_workspace(): void

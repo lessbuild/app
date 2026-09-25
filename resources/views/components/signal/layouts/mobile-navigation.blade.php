@@ -28,7 +28,7 @@
     :id="$id"
     :title="__('Application navigation')"
     :brand-url="$brandUrl"
-    :breakpoint="1024"
+    :breakpoint="1280"
     desktop-navigation="#signal-product-navigation"
 >
     <div class="grid gap-1">
@@ -36,7 +36,22 @@
         @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.dashboard'))
             <x-signal.layouts.navigation-link :item="['label' => __('Overview'), 'href' => route('core.workspace.dashboard', $currentWorkspace), 'active' => request()->routeIs('core.workspace.dashboard')]" class="w-full justify-start" />
         @endif
-        <a class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink" href="{{ $projectsUrl }}">{{ __('Projects') }}</a>
+        @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.subscriptions'))
+            <x-signal.layouts.navigation-link :item="['label' => __('Plans'), 'href' => route('core.workspace.subscriptions', $currentWorkspace), 'active' => request()->routeIs('core.workspace.subscriptions')]" class="w-full justify-start" />
+        @endif
+        @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.admin'))
+            <x-signal.layouts.navigation-link :item="['label' => __('Manage'), 'href' => route('core.workspace.admin', $currentWorkspace), 'active' => request()->routeIs('core.workspace.admin')]" class="w-full justify-start" />
+        @endif
+        @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.costs'))
+            <x-signal.layouts.navigation-link :item="['label' => __('Costs'), 'href' => route('core.workspace.costs', $currentWorkspace), 'active' => request()->routeIs('core.workspace.costs')]" class="w-full justify-start" />
+        @endif
+        @if ($activeProduct === 'core' && $currentWorkspace && \Illuminate\Support\Facades\Route::has('core.workspace.feedback.index'))
+            <x-signal.layouts.navigation-link :item="['label' => __('Feedback'), 'href' => route('core.workspace.feedback.index', $currentWorkspace), 'active' => request()->routeIs('core.workspace.feedback.*')]" class="w-full justify-start" />
+        @endif
+        @if (\Illuminate\Support\Facades\Route::has('core.help'))
+            <x-signal.layouts.navigation-link :item="['label' => __('Help and guides'), 'href' => route('core.help'), 'active' => request()->routeIs('core.help')]" class="w-full justify-start" />
+        @endif
+        <x-signal.layouts.navigation-link :item="['label' => __('Projects'), 'href' => $projectsUrl, 'active' => request()->routeIs('projects.*', 'core.projects.*')]" class="w-full justify-start" />
         @foreach (['deployer', 'monitor', 'analytics'] as $productKeyOption)
             @php
                 $productConfig = $products[$productKeyOption] ?? [];
@@ -57,25 +72,22 @@
             @endif
         @endforeach
 
-        @if (count($workspaceOptions))
-            <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Switch workspace') }}</p>
-            @foreach ($workspaceOptions as $workspace)
-                <form method="POST" action="{{ route($workspaceSwitchRoute, $workspace) }}">
-                    @csrf
-                    <button type="submit" class="flex min-h-10 w-full items-center rounded-control px-3 text-left text-sm font-bold {{ $currentWorkspace?->id === $workspace->id ? 'bg-primary-soft text-primary' : 'text-muted hover:bg-surface-muted hover:text-ink' }}" @if($currentWorkspace?->id === $workspace->id) aria-current="true" @endif>{{ $workspace->name }}</button>
-                </form>
-            @endforeach
-            @if ($workspaceManageUrl)
-                <a href="{{ $workspaceManageUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-primary hover:bg-surface-muted">{{ __('Manage workspace') }}</a>
-            @endif
+        @if (count($workspaceOptions) || $workspaceManageUrl)
+            <x-signal.layouts.workspace-switcher
+                :current-workspace="$currentWorkspace"
+                :workspace-options="$workspaceOptions"
+                :switch-route="$workspaceSwitchRoute"
+                :manage-url="$workspaceManageUrl"
+                variant="mobile"
+            />
         @endif
 
         @if ($showProjectContext)
             <p class="px-3 pb-1 pt-2 text-[10px] font-extrabold uppercase tracking-[0.16em] text-subtle">{{ $contextLabel }}</p>
-            <a href="{{ $contextIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ $contextIndexLabel }}</a>
+            <x-signal.ui.link href="{{ $contextIndexUrl }}" variant="muted" class="w-full justify-start">{{ $contextIndexLabel }}</x-signal.ui.link>
             @foreach ($contextOptions as $contextOption)
                 @if ($contextOptionHref = data_get($contextOption, 'href'))
-                    <a href="{{ $contextOptionHref }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ data_get($contextOption, 'name') }}</a>
+                    <x-signal.ui.link href="{{ $contextOptionHref }}" variant="muted" class="w-full justify-start">{{ data_get($contextOption, 'name') }}</x-signal.ui.link>
                 @endif
             @endforeach
         @endif
@@ -85,10 +97,10 @@
             @if ($environmentContextUnavailable)
                 <p class="px-3 py-2 text-xs font-bold text-warning" role="status">{{ __('Selected environment unavailable') }}</p>
             @endif
-            <a href="{{ $environmentIndexUrl }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('All environments') }}</a>
+            <x-signal.ui.link href="{{ $environmentIndexUrl }}" variant="muted" class="w-full justify-start">{{ __('All environments') }}</x-signal.ui.link>
             @foreach ($environmentOptions as $environmentOption)
                 @if ($environmentOptionHref = data_get($environmentOption, 'href'))
-                    <a href="{{ $environmentOptionHref }}" class="flex min-h-10 items-center rounded-control px-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ data_get($environmentOption, 'name') }}</a>
+                    <x-signal.ui.link href="{{ $environmentOptionHref }}" variant="muted" class="w-full justify-start">{{ data_get($environmentOption, 'name') }}</x-signal.ui.link>
                 @endif
             @endforeach
         @endif
@@ -128,7 +140,7 @@
         @if ($logoutUrl)
             <form action="{{ $logoutUrl }}" method="post" class="mt-1 border-t border-line pt-1">
                 @csrf
-                <button type="submit" class="flex min-h-10 w-full items-center rounded-control px-3 text-left text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Log out') }}</button>
+                <x-signal.ui.button type="submit" variant="quiet" class="min-h-10 w-full justify-start rounded-control px-3 text-left text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Log out') }}</x-signal.ui.button>
             </form>
         @endif
     </div>

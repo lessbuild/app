@@ -111,7 +111,7 @@
 
     <div class="mt-8 grid gap-6 xl:grid-cols-[1.15fr_.85fr]">
         <section id="organization-members" class="scroll-mt-24">
-        <x-forms.section
+        <x-signal.ui.settings-section
             :title="__('Members')"
             :description="__('People with access to :workspace.', ['workspace' => $organization->name])"
         >
@@ -149,12 +149,12 @@
                     </div>
                 @endforeach
             </div>
-        </x-forms.section>
+        </x-signal.ui.settings-section>
         </section>
 
         <div class="space-y-6">
             @if ($canManage)
-                <x-forms.section
+                <x-signal.ui.settings-section
                     :title="__('Security policy')"
                     :description="__('Enforce access requirements for everyone in this workspace.')"
                     :collapsible="true"
@@ -227,9 +227,9 @@
                             <x-signal.ui.button type="submit" variant="primary">{{ __('Save security policy') }}</x-signal.ui.button>
                         </div>
                     </form>
-                </x-forms.section>
+                </x-signal.ui.settings-section>
 
-                <x-forms.section
+                <x-signal.ui.settings-section
                     :title="__('Notification preferences')"
                     :description="__('Choose which events create inbox notifications for this workspace. Alert destinations are configured separately in Observability.')"
                     :collapsible="true"
@@ -254,10 +254,10 @@
                             variant="secondary"
                         >{{ __('Edit preferences') }}</x-signal.ui.button>
                     </div>
-                </x-forms.section>
+                </x-signal.ui.settings-section>
             @endif
 
-            <x-forms.section
+            <x-signal.ui.settings-section
                 :title="__('Your workspaces')"
                 :description="__('Switch the active workspace.')"
                 :collapsible="true"
@@ -274,7 +274,7 @@
                         </form>
                     @endforeach
                 </div>
-            </x-forms.section>
+            </x-signal.ui.settings-section>
         </div>
     </div>
 

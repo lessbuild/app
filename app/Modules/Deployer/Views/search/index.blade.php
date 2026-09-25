@@ -112,12 +112,12 @@
                             </div>
                             <div class="space-y-2">
                                 @foreach ($group['results'] as $result)
-                                    <a href="{{ $result['url'] }}" class="ui-card ui-card--interactive block bg-surface-muted p-3">
+                                    <x-signal.ui.card as="a" tone="interactive" class="block bg-surface-muted p-3" href="{{ $result['url'] }}">
                                         <span class="block font-medium text-ink">{{ $result['title'] }}</span>
                                         @if ($result['subtitle'])
                                             <span class="mt-1 block truncate text-sm text-muted">{{ $result['subtitle'] }}</span>
                                         @endif
-                                    </a>
+                                    </x-signal.ui.card>
                                 @endforeach
                             </div>
                         </x-signal.ui.card>

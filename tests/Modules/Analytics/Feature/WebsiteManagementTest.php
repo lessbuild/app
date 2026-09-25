@@ -119,6 +119,17 @@ class WebsiteManagementTest extends TestCase
             ->assertSee('aria-describedby="name-error"', false);
     }
 
+    public function test_viewer_cannot_open_site_creation(): void
+    {
+        [, $site] = $this->site();
+        $viewer = User::factory()->create();
+        $site->workspace->users()->attach($viewer, ['role' => WorkspaceRole::Viewer->value]);
+
+        $this->actingAs($viewer)
+            ->get(route('analytics.sites.create'))
+            ->assertForbidden();
+    }
+
     public function test_owner_deleting_a_site_removes_its_detail_rows(): void
     {
         [$user, $site] = $this->site();

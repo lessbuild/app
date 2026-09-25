@@ -24,7 +24,7 @@ class DashboardTest extends TestCase
     {
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Ship. Monitor. Understand.')
             ->assertSee('Deployer')
             ->assertSee('Monitor')
             ->assertSee('Analytics');
@@ -33,11 +33,11 @@ class DashboardTest extends TestCase
     public function test_signed_in_visitors_can_open_the_public_homepage_and_dashboard_directly(): void
     {
         $verified = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($verified)->get('/')->assertSuccessful()->assertSee('One workspace for the work behind your software.');
+        $this->actingAs($verified)->get('/')->assertSuccessful()->assertSee('Ship. Monitor. Understand.');
         $this->get(route('dashboard'))->assertSuccessful();
 
         $unverified = User::factory()->unverified()->create();
-        $this->actingAs($unverified)->get('/')->assertSuccessful()->assertSee('One workspace for the work behind your software.');
+        $this->actingAs($unverified)->get('/')->assertSuccessful()->assertSee('Ship. Monitor. Understand.');
         $this->get(route('dashboard'))->assertRedirect(route('verification.notice'));
     }
 

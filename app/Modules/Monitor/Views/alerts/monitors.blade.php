@@ -12,7 +12,7 @@
     <x-monitor::ui.select name="check_type" label="Check type" :value="$checkType" :options="['' => 'All types'] + \App\Modules\Monitor\Http\Requests\SaveMonitorRequest::TYPES" />
     <x-monitor::ui.button variant="secondary">Filter</x-monitor::ui.button>
 </form>
-<div class="ui-card overflow-x-auto">
+<x-signal.ui.card as="div" class="overflow-x-auto">
     <x-monitor::ui.table caption="Monitors and latest results" :framed="false">
         <x-slot:head><tr><th scope="col">Monitor / environment</th><th scope="col">Latest result</th><th scope="col">Interval</th><th scope="col">Last checked (UTC)</th></tr></x-slot:head>
             @forelse($monitors as $monitor)
@@ -26,7 +26,7 @@
             <tr><td colspan="4" class="py-14 text-center text-muted dark:text-subtle">No monitors in this view. Add an HTTP, DNS, TLS or TCP check, job heartbeat or queue monitor.</td></tr>
             @endforelse
     </x-monitor::ui.table>
-</div>
+</x-signal.ui.card>
 {{ $monitors->links() }}
 <p class="text-xs leading-5 text-muted dark:text-subtle">Checks currently run from one location. An unknown or stale result is not evidence that an endpoint is up or down. Private-network targets and automatic redirects are blocked.</p>
 @endsection

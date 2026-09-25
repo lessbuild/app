@@ -22,6 +22,9 @@ return [
             'webhook_tolerance_seconds' => (int) env('MONITOR_STRIPE_WEBHOOK_TOLERANCE_SECONDS', env('STRIPE_WEBHOOK_TOLERANCE_SECONDS', 300)),
         ],
     ],
+    'platform_status' => [
+        'worker_stale_after_seconds' => (int) env('MONITOR_WORKER_STALE_AFTER_SECONDS', 180),
+    ],
     'telemetry' => [
         'queue_connection' => env('MONITOR_TELEMETRY_QUEUE_CONNECTION', 'telemetry'),
         'collection_stale_after_minutes' => (int) env('MONITOR_COLLECTION_STALE_AFTER_MINUTES', env('BEACON_COLLECTION_STALE_AFTER_MINUTES', 60)),

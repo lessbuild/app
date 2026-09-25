@@ -57,7 +57,7 @@
                                     \App\Modules\Deployer\Models\ServerCommandExecution::STATUS_CANCELED => 'warning',
                                     default => 'accent',
                                 })
-                                <article class="ui-card ui-card--muted p-4" wire:key="server-command-{{ $execution->id }}">
+                                <x-signal.ui.card as="article" tone="muted" class="p-4" wire:key="server-command-{{ $execution->id }}">
                                     <div class="flex flex-wrap items-start justify-between gap-3">
                                         <code class="min-w-0 flex-1 break-all text-xs text-ink">{{ $execution->command }}</code>
                                         <x-signal.ui.badge :tone="$statusTone">{{ $execution->status }}</x-signal.ui.badge>
@@ -110,7 +110,7 @@
                                             @endif
                                         </div>
                                     </div>
-                                </article>
+                                </x-signal.ui.card>
                             @empty
                                 <x-signal.ui.empty-state :title="__('No commands have been run on this server yet.')" />
                             @endforelse

@@ -243,7 +243,7 @@
                         };
                     @endphp
                     <a href="{{ route('builds.show', $build) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 transition hover:border-line" data-observability-context-deployment>
-                        <span class="ui-status-dot ui-status-dot-lg" style="--ui-status-dot: {{ $buildColor }}" aria-hidden="true"></span>
+                        <x-signal.ui.status-dot size="lg" :color="$buildColor" aria-hidden="true" />
                         <span class="min-w-0 flex-1">
                             <span class="block truncate font-bold text-ink">{{ $build->repository?->name ?? __('Deployment') }}</span>
                             <span class="mt-0.5 block truncate font-mono text-xs text-muted">{{ $build->shortRevision() ?? __('Revision pending') }} · {{ str((string) $build->trigger_source)->headline() }}</span>
@@ -296,7 +296,7 @@
             <div class="ui-inventory-list mt-4 space-y-2">
                 @forelse($context->healthChecks as $check)
                     <div class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3" data-observability-context-health>
-                        <span class="ui-status-dot ui-status-dot-lg" style="--ui-status-dot: {{ $check->successful ? 'var(--ui-success)' : 'var(--ui-danger)' }}" aria-hidden="true"></span>
+                        <x-signal.ui.status-dot size="lg" :color="$check->successful ? 'var(--ui-success)' : 'var(--ui-danger)'" aria-hidden="true" />
                         <span class="min-w-0 flex-1">
                             <span class="block font-bold text-ink">{{ $check->successful ? __('Healthy response') : __('Failed response') }}</span>
                             <span class="mt-0.5 block text-xs text-muted">{{ str((string) $check->source)->headline() }} · {{ $check->http_status ?: __('Transport failure') }} · {{ $check->duration_ms !== null ? $check->duration_ms.' ms' : __('No duration') }}</span>

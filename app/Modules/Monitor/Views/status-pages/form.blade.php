@@ -7,16 +7,16 @@
     <form method="POST" action="{{ $statusPage->exists ? route('monitor.status-pages.update', $statusPage) : route('monitor.status-pages.store') }}" class="space-y-6">
         @csrf
         @if($statusPage->exists) @method('PATCH') @endif
-        <section class="ui-panel space-y-5 p-6">
+        <x-signal.ui.panel as="section" class="space-y-5 p-6">
             <div class="grid gap-5 sm:grid-cols-2">
                 <x-monitor::ui.input name="name" label="Page name" :value="$statusPage->name" maxlength="120" required />
                 <x-monitor::ui.input name="slug" label="Public URL slug" :value="$statusPage->slug" maxlength="100" placeholder="acme-status" />
             </div>
             <x-monitor::ui.textarea name="description" label="Customer-facing description" :value="$statusPage->description" maxlength="1000" />
-            <input type="hidden" name="published" value="0">
+            <x-signal.ui.input type="hidden" name="published" value="0" :restore="false" />
             <x-monitor::ui.choice id="published" name="published" :checked="old('published', session()->hasOldInput() ? false : $statusPage->published)" label="Publish this page" description="Anyone with the public URL can see component names, high-level health, and active monitor incidents." card />
-        </section>
-        <fieldset class="ui-card space-y-4 p-6" aria-describedby="components-help{{ $errors->has('monitor_ids') ? ' components-error' : '' }}">
+        </x-signal.ui.panel>
+        <x-signal.ui.card as="fieldset" class="space-y-4 p-6" aria-describedby="components-help{{ $errors->has('monitor_ids') ? ' components-error' : '' }}">
             <legend class="px-2 font-bold">Public components</legend>
             <p id="components-help" class="ui-help">Order follows the list below. Keep sensitive internal monitors out of customer-facing pages.</p>
             @php
@@ -35,11 +35,11 @@
                 @endforelse
             </div>
             @error('monitor_ids')<p id="components-error" class="ui-error">{{ $message }}</p>@enderror
-        </fieldset>
+        </x-signal.ui.card>
         <div class="flex flex-wrap items-center justify-between gap-3"><x-monitor::ui.button :href="route('monitor.status-pages.index')" variant="quiet">Cancel</x-monitor::ui.button><x-monitor::ui.button>{{ $statusPage->exists ? 'Save status page' : 'Create status page' }}</x-monitor::ui.button></div>
     </form>
     @if($statusPage->exists)
-        <section class="ui-alert ui-alert-danger block p-5"><h2 class="text-sm font-bold text-danger dark:text-danger">Delete this status page</h2><p class="mt-1 text-xs leading-5 text-danger dark:text-danger">The public URL will stop working immediately. Monitors and their history are not affected.</p><form method="POST" action="{{ route('monitor.status-pages.destroy', $statusPage) }}" class="mt-4">@csrf @method('DELETE')<x-monitor::ui.button variant="secondary" class="border-danger text-danger dark:border-danger dark:text-danger">Delete page</x-monitor::ui.button></form></section>
+        <x-signal.ui.alert as="section" tone="danger" class="block p-5"><h2 class="text-sm font-bold text-danger dark:text-danger">Delete this status page</h2><p class="mt-1 text-xs leading-5 text-danger dark:text-danger">The public URL will stop working immediately. Monitors and their history are not affected.</p><form method="POST" action="{{ route('monitor.status-pages.destroy', $statusPage) }}" class="mt-4">@csrf @method('DELETE')<x-monitor::ui.button variant="secondary" class="border-danger text-danger dark:border-danger dark:text-danger">Delete page</x-monitor::ui.button></form></x-signal.ui.alert>
     @endif
 </div>
 @endsection

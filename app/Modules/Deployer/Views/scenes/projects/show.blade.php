@@ -55,9 +55,8 @@
         >
             <nav class="grid gap-2" aria-label="{{ __('Project environments') }}">
                 @foreach($project->environments as $environment)
-                    <a
+                    <x-signal.ui.card as="a" class="flex min-w-0 items-center justify-between gap-4 p-4 transition hover:border-primary/50"
                         href="#environment-{{ $environment->id }}-heading"
-                        class="ui-card flex min-w-0 items-center justify-between gap-4 p-4 transition hover:border-primary/50"
                         data-sheet-close
                     >
                         <span class="min-w-0">
@@ -67,7 +66,7 @@
                         <x-signal.ui.badge :tone="$environment->hibernated_at ? 'neutral' : 'success'">
                             {{ $environment->hibernated_at ? __('Hibernated') : __('Available') }}
                         </x-signal.ui.badge>
-                    </a>
+                    </x-signal.ui.card>
                 @endforeach
             </nav>
         </x-signal.overlays.side-sheet>
@@ -317,7 +316,7 @@
                 </div>
 
                 <div class="grid gap-5 border-t border-line p-5 lg:grid-cols-2">
-                    <section id="environment-{{ $environment->id }}-processes" class="ui-panel bg-surface-muted p-4" aria-labelledby="environment-{{ $environment->id }}-processes-heading" data-project-processes>
+                    <x-signal.ui.panel as="section" class="bg-surface-muted p-4" id="environment-{{ $environment->id }}-processes" aria-labelledby="environment-{{ $environment->id }}-processes-heading" data-project-processes>
                         <div class="flex flex-wrap items-start justify-between gap-3">
                             <div>
                                 <h3 id="environment-{{ $environment->id }}-processes-heading" class="font-bold text-ink">{{ __('Workers and scheduler') }} <span class="text-muted">({{ $environment->processes->count() }})</span></h3>
@@ -337,9 +336,9 @@
                                 <p class="mt-4 text-sm text-muted">{{ __('Available on Starter and higher.') }} <a href="{{ route('pricing') }}" class="ui-link">{{ __('View plans') }}</a></p>
                             @endif
                         @endcan
-                    </section>
+                    </x-signal.ui.panel>
 
-                    <details id="environment-{{ $environment->id }}-resources" class="ui-panel group bg-surface-muted p-4" @if($resourcesOpen) open @endif data-project-resources>
+                    <x-signal.ui.panel as="details" class="group bg-surface-muted p-4" id="environment-{{ $environment->id }}-resources" @if($resourcesOpen) open @endif data-project-resources>
                         <summary class="flex cursor-pointer list-none items-center justify-between font-bold text-ink"><span>{{ __('Attached resources') }} <span class="text-muted">({{ $environment->resources->count() }})</span></span><span class="text-muted group-open:rotate-45">+</span></summary>
                         <div class="mt-3 space-y-2">@foreach($environment->resources as $resource)<x-signal.ui.panel class="ui-panel flex items-center gap-3 bg-surface p-3" data-project-resource><div class="min-w-0 flex-1"><p class="font-bold text-ink">{{ $resource->name }}</p><p class="text-xs text-muted">{{ str($resource->type)->replace('_', ' ')->title() }} · {{ $resource->is_managed ? __('Managed') : __('External') }} · {{ ucfirst($resource->status) }}</p></div>@can('update', $environment)<form method="POST" action="{{ route('environments.resources.destroy', [$environment, $resource]) }}">@csrf @method('DELETE')<x-signal.ui.button variant="link" type="submit" class="ui-link text-xs">{{ __('Detach') }}</x-signal.ui.button></form>@endcan</x-signal.ui.panel>@endforeach</div>
                         @can('update', $environment)
@@ -349,7 +348,7 @@
                                 <p class="mt-4 text-sm text-muted">{{ __('Available on Pro and higher.') }} <a href="{{ route('pricing') }}" class="ui-link">{{ __('View plans') }}</a></p>
                             @endif
                         @endcan
-                    </details>
+                    </x-signal.ui.panel>
                     @can('update', $environment)
                         @if($featureAccess['resources'])
                             <x-scenes.projects.resource-create-dialog :environment="$environment" :open="$resourceDialogOpen" />

@@ -4,17 +4,23 @@ namespace App\Modules\Monitor\Providers;
 
 use App\Core\Providers\ModuleServiceProvider;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\MappedProductPrincipalAdapter;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
+use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\LegacyIdentityResolver;
+use App\Core\Services\PlatformStatusProviderRegistry;
+use App\Core\Services\ProductApiDocumentationRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
+use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
 use App\Modules\Monitor\Contracts\DnsRecordResolver;
 use App\Modules\Monitor\Contracts\DnsResolver;
 use App\Modules\Monitor\Contracts\TcpConnector;
@@ -26,15 +32,21 @@ use App\Modules\Monitor\Http\Middleware\EnsureApplicationWorkspace;
 use App\Modules\Monitor\Http\Middleware\RequireWorkspace;
 use App\Modules\Monitor\Listeners\CheckApplicationHealth;
 use App\Modules\Monitor\Models\User;
+use App\Modules\Monitor\Services\Core\MonitorApiDocumentationProvider;
+use App\Modules\Monitor\Services\Core\MonitorCustomerStatusPageProvider;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
+use App\Modules\Monitor\Services\Core\MonitorPlatformStatusProvider;
+use App\Modules\Monitor\Services\Core\MonitorProductWorkspaceProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorProjectConnectionDiagnosticProvider;
 use App\Modules\Monitor\Services\Core\MonitorProjectLink;
 use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceStatusManagementProvider;
 use App\Modules\Monitor\Services\DatabaseTelemetryIngestor;
 use App\Modules\Monitor\Services\NativeDnsRecordResolver;
 use App\Modules\Monitor\Services\NativeDnsResolver;
@@ -91,6 +103,23 @@ final class MonitorServiceProvider extends ModuleServiceProvider
     {
         parent::boot();
 
+        app(ProductApiDocumentationRegistry::class)->register(
+            'monitor',
+            app(MonitorApiDocumentationProvider::class),
+        );
+        app(CustomerStatusPageProviderRegistry::class)->register(
+            'monitor',
+            app(MonitorCustomerStatusPageProvider::class),
+        );
+        app(WorkspaceMonitorStatusManagementProviderRegistry::class)->register(
+            'monitor',
+            app(MonitorWorkspaceStatusManagementProvider::class),
+        );
+        app(PlatformStatusProviderRegistry::class)->register(
+            'monitor',
+            app(MonitorPlatformStatusProvider::class),
+        );
+
         if (! config('platform.products.monitor.enabled', false)
             || ! filled(config('platform.products.monitor.host'))) {
             return;
@@ -103,6 +132,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProjectResourceLinkRegistry::class)->register('monitor', app(MonitorResourceLinkProvider::class));
         app(ProjectSetupRegistry::class)->register('monitor', app(MonitorProjectSetup::class));
         app(WorkspaceSearchProviderRegistry::class)->register('monitor', app(MonitorWorkspaceSearchProvider::class));
+        app(WorkspaceActivityProviderRegistry::class)->register('monitor', app(MonitorWorkspaceActivityProvider::class));
         app(ProductPrincipalRegistry::class)->register(
             'monitor',
             new MappedProductPrincipalAdapter('monitor', User::class, app(LegacyIdentityResolver::class)),
@@ -114,6 +144,10 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(ProductWorkspaceMembershipProjectorRegistry::class)->register(
             'monitor',
             app(MonitorWorkspaceMembershipProjector::class),
+        );
+        app(ProductWorkspaceProvisionerRegistry::class)->register(
+            'monitor',
+            app(MonitorProductWorkspaceProvisioner::class),
         );
 
         app('router')->aliasMiddleware('monitor.ingest.token', AuthenticateIngestToken::class);

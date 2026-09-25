@@ -2,6 +2,7 @@
 
 namespace App\Modules\Analytics\Actions\Workspaces;
 
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Analytics\Enums\WorkspaceRole;
 use App\Modules\Analytics\Models\Site;
 use App\Modules\Analytics\Models\Workspace;
@@ -11,7 +12,10 @@ use Illuminate\Support\Str;
 
 final class EnsurePersonalWorkspace
 {
-    public function __construct(private readonly AnalyticsWorkspaceAccess $access) {}
+    public function __construct(
+        private readonly AnalyticsWorkspaceAccess $access,
+        private readonly ProductAuthentication $authentication,
+    ) {}
 
     public function handle(Authenticatable $user, int|string|null $siteId = null): Workspace
     {
@@ -37,6 +41,11 @@ final class EnsurePersonalWorkspace
 
         $productUserIds = $this->access->productUserIds($user);
         abort_if($productUserIds === [], 403, 'Analytics access is not yet reconciled for this account.');
+        abort_if(
+            $this->authentication->usesCoreAuthority('analytics'),
+            409,
+            'This account does not have an Analytics workspace. Create or join a shared workspace in Buildpusher Core.',
+        );
 
         $name = (string) (data_get($user, 'name') ?: 'My');
         $workspace = Workspace::create([

@@ -1,5 +1,216 @@
 # Signal theme integration progress
 
+## Slice 163 — apply the current Signal product templates and tighten Deployer's theme guard — 2026-09-24
+
+Source and implementation:
+
+- Checked `lessbuild/template` `main` at `bcc64939c8a49891180e8065544474f1918e1e8b` (`Add job, social, and finance landing pages`). Its changes since `d3ca9bf3b1e6b2968074198f8c7684cfa6a69f26` add generic landing templates and leave the Buildpusher product pages, shared product styles/tokens, and authenticated Topbar SaaS reference unchanged.
+- Brought the current Signal product tokens and responsive marketing component styles into the one shared theme stylesheet. Added the Signal `layers`, `pulse`, and `chart` icons and made the reusable product-card accept a constrained accent and shared icon.
+- Updated the Buildpusher root overview to use the current product-led hero and a reusable `x-signal.blocks.product-connections` map. The map links to the real product-description routes and clearly describes project relationships without pretending that example resources or metrics are live data. The existing app feature cards, separate-plan copy, workspace CTA, model explanation, and product pages remain in place.
+- Added a Deployer architecture regression that rejects a return to `x-ui.*` and `x-dialogs.*` in module views. Deployer's `x-layouts.app` continues to load the shared Signal document, Topbar SaaS shell, theme runtime, and stylesheet.
+- Updated the current source pin and mapping in `docs/signal-component-library.md` and recorded the marketing composition in `docs/unified-application-plan.md`.
+
+Verification state:
+
+- Updated `MarketingPagesTest`, `LocalUiAssetTest`, `DashboardTest`, `AccountLifecycleTest`, `AccessRequestTest`, and `SignalThemeArchitectureTest` to cover the new public hero, product connections, shared accents, and Deployer component boundary. **These tests have not been run, as requested, until the full implementation plan is complete.**
+- `php artisan view:cache` and `view:clear`, `npm run build`, PHP syntax checks, `vendor/bin/pint --test` for the edited PHP files, and `git diff --check` all passed. The built Signal stylesheet is `assets/app-BGygQfWX.css` (124.86 KB, 23.24 KB gzip).
+- The live unauthenticated Deployer root currently redirects to `/home`, then the product login flow. That does not expose an authenticated dashboard for visual comparison, so the reported old appearance still needs authenticated release verification after the planned implementation is ready. No code was published in this slice.
+
+Next task: complete the remaining shared-workspace and module feature gates, then run the deferred test suite and compare authenticated product screens with the current Signal references before publishing the finished release.
+
+## Slice 162 — verify Monitor integration destination safety contracts — 2026-09-24
+
+Boundary and implementation:
+
+- Audited Monitor's existing integration capability against the feature matrix. Provider-specific destinations, workspace-scoped management/routing, encrypted endpoint and signing-key fields, secret rotation/archive, delivery history, test-send throttling, and its pinned-IP no-redirect transport already live in the Monitor module; the old matrix row incorrectly said the feature was not migrated.
+- Added deferred regression coverage for supported provider host/path formats, rejection of malformed or mismatched URLs, and DNS result sets containing private/mixed or unavailable addresses. The tests use a fake DNS resolver and do not send provider requests.
+
+Verification status:
+
+- Source review confirmed each allowlist, encrypted cast, rate-limited route, and IP-pinning behavior. The new test passes PHP syntax validation and Pint; `git diff --check` passed. No tests or provider requests have been run for this slice.
+
+## Slice 161 — remove obsolete product homepages — 2026-09-24
+
+Boundary and implementation:
+
+- Removed the unreferenced 72 KB Monitor and Analytics welcome pages, each of which carried a stale compiled Tailwind theme. Their product root routes already resolve to the Monitor dashboard and Analytics dashboard; Deployer's root resolves to `/home` and its authenticated dashboard.
+- Removed the Analytics architecture scan's special-case exclusion for `welcome.blade.php` and added a deferred route/source regression covering all three product roots and the deleted pages.
+
+Verification status:
+
+- Repository search found no route or view references to either deleted page. PHP syntax, Pint, Blade compilation, `git diff --check`, and `npm run build` passed. The shared CSS bundle fell from 139.66 KB (27.18 KB gzip) to 117.37 KB (21.85 KB gzip) after Tailwind stopped scanning the stale welcome-page CSS. Tests remain unrun under the plan-wide deferral.
+
+## Slice 160 — finish Core product-view control componentization — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced the four remaining raw hidden inputs in Core workspace and project screens with the shared Signal input component. Explicitly disabled old-input restoration for these transport fields so their values continue to come only from the current authorized action.
+- Added Core view-directory architecture coverage for surfaces, feedback/status primitives, controls, overlays, and legacy namespaces. Tests are authored but remain unrun until the plan is complete.
+
+Verification status:
+
+- Static scan now finds no raw controls/dialogs, card/panel wrappers, status primitives, or legacy UI namespaces in `app/Core/Views` and `resources/views/core`. PHP syntax, Pint, Blade compilation, and `git diff --check` passed. No tests or browser checks have been run for this slice.
+
+## Slice 159 — protect Analytics Signal component adoption — 2026-09-24
+
+Boundary and implementation:
+
+- Audited all 24 Analytics Blade views. They already contain no raw card/panel or status primitives, native controls/dialogs, or legacy `x-ui`/`x-dialogs` calls. Added a feature architecture regression so future Analytics pages cannot regress that shared Signal boundary.
+- The regression is authored but remains unrun until the complete plan, per the user's instruction.
+
+Verification status:
+
+- Static source scan passed for all 24 Analytics views. PHP syntax, Pint, Blade compilation, and `git diff --check` passed. No tests or browser checks have been run for this slice.
+
+## Slice 158 — componentize Deployer feedback and metric primitives — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced Deployer's 27 raw alert wrappers, three status badges, three progress bars, six dashboard metric surfaces, and four operational status dots with shared Signal components. The stat component now supports slot mode for compact metrics, and the shared progress component supports a themed fill class.
+- Moved status-dot styling into the Signal component stylesheet and removed its duplicate legacy rule. Extended Deployer architecture coverage to reject raw feedback, status, progress, and metric primitives; added component rendering regressions. These tests are authored but remain unrun until the plan is complete.
+
+Verification status:
+
+- Source scan confirms no Deployer view-owned alert, badge, progress, status-dot, or stat wrapper remains; statistic sub-elements and metrics already inside shared Signal components remain. `php artisan view:cache`, targeted Pint, PHP syntax validation, `git diff --check`, and `npm run build` passed. No tests or browser checks have been run.
+
+## Slice 157 — componentize Monitor feedback and progress primitives — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced Monitor's 40 raw alert wrappers, its remaining raw status badge, and three inline progress bars with shared Signal alert, badge, and progress components. The alert component now preserves the page's `div`, `p`, `section`, and `aside` semantics; the progress primitive supports labeled progress bars/meters with clamped values and accessible ranges.
+- Added architecture coverage rejecting raw Monitor alert/badge/progress classes and component-rendering regressions for alert semantic tags/tones and progress bounds, role, label, and output width. They are authored but remain unrun until plan completion.
+
+Verification status:
+
+- Static source scans found no raw Monitor alert, badge, progress, card, or panel classes and no native form controls or dialogs. `php artisan view:cache`, Pint, changed-file PHP syntax checks, and `git diff --check` pass. No tests or browser checks have been run.
+
+## Slice 156 — componentize Monitor view surfaces and controls — 2026-09-24
+
+Boundary and implementation:
+
+- Converted Monitor's raw card and panel wrappers across its dashboard, alerting, incidents, issues, metrics, settings, reports, and status pages into shared `x-signal.ui.card` and `x-signal.ui.panel` compositions. The component semantic allowlist now includes `dl`, preserving the dashboard's definition-list markup.
+- Converted all 31 raw Monitor inputs, including hidden transport/version fields, to `x-signal.ui.input` with old-input restoration disabled for server-supplied values. The authentication theme toggle now uses `x-signal.ui.icon-button`, and the compatibility command palette uses the shared Signal modal and input components.
+- Added architecture coverage that rejects raw Monitor card/panel classes, native controls, and dialogs. Existing Monitor button/form aliases still forward into the shared Signal implementations.
+
+Verification status:
+
+- Static source scans found no raw Monitor card/panel classes or native button/input/select/textarea/dialog tags. `php artisan view:cache` compiled all Blade templates successfully; the view cache was cleared afterward. Pint, feature-test PHP syntax, and `git diff --check` pass. No tests or browser checks have been run under the plan's test deferral.
+
+## Slice 155 — use current Signal components through the Deployer shell — 2026-09-24
+
+Boundary and implementation:
+
+- The Deployer shell now calls the shared Signal modal, mobile quick-navigation, and flash-message components directly. Authentication and public navigation use shared Signal panels, badges, buttons, links, icon buttons, and an accessible overlay-backdrop button rather than compatibility aliases or raw controls.
+- Migrated the Deployer settings-section composition into `x-signal.ui.settings-section`; its mobile disclosure and content surfaces compose Signal cards. The old `x-forms.section` remains available for other consumers.
+- Converted shared topbar and mobile-navigation action controls to `x-signal.ui.button` and `x-signal.ui.icon-button`, while preserving POST workspace switching/logout, current-workspace state, accessibility attributes, and responsive behavior. Modal close actions use the shared icon-button component.
+- Added layout architecture coverage requiring direct Signal component calls and rejecting raw controls/old aliases in the Deployer and shared shells. This new coverage remains unrun until the unified plan is complete.
+
+Verification status:
+
+- `php artisan view:cache` compiled every Blade template successfully. Pint, changed-file PHP syntax checks, and `git diff --check` pass. A targeted scan found no raw HTML form controls or `x-ui`/`x-dialogs` calls in the Deployer views and updated shared shell files. No tests or release have been run for this slice.
+
+## Slice 154 — componentize Deployer card and panel surfaces — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced 109 raw Deployer `ui-card` and `ui-panel` element wrappers across 33 Blade views with `x-signal.ui.card` and `x-signal.ui.panel`. The shared card/panel components now support the semantic link, list-item, and paragraph elements already used by those compositions.
+- Kept route destinations, IDs, Livewire keys, accessible labels, data hooks, event handlers, and request behavior on the component attributes. Deployer's legacy `x-layouts.app` name remains a compatibility wrapper over the shared Signal document, Topbar SaaS shell, and command palette.
+- Added an architecture regression that scans Deployer views for raw surface classes and native form controls. It is authored but unrun until plan completion.
+
+Verification status:
+
+- `php artisan view:cache` compiled all Blade templates; Pint, PHP syntax checks, and `git diff --check` pass. The architecture regression remains unrun until plan completion, and no release has been created.
+
+## Slice 153 — include mapped Deployer operational tasks in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Added Deployer-owned read adapters for scheduled task runs, database clones, and server-command execution history. Scheduled runs require a mapped environment; database clones require both source and destination environments to be mapped into the current accessible workspace; server commands require a mapped environment and a server owned by that Deployer organization.
+- The shared feed receives only generic task labels, recognized lifecycle status, timestamps, and links to existing Deployer pages. Command text/output, scheduled-task output, database errors, and resource configuration are not selected for display. No product queue or retry path was replaced.
+- Added regression coverage for mapped task states, clone isolation when one endpoint is unmapped, server organization checks, result links, and redaction. Tests remain unrun until the implementation plan is complete.
+
+Verification status:
+
+- PHP syntax checks, Pint formatting, and `git diff --check` pass. The feature regressions remain unrun until plan completion, and no release has been created.
+
+## Slice 152 — include Deployer backup and recovery work in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Deployer's module-owned workspace provider now includes recent/current backup, restore, and independent restore-verification task state for websites reached through authorized Core-mapped environments. Current queued/running tasks remain visible; terminal records are limited to the recent window.
+- Each summary uses generic status guidance and links to Deployer's existing backup history. The adapter selects no snapshot identifiers, error content, credentials, or backup payload data; detailed recovery evidence remains on the authorized Deployer screen.
+- Added regression coverage for running backup, failed restore, queued verification, old-record exclusion, and error/snapshot redaction. Coverage remains unrun until plan completion, per the user's instruction.
+
+Verification status:
+
+- PHP syntax checks, Pint formatting, and `git diff --check` pass. A clean shallow checkout confirmed upstream `main` is still `b4b002356c5e92b7214569f395d6991f6edc3feb`; Buildpusher's Signal `theme.css` matches it byte for byte, with only the documented Laravel validation and code-block additions in `components.css`. The live hosts still reference an older compiled CSS bundle than the current local build. Regression coverage remains unrun until plan completion, and no release has been created for this slice.
+
+## Slice 151 — show measured Deployer deployment progress in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Deployer build activity now reports recorded deployment stages using `RepositoryDeploymentPlan`, including the correct full-stage completion for successful legacy builds. It does not infer per-stage timestamps or expose build failure text.
+- Added regression coverage for an active deployment at 6 of 15 stages; the test remains deferred until the complete plan is ready.
+
+Verification status:
+
+- PHP syntax checks and `git diff --check` pass. No test command or release has been run for this slice.
+
+## Slice 150 — bind mapped Deployer resources to the Core project workspace — 2026-09-24
+
+Boundary and implementation:
+
+- Tightened Deployer's Core project and environment links so an authorized Deployer organization must resolve to the same Core workspace as the project resource mapping. Local membership in a different workspace is insufficient to expose that project's Deployer records.
+- Added a regression case where the user is an owner of both Core workspaces and the Deployer organization mapping points at the other one. The activity provider must return no Deployer run for the first project's environment.
+- This also guards the new provisioning activity because it receives only environments that pass this mapping check.
+
+Verification status:
+
+- Regression coverage is written but remains unrun until the plan is complete. PHP syntax checks and `git diff --check` pass. No release has been created.
+
+## Slice 149 — include Monitor telemetry processing in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Added and registered a Monitor-owned workspace activity adapter for durable telemetry receipts. It includes queued, processing, retrying, completed, failed, and unrecognized states only through an active Core-mapped Monitor environment, active Core product/project access, local Monitor membership, and a source-workspace mapping to the current Core workspace.
+- Hardened Monitor's shared Core project link adapter as well: applications and environments are constrained to source workspaces explicitly mapped to the same Core project workspace, so summaries and resource destinations share the boundary.
+- The adapter reports bounded accepted/event counts and links to the Monitor environment. Payloads, receipt keys, processing tokens, IDs in descriptive text, error codes, and raw failure content stay out of the shared detail.
+- Added separate-database feature coverage for an authorized failure, a receipt whose stored workspace does not match the mapped environment, and a source workspace remapped to another Core workspace. Tests remain deferred until plan completion.
+
+Verification status:
+
+- PHP syntax checks and `git diff --check` pass. No test command or release has been run for this slice.
+
+## Slice 148 — include Deployer provisioning in shared workspace activity — 2026-09-24
+
+Boundary and implementation:
+
+- Extended Deployer's workspace activity provider to include current server and website provisioning records only when they are attached to an active Core-mapped environment, the member still has product and local organization access, and the local resource organization matches the environment project's organization. A website must also match the environment's mapped server when one is present.
+- Exposed queued, waiting, processing, failed, canceled, successful, and unrecognized states with measured setup-stage counts from Deployer's server-role and website provisioning plans. Successful provisioning appears for 30 days; the feed links to the existing authorized Deployer record and leaves queues and retries owned by Deployer.
+- Activity text stays generic and does not include provider failure messages, IP addresses, passwords, IDs, or credentials. Added feature coverage for visible progress, result links, cross-organization/mismatched mappings, and secret redaction.
+
+Verification status:
+
+- The regression test was written but has not been run, per the user's request to defer tests until the implementation plan is complete. This slice is therefore implemented but not verified. No release has been created.
+
+Next task: continue I8 task-center provider coverage for the remaining durable product operations, without running tests until plan completion.
+
+## Slice 147 — align Deployer navigation with the latest Signal shell — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `b4b002356c5e92b7214569f395d6991f6edc3feb`. Upstream adds portable theme-package import/export and contrast reporting to its builder; shared theme styles and the Topbar SaaS layout are unchanged since `49c26b48dd44335901da95926963339e644eedae`.
+- The Laravel product shell still exposed both navigation rows from 1024px. Updated its product navigation and shared drawer to follow Signal's `xl` breakpoint: the drawer remains the navigation surface below 1280px, including Deployer's crowded compact-laptop widths. Applied Signal's existing horizontal-scroll treatment to both nav rows while keeping live project, environment, workspace, and product links server-authoritative.
+- Extended the feature and browser regression coverage to assert the drawer at 1279px and desktop navigation at 1280px. No product routes, authorization, data, or workflow behavior changed.
+
+Evidence:
+
+- `SignalThemeArchitectureTest`: 4 tests and 44 assertions passed before the user requested that remaining tests be held until plan completion.
+- The Vite production build completed. The browser suite was interrupted at the user's request before completion; tests will be run after the implementation plan is complete.
+- The change has not been released to production. The current release remains `b0741b4-signal`.
+
+Next task: continue the unified workspace activity work by exposing authorized Deployer server and website provisioning status through the workspace feed.
+
 ## Slice 146 — publish the current Signal theme and Deployer shell — 2026-09-24
 
 Boundary and deployment:
@@ -8311,6 +8522,24 @@ Deployment:
 Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
+
+## Slice 164 — Buildpusher marketing pages follow Signal's product templates — 2026-09-25
+
+The latest Signal source at `794d273ebd4635ff124981f0fcddce89e9d7c2b1` includes dedicated Buildpusher suite and product-detail landing compositions. The unified app now adapts them to its public root and product routes, existing account/project model, product-specific feature catalog, and real Deployer, Monitor, and Analytics dashboard destinations.
+
+- The suite page keeps the Signal product-led hero and connected-project map, adds concrete project-resource examples and answers about shared sign-in, project context, separate product databases, and independent workspace subscriptions.
+- Each app has an individual Signal product page with a reusable, clearly fictional interface preview, product-specific benefits, all configured feature groups and descriptions, a workflow sequence, product guardrails, shared-project context, and links to the other app descriptions.
+- Replaced the generic Deployer workflow copy on Monitor and Analytics pages with their own telemetry/incident and site/acquisition/conversion journeys. Monitor and Analytics now have product-specific FAQs and controls copy.
+- Added `x-signal.blocks.product-preview` so each illustrative interface uses shared Signal surfaces, icons, badges, and product accents. Updated the marketing regression assertions; no test runner was invoked under the deferred-test instruction.
+- Updated the Signal source pin and marketing composition mapping in `docs/signal-component-library.md` and `docs/unified-application-plan.md`.
+
+Static verification:
+
+- `php -l` for marketing configuration, the controller, and the authored feature-test file — passed.
+- `vendor/bin/pint --test` for the changed PHP files — passed.
+- `php artisan view:cache` — passed; the compiled view cache was cleared afterward.
+- `git diff --check` — passed.
+- Marketing feature tests remain unrun until the unified-application plan is complete. No website release or production change was made.
 
 ## Slice 101 — Signal console surfaces — 2026-09-22
 

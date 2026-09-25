@@ -26,7 +26,7 @@
 
     <div class="mt-5 space-y-3">
         @forelse ($executions as $execution)
-            <article data-command-execution class="ui-card p-4">
+            <x-signal.ui.card as="article" class="p-4" data-command-execution>
                 <div class="flex flex-wrap items-start justify-between gap-3">
                     <div>
                         <p class="ui-eyebrow text-[0.65rem]">{{ __('Execution #:id', ['id' => $execution->id]) }}</p>
@@ -54,7 +54,7 @@
                 <div class="mt-3">
                     <x-signal.ui.button :href="route('servers.commands.index', ['server' => $execution->server, 'execution' => $execution->id])" variant="ghost">{{ __('Open server history') }}</x-signal.ui.button>
                 </div>
-            </article>
+            </x-signal.ui.card>
         @empty
             <x-signal.ui.empty-state
                 :title="__('No commands match these filters')"

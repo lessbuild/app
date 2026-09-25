@@ -41,11 +41,18 @@ final class EnsureCoreProductWorkspaceAccess
             $organization = Organization::query()->find($organization);
         }
 
+        abort_unless($organization instanceof Organization, 403);
+
+        $hasWorkspaceAccess = $request->routeIs('billing.*')
+            ? $this->workspaceAccess->canManageBilling($platformUser, 'deployer', 'organization', $organization->getKey())
+            : $this->workspaceAccess->allows($platformUser, 'deployer', 'organization', $organization->getKey());
+
         abort_unless(
-            $organization instanceof Organization
-                && $this->workspaceAccess->allows($platformUser, 'deployer', 'organization', $organization->getKey()),
+            $hasWorkspaceAccess,
             403,
-            'This Deployer workspace is not available to your Buildpusher account.',
+            $request->routeIs('billing.*')
+                ? 'Only a Buildpusher workspace owner or billing manager can manage this Deployer plan.'
+                : 'This Deployer workspace is not available to your Buildpusher account.',
         );
 
         return $next($request);

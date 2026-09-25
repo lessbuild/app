@@ -12,7 +12,6 @@ use Illuminate\Contracts\Cache\LockTimeoutException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 use Throwable;
 
@@ -25,7 +24,7 @@ class BillingController extends Controller
         MonitorPlanAuthority $planAuthority,
     ): View {
         $workspace = $currentWorkspace->get();
-        Gate::authorize('billing', $workspace);
+        $currentWorkspace->authorizeBilling($workspace);
         $plans = config('monitor.beacon.plans');
         $currentPlanKey = $workspace->plan;
         $currentPlan = $plans[$currentPlanKey] ?? $plans['free'];
@@ -48,8 +47,11 @@ class BillingController extends Controller
 
         $paidPlanKeys = array_keys(array_filter($plans, fn (array $plan): bool => ($plan['price'] ?? 0) > 0));
         $billingStatus = $corePlanAuthority
-            ? ($planResolution?->available ? ($planResolution->subscriptionStatus ?? 'inactive') : 'unverified')
+            ? ($planResolution?->subscriptionStatus
+                ?? ($planResolution?->unavailableReason === 'current_subscription_missing' ? 'inactive' : 'unverified'))
             : ($workspace->billing_status ?? 'inactive');
+        $canStartCheckout = ! $corePlanAuthority || filled($planResolution?->workspaceId);
+        $providerSubscriptionId = $corePlanAuthority ? $planAuthority->stripeSubscriptionId($workspace) : null;
 
         return view('monitor::settings.billing', [
             'plans' => $plans,
@@ -63,11 +65,11 @@ class BillingController extends Controller
             'usageState' => $usageSummary['state'],
             'billingOwner' => $workspace->owner,
             'stripeBillingConfigured' => $stripe->configured(),
-            'checkoutPlans' => $corePlanAuthority ? [] : array_values(array_filter($paidPlanKeys, $stripe->checkoutConfigured(...))),
-            'portalAvailable' => ! $corePlanAuthority && $stripe->portalConfigured($workspace),
+            'checkoutPlans' => $canStartCheckout ? array_values(array_filter($paidPlanKeys, $stripe->checkoutConfigured(...))) : [],
+            'portalAvailable' => $stripe->portalConfigured($workspace),
             'corePlanAuthority' => $corePlanAuthority,
             'hasActiveSubscription' => in_array($billingStatus, ['active', 'trialing', 'past_due'], true)
-                && filled($workspace->stripe_subscription_id),
+                && (filled($workspace->stripe_subscription_id) || filled($providerSubscriptionId)),
             'billingStatus' => $billingStatus,
         ]);
     }
@@ -80,20 +82,32 @@ class BillingController extends Controller
         MonitorPlanAuthority $planAuthority,
     ): RedirectResponse {
         $workspace = $currentWorkspace->get();
-        Gate::authorize('billing', $workspace);
+        $currentWorkspace->authorizeBilling($workspace);
         abort_unless($request->user()?->hasVerifiedEmail(), 403, 'Verify your email before starting billing.');
 
-        if ($planAuthority->usesCore()) {
-            return back()->withErrors(['billing' => 'Monitor plan changes are paused until its Stripe billing lifecycle is connected to Core.']);
+        $plan = $request->validated()['plan'];
+        $corePlanAuthority = $planAuthority->usesCore();
+        $planResolution = $corePlanAuthority ? $planAuthority->resolve($workspace) : null;
+        if ($corePlanAuthority && ! filled($planResolution?->workspaceId)) {
+            abort(503, 'Core could not confirm this Monitor workspace for billing.');
         }
 
-        $plan = $request->validated()['plan'];
-
-        if ($plan === $workspace->plan) {
+        $currentPlanKey = $corePlanAuthority
+            ? ($planResolution?->available ? $planResolution->planKey : null)
+            : $workspace->plan;
+        if ($currentPlanKey !== null && $plan === $currentPlanKey) {
             return back()->with('status', 'That is already the workspace plan.');
         }
 
-        if (in_array($workspace->billing_status, ['active', 'trialing', 'past_due'], true) && filled($workspace->stripe_subscription_id)) {
+        $billingStatus = $corePlanAuthority
+            ? ($planResolution?->subscriptionStatus ?? 'inactive')
+            : $workspace->billing_status;
+        $subscriptionId = $corePlanAuthority
+            ? $planAuthority->stripeSubscriptionId($workspace)
+            : $workspace->stripe_subscription_id;
+
+        if (in_array($billingStatus, ['active', 'trialing', 'past_due', 'paused', 'incomplete'], true)
+            && filled($subscriptionId)) {
             return back()->withErrors(['billing' => 'Use Manage billing to change an active subscription.']);
         }
 
@@ -145,15 +159,10 @@ class BillingController extends Controller
         Request $request,
         CurrentWorkspace $currentWorkspace,
         StripeBillingClient $stripe,
-        MonitorPlanAuthority $planAuthority,
     ): RedirectResponse {
         $workspace = $currentWorkspace->get();
-        Gate::authorize('billing', $workspace);
+        $currentWorkspace->authorizeBilling($workspace);
         abort_unless($request->user()?->hasVerifiedEmail(), 403, 'Verify your email before managing billing.');
-
-        if ($planAuthority->usesCore()) {
-            return back()->withErrors(['billing' => 'Monitor plan changes are paused until its Stripe billing lifecycle is connected to Core.']);
-        }
 
         try {
             return redirect()->away($stripe->createPortalSession($workspace));
@@ -169,7 +178,7 @@ class BillingController extends Controller
     public function success(CurrentWorkspace $currentWorkspace): RedirectResponse
     {
         $workspace = $currentWorkspace->get();
-        Gate::authorize('billing', $workspace);
+        $currentWorkspace->authorizeBilling($workspace);
         $workspace->forceFill([
             'stripe_checkout_session_id' => null,
             'stripe_checkout_url' => null,
@@ -183,7 +192,7 @@ class BillingController extends Controller
     public function cancel(CurrentWorkspace $currentWorkspace): RedirectResponse
     {
         $workspace = $currentWorkspace->get();
-        Gate::authorize('billing', $workspace);
+        $currentWorkspace->authorizeBilling($workspace);
         $workspace->forceFill([
             'stripe_checkout_session_id' => null,
             'stripe_checkout_url' => null,

@@ -2,23 +2,19 @@
 
 namespace App\Modules\Analytics\Http\Controllers;
 
+use App\Modules\Analytics\Services\AnalyticsApplicationReadiness;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 
 class ReadinessController extends Controller
 {
-    public function __invoke(): JsonResponse
+    public function __invoke(AnalyticsApplicationReadiness $readiness): JsonResponse
     {
-        try {
-            DB::connection('analytics')->getPdo();
-            Cache::store()->get('analytics-readiness');
-        } catch (\Throwable $exception) {
-            report($exception);
+        $checks = $readiness->checks();
+        $ready = collect($checks)->every(static fn (bool $check): bool => $check);
 
-            return response()->json(['status' => 'not_ready'], 503);
-        }
-
-        return response()->json(['status' => 'ok']);
+        return response()
+            ->json(['status' => $ready ? 'ok' : 'not_ready', 'checks' => $checks], $ready ? 200 : 503)
+            ->header('Cache-Control', 'no-store')
+            ->header('X-Content-Type-Options', 'nosniff');
     }
 }

@@ -68,7 +68,7 @@
 
     <div class="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
         @forelse($projects as $project)
-            <a href="{{ route('projects.show', $project) }}" data-project-card class="ui-card ui-card--interactive group flex min-h-0 flex-col justify-between p-4 sm:min-h-52 sm:p-6">
+            <x-signal.ui.card as="a" tone="interactive" class="group flex min-h-0 flex-col justify-between p-4 sm:min-h-52 sm:p-6" href="{{ route('projects.show', $project) }}" data-project-card>
                 <div class="flex min-w-0 flex-wrap items-start justify-between gap-4">
                     <div class="min-w-0 flex-1">
                         <div class="flex items-center gap-2">
@@ -85,7 +85,7 @@
                     <p class="truncate font-mono text-xs text-muted">{{ $project->slug }}</p>
                     <span class="shrink-0 text-sm font-bold text-ink transition-transform group-hover:translate-x-0.5" aria-hidden="true">→</span>
                 </div>
-            </a>
+            </x-signal.ui.card>
         @empty
             <div class="md:col-span-2 xl:col-span-3">
                 <x-lists.empty :title="__('No applications yet')" :description="__('Create an application to group environments and deployment settings.')">

@@ -7,22 +7,22 @@
     @php($roleOptions = array_combine(\App\Modules\Monitor\Models\Workspace::ASSIGNABLE_ROLES, array_map('ucfirst', \App\Modules\Monitor\Models\Workspace::ASSIGNABLE_ROLES)))
     <div class="grid gap-6 xl:grid-cols-2">
         @can('update', $workspace)
-        <section class="ui-panel p-6">
+        <x-signal.ui.panel as="section" class="p-6">
             <h2 class="mb-5 font-bold">Workspace details</h2>
             <form method="POST" action="{{ route('monitor.workspaces.update', $workspace) }}" class="space-y-4">
                 @csrf @method('PATCH')
                 <x-monitor::ui.input name="name" label="Workspace name" :value="$workspace->name" maxlength="120" required />
                 <x-monitor::ui.button>Save changes</x-monitor::ui.button>
             </form>
-        </section>
-        <section class="ui-panel p-6">
+        </x-signal.ui.panel>
+        <x-signal.ui.panel as="section" class="p-6">
             <h2 class="font-bold">Invite a teammate</h2>
             <p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">Admins manage applications and members. Members investigate issues. Viewers have read-only access. Only the owner manages billing.</p>
             @if($seatCapacity['at_limit'])
                 @if(! $seatCapacity['plan_available'] || ! $seatCapacity['limit_configured'])
-                    <p class="ui-alert border-info/30 bg-info-soft block mt-5 p-4 text-xs leading-5 text-info dark:text-info">Monitor could not verify this workspace’s seat allowance. Reconcile its Core subscription before inviting a teammate.</p>
+                    <x-signal.ui.alert as="p" tone="info" class="border-info/30 bg-info-soft block mt-5 p-4 text-xs leading-5 text-info dark:text-info">Monitor could not verify this workspace’s seat allowance. Reconcile its Core subscription before inviting a teammate.</x-signal.ui.alert>
                 @else
-                    <p class="ui-alert ui-alert-warning block mt-5 p-4 text-xs leading-5 text-warning dark:text-warning">Your {{ $workspacePlan['name'] }} plan has reached its {{ $seatCapacity['limit'] }}-seat allowance. Upgrade the workspace plan or remove a teammate before inviting another.</p>
+                    <x-signal.ui.alert as="p" tone="warning" class="block mt-5 p-4 text-xs leading-5 text-warning dark:text-warning">Your {{ $workspacePlan['name'] }} plan has reached its {{ $seatCapacity['limit'] }}-seat allowance. Upgrade the workspace plan or remove a teammate before inviting another.</x-signal.ui.alert>
                 @endif
             @else
                 <form method="POST" action="{{ route('monitor.invitations.store', $workspace) }}" class="mt-5 space-y-4">
@@ -32,10 +32,10 @@
                     <x-monitor::ui.button>Send invitation</x-monitor::ui.button>
                 </form>
             @endif
-        </section>
+        </x-signal.ui.panel>
         @endcan
     </div>
-    <section class="ui-panel overflow-hidden">
+    <x-signal.ui.panel as="section" class="overflow-hidden">
         <div class="border-b border-line px-6 py-4 dark:border-line"><h2 class="font-bold">Members <span class="ml-2 text-xs text-subtle">{{ $members->count() }}{{ ! $seatCapacity['plan_available'] || ! $seatCapacity['limit_configured'] ? ' · plan unverified' : ($seatCapacity['limit'] === null ? ' · unlimited' : ' / '.$seatCapacity['limit']) }} seats</span></h2></div>
         <div class="divide-y divide-line dark:divide-line">
             @foreach($members as $member)
@@ -56,9 +56,9 @@
                 </div>
             @endforeach
         </div>
-    </section>
+    </x-signal.ui.panel>
     @can('update', $workspace)
-    <section class="ui-panel overflow-hidden">
+    <x-signal.ui.panel as="section" class="overflow-hidden">
         <h2 class="border-b border-line px-6 py-4 font-bold dark:border-line">Pending invitations</h2>
         <div class="divide-y divide-line dark:divide-line">
             @forelse($invitations as $invitation)
@@ -70,7 +70,7 @@
                 <p class="px-6 py-8 text-sm text-muted dark:text-subtle">No pending invitations. Invite someone above to get started.</p>
             @endforelse
         </div>
-    </section>
+    </x-signal.ui.panel>
     @endcan
 </div>
 @endsection

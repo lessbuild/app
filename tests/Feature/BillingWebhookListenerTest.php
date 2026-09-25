@@ -4,10 +4,14 @@ namespace Tests\Feature;
 
 use App\Modules\Deployer\Jobs\SyncOrganizationSeatQuantityJob;
 use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\DeployerPlanAuthority;
+use App\Modules\Deployer\Services\SyncDeployerBillingEventIntoCore;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Queue;
 use Laravel\Cashier\Events\WebhookHandled;
+use Laravel\Cashier\Events\WebhookReceived;
+use Mockery;
 use Tests\TestCase;
 
 class BillingWebhookListenerTest extends TestCase
@@ -44,5 +48,18 @@ class BillingWebhookListenerTest extends TestCase
         Event::dispatch(new WebhookHandled(['data' => ['object' => ['customer' => 'cus_unknown']]]));
 
         Queue::assertNothingPushed();
+    }
+
+    public function test_verified_deployer_webhook_is_projected_when_core_is_the_plan_authority(): void
+    {
+        $payload = ['id' => 'evt_deployer_verified', 'type' => 'customer.subscription.updated'];
+        $authority = Mockery::mock(DeployerPlanAuthority::class);
+        $authority->shouldReceive('usesCore')->once()->andReturn(true);
+        $billingEvents = Mockery::mock(SyncDeployerBillingEventIntoCore::class);
+        $billingEvents->shouldReceive('handle')->once()->with($payload);
+        app()->instance(DeployerPlanAuthority::class, $authority);
+        app()->instance(SyncDeployerBillingEventIntoCore::class, $billingEvents);
+
+        Event::dispatch(new WebhookReceived($payload));
     }
 }

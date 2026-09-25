@@ -5,6 +5,7 @@
     'indexable' => false,
     'livewire' => true,
     'productKey' => null,
+    'interactiveMarketing' => false,
 ])
 
 @php($pageTitle = $title ? $title.' · '.config('app.name') : config('app.name'))
@@ -127,6 +128,9 @@
         @vite('resources/js/signal-theme.js')
         @vite('resources/js/signal-drawer.js')
         @vite('resources/js/signal-overlays.js')
+        @if ($interactiveMarketing)
+            @vite('resources/js/signal-marketing.js')
+        @endif
         @if($productKey)
             @vite('resources/js/app.js')
         @endif

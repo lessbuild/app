@@ -160,7 +160,7 @@
                                     {{ $destination->bucket }}/{{ $destination->path_prefix }} · {{ $destination->last_verified_at?->diffForHumans() ?? __('not verified yet') }}
                                 </p>
                                 @if ($destination->last_error)
-                                    <p class="ui-alert ui-alert--danger mt-2 text-xs">{{ $destination->last_error }}</p>
+                                    <x-signal.ui.alert as="p" tone="danger" class="mt-2 text-xs">{{ $destination->last_error }}</x-signal.ui.alert>
                                 @endif
                             </div>
                             @if ($canManage)

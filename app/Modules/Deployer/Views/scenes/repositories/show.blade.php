@@ -645,26 +645,26 @@
                 </p>
             </div>
             <dl class="ui-insight-grid mt-4 grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id]) }}" class="ui-card ui-card--interactive p-4">
+            <x-signal.ui.card as="a" tone="interactive" class="p-4" href="{{ route('builds.index', ['repository_id' => $repository->id]) }}">
                 <dt class="ui-stat__label">{{ __('Total deployments') }}</dt>
                 <dd class="ui-stat__value">{{ $deploymentMetrics['total'] }}</dd>
-            </a>
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED]) }}" class="ui-card ui-card--interactive p-4">
+            </x-signal.ui.card>
+            <x-signal.ui.card as="a" tone="interactive" class="p-4" href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED]) }}">
                 <dt class="ui-stat__label">{{ __('Succeeded') }}</dt>
                 <dd class="mt-1 text-2xl font-bold" style="color: var(--ui-success)">{{ $deploymentMetrics['succeeded'] }}</dd>
-            </a>
-            <a href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Modules\Deployer\Models\Build::STATUS_FAILED]) }}" class="ui-card ui-card--interactive p-4">
+            </x-signal.ui.card>
+            <x-signal.ui.card as="a" tone="interactive" class="p-4" href="{{ route('builds.index', ['repository_id' => $repository->id, 'status' => \App\Modules\Deployer\Models\Build::STATUS_FAILED]) }}">
                 <dt class="ui-stat__label">{{ __('Failed') }}</dt>
                 <dd class="mt-1 text-2xl font-bold" style="color: var(--ui-danger)">{{ $deploymentMetrics['failed'] }}</dd>
-            </a>
-            <div class="ui-card p-4">
+            </x-signal.ui.card>
+            <x-signal.ui.card class="p-4">
                 <dt class="ui-stat__label">{{ __('Completed-run success rate') }}</dt>
                 <dd class="ui-stat__value">
                     {{ $deploymentMetrics['success_rate'] !== null ? $deploymentMetrics['success_rate'].'%' : __('Not available') }}
                 </dd>
                 <p class="mt-1 text-xs text-muted">{{ __('Canceled and active runs are excluded.') }}</p>
-            </div>
-            <div class="ui-card p-4">
+            </x-signal.ui.card>
+            <x-signal.ui.card class="p-4">
                 <dt class="ui-stat__label">{{ __('Recent median duration') }}</dt>
                 <dd class="mt-1 text-2xl font-bold text-ink">
                     {{ $deploymentMetrics['median_duration_seconds'] !== null ? \App\Modules\Deployer\Models\Build::formatDuration($deploymentMetrics['median_duration_seconds']) : __('Not recorded') }}
@@ -672,7 +672,7 @@
                 <p class="mt-1 text-xs text-muted">
                     {{ trans_choice(':count timed deployment|:count timed deployments', $deploymentMetrics['duration_sample_size'], ['count' => $deploymentMetrics['duration_sample_size']]) }}
                 </p>
-            </div>
+            </x-signal.ui.card>
             </dl>
         </section>
     </x-signal.ui.panel>
@@ -698,7 +698,7 @@
                 </x-signal.ui.button>
             </div>
             @forelse ($builds as $build)
-                <div class="ui-card mb-3 flex items-center justify-between gap-4 p-4">
+                <x-signal.ui.card class="mb-3 flex items-center justify-between gap-4 p-4">
                     <div>
                         <a href="{{ route('builds.show', $build) }}" class="ui-link font-medium">
                             {{ __('Build #:id', ['id' => $build->id]) }}
@@ -733,7 +733,7 @@
                     @else
                         <x-signal.ui.badge>{{ str($build->status)->replace('_', ' ') }}</x-signal.ui.badge>
                     @endif
-                </div>
+                </x-signal.ui.card>
             @empty
                 <x-signal.ui.empty-state
                     :title="__('No deployments yet')"

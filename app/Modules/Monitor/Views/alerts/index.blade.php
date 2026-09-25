@@ -5,12 +5,12 @@
 <x-monitor::ui.page-header eyebrow="Reliability" title="Alert rules" description="Turn telemetry thresholds into actionable incidents.">
     <x-slot:actions>@if($canCreate)<x-monitor::ui.button :href="route('monitor.alerts.create')">Create alert rule</x-monitor::ui.button>@endif</x-slot:actions>
 </x-monitor::ui.page-header>
-<p class="ui-alert border-primary/30 bg-primary-soft block p-4 text-xs leading-5 text-primary dark:text-primary">Rules are checked every minute. Incidents appear in the inbox. To receive external notifications, configure email, Slack, Microsoft Teams, PagerDuty, Discord or signed webhook destinations and select them on each rule.</p>
+<x-signal.ui.alert as="p" tone="info" class="border-primary/30 bg-primary-soft block p-4 text-xs leading-5 text-primary dark:text-primary">Rules are checked every minute. Incidents appear in the inbox. To receive external notifications, configure email, Slack, Microsoft Teams, PagerDuty, Discord or signed webhook destinations and select them on each rule.</x-signal.ui.alert>
 <form method="GET" action="{{ route('monitor.alerts.index') }}" class="flex flex-wrap items-end gap-3">
     <x-monitor::ui.select name="state" label="Rule state" :value="$state" :options="['all' => 'Current rules', 'enabled' => 'Enabled', 'paused' => 'Paused rules', 'archived' => 'Archived']" />
     <x-monitor::ui.button variant="secondary">Filter</x-monitor::ui.button>
 </form>
-<div class="ui-card overflow-x-auto">
+<x-signal.ui.card as="div" class="overflow-x-auto">
     <x-monitor::ui.table caption="Alert rules and latest evaluations" :framed="false">
         <x-slot:head><tr><th scope="col">Rule / environment</th><th scope="col">Condition</th><th scope="col">Evaluation</th><th scope="col">Last checked (UTC)</th></tr></x-slot:head>
 @forelse($rules as $rule)
@@ -19,6 +19,6 @@
             <tr><td colspan="4" class="py-12 text-center text-muted dark:text-subtle">No rules yet. Create one for an environment that sends telemetry.</td></tr>
         @endforelse
     </x-monitor::ui.table>
-</div>
+</x-signal.ui.card>
 {{ $rules->links() }}
 @endsection

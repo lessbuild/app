@@ -37,9 +37,7 @@
                 </div>
                 <p class="text-sm font-bold text-ink">{{ __(':complete of :total complete', ['complete' => $onboardingCompleted, 'total' => count($onboardingSteps)]) }}</p>
             </div>
-            <div class="ui-progress mt-4" role="progressbar" aria-label="{{ __('Workspace setup progress') }}" aria-valuemin="0" aria-valuemax="{{ count($onboardingSteps) }}" aria-valuenow="{{ $onboardingCompleted }}">
-                <span style="width: {{ ($onboardingCompleted / count($onboardingSteps)) * 100 }}%"></span>
-            </div>
+            <x-signal.ui.progress class="mt-4" label="{{ __('Workspace setup progress') }}" :value="$onboardingCompleted" :max="count($onboardingSteps)" />
         </div>
         <div class="border-b border-line p-4 lg:hidden">
             <div class="overflow-x-auto pb-1" role="tablist" aria-label="{{ __('Workspace setup steps') }}">
@@ -77,12 +75,7 @@
                     'ring-2 ring-inset ring-focus' => $current,
                 ])>
                     <div class="flex items-center justify-between gap-3">
-                        <span @class([
-                            'ui-badge flex h-8 w-8 items-center justify-center rounded-full p-0 text-sm font-bold',
-                            'ui-badge-success' => $complete,
-                            'ui-badge-primary' => $current,
-                            'ui-badge-soft' => ! $complete && ! $current,
-                        ])>{{ $complete ? '✓' : $loop->iteration }}</span>
+                        <x-signal.ui.badge :tone="$complete ? 'success' : ($current ? 'accent' : 'neutral')" class="flex h-8 w-8 items-center justify-center rounded-full p-0 text-sm font-bold">{{ $complete ? '✓' : $loop->iteration }}</x-signal.ui.badge>
                         <span @class([
                             'text-xs font-bold uppercase tracking-wide',
                             'text-success' => $complete,

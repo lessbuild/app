@@ -87,7 +87,7 @@
         class="min-h-24"
     />
 
-    <details id="{{ $fieldPrefix }}provider-monitoring-settings" class="ui-responsive-details group ui-card ui-card--muted overflow-hidden sm:col-span-2" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
+    <x-signal.ui.card as="details" tone="muted" class="ui-responsive-details group overflow-hidden sm:col-span-2" id="{{ $fieldPrefix }}provider-monitoring-settings" open data-responsive-details data-responsive-details-mobile-open="{{ $monitoringHasErrors ? 'true' : 'false' }}">
         <summary class="flex cursor-pointer list-none items-start justify-between gap-4 p-4 focus:outline-none focus-visible:ring-2 focus-visible:ring-focus lg:hidden [&::-webkit-details-marker]:hidden">
             <span>
                 <span class="block font-bold text-ink">{{ __('Connection monitoring') }}</span>
@@ -132,5 +132,5 @@
                 </x-signal.ui.select-field>
             </div>
         </fieldset>
-    </details>
+    </x-signal.ui.card>
 </div>

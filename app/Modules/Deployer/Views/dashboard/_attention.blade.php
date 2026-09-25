@@ -37,7 +37,7 @@
                 </h3>
                 <div class="space-y-2">
                     @forelse ($attentionWebsites as $website)
-                        <a href="{{ route('websites.show', $website) }}" class="ui-card ui-card--interactive block p-3">
+                        <x-signal.ui.card as="a" tone="interactive" class="block p-3" href="{{ route('websites.show', $website) }}">
                             <span class="block font-bold text-ink">{{ $website->name }}</span>
                             <span class="text-sm text-muted">
                                 @if ($website->provisioning_status === \App\Modules\Deployer\Models\Website::STATUS_FAILED)
@@ -51,7 +51,7 @@
                                     {{ __('Health check failing') }}
                                 @endif
                             </span>
-                        </a>
+                        </x-signal.ui.card>
                     @empty
                         <p class="text-sm text-muted">{{ __('No website failures.') }}</p>
                     @endforelse
@@ -69,10 +69,10 @@
                 </h3>
                 <div class="space-y-2">
                     @forelse ($attentionServers as $server)
-                        <a href="{{ route('servers.show', $server) }}" class="ui-card ui-card--interactive block p-3">
+                        <x-signal.ui.card as="a" tone="interactive" class="block p-3" href="{{ route('servers.show', $server) }}">
                             <span class="block font-bold text-ink">{{ $server->label }}</span>
                             <span class="text-sm text-muted">{{ __('Provisioning failed') }}</span>
-                        </a>
+                        </x-signal.ui.card>
                     @empty
                         <p class="text-sm text-muted">{{ __('No server failures.') }}</p>
                     @endforelse
@@ -90,7 +90,7 @@
                 </h3>
                 <div class="space-y-2">
                     @forelse ($attentionRepositories as $repository)
-                        <a href="{{ route('builds.show', $repository->latestBuild) }}" class="ui-card ui-card--interactive block p-3">
+                        <x-signal.ui.card as="a" tone="interactive" class="block p-3" href="{{ route('builds.show', $repository->latestBuild) }}">
                             <span class="block font-bold text-ink">{{ $repository->name }}</span>
                             <span class="text-sm text-muted">
                                 {{ __('Latest deployment failed') }}
@@ -98,7 +98,7 @@
                                     &middot; {{ $repository->website->name }}
                                 @endif
                             </span>
-                        </a>
+                        </x-signal.ui.card>
                     @empty
                         <p class="text-sm text-muted">{{ __('No deployment failures.') }}</p>
                     @endforelse
@@ -116,7 +116,7 @@
                 </h3>
                 <div class="space-y-2">
                     @forelse ($attentionProviders as $provider)
-                        <a href="{{ route('providers.show', $provider) }}" class="ui-card ui-card--interactive block p-3">
+                        <x-signal.ui.card as="a" tone="interactive" class="block p-3" href="{{ route('providers.show', $provider) }}">
                             <span class="block font-bold text-ink">{{ $provider->name }}</span>
                             <span class="text-sm text-muted">
                                 {{ __('Connection failed') }}
@@ -124,7 +124,7 @@
                                     &middot; {{ $provider->connection_checked_at->diffForHumans() }}
                                 @endif
                             </span>
-                        </a>
+                        </x-signal.ui.card>
                     @empty
                         <p class="text-sm text-muted">{{ __('No provider failures.') }}</p>
                     @endforelse

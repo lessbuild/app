@@ -1,8 +1,10 @@
 <?php
 
+use App\Modules\Monitor\Jobs\RecordQueueWorkerHealth;
 use App\Modules\Monitor\Services\DeliverAlertNotification;
 use App\Modules\Monitor\Services\EvaluateAlertRules;
 use App\Modules\Monitor\Services\PruneTelemetryData;
+use App\Modules\Monitor\Services\ReconcileMonitorCoreBillingEvents;
 use App\Modules\Monitor\Services\ScheduleMonitorChecks;
 use App\Modules\Monitor\Services\Telemetry\TelemetryQueue;
 use App\Modules\Monitor\Services\WakeSnoozedIssues;
@@ -117,3 +119,51 @@ Artisan::command('monitors:check {--limit=100 : Maximum checks to schedule (1-10
 })->purpose('Recover interrupted checks, schedule network probes and evaluate heartbeat deadlines');
 
 Schedule::command('monitors:check')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('monitor:health-probe', function (): int {
+    foreach (['telemetry', 'checks', 'alerts'] as $queue) {
+        RecordQueueWorkerHealth::dispatch($queue);
+    }
+
+    return 0;
+})->purpose('Queue bounded liveness probes for Monitor background workers');
+
+Schedule::command('monitor:health-probe')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('monitor:billing:reconcile-core-events {--limit=10 : Maximum pending events to retry (1-100)} {--event= : Retry one preserved Stripe event ID, including an event held for review} {--include-review : Also retry pending events held for review}', function (ReconcileMonitorCoreBillingEvents $reconciler): int {
+    $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 100]]);
+    $eventId = $this->option('event');
+
+    if ($limit === false) {
+        $this->error('The limit must be an integer between 1 and 100.');
+
+        return 2;
+    }
+
+    if ($eventId !== null && (! is_string($eventId) || ! preg_match('/^evt_[A-Za-z0-9]+$/', $eventId))) {
+        $this->error('The event must be a Stripe event ID.');
+
+        return 2;
+    }
+
+    $summary = $reconciler->handle($limit, $eventId, (bool) $this->option('include-review'));
+    $this->info(sprintf(
+        'Monitor Core billing reconciliation: attempted %d, completed %d, pending %d, held for review %d, failed %d, skipped %d.',
+        $summary['attempted'],
+        $summary['completed'],
+        $summary['pending'],
+        $summary['needs_review'],
+        $summary['failed'],
+        $summary['skipped'],
+    ));
+
+    return $summary['failed'] > 0 ? 1 : 0;
+})->purpose('Retry Monitor Stripe billing events whose Core projection needs reconciliation');
+
+if (config('monitor.beacon.plan_authority', 'legacy') !== 'legacy'
+    && filled(config('monitor.beacon.billing.stripe.secret'))) {
+    Schedule::command('monitor:billing:reconcile-core-events --limit=10')
+        ->everyFifteenMinutes()
+        ->withoutOverlapping(10)
+        ->onOneServer();
+}

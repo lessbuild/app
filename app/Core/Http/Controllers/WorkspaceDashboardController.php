@@ -2,6 +2,7 @@
 
 namespace App\Core\Http\Controllers;
 
+use App\Core\Data\Projects\WorkspaceProjectOperationalState;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
@@ -16,6 +17,7 @@ use App\Core\Models\WorkspaceProjectPin;
 use App\Core\Services\Identity\ResolvePlatformUser;
 use App\Core\Services\ProjectProductSummaries;
 use App\Core\Services\Projects\WorkspaceDashboardEnvironmentFilters;
+use App\Core\Services\Projects\WorkspaceDashboardOperationalFilter;
 use App\Core\Services\Projects\WorkspaceDashboardPriorities;
 use App\Core\Services\ProjectSetup;
 use App\Core\Services\Search\WorkspaceSearchPattern;
@@ -37,6 +39,7 @@ final class WorkspaceDashboardController
         ProjectSetup $projectSetup,
         WorkspaceDashboardPriorities $dashboardPriorities,
         WorkspaceDashboardEnvironmentFilters $environmentFilters,
+        WorkspaceDashboardOperationalFilter $operationalFilter,
     ): View {
         $principal = $request->user();
         abort_unless($principal !== null, 401);
@@ -91,6 +94,10 @@ final class WorkspaceDashboardController
         $viewFilters = $selectedView?->filters ?? [];
         $viewProduct = $viewFilters['product'] ?? 'all';
         $validViewProduct = is_string($viewProduct) && in_array($viewProduct, ['all', 'deployer', 'monitor', 'analytics'], true);
+        $viewOperationalStateValue = $viewFilters['operational_state'] ?? 'all';
+        $viewOperationalState = is_string($viewOperationalStateValue)
+            ? WorkspaceProjectOperationalState::tryFrom($viewOperationalStateValue)
+            : null;
         $viewEnvironment = $viewFilters['environment'] ?? 'all';
         $validViewEnvironment = is_string($viewEnvironment)
             && ($viewEnvironment === 'all' || Str::isUlid($viewEnvironment));
@@ -107,6 +114,7 @@ final class WorkspaceDashboardController
         $viewProjectName = $validViewProjectName ? trim($viewProjectName) : '';
         $selectedViewUnavailable = $selectedView !== null
             && (! $validViewProduct
+                || $viewOperationalState === null
                 || ! $validViewEnvironment
                 || ! $viewEnvironmentAvailable
                 || ! $validViewProjectName
@@ -230,15 +238,21 @@ final class WorkspaceDashboardController
             ];
         });
 
-        $activeProductCounts = $visibleProducts === []
+        $productActivationRollups = $visibleProducts === []
             ? collect()
             : ProjectProduct::query()
                 ->whereIn('product', $visibleProducts)
-                ->where('status', 'active')
                 ->whereHas('project', $projectScope)
-                ->selectRaw('product, count(*) as total')
+                ->selectRaw('product, status, count(*) as total')
+                ->groupBy('product', 'status')
+                ->get()
                 ->groupBy('product')
-                ->pluck('total', 'product');
+                ->map(fn (Collection $statuses): array => [
+                    'active' => (int) ($statuses->firstWhere('status', 'active')?->total ?? 0),
+                    'setting_up' => (int) $statuses->whereIn('status', ['pending', 'provisioning', 'setting_up'])->sum('total'),
+                    'needs_attention' => (int) $statuses->whereIn('status', ['failed', 'error'])->sum('total'),
+                ]);
+        $activeProductCounts = $productActivationRollups->map(fn (array $counts): int => $counts['active']);
 
         $connections = ProjectConnection::query()
             ->where('status', '!=', 'disconnected')
@@ -261,6 +275,20 @@ final class WorkspaceDashboardController
                 ->whereHas('targetResource', fn (Builder $resource) => $resource->whereIn('product', $visibleProducts));
         }
 
+        $needsConnectionState = $selectedView !== null
+            && in_array($viewOperationalState, [
+                WorkspaceProjectOperationalState::Attention,
+                WorkspaceProjectOperationalState::Current,
+            ], true);
+        $failedConnectionProjectIds = ! $needsConnectionState || $projects->isEmpty()
+            ? collect()
+            : (clone $connections)
+                ->whereIn('project_connections.project_id', $projects->modelKeys())
+                ->where(fn (Builder $query) => $query->where('status', 'failed')->orWhereNotNull('last_error_code'))
+                ->distinct()
+                ->pluck('project_connections.project_id')
+                ->map(fn ($projectId): string => (string) $projectId);
+
         $recentConnections = (clone $connections)
             ->with(['project', 'sourceResource', 'targetResource'])
             ->orderByDesc('updated_at')
@@ -273,6 +301,19 @@ final class WorkspaceDashboardController
             ->orderByDesc('updated_at')
             ->limit(10)
             ->get();
+
+        if ($selectedView !== null && $viewOperationalState !== null && $viewOperationalState !== WorkspaceProjectOperationalState::All) {
+            $projects = $projects
+                ->filter(fn (Project $project): bool => $operationalFilter->matches(
+                    $viewOperationalState,
+                    $projectSummaries->get((string) $project->getKey(), collect()),
+                    $projectSetupSteps->get((string) $project->getKey(), collect()),
+                    $project->products,
+                    $failedConnectionProjectIds->contains((string) $project->getKey()),
+                ))
+                ->values();
+        }
+
         $priorities = $projects
             ->flatMap(fn (Project $project) => $dashboardPriorities->forProject(
                 $workspace,
@@ -308,6 +349,7 @@ final class WorkspaceDashboardController
             'projectCount' => $projectCount,
             'productGrants' => $productGrants,
             'activeProductCounts' => $activeProductCounts,
+            'productActivationRollups' => $productActivationRollups,
             'activeProductCount' => $activeProductCounts->sum(),
             'connectionCount' => $connections->count(),
             'recentConnections' => $recentConnections,

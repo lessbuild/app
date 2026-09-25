@@ -74,12 +74,16 @@ final class WorkspaceViewData
             ]],
         ]];
 
-        $managementItems = [[
-            'label' => 'Add website',
-            'route' => 'analytics.sites.create',
-            'icon' => 'plus',
-            'active' => $this->request->routeIs('analytics.sites.create', 'analytics.sites.store'),
-        ]];
+        $managementItems = [];
+
+        if ($currentWorkspaceRole?->canManageSites() === true) {
+            $managementItems[] = [
+                'label' => 'Add website',
+                'route' => 'analytics.sites.create',
+                'icon' => 'plus',
+                'active' => $this->request->routeIs('analytics.sites.create', 'analytics.sites.store'),
+            ];
+        }
 
         if ($currentSite) {
             $managementItems[] = [

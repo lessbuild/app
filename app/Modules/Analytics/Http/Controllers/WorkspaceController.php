@@ -2,19 +2,25 @@
 
 namespace App\Modules\Analytics\Http\Controllers;
 
+use App\Core\Services\Auth\ProductAuthentication;
+use App\Core\Services\PlatformCoreRouteLinks;
 use App\Modules\Analytics\Enums\WorkspaceRole;
-use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
 use App\Modules\Analytics\Models\Workspace;
+use App\Modules\Analytics\Services\AnalyticsWorkspaceAccess;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class WorkspaceController extends Controller
 {
-    public function index(Request $request, AnalyticsWorkspaceAccess $access): View
-    {
+    public function index(
+        Request $request,
+        AnalyticsWorkspaceAccess $access,
+        ProductAuthentication $authentication,
+        PlatformCoreRouteLinks $coreLinks,
+    ): View {
         $productUserIds = $access->productUserIds($request->user());
         $workspaces = $productUserIds === []
             ? collect()
@@ -24,11 +30,28 @@ class WorkspaceController extends Controller
                 ->orderBy('name')
                 ->get();
 
-        return view('analytics::workspaces.index', ['workspaces' => $workspaces]);
+        $usesCoreAuthority = $authentication->usesCoreAuthority('analytics');
+
+        return view('analytics::workspaces.index', [
+            'workspaces' => $workspaces,
+            'usesCoreAuthority' => $usesCoreAuthority,
+            'coreWorkspaceManagementUrl' => $usesCoreAuthority ? $coreLinks->to('core.workspaces.index') : null,
+        ]);
     }
 
-    public function store(Request $request, AnalyticsWorkspaceAccess $access): RedirectResponse
-    {
+    public function store(
+        Request $request,
+        AnalyticsWorkspaceAccess $access,
+        ProductAuthentication $authentication,
+        PlatformCoreRouteLinks $coreLinks,
+    ): RedirectResponse {
+        if ($authentication->usesCoreAuthority('analytics')) {
+            $managementUrl = $coreLinks->to('core.workspaces.index');
+            abort_if($managementUrl === null, 503, 'Shared workspace management is not available.');
+
+            return redirect()->away($managementUrl);
+        }
+
         $productUserIds = $access->productUserIds($request->user());
         abort_if($productUserIds === [], 403, 'Analytics access is not yet reconciled for this account.');
 

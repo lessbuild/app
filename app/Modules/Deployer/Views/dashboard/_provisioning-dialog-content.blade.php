@@ -13,22 +13,21 @@
     </div>
 
     <div class="mt-5 grid grid-cols-2 gap-3">
-        <div class="ui-card p-3">
+        <x-signal.ui.card class="p-3">
             <span class="block text-xl font-extrabold text-ink">{{ $provisioningCounts['servers'] }}</span>
             <span class="text-xs font-semibold uppercase text-muted">{{ __('Servers') }}</span>
-        </div>
-        <div class="ui-card p-3">
+        </x-signal.ui.card>
+        <x-signal.ui.card class="p-3">
             <span class="block text-xl font-extrabold text-ink">{{ $provisioningCounts['websites'] }}</span>
             <span class="text-xs font-semibold uppercase text-muted">{{ __('Websites') }}</span>
-        </div>
+        </x-signal.ui.card>
     </div>
 
     <div class="mt-5 space-y-2">
         @foreach ($provisioningResources as $resource)
             @php($isServer = $resource instanceof \App\Modules\Deployer\Models\Server)
-            <a
+            <x-signal.ui.card as="a" tone="interactive" class="flex items-center justify-between gap-4 p-3"
                 href="{{ $isServer ? route('servers.show', $resource) : route('websites.show', $resource) }}"
-                class="ui-card ui-card--interactive flex items-center justify-between gap-4 p-3"
             >
                 <span class="min-w-0">
                     <span class="block truncate font-bold text-ink">{{ $isServer ? $resource->label : $resource->name }}</span>
@@ -38,7 +37,7 @@
                     <span class="block font-semibold uppercase">{{ str($resource->provisioning_status)->replace('_', ' ') }}</span>
                     <span class="mt-1 block">{{ $resource->created_at->diffForHumans() }}</span>
                 </span>
-            </a>
+            </x-signal.ui.card>
         @endforeach
     </div>
 

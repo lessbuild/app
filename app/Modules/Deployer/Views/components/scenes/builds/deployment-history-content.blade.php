@@ -31,7 +31,7 @@
     @else
         <ol class="relative space-y-3 border-l border-line pl-4" aria-label="{{ __('Deployment timeline') }}">
             @foreach ($builds as $build)
-                <li data-build-card class="ui-card relative p-4">
+                <x-signal.ui.card as="li" class="relative p-4" data-build-card>
                     <span class="absolute -left-[1.35rem] top-5 h-3 w-3 rounded-full border-2 border-surface" style="background-color: var(--ui-primary)" aria-hidden="true"></span>
                     <div class="flex flex-wrap items-start justify-between gap-3">
                         <div class="min-w-0">
@@ -68,7 +68,7 @@
                     <div class="mt-3">
                         <x-signal.ui.button :href="route('builds.show', $build)" variant="ghost">{{ __('View deployment') }}</x-signal.ui.button>
                     </div>
-                </li>
+                </x-signal.ui.card>
             @endforeach
         </ol>
         @if ($builds->hasMorePages())

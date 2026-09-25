@@ -12,16 +12,21 @@ use App\Core\Models\WorkspaceMembershipEvent;
 use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
+use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
 use App\Core\Services\Workspaces\ManageWorkspaceMembership;
 use App\Core\Services\Workspaces\ManageWorkspaceProductAccess;
 use App\Modules\Analytics\Models\User as AnalyticsUser;
 use App\Modules\Analytics\Services\Core\AnalyticsPlatformPrincipalProvisioner;
+use App\Modules\Analytics\Services\Core\AnalyticsProductWorkspaceProvisioner;
 use App\Modules\Analytics\Services\Core\AnalyticsWorkspaceMembershipProjector;
 use App\Modules\Deployer\Models\User as DeployerUser;
 use App\Modules\Deployer\Services\Core\DeployerPlatformPrincipalProvisioner;
+use App\Modules\Deployer\Services\Core\DeployerProductWorkspaceProvisioner;
 use App\Modules\Deployer\Services\Core\DeployerWorkspaceMembershipProjector;
+use App\Modules\Deployer\Services\PersonalOrganization;
 use App\Modules\Monitor\Models\User as MonitorUser;
 use App\Modules\Monitor\Services\Core\MonitorPlatformPrincipalProvisioner;
+use App\Modules\Monitor\Services\Core\MonitorProductWorkspaceProvisioner;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Artisan;
@@ -56,6 +61,7 @@ final class WorkspaceProductAccessManagementTest extends TestCase
 
         $this->registerPrincipalProvisioners();
         $this->registerWorkspaceMembershipProjectors();
+        $this->registerWorkspaceProvisioners();
         Artisan::call('platform:migrate', ['module' => 'core']);
         $this->createProductTables();
 
@@ -251,6 +257,69 @@ final class WorkspaceProductAccessManagementTest extends TestCase
             ->where('membership_id', $this->memberMembership->getKey())
             ->where('product', 'monitor')
             ->value('status'));
+    }
+
+    public function test_grant_provisions_a_missing_product_workspace_projection_from_the_core_workspace(): void
+    {
+        $sources = [
+            'deployer' => ['organization', 'organizations', 'organization_id', 'organization_user'],
+            'monitor' => ['workspace', 'workspaces', 'workspace_id', 'user_workspace'],
+            'analytics' => ['workspace', 'workspaces', 'workspace_id', 'workspace_user'],
+        ];
+
+        foreach ($sources as $product => [$sourceEntity, $workspaceTable, $pivotWorkspaceColumn, $pivotTable]) {
+            DB::connection('core')->table('legacy_identity_maps')
+                ->where('source_product', $product)
+                ->where('source_entity', $sourceEntity)
+                ->where('canonical_entity', 'workspace')
+                ->where('canonical_id', $this->workspace->getKey())
+                ->delete();
+
+            if ($product === 'deployer') {
+                config(['platform.products.deployer.auth_authority' => 'core']);
+                $deployerPrincipal = DeployerUser::query()->findOrFail($this->memberProductUsers[$product]);
+                $organizationsBeforeGrant = DB::connection('deployer')->table('organizations')->count();
+
+                try {
+                    app(PersonalOrganization::class)->ensure($deployerPrincipal);
+                    $this->fail('Core auth must not auto-create an unmapped Deployer organization.');
+                } catch (HttpException $exception) {
+                    $this->assertSame(403, $exception->getStatusCode());
+                }
+
+                $this->assertSame($organizationsBeforeGrant, DB::connection('deployer')->table('organizations')->count());
+            }
+
+            $projected = app(ManageWorkspaceProductAccess::class)->update(
+                actor: $this->owner,
+                workspace: $this->workspace,
+                membership: $this->memberMembership,
+                product: ProductKey::from($product),
+                role: 'member',
+            );
+
+            $this->assertSame(1, $projected);
+            $mapping = DB::connection('core')->table('legacy_identity_maps')
+                ->where('source_product', $product)
+                ->where('source_entity', $sourceEntity)
+                ->where('canonical_entity', 'workspace')
+                ->where('canonical_id', $this->workspace->getKey())
+                ->sole();
+            $this->assertSame('reconciled', $mapping->status);
+
+            $localWorkspace = DB::connection($product)->table($workspaceTable)->where('id', $mapping->source_id)->first();
+            $this->assertNotNull($localWorkspace);
+            $this->assertSame('Signal Workspace', $localWorkspace->name);
+            $this->assertDatabaseHas($pivotTable, [
+                $pivotWorkspaceColumn => $mapping->source_id,
+                'user_id' => $this->memberProductUsers[$product],
+            ], $product);
+
+            if ($product === 'deployer') {
+                $organization = app(PersonalOrganization::class)->ensure($deployerPrincipal);
+                $this->assertSame((string) $mapping->source_id, (string) $organization->getKey());
+            }
+        }
     }
 
     public function test_shared_workspace_role_cannot_silently_downgrade_an_imported_product_owner(): void
@@ -466,6 +535,21 @@ final class WorkspaceProductAccessManagementTest extends TestCase
         ] as $product => $projector) {
             if ($registry->get($product) === null) {
                 $registry->register($product, app($projector));
+            }
+        }
+    }
+
+    private function registerWorkspaceProvisioners(): void
+    {
+        $registry = app(ProductWorkspaceProvisionerRegistry::class);
+
+        foreach ([
+            'deployer' => DeployerProductWorkspaceProvisioner::class,
+            'monitor' => MonitorProductWorkspaceProvisioner::class,
+            'analytics' => AnalyticsProductWorkspaceProvisioner::class,
+        ] as $product => $provisioner) {
+            if ($registry->get($product) === null) {
+                $registry->register($product, app($provisioner));
             }
         }
     }

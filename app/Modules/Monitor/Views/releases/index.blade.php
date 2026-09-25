@@ -4,7 +4,7 @@
 @section('content')
 <div class="space-y-6">
     <x-monitor::ui.page-header eyebrow="Change intelligence" title="Releases" description="Connect reported versions with telemetry and completed deployments." />
-    <section class="ui-panel overflow-hidden">
+    <x-signal.ui.panel as="section" class="overflow-hidden">
         <form method="GET" action="{{ route('monitor.releases.index') }}" class="grid gap-4 border-b border-line p-5 sm:grid-cols-3 dark:border-line">
             <x-monitor::ui.input name="q" label="Version, service or namespace" type="search" :value="$filters['q'] ?? ''" maxlength="255" />
             <x-monitor::ui.select name="application" label="Application" :value="$filters['application'] ?? ''" :options="$applications->pluck('name', 'id')->all()" placeholder="All applications" />
@@ -20,8 +20,8 @@
                 @endforelse
         </x-monitor::ui.table></div>
         @if($releases->hasPages())<div class="border-t border-line p-5 dark:border-line">{{ $releases->links() }}</div>@endif
-    </section>
+    </x-signal.ui.panel>
     <p class="text-xs leading-5 text-muted dark:text-subtle">Versions are case-sensitive and separate for each application, service and namespace. Source timestamps are lifetime observations, including archived environments, not deployment times. Historical events are not backfilled.</p>
-    <section class="ui-panel p-5"><h2 class="font-bold">Attribute telemetry to a version</h2><p class="mt-2 text-sm leading-6 text-muted dark:text-subtle">For JSON events, send attributes["service.version"], the top-level service name and optionally attributes["service.namespace"]. For OTLP, set service.version, service.name and service.namespace on the resource. Missing, invalid or redacted labels remain unlinked. Recording a deployment never assigns unversioned events by time.</p></section>
+    <x-signal.ui.panel as="section" class="p-5"><h2 class="font-bold">Attribute telemetry to a version</h2><p class="mt-2 text-sm leading-6 text-muted dark:text-subtle">For JSON events, send attributes["service.version"], the top-level service name and optionally attributes["service.namespace"]. For OTLP, set service.version, service.name and service.namespace on the resource. Missing, invalid or redacted labels remain unlinked. Recording a deployment never assigns unversioned events by time.</p></x-signal.ui.panel>
 </div>
 @endsection

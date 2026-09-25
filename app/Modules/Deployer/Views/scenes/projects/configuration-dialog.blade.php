@@ -111,7 +111,7 @@
             <a href="{{ $applicationPageUrl }}" data-modal-trigger="{{ $applicationDialogId }}" data-modal-content-url="{{ $authoringContentUrl }}" aria-controls="{{ $applicationDialogId }}" aria-expanded="false" class="ui-link">{{ __('Edit configuration') }}</a>
     @else
         @if ($recentApplications->isNotEmpty())
-            <details class="ui-card p-4">
+            <x-signal.ui.card as="details" class="p-4">
                 <summary class="cursor-pointer font-bold text-ink">{{ __('Recent application receipts') }}</summary>
                 <ul class="mt-3 space-y-2">
                     @foreach ($recentApplications as $receipt)
@@ -120,10 +120,10 @@
                         </li>
                     @endforeach
                 </ul>
-            </details>
+            </x-signal.ui.card>
         @endif
 
-        <section class="ui-card p-4 sm:p-5" aria-labelledby="configuration-authoring-heading">
+        <x-signal.ui.card as="section" class="p-4 sm:p-5" aria-labelledby="configuration-authoring-heading">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h3 id="configuration-authoring-heading" class="font-bold text-ink">{{ __('Create a review') }}</h3>
@@ -139,9 +139,9 @@
                 <p class="text-xs text-muted">{{ __('Use existing website, secret-variable and repository IDs from this workspace. Do not paste secret values. Inputs are not retained after a validation error.') }}</p>
                 <x-signal.ui.button type="submit" variant="primary">{{ __('Create review') }}</x-signal.ui.button>
             </form>
-        </section>
+        </x-signal.ui.card>
 
-        <details class="ui-card p-4">
+        <x-signal.ui.card as="details" class="p-4">
             <summary class="cursor-pointer font-bold text-ink">{{ __('Authoring guide and binding IDs') }}</summary>
             <p class="mt-3 text-sm text-muted">{{ __('Use the parser-valid examples below. The catalog shows identifiers only and never secret values.') }}</p>
             <div class="mt-4 grid gap-4 lg:grid-cols-2">
@@ -160,6 +160,6 @@
                 <section><h3 class="font-semibold text-ink">{{ __('Repositories') }}</h3><ul class="mt-2 space-y-1">@forelse($repositories->items() as $repository)<li class="text-muted">#{{ $repository->id }} · {{ $repository->name }}</li>@empty<li class="text-muted">{{ __('None available.') }}</li>@endforelse</ul></section>
             </div>
             <a href="{{ $fullPageUrl }}" class="ui-link mt-4 inline-block text-sm">{{ __('Open the full binding catalog') }}</a>
-        </details>
+        </x-signal.ui.card>
     @endif
 </div>

@@ -1,4 +1,4 @@
-<section class="ui-panel min-w-0 p-5">
+<x-signal.ui.panel as="section" class="min-w-0 p-5">
     <div class="flex items-start justify-between gap-3"><div><p class="text-xs font-bold uppercase tracking-[0.16em] text-danger dark:text-danger">RESPONSE</p><h2 class="mt-2 text-lg font-bold">Active incidents</h2></div><a href="{{ route('monitor.incidents.index') }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">Open inbox →</a></div>
     <div class="mt-5 divide-y divide-line dark:divide-line">@forelse($data['incidents'] as $incident)<a href="{{ route('monitor.incidents.show', $incident) }}" class="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0"><span class="min-w-0"><span class="block truncate text-sm font-semibold">{{ $incident->title }}</span><span class="mt-1 block text-xs text-muted dark:text-subtle">{{ $incident->assignee?->name ?? 'Unassigned' }}</span></span><x-monitor::ui.badge :tone="$incident->status === 'acknowledged' ? 'amber' : 'red'">{{ $incident->statusLabel() }}</x-monitor::ui.badge></a>@empty<p class="py-5 text-sm text-muted dark:text-subtle">No active incidents need attention.</p>@endforelse</div>
-</section>
+</x-signal.ui.panel>

@@ -27,11 +27,25 @@
         @endforeach
     </div>
 
-    <x-signal.ui.panel as="form" class="space-y-5 p-6" method="POST" :action="route('analytics.workspaces.store')">
-        @csrf
-        <h2 class="text-lg font-extrabold">Create another workspace</h2>
-        <x-signal.ui.input-field name="name" label="Workspace name" :value="old('name')" placeholder="Acme marketing" required />
-        <x-signal.ui.button type="submit" variant="primary">Create workspace</x-signal.ui.button>
-    </x-signal.ui.panel>
+    @if ($usesCoreAuthority)
+        <x-signal.ui.panel class="space-y-4 p-6">
+            <div>
+                <h2 class="text-lg font-extrabold">Manage shared workspaces</h2>
+                <p class="mt-2 text-sm leading-6 text-muted">Create workspaces and manage team membership in Buildpusher Core. Projects you add there can be connected to Analytics and your other apps.</p>
+            </div>
+            @if ($coreWorkspaceManagementUrl)
+                <x-signal.ui.button :href="$coreWorkspaceManagementUrl" variant="primary">Open workspace management</x-signal.ui.button>
+            @else
+                <x-signal.ui.alert tone="warning">Shared workspace management is temporarily unavailable. Return to Analytics after Core is connected.</x-signal.ui.alert>
+            @endif
+        </x-signal.ui.panel>
+    @else
+        <x-signal.ui.panel as="form" class="space-y-5 p-6" method="POST" :action="route('analytics.workspaces.store')">
+            @csrf
+            <h2 class="text-lg font-extrabold">Create another workspace</h2>
+            <x-signal.ui.input-field name="name" label="Workspace name" :value="old('name')" placeholder="Acme marketing" required />
+            <x-signal.ui.button type="submit" variant="primary">Create workspace</x-signal.ui.button>
+        </x-signal.ui.panel>
+    @endif
 </div>
 @endsection

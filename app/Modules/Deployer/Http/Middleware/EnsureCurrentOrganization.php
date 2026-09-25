@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Http\Middleware;
 
+use App\Core\Services\Auth\ProductAuthentication;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\PersonalOrganization;
 use Closure;
@@ -13,7 +14,10 @@ class EnsureCurrentOrganization
     /**
      * Resolve or create the personal workspace through the shared organization service.
      */
-    public function __construct(private readonly PersonalOrganization $organizations) {}
+    public function __construct(
+        private readonly PersonalOrganization $organizations,
+        private readonly ProductAuthentication $authentication,
+    ) {}
 
     /**
      * Ensure an authenticated request user has a current organization before continuing the pipeline.
@@ -25,6 +29,10 @@ class EnsureCurrentOrganization
         $user = $request->user();
 
         if ($user instanceof User) {
+            if ($this->authentication->usesCoreAuthority('deployer') && $request->query->has('organization_id')) {
+                return $next($request);
+            }
+
             $this->organizations->ensure($user);
         }
 

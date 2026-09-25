@@ -27,12 +27,12 @@
     </x-signal.ui.page-header>
 
     @unless ($featureAvailable)
-        <div class="ui-alert ui-alert--info mt-6" role="status">
+        <x-signal.ui.alert tone="info" class="mt-6" role="status">
             <strong class="text-ink">{{ __('Business feature') }}</strong>
             <span class="mx-1">·</span>
             {{ __('Upgrade to create and operate high-availability routes.') }}
             <a href="{{ route('pricing') }}" class="ui-link ml-1 font-bold underline">{{ __('Compare plans') }}</a>
-        </div>
+        </x-signal.ui.alert>
     @endunless
 
     @php
@@ -80,7 +80,21 @@
 
     <div class="mt-6 grid gap-5 xl:grid-cols-2">
         @forelse ($loadBalancers as $balancer)
-            <section class="ui-card p-5">
+            @php
+                $loadBalancerIsRemoving = $balancer->status === 'removing';
+                $loadBalancerRemovalFailed = $balancer->status === 'removal_failed';
+                $loadBalancerCanEdit = ! $loadBalancerIsRemoving && ! $loadBalancerRemovalFailed;
+                $loadBalancerRemovalDialogId = 'load-balancer-removal-'.$balancer->id;
+                $loadBalancerStatusLabel = match ($balancer->status) {
+                    'active', 'healthy', 'ready' => __('Active'),
+                    'pending' => __('Applying'),
+                    'removing' => __('Removing'),
+                    'removal_failed' => __('Removal failed'),
+                    'failed', 'error' => __('Failed'),
+                    default => ucfirst(str_replace('_', ' ', $balancer->status)),
+                };
+            @endphp
+            <x-signal.ui.card as="section" class="p-5">
                 <div class="flex items-start justify-between gap-4">
                     <div class="min-w-0">
                         <p class="ui-eyebrow">{{ $balancer->environment->project->name }} / {{ $balancer->environment->name }}</p>
@@ -88,15 +102,40 @@
                         <p class="mt-1 text-sm text-muted">{{ $balancer->server->label }}</p>
                     </div>
                     <div class="flex shrink-0 flex-col items-end gap-2">
-                        <x-signal.ui.badge tone="{{ in_array($balancer->status, ['active', 'healthy', 'ready'], true) ? 'success' : (in_array($balancer->status, ['failed', 'error'], true) ? 'danger' : 'accent') }}">{{ ucfirst($balancer->status) }}</x-signal.ui.badge>
+                        <x-signal.ui.badge tone="{{ in_array($balancer->status, ['active', 'healthy', 'ready'], true) ? 'success' : (in_array($balancer->status, ['failed', 'error', 'removal_failed'], true) ? 'danger' : 'accent') }}">{{ $loadBalancerStatusLabel }}</x-signal.ui.badge>
                         @if ($canManage)
-                            <form method="POST" action="{{ route('load-balancers.apply', $balancer) }}">
-                                @csrf
-                                <x-signal.ui.button type="submit" variant="secondary">{{ __('Apply') }}</x-signal.ui.button>
-                            </form>
+                            <div class="flex flex-wrap justify-end gap-2">
+                                @if (! $loadBalancerIsRemoving && ! $loadBalancerRemovalFailed)
+                                    <form method="POST" action="{{ route('load-balancers.apply', $balancer) }}">
+                                        @csrf
+                                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Apply') }}</x-signal.ui.button>
+                                    </form>
+                                @endif
+                                @unless ($loadBalancerIsRemoving)
+                                    <x-signal.ui.button
+                                        type="button"
+                                        variant="danger"
+                                        data-modal-trigger="{{ $loadBalancerRemovalDialogId }}"
+                                        aria-controls="{{ $loadBalancerRemovalDialogId }}"
+                                        aria-expanded="false"
+                                    >
+                                        {{ $loadBalancerRemovalFailed ? __('Retry removal') : __('Remove route') }}
+                                    </x-signal.ui.button>
+                                @endunless
+                            </div>
                         @endif
                     </div>
                 </div>
+
+                @if ($loadBalancerIsRemoving)
+                    <x-signal.ui.alert tone="info" class="mt-4" role="status">
+                        {{ __('Remote routing cleanup is in progress. This route will stay here until Deployer confirms cleanup.') }}
+                    </x-signal.ui.alert>
+                @elseif ($loadBalancerRemovalFailed)
+                    <x-signal.ui.alert tone="danger" class="mt-4" role="alert">
+                        {{ __('Remote routing cleanup failed. Retry removal to keep the route and its status visible until cleanup succeeds.') }}
+                    </x-signal.ui.alert>
+                @endif
 
                 @php
                     $nodeManagementOpen = $balancer->nodes->count() < 2
@@ -130,7 +169,7 @@
                                     <p class="truncate font-bold text-ink">{{ $node->server->label }}</p>
                                     <p class="text-xs text-muted">{{ $node->server->public_ip }}:{{ $node->upstream_port }} · {{ __('Weight :weight', ['weight' => $node->weight]) }} · {{ ucfirst($node->health_status) }}</p>
                                 </div>
-                                @if ($canManage)
+                                @if ($canManage && $loadBalancerCanEdit)
                                     <form method="POST" action="{{ route('load-balancers.nodes.destroy', $node) }}">
                                         @csrf
                                         @method('DELETE')
@@ -140,7 +179,7 @@
                             </div>
                         @endforeach
 
-                        @if ($canManage)
+                        @if ($canManage && $loadBalancerCanEdit)
                             <div class="mt-5 border-t border-line pt-5">
                                 <x-signal.ui.button
                                     href="{{ $nodeDialogUrl }}"
@@ -156,7 +195,7 @@
                     </div>
                 </details>
 
-                @if ($canManage)
+                @if ($canManage && $loadBalancerCanEdit)
                     <x-scenes.load-balancers.node-dialog
                         :balancer="$balancer"
                         :servers="$servers"
@@ -164,7 +203,18 @@
                         :open="$nodeDialogOpen"
                     />
                 @endif
-            </section>
+
+                @if ($canManage && ! $loadBalancerIsRemoving)
+                    <x-signal.overlays.delete-confirmation
+                        :id="$loadBalancerRemovalDialogId"
+                        :route="route('load-balancers.destroy', $balancer)"
+                        :title="$loadBalancerRemovalFailed ? __('Retry load-balancer cleanup?') : __('Remove this load balancer?')"
+                        :description="__('Deployer removes the remote routing configuration first. The route remains visible until that cleanup succeeds.')"
+                        :warning="__('This does not remove or change the DNS record.')"
+                        :submit-label="$loadBalancerRemovalFailed ? __('Retry removal') : __('Remove route')"
+                    />
+                @endif
+            </x-signal.ui.card>
         @empty
             <x-signal.ui.empty-state
                 class="xl:col-span-2"

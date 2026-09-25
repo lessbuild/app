@@ -11,9 +11,9 @@
         @method('PATCH')
 
         @if (session('profile_status'))
-            <div class="ui-alert ui-alert--success p-3" role="status">
+            <x-signal.ui.alert tone="success" class="p-3" role="status">
                 {{ session('profile_status') }}
-            </div>
+            </x-signal.ui.alert>
         @endif
 
         <label class="block">

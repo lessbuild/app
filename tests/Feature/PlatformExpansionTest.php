@@ -4,6 +4,8 @@ namespace Tests\Feature;
 
 use App\Modules\Deployer\Jobs\ApplyLoadBalancerJob;
 use App\Modules\Deployer\Jobs\Database\CollectDatabaseSnapshotJob;
+use App\Modules\Deployer\Jobs\Database\ManageDatabaseUserJob;
+use App\Modules\Deployer\Models\DatabaseOperationRun;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\EnvironmentResource;
 use App\Modules\Deployer\Models\Provider;
@@ -32,12 +34,53 @@ class PlatformExpansionTest extends TestCase
     public function test_database_inspection_is_scoped_and_stored_without_exposing_credentials(): void
     {
         [$owner, , , $resource] = $this->infrastructure();
+        $operationRun = DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'inspection',
+            'status' => DatabaseOperationRun::QUEUED,
+        ]);
         $runner = $this->runner("size_bytes=1048576\nactive_connections=3\nschema_table=public.users\n");
-        (new CollectDatabaseSnapshotJob($resource->id))->handle($runner);
+        (new CollectDatabaseSnapshotJob($resource->id, $operationRun->id))->handle($runner);
 
         $this->assertSame(1048576, $resource->snapshots()->sole()->size_bytes);
+        $this->assertSame(DatabaseOperationRun::SUCCEEDED, $operationRun->fresh()->status);
+        $this->assertSame(1, $operationRun->fresh()->attempts);
         $this->actingAs($owner)->get(route('databases.index'))->assertOk()->assertSee('public.users')->assertDontSee('database-secret');
         $this->actingAs(User::factory()->create())->get(route('databases.index'))->assertOk()->assertDontSee($resource->name);
+    }
+
+    public function test_database_user_application_and_removal_record_safe_operation_outcomes(): void
+    {
+        [$owner, , , $resource] = $this->infrastructure();
+        $databaseUser = $resource->databaseUsers()->create([
+            'created_by' => $owner->id,
+            'username' => 'private_reporting_user',
+            'password' => 'credential-secret',
+            'privilege' => 'read',
+        ]);
+        $applyRun = DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'user_apply',
+            'subject_id' => $databaseUser->id,
+            'status' => DatabaseOperationRun::QUEUED,
+        ]);
+
+        (new ManageDatabaseUserJob($databaseUser->id, 'apply', $applyRun->id))->handle($this->runner(''));
+
+        $this->assertSame(DatabaseOperationRun::SUCCEEDED, $applyRun->fresh()->status);
+        $this->assertSame(1, $applyRun->fresh()->attempts);
+        $this->assertNotNull($databaseUser->fresh()->applied_at);
+
+        $removeRun = DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'user_remove',
+            'subject_id' => $databaseUser->id,
+            'status' => DatabaseOperationRun::QUEUED,
+        ]);
+        (new ManageDatabaseUserJob($databaseUser->id, 'remove', $removeRun->id))->handle($this->runner(''));
+
+        $this->assertSame(DatabaseOperationRun::SUCCEEDED, $removeRun->fresh()->status);
+        $this->assertDatabaseMissing('database_users', ['id' => $databaseUser->id]);
     }
 
     public function test_load_balancer_generates_health_checked_multi_node_configuration(): void

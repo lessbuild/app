@@ -31,6 +31,7 @@ final class CoreHomeController
         return view('core::workspaces.index', [
             'user' => $user,
             'workspaces' => $workspaces,
+            'canCreateWorkspace' => $user->status === 'active' && $user->hasVerifiedEmail(),
         ]);
     }
 }

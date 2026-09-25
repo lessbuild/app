@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Jobs\Database;
 
+use App\Modules\Deployer\Models\DatabaseOperationRun;
 use App\Modules\Deployer\Models\DatabaseUser;
 use App\Modules\Deployer\Services\Runner;
 use Illuminate\Bus\Queueable;
@@ -9,22 +10,34 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 use RuntimeException;
+use Throwable;
 
 class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
 
-    public int $uniqueFor = 300;
+    public int $uniqueFor = 7200;
+
+    public int $tries = 5;
+
+    public int $timeout = 600;
 
     /**
      * Capture the managed database user and whether its remote account should be removed or applied.
      *
      * @param  int  $databaseUserId  Stored database account whose remote privileges should be reconciled.
-     * @param  string  $action  The literal remove deletes the account; other values apply its stored credentials and privileges.
+     * @param  string  $action  The literal remove deletes the account; apply reconciles its stored credentials and privileges.
+     * @param  int|null  $operationRunId  Durable operation record created by the authorized request, when available.
      */
-    public function __construct(public readonly int $databaseUserId, public readonly string $action) {}
+    public function __construct(
+        public readonly int $databaseUserId,
+        public readonly string $action,
+        public readonly ?int $operationRunId = null,
+    ) {}
 
     /**
      * Keep account application and removal jobs distinct while coalescing duplicates of each operation.
@@ -36,6 +49,17 @@ class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
         return $this->databaseUserId.'-'.$this->action;
     }
 
+    /** @return array<int, WithoutOverlapping> Serialize changes to one remote database credential. */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('database-user:'.$this->databaseUserId))
+                ->shared()
+                ->releaseAfter(15)
+                ->expireAfter(3600),
+        ];
+    }
+
     /**
      * Apply database privileges and credentials or remove the remote account; persist the applied timestamp or delete its record only after successful execution.
      *
@@ -43,10 +67,42 @@ class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
      */
     public function handle(Runner $runner): void
     {
+        abort_unless(in_array($this->action, ['apply', 'remove'], true), 422);
+
         $record = DatabaseUser::query()->with('resource.environment.website.server')->find($this->databaseUserId);
-        if (! $record) {
+        $operationRun = $this->operationRun();
+
+        abort_unless($this->operationRunId === null || $operationRun !== null, 404);
+
+        if ($operationRun !== null && $record !== null) {
+            abort_unless((string) $operationRun->environment_resource_id === (string) $record->environment_resource_id, 404);
+        }
+
+        if ($operationRun !== null && ! $operationRun->claim()) {
             return;
         }
+
+        if (! $record) {
+            if ($this->action === 'remove') {
+                $operationRun?->markSucceeded();
+            } else {
+                $operationRun?->markFailed();
+            }
+
+            return;
+        }
+
+        try {
+            $this->applyRemoteOperation($runner, $record, $operationRun);
+        } catch (Throwable $exception) {
+            $operationRun?->queueForRetry();
+
+            throw $exception;
+        }
+    }
+
+    private function applyRemoteOperation(Runner $runner, DatabaseUser $record, ?DatabaseOperationRun $operationRun): void
+    {
         $resource = $record->resource;
         $server = $resource->environment?->website?->server;
         abort_unless($server, 422);
@@ -76,11 +132,33 @@ class ManageDatabaseUserJob implements ShouldBeUnique, ShouldQueue
         if (! $result->isSuccessful()) {
             throw new RuntimeException('Database user operation failed.');
         }
-        if ($this->action === 'remove') {
-            $record->delete();
-        } else {
-            $record->update(['applied_at' => now()]);
+        DB::connection('deployer')->transaction(function () use ($record, $operationRun): void {
+            if ($this->action === 'remove') {
+                $record->delete();
+            } else {
+                $record->update(['applied_at' => now()]);
+            }
+
+            $operationRun?->markSucceeded();
+        });
+    }
+
+    public function failed(Throwable $exception): void
+    {
+        $this->operationRun()?->markFailed();
+    }
+
+    private function operationRun(): ?DatabaseOperationRun
+    {
+        if ($this->operationRunId === null) {
+            return null;
         }
+
+        return DatabaseOperationRun::query()
+            ->whereKey($this->operationRunId)
+            ->where('subject_id', $this->databaseUserId)
+            ->where('operation', $this->action === 'remove' ? 'user_remove' : 'user_apply')
+            ->first();
     }
 
     /**

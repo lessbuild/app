@@ -10,7 +10,11 @@ use InvalidArgumentException;
 
 final class ProcessStripeBillingEvent
 {
-    public function __construct(private readonly StripeBillingClient $stripe) {}
+    public function __construct(
+        private readonly StripeBillingClient $stripe,
+        private readonly MonitorPlanAuthority $planAuthority,
+        private readonly SyncMonitorBillingEventIntoCore $coreBilling,
+    ) {}
 
     /**
      * Process a verified Stripe event once.
@@ -32,7 +36,7 @@ final class ProcessStripeBillingEvent
             $object = [];
         }
 
-        return DB::connection('monitor')->transaction(function () use ($eventId, $eventType, $object, $stripeCreatedAt): bool {
+        $processedLocally = DB::connection('monitor')->transaction(function () use ($eventId, $eventType, $object, $stripeCreatedAt): bool {
             if (BillingEvent::query()->where('stripe_event_id', $eventId)->lockForUpdate()->exists()) {
                 return false;
             }
@@ -76,6 +80,12 @@ final class ProcessStripeBillingEvent
 
             return true;
         });
+
+        $processedInCore = $this->planAuthority->usesCore()
+            ? $this->coreBilling->handle($event)
+            : false;
+
+        return $processedLocally || $processedInCore;
     }
 
     /**

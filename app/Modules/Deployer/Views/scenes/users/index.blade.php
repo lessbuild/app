@@ -78,7 +78,7 @@
 
     <div class="mt-8 max-w-5xl space-y-8">
         @if (! auth()->user()->hasVerifiedEmail())
-            <div class="ui-alert ui-alert--warning p-4">
+            <x-signal.ui.alert tone="warning" class="p-4">
                 <p class="font-semibold">{{ __('Verify your email') }}</p>
                 <p class="mt-1">{{ __('Verify :email before managing infrastructure or deployments.', ['email' => auth()->user()->email]) }}</p>
                 @if (session('status') === 'verification-link-sent')
@@ -91,11 +91,11 @@
                     @csrf
                     <x-signal.ui.button type="submit" variant="primary">{{ __('Send verification email') }}</x-signal.ui.button>
                 </form>
-            </div>
+            </x-signal.ui.alert>
         @endif
 
         <section id="account-profile" class="scroll-mt-24">
-            <x-forms.section
+            <x-signal.ui.settings-section
                 :title="__('Profile information')"
                 :description="__('Keep your account identity and contact details current.')"
             >
@@ -115,28 +115,28 @@
                         variant="secondary"
                     >{{ __('Edit profile') }}</x-signal.ui.button>
                 </div>
-            </x-forms.section>
+            </x-signal.ui.settings-section>
         </section>
 
         <form id="password" method="POST" action="{{ route('account.password.update') }}">
             @csrf
             @method('PATCH')
 
-            <x-forms.section
+            <x-signal.ui.settings-section
                 :title="__('Update password')"
                 :description="__('Use a long, unique password to keep your account secure.')"
             >
                 <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
                     @if (session('password_status'))
-                        <div class="ui-alert ui-alert--success p-3" role="status">
+                        <x-signal.ui.alert tone="success" class="p-3" role="status">
                             {{ session('password_status') }}
-                        </div>
+                        </x-signal.ui.alert>
                     @endif
 
                     @if (! auth()->user()->hasLocalPassword())
-                        <p class="ui-alert ui-alert--info p-3">
+                        <x-signal.ui.alert as="p" tone="info" class="p-3">
                             {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type ?? 'a social provider')]) }}
-                        </p>
+                        </x-signal.ui.alert>
                     @else
                         <label class="block">
                             <span class="ui-label">{{ __('Current password') }}</span>
@@ -162,10 +162,10 @@
                         <x-signal.ui.button type="submit" variant="primary">{{ __('Update password') }}</x-signal.ui.button>
                     </div>
                 </x-slot:footer>
-            </x-forms.section>
+            </x-signal.ui.settings-section>
         </form>
 
-        <x-forms.section
+        <x-signal.ui.settings-section
             id="account-two-factor"
             :title="__('Two-factor authentication')"
             :description="__('Require a rotating authenticator code after password or social sign-in.')"
@@ -174,11 +174,11 @@
         >
             <div class="space-y-5 bg-surface px-4 py-5 sm:p-6">
                 @if (session('two_factor_status'))
-                    <div class="ui-alert ui-alert--success p-3" role="status">{{ session('two_factor_status') }}</div>
+                    <x-signal.ui.alert tone="success" class="p-3" role="status">{{ session('two_factor_status') }}</x-signal.ui.alert>
                 @endif
 
                 @if (session('two_factor_recovery_codes'))
-                    <div class="ui-alert ui-alert--warning p-4">
+                    <x-signal.ui.alert tone="warning" class="p-4">
                         <p class="font-bold">{{ __('Save these one-time recovery codes') }}</p>
                         <p class="mt-1 text-sm">{{ __('They will not be shown again. Store them somewhere separate from your authenticator app.') }}</p>
                         <div class="mt-4 grid gap-2 font-mono text-sm sm:grid-cols-2">
@@ -186,16 +186,16 @@
                             <code class="rounded-card border border-line bg-surface-muted px-3 py-2 text-ink">{{ $recoveryCode }}</code>
                             @endforeach
                         </div>
-                    </div>
+                    </x-signal.ui.alert>
                 @endif
 
                 @if (auth()->user()->twoFactorEnabled())
-                    <div class="ui-alert ui-alert--success p-4">
+                    <x-signal.ui.alert tone="success" class="p-4">
                         <p class="font-bold">{{ __('Two-factor authentication is active') }}</p>
                         <p class="mt-1 text-sm">{{ __('Every new sign-in requires your authenticator app or an unused recovery code.') }}</p>
-                    </div>
+                    </x-signal.ui.alert>
                     <div class="grid gap-5 lg:grid-cols-2">
-                        <form method="POST" action="{{ route('account.two-factor.recovery-codes') }}" class="ui-card space-y-3 p-4">
+                        <x-signal.ui.card as="form" class="space-y-3 p-4" method="POST" action="{{ route('account.two-factor.recovery-codes') }}">
                             @csrf
                             <h3 class="font-bold text-ink">{{ __('Replace recovery codes') }}</h3>
                             @if (auth()->user()->hasLocalPassword())
@@ -203,7 +203,7 @@
                             @endif
                             <x-signal.ui.input name="code" autocomplete="one-time-code" class="ui-input font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required :restore="false" />
                             <x-signal.ui.button type="submit" variant="primary">{{ __('Generate new codes') }}</x-signal.ui.button>
-                        </form>
+                        </x-signal.ui.card>
                         <x-signal.ui.panel as="form" method="POST" action="{{ route('account.two-factor.disable') }}" class="ui-panel ui-panel--danger space-y-3 p-4">
                             @csrf @method('DELETE')
                             <h3 class="font-bold text-ink">{{ __('Disable two-factor authentication') }}</h3>
@@ -244,9 +244,9 @@
                 <x-forms.errors name="current_password" bag="twoFactor" />
                 <x-forms.errors name="code" bag="twoFactor" />
             </div>
-        </x-forms.section>
+        </x-signal.ui.settings-section>
 
-        <x-forms.section
+        <x-signal.ui.settings-section
             id="account-security-activity"
             :title="__('Recent security activity')"
             :description="__('Review recent changes to your profile, credentials, sessions, and connected sign-in methods.')"
@@ -277,9 +277,9 @@
                     </div>
                 </x-slot:footer>
             @endif
-        </x-forms.section>
+        </x-signal.ui.settings-section>
 
-        <x-forms.section
+        <x-signal.ui.settings-section
             id="account-sign-ins"
             :title="__('Recent sign-ins')"
             :description="__('Review successful sign-ins retained for account security history.')"
@@ -288,9 +288,9 @@
         >
             <div class="divide-y divide-line bg-surface">
                 @if (session('sign_ins_status'))
-                    <div class="ui-alert ui-alert--success m-4 p-3" role="status">
+                    <x-signal.ui.alert tone="success" class="m-4 p-3" role="status">
                         {{ session('sign_ins_status') }}
-                    </div>
+                    </x-signal.ui.alert>
                 @endif
                 @forelse ($recentSignIns as $signIn)
                     <div class="flex flex-wrap items-start justify-between gap-3 px-4 py-4 sm:px-6">
@@ -372,9 +372,9 @@
                     @endif
                 </div>
             </x-slot:footer>
-        </x-forms.section>
+        </x-signal.ui.settings-section>
 
-        <x-forms.section
+        <x-signal.ui.settings-section
             id="account-browser-sessions"
             :title="__('Browser sessions')"
             :description="__('Review active browsers and log out sessions you no longer recognize.')"
@@ -383,18 +383,18 @@
         >
             <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
                 @if (session('sessions_status'))
-                    <div class="ui-alert ui-alert--success p-3" role="status">
+                    <x-signal.ui.alert tone="success" class="p-3" role="status">
                         {{ session('sessions_status') }}
-                    </div>
+                    </x-signal.ui.alert>
                 @endif
                 @if (session('sessions_error'))
-                    <div class="ui-alert ui-alert--danger p-3" role="alert">
+                    <x-signal.ui.alert tone="danger" class="p-3" role="alert">
                         {{ session('sessions_error') }}
-                    </div>
+                    </x-signal.ui.alert>
                 @endif
 
                 @if ($browserSessionManagementAvailable)
-                    <div class="ui-card divide-y divide-line overflow-hidden">
+                    <x-signal.ui.card class="divide-y divide-line overflow-hidden">
                         @forelse ($browserSessions as $browserSession)
                             <div class="flex flex-wrap items-start justify-between gap-4 p-4">
                                 <div>
@@ -449,7 +449,7 @@
                                 {{ __('No active database-backed browser sessions were found.') }}
                             </p>
                         @endforelse
-                    </div>
+                    </x-signal.ui.card>
                     @if ($browserSessions->count() === App\Modules\Deployer\Services\BrowserSessionManager::MAX_VISIBLE_SESSIONS)
                         <p class="text-xs text-muted">
                             {{ __('Showing the 20 most recently active sessions. Use the control below to log out every other session.') }}
@@ -481,9 +481,9 @@
                     </p>
                 @endif
             </div>
-        </x-forms.section>
+        </x-signal.ui.settings-section>
 
-        <x-forms.section
+        <x-signal.ui.settings-section
             id="account-connected-accounts"
             :title="__('Connected accounts')"
             :description="__('Review and disconnect social sign-in methods linked to your account.')"
@@ -497,9 +497,9 @@
                     </x-signal.ui.alert>
                 @endif
                 @if (session('social_error'))
-                    <div class="ui-alert ui-alert--danger m-4 p-3" role="alert">
+                    <x-signal.ui.alert tone="danger" class="m-4 p-3" role="alert">
                         {{ session('social_error') }}
-                    </div>
+                    </x-signal.ui.alert>
                 @endif
 
                 @foreach ($socialProviders as $provider)
@@ -555,9 +555,9 @@
                     </div>
                 @endforeach
             </div>
-        </x-forms.section>
+        </x-signal.ui.settings-section>
 
-        <x-forms.section
+        <x-signal.ui.settings-section
             id="account-data"
             :title="__('Your data and account')"
             :description="__('Export your information or permanently delete your :app account.', ['app' => config('app.name')])"
@@ -565,10 +565,10 @@
             :open="$errors->getBag('deleteAccount')->any()"
         >
             <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
-                <div class="ui-card flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <x-signal.ui.card class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div><h3 class="font-bold text-ink">{{ __('Export account data') }}</h3><p class="mt-1 text-sm text-muted">{{ __('Download profile, workspace, infrastructure metadata, and sign-in records as JSON. Secrets are excluded.') }}</p></div>
                     <x-signal.ui.button href="{{ route('account.export') }}" variant="secondary" class="shrink-0">{{ __('Download export') }}</x-signal.ui.button>
-                </div>
+                </x-signal.ui.card>
                 <x-signal.ui.panel as="form" method="POST" action="{{ route('account.destroy') }}" class="ui-panel ui-panel--danger space-y-4 p-4">
                     @csrf @method('DELETE')
                     <div><h3 class="font-bold text-ink">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-muted">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
@@ -585,7 +585,7 @@
                     <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</x-signal.ui.button>
                 </x-signal.ui.panel>
             </div>
-        </x-forms.section>
+        </x-signal.ui.settings-section>
     </div>
 
     <x-signal.overlays.modal

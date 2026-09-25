@@ -3,6 +3,9 @@
 return [
     'plan_authority' => env('ANALYTICS_PLAN_AUTHORITY', 'legacy'),
     'horizon_enabled' => (bool) env('ANALYTICS_HORIZON_ENABLED', false),
+    'platform_status' => [
+        'worker_stale_after_seconds' => (int) env('ANALYTICS_WORKER_STALE_AFTER_SECONDS', 180),
+    ],
     'event_retention_days' => (int) env('ANALYTICS_EVENT_RETENTION_DAYS', 90),
     'aggregate_retention_months' => (int) env('ANALYTICS_AGGREGATE_RETENTION_MONTHS', 13),
     'export_retention_hours' => (int) env('ANALYTICS_EXPORT_RETENTION_HOURS', 24),

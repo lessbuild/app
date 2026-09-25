@@ -17,11 +17,11 @@
     </x-signal.ui.page-header>
 
     @unless($featureAvailable)
-        <div class="ui-alert ui-alert--info mt-6" role="status">
+        <x-signal.ui.alert tone="info" class="mt-6" role="status">
             <strong class="text-ink">{{ __('Pro feature') }}</strong>
             · {{ __('Upgrade to save workspace budgets. Read-only estimates remain available.') }}
             <a href="{{ route('pricing') }}" class="ui-link font-bold">{{ __('Compare plans') }}</a>
-        </div>
+        </x-signal.ui.alert>
     @endunless
 
     @php
@@ -48,7 +48,7 @@
     </x-signal.ui.insights>
 
     <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_22rem]">
-        <section class="ui-card overflow-hidden">
+        <x-signal.ui.card as="section" class="overflow-hidden">
             <div class="border-b border-line p-5">
                 <h2 class="text-xl font-extrabold text-ink">{{ __('Resource estimates') }}</h2>
                 <p class="mt-1 text-sm text-muted">
@@ -108,10 +108,10 @@
                     <x-signal.ui.empty-state :title="__('No resource estimates')" :description="__('Provision or import a server to begin tracking estimates.')" icon="server" />
                 @endforelse
             </div>
-        </section>
+        </x-signal.ui.card>
 
         <aside class="space-y-5">
-            <section class="ui-card p-5">
+            <x-signal.ui.card as="section" class="p-5">
                 <div class="flex items-start justify-between gap-3">
                     <h2 class="font-extrabold text-ink">{{ __('Monthly budget') }}</h2>
                     @if($canManage)
@@ -136,7 +136,7 @@
                     <p class="mt-2 text-sm text-muted">{{ __('Set a planning threshold to make cost changes visible before they become surprises.') }}</p>
                 @endif
 
-            </section>
+            </x-signal.ui.card>
 
             @if($canManage)
                 <x-scenes.costs.budget-dialog
@@ -145,16 +145,16 @@
                 />
             @endif
 
-            <section class="ui-card border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-primary)">
+            <x-signal.ui.card as="section" class="border-l-4 border-line bg-surface-muted p-5" style="border-left-color: var(--ui-primary)">
                 <h2 class="font-extrabold">{{ __('Cost basis') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-muted">
                     <li>• {{ __('Monthly amount: stored provider-catalog estimate.') }}</li>
                     <li>• {{ __('CPU: measured :app telemetry, not billing usage.', ['app' => config('app.name')]) }}</li>
                     <li>• {{ __('Provider billing: not connected; invoice remains authoritative.') }}</li>
                 </ul>
-            </section>
+            </x-signal.ui.card>
 
-            <section class="ui-card p-5">
+            <x-signal.ui.card as="section" class="p-5">
                 <h2 class="font-extrabold text-ink">{{ __('Preview lifetime') }}</h2>
                 <p class="mt-2 text-sm text-muted">
                     @if($previewUsage->limit === null)
@@ -184,16 +184,16 @@
                 @if($previewUsage->hiddenCount > 0)
                     <p class="mt-3 text-xs text-muted">{{ __('Showing the first :count active previews; quota usage includes all active previews.', ['count' => $previewUsage->previews->count()]) }}</p>
                 @endif
-            </section>
+            </x-signal.ui.card>
 
-            <section class="ui-card p-5">
+            <x-signal.ui.card as="section" class="p-5">
                 <h2 class="font-extrabold text-ink">{{ __('Optimization signals') }}</h2>
                 <ul class="mt-3 space-y-2 text-sm text-muted">
                     <li>• {{ __('Servers without websites are flagged.') }}</li>
                     <li>• {{ __('Sustained CPU below 10% is flagged for review.') }}</li>
                     <li>• {{ __('Use Automation to hibernate eligible environments.') }}</li>
                 </ul>
-            </section>
+            </x-signal.ui.card>
         </aside>
     </div>
 </x-layouts.app>

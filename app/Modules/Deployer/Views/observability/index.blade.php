@@ -80,26 +80,26 @@
         </div>
 
         <div class="ui-insight-grid mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-            <a href="#operational-incidents" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#operational-incidents" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Active response') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $activeOperationalIncidentCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count incident|:count incidents', $activeOperationalIncidentCount, ['count' => $activeOperationalIncidentCount]) }}</p>
-            </a>
-            <a href="#correlated-signals" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#correlated-signals" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Recent health signals') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $recentHealthFailureCount }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count failed check|:count failed checks', $recentHealthFailureCount, ['count' => $recentHealthFailureCount]) }}</p>
-            </a>
-            <a href="#server-telemetry" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#server-telemetry" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Infrastructure') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $servers->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count monitored server|:count monitored servers', $servers->count(), ['count' => $servers->count()]) }}</p>
-            </a>
-            <a href="#status-pages" class="ui-panel block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" style="border-left-color: var(--ui-primary)">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="a" class="block border-l-4 border-line bg-surface-muted p-4 transition hover:border-line" href="#status-pages" style="border-left-color: var(--ui-primary)">
                 <p class="ui-eyebrow">{{ __('Communication') }}</p>
                 <p class="mt-2 text-2xl font-extrabold text-ink">{{ $statusPages->count() }}</p>
                 <p class="mt-1 text-sm text-muted">{{ trans_choice(':count status page|:count status pages', $statusPages->count(), ['count' => $statusPages->count()]) }}</p>
-            </a>
+            </x-signal.ui.panel>
         </div>
 
         <x-signal.ui.local-nav class="mt-5" :label="__('Observability sections')">
@@ -206,7 +206,7 @@
                 <div class="mt-2 space-y-2">
                     @forelse ($correlatedBuilds as $signal)
                     <a href="{{ route('builds.show', $signal) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
-                            <span class="ui-status-dot" style="--ui-status-dot: {{ $signal->status === \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED ? 'var(--ui-success)' : 'var(--ui-danger)' }}" aria-hidden="true"></span>
+                            <x-signal.ui.status-dot :color="$signal->status === \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED ? 'var(--ui-success)' : 'var(--ui-danger)'" aria-hidden="true" />
                             <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ $signal->repository->name }}</span>
                             <span class="shrink-0 text-xs text-muted">{{ str($signal->status)->headline() }} · {{ $signal->finished_at?->diffForHumans() }}</span>
                         </a>
@@ -220,7 +220,7 @@
                 <div class="mt-2 space-y-2">
                     @forelse ($correlatedHealthChecks as $signal)
                         <a href="{{ route('websites.show', $signal->website) }}" class="flex items-center gap-3 rounded-card border border-line bg-surface-muted p-3 text-sm transition hover:border-line">
-                            <span class="ui-status-dot" style="--ui-status-dot: var(--ui-danger)" aria-hidden="true"></span>
+                            <x-signal.ui.status-dot color="var(--ui-danger)" aria-hidden="true" />
                             <span class="min-w-0 flex-1 truncate font-bold text-ink">{{ $signal->website->name }}</span>
                             <span class="shrink-0 text-xs text-muted">{{ $signal->status_code ?: __('Transport') }} · {{ $signal->checked_at?->diffForHumans() }}</span>
                         </a>
@@ -250,11 +250,11 @@
                 <div class="mt-5 grid gap-3 md:grid-cols-2 xl:grid-cols-3">
                     @foreach ($environmentProjects as $project)
                         @foreach ($project->environments as $environment)
-                            <a href="{{ route('observability.environments.context', $environment) }}" class="ui-panel block bg-surface-muted p-4 transition hover:border-[var(--ui-primary)]">
+                            <x-signal.ui.panel as="a" class="block bg-surface-muted p-4 transition hover:border-[var(--ui-primary)]" href="{{ route('observability.environments.context', $environment) }}">
                                 <p class="ui-eyebrow">{{ $project->name }}</p>
                                 <div class="mt-1 flex items-center justify-between gap-3"><h3 class="truncate font-extrabold text-ink">{{ $environment->name }}</h3><x-signal.ui.badge>{{ str((string) $environment->type)->headline() }}</x-signal.ui.badge></div>
                                 <p class="mt-2 text-xs text-muted">{{ $environment->branch }} · {{ str((string) $environment->status)->headline() }}</p>
-                            </a>
+                            </x-signal.ui.panel>
                         @endforeach
                     @endforeach
                 </div>
@@ -284,7 +284,7 @@
                             <div class="min-w-0 flex-1">
                                 <p class="font-bold text-ink">{{ $destination->name }}</p>
                                 <p class="text-xs text-muted">{{ ucfirst($destination->type) }} · {{ implode(', ', $destination->events ?? []) }} · {{ $destination->last_delivered_at?->diffForHumans() ?? __('never delivered') }}</p>
-                                @if ($destination->last_error)<p class="ui-panel mt-2 border-l-4 bg-surface-muted p-2 text-xs text-ink" style="border-left-color: var(--ui-danger)">{{ $destination->last_error }}</p>@endif
+                                @if ($destination->last_error)<x-signal.ui.panel as="p" class="mt-2 border-l-4 bg-surface-muted p-2 text-xs text-ink" style="border-left-color: var(--ui-danger)">{{ $destination->last_error }}</x-signal.ui.panel>@endif
                             </div>
                             @if ($canManage)
                                 <div class="flex flex-wrap gap-2">

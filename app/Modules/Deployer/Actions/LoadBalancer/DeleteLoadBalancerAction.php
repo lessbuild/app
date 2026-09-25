@@ -2,17 +2,34 @@
 
 namespace App\Modules\Deployer\Actions\LoadBalancer;
 
-use App\Modules\Deployer\Jobs\RemoveLoadBalancerJob;
 use App\Modules\Deployer\Models\LoadBalancer;
+use Illuminate\Support\Facades\DB;
 
 class DeleteLoadBalancerAction
 {
+    public function __construct(private readonly QueueLoadBalancerRemovalAction $queueRemoval) {}
+
     /**
-     * Queue remote configuration removal before deleting the balancer record, preserving job identifiers.
+     * Persist the removal state before queueing remote cleanup; retain a safe retryable state when dispatch fails.
      */
     public function handle(LoadBalancer $loadBalancer): void
     {
-        RemoveLoadBalancerJob::dispatch($loadBalancer->server_id, $loadBalancer->id);
-        $loadBalancer->delete();
+        $dispatch = DB::connection('deployer')->transaction(function () use ($loadBalancer): ?array {
+            $current = LoadBalancer::query()->lockForUpdate()->find($loadBalancer->id);
+
+            if ($current === null || $current->status === 'removing') {
+                return null;
+            }
+
+            $current->forceFill(['status' => 'removing', 'last_error' => null])->save();
+
+            return ['server_id' => (int) $current->server_id, 'load_balancer_id' => (int) $current->id];
+        });
+
+        if ($dispatch === null) {
+            return;
+        }
+
+        $this->queueRemoval->handle($dispatch['server_id'], $dispatch['load_balancer_id']);
     }
 }

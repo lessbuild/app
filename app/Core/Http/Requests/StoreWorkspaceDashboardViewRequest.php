@@ -22,6 +22,7 @@ final class StoreWorkspaceDashboardViewRequest extends FormRequest
             'pinned_only' => ['required', 'boolean'],
             'project_name' => ['nullable', 'string', 'max:80'],
             'environment' => ['nullable', 'string', 'max:26'],
+            'operational_state' => ['nullable', Rule::in(['all', 'attention', 'setup', 'unavailable', 'current'])],
         ];
     }
 }

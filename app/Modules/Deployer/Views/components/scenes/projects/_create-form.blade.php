@@ -26,7 +26,7 @@
                     <span class="min-w-0">
                         <strong class="block text-ink">{{ $template->name }}</strong>
                         <span class="mt-1 block text-xs leading-5 text-muted">{{ $template->description }}</span>
-                        <span class="ui-badge ui-badge-soft mt-2">{{ $template->runtimeType }}</span>
+                        <x-signal.ui.badge tone="neutral" class="mt-2">{{ $template->runtimeType }}</x-signal.ui.badge>
                         @if($template->serviceTemplate)
                             <span class="mt-2 block text-xs font-bold text-ink">{{ __('Curated template :version', ['version' => $template->serviceTemplate->version]) }}</span>
                             <span class="mt-1 block text-xs text-muted">{{ trans_choice(':count managed resource|:count managed resources', count($template->serviceTemplate->resources), ['count' => count($template->serviceTemplate->resources)]) }} · {{ __(':count readiness checks', ['count' => count($template->serviceTemplate->readinessChecks)]) }}</span>

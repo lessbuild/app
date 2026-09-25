@@ -92,6 +92,27 @@ final class StripeBillingClient
         return $this->responseUrl($response, 'open the billing portal');
     }
 
+    /** @return array<string, mixed> */
+    public function retrieveEvent(string $eventId): array
+    {
+        if (! $this->configured() || ! preg_match('/^evt_[A-Za-z0-9]+$/', $eventId)) {
+            throw new StripeBillingException('The Stripe event cannot be retrieved.');
+        }
+
+        $response = $this->request()->get($this->endpoint('v1/events/'.rawurlencode($eventId)));
+        if (! $response->successful()) {
+            throw new StripeBillingException('Stripe could not retrieve the billing event.');
+        }
+
+        $event = $response->json();
+        if (! is_array($event) || ($event['id'] ?? null) !== $eventId
+            || ! is_string($event['type'] ?? null) || ! is_array($event['data']['object'] ?? null)) {
+            throw new StripeBillingException('Stripe returned an invalid billing event.');
+        }
+
+        return $event;
+    }
+
     public function priceId(string $plan): ?string
     {
         $priceId = config('monitor.beacon.plans.'.$plan.'.stripe_price_id');

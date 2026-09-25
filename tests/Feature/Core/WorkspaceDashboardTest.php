@@ -203,6 +203,15 @@ final class WorkspaceDashboardTest extends TestCase
                 'updated_at' => now(),
             ]);
         }
+        DB::connection('core')->table('project_products')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $hiddenProjectId,
+            'product' => 'analytics',
+            'status' => 'active',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
 
         foreach ([
             ['deployer', 'scale', 'active'],
@@ -309,6 +318,7 @@ final class WorkspaceDashboardTest extends TestCase
             'monitor:Checkout',
             'analytics:Docs portal',
         ], $summaryCalls->products);
+        $this->assertSame(3, substr_count($response->getContent(), '1 active project'));
 
         DB::connection('core')->table('project_resources')
             ->where('id', $monitorResourceId)
@@ -400,6 +410,76 @@ final class WorkspaceDashboardTest extends TestCase
         $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
             ->get(route('core.home'))
             ->assertRedirect(route('core.workspace.dashboard', $this->workspaceId));
+    }
+
+    public function test_workspace_subscriptions_keep_each_product_plan_and_seat_count_separate(): void
+    {
+        $this->seedSubscriptionsForWorkspace();
+
+        $response = $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->get(route('core.workspace.subscriptions', $this->workspaceId));
+
+        $response
+            ->assertOk()
+            ->assertSeeText('Subscriptions')
+            ->assertSeeText('Each application has its own plan, access, and usage limits for this workspace.')
+            ->assertSeeText('Deployer Scale')
+            ->assertSeeText('Monitor Team')
+            ->assertSeeText('Analytics Growth')
+            ->assertSeeText('1 of 5 active app seats')
+            ->assertSeeText('1 of 3 active app seats')
+            ->assertSeeText('Current period ends')
+            ->assertDontSeeText('sub_deployer_private')
+            ->assertDontSeeText('sub_monitor_private')
+            ->assertDontSeeText('sub_analytics_private');
+    }
+
+    public function test_workspace_members_can_see_app_access_but_not_subscription_details(): void
+    {
+        $this->seedSubscriptionsForWorkspace();
+        DB::connection('core')->table('workspace_memberships')
+            ->where('id', $this->membershipId)
+            ->update(['role' => 'member']);
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'monitor')
+            ->update(['role' => 'viewer']);
+        DB::connection('core')->table('workspace_product_access')
+            ->where('membership_id', $this->membershipId)
+            ->where('product', 'analytics')
+            ->delete();
+
+        $this->actingAs(PlatformUser::query()->findOrFail($this->userId), 'platform')
+            ->get(route('core.workspace.subscriptions', $this->workspaceId))
+            ->assertOk()
+            ->assertSeeText('Access granted')
+            ->assertSeeText('You currently have access to this app.')
+            ->assertSeeText('You currently do not have access to this app.')
+            ->assertDontSeeText('Deployer Scale')
+            ->assertDontSeeText('Monitor Team')
+            ->assertDontSeeText('Analytics Growth')
+            ->assertDontSeeText('Current period ends')
+            ->assertDontSeeText('sub_deployer_private');
+    }
+
+    public function test_workspace_subscriptions_are_not_disclosed_to_non_members(): void
+    {
+        $this->seedSubscriptionsForWorkspace();
+
+        $outsiderId = (string) Str::ulid();
+        DB::connection('core')->table('users')->insert([
+            'id' => $outsiderId,
+            'name' => 'Casey Outside',
+            'email' => 'casey@example.test',
+            'email_normalized' => 'casey@example.test',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $this->actingAs(PlatformUser::query()->findOrFail($outsiderId), 'platform')
+            ->get(route('core.workspace.subscriptions', $this->workspaceId))
+            ->assertNotFound();
     }
 
     public function test_project_can_be_edited_archived_and_restored_without_removing_product_history(): void
@@ -758,7 +838,12 @@ final class WorkspaceDashboardTest extends TestCase
             'owner_user_id' => $this->userId,
             'created_by_user_id' => $this->userId,
             'name' => 'Invalid filter',
-            'filters' => json_encode(['product' => 'all', 'pinned_only' => false, 'project_name' => ['not-a-string']]),
+            'filters' => json_encode([
+                'product' => 'all',
+                'pinned_only' => false,
+                'project_name' => ['not-a-string'],
+                'operational_state' => ['not-a-state'],
+            ]),
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -767,6 +852,161 @@ final class WorkspaceDashboardTest extends TestCase
             ->assertOk()
             ->assertSeeText('This saved view has an unavailable or invalid filter');
         $this->assertSame(0, substr_count($invalidResponse->getContent(), 'aria-label="Project pin options"'));
+    }
+
+    public function test_saved_views_filter_recent_project_cards_by_authorized_operational_state_without_changing_workspace_rollups(): void
+    {
+        $projects = [
+            'deployer' => $this->createVisibleProject('New service setup'),
+            'monitor' => $this->createVisibleProject('Service degraded'),
+            'analytics' => $this->createVisibleProject('Healthy site'),
+        ];
+
+        foreach (array_keys($projects) as $product) {
+            DB::connection('core')->table('workspace_product_access')->insert([
+                'id' => (string) Str::ulid(),
+                'membership_id' => $this->membershipId,
+                'product' => $product,
+                'role' => 'owner',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('project_products')->insert([
+                'id' => (string) Str::ulid(),
+                'project_id' => $projects[$product],
+                'product' => $product,
+                'status' => 'active',
+                'metadata' => json_encode([]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
+
+        $provisioningProjectId = $this->createVisibleProject('Module provisioning');
+        DB::connection('core')->table('project_products')->insert([
+            'id' => (string) Str::ulid(),
+            'project_id' => $provisioningProjectId,
+            'product' => 'deployer',
+            'status' => 'provisioning',
+            'metadata' => json_encode([]),
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        $summaryRegistry = app(ProjectProductSummaryRegistry::class);
+        foreach (array_keys($projects) as $product) {
+            $summaryRegistry->register($product, new class($product) implements ProjectProductSummaryProvider
+            {
+                public function __construct(private readonly string $product) {}
+
+                public function summarize(PlatformUser $user, Project $project): ?ProjectProductSnapshot
+                {
+                    $state = $this->product === 'monitor' && $project->name === 'Service degraded'
+                        ? ProjectProductSnapshotState::Attention
+                        : ProjectProductSnapshotState::Current;
+
+                    return new ProjectProductSnapshot(
+                        title: str($this->product)->headline().' status',
+                        detail: 'Current authorized summary.',
+                        state: $state,
+                    );
+                }
+            });
+        }
+
+        $setupRegistry = app(ProjectSetupRegistry::class);
+        foreach (array_keys($projects) as $product) {
+            $setupRegistry->register($product, new class($product) implements ProjectSetupProvider
+            {
+                public function __construct(private readonly string $product) {}
+
+                public function steps(PlatformUser $user, Project $project): array
+                {
+                    $state = $this->product === 'deployer' && $project->name === 'New service setup'
+                        ? ProjectSetupStepState::NeedsAction
+                        : ProjectSetupStepState::Complete;
+
+                    return [new ProjectSetupStep(
+                        id: $this->product.'.dashboard-state-test',
+                        product: $this->product,
+                        title: 'Connect '.$this->product,
+                        detail: 'Complete authorized setup for '.$project->name.'.',
+                        state: $state,
+                    )];
+                }
+            });
+        }
+
+        $owner = PlatformUser::query()->findOrFail($this->userId);
+        $this->actingAs($owner, 'platform')
+            ->post(route('core.workspace.views.store', $this->workspaceId), [
+                'name' => 'Attention projects',
+                'visibility' => 'personal',
+                'product' => 'all',
+                'pinned_only' => '0',
+                'operational_state' => 'attention',
+            ])
+            ->assertRedirect();
+
+        $attentionView = DB::connection('core')->table('workspace_dashboard_views')->where('name', 'Attention projects')->first();
+        $this->assertNotNull($attentionView);
+        $this->assertSame('attention', json_decode($attentionView->filters, true, flags: JSON_THROW_ON_ERROR)['operational_state']);
+
+        $attentionResponse = $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $attentionView->id]))
+            ->assertOk()
+            ->assertSeeText('Needs attention')
+            ->assertSeeText('1 active project')
+            ->assertSeeText('Setting up: 1')
+            ->assertSeeText('Projects you can access in this workspace');
+
+        $attentionCards = Str::between(
+            $attentionResponse->getContent(),
+            '<section aria-labelledby="recent-projects-title">',
+            '<section aria-labelledby="workspace-connections-title">',
+        );
+        $this->assertStringContainsString('Service degraded', $attentionCards);
+        $this->assertStringNotContainsString('New service setup', $attentionCards);
+        $this->assertStringNotContainsString('Healthy site', $attentionCards);
+        $this->assertStringNotContainsString('Module provisioning', $attentionCards);
+        $summary = Str::before($attentionResponse->getContent(), '<section aria-labelledby="workspace-saved-views-title"');
+        $this->assertSame(1, substr_count($summary, '>4</dd>'));
+        $this->assertSame(1, substr_count($summary, '>3</dd>'));
+
+        $this->post(route('core.workspace.views.store', $this->workspaceId), [
+            'name' => 'Setup projects',
+            'visibility' => 'personal',
+            'product' => 'all',
+            'pinned_only' => '0',
+            'operational_state' => 'setup',
+        ])->assertRedirect();
+
+        $setupView = DB::connection('core')->table('workspace_dashboard_views')->where('name', 'Setup projects')->first();
+        $this->assertNotNull($setupView);
+        $setupResponse = $this->get(route('core.workspace.dashboard', ['workspace' => $this->workspaceId, 'view' => $setupView->id]))
+            ->assertOk()
+            ->assertSeeText('1 active project')
+            ->assertSeeText('Setting up: 1');
+        $setupCards = Str::between(
+            $setupResponse->getContent(),
+            '<section aria-labelledby="recent-projects-title">',
+            '<section aria-labelledby="workspace-connections-title">',
+        );
+        $this->assertStringContainsString('New service setup', $setupCards);
+        $this->assertStringContainsString('Module provisioning', $setupCards);
+        $this->assertStringNotContainsString('Service degraded', $setupCards);
+        $this->assertStringNotContainsString('Healthy site', $setupCards);
+        $setupSummary = Str::before($setupResponse->getContent(), '<section aria-labelledby="workspace-saved-views-title"');
+        $this->assertSame(1, substr_count($setupSummary, '>4</dd>'));
+        $this->assertSame(1, substr_count($setupSummary, '>3</dd>'));
+
+        $this->post(route('core.workspace.views.store', $this->workspaceId), [
+            'name' => 'Unsupported state',
+            'visibility' => 'personal',
+            'product' => 'all',
+            'pinned_only' => '0',
+            'operational_state' => 'unknown',
+        ])->assertSessionHasErrors('operational_state');
     }
 
     public function test_saved_views_can_filter_by_an_accessible_mapped_environment_and_fail_closed_after_access_changes(): void
@@ -1220,6 +1460,7 @@ final class WorkspaceDashboardTest extends TestCase
             $table->string('status', 24);
             $table->unsignedInteger('quantity')->nullable();
             $table->timestamp('current_period_ends_at')->nullable();
+            $table->json('metadata')->nullable();
             $table->timestamps();
         });
         Schema::connection('core')->create('current_product_subscriptions', function (Blueprint $table): void {
@@ -1255,5 +1496,60 @@ final class WorkspaceDashboardTest extends TestCase
         ]);
 
         return $projectId;
+    }
+
+    private function seedSubscriptionsForWorkspace(): void
+    {
+        foreach ([
+            ['deployer', 'scale', 'active', 5],
+            ['monitor', 'team', 'trialing', 3],
+            ['analytics', 'growth', 'active', 8],
+        ] as [$product, $plan, $status, $seatLimit]) {
+            $subscriptionId = (string) Str::ulid();
+            $planSnapshot = [
+                'name' => str($product)->headline().' '.str($plan)->headline(),
+                'entitlements' => ['workspace_access'],
+                'limits' => match ($product) {
+                    'deployer' => ['members' => $seatLimit],
+                    'monitor' => ['seats' => $seatLimit],
+                    default => ['members' => $seatLimit],
+                },
+            ];
+            if ($product === 'deployer') {
+                $planSnapshot['included_seats'] = $seatLimit;
+            }
+            DB::connection('core')->table('product_subscriptions')->insert([
+                'id' => $subscriptionId,
+                'workspace_id' => $this->workspaceId,
+                'product' => $product,
+                'provider' => 'stripe',
+                'provider_account_key' => $product,
+                'provider_subscription_id' => 'sub_'.$product.'_private',
+                'plan_key' => $plan,
+                'status' => $status,
+                'quantity' => 1,
+                'current_period_ends_at' => now()->addDays(20),
+                'metadata' => json_encode(['plan_snapshot' => $planSnapshot]),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('current_product_subscriptions')->insert([
+                'id' => (string) Str::ulid(),
+                'workspace_id' => $this->workspaceId,
+                'product' => $product,
+                'product_subscription_id' => $subscriptionId,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+            DB::connection('core')->table('workspace_product_access')->insert([
+                'id' => (string) Str::ulid(),
+                'membership_id' => $this->membershipId,
+                'product' => $product,
+                'role' => 'owner',
+                'status' => 'active',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
     }
 }

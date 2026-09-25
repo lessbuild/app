@@ -222,10 +222,10 @@
                     </div>
                     <p class="mt-4 whitespace-pre-line text-sm text-muted">{{ $report->details ?: __('No additional details were provided.') }}</p>
                     @if ($report->resolved_at && $report->resolution_note)
-                        <div class="ui-alert ui-alert--success mt-3 p-3">
+                        <x-signal.ui.alert tone="success" class="mt-3 p-3">
                             <p class="text-xs font-semibold uppercase">{{ __('Resolution note') }}</p>
                             <p class="mt-1 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
-                        </div>
+                        </x-signal.ui.alert>
                     @endif
                     @php
                         $resolutionDialogId = 'gallery-report-resolution-'.$report->id;

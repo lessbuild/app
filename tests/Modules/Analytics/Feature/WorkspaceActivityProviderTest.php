@@ -24,7 +24,7 @@ final class WorkspaceActivityProviderTest extends TestCase
 {
     use RefreshAnalyticsDatabase;
 
-    public function test_recent_exports_are_scoped_to_the_mapped_project_workspace_and_permissions(): void
+    public function test_exports_and_ingestion_batches_are_scoped_to_the_mapped_project_workspace_and_permissions(): void
     {
         config(['platform.products.analytics.auth_authority' => 'core']);
 
@@ -101,6 +101,15 @@ final class WorkspaceActivityProviderTest extends TestCase
             'status' => 'active',
         ]);
         $mappedExport = $this->export($mappedSite);
+        $batchId = (string) Str::uuid();
+        $mappedBatch = $mappedSite->ingestionBatches()->create([
+            'batch_id' => $batchId,
+            'event_count' => 4,
+            'status' => 'failed',
+            'accepted_at' => now(),
+            'processed_at' => now(),
+            'failure_message' => 'private analytics processing exception',
+        ]);
 
         $otherCoreWorkspace = $this->coreWorkspace($user, 'Other project workspace');
         $otherAnalyticsWorkspace = AnalyticsWorkspace::create(['name' => 'Other Analytics workspace']);
@@ -120,20 +129,35 @@ final class WorkspaceActivityProviderTest extends TestCase
             'status' => 'active',
         ]);
         $this->export($otherSite, 'completed');
+        $otherSite->ingestionBatches()->create([
+            'batch_id' => (string) Str::uuid(),
+            'event_count' => 12,
+            'status' => 'processed',
+            'accepted_at' => now(),
+            'processed_at' => now(),
+        ]);
 
         $snapshot = app(WorkspaceActivityProviderRegistry::class)
             ->get('analytics')
             ->recentForWorkspace($user, $coreWorkspace, collect([$project]), 30);
 
         $this->assertTrue($snapshot->available);
-        $this->assertCount(1, $snapshot->runs);
-        $run = $snapshot->runs->sole();
-        $this->assertSame('analytics:report-export:'.$mappedExport->getKey(), $run->key);
-        $this->assertSame('Storefront', $run->projectName);
-        $this->assertCount(1, $run->steps);
-        $this->assertInstanceOf(ProjectWorkflowStep::class, $run->steps[0]);
-        $this->assertSame(ProjectWorkflowStepState::Pending, $run->steps[0]->state);
-        $this->assertStringContainsString('/sites/'.$mappedSite->getKey().'/exports/'.$mappedExport->getKey().'/record', $run->steps[0]->resultUrl);
+        $this->assertCount(2, $snapshot->runs);
+
+        $exportRun = $snapshot->runs->sole(fn ($run) => $run->key === 'analytics:report-export:'.$mappedExport->getKey());
+        $this->assertSame('Storefront', $exportRun->projectName);
+        $this->assertCount(1, $exportRun->steps);
+        $this->assertInstanceOf(ProjectWorkflowStep::class, $exportRun->steps[0]);
+        $this->assertSame(ProjectWorkflowStepState::Pending, $exportRun->steps[0]->state);
+        $this->assertStringContainsString('/sites/'.$mappedSite->getKey().'/exports/'.$mappedExport->getKey().'/record', $exportRun->steps[0]->resultUrl);
+
+        $batchRun = $snapshot->runs->sole(fn ($run) => $run->key === 'analytics:ingestion-batch:'.$mappedBatch->getKey());
+        $this->assertSame('Storefront', $batchRun->projectName);
+        $this->assertSame(ProjectWorkflowStepState::Failed, $batchRun->steps[0]->state);
+        $this->assertStringContainsString('4 accepted events', $batchRun->steps[0]->detail);
+        $this->assertStringNotContainsString($batchId, $batchRun->steps[0]->detail.$batchRun->steps[0]->resultUrl);
+        $this->assertStringNotContainsString('private analytics processing exception', $batchRun->steps[0]->detail);
+        $this->assertStringContainsString('/dashboard?site='.$mappedSite->getKey(), $batchRun->steps[0]->resultUrl);
     }
 
     private function coreWorkspace(PlatformUser $user, string $name): CoreWorkspace

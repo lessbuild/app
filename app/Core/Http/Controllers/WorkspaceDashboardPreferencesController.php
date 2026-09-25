@@ -218,7 +218,7 @@ final class WorkspaceDashboardPreferencesController
     }
 
     /** @param array<string, mixed> $data
-     * @return array{product:string,pinned_only:bool,project_name:string,environment:string}
+     * @return array{product:string,pinned_only:bool,project_name:string,environment:string,operational_state:string}
      */
     private function filters(array $data): array
     {
@@ -227,6 +227,7 @@ final class WorkspaceDashboardPreferencesController
             'pinned_only' => filter_var($data['pinned_only'], FILTER_VALIDATE_BOOLEAN),
             'project_name' => trim((string) ($data['project_name'] ?? '')),
             'environment' => is_string($data['environment'] ?? null) ? $data['environment'] : 'all',
+            'operational_state' => is_string($data['operational_state'] ?? null) ? $data['operational_state'] : 'all',
         ];
     }
 

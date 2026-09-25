@@ -8,37 +8,37 @@
         <x-monitor::ui.page-header eyebrow="WORKSPACE SETTINGS" title="Stay close to the signal." :description="'Choose whether '.config('app.name').' sends you a daily summary of new, resolved, and still-open issues.'" />
 
         @unless($digestAvailable)
-            <section class="ui-alert border-primary/30 bg-primary-soft block p-5">
+            <x-signal.ui.alert as="section" tone="info" class="border-primary/30 bg-primary-soft block p-5">
                 <div class="flex gap-3">
                     <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-control bg-primary-soft text-primary dark:bg-primary-soft dark:text-primary"><x-monitor::icon name="shield" class="h-4 w-4" /></span>
                     <div><h2 class="text-sm font-bold text-primary dark:text-primary">Issue digests are included with your plan.</h2><p class="mt-1 text-xs leading-5 text-primary dark:text-primary">Upgrade your workspace plan to activate scheduled issue summaries.</p></div>
                 </div>
-            </section>
+            </x-signal.ui.alert>
         @endunless
 
         @unless(auth()->user()->hasVerifiedEmail())
-            <section class="ui-alert ui-alert-warning block p-5">
+            <x-signal.ui.alert as="section" tone="warning" class="block p-5">
                 <div class="flex gap-3"><x-monitor::icon name="alert" class="mt-0.5 h-4 w-4 shrink-0 text-warning dark:text-warning" /><p class="text-xs leading-5 text-warning dark:text-warning">Verify {{ auth()->user()->email }} before {{ config('app.name') }} can deliver email notifications.</p></div>
-            </section>
+            </x-signal.ui.alert>
         @endunless
 
         <section class="grid gap-6 xl:grid-cols-[minmax(0,1.1fr)_minmax(300px,0.9fr)]">
-            <div class="ui-card p-6">
+            <x-signal.ui.card as="div" class="p-6">
                 <div class="flex items-start justify-between gap-4"><div><h2 class="font-bold">Daily issue digest</h2><p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">One email at 08:00 UTC when there is issue activity or an open issue to investigate.</p></div><x-monitor::ui.badge :tone="$digestEnabled && $digestAvailable ? 'green' : 'slate'">{{ $digestEnabled && $digestAvailable ? 'Enabled' : 'Paused' }}</x-monitor::ui.badge></div>
                 <form method="POST" action="{{ route('monitor.settings.notifications.update') }}" class="mt-6 flex flex-col gap-5 border-t border-line pt-5 dark:border-line sm:flex-row sm:items-center sm:justify-between">
                     @csrf @method('PATCH')
-                    <input type="hidden" name="enabled" value="0">
+                    <x-signal.ui.input type="hidden" name="enabled" value="0" :restore="false" />
                     <x-monitor::ui.choice id="digest-enabled" name="enabled" :checked="old('enabled', $digestEnabled)" label="Send me the daily digest" :description="$isWorkspaceOwner && $preference === null ? 'Workspace owners receive this by default.' : 'You can pause this any time.'" />
                     <x-monitor::ui.button class="shrink-0">Save preference</x-monitor::ui.button>
                 </form>
-            </div>
-            <div class="ui-card p-6">
+            </x-signal.ui.card>
+            <x-signal.ui.card as="div" class="p-6">
                 <div class="flex items-center gap-2 text-xs font-bold text-primary dark:text-primary"><x-monitor::icon name="inbox" class="h-4 w-4" />Delivery behavior</div>
                 <ul class="mt-5 space-y-4 text-xs leading-5 text-muted dark:text-muted"><li class="flex gap-3"><x-monitor::icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-success" /><span>One delivery record is created for each workspace, recipient, and UTC period.</span></li><li class="flex gap-3"><x-monitor::icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-success" /><span>Rerunning a command cannot resend a completed period.</span></li><li class="flex gap-3"><x-monitor::icon name="check" class="mt-0.5 h-4 w-4 shrink-0 text-success" /><span>Issue titles and locations are redacted before the email is prepared.</span></li></ul>
-            </div>
+            </x-signal.ui.card>
         </section>
 
-        <section class="ui-panel overflow-hidden">
+        <x-signal.ui.panel as="section" class="overflow-hidden">
             <div class="border-b border-line px-6 py-4 dark:border-line"><h2 class="font-bold">Your delivery history</h2><p class="mt-1 text-xs text-muted dark:text-subtle">The latest 20 issue digest attempts for {{ auth()->user()->email }}.</p></div>
             <div class="divide-y divide-line dark:divide-line">
                 @forelse($deliveries as $delivery)
@@ -48,6 +48,6 @@
                     <div class="px-6 py-12 text-center"><span class="mx-auto flex h-10 w-10 items-center justify-center rounded-control bg-surface-muted text-subtle dark:bg-surface-muted"><x-monitor::icon name="inbox" class="h-5 w-5" /></span><h3 class="mt-4 text-sm font-bold">No digest deliveries yet.</h3><p class="mt-1 text-xs text-muted dark:text-subtle">Once an issue digest is sent, its delivery result will appear here.</p></div>
                 @endforelse
             </div>
-        </section>
+        </x-signal.ui.panel>
     </div>
 @endsection

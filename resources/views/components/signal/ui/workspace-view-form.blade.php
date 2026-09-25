@@ -53,6 +53,14 @@
             </x-signal.ui.select>
         </x-signal.ui.field>
 
+        <x-signal.ui.field :label="__('Operational state')" name="operational_state" :id="'workspace-view-operational-state-'.$formId" :hint="__('Filters the recent and pinned project cards by their latest authorized app data.')">
+            <x-signal.ui.select name="operational_state" :id="'workspace-view-operational-state-'.$formId" required>
+                @foreach (\App\Core\Data\Projects\WorkspaceProjectOperationalState::cases() as $state)
+                    <option value="{{ $state->value }}" @selected(old('operational_state', $filters['operational_state'] ?? 'all') === $state->value)>{{ $state->label() }}</option>
+                @endforeach
+            </x-signal.ui.select>
+        </x-signal.ui.field>
+
         <x-signal.ui.field :label="__('Environment')" name="environment" :id="'workspace-view-environment-'.$formId" :hint="__('Only environments with an active mapped app resource are listed.')">
             <x-signal.ui.select name="environment" :id="'workspace-view-environment-'.$formId" required>
                 <option value="all" @selected($environmentValue === 'all')>{{ __('All environments') }}</option>

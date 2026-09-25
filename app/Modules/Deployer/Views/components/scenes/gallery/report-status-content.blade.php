@@ -22,10 +22,10 @@
     </div>
 
     @if ($report->resolved_at && $report->resolution_note)
-        <div class="ui-alert ui-alert--success p-4">
+        <x-signal.ui.alert tone="success" class="p-4">
             <h4 class="text-sm font-bold">{{ __('Contributor resolution note') }}</h4>
             <p class="mt-2 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
-        </div>
+        </x-signal.ui.alert>
     @endif
 
     <div class="flex flex-wrap gap-2">

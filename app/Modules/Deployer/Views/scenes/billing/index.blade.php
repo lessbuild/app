@@ -28,22 +28,25 @@
         @error('plan')
             <x-signal.ui.alert tone="warning" role="alert">{{ $message }}</x-signal.ui.alert>
         @enderror
+        @error('billing')
+            <x-signal.ui.alert tone="warning" role="alert">{{ $message }}</x-signal.ui.alert>
+        @enderror
     </div>
 
     <x-signal.ui.insights
         id="billing-insights"
         class="mt-6 scroll-mt-24"
-        :summary="__('Current plan: :plan', ['plan' => $plans[$currentPlan]['name']])"
+        :summary="__('Current plan: :plan', ['plan' => $currentPlanName])"
     >
         <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
             <x-signal.ui.stat
                 :label="__('Current plan')"
-                :value="$plans[$currentPlan]['name']"
+                :value="$currentPlanName"
                 :description="__('Workspace entitlement level.')"
             />
             <x-signal.ui.stat
                 :label="__('Billing cycle')"
-                :value="$currentPlan === 'free' ? __('No subscription') : ucfirst($currentInterval)"
+                :value="$currentPlan === 'free' ? __('No subscription') : ($hasSubscription ? ucfirst($currentInterval) : __('Not confirmed'))"
                 :description="__('The interval used for paid plan changes.')"
             />
             <x-signal.ui.stat
@@ -53,7 +56,7 @@
             />
             <x-signal.ui.stat
                 :label="__('API limit')"
-                :value="number_format($plans[$currentPlan]['limits']['api_requests_per_minute']).'/min'"
+                :value="$apiLimit === null ? '—' : number_format($apiLimit).'/min'"
                 :description="__('Requests allowed by the current plan.')"
             />
         </dl>
@@ -64,18 +67,20 @@
             <div>
                 <p class="ui-eyebrow text-[0.65rem]">{{ __('Current workspace plan') }}</p>
                 <div class="mt-2 flex flex-wrap items-center gap-3">
-                    <h2 class="text-3xl font-extrabold text-ink">{{ $plans[$currentPlan]['name'] }}</h2>
-                    @if ($currentPlan !== 'free')
+                    <h2 class="text-3xl font-extrabold text-ink">{{ $currentPlanName }}</h2>
+                    @if ($currentPlan && $currentPlan !== 'free')
                         <x-signal.ui.badge tone="accent">{{ ucfirst($currentInterval) }}</x-signal.ui.badge>
                     @endif
                 </div>
-                @if ($subscription?->onTrial())
-                    <p class="mt-2 text-sm text-muted">{{ __('Trial ends :date.', ['date' => $subscription->trial_ends_at->toFormattedDateString()]) }}</p>
-                @elseif ($subscription?->onGracePeriod())
-                    <p class="mt-2 text-sm font-semibold text-warning">{{ __('Cancels :date.', ['date' => $subscription->ends_at->toFormattedDateString()]) }}</p>
+                @if ($trialEndsAt && $trialEndsAt->isFuture())
+                    <p class="mt-2 text-sm text-muted">{{ __('Trial ends :date.', ['date' => $trialEndsAt->toFormattedDateString()]) }}</p>
+                @elseif ($cancelAt && $cancelAt->isFuture())
+                    <p class="mt-2 text-sm font-semibold text-warning">{{ __('Cancels :date.', ['date' => $cancelAt->toFormattedDateString()]) }}</p>
+                @elseif ($corePlanAuthority)
+                    <p class="mt-2 text-sm text-muted">{{ __('Billing status: :status', ['status' => str($billingStatus)->replace('_', ' ')->title()]) }}</p>
                 @endif
             </div>
-            @if ($canManageBilling && $billingUser->stripe_id)
+            @if ($canManageBilling && $portalAvailable)
                 <form method="POST" action="{{ route('billing.portal') }}">
                     @csrf
                     <x-signal.ui.button type="submit" variant="secondary">{{ __('Invoices & payment method') }}</x-signal.ui.button>
@@ -83,9 +88,9 @@
             @endif
         </div>
 
-        @if ($subscription && $canManageBilling)
+        @if ($hasSubscription && $canManageBilling)
             <div class="flex flex-wrap items-center gap-3 border-t border-line bg-surface-muted px-6 py-4">
-                @if ($subscription->onGracePeriod())
+                @if ($cancelAt && $cancelAt->isFuture())
                     <form method="POST" action="{{ route('billing.resume') }}">
                         @csrf
                         <x-signal.ui.button type="submit" variant="primary">{{ __('Resume subscription') }}</x-signal.ui.button>
@@ -101,7 +106,10 @@
     </x-signal.ui.card>
 
     @unless ($canManageBilling)
-        <x-signal.ui.alert class="mt-6" tone="info">{{ __('Only the workspace owner can change its subscription.') }}</x-signal.ui.alert>
+        <x-signal.ui.alert class="mt-6" tone="info">{{ __('Only workspace owners and billing managers can change this subscription.') }}</x-signal.ui.alert>
+    @endunless
+    @unless ($planAvailable)
+        <x-signal.ui.alert class="mt-6" tone="warning">{{ __('Core could not confirm this workspace’s Deployer plan. Core-authorized paid features may be unavailable until the subscription mapping is restored.') }}</x-signal.ui.alert>
     @endunless
     @unless ($stripeReady)
         <x-signal.ui.alert class="mt-6" tone="warning">
@@ -142,7 +150,7 @@
 
                 @if ($key === $currentPlan)
                     <x-signal.ui.button type="button" variant="secondary" class="w-full justify-center" disabled>{{ __('Current plan') }}</x-signal.ui.button>
-                @elseif ($key !== 'free' && $subscription)
+                @elseif ($key !== 'free' && $hasSubscription)
                     <form method="POST" action="{{ route('billing.portal') }}">
                         @csrf
                         <x-signal.ui.button type="submit" variant="primary" class="w-full justify-center" :disabled="! $canManageBilling">{{ __('Change in Stripe') }}</x-signal.ui.button>
@@ -151,7 +159,7 @@
                     <form method="POST" action="{{ route('billing.checkout', $key) }}">
                         @csrf
                         <x-signal.ui.input type="hidden" name="interval" value="{{ $selectedInterval }}" :restore="false" />
-                        <x-signal.ui.button type="submit" variant="primary" class="w-full justify-center" :disabled="! $canManageBilling || ! $stripeReady || blank($priceId)">{{ __('Start 14-day trial') }}</x-signal.ui.button>
+                        <x-signal.ui.button type="submit" variant="primary" class="w-full justify-center" :disabled="! $canManageBilling || ! $workspaceMapped || ! $stripeReady || blank($priceId)">{{ $trialEligible ? __('Start :days-day trial', ['days' => config('billing.trial_days')]) : __('Continue to checkout') }}</x-signal.ui.button>
                     </form>
                 @endif
             </x-signal.ui.card>

@@ -1,12 +1,18 @@
-@props(['name', 'eyebrow', 'summary', 'features' => [], 'href'])
+@props(['name', 'eyebrow', 'summary', 'features' => [], 'href', 'accent' => 'deploy', 'icon' => 'layers'])
 
-<x-signal.ui.card tone="interactive" {{ $attributes->class(['flex h-full flex-col p-6 sm:p-7']) }}>
+@php($accent = in_array($accent, ['deploy', 'monitor', 'analytics'], true) ? $accent : 'deploy')
+@php($icon = in_array($icon, ['layers', 'pulse', 'chart'], true) ? $icon : 'layers')
+
+<x-signal.ui.card tone="interactive" {{ $attributes->class(['product-preview-'.$accent, 'flex h-full flex-col p-6 sm:p-7']) }}>
     <div class="flex items-start justify-between gap-4">
         <div>
-            <p class="ui-eyebrow">{{ $eyebrow }}</p>
+            <span class="product-icon-{{ $accent }} mb-3 grid size-10 place-items-center rounded-xl" aria-hidden="true">
+                <x-signal.ui.icon :name="$icon" class="size-5" />
+            </span>
+            <p class="ui-eyebrow product-accent-{{ $accent }}">{{ $eyebrow }}</p>
             <h3 class="mt-2 text-2xl font-extrabold tracking-tight text-ink">{{ $name }}</h3>
         </div>
-        <x-signal.ui.badge tone="accent">{{ __('Separate plan') }}</x-signal.ui.badge>
+        <x-signal.ui.badge tone="accent">{{ __('Product-specific access') }}</x-signal.ui.badge>
     </div>
 
     <p class="mt-4 text-sm leading-6 text-muted">{{ $summary }}</p>

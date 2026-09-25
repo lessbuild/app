@@ -39,9 +39,11 @@
         </x-slot:actions>
     </x-signal.ui.page-header>
 
-    <dl aria-label="{{ __('Workspace summary') }}" class="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+    <dl aria-label="{{ __('Workspace summary') }}" class="mb-8 grid gap-3 sm:grid-cols-2 xl:grid-cols-6">
         <x-signal.ui.stat :label="__('Projects')" :value="$projectCount" :description="__('Projects you can access in this workspace')" />
         <x-signal.ui.stat :label="__('App connections')" :value="$activeProductCount" :description="__('Product modules active on your projects')" />
+        <x-signal.ui.stat :label="__('Setting up')" :value="$productActivationRollups->sum('setting_up')" :description="__('Product modules provisioning across your projects')" />
+        <x-signal.ui.stat :label="__('Activation issues')" :value="$productActivationRollups->sum('needs_attention')" :description="__('Product activations that need repair')" />
         <x-signal.ui.stat :label="__('Workflows')" :value="$connectionCount" :description="__('Enabled links between applications')" />
         <x-signal.ui.stat :label="__('Team members')" :value="$memberCount" :description="__('People with workspace membership')" />
     </dl>
@@ -91,6 +93,13 @@
                                         <p class="text-xs text-muted">
                                             {{ __(':product · :pins', ['product' => str($savedView->filters['product'] ?? 'all')->headline(), 'pins' => ($savedView->filters['pinned_only'] ?? false) ? __('pinned projects only') : __('all visible projects')]) }}
                                             @php
+                                                $savedOperationalStateValue = $savedView->filters['operational_state'] ?? 'all';
+                                                $savedOperationalState = is_string($savedOperationalStateValue)
+                                                    ? \App\Core\Data\Projects\WorkspaceProjectOperationalState::tryFrom($savedOperationalStateValue)
+                                                    : null;
+                                            @endphp
+                                            · {{ $savedOperationalState?->label() ?? __('Invalid state') }}
+                                            @php
                                                 $savedEnvironmentId = $savedView->filters['environment'] ?? 'all';
                                                 $savedEnvironment = is_string($savedEnvironmentId) && $savedEnvironmentId !== 'all'
                                                     ? $environmentOptions->first(fn ($environment) => (string) $environment->getKey() === $savedEnvironmentId)
@@ -115,7 +124,7 @@
                                             <form method="POST" action="{{ route('core.workspace.views.destroy', [$workspace, $savedView]) }}">
                                                 @csrf
                                                 @method('DELETE')
-                                                <input type="hidden" name="return_view" value="{{ $selectedView?->getKey() ?? 'all' }}">
+                                                <x-signal.ui.input type="hidden" name="return_view" :value="$selectedView?->getKey() ?? 'all'" :restore="false" />
                                                 <x-signal.ui.button type="submit" variant="danger" class="ui-btn-sm">{{ __('Delete') }}</x-signal.ui.button>
                                             </form>
                                         </div>
@@ -212,6 +221,21 @@
                     @else
                         <p class="mt-5 text-sm font-bold text-muted">{{ __('Billing details are visible to workspace owners and billing managers.') }}</p>
                     @endif
+                    <p class="mt-3 border-t border-line pt-3 text-xs text-muted">
+                        @php($activeProjectCount = (int) $activeProductCounts->get($key, 0))
+                        {{ trans_choice(':count active project|:count active projects', $activeProjectCount, ['count' => $activeProjectCount]) }}
+                    </p>
+                    @php($activationRollup = $productActivationRollups->get($key, ['setting_up' => 0, 'needs_attention' => 0]))
+                    @if ($activationRollup['setting_up'] > 0 || $activationRollup['needs_attention'] > 0)
+                        <div class="mt-2 flex flex-wrap gap-2" aria-label="{{ __(':product project activation states', ['product' => $product['label']]) }}">
+                            @if ($activationRollup['setting_up'] > 0)
+                                <x-signal.ui.badge tone="warning">{{ __('Setting up: :count', ['count' => $activationRollup['setting_up']]) }}</x-signal.ui.badge>
+                            @endif
+                            @if ($activationRollup['needs_attention'] > 0)
+                                <x-signal.ui.badge tone="danger">{{ __('Activation issues: :count', ['count' => $activationRollup['needs_attention']]) }}</x-signal.ui.badge>
+                            @endif
+                        </div>
+                    @endif
                 </x-signal.ui.card>
             @endforeach
         </div>
@@ -233,7 +257,7 @@
             @if ($projects->isEmpty())
                 <x-signal.ui.empty-state
                     :title="$selectedView ? __('No projects match this view') : __('No projects yet')"
-                    :description="$selectedView ? __('Try a different product filter or pin projects to this view’s scope.') : __('Create a project once, then connect Deployer, Monitor, or Analytics when your team is ready.')"
+                    :description="$selectedView ? __('Try a different product, state, environment, or pin filter.') : __('Create a project once, then connect Deployer, Monitor, or Analytics when your team is ready.')"
                     icon="view-grid"
                 >
                     @if ($canCreateProjects)

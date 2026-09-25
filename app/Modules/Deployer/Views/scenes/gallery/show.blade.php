@@ -78,11 +78,7 @@
     </x-signal.ui.insights>
 
     @if ($installedRecipe)
-        <div @class([
-            'ui-alert mt-6 p-4',
-            'ui-alert--warning' => $installedRecipe->hasGalleryUpdate(),
-            'ui-alert--success' => ! $installedRecipe->hasGalleryUpdate(),
-        ])>
+        <x-signal.ui.alert :tone="$installedRecipe->hasGalleryUpdate() ? 'warning' : 'success'" class="mt-6 p-4">
             @if ($installedRecipe->hasGalleryUpdate())
                 <p class="font-semibold">{{ __('A newer gallery version is available') }}</p>
                 <p class="mt-1">
@@ -94,7 +90,7 @@
                 <p class="font-semibold">{{ __('Installed in your recipes') }}</p>
                 <p class="mt-1">{{ __('Your private snapshot matches the current gallery revision.') }}</p>
             @endif
-        </div>
+        </x-signal.ui.alert>
     @endif
 
     <x-signal.ui.panel as="section" id="gallery-rating" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="gallery-rating-heading">
@@ -160,7 +156,7 @@
                 @endif
                 <div class="mt-4 space-y-3">
                     @foreach ($recentReports as $report)
-                        <article class="ui-card ui-card--muted p-4">
+                        <x-signal.ui.card as="article" tone="muted" class="p-4">
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <div class="flex flex-wrap items-center gap-2">
                                     <span class="text-sm font-semibold text-ink">{{ str($report->reason)->headline() }}</span>
@@ -170,10 +166,10 @@
                             </div>
                             <p class="mt-2 whitespace-pre-line text-sm text-muted">{{ $report->details ?: __('No additional details were provided.') }}</p>
                             @if ($report->resolved_at && $report->resolution_note)
-                                <div class="ui-alert ui-alert--success mt-3 p-3">
+                                <x-signal.ui.alert tone="success" class="mt-3 p-3">
                                     <p class="text-xs font-semibold uppercase">{{ __('Resolution note') }}</p>
                                     <p class="mt-1 whitespace-pre-line text-sm">{{ $report->resolution_note }}</p>
-                                </div>
+                                </x-signal.ui.alert>
                             @endif
                             @php
                                 $resolutionDialogId = 'gallery-report-resolution-'.$report->id;
@@ -206,7 +202,7 @@
                                     <x-signal.ui.button type="submit" variant="secondary">{{ __('Reopen Report') }}</x-signal.ui.button>
                                 </form>
                             @endif
-                        </article>
+                        </x-signal.ui.card>
                     @endforeach
                 </div>
             @else
@@ -218,20 +214,16 @@
                 {{ __('Tell the contributor about unsafe, broken, outdated, or misleading content. Your identity is not shown to them.') }}
             </p>
             @if ($currentReport)
-                <p @class([
-                    'ui-alert mt-3 p-3',
-                    'ui-alert--danger' => $currentReport->resolved_at === null,
-                    'ui-alert--success' => $currentReport->resolved_at !== null,
-                ])>
+                <x-signal.ui.alert as="p" :tone="$currentReport->resolved_at === null ? 'danger' : 'success'" class="mt-3 p-3">
                     {{ $currentReport->resolved_at === null
                         ? __('You reported this recipe as :reason. You can update or withdraw your report.', ['reason' => str($currentReport->reason)->headline()])
                         : __('The contributor marked your :reason report as resolved. Updating it will reopen it.', ['reason' => str($currentReport->reason)->headline()]) }}
-                </p>
+                </x-signal.ui.alert>
                 @if ($currentReport->resolved_at && $currentReport->resolution_note)
-                    <div class="ui-alert ui-alert--success mt-3 p-3 text-sm">
+                    <x-signal.ui.alert tone="success" class="mt-3 p-3 text-sm">
                         <p class="font-semibold">{{ __('Contributor resolution note') }}</p>
                         <p class="mt-1 whitespace-pre-line">{{ $currentReport->resolution_note }}</p>
-                    </div>
+                    </x-signal.ui.alert>
                 @endif
             @endif
             <x-signal.ui.button

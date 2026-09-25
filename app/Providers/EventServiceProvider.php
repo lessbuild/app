@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Modules\Deployer\Listeners\SyncDeployerBillingWebhook;
 use App\Modules\Deployer\Listeners\SyncSeatsAfterBillingWebhook;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Server;
@@ -15,6 +16,7 @@ use Illuminate\Auth\Events\Registered;
 use Illuminate\Auth\Listeners\SendEmailVerificationNotification;
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 use Laravel\Cashier\Events\WebhookHandled;
+use Laravel\Cashier\Events\WebhookReceived;
 
 class EventServiceProvider extends ServiceProvider
 {
@@ -29,6 +31,9 @@ class EventServiceProvider extends ServiceProvider
         ],
         WebhookHandled::class => [
             SyncSeatsAfterBillingWebhook::class,
+        ],
+        WebhookReceived::class => [
+            SyncDeployerBillingWebhook::class,
         ],
     ];
 

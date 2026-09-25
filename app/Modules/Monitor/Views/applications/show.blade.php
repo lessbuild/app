@@ -11,12 +11,12 @@
         @endif
     </x-monitor::ui.page-header>
     @if($application->trashed())
-        <section class="ui-alert ui-alert-warning flex flex-col justify-between gap-4 p-6 sm:flex-row sm:items-center">
+        <x-signal.ui.alert as="section" tone="warning" class="flex flex-col justify-between gap-4 p-6 sm:flex-row sm:items-center">
             <div><h2 class="font-bold text-warning dark:text-warning">This application is archived</h2><p class="mt-2 text-sm text-warning dark:text-warning">Its telemetry is preserved. Restoring it does not reactivate revoked tokens.</p></div>
             @if($canManage)<form method="POST" action="{{ route('monitor.applications.restore', $application) }}">@csrf<x-monitor::ui.button>Restore application</x-monitor::ui.button></form>@endif
-        </section>
+        </x-signal.ui.alert>
     @endif
-    <section class="ui-panel overflow-hidden">
+    <x-signal.ui.panel as="section" class="overflow-hidden">
         <div class="border-b border-line px-6 py-4 dark:border-line"><h2 class="font-bold">Environments</h2><p class="mt-1 text-xs text-muted dark:text-subtle">Separate credentials and telemetry for production, staging, and development.</p></div>
         <div class="divide-y divide-line dark:divide-line">
             @forelse($environments as $environment)
@@ -31,10 +31,10 @@
                 <p class="px-6 py-8 text-sm text-muted dark:text-subtle">No environments yet. Add one below to begin collecting telemetry.</p>
             @endforelse
         </div>
-    </section>
+    </x-signal.ui.panel>
     @if($canManage && !$application->trashed())
         <div class="grid gap-6 xl:grid-cols-2">
-            <section class="ui-panel p-6">
+            <x-signal.ui.panel as="section" class="p-6">
                 <h2 class="mb-5 font-bold">Add an environment</h2>
                 <form method="POST" action="{{ route('monitor.environments.store', $application) }}" class="space-y-4">
                     @csrf
@@ -43,8 +43,8 @@
                     <x-monitor::ui.select id="environment-status" name="status" label="Ingestion" value="active" :options="['active' => 'Active', 'paused' => 'Paused']" />
                     <x-monitor::ui.button>Create environment</x-monitor::ui.button>
                 </form>
-            </section>
-            <section class="ui-panel shadow-none border-danger bg-surface p-6 dark:border-danger dark:bg-surface">
+            </x-signal.ui.panel>
+            <x-signal.ui.panel as="section" class="shadow-none border-danger bg-surface p-6 dark:border-danger dark:bg-surface">
                 <h2 class="font-bold text-danger dark:text-danger">Archive application</h2>
                 <p class="mt-2 text-sm leading-6 text-muted dark:text-subtle">All ingestion keys will be revoked immediately. Telemetry will be retained and the application can be restored.</p>
                 <form method="POST" action="{{ route('monitor.applications.destroy', $application) }}" class="mt-5 space-y-4">
@@ -52,7 +52,7 @@
                     <x-monitor::ui.input name="confirmation" :label="'Type '.$application->name.' to confirm'" autocomplete="off" required />
                     <x-monitor::ui.button variant="secondary">Archive application</x-monitor::ui.button>
                 </form>
-            </section>
+            </x-signal.ui.panel>
         </div>
     @endif
 </div>

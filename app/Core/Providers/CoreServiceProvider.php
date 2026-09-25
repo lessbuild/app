@@ -4,15 +4,20 @@ namespace App\Core\Providers;
 
 use App\Core\Auth\PlatformUserProvider;
 use App\Core\Contracts\ProductPlanResolver;
+use App\Core\Http\Controllers\CorePlatformStatusController;
 use App\Core\Http\Middleware\RedirectProductGuestToPlatform;
 use App\Core\Http\Middleware\ResolveProductPrincipal;
 use App\Core\Models\Passkey;
 use App\Core\Models\PlatformUser;
 use App\Core\Services\Billing\ResolveProductPlan;
 use App\Core\Services\Connections\ProjectConnectionDiagnosticRegistry;
+use App\Core\Services\CustomerStatusPageProviderRegistry;
 use App\Core\Services\Identity\ProductPrincipalProvisionerRegistry;
 use App\Core\Services\Identity\ProductPrincipalRegistry;
 use App\Core\Services\Identity\ProductWorkspaceMembershipProjectorRegistry;
+use App\Core\Services\Identity\ProductWorkspaceProvisionerRegistry;
+use App\Core\Services\PlatformStatusProviderRegistry;
+use App\Core\Services\ProductApiDocumentationRegistry;
 use App\Core\Services\ProjectProductLinkRegistry;
 use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
@@ -21,6 +26,10 @@ use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
+use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
+use App\Core\Services\WorkspaceCustomerStatusManagementProviderRegistry;
+use App\Core\Services\WorkspaceFeedbackHistoryProviderRegistry;
+use App\Core\Services\WorkspaceMonitorStatusManagementProviderRegistry;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
@@ -40,11 +49,19 @@ final class CoreServiceProvider extends ModuleServiceProvider
         $this->app->singleton(ProjectResourceLinkRegistry::class);
         $this->app->singleton(ProjectSetupRegistry::class);
         $this->app->singleton(ProjectTrafficContextRegistry::class);
+        $this->app->singleton(CustomerStatusPageProviderRegistry::class);
+        $this->app->singleton(PlatformStatusProviderRegistry::class);
+        $this->app->singleton(ProductApiDocumentationRegistry::class);
         $this->app->singleton(WorkspaceSearchProviderRegistry::class);
         $this->app->singleton(WorkspaceActivityProviderRegistry::class);
+        $this->app->singleton(WorkspaceCostBreakdownProviderRegistry::class);
+        $this->app->singleton(WorkspaceCustomerStatusManagementProviderRegistry::class);
+        $this->app->singleton(WorkspaceMonitorStatusManagementProviderRegistry::class);
+        $this->app->singleton(WorkspaceFeedbackHistoryProviderRegistry::class);
         $this->app->singleton(ProductPrincipalRegistry::class);
         $this->app->singleton(ProductPrincipalProvisionerRegistry::class);
         $this->app->singleton(ProductWorkspaceMembershipProjectorRegistry::class);
+        $this->app->singleton(ProductWorkspaceProvisionerRegistry::class);
         $this->app->bind(ProductPlanResolver::class, ResolveProductPlan::class);
 
         Passkeys::useUserModel(PlatformUser::class);
@@ -54,6 +71,26 @@ final class CoreServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        $this->app->booted(function (): void {
+            if ($this->app->routesAreCached()) {
+                return;
+            }
+
+            $registerStatusRoutes = static function (): void {
+                Route::get('/status', [CorePlatformStatusController::class, 'show'])->name('core.status');
+                Route::get('/status/report.json', [CorePlatformStatusController::class, 'report'])->name('core.status.report');
+            };
+            $dashboardHost = config('platform.dashboard_host');
+
+            if (filled($dashboardHost)) {
+                Route::domain($dashboardHost)->middleware('web')->group($registerStatusRoutes);
+
+                return;
+            }
+
+            Route::middleware('web')->group($registerStatusRoutes);
+        });
 
         $this->app['router']->aliasMiddleware('platform.principal', ResolveProductPrincipal::class);
         $this->app['router']->aliasMiddleware('platform.product-guest', RedirectProductGuestToPlatform::class);

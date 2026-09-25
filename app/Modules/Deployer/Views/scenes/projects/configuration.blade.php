@@ -192,7 +192,7 @@
                 @endif
             </x-signal.ui.card>
         @endisset
-        <details class="ui-card mt-6 p-5">
+        <x-signal.ui.card as="details" class="mt-6 p-5">
             <summary class="cursor-pointer font-bold text-ink">{{ __('Version 2 authoring guide') }}</summary>
             <p class="mt-3 text-sm text-muted">{{ __('Start with the parser-valid example below, replace the illustrative binding ID with a workspace ID from the catalog, then add only the sections you need. Invalid submissions are rejected without retaining this form in session input.') }}</p>
             <div class="mt-4 grid gap-5 lg:grid-cols-2">
@@ -210,8 +210,8 @@
                     <li><code class="text-ink">{{ $field['path'] }}</code> — {{ $field['description'] }}</li>
                 @endforeach
             </ul>
-        </details>
-        <details class="ui-card mt-6 p-5">
+        </x-signal.ui.card>
+        <x-signal.ui.card as="details" class="mt-6 p-5">
             <summary class="cursor-pointer font-bold text-ink">{{ __('Find workspace binding IDs') }}</summary>
             <p class="mt-3 text-muted">{{ __('Use these IDs in the JSON bindings below. Secret values are never shown.') }}</p>
             <div class="mt-4 grid gap-6 lg:grid-cols-3">
@@ -219,7 +219,7 @@
                 <section><h2 class="font-bold text-ink">{{ __('Secrets · secrets') }}</h2><ul class="mt-2 space-y-2">@forelse($secrets as $secret)<li class="text-muted">#{{ $secret->id }} · {{ $secret->key }} · {{ $secret->environment->name }} · {{ $secret->scope }}</li>@empty<li class="text-muted">{{ __('No secret sources available.') }}</li>@endforelse</ul>{{ $secrets->withQueryString()->links() }}</section>
                 <section><h2 class="font-bold text-ink">{{ __('Repositories · repositories') }}</h2><ul class="mt-2 space-y-2">@forelse($repositories as $repository)<li class="text-muted">#{{ $repository->id }} · {{ $repository->name }} · {{ $repository->branch }} · {{ __('Website') }} #{{ $repository->website_id }}</li>@empty<li class="text-muted">{{ __('No repositories available.') }}</li>@endforelse</ul>{{ $repositories->withQueryString()->links() }}</section>
             </div>
-        </details>
+        </x-signal.ui.card>
         <form method="POST" action="{{ route('projects.configuration.store', $project) }}" class="mt-6 space-y-5">@csrf
             <label class="block"><span class="ui-label">{{ __('Version 2 YAML document') }}</span><x-signal.ui.textarea required name="document" rows="16" class="ui-input font-mono" spellcheck="false" :restore="false"></x-signal.ui.textarea></label>
             <label class="block"><span class="ui-label">{{ __('Workspace bindings (JSON)') }}</span><x-signal.ui.textarea required name="bindings" rows="5" class="ui-input font-mono" spellcheck="false" placeholder='{"placements":{"site":1},"secrets":{},"repositories":{}}' :restore="false"></x-signal.ui.textarea></label>

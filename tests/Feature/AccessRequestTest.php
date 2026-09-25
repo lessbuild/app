@@ -27,7 +27,7 @@ class AccessRequestTest extends TestCase
     public function test_closed_registration_has_a_complete_public_request_path(): void
     {
         $this->get('/')->assertOk()
-            ->assertSee('One workspace for the work behind your software.')
+            ->assertSee('Ship. Monitor. Understand.')
             ->assertSee('Deployer')
             ->assertSee('Monitor')
             ->assertSee('Analytics');

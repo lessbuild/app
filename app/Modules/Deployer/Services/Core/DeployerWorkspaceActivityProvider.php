@@ -15,6 +15,8 @@ use App\Core\Services\WorkspaceProjectAccess;
 use App\Modules\Deployer\Enums\BuildStatus;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\LostConnectionException;
 use Illuminate\Database\QueryException;
@@ -26,6 +28,10 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
     public function __construct(
         private readonly DeployerProjectLink $projectLinks,
         private readonly WorkspaceProjectAccess $projectAccess,
+        private readonly DeployerProvisioningActivity $provisioningActivity,
+        private readonly DeployerBackupActivity $backupActivity,
+        private readonly DeployerOperationalActivity $operationalActivity,
+        private readonly RepositoryDeploymentPlan $deploymentPlan,
     ) {}
 
     /**
@@ -42,37 +48,104 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
         }
 
         try {
+            $mappedProjects = $this->mappedProjects($user, $workspace, $projects);
             $mappedEnvironments = $this->mappedEnvironments($user, $projects);
 
-            if ($mappedEnvironments === []) {
+            if ($mappedEnvironments === [] && $mappedProjects === []) {
                 return new WorkspaceActivitySnapshot(collect());
             }
 
-            $builds = Build::query()
-                ->whereIn('environment_id', array_keys($mappedEnvironments))
-                ->with('environment:id,project_id,name')
-                ->orderByDesc('created_at')
-                ->orderByDesc('id')
-                ->limit(max(1, min(100, $limit)))
-                ->get([
-                    'id',
-                    'environment_id',
-                    'status',
-                    'revision',
-                    'release_name',
-                    'created_at',
-                    'started_at',
-                    'finished_at',
-                    'updated_at',
-                ]);
+            $builds = $mappedEnvironments === []
+                ? collect()
+                : Build::query()
+                    ->whereIn('environment_id', array_keys($mappedEnvironments))
+                    ->with('environment:id,project_id,name')
+                    ->orderByDesc('created_at')
+                    ->orderByDesc('id')
+                    ->limit(max(1, min(100, $limit)))
+                    ->get([
+                        'id',
+                        'environment_id',
+                        'status',
+                        'revision',
+                        'release_name',
+                        'setup_stage',
+                        'created_at',
+                        'started_at',
+                        'finished_at',
+                        'updated_at',
+                    ]);
 
-            return new WorkspaceActivitySnapshot($builds
+            $runs = $builds
                 ->map(fn (Build $build): ?ProjectWorkflowRun => $this->runFor($build, $workspace, $mappedEnvironments))
                 ->filter()
-                ->values());
+                ->concat($this->provisioningActivity->forMappedEnvironments($mappedEnvironments, $workspace, $limit))
+                ->concat($this->backupActivity->forMappedEnvironments($mappedEnvironments, $workspace, $limit))
+                ->concat($this->operationalActivity->forMappedEnvironments($mappedEnvironments, $mappedProjects, $workspace, $limit))
+                ->sortByDesc(fn (ProjectWorkflowRun $run): int => $run->recordedAt->getTimestamp())
+                ->take(max(1, min(100, $limit)))
+                ->values();
+
+            return new WorkspaceActivitySnapshot($runs);
         } catch (LostConnectionException|QueryException) {
             return new WorkspaceActivitySnapshot(collect(), available: false);
         }
+    }
+
+    /**
+     * @param  Collection<int, CoreProject>  $projects
+     * @return array<string, array{project: CoreProject, deployer_project: Project, organization_id: int}>
+     */
+    private function mappedProjects(PlatformUser $user, Workspace $workspace, Collection $projects): array
+    {
+        $mapped = [];
+        $ambiguous = [];
+
+        foreach ($projects as $project) {
+            if ((string) $project->workspace_id !== (string) $workspace->getKey()
+                || ! $this->projectAccess->canAccessProductResource($user, $project, 'deployer')) {
+                continue;
+            }
+
+            $resources = ProjectResource::query()
+                ->where('project_id', $project->getKey())
+                ->where('product', 'deployer')
+                ->where('resource_type', 'project')
+                ->where('status', 'active')
+                ->orderBy('id')
+                ->get(['resource_id']);
+
+            if ($resources->count() !== 1) {
+                continue;
+            }
+
+            $resourceId = (string) $resources->first()->resource_id;
+            $deployerProject = $this->projectLinks->projectFor($user, $project);
+
+            if ($deployerProject === null || (string) $deployerProject->getKey() !== $resourceId) {
+                continue;
+            }
+
+            $key = (string) $deployerProject->getKey();
+            if (isset($ambiguous[$key])) {
+                continue;
+            }
+
+            if (isset($mapped[$key]) && (string) $mapped[$key]['project']->getKey() !== (string) $project->getKey()) {
+                unset($mapped[$key]);
+                $ambiguous[$key] = true;
+
+                continue;
+            }
+
+            $mapped[$key] = [
+                'project' => $project,
+                'deployer_project' => $deployerProject,
+                'organization_id' => (int) $deployerProject->organization_id,
+            ];
+        }
+
+        return $mapped;
     }
 
     /**
@@ -94,7 +167,8 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
                 ->where('resource_type', 'environment')
                 ->where('status', 'active')
                 ->orderBy('id')
-                ->get(['id', 'project_id', 'product', 'resource_type', 'resource_id', 'status', 'name']);
+                ->with('environment:id,name')
+                ->get(['id', 'project_id', 'product', 'resource_type', 'resource_id', 'status', 'name', 'environment_id']);
 
             foreach ($resources as $resource) {
                 $environment = $this->projectLinks->accessibleEnvironment($user, $project, $resource);
@@ -107,6 +181,8 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
                     'project' => $project,
                     'environment' => $environment,
                     'label' => filled($resource->name) ? $resource->name : $environment->name,
+                    'canonical_environment_id' => $resource->environment_id === null ? null : (string) $resource->environment_id,
+                    'canonical_environment_name' => $resource->environment?->name,
                     'organization_id' => (int) $environment->project->organization_id,
                 ];
             }
@@ -162,25 +238,33 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
                 product: 'deployer',
                 productLabel: (string) config('platform.products.deployer.label', __('Deployer')),
                 title: __(':environment deployment', ['environment' => $mapping['label']]),
-                detail: $this->detail($status),
+                detail: $this->detail($status, (int) $build->setup_stage),
                 state: $state,
                 recordedAt: $recordedAt,
                 attemptedAt: $build->started_at?->toImmutable()->utc(),
                 completedAt: $build->finished_at?->toImmutable()->utc(),
                 resultUrl: $resultUrl,
+                environmentId: $mapping['canonical_environment_id'],
+                environmentName: $mapping['canonical_environment_name'] ?: $mapping['label'],
             )],
         );
     }
 
-    private function detail(?BuildStatus $status): string
+    private function detail(?BuildStatus $status, int $setupStage): string
     {
+        $finalStage = $this->deploymentPlan->finalStage();
+        $completedStages = $status === BuildStatus::Succeeded
+            ? $finalStage
+            : max(0, min($finalStage, $setupStage));
+        $progress = ['completed' => $completedStages, 'total' => $finalStage];
+
         return match ($status) {
-            BuildStatus::Queued => __('This deployment is queued. Detailed progress is not available until work begins.'),
+            BuildStatus::Queued => __('This deployment is queued. :completed of :total stages are recorded.', $progress),
             BuildStatus::AwaitingApproval => __('This deployment is waiting for an authorized reviewer.'),
-            BuildStatus::Deploying, BuildStatus::Running => __('This deployment is active. Open its Deployer record for the latest recorded stage.'),
-            BuildStatus::TimingOut => __('A remote deployment step has not reported completion. Open its Deployer record for current evidence.'),
-            BuildStatus::Succeeded => __('The deployment completed successfully.'),
-            BuildStatus::Failed => __('The deployment failed. Open its Deployer record for the authorized failure details.'),
+            BuildStatus::Deploying, BuildStatus::Running => __('This deployment is active. :completed of :total stages are recorded.', $progress),
+            BuildStatus::TimingOut => __('A remote deployment step has not reported completion. :completed of :total stages are recorded.', $progress),
+            BuildStatus::Succeeded => __('The deployment completed successfully. :completed of :total stages are recorded.', $progress),
+            BuildStatus::Failed => __('The deployment failed. :completed of :total stages are recorded. Open its Deployer record for the authorized failure details.', $progress),
             BuildStatus::Rejected => __('The deployment was declined before remote execution.'),
             BuildStatus::Canceled => __('The deployment was canceled.'),
             null => __('The stored deployment state is not recognized. Open the Deployer record to review it.'),

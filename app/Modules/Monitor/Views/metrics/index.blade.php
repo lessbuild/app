@@ -6,7 +6,7 @@
     <x-monitor::ui.page-header eyebrow="Infrastructure & application telemetry" title="Metrics" description="Explore resource-specific numeric series from any stack. A series keeps its host, container, database or custom labels separate, so unrelated resources are never averaged together.">
         <x-slot:actions><x-monitor::ui.button :href="route('monitor.metrics.index', $filters)" variant="secondary">Refresh metrics</x-monitor::ui.button></x-slot:actions>
     </x-monitor::ui.page-header>
-    <section class="ui-panel space-y-5 p-5">
+    <x-signal.ui.panel as="section" class="space-y-5 p-5">
         <form method="GET" action="{{ route('monitor.metrics.index') }}" class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,1fr)_minmax(0,1fr)_auto] lg:items-end">
             <x-monitor::ui.input name="q" label="Metric, unit or resource" type="search" :value="$filters['q'] ?? ''" maxlength="255" placeholder="system.memory.usage or api-1" />
             <x-monitor::ui.select name="environment" label="Environment" :value="$filters['environment'] ?? ''" :options="$environmentOptions" placeholder="All environments" />
@@ -23,12 +23,12 @@
                 @endforelse
         </x-monitor::ui.table></div>
         @if($series->hasPages())<div class="border-t border-line pt-5 dark:border-line">{{ $series->links() }}</div>@endif
-    </section>
+    </x-signal.ui.panel>
     <section class="space-y-4">
         <div><h2 class="text-xl font-bold">Collector setup profiles</h2><p class="mt-1 text-sm text-muted dark:text-subtle">These profiles use the OpenTelemetry Collector and send JSON OTLP metrics to this workspace. Replace the environment variables and set the token as a secret.</p></div>
         <div class="grid gap-5 xl:grid-cols-2">
             @foreach($profiles as $profile)
-                <article class="ui-card overflow-hidden"><div class="border-b border-line p-5 dark:border-line"><div class="flex flex-wrap items-center justify-between gap-3"><h3 class="font-bold">{{ $profile['label'] }}</h3><x-monitor::ui.badge tone="slate">{{ $profile['stability'] }}</x-monitor::ui.badge></div><p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">{{ $profile['requirements'] }}</p></div><pre class="library-code max-h-96 rounded-none"><code>{{ $profile['yaml'] }}</code></pre></article>
+                <x-signal.ui.card as="article" class="overflow-hidden"><div class="border-b border-line p-5 dark:border-line"><div class="flex flex-wrap items-center justify-between gap-3"><h3 class="font-bold">{{ $profile['label'] }}</h3><x-monitor::ui.badge tone="slate">{{ $profile['stability'] }}</x-monitor::ui.badge></div><p class="mt-2 text-xs leading-5 text-muted dark:text-subtle">{{ $profile['requirements'] }}</p></div><pre class="library-code max-h-96 rounded-none"><code>{{ $profile['yaml'] }}</code></pre></x-signal.ui.card>
             @endforeach
         </div>
         <p class="text-xs leading-5 text-muted dark:text-subtle">Collector component maturity is shown as published by OpenTelemetry. Docker Stats and Oracle DB receiver metrics are alpha. AWS CloudWatch receiver metrics are alpha; its profiles query explicit EC2, Lambda, RDS-instance or SQS-queue metrics and do not collect CloudWatch Logs. SQS metrics are approximate and may be missing while a queue is inactive. The RDS profile excludes Aurora cluster metrics, Enhanced Monitoring and Performance Insights. Set the Lambda metric delay longer than the function runtime plus CloudWatch publication latency. PostgreSQL query sampling and optional MySQL query-sample logs require additional database privileges and are not enabled by these baseline profiles. Use HTTPS before installing real production credentials.</p>

@@ -102,7 +102,7 @@ final class DeployerSubscriptionImportTest extends TestCase
         $this->assertSame(1, DB::connection('core')->table('billing_customers')->count());
     }
 
-    public function test_canceled_subscription_in_its_cashier_grace_period_remains_current(): void
+    public function test_cashier_period_end_cancellation_remains_entitled_until_its_grace_period_ends(): void
     {
         $workspaceId = $this->addMappedOwnerAndOrganization(20, 2);
         $this->addUser(2, 'cus_grace');
@@ -114,9 +114,10 @@ final class DeployerSubscriptionImportTest extends TestCase
             ->where('workspace_id', $workspaceId)->where('product', 'deployer')->first();
         $subscription = DB::connection('core')->table('product_subscriptions')->find($assignment->product_subscription_id);
 
-        $this->assertSame('canceled', $subscription->status);
+        $this->assertSame('active', $subscription->status);
         $this->assertSame('pro', $subscription->plan_key);
         $this->assertNotNull($subscription->cancel_at);
+        $this->assertNotNull($subscription->current_period_ends_at);
         $this->assertNull($subscription->canceled_at);
     }
 

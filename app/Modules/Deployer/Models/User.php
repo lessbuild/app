@@ -32,7 +32,13 @@ class User extends Authenticatable implements MustVerifyEmailContract
     /** Ensure each newly created account has a personal workspace. */
     protected static function booted(): void
     {
-        static::created(fn (User $user): Organization => app(PersonalOrganization::class)->ensure($user));
+        static::created(function (User $user): void {
+            if ($user->auth_type === 'platform') {
+                return;
+            }
+
+            app(PersonalOrganization::class)->ensure($user);
+        });
     }
 
     /**

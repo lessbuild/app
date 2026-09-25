@@ -12,7 +12,11 @@
 
 <div
     id="{{ $id }}"
-    class="app-mobile-sidebar fixed inset-x-0 bottom-0 z-50 hidden lg:hidden"
+    @class([
+        'app-mobile-sidebar fixed inset-x-0 bottom-0 z-50 hidden',
+        'xl:hidden' => $breakpoint >= 1280,
+        'lg:hidden' => $breakpoint < 1280,
+    ])
     data-mobile-drawer
     data-mobile-breakpoint="{{ $breakpoint }}"
     data-desktop-navigation="{{ $desktopNavigation }}"

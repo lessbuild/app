@@ -72,6 +72,27 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
                 $builds->whereHas('repository', fn ($repository) => $repository->whereIn('organization_id', $organizationIds))
                     ->orWhereHas('environment.project', fn ($project) => $project->whereIn('organization_id', $organizationIds));
             })
+            ->where(function ($builds) use ($organizationIds): void {
+                $builds->whereNull('builds.repository_id')
+                    ->orWhereHas('repository', fn ($repository) => $repository->whereIn('organization_id', $organizationIds));
+            })
+            ->where(function ($builds) use ($organizationIds): void {
+                $builds->whereNull('builds.environment_id')
+                    ->orWhereHas('environment.project', fn ($project) => $project->whereIn('organization_id', $organizationIds));
+            })
+            ->where(function ($builds): void {
+                $builds->whereNull('builds.repository_id')
+                    ->orWhereNull('builds.environment_id')
+                    ->orWhereExists(function ($query): void {
+                        $query->selectRaw('1')
+                            ->from('repositories')
+                            ->join('environments', 'environments.id', '=', 'builds.environment_id')
+                            ->join('projects', 'projects.id', '=', 'environments.project_id')
+                            ->whereColumn('repositories.id', 'builds.repository_id')
+                            ->whereColumn('repositories.organization_id', 'projects.organization_id')
+                            ->whereNull('repositories.deleted_at');
+                    });
+            })
             ->where(function ($builds) use ($pattern): void {
                 $builds->whereRaw("builds.revision LIKE ? ESCAPE '!'", [$pattern])
                     ->orWhereRaw("builds.status LIKE ? ESCAPE '!'", [$pattern])
@@ -83,16 +104,23 @@ final class DeployerWorkspaceSearchProvider implements WorkspaceSearchProvider
             ])
             ->latest('builds.id')
             ->limit(5)
-            ->get(['builds.id', 'builds.repository_id', 'builds.status', 'builds.revision'])
+            ->get(['builds.id', 'builds.repository_id', 'builds.environment_id', 'builds.status', 'builds.revision'])
             ->map(function (Build $build) use ($organizationIds): ?WorkspaceSearchResult {
-                $organizationId = collect([
+                $sourceOrganizationIds = collect([
                     $build->repository?->organization_id,
                     $build->environment?->project?->organization_id,
-                ])->first(fn ($id): bool => $id !== null && $organizationIds->contains((string) $id));
+                ])
+                    ->filter(fn ($id): bool => $id !== null && (string) $id !== '')
+                    ->map(static fn ($id): string => (string) $id)
+                    ->unique()
+                    ->values();
 
-                if ($organizationId === null) {
+                if ($sourceOrganizationIds->count() !== 1
+                    || ! $organizationIds->contains((string) $sourceOrganizationIds->first())) {
                     return null;
                 }
+
+                $organizationId = (string) $sourceOrganizationIds->first();
 
                 return new WorkspaceSearchResult(
                     type: __('Deployment'),

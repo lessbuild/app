@@ -731,6 +731,53 @@ class ObservabilityTest extends TestCase
         $this->assertDatabaseMissing('status_subscriptions', ['id' => $subscription->id]);
     }
 
+    public function test_core_status_page_preserves_deployer_history_subscriptions_and_json_handoff(): void
+    {
+        Notification::fake();
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id,
+            'name' => 'Core-visible status',
+            'slug' => 'core-visible-status',
+            'description' => 'The shared Signal status view.',
+            'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $this->actingAs($owner)->post(route('observability.incidents.store'), [
+            'status_page_id' => $page->id,
+            'kind' => 'incident',
+            'status' => 'investigating',
+            'severity' => 'major',
+            'title' => 'Core-visible API latency',
+            'message' => 'The shared page should retain its incident timeline.',
+            'starts_at' => now()->format('Y-m-d H:i:s'),
+        ])->assertRedirect();
+
+        $this->get(route('core.status-pages.show', ['product' => 'deployer', 'slug' => $page->slug]))
+            ->assertOk()
+            ->assertSee('The shared Signal status view.')
+            ->assertSee('Core-visible API latency')
+            ->assertSee('Get status updates')
+            ->assertSee(route('status.report', $page->slug));
+        $this->get(route('status.show', $page->slug))
+            ->assertOk()
+            ->assertSee('Core-visible API latency');
+        $this->getJson(route('status.report', $page->slug))
+            ->assertOk()
+            ->assertJsonPath('incidents.0.status', 'investigating');
+
+        $this->post(route('core.status-pages.subscribe', ['product' => 'deployer', 'slug' => $page->slug]), [
+            'email' => 'Ops@Example.com',
+        ])
+            ->assertRedirect(route('core.status-pages.show', ['product' => 'deployer', 'slug' => $page->slug]))
+            ->assertSessionHas('status_subscription');
+
+        $subscription = $page->subscriptions()->sole();
+        $this->assertSame('ops@example.com', $subscription->email);
+        $this->assertNull($subscription->verified_at);
+        Notification::assertSentOnDemand(ConfirmStatusSubscriptionNotification::class);
+    }
+
     /** @return array{User, Server, Website} */
     private function infrastructure(): array
     {

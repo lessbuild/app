@@ -22,7 +22,7 @@
             @endif
         </x-monitor::ui.page-header>
         @if($release)<a href="{{ route('monitor.releases.show', ['release' => $release->id, 'environment' => $record->event->environment_id]) }}" class="self-start text-xs font-bold text-primary hover:underline dark:text-primary">Release {{ $release->version }} · {{ $release->serviceLabel() }} →</a>@endif
-        <section aria-labelledby="context-title" class="ui-panel p-5 sm:p-6">
+        <x-signal.ui.panel as="section" aria-labelledby="context-title" class="p-5 sm:p-6">
             <h2 id="context-title" class="text-base font-bold">Recorded context</h2>
             <dl class="mt-5 grid grid-cols-1 gap-5 text-xs sm:grid-cols-2 xl:grid-cols-3">
                 @foreach([
@@ -40,16 +40,16 @@
                     <div class="min-w-0"><dt class="text-muted dark:text-subtle">{{ $label }}</dt><dd class="mt-2 break-all font-mono text-ink dark:text-ink">{{ $value }}</dd></div>
                 @endforeach
             </dl>
-        </section>
+        </x-signal.ui.panel>
         <p class="text-xs leading-5 text-muted dark:text-subtle">Stored event data is shown below with the current redaction rules applied. Redaction is best-effort; avoid sending personal data or secrets that your collection rules do not cover.</p>
         @foreach(['Attributes' => $attributesJson, 'Payload' => $payloadJson] as $label => $json)
-            <details class="ui-card overflow-hidden" @if($label === 'Attributes') open @endif>
+            <x-signal.ui.card as="details" class="overflow-hidden" @if($label === 'Attributes') open @endif>
                 <summary class="cursor-pointer p-5 text-sm font-bold focus-visible:outline-2 focus-visible:outline-primary">{{ $label }}</summary>
                 <div class="flex flex-col gap-3 border-t border-line p-5 dark:border-line">
                     <x-monitor::ui.button type="button" variant="secondary" class="self-start" data-copy-target="event-{{ strtolower($label) }}"><span data-copy-label>Copy {{ strtolower($label) }}</span></x-monitor::ui.button>
                     <pre id="event-{{ strtolower($label) }}" class="library-code max-h-[32rem]" tabindex="0" aria-label="{{ $label }} JSON">{{ $json }}</pre>
                 </div>
-            </details>
+            </x-signal.ui.card>
         @endforeach
     </div>
 @endsection

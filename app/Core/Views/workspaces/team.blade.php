@@ -163,7 +163,7 @@
                                                     <form method="POST" action="{{ route('core.workspace.team.memberships.products.update', [$workspace, $membership, $product]) }}" onsubmit='return confirm(@js(__('Revoke this person’s app access through Buildpusher? Their product ownership record will remain unchanged.')))'>
                                                         @csrf
                                                         @method('PUT')
-                                                        <input type="hidden" name="role" value="none">
+                                                        <x-signal.ui.input type="hidden" name="role" value="none" :restore="false" />
                                                         <x-signal.ui.button type="submit" variant="danger">{{ __('Revoke access') }}</x-signal.ui.button>
                                                     </form>
                                                 @endif

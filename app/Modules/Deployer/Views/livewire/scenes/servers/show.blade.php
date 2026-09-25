@@ -342,7 +342,7 @@
                     </li>
                 @empty
                     <li class="pt-3">
-                            <li class="ui-panel border-l-4 border-line bg-surface-muted p-3 text-sm text-muted" style="border-left-color: var(--ui-primary)" role="status">{{ __('No websites attached to server') }}</li>
+                            <x-signal.ui.panel as="li" class="border-l-4 border-line bg-surface-muted p-3 text-sm text-muted" style="border-left-color: var(--ui-primary)" role="status">{{ __('No websites attached to server') }}</x-signal.ui.panel>
                     </li>
                 @endforelse
             </ul>

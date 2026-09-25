@@ -5,18 +5,18 @@ namespace App\Modules\Monitor\Services;
 final class OpenApiDocument
 {
     /** @return array<string, mixed> */
-    public function make(string $serverUrl): array
+    public function make(string $serverUrl, string $productName = 'Monitor'): array
     {
         return [
             'openapi' => '3.1.0',
             'info' => [
-                'title' => config('app.name').' Telemetry API',
+                'title' => $productName.' Telemetry API',
                 'version' => '1.0.0',
-                'description' => 'Versioned ingestion endpoints for application events, OpenTelemetry signals, deployments, heartbeats and queue health.',
+                'description' => 'Versioned ingestion endpoints for '.$productName.' events, OpenTelemetry signals, deployments, heartbeats and queue health.',
             ],
             'servers' => [['url' => rtrim($serverUrl, '/')]],
             'tags' => [
-                ['name' => 'Telemetry', 'description' => config('app.name').' JSON and OpenTelemetry HTTP/JSON ingestion.'],
+                ['name' => 'Telemetry', 'description' => $productName.' JSON and OpenTelemetry HTTP/JSON ingestion.'],
                 ['name' => 'Deployments', 'description' => 'Release and deployment context.'],
                 ['name' => 'Monitors', 'description' => 'Heartbeat and queue monitor signals.'],
             ],

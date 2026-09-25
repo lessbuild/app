@@ -9,14 +9,14 @@
 </x-monitor::ui.page-header>
 <div class="grid items-start gap-6 xl:grid-cols-3">
     <div class="space-y-6 xl:col-span-2">
-        <section class="ui-panel space-y-4 p-6">
+        <x-signal.ui.panel as="section" class="space-y-4 p-6">
             <h2 class="text-lg font-bold">Latest observation for this incident</h2>@if($incident->monitor_id)<x-monitor::ui.monitor-observation :observation="$incident->latest_observation" />@else<x-monitor::ui.alert-observation :observation="$incident->latest_observation" />@endif
             <p class="text-xs text-muted dark:text-subtle">Opened {{ $incident->opened_at->format('Y-m-d H:i:s') }} UTC · Last observed breach {{ $incident->last_breached_at->format('Y-m-d H:i:s') }} UTC</p>
             @if($incident->resolved_at)<p class="text-sm">{{ $incident->statusLabel() }} at {{ $incident->resolved_at->format('Y-m-d H:i:s') }} UTC.</p>@endif
             @if($incident->acknowledged_at)<p class="text-sm">Acknowledged by {{ $incident->acknowledgedBy?->name ?? 'Former teammate' }} at {{ $incident->acknowledged_at->format('Y-m-d H:i:s') }} UTC.</p>@endif
             <p class="text-sm">Assigned owner: {{ $incident->assignee?->name ?? 'Unassigned' }}.</p>
-        </section>
-        <section class="ui-panel space-y-4 p-6"><h2 class="text-lg font-bold">Opening evidence</h2>
+        </x-signal.ui.panel>
+        <x-signal.ui.panel as="section" class="space-y-4 p-6"><h2 class="text-lg font-bold">Opening evidence</h2>
             @if($incident->monitor_id)
             <p class="text-sm">
                 @if(($incident->rule_snapshot['type'] ?? 'http') === 'http')
@@ -40,17 +40,17 @@
             <p class="text-xs text-muted dark:text-subtle">Minimum {{ $incident->rule_snapshot['minimum_samples'] }} samples · {{ $incident->rule_snapshot['trigger_checks'] }} checks to open · {{ $incident->rule_snapshot['recovery_checks'] }} checks to recover. Configuration captured when this incident opened.</p>
             <x-monitor::ui.alert-observation :observation="$incident->opening_observation" />
             @endif
-        </section>
+        </x-signal.ui.panel>
         <section class="space-y-4"><h2 class="text-lg font-bold">Activity</h2>
-            <ol class="space-y-3">@foreach($activities as $activity)<li class="ui-card p-5"><div class="flex flex-wrap justify-between gap-2"><p class="text-sm font-semibold">{{ $activity->label() }}</p><time class="text-xs text-muted dark:text-subtle">{{ $activity->created_at->format('Y-m-d H:i:s') }} UTC</time></div><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $activity->actor?->name ?? 'System / former teammate' }}</p>@if($activity->action === 'assign')<p class="mt-3 text-xs text-muted dark:text-subtle">Assigned to {{ $assignees->firstWhere('id', $activity->metadata['assignee_id'] ?? null)?->name ?? (($activity->metadata['assignee_id'] ?? null) === null ? 'no one' : 'a former contributor') }}.</p>@endif @if($activity->note !== null)<p class="mt-3 whitespace-pre-wrap break-words text-sm">{{ $activity->note }}</p>@endif</li>@endforeach</ol>
+            <ol class="space-y-3">@foreach($activities as $activity)<x-signal.ui.card as="li" class="p-5"><div class="flex flex-wrap justify-between gap-2"><p class="text-sm font-semibold">{{ $activity->label() }}</p><time class="text-xs text-muted dark:text-subtle">{{ $activity->created_at->format('Y-m-d H:i:s') }} UTC</time></div><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $activity->actor?->name ?? 'System / former teammate' }}</p>@if($activity->action === 'assign')<p class="mt-3 text-xs text-muted dark:text-subtle">Assigned to {{ $assignees->firstWhere('id', $activity->metadata['assignee_id'] ?? null)?->name ?? (($activity->metadata['assignee_id'] ?? null) === null ? 'no one' : 'a former contributor') }}.</p>@endif @if($activity->note !== null)<p class="mt-3 whitespace-pre-wrap break-words text-sm">{{ $activity->note }}</p>@endif</x-signal.ui.card>@endforeach</ol>
             {{ $activities->links() }}
         </section>
     </div>
     <aside class="space-y-5">
-        <section class="ui-panel space-y-4 p-5"><h2 class="font-bold">Incident ownership</h2>
+        <x-signal.ui.panel as="section" class="space-y-4 p-5"><h2 class="font-bold">Incident ownership</h2>
             @can('update', $incident)
             <form method="POST" action="{{ route('monitor.incidents.update', $incident) }}" class="space-y-4">
-                @csrf @method('PATCH') <input type="hidden" name="action" value="assign"><input type="hidden" name="version" value="{{ $incident->state_version }}">
+                @csrf @method('PATCH') <x-signal.ui.input type="hidden" name="action" value="assign" :restore="false" /><x-signal.ui.input type="hidden" name="version" value="{{ $incident->state_version }}" :restore="false" />
                 <x-monitor::ui.select name="assignee_id" label="Workspace contributor" :value="$incident->assignee_id" :options="$assignees->pluck('name', 'id')->all()" placeholder="Unassigned" />
                 <x-monitor::ui.button variant="secondary">Update owner</x-monitor::ui.button>
             </form>
@@ -58,18 +58,18 @@
             <p class="text-sm">{{ $incident->assignee?->name ?? 'Unassigned' }}</p>
             <p class="text-xs leading-5 text-muted dark:text-subtle">Your viewer role is read-only. A workspace contributor can assign this incident.</p>
             @endcan
-        </section>
+        </x-signal.ui.panel>
         @if($incident->monitor_id)
-        <section class="ui-panel space-y-4 p-5"><h2 class="font-bold">Current monitor state</h2><p class="text-sm">{{ $source->healthLabel() }}</p><p class="text-xs text-muted dark:text-subtle">Pausing retains active incidents. Unknown and missed checks never indicate recovery.</p><a href="{{ route('monitor.monitors.show', $source) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">View monitor and history →</a></section>
+        <x-signal.ui.panel as="section" class="space-y-4 p-5"><h2 class="font-bold">Current monitor state</h2><p class="text-sm">{{ $source->healthLabel() }}</p><p class="text-xs text-muted dark:text-subtle">Pausing retains active incidents. Unknown and missed checks never indicate recovery.</p><a href="{{ route('monitor.monitors.show', $source) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">View monitor and history →</a></x-signal.ui.panel>
         @else
-        <section class="ui-panel space-y-4 p-5"><h2 class="font-bold">Current rule state</h2><x-monitor::ui.alert-state :rule="$incident->alertRule" /><p class="text-xs leading-5 text-muted dark:text-subtle">Pausing a rule or its source does not resolve active incidents. Missing telemetry is not evidence of recovery.</p><a href="{{ route('monitor.alerts.show', $incident->alertRule) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">View rule and history →</a></section>
+        <x-signal.ui.panel as="section" class="space-y-4 p-5"><h2 class="font-bold">Current rule state</h2><x-monitor::ui.alert-state :rule="$incident->alertRule" /><p class="text-xs leading-5 text-muted dark:text-subtle">Pausing a rule or its source does not resolve active incidents. Missing telemetry is not evidence of recovery.</p><a href="{{ route('monitor.alerts.show', $incident->alertRule) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">View rule and history →</a></x-signal.ui.panel>
         @endif
         @if($deploymentContextMinutes === 0)
-        <section class="ui-alert border-primary/30 bg-primary-soft block space-y-3 p-5"><h2 class="font-bold text-primary dark:text-primary">Deployment context</h2><p class="text-xs leading-5 text-primary dark:text-primary">See recent releases in the affected environment alongside an incident. This change correlation view is available on paid plans.</p><a href="{{ route('monitor.settings.billing') }}" class="text-xs font-bold text-primary underline dark:text-primary">Review plans →</a></section>
+        <x-signal.ui.alert as="section" tone="info" class="border-primary/30 bg-primary-soft block space-y-3 p-5"><h2 class="font-bold text-primary dark:text-primary">Deployment context</h2><p class="text-xs leading-5 text-primary dark:text-primary">See recent releases in the affected environment alongside an incident. This change correlation view is available on paid plans.</p><a href="{{ route('monitor.settings.billing') }}" class="text-xs font-bold text-primary underline dark:text-primary">Review plans →</a></x-signal.ui.alert>
         @else
-        <section class="ui-panel space-y-4 p-5"><div><h2 class="font-bold">Recent deployments</h2><p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">Deployments to this environment in the {{ $deploymentContextMinutes }} minutes before the incident opened. This is a lead for investigation, not proof of causation.</p></div>
+        <x-signal.ui.panel as="section" class="space-y-4 p-5"><div><h2 class="font-bold">Recent deployments</h2><p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">Deployments to this environment in the {{ $deploymentContextMinutes }} minutes before the incident opened. This is a lead for investigation, not proof of causation.</p></div>
             <div class="divide-y divide-line dark:divide-line">@forelse($recentDeployments as $deployment)<a href="{{ route('monitor.deployments.show', [$deployment->environment->application_id, $deployment->environment_id, $deployment->id]) }}" class="block py-3 first:pt-0 last:pb-0 hover:text-primary dark:hover:text-primary"><div class="flex items-start justify-between gap-3"><div class="min-w-0"><p class="truncate text-sm font-semibold">{{ $deployment->release->version }}</p><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $deployment->release->serviceLabel() }} · {{ $deployment->actor?->name ?? 'Automated deployment' }}</p></div><time class="shrink-0 text-right text-[11px] text-muted dark:text-subtle">{{ $deployment->deployed_at->utc()->format('Y-m-d H:i') }} UTC</time></div></a>@empty<p class="text-sm text-muted dark:text-subtle">No deployment was recorded in this context window.</p>@endforelse</div>
-        </section>
+        </x-signal.ui.panel>
         @endif
         @foreach($analyticsTrafficContexts as $trafficContext)
         <section class="space-y-3" aria-label="Analytics traffic context for {{ $trafficContext->siteName }}">
@@ -103,13 +103,13 @@
         </section>
         @endforeach
         @can('update', $incident)
-        <form method="POST" action="{{ route('monitor.incidents.update', $incident) }}" class="ui-panel space-y-4 p-5">
-            @csrf @method('PATCH') <input type="hidden" name="version" value="{{ $incident->state_version }}">
+        <x-signal.ui.panel as="form" method="POST" action="{{ route('monitor.incidents.update', $incident) }}" class="space-y-4 p-5">
+            @csrf @method('PATCH') <x-signal.ui.input type="hidden" name="version" value="{{ $incident->state_version }}" :restore="false" />
             <h2 class="font-bold">Respond</h2>
             <x-monitor::ui.select name="action" label="Action" :value="$incident->status === 'open' ? 'acknowledge' : 'note'" :options="$incident->status === 'open' ? ['acknowledge' => 'Acknowledge incident', 'note' => 'Add note'] : ['note' => 'Add note']" />
             <x-monitor::ui.input name="note" label="Note (required for Add note; no secrets)" maxlength="1000" />
             <p class="text-xs leading-5 text-muted dark:text-subtle">Acknowledgement records who is investigating. Only confirmed successful evaluations mark an incident recovered.</p><x-monitor::ui.button>Save response</x-monitor::ui.button>
-        </form>
+        </x-signal.ui.panel>
         @endcan
     </aside>
 </div>

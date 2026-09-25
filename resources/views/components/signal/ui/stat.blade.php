@@ -1,12 +1,21 @@
 @props([
-    'label',
-    'value',
+    'label' => null,
+    'value' => null,
     'description' => null,
     'icon' => null,
     'change' => null,
     'tone' => 'neutral',
+    'as' => 'dl',
+    'slotMode' => false,
 ])
 
+@php($tag = in_array($as, ['dl', 'div', 'a'], true) ? $as : 'dl')
+
+@if ($slotMode)
+    <{{ $tag }} {{ $attributes->class(['ui-stat']) }}>
+        {{ $slot }}
+    </{{ $tag }}>
+@else
 <dl {{ $attributes->class(['ui-stat']) }}>
     <dt class="ui-stat__label flex min-w-0 flex-wrap items-center justify-between gap-2 text-xs font-bold text-muted">
         <span class="flex min-w-0 items-center gap-2">
@@ -24,3 +33,4 @@
         <dd class="ui-stat__description mt-2 text-xs text-muted">{{ $description }}</dd>
     @endif
 </dl>
+@endif

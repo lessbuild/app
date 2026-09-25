@@ -6,15 +6,19 @@ use App\Core\Contracts\WorkspaceSearchProvider;
 use App\Core\Data\Search\WorkspaceSearchResult;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Workspace;
+use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\Search\ProductWorkspaceSearch;
 use App\Core\Services\Search\WorkspaceSearch;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceProjectAccess;
+use App\Modules\Deployer\Services\Core\DeployerWorkspaceSearchProvider;
 use App\Modules\Monitor\Models\User as MonitorUser;
+use App\Modules\Monitor\Services\Core\MonitorWorkspaceSearchProvider;
 use Illuminate\Database\QueryException;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use Tests\TestCase;
@@ -26,6 +30,10 @@ final class WorkspaceSearchTest extends TestCase
     private string $workspaceId;
 
     private string $membershipId;
+
+    private bool $monitorSearchTablesCreated = false;
+
+    private bool $deployerSearchTablesCreated = false;
 
     protected function setUp(): void
     {
@@ -80,6 +88,18 @@ final class WorkspaceSearchTest extends TestCase
             'users',
         ] as $table) {
             Schema::connection('core')->dropIfExists($table);
+        }
+
+        if ($this->monitorSearchTablesCreated) {
+            foreach (['incidents', 'monitors', 'alert_rules', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
+                Schema::connection('monitor')->dropIfExists($table);
+            }
+        }
+
+        if ($this->deployerSearchTablesCreated) {
+            foreach (['builds', 'repositories', 'environments', 'projects', 'servers', 'organization_user', 'organizations', 'users'] as $table) {
+                Schema::connection('deployer')->dropIfExists($table);
+            }
         }
 
         parent::tearDown();
@@ -249,6 +269,243 @@ final class WorkspaceSearchTest extends TestCase
         ));
     }
 
+    public function test_monitor_incident_search_excludes_incidents_with_sources_in_different_workspaces(): void
+    {
+        $this->createMonitorSearchTables();
+
+        $sourceUserId = '501';
+        $mappedWorkspaceId = '81';
+        $otherSourceWorkspaceId = '82';
+        $otherCanonicalWorkspaceId = (string) Str::ulid();
+        DB::connection('core')->table('workspaces')->insert([
+            'id' => $otherCanonicalWorkspaceId,
+            'owner_user_id' => (string) Str::ulid(),
+            'name' => 'Other workspace',
+            'slug' => 'other-workspace',
+            'status' => 'active',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        $this->mapIdentity('user', $sourceUserId, 'user', $this->userId, 'reconciled');
+        $this->mapIdentity('workspace', $mappedWorkspaceId, 'workspace', $this->workspaceId, 'reconciled');
+        $this->mapIdentity('workspace', $otherSourceWorkspaceId, 'workspace', $otherCanonicalWorkspaceId, 'reconciled');
+
+        DB::connection('monitor')->table('users')->insert(['id' => (int) $sourceUserId, 'name' => 'Monitor user']);
+        DB::connection('monitor')->table('workspaces')->insert([
+            ['id' => (int) $mappedWorkspaceId, 'owner_id' => (int) $sourceUserId, 'name' => 'Mapped', 'slug' => 'mapped'],
+            ['id' => (int) $otherSourceWorkspaceId, 'owner_id' => (int) $sourceUserId, 'name' => 'Other', 'slug' => 'other'],
+        ]);
+        DB::connection('monitor')->table('user_workspace')->insert([
+            'workspace_id' => (int) $mappedWorkspaceId,
+            'user_id' => (int) $sourceUserId,
+            'role' => 'owner',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+        DB::connection('monitor')->table('applications')->insert([
+            ['id' => 91, 'workspace_id' => (int) $mappedWorkspaceId, 'name' => 'Mapped app'],
+            ['id' => 92, 'workspace_id' => (int) $otherSourceWorkspaceId, 'name' => 'Other app'],
+        ]);
+        DB::connection('monitor')->table('environments')->insert([
+            ['id' => 101, 'application_id' => 91, 'name' => 'Production'],
+            ['id' => 102, 'application_id' => 92, 'name' => 'Production'],
+        ]);
+        DB::connection('monitor')->table('alert_rules')->insert([
+            'id' => 201,
+            'environment_id' => 101,
+            'name' => 'Mapped alert rule',
+        ]);
+        DB::connection('monitor')->table('monitors')->insert([
+            'id' => 301,
+            'environment_id' => 102,
+            'name' => 'Other workspace monitor',
+            'type' => 'http',
+        ]);
+        DB::connection('monitor')->table('incidents')->insert([
+            ['id' => 401, 'alert_rule_id' => 201, 'monitor_id' => null, 'status' => 'open', 'opened_at' => now()],
+            ['id' => 402, 'alert_rule_id' => 201, 'monitor_id' => 301, 'status' => 'open', 'opened_at' => now()],
+        ]);
+
+        if (! Route::has('monitor.incidents.show')) {
+            Route::get('/monitor/incidents/{incident}', fn () => response()->noContent())
+                ->name('monitor.incidents.show');
+        }
+
+        $results = (new MonitorWorkspaceSearchProvider(app(LegacyIdentityResolver::class)))
+            ->search($this->user(), $this->workspace(), 'open');
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Incident #401', $results[0]->title);
+        parse_str((string) parse_url($results[0]->url, PHP_URL_QUERY), $query);
+        $this->assertSame((int) $mappedWorkspaceId, (int) ($query['workspace_id'] ?? 0));
+    }
+
+    public function test_deployer_search_includes_environment_only_builds_and_excludes_cross_organization_builds(): void
+    {
+        $this->createDeployerSearchTables();
+
+        $sourceUserId = '601';
+        $mappedOrganizationId = '91';
+        $otherOrganizationId = '92';
+        $this->mapIdentity('user', $sourceUserId, 'user', $this->userId, 'reconciled', 'deployer');
+        $this->mapIdentity('organization', $mappedOrganizationId, 'workspace', $this->workspaceId, 'reconciled', 'deployer');
+        $this->mapIdentity('organization', $otherOrganizationId, 'workspace', $this->workspaceId, 'reconciled', 'deployer');
+
+        DB::connection('deployer')->table('users')->insert(['id' => (int) $sourceUserId, 'name' => 'Deployer user']);
+        DB::connection('deployer')->table('organizations')->insert([
+            ['id' => (int) $mappedOrganizationId, 'owner_id' => (int) $sourceUserId],
+            ['id' => (int) $otherOrganizationId, 'owner_id' => (int) $sourceUserId],
+        ]);
+        DB::connection('deployer')->table('repositories')->insert([
+            'id' => 101,
+            'organization_id' => (int) $mappedOrganizationId,
+            'name' => 'Mapped repository',
+            'deleted_at' => null,
+        ]);
+        DB::connection('deployer')->table('projects')->insert([
+            ['id' => 301, 'organization_id' => (int) $mappedOrganizationId],
+            ['id' => 302, 'organization_id' => (int) $otherOrganizationId],
+        ]);
+        DB::connection('deployer')->table('environments')->insert([
+            ['id' => 201, 'project_id' => 301],
+            ['id' => 202, 'project_id' => 302],
+        ]);
+        DB::connection('deployer')->table('builds')->insert([
+            ['id' => 401, 'repository_id' => null, 'environment_id' => 201, 'status' => 'failed', 'revision' => 'abc123'],
+            ['id' => 402, 'repository_id' => 101, 'environment_id' => 202, 'status' => 'failed', 'revision' => 'def456'],
+        ]);
+
+        if (! Route::has('servers.show')) {
+            Route::get('/deployer/servers/{server}', fn () => response()->noContent())->name('servers.show');
+        }
+        if (! Route::has('builds.show')) {
+            Route::get('/deployer/builds/{build}', fn () => response()->noContent())->name('builds.show');
+        }
+
+        $results = (new DeployerWorkspaceSearchProvider(app(LegacyIdentityResolver::class)))
+            ->search($this->user(), $this->workspace(), 'failed');
+
+        $this->assertCount(1, $results);
+        $this->assertSame('Build #401', $results[0]->title);
+        parse_str((string) parse_url($results[0]->url, PHP_URL_QUERY), $query);
+        $this->assertSame((int) $mappedOrganizationId, (int) ($query['organization_id'] ?? 0));
+    }
+
+    private function createMonitorSearchTables(): void
+    {
+        foreach (['incidents', 'monitors', 'alert_rules', 'environments', 'applications', 'user_workspace', 'workspaces', 'users'] as $table) {
+            Schema::connection('monitor')->dropIfExists($table);
+        }
+
+        Schema::connection('monitor')->create('users', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->string('name');
+        });
+        Schema::connection('monitor')->create('workspaces', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('owner_id');
+            $table->string('name');
+            $table->string('slug');
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('user_workspace', function (Blueprint $table): void {
+            $table->unsignedBigInteger('workspace_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('role');
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('applications', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('workspace_id');
+            $table->string('name');
+            $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('environments', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('application_id');
+            $table->string('name');
+            $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('alert_rules', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('environment_id');
+            $table->string('name');
+            $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('monitors', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('environment_id');
+            $table->string('name');
+            $table->string('type');
+            $table->softDeletes();
+            $table->timestamps();
+        });
+        Schema::connection('monitor')->create('incidents', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('alert_rule_id')->nullable();
+            $table->unsignedBigInteger('monitor_id')->nullable();
+            $table->string('status');
+            $table->timestamp('opened_at');
+        });
+
+        $this->monitorSearchTablesCreated = true;
+    }
+
+    private function createDeployerSearchTables(): void
+    {
+        foreach (['builds', 'repositories', 'environments', 'projects', 'servers', 'organization_user', 'organizations', 'users'] as $table) {
+            Schema::connection('deployer')->dropIfExists($table);
+        }
+
+        Schema::connection('deployer')->create('users', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->string('name');
+        });
+        Schema::connection('deployer')->create('organizations', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('owner_id');
+        });
+        Schema::connection('deployer')->create('organization_user', function (Blueprint $table): void {
+            $table->unsignedBigInteger('organization_id');
+            $table->unsignedBigInteger('user_id');
+            $table->string('role')->nullable();
+            $table->timestamps();
+        });
+        Schema::connection('deployer')->create('servers', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('organization_id');
+            $table->string('name')->nullable();
+            $table->string('display_name')->nullable();
+            $table->string('provisioning_status')->nullable();
+        });
+        Schema::connection('deployer')->create('repositories', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('organization_id');
+            $table->string('name');
+            $table->softDeletes();
+        });
+        Schema::connection('deployer')->create('projects', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('organization_id');
+        });
+        Schema::connection('deployer')->create('environments', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('project_id');
+        });
+        Schema::connection('deployer')->create('builds', function (Blueprint $table): void {
+            $table->unsignedBigInteger('id')->primary();
+            $table->unsignedBigInteger('repository_id')->nullable();
+            $table->unsignedBigInteger('environment_id')->nullable();
+            $table->string('status');
+            $table->string('revision')->nullable();
+        });
+
+        $this->deployerSearchTablesCreated = true;
+    }
+
     private function project(string $name, bool $member): string
     {
         $projectId = (string) Str::ulid();
@@ -299,9 +556,10 @@ final class WorkspaceSearchTest extends TestCase
         string $canonicalEntity,
         string $canonicalId,
         string $status,
+        string $product = 'monitor',
     ): void {
         DB::connection('core')->table('legacy_identity_maps')->insert([
-            'source_product' => 'monitor',
+            'source_product' => $product,
             'source_entity' => $sourceEntity,
             'source_id' => $sourceId,
             'canonical_entity' => $canonicalEntity,
