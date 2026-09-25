@@ -6,6 +6,7 @@ use App\Core\Http\Controllers\CoreHelpController;
 use App\Core\Http\Controllers\CoreHomeController;
 use App\Core\Http\Controllers\CorePlatformStatusController;
 use App\Core\Http\Controllers\MarketingController;
+use App\Core\Http\Controllers\MarketingPricingController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\ProjectEnvironmentsController;
 use App\Core\Http\Controllers\ProjectHandoverController;
@@ -43,9 +44,10 @@ Route::post('/status/{product}/{slug}/subscribe', [CoreCustomerStatusPageControl
     ->middleware('throttle:5,1')
     ->name('core.status-pages.subscribe');
 
-// Keep local/test routes distinct when product hostnames are not configured.
-$legalRoutePrefix = filled(config('platform.dashboard_host')) ? '' : 'core';
-Route::prefix($legalRoutePrefix)->group(function (): void {
+// Keep local/test public routes distinct when product hostnames are not configured.
+$corePublicRoutePrefix = filled(config('platform.dashboard_host')) ? '' : 'core';
+Route::prefix($corePublicRoutePrefix)->group(function (): void {
+    Route::get('/pricing', MarketingPricingController::class)->name('core.pricing');
     Route::view('/privacy', 'core::marketing.privacy')->name('core.privacy');
     Route::view('/terms', 'core::marketing.terms')->name('core.terms');
 });

@@ -21,7 +21,40 @@ final class MarketingPagesTest extends TestCase
         $this->get(route('core.entry'))
             ->assertOk()
             ->assertSee(route('core.privacy'), false)
-            ->assertSee(route('core.terms'), false);
+            ->assertSee(route('core.terms'), false)
+            ->assertSee(route('core.pricing'), false);
+    }
+
+    public function test_core_pricing_page_preserves_independent_configured_product_catalogs(): void
+    {
+        $html = $this->get(route('core.pricing'))
+            ->assertOk()
+            ->assertSee('Deployer plans')
+            ->assertSee('Monitor plans')
+            ->assertSee('Analytics plans')
+            ->assertSee('data-product-pricing="deployer"', false)
+            ->assertSee('data-product-pricing="monitor"', false)
+            ->assertSee('data-product-pricing="analytics"', false)
+            ->assertSee('$199')
+            ->assertSee('$29')
+            ->assertSee('Existing Analytics access stays separate from Deployer and Monitor')
+            ->assertSee('Changing one app subscription does not change another');
+
+        foreach (config('billing.plans') as $plan) {
+            $html->assertSee($plan['name']);
+
+            foreach ($plan['features'] as $feature) {
+                $html->assertSee($feature);
+            }
+        }
+
+        foreach (config('monitor.beacon.plans') as $plan) {
+            $html->assertSee($plan['name']);
+
+            foreach ($plan['features'] as $feature) {
+                $html->assertSee($feature);
+            }
+        }
     }
 
     public function test_core_legal_pages_are_public_complete_and_cross_linked(): void
@@ -64,7 +97,8 @@ final class MarketingPagesTest extends TestCase
             $this->get(route('core.marketing.product', $product))
                 ->assertOk()
                 ->assertSee('At a glance')
-                ->assertSee('What you can do');
+                ->assertSee('What you can do')
+                ->assertSee(route('core.pricing'), false);
         }
     }
 

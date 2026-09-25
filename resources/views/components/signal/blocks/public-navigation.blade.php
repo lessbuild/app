@@ -16,6 +16,7 @@
             @foreach (['deployer' => 'Deployer', 'monitor' => 'Monitor', 'analytics' => 'Analytics'] as $slug => $label)
                 <a href="{{ route('core.marketing.product', $slug) }}" class="rounded-control px-3 py-2 text-sm font-semibold transition hover:bg-surface-muted hover:text-ink {{ $activeProduct === $slug ? 'bg-surface-muted text-ink' : 'text-muted' }}" @if ($activeProduct === $slug) aria-current="page" @endif>{{ $label }}</a>
             @endforeach
+            <a href="{{ route('core.pricing') }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted transition hover:bg-surface-muted hover:text-ink" @if (request()->routeIs('core.pricing')) aria-current="page" @endif>{{ __('Pricing') }}</a>
             <a href="{{ route('core.help') }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted transition hover:bg-surface-muted hover:text-ink" @if (request()->routeIs('core.help')) aria-current="page" @endif>{{ __('Help') }}</a>
             <a href="{{ route('core.status') }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted transition hover:bg-surface-muted hover:text-ink" @if (request()->routeIs('core.status')) aria-current="page" @endif>{{ __('Status') }}</a>
         </nav>
@@ -30,6 +31,7 @@
                     @foreach (['deployer' => 'Deployer', 'monitor' => 'Monitor', 'analytics' => 'Analytics'] as $slug => $label)
                         <a href="{{ route('core.marketing.product', $slug) }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink">{{ $label }}</a>
                     @endforeach
+                    <a href="{{ route('core.pricing') }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Pricing') }}</a>
                     <a href="{{ route('core.help') }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Help and guides') }}</a>
                     <a href="{{ route('core.status') }}" class="rounded-control px-3 py-2 text-sm font-semibold text-muted hover:bg-surface-muted hover:text-ink">{{ __('Platform status') }}</a>
                 </nav>
