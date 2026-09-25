@@ -28,6 +28,7 @@ use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
 use App\Core\Services\ProjectTrafficContextRegistry;
+use App\Core\Services\Restoration\ProductResourceRestorationRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceCostBreakdownProviderRegistry;
@@ -50,6 +51,7 @@ final class CoreServiceProvider extends ModuleServiceProvider
     public function register(): void
     {
         $this->app->singleton(ProjectProductLinkRegistry::class);
+        $this->app->singleton(ProductResourceRestorationRegistry::class);
         $this->app->singleton(ProjectConnectionDiagnosticRegistry::class);
         $this->app->singleton(ProjectConnectionDeliveryConsumerRegistry::class);
         $this->app->singleton(ProjectConnectionOutboxDispatcherRegistry::class);

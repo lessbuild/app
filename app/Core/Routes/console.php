@@ -17,3 +17,9 @@ Schedule::command('workspace-product-access:retry-cleanup --apply --limit=100')
         && Schema::connection('core')->hasTable('legacy_identity_maps'))
     ->withoutOverlapping(5)
     ->onOneServer();
+
+Schedule::command('resource-restorations:process --limit=100')
+    ->everyMinute()
+    ->when(fn (): bool => Schema::connection('core')->hasTable('resource_restoration_requests'))
+    ->withoutOverlapping(5)
+    ->onOneServer();

@@ -389,6 +389,100 @@ final class MappedProjectResourceAccessTest extends TestCase
         $this->assertFalse($this->historyAllowed('deployer', 'project', '1'));
     }
 
+    public function test_retained_read_preserves_archived_details_while_restore_requires_an_explicitly_active_project(): void
+    {
+        $resource = $this->resource('monitor', 'application', '1');
+        $resource->update(['status' => 'archived']);
+        $this->identity('monitor', 'application', '1', 'project', $this->project->getKey());
+        $product = ProjectProduct::query()->where('project_id', $this->project->getKey())->where('product', 'monitor')->firstOrFail();
+        $product->update(['status' => 'inactive']);
+        $this->project->update(['status' => 'archived', 'archived_at' => now()]);
+
+        $this->assertTrue($this->lifecycleAllowed('application', '1', ProjectResourceAccessPurpose::RetainedRead));
+        $this->assertFalse($this->lifecycleAllowed('application', '1', ProjectResourceAccessPurpose::Restoration));
+        $this->assertFalse($this->allowed('monitor', 'application', '1'));
+        $this->project->update(['status' => 'active']);
+        $this->assertFalse($this->lifecycleAllowed('application', '1', ProjectResourceAccessPurpose::Restoration));
+        $this->project->update(['archived_at' => null]);
+        $this->assertTrue($this->lifecycleAllowed('application', '1', ProjectResourceAccessPurpose::Restoration));
+        $this->assertSame('inactive', $product->fresh()->status);
+        $this->assertSame('archived', $resource->fresh()->status);
+    }
+
+    public function test_retained_read_and_restore_both_require_current_memberships_grants_and_account_state(): void
+    {
+        $this->resource('monitor', 'application', '1')->update(['status' => 'archived']);
+        $member = ProjectMembership::query()->where('project_id', $this->project->getKey())->firstOrFail();
+        $grant = WorkspaceProductAccess::query()->where('membership_id', $this->membership->getKey())->where('product', 'monitor')->firstOrFail();
+
+        foreach ([ProjectResourceAccessPurpose::RetainedRead, ProjectResourceAccessPurpose::Restoration] as $purpose) {
+            $this->assertTrue($this->lifecycleAllowed('application', '1', $purpose));
+            $member->update(['revoked_at' => now()]);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $member->update(['revoked_at' => null]);
+            $grant->update(['expires_at' => now()->subSecond()]);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $grant->update(['expires_at' => null]);
+            $this->membership->update(['status' => 'revoked']);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $this->membership->update(['status' => 'active']);
+            PlatformUser::query()->whereKey($this->user->getKey())->update(['status' => 'inactive']);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            PlatformUser::query()->whereKey($this->user->getKey())->update(['status' => 'active']);
+            $this->workspace->update(['archived_at' => now()]);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $this->workspace->update(['archived_at' => null]);
+        }
+    }
+
+    public function test_lifecycle_purposes_preserve_exact_environment_mapping_and_reject_deleted_targets(): void
+    {
+        $environment = ProjectEnvironment::query()->create([
+            'project_id' => $this->project->getKey(), 'name' => 'Retained', 'slug' => 'retained', 'status' => 'archived',
+        ]);
+        $resource = $this->resource('monitor', 'environment', '1');
+        $resource->update(['environment_id' => $environment->getKey(), 'status' => 'archived']);
+        $identity = $this->identity('monitor', 'environment', '1', 'project_environment', $environment->getKey());
+        foreach ([ProjectResourceAccessPurpose::RetainedRead, ProjectResourceAccessPurpose::Restoration] as $purpose) {
+            $this->assertTrue($this->lifecycleAllowed('environment', '1', $purpose));
+            $identity->update(['status' => 'needs_review']);
+            $this->assertFalse($this->lifecycleAllowed('environment', '1', $purpose));
+            $identity->update(['status' => 'reconciled']);
+        }
+        $environment->delete();
+        foreach ([ProjectResourceAccessPurpose::RetainedRead, ProjectResourceAccessPurpose::Restoration] as $purpose) {
+            $this->assertFalse($this->lifecycleAllowed('environment', '1', $purpose));
+        }
+        $this->assertNull($resource->fresh()->environment_id);
+    }
+
+    public function test_lifecycle_purposes_never_admit_suspended_or_missing_project_products_or_revoked_resources(): void
+    {
+        $resource = $this->resource('monitor', 'application', '1');
+        $product = ProjectProduct::query()->where('project_id', $this->project->getKey())->where('product', 'monitor')->firstOrFail();
+        foreach ([ProjectResourceAccessPurpose::RetainedRead, ProjectResourceAccessPurpose::Restoration] as $purpose) {
+            $product->update(['status' => 'inactive']);
+            $resource->update(['status' => 'revoked']);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $resource->update(['status' => 'archived']);
+            $product->update(['status' => 'suspended']);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $product->update(['status' => 'inactive']);
+            $this->project->update(['status' => 'suspended']);
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+            $this->project->update(['status' => 'active']);
+        }
+        $product->delete();
+        foreach ([ProjectResourceAccessPurpose::RetainedRead, ProjectResourceAccessPurpose::Restoration] as $purpose) {
+            $this->assertFalse($this->lifecycleAllowed('application', '1', $purpose));
+        }
+    }
+
+    private function lifecycleAllowed(string $type, string $id, ProjectResourceAccessPurpose $purpose): bool
+    {
+        return $this->access->allows($this->user, 'monitor', $type, $id, 'workspace', '10', purpose: $purpose);
+    }
+
     private function historyAllowed(string $product, string $type, string $id): bool
     {
         return $this->access->allows(

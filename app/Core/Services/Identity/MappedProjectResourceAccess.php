@@ -45,8 +45,9 @@ final class MappedProjectResourceAccess
      * Null denies the entire source query: the current Core context is invalid.
      * An empty list means no additional mapped-project exclusions (or legacy mode).
      * Provide candidate IDs when available to bound the Core lookup.
-     * HistoricalExport requires separate native export permission and does not
+     * Non-interactive purposes require their own native permission. They never
      * relax membership, product grants, tenant boundaries, or mapping integrity.
+     * Restoration is for the durable lifecycle workflow, not ordinary updates.
      *
      * @param  list<string|int>|null  $candidateIds
      * @return list<string>|null
@@ -217,7 +218,11 @@ final class MappedProjectResourceAccess
 
     private function resourceIsAccessible(string $product, string $type, string $status, ProjectResourceAccessPurpose $purpose): bool
     {
-        if ($purpose === ProjectResourceAccessPurpose::HistoricalExport && $status === 'archived') {
+        if (in_array($purpose, [
+            ProjectResourceAccessPurpose::HistoricalExport,
+            ProjectResourceAccessPurpose::RetainedRead,
+            ProjectResourceAccessPurpose::Restoration,
+        ], true) && $status === 'archived') {
             return true;
         }
 

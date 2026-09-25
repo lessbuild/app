@@ -33,3 +33,13 @@ The current pointer resolves to `/mnt/volume_nyc1_1789401255960/buildpusher-unif
 Follow-up live checks also returned 200 for the Deployer guide and the Deployer/Monitor API references. The recent application errors inspected after deployment were background deployment SSH timeouts, separate from the repaired public page render paths.
 
 The Auth root redirects to login (302), and the password-reset request page returns 200. Public registration returns 404 under the existing production setting `lessbuild.registration.enabled=false`; that setting was not changed. A complete authenticated login round trip remains unverified.
+
+## Formatted-price JavaScript follow-up
+
+Read-only inspection in Chromium found a remaining `Unexpected token ','` error: the Unlimited annual price rendered as an unquoted `1,990` in the Alpine expression. Prices are now encoded as JavaScript strings with Laravel's `Js::from`, preserving the formatted amount while allowing interval switching.
+
+The fix was pushed as `cda5d3f` on `feature/unified-platform` and cherry-picked onto the existing production code as `49371e115726d42c829cd242eca9ffa6b1da5e09` on `fix/pricing-interval`. The production pointer now resolves to `/mnt/volume_nyc1_1789401255960/buildpusher-unified/releases/49371e115726d42c829cd242eca9ffa6b1da5e09`. The unrelated in-progress feature-branch changes were not part of this hotfix. Existing locked dependencies and built assets were retained; optimized autoload, configuration, route and view caches were regenerated. All 506 compiled Blade files passed syntax checks before the atomic switch, and PHP-FPM reloaded successfully. No migration or data reset was performed.
+
+Live Chromium inspection after release confirmed `$1,990` yearly → `$199` monthly → `$1,990` yearly, exactly one visible panel for each product tab, no JavaScript page errors, and document width 390px at a 390px mobile viewport. Public HTTPS requests returned 200 for pricing, Auth login, password reset, the help index, Deployer guide, and all three product API references. Legacy Deployer `/docs` and `/api-docs` redirects also reached the corresponding Core pages successfully. Authentication with a real account remains unverified.
+
+Two browser regressions were authored in `tests/Browser/core-pricing.spec.js` for the four-digit price and keyboard/mobile tab behavior. The regression suite remains unrun; only static checks and the read-only live inspection above were performed.

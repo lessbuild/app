@@ -131,17 +131,22 @@ final class WorkspaceProjectAccess
             return $query->whereRaw('1 = 0');
         }
 
-        $historical = $purpose === ProjectResourceAccessPurpose::HistoricalExport;
+        $retainedRead = in_array($purpose, [
+            ProjectResourceAccessPurpose::HistoricalExport,
+            ProjectResourceAccessPurpose::RetainedRead,
+        ], true);
+        $retainedProduct = $retainedRead || $purpose === ProjectResourceAccessPurpose::Restoration;
 
         // Archiving retained data is distinct from revoking a member's access.
-        // Historical export never reactivates a project or its product module.
+        // Reads never reactivate anything. A restore operation additionally requires
+        // the user to have explicitly restored the shared project beforehand.
         return $query->where(fn (Builder $projects) => $projects
             ->where(fn (Builder $active) => $active->where('status', 'active')->whereNull('archived_at'))
-            ->when($historical, fn (Builder $archives) => $archives->orWhere('status', 'archived')))
+            ->when($retainedRead, fn (Builder $archives) => $archives->orWhere('status', 'archived')))
             ->whereHas('memberships', fn (Builder $members) => $members
                 ->where('user_id', $user->getKey())->where('status', 'active')->whereNull('revoked_at'))
             ->whereHas('products', fn (Builder $products) => $products
-                ->where('product', $product)->whereIn('status', $historical ? ['active', 'inactive'] : ['active']));
+                ->where('product', $product)->whereIn('status', $retainedProduct ? ['active', 'inactive'] : ['active']));
     }
 
     /**

@@ -2,11 +2,13 @@
 
 namespace App\Modules\Monitor\Http\Controllers;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Modules\Monitor\Data\Telemetry\IssuedIngestToken;
 use App\Modules\Monitor\Http\Requests\StoreApplicationRequest;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Services\ArchiveApplication;
+use App\Modules\Monitor\Services\Core\RestoreMonitorResource;
 use App\Modules\Monitor\Services\CreateIngestToken;
 use App\Modules\Monitor\Services\CurrentWorkspace;
 use App\Modules\Monitor\Services\WorkspacePlanLimits;
@@ -21,15 +23,16 @@ use Illuminate\View\View;
 
 class ApplicationController extends Controller
 {
-    public function index(Request $request, CurrentWorkspace $currentWorkspace, WorkspacePlanLimits $limits): View
+    public function index(Request $request, CurrentWorkspace $currentWorkspace, WorkspacePlanLimits $limits, RestoreMonitorResource $restore): View
     {
         $workspace = $currentWorkspace->get();
         $archived = $request->query('status') === 'archived';
         $applicationCapacity = $limits->applicationCapacity($workspace);
+        $purpose = $archived ? ProjectResourceAccessPurpose::RetainedRead : ProjectResourceAccessPurpose::Interactive;
 
         return view('monitor::applications.index', [
-            'applications' => $workspace->applications()->visibleTo(request()->user(), $workspace)->when($archived, fn ($query) => $query->onlyTrashed())
-                ->withCount(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace)])->withSum(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace)], 'event_count')
+            'applications' => $workspace->applications()->visibleTo(request()->user(), $workspace, $purpose)->when($archived, fn ($query) => $query->withTrashed()->where(fn ($retained) => $retained->whereNotNull('deleted_at')->orWhereIn('id', $restore->retainedApplicationIds())))
+                ->withCount(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace, $purpose)])->withSum(['environments' => fn ($query) => $query->visibleTo(request()->user(), $workspace, $purpose)], 'event_count')
                 ->orderBy('name')->orderBy('id')->paginate(12)->withQueryString(),
             'archived' => $archived,
             'canManage' => Gate::allows('update', $workspace),
@@ -54,7 +57,9 @@ class ApplicationController extends Controller
             $application = $workspace->applications()->create(
                 $request->validated() + ['slug' => Str::slug($request->validated('name')).'-'.Str::uuid(), 'accent' => 'violet'],
             );
+            $application = Application::query()->lockForUpdate()->findOrFail($application->id);
             $environment = $application->environments()->create(['name' => 'Production', 'slug' => 'production', 'status' => 'active']);
+            $application->increment('lifecycle_revision');
 
             return $createToken->create($environment, $request->user(), 'Initial collector');
         });
@@ -64,16 +69,21 @@ class ApplicationController extends Controller
             ->with('issued_ingest_token', ['environment_id' => $issued->token->environment_id, 'encrypted_secret' => Crypt::encryptString($issued->secret)]);
     }
 
-    public function show(Request $request, Application $application): View
+    public function show(Request $request, Application $application, RestoreMonitorResource $restore): View
     {
-        Gate::authorize('view', $application);
+        Gate::authorize('viewRetained', $application);
+
+        $environments = $application->environments()->withTrashed()->visibleTo($request->user(), $application->workspace, ProjectResourceAccessPurpose::RetainedRead)
+            ->orderBy('name')->orderBy('id')->get();
+        $environments->filter(fn ($environment): bool => Gate::allows('view', $environment))
+            ->loadCount(['ingestTokens as active_token_count' => fn ($query) => $query->active()]);
 
         return view('monitor::applications.show', [
             'application' => $application,
-            'environments' => $application->environments()->withTrashed()->visibleTo($request->user(), $application->workspace)
-                ->withCount(['ingestTokens as active_token_count' => fn ($query) => $query->active()])
-                ->orderBy('name')->orderBy('id')->get(),
-            'canManage' => Gate::allows('update', $application->workspace),
+            'environments' => $environments,
+            'canManage' => Gate::allows('update', $application),
+            'canRestore' => Gate::allows('restore', $application),
+            ...$restore->viewData($request->user(), $application),
         ]);
     }
 
@@ -100,11 +110,13 @@ class ApplicationController extends Controller
         return to_route('monitor.applications.index')->with('status', 'Application archived and its ingestion tokens revoked. Telemetry has been preserved.');
     }
 
-    public function restore(Application $application): RedirectResponse
+    public function restore(Request $request, Application $application, RestoreMonitorResource $restore): RedirectResponse
     {
-        Gate::authorize('restore', $application);
-        abort_unless($application->trashed(), 404);
-        $application->restore();
+        $request->validate(['idempotency_key' => ['nullable', 'uuid']]);
+        $pending = $restore->restore($request->user(), $application, $request->input('idempotency_key') ?? (string) Str::uuid());
+        if ($pending !== null) {
+            return to_route('platform.resource-restorations.show', $pending);
+        }
 
         return to_route('monitor.applications.show', $application)->with('status', 'Application restored. Issue new tokens before reconnecting your collectors.');
     }

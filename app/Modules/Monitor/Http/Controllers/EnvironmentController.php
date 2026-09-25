@@ -8,6 +8,7 @@ use App\Modules\Monitor\Http\Resources\EnvironmentConnectionResource;
 use App\Modules\Monitor\Models\Application;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Services\ArchiveEnvironment;
+use App\Modules\Monitor\Services\Core\RestoreMonitorResource;
 use App\Modules\Monitor\Services\CreateIngestToken;
 use App\Modules\Monitor\Services\SuspendHeartbeats;
 use App\Modules\Monitor\Services\SuspendQueueMonitors;
@@ -18,6 +19,7 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class EnvironmentController extends Controller
@@ -25,7 +27,10 @@ class EnvironmentController extends Controller
     public function store(StoreEnvironmentRequest $request, Application $application, CreateIngestToken $createToken): RedirectResponse
     {
         $issued = DB::connection('monitor')->transaction(function () use ($request, $application, $createToken): IssuedIngestToken {
+            $application = Application::query()->lockForUpdate()->findOrFail($application->id);
+            Gate::authorize('update', $application);
             $environment = $application->environments()->create($request->validated());
+            $application->increment('lifecycle_revision');
 
             return $createToken->create($environment, $request->user(), 'Initial collector');
         });
@@ -35,9 +40,9 @@ class EnvironmentController extends Controller
             ->with('issued_ingest_token', ['environment_id' => $issued->token->environment_id, 'encrypted_secret' => Crypt::encryptString($issued->secret)]);
     }
 
-    public function show(Request $request, Application $application, Environment $environment): Response
+    public function show(Request $request, Application $application, Environment $environment, RestoreMonitorResource $restore): Response
     {
-        Gate::authorize('view', $environment);
+        Gate::authorize('viewRetained', $environment);
         $canManage = Gate::allows('update', $environment);
         $issued = $request->session()->get('issued_ingest_token');
         $secret = null;
@@ -51,6 +56,8 @@ class EnvironmentController extends Controller
             'environment' => $environment,
             'canManage' => $canManage,
             'canRestore' => Gate::allows('restore', $environment),
+            'canInteract' => Gate::allows('view', $environment),
+            ...$restore->viewData($request->user(), $environment),
             'tokens' => $canManage ? $environment->ingestTokens()->with('creator:id,name')->latest('id')->paginate(10, ['*'], 'tokens_page') : collect(),
             'secret' => $secret,
             'recentReceipts' => $environment->ingestReceipts()
@@ -72,7 +79,7 @@ class EnvironmentController extends Controller
     public function update(StoreEnvironmentRequest $request, Application $application, Environment $environment, SuspendHeartbeats $heartbeats, SuspendQueueMonitors $queues): RedirectResponse
     {
         DB::connection('monitor')->transaction(function () use ($request, $application, $environment, $heartbeats, $queues): void {
-            Application::query()->lockForUpdate()->findOrFail($application->id);
+            $application = Application::query()->lockForUpdate()->findOrFail($application->id);
             $environment = Environment::query()->lockForUpdate()->findOrFail($environment->id);
             Gate::authorize('update', $environment);
             $environment->fill($request->validated());
@@ -80,7 +87,11 @@ class EnvironmentController extends Controller
                 $heartbeats->environment($environment->id);
                 $queues->environment($environment->id);
             }
+            $lifecycleChanged = $environment->isDirty('status');
             $environment->save();
+            if ($lifecycleChanged) {
+                $application->increment('lifecycle_revision');
+            }
         }, attempts: 3);
 
         return to_route('monitor.environments.show', [$application, $environment])->with('status', 'Environment updated.');
@@ -95,11 +106,13 @@ class EnvironmentController extends Controller
         return to_route('monitor.applications.show', $application)->with('status', 'Environment archived and tokens revoked. Its telemetry is preserved.');
     }
 
-    public function restore(Application $application, Environment $environment): RedirectResponse
+    public function restore(Request $request, Application $application, Environment $environment, RestoreMonitorResource $restore): RedirectResponse
     {
-        Gate::authorize('restore', $environment);
-        abort_unless($environment->trashed(), 404);
-        $environment->restore();
+        $request->validate(['idempotency_key' => ['nullable', 'uuid']]);
+        $pending = $restore->restore($request->user(), $environment, $request->input('idempotency_key') ?? (string) Str::uuid());
+        if ($pending !== null) {
+            return to_route('platform.resource-restorations.show', $pending);
+        }
 
         return to_route('monitor.environments.show', [$application, $environment])->with('status', 'Environment restored. Generate a new token to resume ingestion.');
     }

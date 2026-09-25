@@ -11,6 +11,7 @@ use App\Core\Http\Controllers\MarketingPricingController;
 use App\Core\Http\Controllers\ProjectConnectionsController;
 use App\Core\Http\Controllers\ProjectEnvironmentsController;
 use App\Core\Http\Controllers\ProjectHandoverController;
+use App\Core\Http\Controllers\ResourceRestorationsController;
 use App\Core\Http\Controllers\WorkspaceAdministrationController;
 use App\Core\Http\Controllers\WorkspaceCostBreakdownController;
 use App\Core\Http\Controllers\WorkspaceCredentialInventoryController;
@@ -68,6 +69,10 @@ Route::get('/{product}', [MarketingController::class, 'showProduct'])
     ->name('core.marketing.product');
 
 Route::middleware('auth:platform')->group(function (): void {
+    Route::get('/resource-restorations/{restoration}', [ResourceRestorationsController::class, 'show'])
+        ->name('platform.resource-restorations.show');
+    Route::post('/resource-restorations/{restoration}/retry', [ResourceRestorationsController::class, 'retry'])
+        ->middleware('throttle:10,1')->name('platform.resource-restorations.retry');
     Route::get('/workspaces', CoreHomeController::class)->name('core.home');
     Route::get('/workspaces/manage', [WorkspaceDirectoryController::class, 'index'])->name('core.workspaces.index');
     Route::post('/workspaces', [WorkspaceDirectoryController::class, 'store'])

@@ -450,7 +450,11 @@ final class ImportMonitorWorkspacesAndApplicationsIntoCore
                 'status' => $isDeleted ? 'inactive' : 'active',
                 'requested_by_user_id' => null,
                 'activated_at' => $source->created_at ?? $now,
-                'metadata' => ['migration_source' => 'monitor'],
+                'metadata' => [
+                    'migration_source' => 'monitor',
+                    'source_application_id' => $sourceId,
+                    'archive_origin' => $isDeleted ? 'parent_application' : null,
+                ],
             ]);
 
             $applicationResource = ProjectResource::query()->create([
@@ -546,6 +550,7 @@ final class ImportMonitorWorkspacesAndApplicationsIntoCore
                 'event_count' => (int) ($source->event_count ?? 0),
                 'last_seen_at' => $source->last_seen_at ?? null,
                 'deleted_at' => $source->deleted_at ?? null,
+                'archive_origin' => ($source->deleted_at ?? null) !== null ? 'native_resource' : ($parentDeleted ? 'parent_application' : null),
                 'ingest_credentials_remain_in_monitor_database' => true,
             ],
         ]);
@@ -567,6 +572,7 @@ final class ImportMonitorWorkspacesAndApplicationsIntoCore
                 'event_count' => (int) ($source->event_count ?? 0),
                 'last_seen_at' => $source->last_seen_at ?? null,
                 'deleted_at' => $source->deleted_at ?? null,
+                'archive_origin' => ($source->deleted_at ?? null) !== null ? 'native_resource' : ($parentDeleted ? 'parent_application' : null),
                 'ingest_credentials_remain_in_monitor_database' => true,
             ],
         ]);

@@ -29,17 +29,17 @@ final class MonitorProjectAccess
         private readonly ProductAuthentication $authentication,
     ) {}
 
-    public function application(Authenticatable $principal, Application $application): bool
+    public function application(Authenticatable $principal, Application $application, ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive): bool
     {
-        return $this->access->allows($principal, 'monitor', 'application', $application->getKey(), 'workspace', $application->workspace_id);
+        return $this->access->allows($principal, 'monitor', 'application', $application->getKey(), 'workspace', $application->workspace_id, $purpose);
     }
 
-    public function environment(Authenticatable $principal, Environment $environment): bool
+    public function environment(Authenticatable $principal, Environment $environment, ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive): bool
     {
-        $application = $environment->application;
+        $application = $purpose === ProjectResourceAccessPurpose::Interactive ? $environment->application : $environment->application()->withTrashed()->first();
 
-        return $application !== null && $this->application($principal, $application)
-            && $this->access->allows($principal, 'monitor', 'environment', $environment->getKey(), 'workspace', $application->workspace_id);
+        return $application !== null && $this->application($principal, $application, $purpose)
+            && $this->access->allows($principal, 'monitor', 'environment', $environment->getKey(), 'workspace', $application->workspace_id, $purpose);
     }
 
     public function constrain(Builder $query, Authenticatable $principal, Workspace $workspace, ProjectResourceAccessPurpose $purpose = ProjectResourceAccessPurpose::Interactive): void

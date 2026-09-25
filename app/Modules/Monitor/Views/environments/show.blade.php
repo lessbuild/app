@@ -7,12 +7,20 @@
     <x-monitor::ui.page-header :eyebrow="$application->framework.' · '.$application->name" :title="$environment->name" description="Connect a collector, confirm receipt, and manage its credentials.">
         <x-slot:actions><x-monitor::ui.badge :tone="$environment->trashed() || $environment->status === 'paused' ? 'amber' : 'slate'">{{ $environment->trashed() ? 'Archived' : ucfirst($environment->status) }}</x-monitor::ui.badge></x-slot:actions>
     </x-monitor::ui.page-header>
-    @if($environment->trashed())
+    @if($needsRestoration || $restorationProgressUrl || $coreProjectRestoreUrl || $application->trashed())
         <x-signal.ui.alert as="section" tone="warning" class="block p-6">
-            <h2 class="font-bold">Archived environment</h2><p class="mt-2 text-sm text-muted dark:text-subtle">Its events are preserved. Restore it, then create a fresh token to collect new events.</p>
-            @if($canRestore)<form method="POST" action="{{ route('monitor.environments.restore', [$application, $environment]) }}" class="mt-4">@csrf<x-monitor::ui.button>Restore environment</x-monitor::ui.button></form>@endif
+            <h2 class="font-bold">Environment restoration</h2><p class="mt-2 text-sm text-muted dark:text-subtle">Events are preserved. Restoration preserves paused collection and leaves revoked tokens and disabled checks unchanged.</p>
+            @if($coreProjectRestoreUrl)
+                <a href="{{ $coreProjectRestoreUrl }}" class="mt-4 inline-block text-sm font-bold underline">Restore the Core project first →</a>
+            @elseif($application->trashed())
+                <a href="{{ route('monitor.applications.show', $application) }}" class="mt-4 inline-block text-sm font-bold underline">Restore the application first →</a>
+            @elseif($restorationProgressUrl)
+                <a href="{{ $restorationProgressUrl }}" class="mt-4 inline-block text-sm font-bold underline">View restoration progress →</a>
+            @elseif($canRestore)
+                <form method="POST" action="{{ route('monitor.environments.restore', [$application, $environment]) }}" class="mt-4">@csrf<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}"><x-monitor::ui.button>Restore environment</x-monitor::ui.button></form>
+            @endif
         </x-signal.ui.alert>
-    @else
+    @elseif($canInteract)
         @unless($application->trashed())<a href="{{ route('monitor.deployments.index', [$application, $environment]) }}" class="inline-block text-xs font-bold text-primary hover:underline dark:text-primary">Deployment history →</a>@endunless
         @if($secret)
             <x-signal.ui.alert as="section" tone="info" class="border-primary/30 bg-primary-soft block p-6">
@@ -68,7 +76,7 @@
     <x-signal.ui.panel as="section" class="overflow-hidden">
         <div class="flex flex-col justify-between gap-3 border-b border-line px-6 py-4 sm:flex-row sm:items-center dark:border-line">
             <div><h2 class="font-bold">Delivery receipts</h2><p class="mt-1 text-xs leading-5 text-muted dark:text-subtle">Latest six accepted batches. Refresh this page for updates. Rejected requests and empty OTLP exports are not recorded here.</p></div>
-            <a href="{{ route('monitor.environments.ingestion', [$application, $environment]) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">Ingestion diagnostics</a>
+            @if($canInteract)<a href="{{ route('monitor.environments.ingestion', [$application, $environment]) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">Ingestion diagnostics</a>@endif
         </div>
         @if($recentReceipts->isNotEmpty())
             <div class="overflow-x-auto">
@@ -94,14 +102,14 @@
     <x-signal.ui.panel as="section" class="overflow-hidden">
         <div class="flex items-center justify-between gap-3 border-b border-line px-6 py-4 dark:border-line">
             <h2 class="font-bold">Recently received</h2>
-            @unless($environment->trashed() || $application->trashed())<a href="{{ route('monitor.events.index', ['application' => $application->id, 'environment' => $environment->id, 'range' => 'all']) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">Explore events</a>@endunless
+            @if($canInteract && ! $environment->trashed() && ! $application->trashed())<a href="{{ route('monitor.events.index', ['application' => $application->id, 'environment' => $environment->id, 'range' => 'all']) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">Explore events</a>@endif
         </div>
         <div class="divide-y divide-line dark:divide-line">
             @forelse($recentEvents as $event)
                 <div class="flex flex-col justify-between gap-2 px-6 py-4 sm:flex-row">
                     <div>
                         <p class="text-sm font-semibold">
-                            @unless($environment->trashed() || $application->trashed())<a href="{{ route('monitor.events.show', $event->id) }}" class="hover:text-primary dark:hover:text-primary">{{ $event->name ?? ucfirst($event->type) }}</a>@else{{ $event->name ?? ucfirst($event->type) }}@endunless
+                            @if($canInteract && ! $environment->trashed() && ! $application->trashed())<a href="{{ route('monitor.events.show', $event->id) }}" class="hover:text-primary dark:hover:text-primary">{{ $event->name ?? ucfirst($event->type) }}</a>@else{{ $event->name ?? ucfirst($event->type) }}@endif
                         </p>
                         <p class="mt-1 text-xs text-muted dark:text-subtle">{{ $event->service ?? $event->type }}</p>
                     </div>

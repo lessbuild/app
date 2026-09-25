@@ -26,6 +26,7 @@ final class ArchiveApplication
             $this->heartbeats->application($application->id);
             $this->queues->application($application->id);
             $application->delete();
+            $application->increment('lifecycle_revision');
         });
     }
 }

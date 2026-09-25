@@ -21,6 +21,7 @@ use App\Core\Services\ProjectProductSummaryRegistry;
 use App\Core\Services\ProjectResourceDestinationRegistry;
 use App\Core\Services\ProjectResourceLinkRegistry;
 use App\Core\Services\ProjectSetupRegistry;
+use App\Core\Services\Restoration\ProductResourceRestorationRegistry;
 use App\Core\Services\Search\WorkspaceSearchProviderRegistry;
 use App\Core\Services\WorkspaceActivityProviderRegistry;
 use App\Core\Services\WorkspaceCredentialProviderRegistry;
@@ -51,6 +52,7 @@ use App\Modules\Monitor\Services\Core\MonitorProjectSetup;
 use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
+use App\Modules\Monitor\Services\Core\MonitorResourceRestorationProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceCredentialProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceMembershipProjector;
@@ -112,6 +114,8 @@ final class MonitorServiceProvider extends ModuleServiceProvider
     public function boot(): void
     {
         parent::boot();
+
+        app(ProductResourceRestorationRegistry::class)->register(app(MonitorResourceRestorationProvider::class));
 
         app(ProductApiDocumentationRegistry::class)->register(
             'monitor',

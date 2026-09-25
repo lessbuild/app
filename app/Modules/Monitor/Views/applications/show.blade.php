@@ -10,10 +10,16 @@
             <x-slot:actions><x-monitor::ui.button :href="route('monitor.applications.edit', $application)" variant="secondary">Edit application</x-monitor::ui.button></x-slot:actions>
         @endif
     </x-monitor::ui.page-header>
-    @if($application->trashed())
+    @if($needsRestoration || $restorationProgressUrl || $coreProjectRestoreUrl)
         <x-signal.ui.alert as="section" tone="warning" class="flex flex-col justify-between gap-4 p-6 sm:flex-row sm:items-center">
-            <div><h2 class="font-bold text-warning dark:text-warning">This application is archived</h2><p class="mt-2 text-sm text-warning dark:text-warning">Its telemetry is preserved. Restoring it does not reactivate revoked tokens.</p></div>
-            @if($canManage)<form method="POST" action="{{ route('monitor.applications.restore', $application) }}">@csrf<x-monitor::ui.button>Restore application</x-monitor::ui.button></form>@endif
+            <div><h2 class="font-bold text-warning dark:text-warning">Application restoration</h2><p class="mt-2 text-sm text-warning dark:text-warning">Telemetry is preserved. Restoring this application keeps independently archived and paused environments unchanged. Credentials and checks stay disabled.</p></div>
+            @if($coreProjectRestoreUrl)
+                <a href="{{ $coreProjectRestoreUrl }}" class="text-sm font-bold underline">Restore the Core project first →</a>
+            @elseif($restorationProgressUrl)
+                <a href="{{ $restorationProgressUrl }}" class="text-sm font-bold underline">View restoration progress →</a>
+            @elseif($canRestore)
+                <form method="POST" action="{{ route('monitor.applications.restore', $application) }}">@csrf<input type="hidden" name="idempotency_key" value="{{ (string) \Illuminate\Support\Str::uuid() }}"><x-monitor::ui.button>Restore application</x-monitor::ui.button></form>
+            @endif
         </x-signal.ui.alert>
     @endif
     <x-signal.ui.panel as="section" class="overflow-hidden">
@@ -21,10 +27,10 @@
         <div class="divide-y divide-line dark:divide-line">
             @forelse($environments as $environment)
                 <div class="flex flex-col justify-between gap-4 px-6 py-5 sm:flex-row sm:items-center">
-                    <div><h3 class="text-sm font-bold">@unless($application->trashed())<a href="{{ route('monitor.environments.show', [$application, $environment]) }}" class="hover:text-primary dark:hover:text-primary">{{ $environment->name }}</a>@else{{ $environment->name }}@endunless</h3><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $environment->slug }} · {{ number_format($environment->event_count) }} events · {{ $environment->active_token_count }} active keys</p></div>
+                    <div><h3 class="text-sm font-bold"><a href="{{ route('monitor.environments.show', [$application, $environment]) }}" class="hover:text-primary dark:hover:text-primary">{{ $environment->name }}</a></h3><p class="mt-1 text-xs text-muted dark:text-subtle">{{ $environment->slug }} · {{ number_format($environment->event_count) }} events@if($environment->active_token_count !== null) · {{ $environment->active_token_count }} active keys@endif</p></div>
                     <div class="flex items-center gap-3">
                         <x-monitor::ui.badge :tone="$environment->trashed() || $environment->status === 'paused' ? 'amber' : ($environment->last_seen_at ? 'green' : 'slate')">{{ $environment->trashed() ? 'Archived' : ($environment->status === 'paused' ? 'Paused' : ($environment->last_seen_at ? 'Events received' : 'Awaiting events')) }}</x-monitor::ui.badge>
-                        @unless($application->trashed())<a href="{{ route('monitor.environments.show', [$application, $environment]) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">{{ $canManage ? 'Setup & keys' : 'View details' }} →</a>@endunless
+                        <a href="{{ route('monitor.environments.show', [$application, $environment]) }}" class="text-xs font-bold text-primary hover:underline dark:text-primary">{{ $canManage ? 'Setup & keys' : 'View details' }} →</a>
                     </div>
                 </div>
             @empty

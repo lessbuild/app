@@ -23,6 +23,11 @@ class Application extends Model
     /** @use HasFactory<ApplicationFactory> */
     use HasFactory, SoftDeletes;
 
+    protected function casts(): array
+    {
+        return ['lifecycle_revision' => 'integer'];
+    }
+
     /** @return BelongsTo<Workspace, $this> */
     public function workspace(): BelongsTo
     {

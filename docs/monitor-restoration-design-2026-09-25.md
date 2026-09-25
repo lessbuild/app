@@ -1,6 +1,6 @@
 # Monitor restoration implementation design
 
-Status: design only. This does not implement or release the native application/environment restoration gap recorded in the remaining-source checklist.
+Status: source implemented in the feature branch; not deployed. The additive migrations, automated regression execution and production acceptance remain pending. See [implementation and validation progress](verification/monitor-restoration-progress-2026-09-25.md).
 
 ## Preserve the native lifecycle
 
@@ -16,7 +16,7 @@ Archive views can link to the Core project index filtered by workspace and archi
 
 ## Durable Core request and module receipt
 
-Use a Core product restoration contract and registry. The proposed interface is:
+Use a Core product restoration contract and registry. The implemented interface is:
 
 ```php
 interface ProductResourceRestorationProvider
@@ -24,7 +24,7 @@ interface ProductResourceRestorationProvider
     public function product(): string;
     /** @return list<string> */
     public function resourceTypes(): array;
-    public function inspect(PlatformUser $actor, ResourceRestorationTarget $target): NativeRestorationSnapshot;
+    public function inspect(PlatformUser $actor, ResourceRestorationTarget $target, ?string $receiptRequestId = null): NativeRestorationSnapshot;
     public function apply(ResourceRestorationAttempt $attempt): NativeRestorationReceipt;
     public function withCurrentReceipt(ResourceRestorationAttempt $attempt, Closure $commit): void;
 }
@@ -46,3 +46,13 @@ Add a monotonic application lifecycle revision covering application and child en
 Core must not treat a legacy-identity-only resource as unmapped. Contradictory, incomplete, cross-workspace or orphaned mappings block restoration until reconciled. App-wide restore requires authority over every affected child. Only exact existing child maps in the same project may be reconciled, with importer provenance distinguishing parent-derived archive from independently archived canonical state. Preserve each native child's own deleted/paused state; do not create replacement ownership records or broadly activate unrelated mappings.
 
 Implement a durable progress/retry surface and scheduler recovery, then author regressions for interruption between source and projection, duplicate requests, expired leases, concurrent rearchive, revoked authority, changed mappings, mixed archived/paused children, unmapped legacy behavior and unchanged tokens/checks. Keep automated execution deferred until the approved source implementation is complete.
+
+## Implemented recovery and database details
+
+The provider locks application, native workspace, environments, and receipt in that order. SQLite ignores `FOR UPDATE`, so a no-op application revision update reserves its writer before lifecycle reads; the final Core transaction similarly reserves its request writer before authority reads. Lock contention rolls back and uses bounded durable retries. No-op reservations do not increment lifecycle revisions or change timestamps.
+
+Core fingerprints the current actor's native identity maps, native workspace identity, exact resource/environment/parent maps, child inventory, lifecycle/provenance, shared environment bindings, and selected product attachment. Explicit resource-only links remain valid; identity-only/orphan/conflicting mappings require reconciliation. Environment restoration binds an active native parent and its exact canonical mapping or verified absence.
+
+Imported inactive Monitor project attachments can reactivate only with proven importer-owned parent archival. Neither workspace grants nor subscriptions change. New imports mark archive origin explicitly. Older untouched imports use conservative batch/map/source/timestamp evidence; ambiguous records require reconciliation. Restored provenance is consumed. Shared canonical environments retain their lifecycle when another resource is bound; archived shared environments require reconciliation before source mutation.
+
+Expired leases stop automatic recovery after twelve attempts. A current manager can retry interrupted work or create a new immutable request after state/mapping changes; a replacement manager never inherits the old request's actor. The Core scheduler discovers the recovery command through the module console registration.

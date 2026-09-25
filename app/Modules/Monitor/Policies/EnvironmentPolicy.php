@@ -2,6 +2,7 @@
 
 namespace App\Modules\Monitor\Policies;
 
+use App\Core\Enums\ProjectResourceAccessPurpose;
 use App\Modules\Monitor\Models\Environment;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Services\Core\MonitorProjectAccess;
@@ -33,9 +34,18 @@ class EnvironmentPolicy
         return $this->update($user, $environment);
     }
 
+    public function viewRetained(User $user, Environment $environment): Response
+    {
+        $application = $environment->application()->withTrashed()->first();
+
+        return $application === null || ! $this->projects->environment($user, $environment, ProjectResourceAccessPurpose::RetainedRead)
+            ? Response::denyAsNotFound()
+            : Gate::forUser($user)->inspect('view', $application->workspace);
+    }
+
     public function restore(User $user, Environment $environment): Response
     {
-        return $environment->application === null || ! $this->projects->environment($user, $environment)
+        return $environment->application === null || ! $this->projects->environment($user, $environment, ProjectResourceAccessPurpose::Restoration)
             ? Response::denyAsNotFound()
             : Gate::forUser($user)->inspect('update', $environment->application->workspace);
     }
