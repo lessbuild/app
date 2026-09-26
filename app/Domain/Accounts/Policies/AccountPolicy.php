@@ -45,6 +45,14 @@ final class AccountPolicy
         return $this->permits($user, $account, AccountPermission::ViewAuditLog);
     }
 
+    /** Whether the service shows up for this person at all (their membership may be limited to some services). */
+    public function useService(User $user, Account $account, string $service): bool
+    {
+        $membership = $user->membershipIn($account);
+
+        return $membership !== null && $membership->role->allows(AccountPermission::ViewProjects) && $membership->canUseService($service);
+    }
+
     public function delete(User $user, Account $account): bool
     {
         return $this->permits($user, $account, AccountPermission::DeleteAccount);

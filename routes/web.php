@@ -15,6 +15,7 @@ use App\Http\Controllers\Projects\DomainController;
 use App\Http\Controllers\Projects\EnvironmentController;
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\Projects\ServiceController;
+use App\Http\Controllers\Services\ServiceOverviewController;
 use App\Http\Controllers\Settings\PrivacyController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -36,6 +37,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
 
+    Route::get('/services/{service}', ServiceOverviewController::class)->name('services.show');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
     Route::post('/projects', [ProjectController::class, 'store'])->middleware('throttle:30,1')->name('projects.store');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {

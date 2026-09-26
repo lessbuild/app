@@ -21,10 +21,12 @@ Design notes for Phase 2 of [the plan](platform-v2-plan.md). Journeys come first
 
 ## Shell
 
-- **Topbar**: brand, account switcher, project switcher, search/command palette (⌘K), notifications, user menu (Settings, Sign out). Ported from the old branch's Signal `topbar`, `workspace-switcher` and `command-palette` layouts. The JS (`signal-topbar.js`, `signal-shell.js`) is already in v2.
-- **Project sidebar**: Overview, the enabled services and their nav items, Environments, Domains, Settings.
-- **Account sidebar**: Projects, Members, API tokens, Audit log, Settings.
-- **Mobile**: the same navigation in the Signal drawer.
+The Signal two-row topbar (as on the old branch), with no sidebar:
+
+- **Row one**: menu button (below `xl`), brand, the platform's areas (Projects, then each service the person may use), account switcher, theme toggle, user menu (the account's pages, your settings, sign out). Inside a project a service tab opens that project's service; elsewhere it opens the service across the account (`/services/{service}`: which projects use it).
+- **Row two**: the project switcher on the left; on the right, the sections of the current area: a service's pages, the project's (Overview, Domains, Settings), the account's (Members, API tokens, Audit log, Settings) or your settings (Profile, Security, Sessions, Privacy).
+- **Mobile**: row one's areas, the account switcher and the account pages move into the Signal drawer; row two stays.
+- `ShellComposer` builds all of it from the current user and route.
 
 ## Slices
 
