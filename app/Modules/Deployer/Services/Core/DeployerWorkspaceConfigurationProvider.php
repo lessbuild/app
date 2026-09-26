@@ -30,6 +30,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Route;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 
 /** Keeps Core configuration edits on the exact mapped Deployer resources and their native actions. */
@@ -391,6 +392,12 @@ final class DeployerWorkspaceConfigurationProvider implements WorkspaceDeployerC
             hibernateAfterMinutes: $environment->hibernate_after_minutes === null ? null : (int) $environment->hibernate_after_minutes,
             postDeploymentObservationMinutes: $environment->post_deployment_observation_minutes === null
                 ? null : (int) $environment->post_deployment_observation_minutes,
+            variablesUrl: Route::has('projects.show') && $projectContext['nativeActor']->can('update', $environment)
+                ? route('projects.show', [
+                    'project' => $projectContext['nativeProject']->getKey(),
+                    'organization_id' => $projectContext['organization']->getKey(),
+                ]).'#environment-'.$environment->getKey().'-variables'
+                : null,
         );
     }
 

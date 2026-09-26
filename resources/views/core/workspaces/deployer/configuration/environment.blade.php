@@ -21,6 +21,9 @@
     >
         <x-slot:actions>
             <x-signal.ui.button :href="route('core.workspace.deployer.configuration.projects.show', [$workspace, $project])">{{ __('Application settings') }}</x-signal.ui.button>
+            @if ($snapshot->variablesUrl)
+                <x-signal.ui.button :href="$snapshot->variablesUrl" variant="secondary">{{ __('Manage variables in Deployer') }}</x-signal.ui.button>
+            @endif
         </x-slot:actions>
     </x-signal.ui.page-header>
 

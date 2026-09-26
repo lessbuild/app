@@ -17,5 +17,7 @@ final readonly class DeployerEnvironmentConfigurationSnapshot
         public int $maximumReplicas,
         public ?int $hibernateAfterMinutes,
         public ?int $postDeploymentObservationMinutes,
+        // Encrypted variables stay Deployer-owned; Core only links authorized editors to the native section.
+        public ?string $variablesUrl = null,
     ) {}
 }

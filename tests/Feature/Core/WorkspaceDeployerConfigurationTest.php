@@ -126,6 +126,8 @@ final class WorkspaceDeployerConfigurationTest extends TestCase
             ->assertOk()
             ->assertSee('8.3')
             ->assertSee('main')
+            ->assertSee('Manage variables in Deployer')
+            ->assertSee('#environment-'.$this->nativeEnvironment->getKey().'-variables', false)
             ->assertDontSee('name="type"', false)
             ->assertDontSee('CONFIGURATION_COMMAND_SENTINEL')
             ->assertDontSee('CONFIGURATION_SECRET_SENTINEL');
