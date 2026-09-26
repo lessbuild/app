@@ -12,6 +12,7 @@ use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\WorkspaceProjectAccess;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\EnvironmentBlueprintRecipe;
+use App\Modules\Deployer\Models\EnvironmentBlueprintRecipeTombstone;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\Project;
@@ -48,29 +49,43 @@ final class InstallBlueprintRecipeSnapshotAction
         if (! Schema::connection('deployer')->hasTable('environment_blueprint_recipes')) {
             $this->conflict();
         }
+        if (! Schema::connection('deployer')->hasTable('environment_blueprint_recipe_tombstones')) {
+            $this->conflict();
+        }
 
         $copy = DB::connection('deployer')->transaction(function () use (
             $actor, $project, $environment, $snapshot, $sharePersonalSnapshot,
         ): Recipe {
-            // A write fence serializes concurrent first copies on databases where SELECT FOR UPDATE is advisory.
-            DB::connection('deployer')->table('environment_blueprint_recipes')
-                ->where('id', $snapshot->getKey())->update(['id' => DB::raw('id')]);
-
+            // Install and archive use the same actor → workspace → project → snapshot lock order.
+            DB::connection('deployer')->table('users')->where('id', $actor->getKey())->update(['id' => DB::raw('id')]);
             $lockedActor = User::query()->whereKey($actor->getKey())->lockForUpdate()->first();
-            $lockedProject = Project::query()->whereKey($project->getKey())->lockForUpdate()->first();
-            if ($lockedActor === null || $lockedProject === null) {
+            if ($lockedActor === null || $lockedActor->current_organization_id === null) {
                 $this->conflict();
             }
-            $lockedEnvironment = Environment::query()->whereKey($environment->getKey())
-                ->where('project_id', $lockedProject->getKey())->lockForUpdate()->first();
+            DB::connection('deployer')->table('organizations')->where('id', $lockedActor->current_organization_id)
+                ->update(['id' => DB::raw('id')]);
+            $organization = Organization::query()->whereKey($lockedActor->current_organization_id)->lockForUpdate()->first();
+            if ($organization === null) {
+                $this->conflict();
+            }
+
+            DB::connection('deployer')->table('projects')->where('id', $project->getKey())->update(['id' => DB::raw('id')]);
+            $lockedProject = Project::query()->whereKey($project->getKey())->lockForUpdate()->first();
+            if ($lockedProject === null || (string) $lockedProject->organization_id !== (string) $organization->getKey()) {
+                $this->conflict();
+            }
+
+            DB::connection('deployer')->table('environment_blueprint_recipes')
+                ->where('id', $snapshot->getKey())->update(['id' => DB::raw('id')]);
             $lockedSnapshot = EnvironmentBlueprintRecipe::query()->whereKey($snapshot->getKey())
                 ->where('environment_id', $environment->getKey())->lockForUpdate()->first();
+            $lockedEnvironment = Environment::query()->whereKey($environment->getKey())
+                ->where('project_id', $lockedProject->getKey())->lockForUpdate()->first();
             if ($lockedEnvironment === null || $lockedSnapshot === null) {
                 $this->conflict();
             }
 
-            $organization = Organization::query()->whereKey($lockedProject->organization_id)->lockForUpdate()->first();
-            if ($organization === null || (string) $lockedActor->current_organization_id !== (string) $organization->getKey()
+            if ((string) $lockedActor->current_organization_id !== (string) $organization->getKey()
                 || (string) $lockedSnapshot->workspace_source_id !== (string) $organization->getKey()
                 || (string) $lockedSnapshot->environment_id !== (string) $lockedEnvironment->getKey()
                 || (string) $lockedEnvironment->project_id !== (string) $lockedProject->getKey()
@@ -82,6 +97,15 @@ final class InstallBlueprintRecipeSnapshotAction
             $this->assertOpen($lockedActor, $organization);
             $this->assertAuthorized($lockedActor, $lockedProject, $lockedEnvironment, $organization, $lockedSnapshot);
             $this->assertExactCoreBindings($lockedActor, $organization, $lockedProject, $lockedEnvironment, $lockedSnapshot);
+
+            if (EnvironmentBlueprintRecipeTombstone::query()
+                ->where('step_id', $lockedSnapshot->step_id)
+                ->where('environment_id', $lockedEnvironment->getKey())
+                ->where('position', $lockedSnapshot->position)
+                ->exists()) {
+                $this->conflict();
+            }
+
             $this->assertSnapshotIntegrity($lockedSnapshot);
 
             if ($lockedSnapshot->source_organization_id === null) {
@@ -164,6 +188,13 @@ final class InstallBlueprintRecipeSnapshotAction
             $this->assertAuthorized($lockedActor, $lockedProject, $lockedEnvironment, $organization, $lockedSnapshot);
             $this->assertExactCoreBindings($lockedActor, $organization, $lockedProject, $lockedEnvironment, $lockedSnapshot);
             $this->assertOpen($lockedActor, $organization);
+            if (EnvironmentBlueprintRecipeTombstone::query()
+                ->where('step_id', $lockedSnapshot->step_id)
+                ->where('environment_id', $lockedEnvironment->getKey())
+                ->where('position', $lockedSnapshot->position)
+                ->exists()) {
+                $this->conflict();
+            }
 
             return $copy;
         }, attempts: 3);

@@ -208,6 +208,8 @@ Route::middleware([
         Route::resource('projects', ProjectController::class)->except(['edit', 'update']);
         Route::post('projects/{project}/environments/{environment}/blueprint-recipe-snapshots/{blueprintRecipeSnapshot}/install', [ProjectController::class, 'installBlueprintRecipeSnapshot'])
             ->scopeBindings()->name('projects.environments.blueprint-recipes.install');
+        Route::post('projects/{project}/environments/{environment}/blueprint-recipe-slots/archive', [ProjectController::class, 'archiveBlueprintRecipeSnapshot'])
+            ->scopeBindings()->name('projects.environments.blueprint-recipes.archive');
         Route::get('projects/{project}/configuration', [ApplicationConfigurationController::class, 'create'])->name('projects.configuration.create');
         Route::post('projects/{project}/configuration', [ApplicationConfigurationController::class, 'store'])->name('projects.configuration.store');
         Route::get('projects/{project}/configuration/compare', [ApplicationConfigurationController::class, 'compare'])->name('projects.configuration.compare');

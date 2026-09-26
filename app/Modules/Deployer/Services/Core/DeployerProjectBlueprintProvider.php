@@ -10,6 +10,7 @@ use App\Core\Data\Blueprints\BlueprintStepAttempt;
 use App\Core\Data\Blueprints\BlueprintTarget;
 use App\Core\Exceptions\Blueprints\BlueprintBlocked;
 use App\Core\Models\Project as CoreProject;
+use App\Core\Models\ProjectBlueprintStep;
 use App\Core\Models\ProjectEnvironment as CoreProjectEnvironment;
 use App\Core\Models\ProjectResource;
 use App\Core\Models\Workspace as CoreWorkspace;
@@ -21,6 +22,7 @@ use App\Modules\Deployer\Actions\Project\ApplyApplicationTemplate;
 use App\Modules\Deployer\Models\BlueprintApplicationReceipt;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\EnvironmentBlueprintRecipe;
+use App\Modules\Deployer\Models\EnvironmentBlueprintRecipeTombstone;
 use App\Modules\Deployer\Models\EnvironmentProcess;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\ProductDeletionFence;
@@ -29,6 +31,7 @@ use App\Modules\Deployer\Models\Recipe;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Entitlements;
+use App\Modules\Deployer\Services\EnvironmentBlueprintRecipeTombstoneEvidence;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
@@ -138,6 +141,10 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 $this->authority->assertAttempt($attempt);
 
                 return BlueprintProductResult::fromArray($receipt->result);
+            }
+            if (Schema::connection('deployer')->hasTable('environment_blueprint_recipe_tombstones')
+                && EnvironmentBlueprintRecipeTombstone::query()->where('step_id', $attempt->stepId)->exists()) {
+                throw new BlueprintBlocked('resource_conflict');
             }
 
             $state = $this->inspect($attempt->target, $configuration);
@@ -793,6 +800,9 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 || (string) $resource->parentSourceId !== (string) $context['project']->getKey()) {
                 throw new BlueprintBlocked('invalid_product_result');
             }
+            if (isset($seenKeys[$resource->environmentKey])) {
+                throw new BlueprintBlocked('invalid_product_result');
+            }
             $environmentQuery = Environment::query()->whereKey($resource->sourceId)
                 ->where('project_id', $context['project']->getKey());
             if (DB::connection('deployer')->transactionLevel() > 0) {
@@ -816,13 +826,16 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
             throw new BlueprintBlocked('invalid_product_result');
         }
 
-        $expectedSnapshotCount = 0;
+        $expectedEvidenceCount = 0;
         $hasSnapshotTable = Schema::connection('deployer')->hasTable('environment_blueprint_recipes');
+        $hasTombstoneTable = Schema::connection('deployer')->hasTable('environment_blueprint_recipe_tombstones');
+        $step = $hasTombstoneTable ? ProjectBlueprintStep::query()->find($attempt->stepId) : null;
+        $evidence = $hasTombstoneTable ? app(EnvironmentBlueprintRecipeTombstoneEvidence::class) : null;
         foreach (array_keys($attempt->target->environments) as $key) {
             $expectedRecipeIds = collect($configuration['environment_recipes'])
                 ->firstWhere('environment', $key)['recipe_ids'] ?? [];
-            $expectedSnapshotCount += count($expectedRecipeIds);
-            if ($expectedRecipeIds !== [] && ! $hasSnapshotTable) {
+            $expectedEvidenceCount += count($expectedRecipeIds);
+            if ($expectedRecipeIds !== [] && ! $hasSnapshotTable && ! $hasTombstoneTable) {
                 throw new BlueprintBlocked('resource_conflict');
             }
             $environment = $resolvedEnvironments[$key] ?? null;
@@ -843,20 +856,33 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 );
             }
 
-            if (! $hasSnapshotTable) {
-                continue;
-            }
-
-            $snapshots = EnvironmentBlueprintRecipe::query()
-                ->where('step_id', $attempt->stepId)
-                ->where('environment_id', $environment->getKey())
-                ->orderBy('position')->orderBy('id')->get();
-            if ($snapshots->count() !== count($expectedRecipeIds)) {
+            $snapshots = $hasSnapshotTable
+                ? EnvironmentBlueprintRecipe::query()->where('step_id', $attempt->stepId)
+                    ->where('environment_id', $environment->getKey())->get()->groupBy('position')
+                : collect();
+            $tombstones = $hasTombstoneTable
+                ? EnvironmentBlueprintRecipeTombstone::query()->where('step_id', $attempt->stepId)
+                    ->where('environment_id', $environment->getKey())->get()->groupBy('position')
+                : collect();
+            if ($snapshots->flatten(1)->count() + $tombstones->flatten(1)->count() !== count($expectedRecipeIds)) {
                 throw new BlueprintBlocked('invalid_product_result');
             }
             foreach ($expectedRecipeIds as $position => $recipeId) {
+                $activeRows = $snapshots->get($position, collect());
+                $archivedRows = $tombstones->get($position, collect());
+                if ($activeRows->count() + $archivedRows->count() !== 1) {
+                    throw new BlueprintBlocked('resource_conflict');
+                }
+                if ($archivedRows->isNotEmpty()) {
+                    if ($step === null || $evidence === null
+                        || ! $evidence->verifyTombstone($archivedRows->first(), $step, $receipt)) {
+                        throw new BlueprintBlocked('resource_conflict');
+                    }
+
+                    continue;
+                }
                 /** @var EnvironmentBlueprintRecipe|null $snapshot */
-                $snapshot = $snapshots->get($position);
+                $snapshot = $activeRows->first();
                 if ($snapshot === null || $canonicalEnvironmentId === null
                     || (string) $snapshot->step_id !== (string) $attempt->stepId
                     || (string) $snapshot->actor_source_id !== (string) $receipt->actor_source_id
@@ -872,8 +898,11 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 $this->assertSnapshotIntegrity($snapshot);
             }
         }
-        if ($hasSnapshotTable
-            && EnvironmentBlueprintRecipe::query()->where('step_id', $attempt->stepId)->count() !== $expectedSnapshotCount) {
+        $activeCount = $hasSnapshotTable
+            ? EnvironmentBlueprintRecipe::query()->where('step_id', $attempt->stepId)->count() : 0;
+        $archivedCount = $hasTombstoneTable
+            ? EnvironmentBlueprintRecipeTombstone::query()->where('step_id', $attempt->stepId)->count() : 0;
+        if ($activeCount + $archivedCount !== $expectedEvidenceCount) {
             throw new BlueprintBlocked('invalid_product_result');
         }
     }

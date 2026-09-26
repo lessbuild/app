@@ -25,6 +25,7 @@ use App\Core\Services\Blueprints\RecordBlueprintResources;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Actions\Project\ApplyApplicationTemplate;
 use App\Modules\Deployer\Actions\Project\InstallBlueprintRecipeSnapshotAction;
+use App\Modules\Deployer\Models\BlueprintApplicationReceipt;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\EnvironmentBlueprintRecipe;
 use App\Modules\Deployer\Models\Project as NativeProject;
@@ -33,6 +34,7 @@ use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Core\DeployerProjectBlueprintProvider;
 use App\Modules\Deployer\Services\Entitlements;
+use App\Modules\Deployer\Services\EnvironmentBlueprintRecipeTombstoneEvidence;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Event;
@@ -453,6 +455,70 @@ final class DeployerProjectBlueprintProviderTest extends TestCase
         $this->assertSame((string) $fixture['environment']->getKey(), (string) $environmentMapping->environment_id);
         $this->assertSame('active', $projectMapping->status);
         $this->assertSame('active', $environmentMapping->status);
+    }
+
+    public function test_archived_recipe_slot_replays_without_restoring_private_snapshot_material(): void
+    {
+        $fixture = $this->scenario('blueprint-recipe-archived-replay');
+        $recipe = $this->createRecipe($fixture, 'Private archived recipe', ['script' => 'echo do not restore']);
+        $provider = $this->provider();
+        $configuration = $this->configurationWithRecipe($recipe);
+        $preview = $provider->preview($fixture['target'], $configuration);
+        $this->assertTrue($preview->ready(), implode('; ', $preview->blockers));
+        $attempt = $this->acceptedAttempt($fixture, $configuration, $preview->authority);
+        $first = $provider->apply($attempt);
+
+        $snapshot = EnvironmentBlueprintRecipe::query()->where('step_id', $attempt->stepId)->sole();
+        $step = ProjectBlueprintStep::query()->findOrFail($attempt->stepId);
+        $receipt = BlueprintApplicationReceipt::query()->where('step_id', $attempt->stepId)->sole();
+        $tombstone = app(EnvironmentBlueprintRecipeTombstoneEvidence::class)->makeTombstone($step, $receipt, $snapshot);
+        $tombstone->save();
+
+        try {
+            $provider->apply($attempt);
+            $this->fail('An active snapshot and terminal evidence for the same slot must conflict.');
+        } catch (BlueprintBlocked $exception) {
+            $this->assertSame('invalid_product_result', $exception->reason);
+        }
+
+        $snapshot->delete();
+        $this->assertDatabaseCount('environment_blueprint_recipes', 0, 'deployer');
+        $this->assertDatabaseCount('environment_blueprint_recipe_tombstones', 1, 'deployer');
+        $replay = $provider->apply($attempt);
+        $this->assertSame($first->toArray(), $replay->toArray());
+        $this->assertDatabaseCount('environment_blueprint_recipes', 0, 'deployer');
+
+        $tombstone->forceFill(['slot_commitment' => str_repeat('0', 64)])->save();
+        try {
+            $provider->apply($attempt);
+            $this->fail('A modified terminal marker must not satisfy a completed native receipt.');
+        } catch (BlueprintBlocked $exception) {
+            $this->assertSame('resource_conflict', $exception->reason);
+        }
+        $this->assertDatabaseCount('environment_blueprint_recipes', 0, 'deployer');
+    }
+
+    public function test_receipt_replay_rejects_duplicate_environment_resources(): void
+    {
+        $fixture = $this->scenario('blueprint-duplicate-environment-receipt');
+        $provider = $this->provider();
+        $configuration = $this->configuration();
+        $preview = $provider->preview($fixture['target'], $configuration);
+        $this->assertTrue($preview->ready(), implode('; ', $preview->blockers));
+        $attempt = $this->acceptedAttempt($fixture, $configuration, $preview->authority);
+        $provider->apply($attempt);
+
+        $receipt = BlueprintApplicationReceipt::query()->where('step_id', $attempt->stepId)->sole();
+        $result = $receipt->result;
+        $result['resources'][] = $result['resources'][1];
+        $receipt->forceFill(['result' => $result])->save();
+
+        try {
+            $provider->apply($attempt);
+            $this->fail('A duplicate saved environment resource must not pass native receipt replay.');
+        } catch (BlueprintBlocked $exception) {
+            $this->assertSame('invalid_product_result', $exception->reason);
+        }
     }
 
     public function test_recipe_receipt_replays_for_mapped_project_with_new_unmapped_environment(): void

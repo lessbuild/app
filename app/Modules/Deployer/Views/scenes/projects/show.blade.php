@@ -193,14 +193,19 @@
                                 @foreach($environment->blueprintRecipeSnapshots as $snapshot)
                                     <li>
                                         <x-signal.ui.panel class="ui-panel flex flex-wrap items-center gap-3 bg-surface-muted px-3 py-3" data-prepared-blueprint-recipe>
+                                            @php
+                                                $snapshotIsPersonal = $snapshot->source_organization_id === null;
+                                                $canSeeSnapshotDetails = !$snapshotIsPersonal
+                                                    || (string) $snapshot->source_user_id === (string) auth()->user()->getKey();
+                                            @endphp
                                             <div class="min-w-0 flex-1">
-                                                <p class="truncate text-sm font-bold text-ink">{{ $snapshot->source_name }}</p>
-                                                <p class="mt-1 text-xs text-muted">{{ __('Order :position', ['position' => $snapshot->position + 1]) }} · {{ __('Source revision: :revision', ['revision' => $snapshot->source_revision_at?->format('Y-m-d H:i:s') ?? __('unversioned')]) }}</p>
-                                                @if($snapshot->install_attempted_at)
+                                                <p class="truncate text-sm font-bold text-ink">{{ $canSeeSnapshotDetails ? $snapshot->source_name : __('Private personal recipe reference') }}</p>
+                                                <p class="mt-1 text-xs text-muted">{{ __('Order :position', ['position' => $snapshot->position + 1]) }}@if($canSeeSnapshotDetails) · {{ __('Source revision: :revision', ['revision' => $snapshot->source_revision_at?->format('Y-m-d H:i:s') ?? __('unversioned')]) }}@endif</p>
+                                                @if($canSeeSnapshotDetails && $snapshot->install_attempted_at)
                                                     <p class="mt-1 text-xs text-muted">{{ __('A workspace copy was recorded; reopening it checks that the original copy still exists.') }}</p>
                                                 @endif
                                             </div>
-                                            @if($canDeploy && in_array((string) $environment->getKey(), $canInstallBlueprintSnapshots, true))
+                                            @if($canSeeSnapshotDetails && $canDeploy && in_array((string) $environment->getKey(), $canInstallBlueprintSnapshots, true))
                                                 <form method="POST" action="{{ route('projects.environments.blueprint-recipes.install', [$project, $environment, $snapshot]) }}" class="flex flex-wrap items-center gap-3">
                                                     @csrf
                                                     @if($snapshot->source_organization_id === null)
@@ -215,6 +220,24 @@
                                                         />
                                                     @endif
                                                     <x-signal.ui.button type="submit" variant="secondary">{{ $snapshot->install_attempted_at ? __('Open recorded recipe copy') : __('Copy saved snapshot to recipes') }}</x-signal.ui.button>
+                                                </form>
+                                            @endif
+                                            @if($canManage && in_array((string) $environment->getKey(), $canArchiveBlueprintSnapshots, true))
+                                                <form method="POST" action="{{ route('projects.environments.blueprint-recipes.archive', [$project, $environment]) }}" class="flex flex-wrap items-center gap-3">
+                                                    @csrf
+                                                    <input type="hidden" name="step_id" value="{{ $snapshot->step_id }}">
+                                                    <input type="hidden" name="position" value="{{ $snapshot->position }}">
+                                                    <x-signal.ui.choice
+                                                        :id="'confirm-archive-blueprint-recipe-'.$snapshot->id"
+                                                        name="confirm_archive"
+                                                        value="1"
+                                                        :label="__('I understand this removes the prepared reference permanently; any installed copy remains separately.')"
+                                                        :required="true"
+                                                        :restore="false"
+                                                        :checked="false"
+                                                        :show-errors="false"
+                                                    />
+                                                    <x-signal.ui.button type="submit" variant="danger">{{ __('Archive reference') }}</x-signal.ui.button>
                                                 </form>
                                             @endif
                                         </x-signal.ui.panel>

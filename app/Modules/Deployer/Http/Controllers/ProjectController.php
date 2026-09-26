@@ -9,6 +9,7 @@ use App\Core\Models\Workspace as CoreWorkspace;
 use App\Core\Services\Auth\ProductAuthentication;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Actions\Project\ApprovePreviewSecretsAction;
+use App\Modules\Deployer\Actions\Project\ArchiveBlueprintRecipeSnapshotAction;
 use App\Modules\Deployer\Actions\Project\CreateProjectAction;
 use App\Modules\Deployer\Actions\Project\DeleteProjectAction;
 use App\Modules\Deployer\Actions\Project\InstallBlueprintRecipeSnapshotAction;
@@ -85,6 +86,7 @@ class ProjectController extends Controller
         $actor = $request->user();
         $projection = app(DeployerResourceProjection::class);
         $usesCore = app(ProductAuthentication::class)->usesCoreAuthority('deployer');
+        $canManageProjectResources = $project->organization->permits($actor, 'manage');
         $environments = $projection->environments(Environment::query(), $actor)->select('environments.id');
         $websites = $projection->websites(Website::withTrashed(), $actor)->select('websites.id');
         $repositories = $projection->repositories(Repository::withTrashed(), $actor)->select('repositories.id');
@@ -110,7 +112,9 @@ class ProjectController extends Controller
             'environments.variables',
             'environments.processes',
             'environments.resources',
-            ...($hasSnapshotStore ? ['environments.blueprintRecipeSnapshots' => function ($query) use ($actor, $project, $canonicalProjectId, $canonicalEnvironmentBindings): void {
+            ...($hasSnapshotStore ? ['environments.blueprintRecipeSnapshots' => function ($query) use (
+                $actor, $project, $canonicalProjectId, $canonicalEnvironmentBindings, $canManageProjectResources,
+            ): void {
                 $query
                     ->select([
                         'id', 'environment_id', 'step_id', 'workspace_source_id', 'canonical_project_id',
@@ -132,10 +136,12 @@ class ProjectController extends Controller
                                 ->where('canonical_environment_id', $canonicalEnvironmentId));
                         }
                     })
+                    ->where('workspace_source_id', $project->organization_id)
                     ->where(fn ($visibility) => $visibility
                         ->where('source_organization_id', $project->organization_id)
                         ->orWhere(fn ($personal) => $personal->whereNull('source_organization_id')
-                            ->where('source_user_id', $actor->getKey())))
+                            ->where(fn ($owner) => $owner->where('source_user_id', $actor->getKey())
+                                ->when($canManageProjectResources, fn ($managers) => $managers->orWhereNotNull('source_user_id')))))
                     ->orderBy('position')->orderBy('id');
             }] : []),
             'previews' => fn ($query) => $query->when($usesCore, fn ($preview) => $preview
@@ -159,7 +165,6 @@ class ProjectController extends Controller
             }
             $environment->setAttribute('prepared_recipe_snapshot_count', $environment->blueprintRecipeSnapshots->count());
         }
-        $canManageProjectResources = $project->organization->permits($actor, 'manage');
         $canInstallBlueprintSnapshots = $project->environments
             ->filter(fn (Environment $environment): bool => $usesCore
                 && $project->organization->permits($actor, 'deploy')
@@ -167,6 +172,16 @@ class ProjectController extends Controller
                 && $canonicalProjectId !== null
                 && app(DeployerProjectAccess::class)->canChangeEnvironment($actor, $environment)
                 && (! $environment->is_protected && ! $environment->requires_deployment_approval || $canManageProjectResources))
+            ->map(fn (Environment $environment): string => (string) $environment->getKey())
+            ->all();
+        $canArchiveBlueprintSnapshots = $project->environments
+            ->filter(fn (Environment $environment): bool => $usesCore
+                && $canManageProjectResources
+                && isset($canonicalEnvironmentBindings[(string) $environment->getKey()])
+                && $canonicalProjectId !== null
+                && app(DeployerProjectAccess::class)->project($actor, $project)
+                && app(DeployerProjectAccess::class)->environment($actor, $environment)
+                && app(DeployerProjectAccess::class)->canChangeEnvironment($actor, $environment))
             ->map(fn (Environment $environment): string => (string) $environment->getKey())
             ->all();
 
@@ -177,6 +192,7 @@ class ProjectController extends Controller
             'canManage' => $project->organization->permits($request->user(), 'manage'),
             'canDeploy' => $project->organization->permits($request->user(), 'deploy'),
             'canInstallBlueprintSnapshots' => $canInstallBlueprintSnapshots,
+            'canArchiveBlueprintSnapshots' => $canArchiveBlueprintSnapshots,
             'featureAccess' => collect(['workers', 'resources', 'previews', 'scaling', 'hibernation', 'monitoring'])
                 ->mapWithKeys(fn (string $feature): array => [$feature => $entitlements->allows($project->organization, $feature)]),
         ]);
@@ -269,6 +285,35 @@ class ProjectController extends Controller
 
         return redirect()->route('recipes.show', $recipe)
             ->with('success', __('Prepared recipe snapshot is in the workspace library. Review it before using it on a server.'));
+    }
+
+    /** Archive one accepted prepared recipe reference after an explicit manager confirmation. */
+    public function archiveBlueprintRecipeSnapshot(
+        Request $request,
+        Project $project,
+        Environment $environment,
+        ArchiveBlueprintRecipeSnapshotAction $archiveSnapshot,
+    ): RedirectResponse {
+        $this->authorize('view', $project);
+        $validated = $request->validate([
+            'step_id' => ['required', 'string', 'regex:/\\A[0-9A-HJKMNP-TV-Z]{26}\\z/'],
+            'position' => ['required', 'integer', 'min:0', 'max:65535'],
+            'confirm_archive' => ['required', 'accepted'],
+        ]);
+        $result = $archiveSnapshot->handle(
+            $request->user(),
+            $project,
+            $environment,
+            $validated['step_id'],
+            (int) $validated['position'],
+            (bool) $validated['confirm_archive'],
+        );
+
+        return redirect()->route('projects.show', $project)
+            ->with('success', $result['already_archived']
+                ? __('This prepared recipe reference was already archived.')
+                : __('Prepared recipe reference archived.'))
+            ->with('info', __('Archiving removes this reference only. Any installed copy remains separately and may still need an ownership transfer before account deletion.'));
     }
 
     /**
