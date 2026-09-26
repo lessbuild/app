@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Account\AuditLogController;
 use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
@@ -25,6 +26,8 @@ Route::post('/user/confirm-password/{provider}', [SocialSignInController::class,
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
+
+    Route::get('/account/audit-log', AuditLogController::class)->name('account.audit-log');
 
     Route::redirect('/settings', '/settings/profile')->name('settings');
     Route::get('/settings/profile', ProfileController::class)->name('settings.profile');
