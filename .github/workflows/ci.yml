@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [platform-v2]
+  pull_request:
+    branches: [platform-v2]
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          coverage: none
+      - run: composer install --no-interaction --prefer-dist
+      - run: vendor/bin/pint --test
+      - run: vendor/bin/phpstan analyse --no-progress --memory-limit=1G
+      - run: cp .env.example .env && php artisan key:generate
+      - run: php artisan test
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci && npm run build
