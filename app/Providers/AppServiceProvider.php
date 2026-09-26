@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Domain\Api\Models\ApiToken;
 use App\Domain\Audit\Contracts\RequestOrigin;
 use App\Domain\Audit\Listeners\AuditSubscriber;
+use App\Domain\Notifications\Listeners\NotificationSubscriber;
 use App\Domain\Projects\Contracts\DnsResolver;
 use App\Http\HttpRequestOrigin;
 use App\Http\View\ShellComposer;
@@ -39,6 +40,7 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Event::subscribe(AuditSubscriber::class);
+        Event::subscribe(NotificationSubscriber::class);
         View::composer('components.signal.layouts.app', ShellComposer::class);
 
         Sanctum::usePersonalAccessTokenModel(ApiToken::class);

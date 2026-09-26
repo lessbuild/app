@@ -7,6 +7,7 @@ namespace App\Http\View;
 use App\Domain\Accounts\Models\Account;
 use App\Domain\Accounts\Queries\AccountSwitcherQuery;
 use App\Domain\Identity\Models\User;
+use App\Domain\Notifications\Queries\InboxQuery;
 use App\Domain\Projects\Models\Project;
 use App\Domain\Projects\Queries\ProjectSwitcherQuery;
 use App\Platform\ServiceRegistry;
@@ -21,6 +22,7 @@ final class ShellComposer
         private readonly AccountSwitcherQuery $accounts,
         private readonly ProjectSwitcherQuery $projects,
         private readonly ServiceRegistry $services,
+        private readonly InboxQuery $inbox,
     ) {}
 
     public function compose(View $view): void
@@ -46,6 +48,7 @@ final class ShellComposer
             sectionNav: $sectionNav,
             accountLinks: $account !== null ? $this->accountLinks($user, $account) : [],
             canCreateProject: $account !== null && $user->can('create', [Project::class, $account]),
+            unreadNotifications: $this->inbox->unreadCount($user),
         ));
     }
 
@@ -53,7 +56,7 @@ final class ShellComposer
     private function primaryNav(User $user, Account $account, ?Project $project): array
     {
         $service = $this->request->route('service');
-        $links = [new NavLink(__('Projects'), route('dashboard'), ! is_string($service) && ! $this->request->routeIs('account.*', 'settings.*'), 'tasks')];
+        $links = [new NavLink(__('Projects'), route('dashboard'), ! is_string($service) && $this->request->routeIs('dashboard', 'projects.*'), 'tasks')];
 
         foreach ($this->services->all() as $definition) {
             if (! $user->can('useService', [$account, $definition->key()])) {

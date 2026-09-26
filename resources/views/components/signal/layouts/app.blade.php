@@ -31,6 +31,12 @@
 
                     <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                         <x-signal.layouts.account-switcher :shell="$shell" class="hidden md:block" />
+                        <x-signal.ui.icon-button :label="$shell->unreadNotifications > 0 ? trans_choice('Notifications, :count unread|Notifications, :count unread', $shell->unreadNotifications, ['count' => $shell->unreadNotifications]) : __('Notifications')" :href="route('notifications.index')" class="relative" :aria-current="request()->routeIs('notifications.*') ? 'page' : null">
+                            <x-signal.ui.icon name="bell" class="h-[18px] w-[18px] stroke-2" />
+                            @if ($shell->unreadNotifications > 0)
+                                <span class="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-extrabold leading-4 text-white" aria-hidden="true">{{ $shell->unreadNotifications > 9 ? '9+' : $shell->unreadNotifications }}</span>
+                            @endif
+                        </x-signal.ui.icon-button>
                         <x-signal.ui.icon-button :label="__('Use dark theme')" data-theme-toggle aria-pressed="false">
                             <svg class="h-[19px] w-[19px] dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.6 8.6 0 1 0 20.2 15.1Z" /></svg>
                             <svg class="hidden h-[19px] w-[19px] dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.6" /><path stroke-linecap="round" d="M12 2.5v2M12 19.5v2M4.3 4.3l1.4 1.4m12.6 12.6 1.4 1.4M2.5 12h2m15 0h2M4.3 19.7l1.4-1.4M18.3 5.7l1.4-1.4" /></svg>

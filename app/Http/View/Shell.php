@@ -33,5 +33,6 @@ final readonly class Shell
         public array $sectionNav,
         public array $accountLinks,
         public bool $canCreateProject,
+        public int $unreadNotifications = 0,
     ) {}
 }

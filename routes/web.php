@@ -11,6 +11,7 @@ use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\NotificationsController;
 use App\Http\Controllers\Projects\DomainController;
 use App\Http\Controllers\Projects\EnvironmentController;
 use App\Http\Controllers\Projects\ProjectController;
@@ -36,6 +37,10 @@ Route::post('/user/confirm-password/{provider}', [SocialSignInController::class,
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
+
+    Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/read', [NotificationsController::class, 'markAllRead'])->name('notifications.read-all');
+    Route::get('/notifications/{notification}', [NotificationsController::class, 'open'])->name('notifications.open');
 
     Route::get('/services/{service}', ServiceOverviewController::class)->name('services.show');
     Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
