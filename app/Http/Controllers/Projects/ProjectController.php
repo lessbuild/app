@@ -7,9 +7,11 @@ namespace App\Http\Controllers\Projects;
 use App\Domain\Identity\Models\User;
 use App\Domain\Projects\Actions\CreateProject;
 use App\Domain\Projects\Actions\DeleteProject;
+use App\Domain\Projects\Actions\DismissChecklist;
 use App\Domain\Projects\Actions\UpdateProject;
 use App\Domain\Projects\Enums\EnvironmentKind;
 use App\Domain\Projects\Models\Project;
+use App\Domain\Projects\Queries\ProjectChecklistQuery;
 use App\Domain\Projects\Queries\ProjectOverviewQuery;
 use App\Http\Requests\Projects\ProjectRequest;
 use Illuminate\Container\Attributes\CurrentUser;
@@ -36,9 +38,16 @@ final class ProjectController
         return to_route('projects.show', $project)->with('status', __('Project created. Next, turn on the services you need.'));
     }
 
-    public function show(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query): View
+    public function show(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query, ProjectChecklistQuery $checklist): View
     {
-        return view('projects.show', ['overview' => $query->handle($project, $user)]);
+        return view('projects.show', ['overview' => $query->handle($project, $user), 'checklist' => $checklist->handle($project, $user)]);
+    }
+
+    public function dismissChecklist(#[CurrentUser] User $user, Project $project, DismissChecklist $dismiss): RedirectResponse
+    {
+        $dismiss->handle($user, $project);
+
+        return to_route('projects.show', $project);
     }
 
     public function edit(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query): View

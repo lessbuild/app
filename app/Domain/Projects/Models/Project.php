@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string $name
  * @property string $slug
  * @property string|null $description
+ * @property Carbon|null $checklist_dismissed_at
  * @property Carbon|null $created_at
  * @property-read Account $account
  */
@@ -34,6 +35,12 @@ class Project extends Model
 {
     /** @use HasFactory<ProjectFactory> */
     use HasFactory, HasUlids;
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return ['checklist_dismissed_at' => 'datetime'];
+    }
 
     /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo

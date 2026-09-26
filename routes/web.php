@@ -40,6 +40,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/projects', [ProjectController::class, 'store'])->middleware('throttle:30,1')->name('projects.store');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
         Route::get('/', [ProjectController::class, 'show'])->name('projects.show');
+        Route::delete('/checklist', [ProjectController::class, 'dismissChecklist'])->name('projects.checklist.dismiss');
         Route::get('/settings', [ProjectController::class, 'edit'])->name('projects.settings');
         Route::put('/settings', [ProjectController::class, 'update'])->name('projects.update');
         Route::delete('/', [ProjectController::class, 'destroy'])->middleware('password.confirm')->name('projects.destroy');

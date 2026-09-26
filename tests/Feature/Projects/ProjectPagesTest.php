@@ -38,7 +38,7 @@ final class ProjectPagesTest extends TestCase
         $this->actingAs($this->owner)->get("/projects/{$project->id}")
             ->assertOk()
             ->assertSee('Storefront')
-            ->assertSee(__('Turn on the services this project needs'))
+            ->assertSee(__('Get :project going', ['project' => 'Storefront']))
             ->assertSee(__('Turn on :service', ['service' => 'Monitoring']));
 
         $this->actingAs($this->owner)->post("/projects/{$project->id}/services/monitoring")->assertRedirect("/projects/{$project->id}/services/monitoring");
