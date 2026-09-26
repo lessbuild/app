@@ -169,18 +169,18 @@ const queueWorkspaceSearch = () => {
   }
 
   if (!searchUrl || query.length < 2) {
-    if (searchStatus) searchStatus.textContent = query.length < 2 ? 'Enter at least 2 characters to search workspace resources.' : '';
+    if (searchStatus) searchStatus.textContent = query.length < 2 ? 'Enter at least 2 characters to search.' : '';
     updateEmptyState();
     return;
   }
 
   palette.dataset.searching = 'true';
-  if (searchStatus) searchStatus.textContent = 'Searching workspace resources…';
+  if (searchStatus) searchStatus.textContent = 'Searching…';
   if (dynamicResults) {
     const loading = document.createElement('p');
     loading.dataset.signalCommandLoading = '';
     loading.className = 'px-3 py-3 text-sm text-muted';
-    loading.textContent = 'Searching workspace resources…';
+    loading.textContent = 'Searching…';
     dynamicResults.replaceChildren(loading);
   }
   updateEmptyState();
@@ -198,20 +198,20 @@ const queueWorkspaceSearch = () => {
         credentials: 'same-origin',
       });
 
-      if (!response.ok) throw new Error(`Workspace search failed with ${response.status}`);
+      if (!response.ok) throw new Error(`Search failed with ${response.status}`);
       const payload = await response.json();
       if (sequence !== searchSequence) return;
 
       renderSearchResults(payload);
     } catch (error) {
       if (error.name !== 'AbortError' && sequence === searchSequence) {
-        if (searchStatus) searchStatus.textContent = 'Workspace search is temporarily unavailable.';
+        if (searchStatus) searchStatus.textContent = 'Search is temporarily unavailable.';
         if (dynamicResults) {
           const notice = document.createElement('p');
           notice.setAttribute('role', 'alert');
           notice.dataset.signalCommandUnavailable = '';
           notice.className = 'px-3 py-3 text-sm text-muted';
-          notice.textContent = 'Workspace search is temporarily unavailable.';
+          notice.textContent = 'Search is temporarily unavailable.';
           dynamicResults.replaceChildren(notice);
         }
       }

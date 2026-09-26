@@ -16,6 +16,7 @@ use App\Http\Controllers\Projects\DomainController;
 use App\Http\Controllers\Projects\EnvironmentController;
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\Projects\ServiceController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Services\ServiceOverviewController;
 use App\Http\Controllers\Settings\PrivacyController;
 use App\Http\Controllers\Settings\ProfileController;
@@ -38,6 +39,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
 
+    Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
     Route::get('/notifications', [NotificationsController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/read', [NotificationsController::class, 'markAllRead'])->name('notifications.read-all');
     Route::get('/notifications/{notification}', [NotificationsController::class, 'open'])->name('notifications.open');

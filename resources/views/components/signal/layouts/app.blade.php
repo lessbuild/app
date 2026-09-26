@@ -31,6 +31,14 @@
 
                     <div class="ml-auto flex shrink-0 items-center gap-1.5 sm:gap-2">
                         <x-signal.layouts.account-switcher :shell="$shell" class="hidden md:block" />
+                        <x-signal.ui.button type="button" size="sm" class="hidden sm:inline-flex" :aria-label="__('Search')" aria-controls="signal-command-palette" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" data-signal-command-open>
+                            <x-signal.ui.icon name="search" class="h-3.5 w-3.5 stroke-2" />
+                            <span class="hidden xl:inline">{{ __('Search') }}</span>
+                            <kbd class="ui-kbd hidden xl:inline-flex">⌘K</kbd>
+                        </x-signal.ui.button>
+                        <x-signal.ui.icon-button :label="__('Search')" class="sm:hidden" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
+                            <x-signal.ui.icon name="search" class="h-[18px] w-[18px] stroke-2" />
+                        </x-signal.ui.icon-button>
                         <x-signal.ui.icon-button :label="$shell->unreadNotifications > 0 ? trans_choice('Notifications, :count unread|Notifications, :count unread', $shell->unreadNotifications, ['count' => $shell->unreadNotifications]) : __('Notifications')" :href="route('notifications.index')" class="relative" :aria-current="request()->routeIs('notifications.*') ? 'page' : null">
                             <x-signal.ui.icon name="bell" class="h-[18px] w-[18px] stroke-2" />
                             @if ($shell->unreadNotifications > 0)
@@ -95,6 +103,7 @@
     </main>
 
     @isset($shell)
+        <x-signal.layouts.command-palette :shell="$shell" />
         <x-signal.layouts.mobile-sidebar id="app-navigation-drawer" :title="__('Navigation')" :brand-url="route('dashboard')" desktop-navigation="#app-primary-navigation" :breakpoint="1280">
             <div class="grid gap-5">
                 <x-signal.layouts.account-switcher :shell="$shell" variant="mobile" />
