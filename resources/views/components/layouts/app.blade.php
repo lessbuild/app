@@ -4,7 +4,7 @@
 ])
 
 @php
-    $resolvedTitle = $title ?: app(\App\View\PageTitle::class)->for(request()->route());
+    $resolvedTitle = $title ?: app(\App\Modules\Deployer\View\PageTitle::class)->for(request()->route());
     $applicationCreateDialogOpen = request()->query('dialog') === 'create-application';
     $applicationCreateDialogUrl = request()->url().'?dialog=create-application';
     $applicationCreateDialogCancelUrl = request()->url();
@@ -37,202 +37,51 @@
     $serverCreateDialogData = $creationDialogData['server'] ?? null;
     $websiteCreateDialogData = $creationDialogData['website'] ?? null;
     $repositoryCreateDialogData = $creationDialogData['repository'] ?? null;
+    $deployerCommandItems = [
+        ['label' => __('Dashboard'), 'href' => route('dashboard'), 'keywords' => __('overview home')],
+        ['label' => __('Create application'), 'href' => $applicationCreateDialogUrl, 'keywords' => __('new project app'), 'modal' => 'application-create-dialog', 'modalOpen' => $applicationCreateDialogOpen],
+        ['label' => __('Provision server'), 'href' => $serverCreateDialogUrl, 'keywords' => __('new cloud infrastructure'), 'modal' => 'server-create-dialog', 'modalUrl' => $serverCreateContentUrl, 'modalOpen' => $serverCreateDialogOpen],
+        ['label' => __('Import existing server'), 'href' => route('servers.import.create'), 'keywords' => __('ssh migrate')],
+        ['label' => __('Add website'), 'href' => $websiteCreateDialogUrl, 'keywords' => __('domain site'), 'modal' => 'website-create-dialog', 'modalUrl' => $websiteCreateContentUrl, 'modalOpen' => $websiteCreateDialogOpen],
+        ['label' => __('Connect repository'), 'href' => $repositoryCreateDialogUrl, 'keywords' => __('git source deploy'), 'modal' => 'repository-create-dialog', 'modalUrl' => $repositoryCreateContentUrl, 'modalOpen' => $repositoryCreateDialogOpen],
+        ['label' => __('View deployments'), 'href' => route('builds.index'), 'keywords' => __('build history releases')],
+        ['label' => __('Open live logs'), 'href' => route('websites.index'), 'keywords' => __('runtime logs')],
+        ['label' => __('Observability'), 'href' => route('observability.index'), 'keywords' => __('alerts status incidents')],
+        ['label' => __('Database operations'), 'href' => route('databases.index'), 'keywords' => __('mysql postgres clone credentials inspect')],
+        ['label' => __('High availability'), 'href' => route('load-balancers.index'), 'keywords' => __('load balancer failover nodes traffic')],
+        ['label' => __('API and automation'), 'href' => route('automation.index'), 'keywords' => __('tokens schedules workflow')],
+        ['label' => __('Product guide'), 'href' => route('docs'), 'keywords' => __('help documentation')],
+    ];
 @endphp
 
-<x-layouts.core :title="$resolvedTitle" :description="$description">
+<x-signal.layouts.core :title="$resolvedTitle" :description="$description" product-key="deployer">
     <a href="#main-content" class="ui-skip-link">
         {{ __('Skip to main content') }}
     </a>
-    <div
-        data-mobile-shell
-        class="min-h-screen overflow-x-hidden lg:flex"
-        x-data="{
-            menu: false,
-            palette: false,
-            paletteQuery: '',
-            paletteIndex: -1,
-            lastPaletteTrigger: null,
-            workspaceSearchTimer: null,
-            workspaceSearchRequest: null,
-            workspaceSearchSequence: 0,
-            workspaceSearchResults: '',
-            workspaceSearchLoading: false,
-            workspaceSearchError: false,
-            paletteLinks() {
-                return [...(this.$refs.paletteResults?.querySelectorAll('[data-palette-item]') ?? [])]
-                    .filter((element) => element.offsetParent !== null);
-            },
-            movePalette(delta) {
-                const links = this.paletteLinks();
-                if (!links.length) {
-                    this.paletteIndex = -1;
-                    this.$refs.paletteInput.focus();
-                    return;
-                }
-                if (this.paletteIndex < 0) {
-                    this.paletteIndex = delta > 0 ? 0 : links.length - 1;
-                } else {
-                    this.paletteIndex = (this.paletteIndex + delta + links.length) % links.length;
-                }
-                links[this.paletteIndex]?.focus();
-            },
-            movePaletteTo(index) {
-                const links = this.paletteLinks();
-                if (!links.length) {
-                    this.paletteIndex = -1;
-                    this.$refs.paletteInput.focus();
-                    return;
-                }
-                this.paletteIndex = Math.min(Math.max(index, 0), links.length - 1);
-                links[this.paletteIndex]?.focus();
-            },
-            resetPaletteSelection() {
-                this.paletteIndex = -1;
-            },
-            openPalette(trigger = null) {
-                this.palette = true;
-                this.lastPaletteTrigger = trigger;
-                this.paletteQuery = '';
-                this.paletteIndex = -1;
-                this.workspaceSearchResults = '';
-                this.workspaceSearchError = false;
-                this.workspaceSearchLoading = false;
-                this.workspaceSearchSequence += 1;
-                this.workspaceSearchRequest?.abort();
-                this.$nextTick(() => {
-                    const dialog = this.$refs.commandPalette;
+    <div data-mobile-shell class="min-h-screen overflow-x-hidden">
 
-                    if (dialog && ! dialog.open) {
-                        dialog.showModal();
-                    }
+        <x-signal.layouts.topbar
+            :navigation="$navigation ?? []"
+            :title="$resolvedTitle"
+            product-key="deployer"
+            :product-url-overrides="$productUrlOverrides ?? null"
+            :shared-context-unavailable="$sharedContextUnavailable ?? false"
+        />
 
-                    this.$refs.paletteInput.focus();
-                });
-            },
-            closePalette() {
-                this.palette = false;
-                this.workspaceSearchRequest?.abort();
-                this.workspaceSearchSequence += 1;
-
-                if (this.$refs.commandPalette?.open) {
-                    this.$refs.commandPalette.close();
-                }
-
-                this.restorePaletteFocus();
-            },
-            queueWorkspaceSearch() {
-                window.clearTimeout(this.workspaceSearchTimer);
-                this.workspaceSearchRequest?.abort();
-                this.workspaceSearchSequence += 1;
-                const sequence = this.workspaceSearchSequence;
-                const query = this.paletteQuery.trim();
-                this.workspaceSearchResults = '';
-                this.workspaceSearchError = false;
-
-                if (query === '') {
-                    this.workspaceSearchLoading = false;
-                    return;
-                }
-
-                this.workspaceSearchLoading = true;
-                this.workspaceSearchTimer = window.setTimeout(async () => {
-                    const controller = new AbortController();
-                    this.workspaceSearchRequest = controller;
-                    const url = new URL('{{ route('search.index') }}', window.location.href);
-                    url.searchParams.set('q', query);
-                    url.searchParams.set('fragment', 'workspace');
-
-                    try {
-                        const response = await fetch(url, {
-                            signal: controller.signal,
-                            headers: { Accept: 'text/html', 'X-Requested-With': 'XMLHttpRequest' },
-                        });
-
-                        if (!response.ok) {
-                            throw new Error(`Workspace search failed with ${response.status}`);
-                        }
-
-                        const body = await response.text();
-                        if (sequence !== this.workspaceSearchSequence) {
-                            return;
-                        }
-
-                        this.workspaceSearchResults = body;
-                    } catch (error) {
-                        if (error.name !== 'AbortError' && sequence === this.workspaceSearchSequence) {
-                            this.workspaceSearchError = true;
-                        }
-                    } finally {
-                        if (sequence === this.workspaceSearchSequence) {
-                            this.workspaceSearchLoading = false;
-                            this.workspaceSearchRequest = null;
-                        }
-                    }
-                }, 180);
-            },
-            restorePaletteFocus() {
-                this.$nextTick(() => {
-                    const remembered = this.lastPaletteTrigger;
-                    const trigger = remembered?.isConnected && remembered.offsetParent !== null
-                        ? remembered
-                        : [this.$refs.paletteToggle, this.$refs.mobilePaletteToggle, this.$refs.mobileQuickPaletteToggle]
-                            .find((element) => element && element.offsetParent !== null);
-                    this.lastPaletteTrigger = null;
-                    trigger?.focus();
-                });
-            }
-        }"
-        @keydown.escape.window="if (palette) { closePalette() } else if (menu) { menu = false; $nextTick(() => $refs.navigationToggle.focus()) }"
-        @keydown.window.prevent.cmd.k="openPalette()"
-        @keydown.window.prevent.ctrl.k="openPalette()"
-    >
-
-        <x-layouts.sidebar :navigation="$navigation ?? []" />
-        <div class="min-w-0 flex-1">
-            <header class="sticky top-0 z-30 flex h-[var(--header-height)] items-center justify-between gap-4 border-b border-line bg-surface/90 px-5 backdrop-blur sm:px-8" data-mobile-header>
-                <div class="flex min-w-0 items-center gap-3">
-                    <button type="button" x-ref="navigationToggle" class="ui-icon-btn lg:hidden" aria-label="{{ __('Open navigation') }}" aria-controls="app-mobile-nav" :aria-expanded="menu.toString()" @click="menu = true; $nextTick(() => $refs.closeNavigation.focus())">
-                        <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#menu"></use></svg>
-                    </button>
-                    <div class="min-w-0">
-                        <div class="hidden items-center gap-2 text-xs text-muted sm:flex">
-                            <span>{{ config('app.name') }}</span>
-                            <svg class="h-3.5 w-3.5 text-subtle" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>
-                            <span class="truncate font-bold text-ink">{{ $resolvedTitle }}</span>
-                        </div>
-                        <div class="truncate text-sm font-bold text-ink sm:hidden">{{ $resolvedTitle }}</div>
-                    </div>
-                </div>
-                <div class="flex items-center gap-2">
-                    <button type="button" x-ref="paletteToggle" class="ui-btn ui-btn-secondary ui-btn-sm hidden sm:inline-flex" aria-label="{{ __('Jump to') }}" aria-controls="command-palette" aria-haspopup="dialog" aria-keyshortcuts="Control+K Meta+K" @click="openPalette($event.currentTarget)">
-                        <svg class="h-3.5 w-3.5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
-                        <span class="hidden lg:inline">{{ __('Jump to') }}</span>
-                        <kbd class="ui-kbd hidden lg:inline-flex">⌘K</kbd>
-                    </button>
-                    <button type="button" x-ref="mobilePaletteToggle" class="ui-icon-btn sm:hidden" aria-controls="command-palette" aria-haspopup="dialog" aria-label="{{ __('Open quick navigation') }}" @click="openPalette($event.currentTarget)">
-                        <svg class="h-[18px] w-[18px] stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#command"></use></svg>
-                    </button>
-                    <a href="{{ url('/') }}" class="ui-btn ui-btn-secondary ui-btn-sm hidden sm:inline-flex">{{ __('View public site') }}</a>
-                    <button type="button" class="ui-icon-btn" data-theme-toggle aria-label="{{ __('Use dark theme') }}" aria-pressed="false">
-                        <svg class="h-[19px] w-[19px] stroke-2 dark:hidden" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#moon"></use></svg>
-                        <svg class="hidden h-[19px] w-[19px] stroke-2 dark:block" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#sun"></use></svg>
-                    </button>
-                </div>
-            </header>
-
-            <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="mx-auto max-w-content px-5 py-8 pb-24 sm:px-8 sm:py-10 lg:pb-10">
-                <x-alerts.flash />
-                {{ $slot }}
-            </main>
-        </div>
-        <x-layouts.mobile-navigation :navigation="$navigation ?? []" />
-
-        <nav data-mobile-quick-navigation class="ui-bottom-nav lg:hidden" aria-label="{{ __('Mobile quick actions') }}">
-            <a href="{{ route('dashboard') }}" data-mobile-quick-action="home" @class(['ui-bottom-nav-link']) @if(request()->routeIs('dashboard')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#view-grid"></use></svg><span>{{ __('Home') }}</span></a>
-            <a href="{{ $applicationCreateDialogUrl }}" data-mobile-quick-action="create" data-modal-trigger="application-create-dialog" aria-controls="application-create-dialog" aria-expanded="{{ $applicationCreateDialogOpen ? 'true' : 'false' }}" @class(['ui-bottom-nav-link']) @if($applicationCreateDialogOpen) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#cloud-upload"></use></svg><span>{{ __('New app') }}</span></a>
-            <button type="button" data-mobile-quick-action="search" x-ref="mobileQuickPaletteToggle" class="ui-bottom-nav-link" @click="openPalette($event.currentTarget)"><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#code"></use></svg><span>{{ __('Search') }}</span></button>
-            <a href="{{ route('notifications.index') }}" data-mobile-quick-action="alerts" @class(['ui-bottom-nav-link', 'relative']) @if(request()->routeIs('notifications.*')) aria-current="page" @endif><svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#information-circle"></use></svg><span>{{ __('Alerts') }}</span>@if(($navigation['unread_notifications'] ?? 0) > 0)<span class="ui-status-dot absolute right-3 top-1" style="--ui-status-dot: var(--ui-danger)" aria-label="{{ __('Unread alerts') }}"></span>@endif</a>
-        </nav>
+        <main id="main-content" tabindex="-1" data-mobile-main data-mobile-content class="ui-layout-gutter mx-auto w-full max-w-content py-7 sm:py-9">
+            <x-signal.ui.flash-messages />
+            {{ $slot }}
+        </main>
+        <x-signal.layouts.mobile-quick-navigation
+            :create-url="$applicationCreateDialogUrl"
+            :create-open="$applicationCreateDialogOpen"
+        />
+        <x-signal.layouts.command-palette
+            :navigation="$navigation ?? []"
+            :search-url="route('search.index')"
+            :search-action-url="route('search.index')"
+            :extra-items="$deployerCommandItems"
+        />
 
         <div
             data-network-status
@@ -244,65 +93,6 @@
             data-online-message="{{ __('Connection restored. Refresh if the current page is stale.') }}"
         ></div>
 
-        <dialog id="command-palette" x-ref="commandPalette" class="ui-dialog ui-command-dialog max-h-[80vh] overflow-hidden" role="dialog" aria-modal="true" aria-labelledby="command-palette-title" data-workspace-search-dialog @cancel.prevent="closePalette()" @keydown.arrow-down.prevent="movePalette(1)" @keydown.arrow-up.prevent="movePalette(-1)" @keydown.home.prevent="movePaletteTo(0)" @keydown.end.prevent="movePaletteTo(paletteLinks().length - 1)">
-            <div class="p-5 sm:p-6">
-                <div class="flex items-start justify-between gap-4">
-                    <div>
-                        <p class="ui-eyebrow">{{ __('Quick navigation') }}</p>
-                        <h2 id="command-palette-title" class="mt-2 text-xl font-extrabold text-ink">{{ __('Search workspace') }}</h2>
-                        <p class="mt-2 text-sm leading-6 text-muted">{{ __('Search pages, resources and workspace actions without leaving the keyboard.') }}</p>
-                    </div>
-                    <button type="button" class="ui-icon-btn" aria-label="{{ __('Close workspace search') }}" @click="closePalette()">
-                        <svg class="h-5 w-5 stroke-2" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#close"></use></svg>
-                    </button>
-                </div>
-                <form method="GET" action="{{ route('search.index') }}" class="mt-6">
-                    <label for="command-palette-query" class="sr-only">{{ __('Search commands and workspace resources') }}</label>
-                    <input id="command-palette-query" x-ref="paletteInput" x-model="paletteQuery" @input="resetPaletteSelection(); queueWorkspaceSearch()" name="q" type="search" maxlength="100" autocomplete="off" class="ui-input text-base" placeholder="{{ __('Search commands and workspace resources…') }}">
-                </form>
-                <nav x-ref="paletteResults" class="mt-4 grid max-h-[min(28rem,55vh)] gap-1 overflow-y-auto" aria-label="{{ __('Quick actions') }}" role="listbox">
-                    @foreach ([
-                        [__('Dashboard'), route('dashboard'), __('overview home')],
-                        [__('Create application'), $applicationCreateDialogUrl, __('new project app')],
-                        [__('Provision server'), $serverCreateDialogUrl, __('new cloud infrastructure')],
-                        [__('Import existing server'), route('servers.import.create'), __('ssh migrate')],
-                        [__('Add website'), $websiteCreateDialogUrl, __('domain site')],
-                        [__('Connect repository'), $repositoryCreateDialogUrl, __('git source deploy')],
-                        [__('View deployments'), route('builds.index'), __('build history releases')],
-                        [__('Open live logs'), route('websites.index'), __('runtime logs')],
-                        [__('Observability'), route('observability.index'), __('alerts status incidents')],
-                        [__('Database operations'), route('databases.index'), __('mysql postgres clone credentials inspect')],
-                        [__('High availability'), route('load-balancers.index'), __('load balancer failover nodes traffic')],
-                        [__('API and automation'), route('automation.index'), __('tokens schedules workflow')],
-                        [__('Product guide'), route('docs'), __('help documentation')],
-                    ] as [$label, $url, $keywords])
-                        @php
-                            $commandModal = match ($label) {
-                                __('Create application') => ['application-create-dialog', null, $applicationCreateDialogOpen],
-                                __('Provision server') => ['server-create-dialog', $serverCreateContentUrl, $serverCreateDialogOpen],
-                                __('Add website') => ['website-create-dialog', $websiteCreateContentUrl, $websiteCreateDialogOpen],
-                                __('Connect repository') => ['repository-create-dialog', $repositoryCreateContentUrl, $repositoryCreateDialogOpen],
-                                default => null,
-                            };
-                        @endphp
-                        <a id="command-palette-result-{{ $loop->index }}" href="{{ $url }}" @if($commandModal) data-modal-trigger="{{ $commandModal[0] }}" @if($commandModal[1]) data-modal-content-url="{{ $commandModal[1] }}" @endif aria-controls="{{ $commandModal[0] }}" aria-expanded="{{ $commandModal[2] ? 'true' : 'false' }}" @click="closePalette()" @endif x-show="paletteQuery === '' || {{ Illuminate\Support\Js::from(strtolower($label.' '.$keywords)) }}.includes(paletteQuery.toLowerCase())" data-palette-item role="option" :aria-selected="paletteLinks()[paletteIndex] === $el ? 'true' : 'false'" class="ui-command-item flex items-center justify-between gap-3 rounded-card px-3 py-3 text-sm font-bold text-muted hover:bg-surface-muted hover:text-ink focus:bg-surface-muted focus:text-ink focus:outline-hidden">
-                            <span>{{ $label }}</span><span aria-hidden="true" class="text-muted">↵</span>
-                        </a>
-                    @endforeach
-                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchLoading" role="status" class="px-3 py-3 text-sm text-muted">{{ __('Searching workspace…') }}</div>
-                    <div x-show="paletteQuery.trim() !== '' && workspaceSearchError" role="alert" class="space-y-2 px-3 py-3 text-sm text-muted">
-                        <p>{{ __('Workspace search could not be loaded.') }}</p>
-                        <button type="button" class="ui-link" @click="queueWorkspaceSearch()">{{ __('Retry') }}</button>
-                    </div>
-                    <div x-show="workspaceSearchResults !== ''" x-html="workspaceSearchResults"></div>
-                    <p x-show="paletteQuery.trim() !== '' && !workspaceSearchLoading && !workspaceSearchError && workspaceSearchResults === '' && paletteLinks().length === 0" role="status" class="px-3 py-3 text-sm text-muted">
-                        {{ __('No matching quick actions. Press Enter to search all workspace resources.') }}
-                    </p>
-                    <p class="mt-3 border-t border-line pt-3 text-[11px] text-subtle">{{ __('Press Enter to search all workspace resources for your exact query.') }}</p>
-                </nav>
-            </div>
-        </dialog>
-
         @if ($applicationCreateDialogHosted)
             <x-scenes.projects.create-dialog
                 :templates="$applicationCreationTemplates ?? []"
@@ -312,7 +102,7 @@
         @endif
 
         @if ($providerCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="provider-create-dialog"
                 :title="__('Add provider')"
                 :description="__('Connect an infrastructure or source-control credential to this workspace.')"
@@ -328,11 +118,11 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading provider form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
         @if ($serverCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="server-create-dialog"
                 :title="__('Add server')"
                 :description="__('Choose a provider and infrastructure profile, then start server provisioning.')"
@@ -358,11 +148,11 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading server form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
         @if ($websiteCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="website-create-dialog"
                 :title="__('Add website')"
                 :description="__('Choose a server, configure deployment health checks, and create a new deployment target.')"
@@ -385,11 +175,11 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading website form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
         @if ($repositoryCreateDialogHosted)
-            <x-dialogs.modal
+            <x-signal.overlays.modal
                 id="repository-create-dialog"
                 :title="__('Add repository')"
                 :description="__('Connect a source repository to an active website and deployment branch.')"
@@ -411,8 +201,8 @@
                         <p class="p-5 text-sm text-muted">{{ __('Loading repository form…') }}</p>
                     @endif
                 </div>
-            </x-dialogs.modal>
+            </x-signal.overlays.modal>
         @endif
 
     </div>
-</x-layouts.core>
+</x-signal.layouts.core>

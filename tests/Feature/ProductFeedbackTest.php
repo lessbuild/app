@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ProductFeedback;
-use App\Models\User;
+use App\Modules\Deployer\Models\ProductFeedback;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;

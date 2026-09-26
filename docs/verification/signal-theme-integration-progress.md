@@ -1,5 +1,847 @@
 # Signal theme integration progress
 
+## Slice 163 — apply the current Signal product templates and tighten Deployer's theme guard — 2026-09-24
+
+Source and implementation:
+
+- Checked `lessbuild/template` `main` at `bcc64939c8a49891180e8065544474f1918e1e8b` (`Add job, social, and finance landing pages`). Its changes since `d3ca9bf3b1e6b2968074198f8c7684cfa6a69f26` add generic landing templates and leave the Buildpusher product pages, shared product styles/tokens, and authenticated Topbar SaaS reference unchanged.
+- Brought the current Signal product tokens and responsive marketing component styles into the one shared theme stylesheet. Added the Signal `layers`, `pulse`, and `chart` icons and made the reusable product-card accept a constrained accent and shared icon.
+- Updated the Buildpusher root overview to use the current product-led hero and a reusable `x-signal.blocks.product-connections` map. The map links to the real product-description routes and clearly describes project relationships without pretending that example resources or metrics are live data. The existing app feature cards, separate-plan copy, workspace CTA, model explanation, and product pages remain in place.
+- Added a Deployer architecture regression that rejects a return to `x-ui.*` and `x-dialogs.*` in module views. Deployer's `x-layouts.app` continues to load the shared Signal document, Topbar SaaS shell, theme runtime, and stylesheet.
+- Updated the current source pin and mapping in `docs/signal-component-library.md` and recorded the marketing composition in `docs/unified-application-plan.md`.
+
+Verification state:
+
+- Updated `MarketingPagesTest`, `LocalUiAssetTest`, `DashboardTest`, `AccountLifecycleTest`, `AccessRequestTest`, and `SignalThemeArchitectureTest` to cover the new public hero, product connections, shared accents, and Deployer component boundary. **These tests have not been run, as requested, until the full implementation plan is complete.**
+- `php artisan view:cache` and `view:clear`, `npm run build`, PHP syntax checks, `vendor/bin/pint --test` for the edited PHP files, and `git diff --check` all passed. The built Signal stylesheet is `assets/app-BGygQfWX.css` (124.86 KB, 23.24 KB gzip).
+- The live unauthenticated Deployer root currently redirects to `/home`, then the product login flow. That does not expose an authenticated dashboard for visual comparison, so the reported old appearance still needs authenticated release verification after the planned implementation is ready. No code was published in this slice.
+
+Next task: complete the remaining shared-workspace and module feature gates, then run the deferred test suite and compare authenticated product screens with the current Signal references before publishing the finished release.
+
+## Slice 162 — verify Monitor integration destination safety contracts — 2026-09-24
+
+Boundary and implementation:
+
+- Audited Monitor's existing integration capability against the feature matrix. Provider-specific destinations, workspace-scoped management/routing, encrypted endpoint and signing-key fields, secret rotation/archive, delivery history, test-send throttling, and its pinned-IP no-redirect transport already live in the Monitor module; the old matrix row incorrectly said the feature was not migrated.
+- Added deferred regression coverage for supported provider host/path formats, rejection of malformed or mismatched URLs, and DNS result sets containing private/mixed or unavailable addresses. The tests use a fake DNS resolver and do not send provider requests.
+
+Verification status:
+
+- Source review confirmed each allowlist, encrypted cast, rate-limited route, and IP-pinning behavior. The new test passes PHP syntax validation and Pint; `git diff --check` passed. No tests or provider requests have been run for this slice.
+
+## Slice 161 — remove obsolete product homepages — 2026-09-24
+
+Boundary and implementation:
+
+- Removed the unreferenced 72 KB Monitor and Analytics welcome pages, each of which carried a stale compiled Tailwind theme. Their product root routes already resolve to the Monitor dashboard and Analytics dashboard; Deployer's root resolves to `/home` and its authenticated dashboard.
+- Removed the Analytics architecture scan's special-case exclusion for `welcome.blade.php` and added a deferred route/source regression covering all three product roots and the deleted pages.
+
+Verification status:
+
+- Repository search found no route or view references to either deleted page. PHP syntax, Pint, Blade compilation, `git diff --check`, and `npm run build` passed. The shared CSS bundle fell from 139.66 KB (27.18 KB gzip) to 117.37 KB (21.85 KB gzip) after Tailwind stopped scanning the stale welcome-page CSS. Tests remain unrun under the plan-wide deferral.
+
+## Slice 160 — finish Core product-view control componentization — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced the four remaining raw hidden inputs in Core workspace and project screens with the shared Signal input component. Explicitly disabled old-input restoration for these transport fields so their values continue to come only from the current authorized action.
+- Added Core view-directory architecture coverage for surfaces, feedback/status primitives, controls, overlays, and legacy namespaces. Tests are authored but remain unrun until the plan is complete.
+
+Verification status:
+
+- Static scan now finds no raw controls/dialogs, card/panel wrappers, status primitives, or legacy UI namespaces in `app/Core/Views` and `resources/views/core`. PHP syntax, Pint, Blade compilation, and `git diff --check` passed. No tests or browser checks have been run for this slice.
+
+## Slice 159 — protect Analytics Signal component adoption — 2026-09-24
+
+Boundary and implementation:
+
+- Audited all 24 Analytics Blade views. They already contain no raw card/panel or status primitives, native controls/dialogs, or legacy `x-ui`/`x-dialogs` calls. Added a feature architecture regression so future Analytics pages cannot regress that shared Signal boundary.
+- The regression is authored but remains unrun until the complete plan, per the user's instruction.
+
+Verification status:
+
+- Static source scan passed for all 24 Analytics views. PHP syntax, Pint, Blade compilation, and `git diff --check` passed. No tests or browser checks have been run for this slice.
+
+## Slice 158 — componentize Deployer feedback and metric primitives — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced Deployer's 27 raw alert wrappers, three status badges, three progress bars, six dashboard metric surfaces, and four operational status dots with shared Signal components. The stat component now supports slot mode for compact metrics, and the shared progress component supports a themed fill class.
+- Moved status-dot styling into the Signal component stylesheet and removed its duplicate legacy rule. Extended Deployer architecture coverage to reject raw feedback, status, progress, and metric primitives; added component rendering regressions. These tests are authored but remain unrun until the plan is complete.
+
+Verification status:
+
+- Source scan confirms no Deployer view-owned alert, badge, progress, status-dot, or stat wrapper remains; statistic sub-elements and metrics already inside shared Signal components remain. `php artisan view:cache`, targeted Pint, PHP syntax validation, `git diff --check`, and `npm run build` passed. No tests or browser checks have been run.
+
+## Slice 157 — componentize Monitor feedback and progress primitives — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced Monitor's 40 raw alert wrappers, its remaining raw status badge, and three inline progress bars with shared Signal alert, badge, and progress components. The alert component now preserves the page's `div`, `p`, `section`, and `aside` semantics; the progress primitive supports labeled progress bars/meters with clamped values and accessible ranges.
+- Added architecture coverage rejecting raw Monitor alert/badge/progress classes and component-rendering regressions for alert semantic tags/tones and progress bounds, role, label, and output width. They are authored but remain unrun until plan completion.
+
+Verification status:
+
+- Static source scans found no raw Monitor alert, badge, progress, card, or panel classes and no native form controls or dialogs. `php artisan view:cache`, Pint, changed-file PHP syntax checks, and `git diff --check` pass. No tests or browser checks have been run.
+
+## Slice 156 — componentize Monitor view surfaces and controls — 2026-09-24
+
+Boundary and implementation:
+
+- Converted Monitor's raw card and panel wrappers across its dashboard, alerting, incidents, issues, metrics, settings, reports, and status pages into shared `x-signal.ui.card` and `x-signal.ui.panel` compositions. The component semantic allowlist now includes `dl`, preserving the dashboard's definition-list markup.
+- Converted all 31 raw Monitor inputs, including hidden transport/version fields, to `x-signal.ui.input` with old-input restoration disabled for server-supplied values. The authentication theme toggle now uses `x-signal.ui.icon-button`, and the compatibility command palette uses the shared Signal modal and input components.
+- Added architecture coverage that rejects raw Monitor card/panel classes, native controls, and dialogs. Existing Monitor button/form aliases still forward into the shared Signal implementations.
+
+Verification status:
+
+- Static source scans found no raw Monitor card/panel classes or native button/input/select/textarea/dialog tags. `php artisan view:cache` compiled all Blade templates successfully; the view cache was cleared afterward. Pint, feature-test PHP syntax, and `git diff --check` pass. No tests or browser checks have been run under the plan's test deferral.
+
+## Slice 155 — use current Signal components through the Deployer shell — 2026-09-24
+
+Boundary and implementation:
+
+- The Deployer shell now calls the shared Signal modal, mobile quick-navigation, and flash-message components directly. Authentication and public navigation use shared Signal panels, badges, buttons, links, icon buttons, and an accessible overlay-backdrop button rather than compatibility aliases or raw controls.
+- Migrated the Deployer settings-section composition into `x-signal.ui.settings-section`; its mobile disclosure and content surfaces compose Signal cards. The old `x-forms.section` remains available for other consumers.
+- Converted shared topbar and mobile-navigation action controls to `x-signal.ui.button` and `x-signal.ui.icon-button`, while preserving POST workspace switching/logout, current-workspace state, accessibility attributes, and responsive behavior. Modal close actions use the shared icon-button component.
+- Added layout architecture coverage requiring direct Signal component calls and rejecting raw controls/old aliases in the Deployer and shared shells. This new coverage remains unrun until the unified plan is complete.
+
+Verification status:
+
+- `php artisan view:cache` compiled every Blade template successfully. Pint, changed-file PHP syntax checks, and `git diff --check` pass. A targeted scan found no raw HTML form controls or `x-ui`/`x-dialogs` calls in the Deployer views and updated shared shell files. No tests or release have been run for this slice.
+
+## Slice 154 — componentize Deployer card and panel surfaces — 2026-09-24
+
+Boundary and implementation:
+
+- Replaced 109 raw Deployer `ui-card` and `ui-panel` element wrappers across 33 Blade views with `x-signal.ui.card` and `x-signal.ui.panel`. The shared card/panel components now support the semantic link, list-item, and paragraph elements already used by those compositions.
+- Kept route destinations, IDs, Livewire keys, accessible labels, data hooks, event handlers, and request behavior on the component attributes. Deployer's legacy `x-layouts.app` name remains a compatibility wrapper over the shared Signal document, Topbar SaaS shell, and command palette.
+- Added an architecture regression that scans Deployer views for raw surface classes and native form controls. It is authored but unrun until plan completion.
+
+Verification status:
+
+- `php artisan view:cache` compiled all Blade templates; Pint, PHP syntax checks, and `git diff --check` pass. The architecture regression remains unrun until plan completion, and no release has been created.
+
+## Slice 153 — include mapped Deployer operational tasks in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Added Deployer-owned read adapters for scheduled task runs, database clones, and server-command execution history. Scheduled runs require a mapped environment; database clones require both source and destination environments to be mapped into the current accessible workspace; server commands require a mapped environment and a server owned by that Deployer organization.
+- The shared feed receives only generic task labels, recognized lifecycle status, timestamps, and links to existing Deployer pages. Command text/output, scheduled-task output, database errors, and resource configuration are not selected for display. No product queue or retry path was replaced.
+- Added regression coverage for mapped task states, clone isolation when one endpoint is unmapped, server organization checks, result links, and redaction. Tests remain unrun until the implementation plan is complete.
+
+Verification status:
+
+- PHP syntax checks, Pint formatting, and `git diff --check` pass. The feature regressions remain unrun until plan completion, and no release has been created.
+
+## Slice 152 — include Deployer backup and recovery work in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Deployer's module-owned workspace provider now includes recent/current backup, restore, and independent restore-verification task state for websites reached through authorized Core-mapped environments. Current queued/running tasks remain visible; terminal records are limited to the recent window.
+- Each summary uses generic status guidance and links to Deployer's existing backup history. The adapter selects no snapshot identifiers, error content, credentials, or backup payload data; detailed recovery evidence remains on the authorized Deployer screen.
+- Added regression coverage for running backup, failed restore, queued verification, old-record exclusion, and error/snapshot redaction. Coverage remains unrun until plan completion, per the user's instruction.
+
+Verification status:
+
+- PHP syntax checks, Pint formatting, and `git diff --check` pass. A clean shallow checkout confirmed upstream `main` is still `b4b002356c5e92b7214569f395d6991f6edc3feb`; Buildpusher's Signal `theme.css` matches it byte for byte, with only the documented Laravel validation and code-block additions in `components.css`. The live hosts still reference an older compiled CSS bundle than the current local build. Regression coverage remains unrun until plan completion, and no release has been created for this slice.
+
+## Slice 151 — show measured Deployer deployment progress in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Deployer build activity now reports recorded deployment stages using `RepositoryDeploymentPlan`, including the correct full-stage completion for successful legacy builds. It does not infer per-stage timestamps or expose build failure text.
+- Added regression coverage for an active deployment at 6 of 15 stages; the test remains deferred until the complete plan is ready.
+
+Verification status:
+
+- PHP syntax checks and `git diff --check` pass. No test command or release has been run for this slice.
+
+## Slice 150 — bind mapped Deployer resources to the Core project workspace — 2026-09-24
+
+Boundary and implementation:
+
+- Tightened Deployer's Core project and environment links so an authorized Deployer organization must resolve to the same Core workspace as the project resource mapping. Local membership in a different workspace is insufficient to expose that project's Deployer records.
+- Added a regression case where the user is an owner of both Core workspaces and the Deployer organization mapping points at the other one. The activity provider must return no Deployer run for the first project's environment.
+- This also guards the new provisioning activity because it receives only environments that pass this mapping check.
+
+Verification status:
+
+- Regression coverage is written but remains unrun until the plan is complete. PHP syntax checks and `git diff --check` pass. No release has been created.
+
+## Slice 149 — include Monitor telemetry processing in shared activity — 2026-09-24
+
+Boundary and implementation:
+
+- Added and registered a Monitor-owned workspace activity adapter for durable telemetry receipts. It includes queued, processing, retrying, completed, failed, and unrecognized states only through an active Core-mapped Monitor environment, active Core product/project access, local Monitor membership, and a source-workspace mapping to the current Core workspace.
+- Hardened Monitor's shared Core project link adapter as well: applications and environments are constrained to source workspaces explicitly mapped to the same Core project workspace, so summaries and resource destinations share the boundary.
+- The adapter reports bounded accepted/event counts and links to the Monitor environment. Payloads, receipt keys, processing tokens, IDs in descriptive text, error codes, and raw failure content stay out of the shared detail.
+- Added separate-database feature coverage for an authorized failure, a receipt whose stored workspace does not match the mapped environment, and a source workspace remapped to another Core workspace. Tests remain deferred until plan completion.
+
+Verification status:
+
+- PHP syntax checks and `git diff --check` pass. No test command or release has been run for this slice.
+
+## Slice 148 — include Deployer provisioning in shared workspace activity — 2026-09-24
+
+Boundary and implementation:
+
+- Extended Deployer's workspace activity provider to include current server and website provisioning records only when they are attached to an active Core-mapped environment, the member still has product and local organization access, and the local resource organization matches the environment project's organization. A website must also match the environment's mapped server when one is present.
+- Exposed queued, waiting, processing, failed, canceled, successful, and unrecognized states with measured setup-stage counts from Deployer's server-role and website provisioning plans. Successful provisioning appears for 30 days; the feed links to the existing authorized Deployer record and leaves queues and retries owned by Deployer.
+- Activity text stays generic and does not include provider failure messages, IP addresses, passwords, IDs, or credentials. Added feature coverage for visible progress, result links, cross-organization/mismatched mappings, and secret redaction.
+
+Verification status:
+
+- The regression test was written but has not been run, per the user's request to defer tests until the implementation plan is complete. This slice is therefore implemented but not verified. No release has been created.
+
+Next task: continue I8 task-center provider coverage for the remaining durable product operations, without running tests until plan completion.
+
+## Slice 147 — align Deployer navigation with the latest Signal shell — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `b4b002356c5e92b7214569f395d6991f6edc3feb`. Upstream adds portable theme-package import/export and contrast reporting to its builder; shared theme styles and the Topbar SaaS layout are unchanged since `49c26b48dd44335901da95926963339e644eedae`.
+- The Laravel product shell still exposed both navigation rows from 1024px. Updated its product navigation and shared drawer to follow Signal's `xl` breakpoint: the drawer remains the navigation surface below 1280px, including Deployer's crowded compact-laptop widths. Applied Signal's existing horizontal-scroll treatment to both nav rows while keeping live project, environment, workspace, and product links server-authoritative.
+- Extended the feature and browser regression coverage to assert the drawer at 1279px and desktop navigation at 1280px. No product routes, authorization, data, or workflow behavior changed.
+
+Evidence:
+
+- `SignalThemeArchitectureTest`: 4 tests and 44 assertions passed before the user requested that remaining tests be held until plan completion.
+- The Vite production build completed. The browser suite was interrupted at the user's request before completion; tests will be run after the implementation plan is complete.
+- The change has not been released to production. The current release remains `b0741b4-signal`.
+
+Next task: continue the unified workspace activity work by exposing authorized Deployer server and website provisioning status through the workspace feed.
+
+## Slice 146 — publish the current Signal theme and Deployer shell — 2026-09-24
+
+Boundary and deployment:
+
+- Rechecked `lessbuild/template` `main` at `49c26b48dd44335901da95926963339e644eedae`. The Signal theme stylesheet matches upstream; the shared component stylesheet retains Buildpusher's Laravel validation and code-block additions. Deployer's app shell and product screens already compose the current Signal layout and UI components. The visible mismatch came from production still serving an older release.
+- Built and staged source commit `b0741b4` as `/var/www/buildpusher-unified/releases/b0741b4-signal`, retaining the shared `.env` and storage links. Atomically switched `current` from `0b0fef0` and reloaded PHP-FPM. The source delta contains no migration or Composer lock changes, so this release made no database changes; the previous release remains available for rollback.
+- Updated two stale regression assertions to match Signal's current translucent topbar and `max-w-content` layout.
+
+Evidence:
+
+- `npm run test:signal-theme`: Vite production build and **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth at mobile and desktop widths.
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/LocalUiAssetTest.php tests/Feature/DashboardTest.php`: **107 tests, 3,589 assertions passed**.
+- Live GET checks returned HTTP 200 for the Buildpusher homepage and Auth login. Deployer, Monitor, and Analytics roots handed off to Auth with the original return targets. All five hosts serve `data-storage-namespace="buildpusher-signal"` and the new theme runtime asset. A live browser check seeded the old rose palette and red token overrides: the page used Signal's graphite palette while preserving the existing dark appearance. The deployed dashboard itself was not checked with an authenticated browser session.
+
+## Slice 145 — align product shells with the latest Signal width tokens — 2026-09-24
+
+Boundary and implementation:
+
+- Checked `lessbuild/template` `main` at `49c26b48dd44335901da95926963339e644eedae` (`Add per-workspace brand profiles`). Upstream's shared theme, component catalog, and Topbar SaaS example are unchanged from the previously integrated source. Its current app shell now uses the shared layout gutter and `max-w-content` token consistently for the header, workspace context, and page content; its workspace brand controls are browser-only demo behavior.
+- Updated the shared topbar and Core, Deployer, Monitor, and Analytics shells to use Signal's theme-backed content width and gutter. The Deployer header now follows the current Signal surface treatment. This corrects the overly wide Deployer shell that made the current component library look like the older product layout.
+- Kept workspace identity server-authoritative. The static template's local workspace creation and brand-profile storage are not suitable for Buildpusher's real memberships and access checks.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/Core/WorkspaceWorkflowActivityTest.php tests/Feature/Core/ProjectConnectionDiagnosticsTest.php tests/Feature/Core/ProjectProductLinksTest.php`: **37 tests, 223 assertions passed**.
+- `npm run test:signal-theme`: production Vite build passed; **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth at mobile and desktop widths. The shared theme tokens, navigation drawer, and component treatment remained consistent after the layout-width change.
+- The production release still needs the current feature branch; local shell updates do not change the deployed site until the release is updated.
+
+## Slice 144 — verify latest Signal sources and production theme drift — 2026-09-24
+
+Boundary and findings:
+
+- Fetched `lessbuild/template` `main` at `91d712626f3f50bddb54c16147e579ee4e5addaf` and compared it with the integrated `2235760c85e4251d52b4b81923cd68ffee799b37` source. Upstream has no intervening theme, component, component-catalog, or Topbar SaaS changes; its latest work is the template release-notes page and admin/browser tooling.
+- The current Deployer layout resolves through the shared Signal document and Topbar SaaS shell. Its product screens use the shared Signal controls and page headers. The branch includes the Signal-scoped storage migration from slice 143, which resets stale palette/token overrides while preserving the existing light/dark preference.
+- A live unauthenticated request to `deployer.buildpusher.com` handed off to Auth, whose current HTML still declares `data-storage-namespace="buildpusher"`. The branch declares `buildpusher-signal`; the deployed browser runtime therefore predates the stale-override fix and can continue displaying old saved theme choices. This is a release drift, not a missing Deployer view conversion.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/Core/ProjectProductLinksTest.php tests/Feature/Core/ProjectConnectionDiagnosticsTest.php tests/Feature/Core/DeployerConnectionDiagnosticTest.php tests/Feature/Monitor/CorePlanAuthorityTest.php`: **35 tests, 186 assertions passed**.
+- `vendor/bin/pint --test` on the touched Monitor files and tests, `git diff --check`, and `npm run test:signal-theme`: passed; the browser test confirmed the Signal theme behavior across Core, Deployer, Monitor, Analytics, public, and auth contexts.
+- Production release remains pending because this checkout has no private SSH deployment key. The unauthenticated host check cannot verify an authenticated Deployer dashboard visually.
+
+## Slice 143 — reset stale browser overrides to the current Signal theme — 2026-09-24
+
+Boundary and implementation:
+
+- Checked upstream `lessbuild/template` `main` at `2235760c85e4251d52b4b81923cd68ffee799b37`. Since the integrated `1dfa5aa` revision, upstream has added a browser-only feedback/roadmap example and admin interactions, but no shared theme, component, component-catalog, or Topbar SaaS source changes. Deployer's real feedback page remains database-backed and does not import the example's static roadmap records.
+- The shared document previously read its `buildpusher-*` local-storage keys on every host, so a stale Deployer palette or raw token override could supersede Signal's current defaults. Versioned the shared keyspace to `buildpusher-signal`; old light/dark appearance is carried forward, while stale palette, density, corner, font, preset, and raw token overrides are ignored. New Signal-scoped values continue to work.
+- Updated the source mapping and added browser regression coverage for the storage migration across the shared Deployer shell.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/LocalUiAssetTest.php`: **78 tests, 3,225 assertions passed**.
+- `npm run test:signal-theme`: production Vite build passed; **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth at mobile and desktop widths. The test confirms old Deployer style overrides no longer win while dark mode is preserved.
+- The anonymous Deployer route still redirects into the shared sign-in flow. This environment has no production SSH key or authenticated browser session, so the new versioned theme runtime has not been released or visually checked on an authenticated production dashboard.
+
+## Slice 142 — refresh Deployer with the latest Signal composition — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `e4a59ef9ad8913efc4b4383efebf893d5e3caa82`; its theme and component files match the preceding integration source. Updated the shared component stylesheet with Signal's current comparison-chart, command-palette, and Topbar SaaS navigation treatments, keeping Buildpusher's input-validation and code-block adaptations. Removed stale responsive popover rules that no longer belong to the current Signal implementation.
+- Applied Signal's current topbar link treatment to the cross-product navigation used by Deployer, Monitor, Analytics, and Core. Reworked the shared command palette to use Signal's current command list, section, row, item, and metadata composition; Deployer's server-backed search results and keyboard behavior remain intact.
+- Updated the Signal source record and regression coverage. The latest grouped activity inbox remains a reference pattern only; product activity continues to use authorized module data.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/SignalThemeArchitectureTest.php tests/Feature/LocalUiAssetTest.php`: **78 tests, 3,222 assertions passed**.
+- `npm run test:signal-theme`: production build and **1 browser test passed** across product, public, and auth contexts. `npx playwright test tests/Browser/signal-workspace-search.spec.js tests/Browser/asset-layout.spec.js -g "Signal workspace search renders|dashboard workspace search opens"`: **2 browser tests passed**, covering Deployer's live command palette and cross-product search.
+- Blade view cache, JavaScript syntax, and `git diff --check` passed.
+
+Next task: continue the plan's full product-parity and production visual/accessibility acceptance against the original application inventories.
+
+## Slice 141 — adopt the latest Signal record-detail interactions in Deployer — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `594c17b511533339bb80a2d17b7b2314c0496602` (`Record dashboard release verification`), including the latest component and dashboard sources. The upstream theme tokens and component APIs are unchanged since `cade4159eb13b8609e69c1b7728a69d67c04f22c`; the newer dashboard example adds keyboard-accessible widget ordering and saved date/segment filters. Replaced Deployer's remaining `x-dialogs.*` and `x-avatar` calls with direct `x-signal.overlays.*` and `x-signal.ui.avatar` calls; compatibility adapters remain available to other consumers.
+- Added shared Signal side-sheet and trigger components, with backdrop dismissal, Escape handling, focus containment/return, and scroll-lock preservation. Deployer project details now provide a Signal environment navigator that uses only the already-authorized project environments.
+- Connected Deployer's dashboard search shortcut to the current Signal command-palette runtime, made Escape consistently dismiss its search dialog, and restore URL-backed modal focus after browser history finishes changing. The dashboard's existing widget visibility remains stored server-side per user.
+- The latest custom-popover runtime has no current Laravel consumer; application menus remain native disclosures. The record-detail sample's static customer data was not copied into product screens.
+
+Evidence:
+
+- `php artisan test --compact tests/Feature/LocalUiAssetTest.php tests/Feature/ProjectEnvironmentTest.php tests/Feature/SignalThemeArchitectureTest.php`: **85 tests, 3,321 assertions passed**.
+- `npx playwright test tests/Browser/signal-theme-tokens.spec.js`: **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth contexts, at mobile and desktop sizes; also verified the Deployer side-sheet focus loop, Escape dismissal, focus return, and scroll lock.
+- `npx playwright test tests/Browser/asset-layout.spec.js -g "mobile New app|dashboard workspace search|application detail composers"`: **3 browser tests passed**. `-g "every rendered link and modal hook"`: **1 browser test passed** across the rendered route inventory.
+- `npx playwright test tests/Browser/signal-workspace-search.spec.js`: **1 browser test passed**, including keyboard search and focus restoration.
+- Vite production build, Blade view cache, Pint, JavaScript syntax, and `git diff --check` passed.
+
+Next task: continue the plan's full product-parity and production visual/accessibility acceptance against the original application inventories.
+
+## Slice 140 — refresh Deployer page headers from the current Signal component — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `988fefc475a8646049c91cda4ff96def1fa9c27e` (`Add responsive browser checks and page headers`). Updated the shared Signal page-header to follow its responsive spacing, title anchor, breadcrumb, divider, and action layout while retaining Laravel's icon and metadata slots.
+- Migrated 50 Deployer screens from the legacy heading adapter to direct `x-signal.ui.page-header` use. The main Deployer dashboard's custom greeting header now uses the same component; its quick actions and create-dialog routes remain in place.
+- Updated the theme browser fixture to exercise the real shared page-header in Deployer and each other document context. Refreshed stale Signal source fingerprints and old drawer/dialog assertions so tests check the current theme and navigation behavior.
+
+Evidence:
+
+- `php artisan view:clear && php artisan view:cache`: passed.
+- `php artisan test --compact tests/Feature/LocalUiAssetTest.php tests/Feature/SignalThemeArchitectureTest.php`: **76 tests, 3,181 assertions passed**.
+- `npm run test:signal-theme`: production Vite build passed; **1 browser test passed** across six document contexts at mobile and desktop widths, including page-header visibility, shared tokens, Deployer navigation, drawer placement, and overflow.
+- Scoped Pint and `git diff --check` passed.
+
+Next task: complete authenticated-screen visual and accessibility acceptance with real Deployer, Monitor, and Analytics workspace data after the release path is available.
+
+## Slice 139 — update Deployer to the latest Signal mobile shell — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `a87e553a6c499deaa86163469f018ceff9e2a6c4` (`Keep mobile topbar visible above More sidebar`). Deployer already uses the shared Signal document, Topbar SaaS layout, theme tokens, and `x-signal.ui.*` components; the shared product drawer still covered that shell's two-row header.
+- Adapted the latest topbar layering to the Laravel context-aware shell. The drawer now starts below the measured live header height, which keeps Deployer's workspace, project, and environment controls visible even when the topbar wraps at narrow widths. The shared drawer handles the other product shells the same way.
+- Added architecture and browser assertions for drawer placement across product layouts and mobile/desktop widths.
+
+Evidence:
+
+- `npm run build && npx playwright test tests/Browser/signal-theme-tokens.spec.js`: **1 browser test passed** across Core, Deployer, Monitor, Analytics, public, and auth documents at mobile and desktop sizes. The browser verifies the drawer starts at the live header's bottom edge.
+- `git diff --check`, JavaScript syntax checks, and scoped Pint passed.
+
+Next task: complete the authenticated product visual and accessibility acceptance against real Deployer, Monitor, and Analytics workspaces after release.
+
+## Slice 138 — verify HTTPS cross-host SSO browser handoffs — 2026-09-24
+
+Boundary and implementation:
+
+- Completed the local real-browser acceptance path through auth, Deployer, Monitor, Analytics, and workspace logout using isolated SQLite databases, exact local host origins, and a temporary HTTPS certificate.
+- Kept product sessions host-only and secure, tickets bound to exact issuer/audience origins and single use, and logout revocation shared across product hosts. The exchange accepts a validated origin or the origin-only referrer supplied by browser form navigation.
+- Added a same-host dashboard logout endpoint and allowed only exact configured platform origins in the form-action CSP. `upgrade-insecure-requests` is emitted only on HTTPS responses.
+
+Evidence:
+
+- `npm run test:platform-sso -- --timeout=180000`: **1 Chromium test passed**. It confirms four secure host-only cookies, all product handoffs, session revocation at logout, and a later product request returning to sign-in.
+- `php artisan test --compact tests/Feature/SecurityHeadersTest.php tests/Feature/Core/PlatformAuthenticationTest.php`: **15 tests, 162 assertions passed**. Scoped Pint and `git diff --check` passed.
+- Production authenticated smoke, provider/passkey compatibility, and ambiguous Monitor identity ownership remain release gates; this fixture makes no production database or account changes.
+
+## Slice 137 — apply the latest Signal navigation drawer and responsive layout — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `lessbuild/template` `main` at `c7eba561808f9831530d1bfaeaec81399cafe45c`. Adapted its latest mobile app-sidebar into shared Blade `mobile-sidebar` and `mobile-navigation` components. Replaced the product shells' earlier mobile popover with the Signal slide-in drawer while preserving product links, workspace switching, project/environment context, product sections, support, and logout.
+- Generalized the shared drawer runtime for an explicit breakpoint and desktop-navigation target. Escape dismissal, focus containment/return, scroll locking, and breakpoint close behavior continue to use the shared runtime; no demo/localStorage workspace state was imported.
+- Applied Signal's layout-gutter token to Core, Deployer, Monitor, and Analytics shells. Added the current Signal preview/dialog/table spacing patterns and reduced-motion drawer transitions to the one shared stylesheet.
+
+Evidence:
+
+- `SignalThemeArchitectureTest` and `PlatformAuthenticationTest`: **12 tests, 101 assertions**.
+- `npm run test:signal-theme`: **1 browser test passed** across six document contexts and mobile/desktop viewports. It verifies the shared palette/component tokens, gutters, Deployer active navigation, drawer appearance, product section state, Escape dismissal, focus containment/return, and no horizontal overflow.
+- Vite production build, scoped Pint, JavaScript syntax, and `git diff --check` passed. No database or production runtime changes have been made for this slice yet.
+
+Next task: compare authenticated Deployer, Monitor, and Analytics screens with the current Signal Topbar SaaS reference after release, including light/dark, mobile/desktop, keyboard, and accessibility states.
+
+## Slice 136 — reconcile the live Deployer Signal shell with the current branch — 2026-09-24
+
+Boundary and implementation:
+
+- The active production release was labeled `1325a39`, but its Deployer topbar
+  view did not match the branch at that revision and lacked the current grouped
+  mobile navigation. Rebuilt from the verified `3e07861` branch commit so the
+  deployed Deployer shell uses the same Signal layout and component library as
+  the checked-in source.
+- Kept the shared `.env` and storage symlinks, retained the previous release
+  for rollback, and made no database or account changes.
+
+Evidence and release:
+
+- `SignalThemeArchitectureTest` and `GlobalSearchTest`: **15 tests, 123
+  assertions**. `npm run test:signal-theme`: **1 browser test passed** across
+  product layouts and mobile/desktop viewports. Vite production build, Composer
+  install from the lockfile, route/event/config/view caches, and the five-host
+  SSO route table passed.
+- The `current` symlink now points to `/var/www/buildpusher-unified/releases/3e07861`;
+  its Deployer topbar matches the branch. PHP-FPM was reloaded. The Buildpusher
+  home, product description pages, and central login returned HTTP 200. Product
+  roots handed off to central login as configured; the shared Signal stylesheet
+  returned HTTP 200. No product databases were migrated or modified.
+- Authenticated live-page visual acceptance remains open because the external
+  smoke checks did not use an account session. The shared component and theme
+  behavior is covered by the browser and feature checks above.
+
+Next task: compare representative authenticated Deployer, Monitor, and Analytics
+screens with the Signal Topbar SaaS reference in light/dark themes and at mobile
+and desktop widths, then complete keyboard/accessibility review.
+
+## Slice 135 — verify shared Signal theme propagation across the product shells — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked Signal `main` at `0e8218d8bac1a945fea3cc78e342e9d56b631ca8`; it
+  still changes only `PLAN.md` from the integrated UI revision
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974`. There are no newer upstream
+  component or stylesheet files to import.
+- Added an architecture regression test requiring Core, Deployer, Monitor,
+  Analytics, public, and authentication layouts to use the shared Signal
+  document and theme runtime. Deployer's application wrapper composes the
+  shared topbar with `product-key="deployer"` and the shared Signal stylesheet.
+- Added a browser fixture that exercises Signal's real topbar and shared panel,
+  card, primary button, and labeled input at mobile and desktop widths. One
+  stylesheet build is served across all six contexts while URL-selected palette,
+  radius, typography, and density values are checked, including Deployer's
+  mobile product navigation and active state.
+- Confirmed Deployer has no separate stylesheet or theme entry point. Its
+  source-authored product views use shared `x-signal.ui.*` primitives; its
+  app-specific styles consume Signal semantic tokens.
+
+Evidence and release:
+
+- `npm run test:signal-theme`: **1 browser test passed** across 12 product/layout
+  and viewport combinations. It checks one shared CSS fingerprint, rose primary
+  color, panel/card/control radii, compact input density, editorial typography,
+  accessible button/input labels, active navigation, and horizontal overflow.
+- `SignalThemeArchitectureTest`: **2 tests, 13 assertions**. Pint and
+  `git diff --check` passed.
+- Live unauthenticated checks on 24 September returned the Buildpusher homepage
+  at HTTP 200. Deployer, Monitor, and Analytics guest flows ended at central
+  login and loaded the same fingerprinted Signal stylesheet,
+  `app-uzv_x7JM.css`. This confirms the deployed shared theme entry; authenticated
+  product-page visual acceptance remains open.
+- This slice changes test coverage and documentation only. It does not alter
+  production runtime behavior, data, or database state.
+
+Next task: compare representative authenticated Deployer, Monitor, and Analytics
+screens with the Signal Topbar SaaS reference in light/dark themes and at mobile
+and desktop widths, then complete keyboard/accessibility review.
+
+## Slice 133 — converge Deployer views on the latest Signal component library — 2026-09-24
+
+Boundary and implementation:
+
+- Checked upstream Signal `main`; the current revision is
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974` (`Clamp component popovers on
+  mobile`). Its shared popover clamping styles are present in the application
+  Signal stylesheet.
+- Replaced **1,874** legacy `x-ui.*` tag references across **136** Deployer Blade views
+  with direct `x-signal.ui.*` components. The shared page-heading partial now
+  also calls Signal directly; the old aliases remain available for compatibility.
+- Added a reusable semantic Signal panel component and converted the existing
+  Deployer panel wrappers to it. Server and website inventory filters now use
+  shared Signal field, select, checkbox, filter-panel, insights, stat, and
+  button components while retaining query names, selections, exports, clear
+  links, and mobile layouts.
+- Routed **all 362** Deployer view controls through Signal components: 229
+  inputs (including hidden transport fields), 96 selects, 27 textareas, and 10
+  buttons. Hidden fields retain their names and values without visible styling
+  or generated DOM IDs. The source-authored Deployer views now contain no raw
+  input, select, textarea, button, dialog, or panel wrapper markup.
+- Added shared `link` and `stateful` button variants and a reusable dialog shell
+  for the Livewire-owned server command interface. Existing form names, checked
+  and selected states, Alpine/Livewire bindings, modal IDs, and submission
+  behavior remain intact.
+
+Evidence and release:
+
+- `php artisan view:cache`, `InfrastructureListFilterTest` (**8 tests, 68
+  assertions**), the asset-layout fixture (**313 assertions**), and the shared
+  Signal regression suite passed. Mobile Playwright inventory checks, Pint,
+  JavaScript syntax, Vite build, and `git diff --check` passed.
+- Commit `9529430` is pushed to `origin/feature/unified-platform` and deployed
+  as `/var/www/buildpusher-unified/releases/9529430`; `current` points to that
+  release. It was built from the active release snapshot so production-only
+  runtime files outside the branch were retained. Release-local config, route,
+  and view caches were rebuilt, then PHP-FPM was reloaded. The Buildpusher home,
+  product description pages, and central login return HTTP 200; Deployer,
+  Monitor, and Analytics roots retain their expected 302 redirects, and
+  Deployer health returns HTTP 200. Release `6c4a179` remains available for
+  rollback. No application data or database migrations changed.
+
+Next task: complete the cross-product theme-token demonstration and
+representative Deployer visual/accessibility acceptance.
+
+## Slice 134 — bring Analytics product views onto shared Signal controls — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated Analytics account, authentication, goal, site setup, export, and
+  workspace/team views to the shared Signal page header, panel, card, field,
+  input, select, checkbox, button, link, alert, badge, and empty-state
+  components. Existing routes, HTTP methods, field names, CSRF/method fields,
+  old input, and user-facing feature behavior remain unchanged.
+- Added a shared Signal code-block component backed by theme tokens and moved
+  Analytics installation snippets and verification-token surface onto shared
+  components. Code samples render escaped text rather than executable markup.
+- Removed the last raw Analytics form controls and direct panel/button/input
+  classes from the active product views. Added an architecture regression test
+  to keep future Analytics views on Signal controls and surfaces.
+- Rechecked Signal `main` at `0e8218d8bac1a945fea3cc78e342e9d56b631ca8`;
+  it changes only upstream `PLAN.md` from the integrated UI revision, so there
+  were no newer component or stylesheet files to import. The deployed Deployer
+  release uses the shared Signal topbar shell and the current shared CSS and
+  theme scripts on its login flow.
+
+Evidence and release:
+
+- Blade view caching and the Vite production asset build passed. The Analytics
+  view-architecture and identity/data preservation suite passed: **12 tests**,
+  **134 assertions**. Pint and `git diff --check` passed.
+- Commit `1325a39` was pushed to `origin/feature/unified-platform` and deployed
+  as `/var/www/buildpusher-unified/releases/1325a39`; `current` points to it.
+  The production CSS is `app-uzv_x7JM.css` and returns HTTP 200 with the new
+  `ui-code-block` rules. Buildpusher, the three product description pages, and
+  central login returned HTTP 200. Product roots retained their dashboard/auth
+  redirects, the Deployer health endpoint returned HTTP 200, and Caddy and
+  PHP-FPM are active. A guest request to Deployer ends at central login, which
+  loads the new fingerprinted Signal CSS. No database migrations ran.
+
+Next task: complete the cross-product theme-token demonstration and
+representative authenticated Deployer/Monitor/Analytics visual and accessibility
+acceptance; the full capability-level feature parity review remains open.
+
+## Slice 132 — componentize Deployer automation dialogs — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated deployment schedule, scheduled task, and personal access token
+  dialogs to shared Signal input, textarea, select, checkbox, card, and button
+  components.
+- Kept environment-specific dialog IDs, form names, the old-input dialog
+  sentinel, cron/timezone/timeout defaults, checkbox false values, token expiry
+  choices, and token ability defaults. Field help and validation now use the
+  shared accessible associations.
+
+Evidence and release:
+
+- The automation feature suite passed: **39 tests**, **239 assertions**.
+  Mobile Playwright passed both the token and schedule/task dialog checks.
+  Pint, JavaScript syntax, and `git diff --check` passed.
+- Commit `6c4a179` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/6c4a179`; release `c39b8f1` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, three product pages, and shared login returned
+  HTTP 200. Product roots retained their expected redirects, Deployer health
+  returned HTTP 200, and PHP-FPM is active.
+
+Next task: continue migrating Deployer's remaining security, inventory, and
+feature forms to Signal components while preserving the existing workflows.
+
+## Slice 131 — componentize Deployer recipe and server-import forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated recipe name/description/script/category fields, gallery-publish
+  checkbox, and settings card to shared Signal field, checkbox, select, and card
+  components for both create and edit dialogs.
+- Migrated existing-server inspection fields and the import-review approval
+  form to Signal components. SSH fingerprint and backup confirmations now expose
+  field-level validation; the typed server name remains required.
+- The SSH private key field no longer restores its contents after validation,
+  and `ssh_private_key` is excluded from Laravel's flashed old input. The key
+  remains encrypted when accepted and is still inspected before any import
+  assessment or server is created.
+
+Evidence and release:
+
+- Focused import, creation-dialog, shared UI, and recipe filter suites:
+  **104 passed**, **3,364 assertions**. Mobile Playwright verified the recipe
+  edit dialog alongside provider/repository/website/server edit dialogs. Pint,
+  JavaScript syntax, and `git diff --check` passed.
+- Commit `c39b8f1` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/c39b8f1`; release `13c205f` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, three product pages, and shared login returned
+  HTTP 200. Product roots retained their expected redirects, Deployer health
+  returned HTTP 200, and PHP-FPM is active.
+
+Next task: continue migrating remaining Deployer forms to Signal components and
+close provider/import/provisioning and recipe/gallery feature-parity evidence.
+
+## Slice 130 — componentize Deployer server forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated server provider/type selectors, server name, provider image/region/
+  size catalog fields, and provisioning recipe choices to shared Signal select,
+  input, choice, and card components. The server display-name dialog now uses
+  Signal input, card, and button components.
+- Preserved provider-specific catalog URLs, asynchronously loaded options and
+  selected values, recipe IDs and selection order, old input, field prefixes,
+  validation associations, and existing request names. Provider catalog
+  loading and plan-limit handling remain unchanged.
+
+Evidence and release:
+
+- Focused creation-dialog, display-name, provider-catalog, and shared UI suites:
+  **97 passed**, **3,323 assertions**. A mobile Playwright check verified all
+  server creation fields, each recipe choice card, and the display-name dialog.
+  Pint, JavaScript syntax, and `git diff --check` passed.
+- Commit `13c205f` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/13c205f`; release `41bc412` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, three product pages, and shared login returned
+  HTTP 200. Deployer, Monitor, and Analytics roots retained their expected
+  redirects; PHP-FPM is active.
+
+Next task: continue componentizing the remaining Deployer feature forms and
+actions; provider import, provisioning, webhook, and callback regressions remain
+open.
+
+## Slice 129 — componentize Deployer repository forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated the repository create/edit form's website and provider selects,
+  repository identity fields, URL, branch, service root, path filters, build
+  and post-deployment commands, and description to shared Signal controls.
+- The URL prefix and path-filter fieldset now use shared Signal addon and card
+  components. Indexed include/exclude validation errors are announced and
+  associated with their textarea. Empty-state cards and create/edit actions
+  use Signal card and button components directly.
+- Kept provider/website eligibility and selection, query-prefilled branch and
+  URL, repository paths as newline-delimited text, command hooks, warning copy,
+  and existing route/request contracts.
+
+Evidence and release:
+
+- Focused creation, repository safety, deployment-root, and shared UI tests:
+  **101 passed**, **3,386 assertions**; a post-update repository safety rerun:
+  **6 passed**, **68 assertions**. Mobile Playwright create/edit journeys
+  verified Signal controls, both selectors, URL edges, path-filter values, and
+  hook fields. Pint, JavaScript syntax, and `git diff --check` passed.
+- Commit `41bc412` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/41bc412`. Release `8b311d1` remains
+  available for rollback. Release-local config, route, and view caches were
+  rebuilt with root-only cache snapshots. No migrations, assets, or queue
+  workers changed.
+- The Buildpusher overview, all three product pages, and shared login returned
+  HTTP 200. Product roots retained their expected dashboard/auth redirects;
+  PHP-FPM is active.
+
+Next task: continue componentizing Deployer's remaining feature forms and
+actions; the repository webhook and provider callback regressions remain open.
+
+## Slice 128 — componentize Deployer website forms — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated the shared create/edit website form to Signal select, input,
+  textarea, checkbox, and card components. URL and health-check controls use a
+  reusable Signal input-addon component with joined borders, decorative
+  semantics, and prefix/suffix support in the shared input-field component.
+- Create and edit actions now use the Signal button directly. Preserved field
+  prefixes, old input, retention defaults, health-check/monitoring values,
+  descriptions, hidden false checkbox values, edit-environment plaintext
+  handling, routes, and request names.
+- Rechecked `lessbuild/template` main; it remains at
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974`, the already-pinned Signal
+  source.
+
+Evidence and release:
+
+- Focused website, encryption, health-monitoring, creation-dialog, and shared
+  UI suites: **75 passed**, **3,181 assertions**; the subsequent shared UI
+  rerun including suffix-addon coverage: **70 passed**, **3,139 assertions**.
+  Mobile Playwright verified create and edit forms, labels, joined controls,
+  and the Signal health-check card. Pint, JavaScript syntax, and
+  `git diff --check` passed.
+- Commit `8b311d1` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/8b311d1`. The previous `c00644c`
+  release remains available for rollback. Release-local config, route, and
+  view caches were rebuilt; cache snapshots remain root-only. No migrations,
+  assets, or queue workers changed.
+- The Buildpusher overview and all three product pages plus the shared login
+  returned HTTP 200. Deployer, Monitor, and Analytics roots kept their expected
+  302 dashboard/auth handoffs. PHP-FPM is active.
+
+Next task: continue componentizing Deployer's remaining feature forms and
+actions; cross-product theme and accessibility acceptance remains open.
+
+## Slice 127 — componentize Deployer deployment controls — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated deployment lock, weekly window, day selection, start/end times,
+  timezone, release strategy, rolling pause, and automatic rollback controls to
+  shared Signal checkbox, input, select, and button components.
+- Kept the named `deployment_window_days[]` values, current/old selected days,
+  default 09:00–17:00 times, timezone datalist, selected rollout settings, and
+  hidden false values. Day checkboxes share one field-level validation message
+  with valid `aria-describedby` references.
+- Extended the input-field slot for the timezone datalist and the checkbox
+  layout props for compact grouped controls; these are reusable component
+  capabilities, not page-specific styling.
+
+Evidence and release:
+
+- Deployer environment feature suite and shared UI tests: **77 passed**,
+  **3,234 assertions**. Mobile Playwright verified the settings and deployment
+  controls in their dialogs; open/dismiss/focus-return and named form controls
+  passed. Pint and `git diff --check` passed.
+- Commit `c00644c` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/c00644c`. The previous `f8a0b86`
+  release remains available for rollback. No migrations or asset build were
+  needed; this release uses its own compiled-view cache.
+- The public overview, product descriptions, and auth login returned HTTP 200;
+  the product dashboard roots retained their expected 302 handoffs. PHP-FPM is
+  active.
+
+Next task: continue migrating Deployer's remaining feature-specific forms and
+actions to shared Signal components, then extend this audit to Monitor and
+Analytics. Full feature, theme, accessibility, and visual acceptance remains
+open.
+
+## Slice 126 — componentize Deployer environment settings — 2026-09-24
+
+Boundary and implementation:
+
+- Migrated the environment settings dialog's runtime, branch, placement,
+  hibernation, post-deployment observation, and protection controls to shared
+  Signal input, select, checkbox, and button components.
+- Added layout-class support to shared input/select field wrappers and
+  validation descriptions/errors to the shared checkbox. Each repeated
+  environment dialog receives unique control IDs; array names and hidden
+  unchecked values keep their existing request contracts.
+- Retained the PATCH action, CSRF/method fields, environment context, old-input
+  behavior, and the existing feature-gated controls.
+
+Evidence and release:
+
+- Full Laravel suite: **1,975 passed**, **18,757 assertions**. Focused
+  Deployer/Core/Analytics UI tests: **80 passed**, **3,272 assertions**; the
+  mobile Playwright modal/focus journey passed. Pint and `git diff --check`
+  passed.
+- Commit `f8a0b86` was pushed to `origin/feature/unified-platform` and is live
+  at `/var/www/buildpusher-unified/releases/f8a0b86`. The previous `43a4b91`
+  release remains available for rollback. No database migrations or asset
+  build were needed; compiled views use this release's own cache directory.
+- Buildpusher's public overview, three product descriptions, and shared login
+  returned HTTP 200. Product roots returned their expected dashboard or auth
+  handoffs. PHP-FPM is active.
+
+Next task: componentize the deployment-controls dialog and continue the
+feature-specific Deployer form audit; full cross-product theme and accessibility
+acceptance remains open.
+
+## Slice 125 — update Deployer's Signal navigation and fence connection deliveries — 2026-09-24
+
+Boundary and implementation:
+
+- Rechecked `https://github.com/lessbuild/template` `main`; it still resolves to
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974`. The release retains the current
+  Signal stylesheet and product bundle from Slice 124; this change updates the
+  shared shell and Deployer navigation without changing built assets.
+- The Signal mobile menu now renders the grouped destinations supplied by
+  Deployer, including product pages, profile links, and System Health. Active
+  route state is kept on the current destination. The shared button component
+  accepts only `button`, `submit`, or `reset` types.
+- Connection delivery completion and failure updates now compare the active
+  claim generation. A worker whose lease expired cannot overwrite a newer
+  delivery attempt, and backoff uses the locked attempt count.
+
+Evidence and release:
+
+- Full Laravel suite: **1,974 passed**, **18,747 assertions**. Post-format
+  focused UI and delivery suites: **111 passed**, **3,615 assertions**.
+- Pint and `git diff --check` passed. No database migrations or asset build
+  were needed; compiled Blade views use this release's own cache directory.
+- Commit `43a4b91` was pushed to `origin/feature/unified-platform` and deployed
+  at `/var/www/buildpusher-unified/releases/43a4b91`. The prior `7bad0f0`
+  release remains available for rollback.
+- Public Buildpusher app pages and the auth login returned HTTP 200. The
+  Deployer and Analytics roots redirected to their dashboards; Monitor
+  redirected to central authentication. PHP-FPM and all five Buildpusher queue
+  workers were active after restart.
+
+Next task: continue auditing Deployer's remaining feature-specific forms and
+actions against Signal components while preserving route and modal behavior.
+
+## Slice 124 — move Deployer onto Signal's current topbar SaaS shell — 2026-09-24
+
+Responsibility problem:
+
+- Deployer rendered the shared Signal topbar markup, but its layout omitted the
+  product key. That kept the Signal product JavaScript entry from loading and
+  left Deployer on its custom mobile drawer and Alpine command palette.
+
+Boundary and implementation:
+
+- Checked the current upstream `main` of
+  `https://github.com/lessbuild/template`; it resolves to
+  `cdb156bf4fe92f30f18b7763eaa313da5819d974` (`Clamp component popovers on
+  mobile`, 2026-09-24).
+- Made Deployer declare its product key, so it loads the shared Signal runtime
+  and uses the same responsive topbar navigation and command palette as the
+  other product modules. The legacy Deployer mobile drawer and palette are no
+  longer rendered; the four-item mobile quick-navigation bar remains.
+- Moved Deployer's existing 13 command shortcuts into the shared Signal
+  palette, including lazy server/site/repository dialogs and the full-page
+  search fallback. Added a private, bounded JSON response to its existing
+  workspace search route so the shared palette can also show cross-product
+  matches.
+- Applied the latest upstream mobile popover sizing and overflow rules to the
+  shared Signal component stylesheet without overwriting app-specific form
+  validation and theme styles.
+- Converted Analytics website setup and settings to Signal page headers, cards,
+  alerts, fields, choices, and actions. The settings keep domain/timezone/path
+  editing, collection pause controls, tracker installation, workspace access,
+  and deletion behavior.
+
+Preserved contracts and safety:
+
+- Product routes, role checks, dialog URLs, resource search scoping, modal
+  content loading, and project/activity mobile shortcuts remain in place.
+- No database, authentication, billing, or deployment behavior changed.
+
+Evidence:
+
+- Upstream `main` fetch and revision verification: passed.
+- `GlobalSearchTest.php`: **13 passed**, **110 assertions**.
+- Analytics `WebsiteManagementTest.php`: **4 passed**, **44 assertions**.
+- `signal-workspace-search.spec.js`: **1 passed** (15s), including static
+  action click, live result rendering, Escape, and keyboard focus restoration.
+- Production Vite build and Blade view cache: passed.
+- JavaScript syntax check and `git diff --check`: passed.
+- Commit `7bad0f02684867d1ab90760a5f6ab67349634525` was pushed to
+  `origin/feature/unified-platform` and deployed as
+  `/var/www/buildpusher-unified/releases/7bad0f0`; the prior release remains
+  available for rollback.
+- Live checks verified the new CSS/JavaScript asset hashes and all configured
+  host entry points. See
+  `docs/verification/deployer-signal-topbar-release-2026-09-24.md`.
+
+Next task: continue the Signal component coverage audit across Deployer's
+remaining feature-specific forms and actions, preserving their route and modal
+behavior.
+
 ## Slice 123 — verify active Signal defaults in the rendered page — 2026-09-22
 
 Responsibility problem:
@@ -7680,6 +8522,24 @@ Deployment:
 Next task: inspect the remaining inventory/list compatibility rules and migrate
 only the concrete surfaces that still differ from Signal's card and table
 primitives.
+
+## Slice 164 — Buildpusher marketing pages follow Signal's product templates — 2026-09-25
+
+The latest Signal source at `794d273ebd4635ff124981f0fcddce89e9d7c2b1` includes dedicated Buildpusher suite and product-detail landing compositions. The unified app now adapts them to its public root and product routes, existing account/project model, product-specific feature catalog, and real Deployer, Monitor, and Analytics dashboard destinations.
+
+- The suite page keeps the Signal product-led hero and connected-project map, adds concrete project-resource examples and answers about shared sign-in, project context, separate product databases, and independent workspace subscriptions.
+- Each app has an individual Signal product page with a reusable, clearly fictional interface preview, product-specific benefits, all configured feature groups and descriptions, a workflow sequence, product guardrails, shared-project context, and links to the other app descriptions.
+- Replaced the generic Deployer workflow copy on Monitor and Analytics pages with their own telemetry/incident and site/acquisition/conversion journeys. Monitor and Analytics now have product-specific FAQs and controls copy.
+- Added `x-signal.blocks.product-preview` so each illustrative interface uses shared Signal surfaces, icons, badges, and product accents. Updated the marketing regression assertions; no test runner was invoked under the deferred-test instruction.
+- Updated the Signal source pin and marketing composition mapping in `docs/signal-component-library.md` and `docs/unified-application-plan.md`.
+
+Static verification:
+
+- `php -l` for marketing configuration, the controller, and the authored feature-test file — passed.
+- `vendor/bin/pint --test` for the changed PHP files — passed.
+- `php artisan view:cache` — passed; the compiled view cache was cleared afterward.
+- `git diff --check` — passed.
+- Marketing feature tests remain unrun until the unified-application plan is complete. No website release or production change was made.
 
 ## Slice 101 — Signal console surfaces — 2026-09-22
 

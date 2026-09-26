@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Repository\PublishRepositoryJob;
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\ProviderConnectionCheck;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\RepositoryDeploymentPlan;
+use App\Modules\Deployer\Jobs\Repository\PublishRepositoryJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\URL;

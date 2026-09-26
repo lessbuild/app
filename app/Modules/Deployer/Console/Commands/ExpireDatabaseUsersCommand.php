@@ -1,0 +1,27 @@
+<?php
+
+namespace App\Modules\Deployer\Console\Commands;
+
+use App\Modules\Deployer\Jobs\Database\ManageDatabaseUserJob;
+use App\Modules\Deployer\Models\DatabaseUser;
+use Illuminate\Console\Command;
+
+class ExpireDatabaseUsersCommand extends Command
+{
+    protected $signature = 'buildpusher:database-users:expire';
+
+    protected $description = 'Queue removal of expired temporary database users';
+
+    /**
+     * Queue remote removal of applied database accounts whose access expiration has passed.
+     *
+     * @return int SUCCESS after dispatching removal jobs; account deletion completes in the workers.
+     */
+    public function handle(): int
+    {
+        DatabaseUser::query()->whereNotNull('expires_at')->where('expires_at', '<=', now())->whereNotNull('applied_at')
+            ->eachById(fn (DatabaseUser $user) => ManageDatabaseUserJob::dispatch($user->id, 'remove'));
+
+        return self::SUCCESS;
+    }
+}

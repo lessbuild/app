@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\ConfigurationOwnership;
-use App\Models\ConfigurationReview;
-use App\Models\Environment;
-use App\Models\PreviewDeployment;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\ApplicationConfigurationDocument;
-use App\Services\ApplicationConfigurationPlanner;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ConfigurationOwnership;
+use App\Modules\Deployer\Models\ConfigurationReview;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\PreviewDeployment;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ApplicationConfigurationDocument;
+use App\Modules\Deployer\Services\ApplicationConfigurationPlanner;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;

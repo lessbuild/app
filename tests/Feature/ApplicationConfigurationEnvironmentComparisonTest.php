@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Environment;
-use App\Models\Project;
-use App\Models\User;
-use App\Services\ApplicationConfigurationEnvironmentComparisonQuery;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationEnvironmentComparisonQuery;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;

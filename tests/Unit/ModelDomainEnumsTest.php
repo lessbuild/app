@@ -2,12 +2,12 @@
 
 namespace Tests\Unit;
 
-use App\Enums\BuildStatus;
-use App\Enums\ServerCommandStatus;
-use App\Enums\SignInMethod;
-use App\Models\Build;
-use App\Models\ServerCommandExecution;
-use App\Models\SignInEvent;
+use App\Modules\Deployer\Enums\BuildStatus;
+use App\Modules\Deployer\Enums\ServerCommandStatus;
+use App\Modules\Deployer\Enums\SignInMethod;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\SignInEvent;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

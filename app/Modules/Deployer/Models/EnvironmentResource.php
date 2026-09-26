@@ -1,0 +1,46 @@
+<?php
+
+namespace App\Modules\Deployer\Models;
+
+use App\Modules\Deployer\Database\DeployerModel;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+
+class EnvironmentResource extends DeployerModel
+{
+    public const TYPES = ['mysql', 'postgresql', 'redis', 'valkey', 'object_storage'];
+
+    public const STATUS_PLANNED = 'planned';
+
+    public const STATUS_PROVISIONING = 'provisioning';
+
+    public const STATUS_READY = 'ready';
+
+    public const STATUS_FAILED = 'failed';
+
+    protected $guarded = [];
+
+    protected $hidden = ['configuration'];
+
+    protected $casts = ['configuration' => 'encrypted:array', 'is_managed' => 'boolean', 'is_preview_owned' => 'boolean'];
+
+    /** @return BelongsTo<Environment, $this> */
+    public function environment(): BelongsTo
+    {
+        return $this->belongsTo(Environment::class);
+    }
+
+    /** @return HasMany<DatabaseSnapshot, $this> */
+    public function snapshots(): HasMany
+    {
+        return $this->hasMany(DatabaseSnapshot::class);
+    }
+
+    /** @return HasMany<DatabaseUser, $this> */
+    public function databaseUsers(): HasMany
+    {
+        return $this->hasMany(DatabaseUser::class);
+    }
+}

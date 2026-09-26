@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Models\Project;
-use App\Services\PreviewStackCatalog;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Services\PreviewStackCatalog;
 use Tests\TestCase;
 
 class PreviewStackCatalogTest extends TestCase

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Support\CsvCell;
+use App\Modules\Deployer\Support\CsvCell;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 

@@ -1,0 +1,121 @@
+# Unified platform deployment
+
+## Runtime
+
+Caddy serves the same Laravel `public` directory on `buildpusher.com`,
+`auth.buildpusher.com`, `deployer.buildpusher.com`, `monitor.buildpusher.com`, and
+`analytics.buildpusher.com`. `www.buildpusher.com` redirects to the apex domain.
+The apex root is a public product overview; `/deployer`, `/monitor`, and `/analytics`
+are the product descriptions. The three product subdomain roots enter their respective
+authenticated dashboards. Keep the Caddy site block passing `buildpusher.com/` to
+Laravel so the public overview can render instead of redirecting to sign-in.
+The active release is `/var/www/buildpusher-unified/current`; persistent environment
+and storage files live under `/var/www/buildpusher-unified/shared`. The PHP-FPM pool
+is `buildpusher-php-fpm.service` and exposes
+`/run/buildpusher/php8.5-fpm.sock`.
+
+The platform has four independent SQLite databases under
+`/var/lib/buildpusher-unified`: Core owns identity and shared projects; Deployer,
+Monitor, and Analytics own their product data and plans. Do not use Laravel's
+`migrate:fresh` against a deployed database. Apply module migrations separately:
+
+```sh
+php artisan platform:migrate core --force
+php artisan platform:migrate deployer --force
+php artisan platform:migrate monitor --force
+php artisan platform:migrate analytics --force
+```
+
+The deployer, monitor, and analytics plan authorities remain product-specific.
+Core authentication is enabled after all four schemas are current. Core-authenticated
+workspace paths require an explicit source-to-Core workspace map, active Core
+membership, and an active grant for that product; a local membership alone does not
+restore access after a Core grant is revoked. Subscription entitlement remains under
+each product's separate plan authority. New product accounts are provisioned from
+Core on first access; an existing local account is never linked by email alone.
+Existing legacy database files are retained separately for rollback and explicit
+account reconciliation.
+
+Set `SESSION_CONNECTION=core` so central authentication sessions do not depend on
+the Deployer database. The Core migration creates the Laravel session table.
+
+Platform passkeys use the apex host as their WebAuthn relying-party ID and the
+configured Buildpusher app hosts as allowed origins. Production currently derives
+`buildpusher.com` from the dashboard host; set
+`PLATFORM_PASSKEY_RELYING_PARTY_ID=buildpusher.com` explicitly if the dashboard
+host may change. `PLATFORM_PASSKEY_USER_HANDLE_SECRET` overrides the stable
+`APP_KEY` fallback; keep whichever value is active unchanged across releases
+because changing it invalidates existing passkey registrations. If setting
+`PLATFORM_PASSKEY_ALLOWED_ORIGINS` explicitly, use the exact HTTPS origins for
+the apex, auth, dashboard, and product hosts.
+
+## Social sign-in providers
+
+Core owns social sign-in and linked identities on `auth.buildpusher.com`. Set the
+existing `GITHUB_CLIENT_ID` and `GITHUB_CLIENT_SECRET`, `GITLAB_CLIENT_ID` and
+`GITLAB_CLIENT_SECRET`, and `BITBUCKET_CLIENT_ID` and `BITBUCKET_CLIENT_SECRET`
+values only after creating the corresponding OAuth applications. Register these
+exact callback URLs in each provider console:
+
+```text
+https://auth.buildpusher.com/social/callback/github
+https://auth.buildpusher.com/social/callback/gitlab
+https://auth.buildpusher.com/social/callback/bitbucket
+```
+
+Core builds each callback URL from its named route; the older `*_REDIRECT`
+settings are not used by the central flow. Until a provider has both credentials,
+Core hides its sign-in button and reports linking as unavailable. Never resolve a
+Core account from a provider email match alone. If an invitation is involved,
+Core checks its pending invitation email and returns to the invitation page; the
+user still explicitly accepts the invitation there.
+
+`GITLAB_HOST` defaults to `https://gitlab.com` for self-managed deployments and
+must remain an HTTPS origin. Core requests the current GitLab v4 user profile and
+does not use an unconfirmed profile email for account creation or linking.
+
+## Queues and scheduler
+
+Install `deploy/systemd/buildpusher-worker@.service`,
+`deploy/systemd/buildpusher-schedule.service`, and
+`deploy/systemd/buildpusher-schedule.timer` into `/etc/systemd/system`, then enable
+the timer and one worker instance for each queue:
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now buildpusher-schedule.timer
+sudo systemctl enable --now buildpusher-worker@database.service
+sudo systemctl enable --now buildpusher-worker@telemetry.service
+sudo systemctl enable --now buildpusher-worker@checks.service
+sudo systemctl enable --now buildpusher-worker@alerts.service
+sudo systemctl enable --now buildpusher-worker@analytics.service
+```
+
+The default worker uses Deployer's queue database. The telemetry, checks, and alerts
+workers use Monitor's database. Analytics uses its own queue database. The scheduler
+dispatches product checks and retention tasks once per minute. Configure
+`DIAGNOSTIC_SYSTEMD_TIMERS=true` and set `DIAGNOSTIC_SYSTEMD_SERVICES` to the FPM and
+worker service names so the control panel checks the active runtime.
+
+During a product cutover, confirm that the unified scheduler and workers own each
+task before retiring the legacy services. Check for running and queued work, drain
+or translate it, then stop and disable legacy schedulers/workers that would execute
+the same task against the old installation. Retain legacy databases, release files,
+and required backup timers through the reconciliation and rollback-retention window.
+Do not run two schedulers or workers against the same migrated workload.
+
+## Release procedure
+
+Build assets and install locked PHP dependencies before switching traffic. Keep the
+shared `.env`, storage, and database files outside release directories. Copy the new
+release into a versioned directory, link shared state, build Laravel's production
+caches, and run the four module migrations against the shared databases. Validate
+the Caddy configuration and the new release before atomically moving `current` and
+reloading Caddy. Retain the previous release and database files until the new hosts,
+login handoff, workers, and scheduled tasks have passed their smoke checks.
+
+Set each product's `*_AUTH_AUTHORITY=core` only after the product migration has run.
+Keep `SESSION_DOMAIN` empty: the central auth host uses a signed one-time handoff to
+the requested product host, while every application session cookie stays host-only.
+Configure a real mail transport before relying on email verification, invitations,
+or notifications in production.

@@ -1,0 +1,11 @@
+<x-layouts.app>
+    <x-scenes.admin.access-request-management
+        :requests="$requests"
+        :status="$status"
+        :counts="$counts"
+        :editing-request="$editingRequest"
+        :review-dialog-id="$reviewDialogId"
+        :review-dialog-open="$reviewDialogOpen"
+        :route-names="$routeNames"
+    />
+</x-layouts.app>

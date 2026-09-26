@@ -1,0 +1,142 @@
+<?php
+
+namespace App\Modules\Monitor\Services\Core;
+
+use App\Core\Contracts\ProjectProductLink;
+use App\Core\Models\PlatformUser;
+use App\Core\Models\Project;
+use App\Core\Models\ProjectResource;
+use App\Core\Services\LegacyIdentityResolver;
+use App\Modules\Monitor\Models\Application;
+use App\Modules\Monitor\Models\Environment;
+use Illuminate\Database\LostConnectionException;
+use Illuminate\Database\QueryException;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Route;
+
+final class MonitorProjectLink implements ProjectProductLink
+{
+    public function __construct(
+        private readonly LegacyIdentityResolver $identities,
+        private readonly MonitorProjectAccess $projects,
+    ) {}
+
+    public function resolve(PlatformUser $user, Project $project): ?string
+    {
+        if (! Route::has('monitor.applications.show')) {
+            return null;
+        }
+
+        try {
+            $application = $this->accessibleApplications($user, $project)->first();
+
+            if ($application !== null) {
+                return route('monitor.applications.show', $application->getKey());
+            }
+        } catch (LostConnectionException|QueryException) {
+            return null;
+        }
+
+        return null;
+    }
+
+    /** @return Collection<int, Application> */
+    public function accessibleApplications(PlatformUser $user, Project $project): Collection
+    {
+        $resourceIds = ProjectResource::query()
+            ->where('project_id', $project->getKey())
+            ->where('product', 'monitor')
+            ->where('resource_type', 'application')
+            ->where('status', 'active')
+            ->orderBy('id')
+            ->limit(100)
+            ->pluck('resource_id');
+
+        if ($resourceIds->isEmpty()) {
+            return collect();
+        }
+
+        $workspaceIds = $this->identities->sourceIdsForCanonical(
+            'monitor',
+            'workspace',
+            (string) $project->workspace_id,
+            'workspace',
+        );
+
+        if ($workspaceIds === []) {
+            return collect();
+        }
+
+        $legacyUserIds = $this->identities->sourceIdsFor($user, 'monitor');
+        if ($legacyUserIds === []) {
+            return collect();
+        }
+
+        return Application::query()
+            ->whereKey($resourceIds)
+            ->whereIn('workspace_id', $workspaceIds)
+            ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds))
+            ->with('workspace')
+            ->get()
+            ->filter(fn (Application $application): bool => $this->projects->application($user, $application))
+            ->values();
+    }
+
+    public function accessibleEnvironment(PlatformUser $user, ProjectResource $resource): ?Environment
+    {
+        if ($resource->product !== 'monitor'
+            || $resource->resource_type !== 'environment'
+            || $resource->status !== 'active') {
+            return null;
+        }
+
+        $currentMapping = ProjectResource::query()
+            ->whereKey($resource->getKey())
+            ->where('project_id', $resource->project_id)
+            ->where('product', 'monitor')
+            ->where('resource_type', 'environment')
+            ->where('status', 'active')
+            ->first(['id', 'project_id', 'resource_id']);
+
+        if ($currentMapping === null) {
+            return null;
+        }
+
+        $project = Project::query()->find($currentMapping->project_id);
+        if ($project === null) {
+            return null;
+        }
+
+        $workspaceIds = $this->identities->sourceIdsForCanonical(
+            'monitor',
+            'workspace',
+            (string) $project->workspace_id,
+            'workspace',
+        );
+
+        if ($workspaceIds === []) {
+            return null;
+        }
+
+        $legacyUserIds = $this->identities->sourceIdsFor($user, 'monitor');
+        if ($legacyUserIds === []) {
+            return null;
+        }
+
+        $environment = Environment::query()
+            ->whereKey($currentMapping->resource_id)
+            ->where('status', 'active')
+            ->whereHas('application', fn ($application) => $application
+                ->whereIn('workspace_id', $workspaceIds)
+                ->whereHas('workspace.members', fn ($members) => $members->whereIn('users.id', $legacyUserIds)))
+            ->with('application.workspace')
+            ->first(['id', 'application_id', 'name', 'last_seen_at']);
+
+        return $environment !== null && $this->projects->environment($user, $environment) ? $environment : null;
+    }
+
+    public function environmentAllowed(PlatformUser $user, Environment $environment): bool
+    {
+        return $this->projects->environment($user, $environment);
+    }
+}

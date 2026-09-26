@@ -2,21 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\ActivateReleaseScript;
-use App\Scripts\Repository\ArtisanCommandsScript;
-use App\Scripts\Repository\InstallDependenciesScript;
-use App\Scripts\Repository\PreviewInitializationScript;
-use App\Scripts\Repository\RunBuildCommandsScript;
-use App\Scripts\Repository\RunPostDeploymentCommandsScript;
-use App\Scripts\Repository\VerifyDeploymentHealthScript;
-use App\Services\RepositoryDeploymentPlan;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\ActivateReleaseScript;
+use App\Modules\Deployer\Scripts\Repository\ArtisanCommandsScript;
+use App\Modules\Deployer\Scripts\Repository\InstallDependenciesScript;
+use App\Modules\Deployer\Scripts\Repository\PreviewInitializationScript;
+use App\Modules\Deployer\Scripts\Repository\RunBuildCommandsScript;
+use App\Modules\Deployer\Scripts\Repository\RunPostDeploymentCommandsScript;
+use App\Modules\Deployer\Scripts\Repository\VerifyDeploymentHealthScript;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;

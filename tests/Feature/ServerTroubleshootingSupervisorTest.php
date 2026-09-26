@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Server\OpenServerTroubleshootingSessionAction;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\ServerTroubleshootingSession;
-use App\Models\User;
+use App\Modules\Deployer\Actions\Server\OpenServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerTroubleshootingSession;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

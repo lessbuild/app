@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\OrganizationInvitation;
-use App\Models\User;
-use App\Services\PersonalOrganization;
+use App\Modules\Deployer\Models\OrganizationInvitation;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\PersonalOrganization;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

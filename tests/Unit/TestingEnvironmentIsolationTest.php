@@ -9,7 +9,9 @@ class TestingEnvironmentIsolationTest extends TestCase
     public function test_testing_environment_is_isolated_from_production_configuration(): void
     {
         $this->assertTrue($this->app->environment('testing'));
-        $this->assertSame('sqlite', config('database.default'));
+        $this->assertSame('deployer', config('database.default'));
+        $this->assertSame('sqlite', config('database.connections.deployer.driver'));
+        $this->assertSame(':memory:', config('database.connections.deployer.database'));
         $this->assertSame(':memory:', config('database.connections.sqlite.database'));
         $this->assertSame(5000, config('database.connections.sqlite.busy_timeout'));
         $this->assertSame('WAL', config('database.connections.sqlite.journal_mode'));

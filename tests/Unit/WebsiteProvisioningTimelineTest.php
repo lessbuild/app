@@ -2,9 +2,9 @@
 
 namespace Tests\Unit;
 
-use App\Models\Website;
-use App\Services\WebsiteProvisioningPlan;
-use App\Services\WebsiteProvisioningTimeline;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\WebsiteProvisioningPlan;
+use App\Modules\Deployer\Services\WebsiteProvisioningTimeline;
 use Tests\TestCase;
 
 class WebsiteProvisioningTimelineTest extends TestCase

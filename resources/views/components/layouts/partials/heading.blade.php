@@ -5,7 +5,7 @@
     'icon' => null,
 ])
 
-<x-ui.page-header
+<x-signal.ui.page-header
     :eyebrow="$eyebrow"
     :title="$title"
     :description="$description"
@@ -14,4 +14,4 @@
     @isset($buttons)
         <x-slot:actions>{{ $buttons }}</x-slot:actions>
     @endisset
-</x-ui.page-header>
+</x-signal.ui.page-header>

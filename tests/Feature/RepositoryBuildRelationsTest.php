@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Enums\BuildStatus;
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\User;
+use App\Modules\Deployer\Enums\BuildStatus;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use PHPUnit\Framework\Attributes\DataProvider;

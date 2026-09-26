@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Notifications\AccountSecurityNotification;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\AccountSecurityNotification;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;

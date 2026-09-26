@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ApplyLoadBalancerJob;
-use App\Jobs\RemoveLoadBalancerJob;
-use App\Models\Environment;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\ApplyLoadBalancerJob;
+use App\Modules\Deployer\Jobs\RemoveLoadBalancerJob;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Queue;
@@ -37,10 +37,12 @@ class LoadBalancerOperationsTest extends TestCase
             'health_path' => '/health',
         ])->assertSessionHas('success', 'Load balancer created. Add at least two application nodes.');
         $loadBalancer = $owner->currentOrganization->loadBalancers()->sole();
+        $loadBalancer->update(['status' => 'active', 'last_error' => 'previous_apply_error']);
 
         $this->actingAs($owner)->post(route('load-balancers.nodes.store', $loadBalancer), [
             'server_id' => $nodeServer->id, 'upstream_port' => 8080, 'weight' => 2,
         ])->assertSessionHas('success', 'Application node added and configuration queued.');
+        $this->assertDatabaseHas('load_balancers', ['id' => $loadBalancer->id, 'status' => 'pending', 'last_error' => null]);
         $node = $loadBalancer->nodes()->sole();
         Queue::assertPushed(ApplyLoadBalancerJob::class, fn (ApplyLoadBalancerJob $job): bool => $job->loadBalancerId === $loadBalancer->id);
 
@@ -51,8 +53,8 @@ class LoadBalancerOperationsTest extends TestCase
         $this->assertDatabaseMissing('load_balancer_nodes', ['id' => $node->id]);
 
         $this->actingAs($owner)->delete(route('load-balancers.destroy', $loadBalancer))
-            ->assertSessionHas('success', 'Load balancer removed. Remove its DNS record if it is no longer used.');
-        $this->assertDatabaseMissing('load_balancers', ['id' => $loadBalancer->id]);
+            ->assertSessionHas('success', 'Load-balancer removal queued. The route will disappear after remote cleanup succeeds. Remove its DNS record separately if it is no longer used.');
+        $this->assertDatabaseHas('load_balancers', ['id' => $loadBalancer->id, 'status' => 'removing', 'last_error' => null]);
         Queue::assertPushed(RemoveLoadBalancerJob::class, fn (RemoveLoadBalancerJob $job): bool => $job->serverId === $loadBalancerServer->id && $job->loadBalancerId === $loadBalancer->id);
     }
 
@@ -98,6 +100,8 @@ class LoadBalancerOperationsTest extends TestCase
             $initialContent,
         );
         $this->assertStringContainsString('data-modal-trigger="load-balancer-node-'.$loadBalancer->id.'"', $initialContent);
+        $this->assertStringContainsString('data-modal-trigger="load-balancer-removal-'.$loadBalancer->id.'"', $initialContent);
+        $this->assertStringContainsString('Deployer removes the remote routing configuration first.', $initialContent);
         $this->assertMatchesRegularExpression('/<details id="load-balancer-nodes-'.$loadBalancer->id.'"[^>]*\bopen\b[^>]*>/', $initialContent);
 
         $nodeDialogUrl = route('load-balancers.index', [
@@ -218,6 +222,62 @@ class LoadBalancerOperationsTest extends TestCase
 
         $this->assertDatabaseCount('load_balancers', 1);
         $this->assertDatabaseCount('load_balancer_nodes', 0);
+        Queue::assertNothingPushed();
+    }
+
+    public function test_manager_can_retry_a_failed_remote_load_balancer_removal(): void
+    {
+        [$owner, $environment, $loadBalancerServer] = $this->infrastructure();
+        $loadBalancer = $owner->currentOrganization->loadBalancers()->create([
+            'environment_id' => $environment->id,
+            'server_id' => $loadBalancerServer->id,
+            'hostname' => 'edge.example.com',
+            'health_path' => '/health',
+            'status' => 'removal_failed',
+            'last_error' => 'private_ssh_failure',
+            'created_by' => $owner->id,
+        ]);
+        Queue::fake();
+
+        $this->actingAs($owner)->delete(route('load-balancers.destroy', $loadBalancer))
+            ->assertSessionHas('success', 'Load-balancer removal queued. The route will disappear after remote cleanup succeeds. Remove its DNS record separately if it is no longer used.');
+
+        $this->assertDatabaseHas('load_balancers', [
+            'id' => $loadBalancer->id,
+            'status' => 'removing',
+            'last_error' => null,
+        ]);
+        Queue::assertPushed(RemoveLoadBalancerJob::class, fn (RemoveLoadBalancerJob $job): bool => $job->serverId === $loadBalancerServer->id && $job->loadBalancerId === $loadBalancer->id);
+    }
+
+    public function test_apply_and_node_changes_are_rejected_during_load_balancer_removal(): void
+    {
+        [$owner, $environment, $loadBalancerServer, $nodeServer] = $this->infrastructure();
+        $loadBalancer = $owner->currentOrganization->loadBalancers()->create([
+            'environment_id' => $environment->id,
+            'server_id' => $loadBalancerServer->id,
+            'hostname' => 'edge.example.com',
+            'health_path' => '/health',
+            'status' => 'removing',
+            'created_by' => $owner->id,
+        ]);
+        $node = $loadBalancer->nodes()->create([
+            'server_id' => $nodeServer->id,
+            'upstream_port' => 8080,
+            'weight' => 1,
+        ]);
+        Queue::fake();
+
+        $this->actingAs($owner)->post(route('load-balancers.apply', $loadBalancer))->assertConflict();
+        $this->actingAs($owner)->post(route('load-balancers.nodes.store', $loadBalancer), [
+            'server_id' => $nodeServer->id,
+            'upstream_port' => 8081,
+            'weight' => 1,
+        ])->assertConflict();
+        $this->actingAs($owner)->delete(route('load-balancers.nodes.destroy', $node))->assertConflict();
+
+        $this->assertDatabaseHas('load_balancers', ['id' => $loadBalancer->id, 'status' => 'removing']);
+        $this->assertDatabaseHas('load_balancer_nodes', ['id' => $node->id]);
         Queue::assertNothingPushed();
     }
 

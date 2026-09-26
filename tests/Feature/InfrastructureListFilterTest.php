@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -62,10 +62,14 @@ class InfrastructureListFilterTest extends TestCase
             ->assertSee('value="customer"', false)
             ->assertSee('value="failed" selected', false)
             ->assertSee('value="unhealthy" selected', false)
-            ->assertSee('name="attention" value="1" checked', false)
             ->assertDontSee('Customer Healthy')
             ->assertDontSee('Unrelated Outage')
             ->assertDontSee('Customer Private');
+
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*\bname="attention")(?=[^>]*\bvalue="1")(?=[^>]*\bchecked)[^>]*>/',
+            $response->getContent(),
+        );
 
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*\bid="websites-filters")(?=[^>]*\bdata-filter-dialog\b)(?=[^>]*\sopen(?:\s|>))[^>]*>/',
@@ -260,14 +264,19 @@ class InfrastructureListFilterTest extends TestCase
             [route('servers.index', ['provisioning' => 1]), route('servers.export', ['provisioning' => 1]), 'Ready Server Excluded', 'Foreign Provisioning Server', 'Provisioning Server 1'],
             [route('websites.index', ['provisioning' => 1]), route('websites.export', ['provisioning' => 1]), 'Ready Website Excluded', 'Foreign Provisioning Website', 'Provisioning Website 1'],
         ] as [$indexUrl, $exportUrl, $excluded, $foreignName, $included]) {
-            $this->actingAs($owner)->get($indexUrl)
+            $response = $this->actingAs($owner)->get($indexUrl);
+            $response
                 ->assertSuccessful()
-                ->assertSee('name="provisioning" value="1" checked', false)
                 ->assertSee('provisioning=1', false)
                 ->assertSee('page=2', false)
                 ->assertSee($exportUrl)
                 ->assertDontSee($excluded)
                 ->assertDontSee($foreignName);
+
+            $this->assertMatchesRegularExpression(
+                '/<input(?=[^>]*\bname="provisioning")(?=[^>]*\bvalue="1")(?=[^>]*\bchecked)[^>]*>/',
+                $response->getContent(),
+            );
 
             $csv = $this->actingAs($owner)->get($exportUrl)
                 ->assertSuccessful()

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\ExternalMonitoring;
+use App\Modules\Deployer\Services\ExternalMonitoring;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 

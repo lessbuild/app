@@ -1,0 +1,62 @@
+<?php
+
+namespace App\Modules\Deployer\Policies;
+
+use App\Modules\Deployer\Models\OperationalIncident;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
+
+class OperationalIncidentPolicy
+{
+    /**
+     * Allow an auditor or operator to export incidents from the selected workspace.
+     */
+    public function export(User $user): bool
+    {
+        $organization = $user->currentOrganization;
+        if ($organization === null) {
+            return false;
+        }
+
+        return $organization->permits($user, 'audit') || $organization->permits($user, 'operate');
+    }
+
+    /**
+     * Allow operations responders to acknowledge an incident in the selected workspace.
+     */
+    public function acknowledge(User $user, OperationalIncident $incident): bool
+    {
+        return $this->operates($user, $incident);
+    }
+
+    /**
+     * Allow operations responders to assign an incident in the selected workspace.
+     */
+    public function assign(User $user, OperationalIncident $incident): bool
+    {
+        return $this->operates($user, $incident);
+    }
+
+    /**
+     * Allow operations responders to append a note to an incident in the selected workspace.
+     */
+    public function note(User $user, OperationalIncident $incident): bool
+    {
+        return $this->operates($user, $incident);
+    }
+
+    /**
+     * Allow operations responders to resolve an incident in the selected workspace.
+     */
+    public function resolve(User $user, OperationalIncident $incident): bool
+    {
+        return $this->operates($user, $incident);
+    }
+
+    private function operates(User $user, OperationalIncident $incident): bool
+    {
+        return app(DeployerProjectAccess::class)->incidents(OperationalIncident::query()->whereKey($incident->getKey()), $user)->exists()
+            && (int) $incident->organization_id === (int) $user->current_organization_id
+            && $incident->organization->permits($user, 'operate');
+    }
+}

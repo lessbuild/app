@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
-use App\Actions\Server\DeleteCloudServerAction;
-use App\Contracts\ServerProvider;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Services\ServerProviderResolver;
+use App\Modules\Deployer\Actions\Server\DeleteCloudServerAction;
+use App\Modules\Deployer\Contracts\ServerProvider;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Services\ServerProviderResolver;
 use Mockery;
 use RuntimeException;
 use Tests\TestCase;

@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Models\Environment;
-use App\Models\ObservabilityInvestigationView;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\ObservabilityInvestigationView;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Str;
 use Tests\TestCase;

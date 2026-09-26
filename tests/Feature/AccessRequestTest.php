@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\AccessRequest;
-use App\Models\User;
-use App\Notifications\AccessInvitationNotification;
-use App\Notifications\AccessRequestReceivedNotification;
+use App\Modules\Deployer\Models\AccessRequest;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\AccessInvitationNotification;
+use App\Modules\Deployer\Notifications\AccessRequestReceivedNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
@@ -26,7 +26,11 @@ class AccessRequestTest extends TestCase
 
     public function test_closed_registration_has_a_complete_public_request_path(): void
     {
-        $this->get('/')->assertOk()->assertSee(route('access-request.create'))->assertSee('Request access');
+        $this->get('/')->assertOk()
+            ->assertSee('Ship. Monitor. Understand.')
+            ->assertSee('Deployer')
+            ->assertSee('Monitor')
+            ->assertSee('Analytics');
         $this->get(route('pricing'))->assertOk()->assertSee('Request access')->assertDontSee('Start 14-day trial');
         $this->get(route('login'))->assertOk()->assertSee('Request an account');
         $this->get(route('access-request.create', ['plan' => 'pro']))

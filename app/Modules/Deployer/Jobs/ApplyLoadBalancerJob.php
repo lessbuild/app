@@ -1,0 +1,121 @@
+<?php
+
+namespace App\Modules\Deployer\Jobs;
+
+use App\Modules\Deployer\Models\LoadBalancer;
+use App\Modules\Deployer\Models\ProductDeletionFence;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Services\Runner;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldBeUnique;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Queue\SerializesModels;
+use RuntimeException;
+use Throwable;
+
+class ApplyLoadBalancerJob implements ShouldBeUnique, ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    public int $uniqueFor = 300;
+
+    public int $tries = 18;
+
+    public int $maxExceptions = 3;
+
+    public int $timeout = 75;
+
+    public array $backoff = [10, 30, 60];
+
+    /**
+     * Capture the load balancer whose current nodes will be rendered at execution time.
+     *
+     * @param  int  $loadBalancerId  Persisted load-balancer identifier used to locate its routing configuration.
+     */
+    public function __construct(public readonly int $loadBalancerId) {}
+
+    /**
+     * Coalesce queued instances of this job for the same load balancer.
+     *
+     * @return string The load balancer identifier used by Laravel's unique-job lock.
+     */
+    public function uniqueId(): string
+    {
+        return (string) $this->loadBalancerId;
+    }
+
+    /** @return array<int, WithoutOverlapping> Serialize apply and removal commands for one remote route. */
+    public function middleware(): array
+    {
+        return [
+            (new WithoutOverlapping('load-balancer:'.$this->loadBalancerId))
+                ->shared()
+                ->releaseAfter(5)
+                ->expireAfter(90),
+        ];
+    }
+
+    /**
+     * Render weighted active upstreams, validate and reload Caddy, and record the applied state; skip unavailable servers and record then rethrow application failures.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     */
+    public function handle(Runner $runner): void
+    {
+        $candidate = LoadBalancer::query()->find($this->loadBalancerId);
+        if ($candidate && ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $candidate->organization_id)->exists()) {
+            LoadBalancer::query()->whereKey($this->loadBalancerId)->whereIn('status', ['pending', 'failed'])->update([
+                'status' => 'failed', 'last_error' => 'Apply canceled because its workspace is being deleted.',
+            ]);
+
+            return;
+        }
+        $balancer = LoadBalancer::query()
+            ->with(['server', 'nodes.server'])
+            ->whereKey($this->loadBalancerId)
+            ->whereIn('status', ['pending', 'failed'])
+            ->first();
+        if (! $balancer?->server || $balancer->server->provisioning_status !== Server::STATUS_ACTIVE) {
+            return;
+        }
+        try {
+            $upstreams = $balancer->nodes->filter(fn ($node) => $node->is_enabled && $node->server?->provisioning_status === Server::STATUS_ACTIVE)
+                ->flatMap(fn ($node) => array_fill(0, max(1, min(10, $node->weight)), 'http://'.$node->server->public_ip.':'.$node->upstream_port))->values();
+            $hostname = strtolower($balancer->hostname);
+            if (! preg_match('/\A(?=.{1,253}\z)(?:[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/D', $hostname)) {
+                throw new RuntimeException('Unsafe load-balancer hostname.');
+            }
+            $path = $balancer->health_path;
+            if (! preg_match('#\A/[A-Za-z0-9._~!$&\'()*+,;=:@%/-]*\z#D', $path)) {
+                throw new RuntimeException('Unsafe health path.');
+            }
+            $block = $upstreams->isEmpty()
+                ? $hostname." {\n    respond \"No healthy application nodes\" 503\n}\n"
+                : $hostname." {\n    reverse_proxy ".implode(' ', $upstreams->all())." {\n        lb_policy least_conn\n        health_uri {$path}\n        health_interval 10s\n        health_timeout 3s\n        fail_duration 30s\n        max_fails 2\n    }\n}\n";
+            $encoded = escapeshellarg(base64_encode($block));
+            $file = escapeshellarg('/etc/caddy/websites/ha-'.$balancer->id.'.conf');
+            $script = "set -e\nprintf '%s' {$encoded} | base64 --decode > {$file}\ncaddy fmt --overwrite {$file}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy";
+            $result = $runner->server($balancer->server)->create()->execute($script);
+            if (! $result->isSuccessful()) {
+                throw new RuntimeException(trim($result->getErrorOutput()) ?: 'Caddy rejected the load-balancer configuration.');
+            }
+            LoadBalancer::query()
+                ->whereKey($balancer->id)
+                ->whereIn('status', ['pending', 'failed'])
+                ->update(['status' => 'active', 'last_error' => null, 'applied_at' => now(), 'updated_at' => now()]);
+        } catch (Throwable $exception) {
+            LoadBalancer::query()
+                ->whereKey($balancer->id)
+                ->whereIn('status', ['pending', 'failed'])
+                ->update([
+                    'status' => 'failed',
+                    'last_error' => mb_substr($exception->getMessage(), 0, 2000),
+                    'updated_at' => now(),
+                ]);
+            throw $exception;
+        }
+    }
+}

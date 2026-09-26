@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Web\AddWebsiteJob;
-use App\Models\Build;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\PurgeOldReleasesScript;
+use App\Modules\Deployer\Jobs\Web\AddWebsiteJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\PurgeOldReleasesScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Symfony\Component\Process\Process;
@@ -40,7 +40,9 @@ class WebsiteReleaseRetentionTest extends TestCase
             ->assertSee('Keep between 2 and 20 releases')
             ->assertSee('value="5"', false)
             ->assertSee('class="ui-input w-full"', false)
-            ->assertSee('class="ui-panel bg-surface-muted p-5"', false);
+            ->assertSee('ui-card', false)
+            ->assertSee('bg-surface-muted p-5', false)
+            ->assertSee('shadow-none', false);
     }
 
     public function test_custom_retention_controls_remote_release_pruning(): void

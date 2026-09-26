@@ -1,0 +1,623 @@
+<x-layouts.app>
+    <x-signal.ui.page-header
+        eyebrow="{{ __('Account security') }}"
+        icon="user-circle"
+        :title="__('Account')"
+        :description="__('Manage your profile and sign-in credentials.')"
+    />
+
+    @php
+        $connectedProviderCount = $socialProviders->where('connected', true)->count();
+        $signInHistoryDialogId = 'account-sign-in-history-dialog';
+        $signInHistoryDialogOpen = request()->query('dialog') === $signInHistoryDialogId;
+        $signInHistoryDialogUrl = route('account.index', ['dialog' => $signInHistoryDialogId]);
+        $signInHistoryContentUrl = route('account.sign-ins.index', ['fragment' => 'sign-in-history']);
+        $accountAuditDialogId = 'account-audit-dialog';
+        $accountAuditDialogOpen = request()->query('dialog') === $accountAuditDialogId;
+        $accountAuditDialogUrl = route('account.index', ['dialog' => $accountAuditDialogId]);
+        $accountAuditContentUrl = route('activity.index', [
+            'category' => 'account',
+            'fragment' => 'account-audit',
+        ]);
+        $profileDialogId = 'account-profile-dialog';
+        $profileDialogOpen = request()->query('dialog') === $profileDialogId
+            || $errors->getBag('profile')->any();
+        $profileDialogUrl = route('account.index', ['dialog' => $profileDialogId]);
+        $securityCheckCount = collect([
+            auth()->user()->hasVerifiedEmail(),
+            auth()->user()->hasLocalPassword(),
+            filled(auth()->user()->two_factor_secret),
+        ])->filter()->count();
+    @endphp
+
+    <x-signal.ui.insights
+        id="account-insights"
+        class="mt-6 max-w-5xl"
+        :summary="trans_choice(':count of 3 account security checks complete|:count of 3 account security checks complete', $securityCheckCount, ['count' => $securityCheckCount])"
+    >
+        <dl class="ui-insight-grid grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <x-signal.ui.stat
+                :label="__('Email')"
+                :value="auth()->user()->hasVerifiedEmail() ? __('Verified') : __('Needs verification')"
+                :description="__('Required before managing infrastructure.')"
+            />
+            <x-signal.ui.stat
+                :label="__('Two-factor')"
+                :value="filled(auth()->user()->two_factor_secret) ? __('Enabled') : __('Not enabled')"
+                :description="__('Authenticator protection for sign-in.')"
+            />
+            <x-signal.ui.stat
+                :label="__('Browser sessions')"
+                :value="$browserSessions->count()"
+                :description="__('Active sessions, including this browser.')"
+            />
+            <x-signal.ui.stat
+                :label="__('Connected sign-ins')"
+                :value="$connectedProviderCount"
+                :description="__('Linked social sign-in providers.')"
+            />
+        </dl>
+    </x-signal.ui.insights>
+
+    <x-signal.ui.local-nav :label="__('Account sections')">
+        <a
+            href="{{ $profileDialogUrl }}"
+            class="ui-local-nav__link"
+            data-modal-trigger="{{ $profileDialogId }}"
+            aria-controls="{{ $profileDialogId }}"
+            aria-expanded="{{ $profileDialogOpen ? 'true' : 'false' }}"
+        >{{ __('Profile') }}</a>
+        <a href="#password" class="ui-local-nav__link">{{ __('Password') }}</a>
+        <a href="#account-two-factor" class="ui-local-nav__link">{{ __('Two-factor') }}</a>
+        <a href="#account-security-activity" class="ui-local-nav__link">{{ __('Security activity') }}</a>
+        <a href="#account-sign-ins" class="ui-local-nav__link">{{ __('Sign-ins') }}</a>
+        <a href="#account-browser-sessions" class="ui-local-nav__link">{{ __('Sessions') }}</a>
+        <a href="#account-connected-accounts" class="ui-local-nav__link">{{ __('Connected accounts') }}</a>
+        <a href="#account-data" class="ui-local-nav__link">{{ __('Your data') }}</a>
+    </x-signal.ui.local-nav>
+
+    <div class="mt-8 max-w-5xl space-y-8">
+        @if (! auth()->user()->hasVerifiedEmail())
+            <x-signal.ui.alert tone="warning" class="p-4">
+                <p class="font-semibold">{{ __('Verify your email') }}</p>
+                <p class="mt-1">{{ __('Verify :email before managing infrastructure or deployments.', ['email' => auth()->user()->email]) }}</p>
+                @if (session('status') === 'verification-link-sent')
+                    <p class="mt-2 font-semibold">{{ __('A new verification link has been sent.') }}</p>
+                @endif
+                @if (session('verification_error'))
+                    <p class="mt-2 font-semibold text-danger">{{ session('verification_error') }}</p>
+                @endif
+                <form method="POST" action="{{ route('verification.send') }}" class="mt-3">
+                    @csrf
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Send verification email') }}</x-signal.ui.button>
+                </form>
+            </x-signal.ui.alert>
+        @endif
+
+        <section id="account-profile" class="scroll-mt-24">
+            <x-signal.ui.settings-section
+                :title="__('Profile information')"
+                :description="__('Keep your account identity and contact details current.')"
+            >
+                <div class="flex flex-wrap items-start justify-between gap-4 bg-surface px-4 py-5 sm:p-6">
+                    <div>
+                        <p class="text-lg font-semibold text-ink">{{ auth()->user()->name }}</p>
+                        <p class="mt-1 text-sm text-muted">{{ auth()->user()->email }}</p>
+                        <p class="mt-3 text-xs text-muted">
+                            {{ auth()->user()->hasVerifiedEmail() ? __('Email verified') : __('Email verification required before managing infrastructure.') }}
+                        </p>
+                    </div>
+                    <x-signal.ui.button
+                        href="{{ $profileDialogUrl }}"
+                        data-modal-trigger="{{ $profileDialogId }}"
+                        aria-controls="{{ $profileDialogId }}"
+                        aria-expanded="{{ $profileDialogOpen ? 'true' : 'false' }}"
+                        variant="secondary"
+                    >{{ __('Edit profile') }}</x-signal.ui.button>
+                </div>
+            </x-signal.ui.settings-section>
+        </section>
+
+        <form id="password" method="POST" action="{{ route('account.password.update') }}">
+            @csrf
+            @method('PATCH')
+
+            <x-signal.ui.settings-section
+                :title="__('Update password')"
+                :description="__('Use a long, unique password to keep your account secure.')"
+            >
+                <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
+                    @if (session('password_status'))
+                        <x-signal.ui.alert tone="success" class="p-3" role="status">
+                            {{ session('password_status') }}
+                        </x-signal.ui.alert>
+                    @endif
+
+                    @if (! auth()->user()->hasLocalPassword())
+                        <x-signal.ui.alert as="p" tone="info" class="p-3">
+                            {{ __('You signed in with :provider. Set a password here to also enable email and password sign-in.', ['provider' => ucfirst(auth()->user()->auth_type ?? 'a social provider')]) }}
+                        </x-signal.ui.alert>
+                    @else
+                        <label class="block">
+                            <span class="ui-label">{{ __('Current password') }}</span>
+                            <x-signal.ui.input class="ui-input" name="current_password" type="password" autocomplete="current-password" required :restore="false" />
+                        </label>
+                        <x-forms.errors name="current_password" bag="password" />
+                    @endif
+
+                    <label class="block">
+                        <span class="ui-label">{{ __('New password') }}</span>
+                    <x-signal.ui.input class="ui-input" name="password" type="password" autocomplete="new-password" required :restore="false" />
+                    </label>
+                    <x-forms.errors name="password" bag="password" />
+
+                    <label class="block">
+                        <span class="ui-label">{{ __('Confirm new password') }}</span>
+                    <x-signal.ui.input class="ui-input" name="password_confirmation" type="password" autocomplete="new-password" required :restore="false" />
+                    </label>
+                </div>
+
+                <x-slot:footer>
+                    <div class="border-t border-line bg-surface-muted px-4 py-3 text-right sm:px-6">
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Update password') }}</x-signal.ui.button>
+                    </div>
+                </x-slot:footer>
+            </x-signal.ui.settings-section>
+        </form>
+
+        <x-signal.ui.settings-section
+            id="account-two-factor"
+            :title="__('Two-factor authentication')"
+            :description="__('Require a rotating authenticator code after password or social sign-in.')"
+            :collapsible="true"
+            :open="session('two_factor_status') || session('two_factor_recovery_codes') || filled(auth()->user()->two_factor_secret) || $errors->getBag('twoFactor')->any()"
+        >
+            <div class="space-y-5 bg-surface px-4 py-5 sm:p-6">
+                @if (session('two_factor_status'))
+                    <x-signal.ui.alert tone="success" class="p-3" role="status">{{ session('two_factor_status') }}</x-signal.ui.alert>
+                @endif
+
+                @if (session('two_factor_recovery_codes'))
+                    <x-signal.ui.alert tone="warning" class="p-4">
+                        <p class="font-bold">{{ __('Save these one-time recovery codes') }}</p>
+                        <p class="mt-1 text-sm">{{ __('They will not be shown again. Store them somewhere separate from your authenticator app.') }}</p>
+                        <div class="mt-4 grid gap-2 font-mono text-sm sm:grid-cols-2">
+                            @foreach (session('two_factor_recovery_codes') as $recoveryCode)
+                            <code class="rounded-card border border-line bg-surface-muted px-3 py-2 text-ink">{{ $recoveryCode }}</code>
+                            @endforeach
+                        </div>
+                    </x-signal.ui.alert>
+                @endif
+
+                @if (auth()->user()->twoFactorEnabled())
+                    <x-signal.ui.alert tone="success" class="p-4">
+                        <p class="font-bold">{{ __('Two-factor authentication is active') }}</p>
+                        <p class="mt-1 text-sm">{{ __('Every new sign-in requires your authenticator app or an unused recovery code.') }}</p>
+                    </x-signal.ui.alert>
+                    <div class="grid gap-5 lg:grid-cols-2">
+                        <x-signal.ui.card as="form" class="space-y-3 p-4" method="POST" action="{{ route('account.two-factor.recovery-codes') }}">
+                            @csrf
+                            <h3 class="font-bold text-ink">{{ __('Replace recovery codes') }}</h3>
+                            @if (auth()->user()->hasLocalPassword())
+                                <x-signal.ui.input name="current_password" type="password" autocomplete="current-password" class="ui-input" placeholder="{{ __('Current password') }}" required :restore="false" />
+                            @endif
+                            <x-signal.ui.input name="code" autocomplete="one-time-code" class="ui-input font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required :restore="false" />
+                            <x-signal.ui.button type="submit" variant="primary">{{ __('Generate new codes') }}</x-signal.ui.button>
+                        </x-signal.ui.card>
+                        <x-signal.ui.panel as="form" method="POST" action="{{ route('account.two-factor.disable') }}" class="ui-panel ui-panel--danger space-y-3 p-4">
+                            @csrf @method('DELETE')
+                            <h3 class="font-bold text-ink">{{ __('Disable two-factor authentication') }}</h3>
+                            @if (auth()->user()->hasLocalPassword())
+                                <x-signal.ui.input name="current_password" type="password" autocomplete="current-password" class="ui-input" placeholder="{{ __('Current password') }}" required :restore="false" />
+                            @endif
+                            <x-signal.ui.input name="code" autocomplete="one-time-code" class="ui-input font-mono" placeholder="{{ __('Authenticator or recovery code') }}" required :restore="false" />
+                            <x-signal.ui.button type="submit" variant="danger">{{ __('Disable two-factor') }}</x-signal.ui.button>
+                        </x-signal.ui.panel>
+                    </div>
+                @elseif (filled(auth()->user()->two_factor_secret))
+                    <div>
+                        <h3 class="font-bold text-ink">{{ __('Connect your authenticator app') }}</h3>
+                        <p class="mt-1 text-sm text-muted">{{ __('Add this setup key manually, then enter the generated six-digit code.') }}</p>
+                        <code class="mt-3 block break-all rounded-card border border-line bg-surface-muted p-3 font-mono text-ink">{{ auth()->user()->two_factor_secret }}</code>
+                        <details class="mt-3 text-sm text-muted"><summary class="ui-link cursor-pointer">{{ __('Show provisioning URI') }}</summary><code class="mt-2 block break-all rounded-card border border-line bg-surface-muted p-3 text-xs text-ink">{{ $twoFactorProvisioningUri }}</code></details>
+                    </div>
+                    <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        <form method="POST" action="{{ route('account.two-factor.confirm') }}" class="flex flex-1 flex-col gap-3 sm:flex-row sm:items-end">
+                            @csrf
+                            <label class="block flex-1"><span class="ui-label">{{ __('Six-digit code') }}</span><x-signal.ui.input name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="20" class="ui-input font-mono" required :restore="false" /></label>
+                            <x-signal.ui.button type="submit" variant="primary">{{ __('Confirm and enable') }}</x-signal.ui.button>
+                        </form>
+                        <form method="POST" action="{{ route('account.two-factor.cancel') }}">@csrf @method('DELETE')
+                            <x-signal.ui.button type="submit" variant="secondary">{{ __('Cancel setup') }}</x-signal.ui.button>
+                        </form>
+                    </div>
+                @else
+                    <p class="text-sm leading-6 text-muted">{{ __('Use any TOTP-compatible authenticator. You will receive eight one-time recovery codes after confirmation.') }}</p>
+                    <form method="POST" action="{{ route('account.two-factor.enable') }}" class="flex flex-col gap-3 sm:flex-row sm:items-end">
+                        @csrf
+                        @if (auth()->user()->hasLocalPassword())
+                            <label class="block flex-1"><span class="ui-label">{{ __('Current password') }}</span><x-signal.ui.input name="current_password" type="password" autocomplete="current-password" class="ui-input" required :restore="false" /></label>
+                        @endif
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Set up authenticator') }}</x-signal.ui.button>
+                    </form>
+                @endif
+                <x-forms.errors name="current_password" bag="twoFactor" />
+                <x-forms.errors name="code" bag="twoFactor" />
+            </div>
+        </x-signal.ui.settings-section>
+
+        <x-signal.ui.settings-section
+            id="account-security-activity"
+            :title="__('Recent security activity')"
+            :description="__('Review recent changes to your profile, credentials, sessions, and connected sign-in methods.')"
+            :collapsible="true"
+        >
+            <div class="bg-surface p-4 sm:p-6">
+                <x-activity-feed
+                    :events="$recentAccountEvents"
+                    :empty-title="__('No security activity yet')"
+                    :empty-description="__('Account security changes will appear here without credential, provider identity, session, or network details.')"
+                />
+            </div>
+
+            @if (auth()->user()->hasVerifiedEmail())
+                <x-slot:footer>
+                    <div class="flex justify-end border-t border-line bg-surface-muted px-4 py-3 sm:px-6">
+                        <x-signal.ui.button
+                            href="{{ route('activity.index', ['category' => 'account']) }}"
+                            data-modal-trigger="{{ $accountAuditDialogId }}"
+                            data-modal-content-url="{{ $accountAuditContentUrl }}"
+                            data-modal-history-url="{{ $accountAuditDialogUrl }}"
+                            aria-controls="{{ $accountAuditDialogId }}"
+                            aria-expanded="{{ $accountAuditDialogOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >
+                            {{ __('View full account audit') }}
+                        </x-signal.ui.button>
+                    </div>
+                </x-slot:footer>
+            @endif
+        </x-signal.ui.settings-section>
+
+        <x-signal.ui.settings-section
+            id="account-sign-ins"
+            :title="__('Recent sign-ins')"
+            :description="__('Review successful sign-ins retained for account security history.')"
+            :collapsible="true"
+            :open="session('sign_ins_status') || $errors->getBag('signIns')->any()"
+        >
+            <div class="divide-y divide-line bg-surface">
+                @if (session('sign_ins_status'))
+                    <x-signal.ui.alert tone="success" class="m-4 p-3" role="status">
+                        {{ session('sign_ins_status') }}
+                    </x-signal.ui.alert>
+                @endif
+                @forelse ($recentSignIns as $signIn)
+                    <div class="flex flex-wrap items-start justify-between gap-3 px-4 py-4 sm:px-6">
+                        <div>
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="font-medium text-ink">{{ $signIn['device'] }}</p>
+                                <x-signal.ui.badge tone="neutral">
+                                    {{ $signIn['method'] }}
+                                </x-signal.ui.badge>
+                            </div>
+                            <p class="mt-1 text-sm text-muted">{{ $signIn['ip_address'] }}</p>
+                        </div>
+                        <time
+                            class="text-sm text-muted"
+                            datetime="{{ $signIn['signed_in_at']->toIso8601String() }}"
+                            title="{{ $signIn['signed_in_at']->toDayDateTimeString() }}"
+                        >
+                            {{ $signIn['signed_in_at']->diffForHumans() }}
+                        </time>
+                    </div>
+                @empty
+                    <div class="p-6 text-center">
+                        <p class="font-medium text-ink">{{ __('No sign-in history yet') }}</p>
+                        <p class="mt-1 text-sm text-muted">
+                            {{ __('Successful password and social sign-ins will appear here.') }}
+                        </p>
+                    </div>
+                @endforelse
+            </div>
+
+            <x-slot:footer>
+                <div class="flex flex-wrap items-end justify-between gap-4 border-t border-line bg-surface-muted px-4 py-3 sm:px-6">
+                    <div class="flex flex-wrap gap-3">
+                        <x-signal.ui.button
+                            href="{{ route('account.sign-ins.index') }}"
+                            data-modal-trigger="{{ $signInHistoryDialogId }}"
+                            data-modal-content-url="{{ $signInHistoryContentUrl }}"
+                            data-modal-history-url="{{ $signInHistoryDialogUrl }}"
+                            aria-controls="{{ $signInHistoryDialogId }}"
+                            aria-expanded="{{ $signInHistoryDialogOpen ? 'true' : 'false' }}"
+                            variant="secondary"
+                        >
+                            {{ __('View full history') }}
+                        </x-signal.ui.button>
+                        <x-signal.ui.button href="{{ route('account.sign-ins.export') }}" variant="secondary">
+                            {{ __('Export CSV') }}
+                        </x-signal.ui.button>
+                    </div>
+
+                    @if ($recentSignIns->isNotEmpty() && auth()->user()->hasLocalPassword())
+                        <form method="POST" action="{{ route('account.sign-ins.destroy') }}" class="flex flex-wrap items-end justify-end gap-3">
+                            @csrf
+                            @method('DELETE')
+                            <label class="block min-w-52 text-left">
+                                <span class="ui-label text-xs">
+                                    {{ __('Current password') }}
+                                </span>
+                                <x-signal.ui.input
+                                    class="ui-input"
+                                    name="current_password"
+                                    type="password"
+                                    autocomplete="current-password"
+                                    required :restore="false" />
+                                <x-forms.errors name="current_password" bag="signIns" />
+                            </label>
+                            <x-signal.ui.button
+                                type="submit"
+                                variant="danger"
+                                onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently clear your successful sign-in history?')) }})"
+                            >
+                                {{ __('Clear history') }}
+                            </x-signal.ui.button>
+                        </form>
+                    @elseif ($recentSignIns->isNotEmpty())
+                        <p class="text-sm text-muted">
+                            {{ __('Set a local password before clearing sign-in history.') }}
+                            <a href="#password" class="ui-link">{{ __('Set password') }}</a>
+                        </p>
+                    @endif
+                </div>
+            </x-slot:footer>
+        </x-signal.ui.settings-section>
+
+        <x-signal.ui.settings-section
+            id="account-browser-sessions"
+            :title="__('Browser sessions')"
+            :description="__('Review active browsers and log out sessions you no longer recognize.')"
+            :collapsible="true"
+            :open="session('sessions_status') || session('sessions_error') || old('session_id') || $errors->getBag('sessions')->any()"
+        >
+            <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
+                @if (session('sessions_status'))
+                    <x-signal.ui.alert tone="success" class="p-3" role="status">
+                        {{ session('sessions_status') }}
+                    </x-signal.ui.alert>
+                @endif
+                @if (session('sessions_error'))
+                    <x-signal.ui.alert tone="danger" class="p-3" role="alert">
+                        {{ session('sessions_error') }}
+                    </x-signal.ui.alert>
+                @endif
+
+                @if ($browserSessionManagementAvailable)
+                    <x-signal.ui.card class="divide-y divide-line overflow-hidden">
+                        @forelse ($browserSessions as $browserSession)
+                            <div class="flex flex-wrap items-start justify-between gap-4 p-4">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <p class="font-medium text-ink">{{ $browserSession['device'] }}</p>
+                                        @if ($browserSession['is_current'])
+                                            <x-signal.ui.badge tone="success">
+                                                {{ __('Current browser') }}
+                                            </x-signal.ui.badge>
+                                        @endif
+                                    </div>
+                                    <p class="mt-1 text-sm text-muted">
+                                        {{ $browserSession['ip_address'] }}
+                                        <span aria-hidden="true">&middot;</span>
+                                        <span title="{{ $browserSession['last_active_at']->toIso8601String() }}">
+                                            {{ __('Active :time', ['time' => $browserSession['last_active_at']->diffForHumans()]) }}
+                                        </span>
+                                    </p>
+                                </div>
+
+                                @if (! $browserSession['is_current'] && auth()->user()->hasLocalPassword())
+                                    <form method="POST" action="{{ route('account.sessions.destroy', $browserSession['id']) }}" class="flex flex-wrap items-end justify-end gap-3">
+                                        @csrf
+                                        @method('DELETE')
+                                        <x-signal.ui.input type="hidden" name="session_id" value="{{ $browserSession['id'] }}" :restore="false" />
+                                        <label class="block min-w-52 text-left">
+                                            <span class="ui-label text-xs">
+                                                {{ __('Current password') }}
+                                            </span>
+                                            <x-signal.ui.input
+                                                class="ui-input"
+                                                name="current_password"
+                                                type="password"
+                                                autocomplete="current-password"
+                                                required :restore="false" />
+                                            @if (old('session_id') === $browserSession['id'])
+                                                <x-forms.errors name="current_password" bag="sessions" />
+                                            @endif
+                                        </label>
+                                        <x-signal.ui.button
+                                            type="submit"
+                                            variant="danger"
+                                            onclick="return confirm({{ Illuminate\Support\Js::from(__('Log out this browser session?')) }})"
+                                        >
+                                            {{ __('Log out') }}
+                                        </x-signal.ui.button>
+                                    </form>
+                                @endif
+                            </div>
+                        @empty
+                            <p class="p-4 text-sm text-muted">
+                                {{ __('No active database-backed browser sessions were found.') }}
+                            </p>
+                        @endforelse
+                    </x-signal.ui.card>
+                    @if ($browserSessions->count() === App\Modules\Deployer\Services\BrowserSessionManager::MAX_VISIBLE_SESSIONS)
+                        <p class="text-xs text-muted">
+                            {{ __('Showing the 20 most recently active sessions. Use the control below to log out every other session.') }}
+                        </p>
+                    @endif
+                @endif
+
+                @if (auth()->user()->hasLocalPassword())
+                    <form method="POST" action="{{ route('account.sessions.revoke') }}" class="space-y-6 border-t border-line pt-6">
+                        @csrf
+                        <label class="block">
+                            <span class="ui-label">{{ __('Current password') }}</span>
+                            <x-signal.ui.input
+                                class="ui-input"
+                                name="current_password"
+                                type="password"
+                                autocomplete="current-password"
+                                required :restore="false" />
+                        </label>
+                        @if (blank(old('session_id')))
+                            <x-forms.errors name="current_password" bag="sessions" />
+                        @endif
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Log out other sessions') }}</x-signal.ui.button>
+                    </form>
+                @else
+                    <p class="text-sm text-muted">
+                        {{ __('Set a local password before revoking other browser sessions.') }}
+                        <a href="#password" class="ui-link">{{ __('Set password') }}</a>
+                    </p>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+
+        <x-signal.ui.settings-section
+            id="account-connected-accounts"
+            :title="__('Connected accounts')"
+            :description="__('Review and disconnect social sign-in methods linked to your account.')"
+            :collapsible="true"
+            :open="session('social_status') || session('social_error') || $errors->getBag('social')->any()"
+        >
+            <div class="divide-y divide-line bg-surface">
+                @if (session('social_status'))
+                    <x-signal.ui.alert tone="success" class="m-4" role="status">
+                        {{ session('social_status') }}
+                    </x-signal.ui.alert>
+                @endif
+                @if (session('social_error'))
+                    <x-signal.ui.alert tone="danger" class="m-4 p-3" role="alert">
+                        {{ session('social_error') }}
+                    </x-signal.ui.alert>
+                @endif
+
+                @foreach ($socialProviders as $provider)
+                    <div class="flex flex-wrap items-center justify-between gap-4 px-4 py-5 sm:px-6">
+                        <div>
+                            <p class="font-medium text-ink">{{ $provider['name'] }}</p>
+                            <div class="mt-2">
+                                <x-signal.ui.badge :tone="$provider['connected'] ? 'success' : 'neutral'">
+                                    {{ $provider['connected'] ? __('Connected') : __('Not connected') }}
+                                </x-signal.ui.badge>
+                            </div>
+                        </div>
+                        @if ($provider['connected'] && $provider['can_disconnect'])
+                            <form method="POST" action="{{ route('account.social.destroy', $provider['key']) }}" class="flex flex-wrap items-end justify-end gap-3">
+                                @csrf
+                                @method('DELETE')
+                                <x-signal.ui.input type="hidden" name="social_provider" value="{{ $provider['key'] }}" :restore="false" />
+                                @if ($provider['requires_password'])
+                                    <label class="block min-w-52 text-left">
+                                        <span class="ui-label text-xs">
+                                            {{ __('Current password') }}
+                                        </span>
+                                        <x-signal.ui.input
+                                            class="ui-input"
+                                            name="current_password"
+                                            type="password"
+                                            autocomplete="current-password"
+                                            required :restore="false" />
+                                        @if (old('social_provider') === $provider['key'])
+                                            <x-forms.errors name="current_password" bag="social" />
+                                        @endif
+                                    </label>
+                                @endif
+                                <x-signal.ui.button
+                                    type="submit"
+                                    variant="danger"
+                                    onclick="return confirm({{ Illuminate\Support\Js::from(__('Disconnect :provider?', ['provider' => $provider['name']])) }})"
+                                >
+                                    {{ __('Disconnect') }}
+                                </x-signal.ui.button>
+                            </form>
+                        @elseif ($provider['connected'])
+                            <p class="max-w-sm text-right text-xs text-muted">
+                                {{ __('Set a local password before disconnecting your only sign-in method.') }}
+                            </p>
+                        @elseif ($provider['configured'])
+                            <x-signal.ui.button href="{{ route('account.social.connect', $provider['key']) }}" variant="secondary">
+                                {{ __('Connect') }}
+                            </x-signal.ui.button>
+                        @else
+                            <p class="text-xs text-muted">{{ __('Not configured') }}</p>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </x-signal.ui.settings-section>
+
+        <x-signal.ui.settings-section
+            id="account-data"
+            :title="__('Your data and account')"
+            :description="$canDeleteAccount ? __('Export your information or permanently delete your :app account.', ['app' => config('app.name')]) : __('Export your information. Account deletion will return after shared product cleanup is coordinated.')"
+            :collapsible="true"
+            :open="$errors->getBag('deleteAccount')->any()"
+        >
+            <div class="space-y-6 bg-surface px-4 py-5 sm:p-6">
+                <x-signal.ui.card class="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div><h3 class="font-bold text-ink">{{ __('Export account data') }}</h3><p class="mt-1 text-sm text-muted">{{ __('Download profile, workspace, infrastructure metadata, and sign-in records as JSON. Secrets are excluded.') }}</p></div>
+                    <x-signal.ui.button href="{{ route('account.export') }}" variant="secondary" class="shrink-0">{{ __('Download export') }}</x-signal.ui.button>
+                </x-signal.ui.card>
+                @if ($canDeleteAccount)
+                    <x-signal.ui.panel as="form" method="POST" action="{{ route('account.destroy') }}" class="ui-panel ui-panel--danger space-y-4 p-4">
+                        @csrf @method('DELETE')
+                        <div><h3 class="font-bold text-ink">{{ __('Delete account and owned workspaces') }}</h3><p class="mt-1 text-sm leading-6 text-muted">{{ __('This permanently removes :app control-plane data. It does not delete servers or resources in connected provider accounts. Remove teammates and wait for active operations first.', ['app' => config('app.name')]) }}</p></div>
+                        <label class="block"><span class="ui-label">{{ __('Type your email address to confirm') }}</span><x-signal.ui.input name="confirmation" type="email" autocomplete="off" class="ui-input" required :restore="false" /></label>
+                        @if (auth()->user()->hasLocalPassword())
+                            <label class="block"><span class="ui-label">{{ __('Current password') }}</span><x-signal.ui.input name="current_password" type="password" autocomplete="current-password" class="ui-input" required :restore="false" /></label>
+                        @endif
+                        @if (auth()->user()->twoFactorEnabled())
+                            <label class="block"><span class="ui-label">{{ __('Authenticator or recovery code') }}</span><x-signal.ui.input name="code" autocomplete="one-time-code" class="ui-input font-mono" required :restore="false" /></label>
+                        @endif
+                        <x-forms.errors name="confirmation" bag="deleteAccount" />
+                        <x-forms.errors name="current_password" bag="deleteAccount" />
+                        <x-forms.errors name="code" bag="deleteAccount" />
+                        <x-signal.ui.button type="submit" variant="danger" onclick="return confirm({{ Illuminate\Support\Js::from(__('Permanently delete your account and every workspace you own?')) }})">{{ __('Permanently delete account') }}</x-signal.ui.button>
+                    </x-signal.ui.panel>
+                @else
+                    <x-signal.ui.panel class="space-y-2 border-l-4 border-l-warning p-4">
+                        <h3 class="font-bold text-ink">{{ __('Account deletion is temporarily unavailable') }}</h3>
+                        <p class="text-sm leading-6 text-muted">{{ __('This account is shared across Buildpusher products. Deleting only the Deployer copy could leave workspace access or product data in an inconsistent state, so no product-local deletion is allowed. The coordinated account cleanup workflow is still being completed. Your account and data remain unchanged; you can download the shared account export from Core account security.') }}</p>
+                    </x-signal.ui.panel>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+    </div>
+
+    <x-signal.overlays.modal
+        id="{{ $signInHistoryDialogId }}"
+        :title="__('Sign-in history')"
+        :description="__('Review successful sign-ins without leaving account security settings.')"
+        :open="$signInHistoryDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-muted">{{ __('Loading sign-in history…') }}</p>
+        </div>
+    </x-signal.overlays.modal>
+
+    <x-scenes.users.profile-dialog :open="$profileDialogOpen" />
+
+    <x-signal.overlays.modal
+        id="{{ $accountAuditDialogId }}"
+        :title="__('Account audit')"
+        :description="__('Review security activity without leaving account settings.')"
+        :open="$accountAuditDialogOpen"
+        body-class="p-0"
+    >
+        <div data-modal-content>
+            <p class="p-5 text-sm text-muted">{{ __('Loading account audit…') }}</p>
+        </div>
+    </x-signal.overlays.modal>
+</x-layouts.app>

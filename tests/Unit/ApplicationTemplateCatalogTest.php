@@ -2,8 +2,8 @@
 
 namespace Tests\Unit;
 
-use App\Data\ApplicationTemplateDefinition;
-use App\Services\ApplicationTemplateCatalog;
+use App\Modules\Deployer\Data\ApplicationTemplateDefinition;
+use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use InvalidArgumentException;
 use Tests\TestCase;
 

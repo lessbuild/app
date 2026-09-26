@@ -2,13 +2,13 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\SyncOrganizationSeatQuantityJob;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\User;
-use App\Notifications\OrganizationInvitationNotification;
-use App\Services\PersonalOrganization;
-use App\Services\TwoFactorAuthentication;
+use App\Modules\Deployer\Jobs\SyncOrganizationSeatQuantityJob;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\OrganizationInvitationNotification;
+use App\Modules\Deployer\Services\PersonalOrganization;
+use App\Modules\Deployer\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;

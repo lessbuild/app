@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Server\InitialiseServerJob;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Recipe;
-use App\Models\Server;
-use App\Models\User;
-use App\Scripts\Server\RecipesScript;
+use App\Modules\Deployer\Jobs\Server\InitialiseServerJob;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Scripts\Server\RecipesScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;

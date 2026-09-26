@@ -2,33 +2,62 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\ProviderConnectionCheck;
-use App\Models\Recipe;
-use App\Models\RecipeRating;
-use App\Models\RecipeReport;
-use App\Models\RepositoryWebhookDelivery;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\ServerLogSnapshot;
-use App\Models\SignInEvent;
-use App\Models\StatusPage;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
-use Database\Seeders\DemoAccountSeeder;
-use Database\Seeders\DemoGallerySeeder;
-use Database\Seeders\DemoSeeder;
+use App\Modules\Deployer\Database\Seeders\DemoAccountSeeder;
+use App\Modules\Deployer\Database\Seeders\DemoGallerySeeder;
+use App\Modules\Deployer\Database\Seeders\DemoSeeder;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ProviderConnectionCheck;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\RecipeRating;
+use App\Modules\Deployer\Models\RecipeReport;
+use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\ServerLogSnapshot;
+use App\Modules\Deployer\Models\SignInEvent;
+use App\Modules\Deployer\Models\StatusPage;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
 class DemoSeederTest extends TestCase
 {
     use RefreshDatabase;
+
+    private bool $createdCoreSessionsTable = false;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        if (! Schema::connection('core')->hasTable('sessions')) {
+            Schema::connection('core')->create('sessions', function ($table): void {
+                $table->string('id')->primary();
+                $table->ulid('user_id')->nullable()->index();
+                $table->string('ip_address', 45)->nullable();
+                $table->text('user_agent')->nullable();
+                $table->longText('payload');
+                $table->unsignedInteger('last_activity')->index();
+            });
+            $this->createdCoreSessionsTable = true;
+        }
+    }
+
+    protected function tearDown(): void
+    {
+        if ($this->createdCoreSessionsTable) {
+            Schema::connection('core')->dropIfExists('sessions');
+        }
+
+        parent::tearDown();
+    }
 
     public function test_demo_seeder_creates_an_idempotent_full_feature_workspace(): void
     {
@@ -48,11 +77,11 @@ class DemoSeederTest extends TestCase
             [SignInEvent::METHOD_PASSWORD, 'github', 'gitlab'],
             $user->signIns()->pluck('method')->all(),
         );
-        $this->assertDatabaseHas('sessions', [
-            'id' => DemoAccountSeeder::SESSION_ID,
-            'user_id' => $user->id,
-            'ip_address' => '192.0.2.10',
-        ]);
+        $this->assertTrue(DB::connection('core')->table('sessions')
+            ->where('id', DemoAccountSeeder::SESSION_ID)
+            ->where('user_id', $user->id)
+            ->where('ip_address', '192.0.2.10')
+            ->exists());
         $this->assertSame(5, $user->providers()->where('name', 'like', DemoSeeder::PREFIX.'%')->count());
         $this->assertEqualsCanonicalizing([
             Provider::TYPE_DIGITALOCEAN,
@@ -293,6 +322,32 @@ class DemoSeederTest extends TestCase
         $restoredImport->load('source');
         $this->assertTrue($restoredImport->hasGalleryUpdate());
         $this->assertSame(1, $user->providers()->where('name', 'Personal provider')->count());
+    }
+
+    public function test_demo_seeders_store_browser_sessions_on_the_shared_auth_connection(): void
+    {
+        $previousConnection = DB::getDefaultConnection();
+
+        try {
+            DB::setDefaultConnection('core');
+
+            $this->assertSame(0, Artisan::call('db:seed', [
+                '--class' => DemoSeeder::class,
+                '--force' => true,
+            ]), Artisan::output());
+        } finally {
+            DB::setDefaultConnection($previousConnection);
+        }
+
+        $user = User::query()->where('email', DemoSeeder::EMAIL)->sole();
+
+        $this->assertTrue(DB::connection('core')->table('sessions')
+            ->where('id', DemoAccountSeeder::SESSION_ID)
+            ->where('user_id', $user->id)
+            ->exists());
+        $this->assertTrue(Schema::connection('core')->hasTable('sessions'));
+        $this->assertFalse(Schema::connection('core')->hasTable('region_size'));
+        $this->assertSame($previousConnection, DB::getDefaultConnection());
     }
 
     public function test_demo_secrets_are_encrypted_and_account_can_sign_in(): void
@@ -1128,7 +1183,7 @@ class DemoSeederTest extends TestCase
                 ->count(),
             'events' => $user->events()->where('event', 'like', 'Demo:%')->count(),
             'notifications' => $user->notifications()->where('data->demo', true)->count(),
-            'browser_sessions' => DB::table('sessions')
+            'browser_sessions' => DB::connection('core')->table('sessions')
                 ->where('id', DemoAccountSeeder::SESSION_ID)
                 ->where('user_id', $user->id)
                 ->count(),

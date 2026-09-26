@@ -1,5 +1,6 @@
 const signalThemeRoot = document.documentElement;
 const signalThemeNamespace = signalThemeRoot.dataset.storageNamespace || 'buildpusher';
+let signalThemeSaveInProgress = false;
 
 /* Keep explicit theme overrides predictable even when a caller adds the
  * opposite class directly. The normal controller toggles the classes
@@ -51,11 +52,13 @@ const syncSignalThemeControls = () => {
 };
 
 const setSignalAppearance = (appearance) => {
-  if (! ['light', 'dark'].includes(appearance)) return;
+  if (! ['system', 'light', 'dark'].includes(appearance)) return;
 
   signalThemeRoot.dataset.appearance = appearance;
-  signalThemeRoot.classList.toggle('dark', appearance === 'dark');
-  signalThemeRoot.classList.toggle('light', appearance !== 'dark');
+  const dark = appearance === 'dark'
+    || (appearance === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
+  signalThemeRoot.classList.toggle('dark', dark);
+  signalThemeRoot.classList.toggle('light', ! dark);
 
   try {
     localStorage.setItem(`${signalThemeNamespace}-appearance`, appearance);
@@ -64,12 +67,70 @@ const setSignalAppearance = (appearance) => {
   syncSignalThemeControls();
 };
 
+const persistSignalAppearance = async (appearance, previousAppearance) => {
+  const url = signalThemeRoot.dataset.themePreferenceUrl;
+  const status = document.querySelector('[data-theme-status]');
+  const controls = [...document.querySelectorAll('[data-theme-toggle]')];
+  const previousDisabled = controls.map((control) => control.disabled);
+  const csrfToken = document.querySelector('meta[name="csrf-token"]')?.content;
+
+  if (! url || ! csrfToken) {
+    setSignalAppearance(previousAppearance);
+    if (status) status.textContent = signalThemeRoot.dataset.themeSaveFailedLabel || 'Appearance could not be saved.';
+
+    return;
+  }
+
+  signalThemeSaveInProgress = true;
+  controls.forEach((control) => {
+    control.disabled = true;
+    control.setAttribute('aria-busy', 'true');
+  });
+  if (status) status.textContent = signalThemeRoot.dataset.themeSavingLabel || 'Saving appearance preference.';
+
+  try {
+    const response = await fetch(url, {
+      method: 'PUT',
+      credentials: 'same-origin',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+      },
+      body: JSON.stringify({ appearance }),
+    });
+    const result = await response.json();
+
+    if (! response.ok || result.appearance !== appearance) {
+      throw new Error('Appearance preference was not saved.');
+    }
+
+    signalThemeRoot.dataset.themeUserAppearance = appearance;
+    if (status) status.textContent = signalThemeRoot.dataset.themeSavedLabel || 'Appearance preference saved.';
+  } catch (_) {
+    setSignalAppearance(previousAppearance);
+    if (status) status.textContent = signalThemeRoot.dataset.themeSaveFailedLabel || 'Appearance could not be saved.';
+  } finally {
+    controls.forEach((control, index) => {
+      control.disabled = previousDisabled[index];
+      control.removeAttribute('aria-busy');
+    });
+    signalThemeSaveInProgress = false;
+  }
+};
+
 document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('click', (event) => {
     const control = event.target.closest('[data-theme-toggle]');
-    if (! control) return;
+    if (! control || signalThemeSaveInProgress) return;
 
-    setSignalAppearance(signalThemeRoot.classList.contains('dark') ? 'light' : 'dark');
+    const previousAppearance = signalThemeRoot.dataset.appearance || 'system';
+    const appearance = signalThemeRoot.classList.contains('dark') ? 'light' : 'dark';
+    setSignalAppearance(appearance);
+
+    if (signalThemeRoot.dataset.themePreferenceUrl) {
+      void persistSignalAppearance(appearance, previousAppearance);
+    }
   });
 
   syncSignalThemeControls();

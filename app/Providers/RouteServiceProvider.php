@@ -2,8 +2,8 @@
 
 namespace App\Providers;
 
-use App\Models\Server;
-use App\Models\User;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Foundation\Support\Providers\RouteServiceProvider as ServiceProvider;
 use Illuminate\Http\Request;
@@ -32,15 +32,6 @@ class RouteServiceProvider extends ServiceProvider
         Route::model('server', Server::class);
 
         $this->configureRateLimiting();
-
-        $this->routes(function (): void {
-            Route::middleware('api')
-                ->prefix('api')
-                ->group(base_path('routes/api.php'));
-
-            Route::middleware('web')
-                ->group(base_path('routes/web.php'));
-        });
     }
 
     /**

@@ -1,0 +1,332 @@
+<?php
+
+namespace App\Modules\Deployer\Http\Controllers;
+
+use App\Modules\Deployer\Http\Requests\ApplyApplicationConfigurationRequest;
+use App\Modules\Deployer\Http\Requests\CancelApplicationConfigurationRequest;
+use App\Modules\Deployer\Http\Requests\CompareApplicationConfigurationRequest;
+use App\Modules\Deployer\Http\Requests\ObserveApplicationConfigurationRequest;
+use App\Modules\Deployer\Http\Requests\RetryApplicationConfigurationRequest;
+use App\Modules\Deployer\Http\Requests\StoreApplicationConfigurationRequest;
+use App\Modules\Deployer\Models\ConfigurationApplication;
+use App\Modules\Deployer\Models\ConfigurationOperation;
+use App\Modules\Deployer\Models\ConfigurationReview;
+use App\Modules\Deployer\Models\EnvironmentVariable;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ApplicationConfigurationAuthoringGuide;
+use App\Modules\Deployer\Services\ApplicationConfigurationCancellation;
+use App\Modules\Deployer\Services\ApplicationConfigurationEnvironmentComparisonQuery;
+use App\Modules\Deployer\Services\ApplicationConfigurationEnvironmentObservationQuery;
+use App\Modules\Deployer\Services\ApplicationConfigurationEnvironmentOverviewQuery;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationResults;
+use App\Modules\Deployer\Services\ApplicationConfigurationRetries;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
+use Illuminate\Contracts\View\View;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Validation\ValidationException;
+
+class ApplicationConfigurationController extends Controller
+{
+    public function __construct(
+        private readonly ApplicationConfigurationResults $results,
+        private readonly ApplicationConfigurationEnvironmentOverviewQuery $environmentOverview,
+        private readonly ApplicationConfigurationAuthoringGuide $authoringGuide,
+        private readonly ApplicationConfigurationEnvironmentObservationQuery $environmentObservation,
+    ) {}
+
+    /**
+     * @param  Request  $request  The authenticated workspace member.
+     * @param  Project  $project  The route-bound project.
+     * @return void Reject access unless the member can view and manage the project workspace.
+     */
+    private function access(Project $project): void
+    {
+        $this->authorize('manageConfiguration', $project);
+    }
+
+    /**
+     * @param  Request  $request  The authenticated request, including binding-catalog pagination.
+     * @param  Project  $project  The project being configured.
+     * @return View The upload form and workspace-scoped binding catalog without secret values.
+     */
+    public function create(Request $request, Project $project): View
+    {
+        $this->access($project);
+
+        return view('scenes.projects.configuration', $this->authoringPageData($project));
+    }
+
+    /**
+     * Render the authorized configuration workflow as a body-only fragment for
+     * the application-context modal. Review state is selected explicitly by
+     * query identity and is never inferred from arbitrary return URLs.
+     *
+     * @return View|Response The authoring, review or application-receipt fragment.
+     */
+    public function dialog(
+        Request $request,
+        Project $project,
+        ApplicationConfigurationReviews $reviews,
+    ): View|Response {
+        $this->access($project);
+        $reviewId = $request->integer('configuration_review');
+
+        if ($reviewId === 0) {
+            return view('scenes.projects.configuration-dialog', $this->authoringPageData($project));
+        }
+
+        $review = ConfigurationReview::query()->findOrFail($reviewId);
+        $data = $this->reviewState($request, $project, $review, $reviews);
+        $status = $data['_status'] ?? 200;
+        unset($data['_status']);
+
+        // A stale review is an expected in-dialog outcome. Keep the canonical
+        // page's 422 response, while allowing the fragment loader to render
+        // the safe recovery message instead of replacing it with a transport
+        // error.
+        return response()->view('scenes.projects.configuration-dialog', $data, $status === 422 ? 200 : $status);
+    }
+
+    /**
+     * Render a manager-only comparison of two environments' recorded local metadata.
+     *
+     * @param  CompareApplicationConfigurationRequest  $request  Validated environment IDs.
+     * @param  Project  $project  The authorized configuration target.
+     * @param  ApplicationConfigurationEnvironmentComparisonQuery  $comparisonQuery  Compares safe recorded state without provider calls.
+     * @return View The authoring page with the selected comparison.
+     */
+    public function compare(
+        CompareApplicationConfigurationRequest $request,
+        Project $project,
+        ApplicationConfigurationEnvironmentComparisonQuery $comparisonQuery,
+    ): View {
+        $this->access($project);
+        $comparison = $comparisonQuery->for($project, $request->fromEnvironmentId(), $request->toEnvironmentId());
+        abort_unless($comparison, 404);
+
+        return view('scenes.projects.configuration', [
+            ...$this->authoringPageData($project),
+            'comparison' => $comparison,
+        ]);
+    }
+
+    /**
+     * Explicitly fetch the supported provider metadata for one recorded environment.
+     *
+     * @param  ObserveApplicationConfigurationRequest  $request  Validated project environment ID.
+     * @param  Project  $project  The authorized configuration target.
+     * @return View The authoring page with a one-time, read-only observation.
+     */
+    public function observe(ObserveApplicationConfigurationRequest $request, Project $project): View
+    {
+        $this->access($project);
+        $observation = $this->environmentObservation->for($project, $request->environmentId());
+        abort_unless($observation, 404);
+
+        return view('scenes.projects.configuration', [
+            ...$this->authoringPageData($project),
+            'observation' => $observation,
+        ]);
+    }
+
+    /**
+     * Compose the shared read-only data for the authoring and comparison views.
+     *
+     * @return array<string, mixed> Workspace-scoped catalogs and safe configuration guidance.
+     */
+    private function authoringPageData(Project $project): array
+    {
+        return [
+            'project' => $project, 'review' => null, 'plan' => null, 'application' => null,
+            'environmentOverview' => $this->environmentOverview->for($project),
+            'authoringGuide' => $this->authoringGuide->for(),
+            'recentApplications' => ConfigurationApplication::query()->whereHas('review', fn ($query) => $query->where('project_id', $project->id))
+                ->latest('id')->limit(20)->get(['id', 'configuration_review_id', 'status', 'created_at']),
+            'websites' => Website::query()->where('organization_id', $project->organization_id)
+                ->whereHas('server', fn ($query) => $query->where('organization_id', $project->organization_id))
+                ->orderBy('name')->paginate(25, ['id', 'name', 'url'], 'sites_page'),
+            'repositories' => Repository::query()->where('organization_id', $project->organization_id)
+                ->orderBy('name')->paginate(25, ['id', 'name', 'website_id', 'branch'], 'repos_page'),
+            'secrets' => EnvironmentVariable::query()->where('is_secret', true)
+                ->whereHas('environment.project', fn ($query) => $query->where('organization_id', $project->organization_id))
+                ->with('environment:id,name,project_id')->orderBy('key')
+                ->paginate(25, ['id', 'environment_id', 'key', 'scope'], 'secrets_page'),
+        ];
+    }
+
+    /**
+     * @param  Request  $request  The submitted YAML and JSON bindings.
+     * @param  Project  $project  The authorized configuration target.
+     * @param  ApplicationConfigurationReviews  $reviews  Creates the immutable review and mutation-free plan.
+     * @return RedirectResponse The saved review or validation feedback without flashing input.
+     */
+    public function store(StoreApplicationConfigurationRequest $request, Project $project, ApplicationConfigurationReviews $reviews): RedirectResponse
+    {
+        $this->access($project);
+        try {
+            $review = $reviews->create($project, $request->user(), $request->document(), $request->bindings());
+        } catch (ValidationException $exception) {
+            // Never flash submitted commands or binding input into session storage.
+            return back()->withErrors($exception->errors());
+        }
+
+        return $this->configurationRedirect($request, $project, $review);
+    }
+
+    /**
+     * @param  Request  $request  The member requesting a review or application receipt.
+     * @param  Project  $project  The review's authorized parent project.
+     * @param  ConfigurationReview  $review  The saved review to inspect.
+     * @param  ApplicationConfigurationReviews  $reviews  Revalidates an unapplied review.
+     * @return View|Response The current review/receipt, or a 422 response for a stale review.
+     */
+    public function show(Request $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReviews $reviews): View|Response
+    {
+        $this->access($project);
+        $data = $this->reviewState($request, $project, $review, $reviews);
+        $status = $data['_status'] ?? 200;
+        unset($data['_status']);
+
+        if ($status !== 200) {
+            return response()->view('scenes.projects.configuration', $data, $status);
+        }
+
+        return view('scenes.projects.configuration', $data);
+    }
+
+    /**
+     * Assemble the existing review and receipt state for both the canonical
+     * page and the contextual fragment without changing its authorization or
+     * stale-review behavior.
+     *
+     * @return array<string, mixed> View data, optionally including `_status` for a stale review response.
+     */
+    private function reviewState(
+        Request $request,
+        Project $project,
+        ConfigurationReview $review,
+        ApplicationConfigurationReviews $reviews,
+    ): array {
+        abort_unless((int) $review->project_id === (int) $project->id, 404);
+        $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->with('operations')->first();
+        abort_unless($application || (int) $review->requested_by === (int) $request->user()->id, 404);
+        if ($application) {
+            $this->authorize('view', $review);
+            $application = $this->results->refresh($application);
+        }
+
+        try {
+            $plan = $application ? $review->summary : $reviews->inspect($review, $request->user());
+        } catch (ValidationException $exception) {
+            return [
+                'project' => $project,
+                'review' => $review,
+                'application' => null,
+                'plan' => null,
+                'reviewError' => collect($exception->errors())->flatten()->first(),
+                '_status' => 422,
+            ];
+        }
+
+        return compact('project', 'review', 'plan', 'application');
+    }
+
+    /**
+     * @param  Request  $request  A cancellation request containing only the operation identity.
+     * @param  Project  $project  The authorized parent project.
+     * @param  ConfigurationReview  $review  The review whose receipt references the operation.
+     * @param  ConfigurationOperation  $operation  The operation to cancel if still safe.
+     * @param  ApplicationConfigurationCancellation  $cancellation  Rechecks state and cancels pending work.
+     * @return RedirectResponse The current receipt or an explanation why cancellation was rejected.
+     */
+    public function cancel(CancelApplicationConfigurationRequest $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationCancellation $cancellation): RedirectResponse
+    {
+        $this->access($project);
+        abort_unless((int) $review->project_id === (int) $project->id, 404);
+        $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->firstOrFail();
+        abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
+        $this->authorize('cancel', $application);
+        try {
+            $cancellation->cancel($operation, $request->user());
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return $this->configurationRedirect($request, $project, $review);
+    }
+
+    /**
+     * @param  Request  $request  The review author's explicit retry request.
+     * @param  Project  $project  The authorized parent project.
+     * @param  ConfigurationReview  $review  The original review for the failed operation.
+     * @param  ConfigurationOperation  $operation  The failed operation referenced by the receipt.
+     * @param  ApplicationConfigurationRetries  $retries  Revalidates and reserves an idempotent retry.
+     * @return RedirectResponse The updated receipt or retry validation feedback.
+     */
+    public function retry(RetryApplicationConfigurationRequest $request, Project $project, ConfigurationReview $review, ConfigurationOperation $operation, ApplicationConfigurationRetries $retries): RedirectResponse
+    {
+        $this->access($project);
+        abort_unless((int) $review->project_id === (int) $project->id && (int) $review->requested_by === (int) $request->user()->id, 404);
+        $application = ConfigurationApplication::query()->where('configuration_review_id', $review->id)->firstOrFail();
+        abort_unless($application->relatedOperations()->whereKey($operation->id)->exists(), 404);
+        $this->authorize('retry', $application);
+        try {
+            $retries->retry($operation, $request->user());
+        } catch (ValidationException $exception) {
+            return back()->withErrors($exception->errors());
+        }
+
+        return $this->configurationRedirect($request, $project, $review);
+    }
+
+    /**
+     * @param  Request  $request  The authenticated application request without replacement input.
+     * @param  Project  $project  The authorized review target.
+     * @param  ConfigurationReview  $review  The saved immutable review to apply.
+     * @param  ApplicationConfigurationReconciler  $reconciler  Applies the reviewed local configuration atomically.
+     * @return RedirectResponse The durable receipt or validation feedback requiring a new review.
+     */
+    public function apply(ApplyApplicationConfigurationRequest $request, Project $project, ConfigurationReview $review, ApplicationConfigurationReconciler $reconciler): RedirectResponse
+    {
+        $this->access($project);
+        abort_unless((int) $review->project_id === (int) $project->id, 404);
+        $this->authorize('apply', $review);
+        try {
+            $reconciler->apply($review, $request->user());
+        } catch (ValidationException $exception) {
+            if ($request->query('dialog') === 'application-configuration') {
+                return redirect()->route('projects.show', [
+                    'project' => $project,
+                    'dialog' => 'application-configuration',
+                    'configuration_review' => $review->id,
+                ])->withErrors($exception->errors());
+            }
+
+            return redirect()->route('projects.configuration.create', $project)->withErrors($exception->errors());
+        }
+
+        return $this->configurationRedirect($request, $project, $review);
+    }
+
+    /**
+     * Return to the application context for modal operations while preserving
+     * the canonical review URL for ordinary full-page requests.
+     */
+    private function configurationRedirect(Request $request, Project $project, ConfigurationReview $review): RedirectResponse
+    {
+        if ($request->query('dialog') === 'application-configuration') {
+            return redirect()->route('projects.show', [
+                'project' => $project,
+                'dialog' => 'application-configuration',
+                'configuration_review' => $review->id,
+            ]);
+        }
+
+        return redirect()->route('projects.configuration.review', [$project, $review]);
+    }
+}

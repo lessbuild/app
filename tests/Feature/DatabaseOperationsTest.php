@@ -2,14 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Database\CloneDatabaseJob;
-use App\Jobs\Database\CollectDatabaseSnapshotJob;
-use App\Jobs\Database\ManageDatabaseUserJob;
-use App\Models\DatabaseClone;
-use App\Models\EnvironmentResource;
-use App\Models\Provider;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\Database\CloneDatabaseJob;
+use App\Modules\Deployer\Jobs\Database\CollectDatabaseSnapshotJob;
+use App\Modules\Deployer\Jobs\Database\ManageDatabaseUserJob;
+use App\Modules\Deployer\Models\DatabaseClone;
+use App\Modules\Deployer\Models\DatabaseOperationRun;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -34,7 +35,9 @@ class DatabaseOperationsTest extends TestCase
 
         $this->actingAs($owner)->post(route('databases.inspect', $resource))
             ->assertSessionHas('success', 'Database inspection queued.');
-        Queue::assertPushed(CollectDatabaseSnapshotJob::class, fn (CollectDatabaseSnapshotJob $job): bool => $job->resourceId === $resource->id);
+        $inspectionRun = DatabaseOperationRun::query()->where('operation', 'inspection')->sole();
+        $this->assertSame(DatabaseOperationRun::QUEUED, $inspectionRun->status);
+        Queue::assertPushed(CollectDatabaseSnapshotJob::class, fn (CollectDatabaseSnapshotJob $job): bool => $job->resourceId === $resource->id && $job->operationRunId === $inspectionRun->id);
 
         $response = $this->actingAs($owner)->post(route('databases.users.store', $resource), [
             'username' => 'report_reader',
@@ -49,11 +52,87 @@ class DatabaseOperationsTest extends TestCase
         $this->assertSame($password, $databaseUser->password);
         $this->assertNotSame($password, DB::table('database_users')->value('password'));
         $this->assertEqualsWithDelta(7, now()->diffInDays($databaseUser->expires_at), 0.001);
-        Queue::assertPushed(ManageDatabaseUserJob::class, fn (ManageDatabaseUserJob $job): bool => $job->databaseUserId === $databaseUser->id && $job->action === 'apply');
+        $applyRun = DatabaseOperationRun::query()->where('operation', 'user_apply')->sole();
+        $this->assertSame(DatabaseOperationRun::QUEUED, $applyRun->status);
+        Queue::assertPushed(ManageDatabaseUserJob::class, fn (ManageDatabaseUserJob $job): bool => $job->databaseUserId === $databaseUser->id && $job->action === 'apply' && $job->operationRunId === $applyRun->id);
 
         $this->actingAs($owner)->delete(route('databases.users.destroy', $databaseUser))
             ->assertSessionHas('success', 'Database user removal queued.');
-        Queue::assertPushed(ManageDatabaseUserJob::class, fn (ManageDatabaseUserJob $job): bool => $job->databaseUserId === $databaseUser->id && $job->action === 'remove');
+        $removalRun = DatabaseOperationRun::query()->where('operation', 'user_remove')->sole();
+        $this->assertSame(DatabaseOperationRun::QUEUED, $removalRun->status);
+        Queue::assertPushed(ManageDatabaseUserJob::class, fn (ManageDatabaseUserJob $job): bool => $job->databaseUserId === $databaseUser->id && $job->action === 'remove' && $job->operationRunId === $removalRun->id);
+    }
+
+    public function test_database_operation_reconciliation_requeues_only_stale_durable_work(): void
+    {
+        [, $resource] = $this->infrastructure();
+        Queue::fake();
+
+        $staleQueued = DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'inspection',
+            'status' => DatabaseOperationRun::QUEUED,
+            'created_at' => now()->subMinutes(4),
+            'updated_at' => now()->subMinutes(4),
+        ]);
+        $expiredRunning = DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'inspection',
+            'status' => DatabaseOperationRun::RUNNING,
+            'attempts' => 1,
+            'started_at' => now()->subMinutes(35),
+            'lease_expires_at' => now()->subMinutes(5),
+            'created_at' => now()->subMinutes(36),
+            'updated_at' => now()->subMinutes(35),
+        ]);
+        DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'inspection',
+            'status' => DatabaseOperationRun::QUEUED,
+        ]);
+        DatabaseOperationRun::query()->create([
+            'environment_resource_id' => $resource->id,
+            'operation' => 'inspection',
+            'status' => DatabaseOperationRun::FAILED,
+            'created_at' => now()->subMinutes(10),
+            'updated_at' => now()->subMinutes(10),
+        ]);
+
+        $this->artisan('buildpusher:databases:reconcile-operations')
+            ->assertSuccessful()
+            ->expectsOutputToContain('checked 2, dispatch attempts 2, failed 0');
+
+        Queue::assertPushed(CollectDatabaseSnapshotJob::class, 2);
+        Queue::assertPushed(CollectDatabaseSnapshotJob::class, fn (CollectDatabaseSnapshotJob $job): bool => $job->operationRunId === $staleQueued->id);
+        Queue::assertPushed(CollectDatabaseSnapshotJob::class, fn (CollectDatabaseSnapshotJob $job): bool => $job->operationRunId === $expiredRunning->id);
+    }
+
+    public function test_owner_can_retry_unapplied_database_credentials_without_revealing_the_password(): void
+    {
+        [$owner, $resource] = $this->infrastructure();
+        $databaseUser = $resource->databaseUsers()->create([
+            'created_by' => $owner->id,
+            'username' => 'retry_reader',
+            'password' => 'stored-encrypted-password',
+            'privilege' => 'read',
+        ]);
+        Queue::fake();
+
+        $this->actingAs($owner)->post(route('databases.users.retry', $databaseUser))
+            ->assertSessionHas('success', 'Database user setup queued.')
+            ->assertSessionMissing('databasePassword');
+
+        $operationRun = DatabaseOperationRun::query()->where('operation', 'user_apply')->sole();
+        $this->assertSame($databaseUser->id, $operationRun->subject_id);
+        $this->assertSame(DatabaseOperationRun::QUEUED, $operationRun->status);
+        Queue::assertPushed(ManageDatabaseUserJob::class, fn (ManageDatabaseUserJob $job): bool => $job->databaseUserId === $databaseUser->id
+            && $job->action === 'apply'
+            && $job->operationRunId === $operationRun->id);
+
+        $this->actingAs($owner)->post(route('databases.users.retry', $databaseUser))
+            ->assertSessionHas('success', 'Database user setup is already underway.');
+        Queue::assertPushed(ManageDatabaseUserJob::class, 1);
+        $this->assertSame('stored-encrypted-password', $databaseUser->fresh()->password);
     }
 
     public function test_database_management_is_open_for_first_use_and_collapsed_after_setup(): void
@@ -129,9 +208,16 @@ class DatabaseOperationsTest extends TestCase
         $viewer = User::factory()->create(['current_organization_id' => $owner->current_organization_id]);
         $owner->currentOrganization->members()->attach($viewer->id, ['role' => 'viewer']);
         Queue::fake();
+        $databaseUser = $resource->databaseUsers()->create([
+            'created_by' => $owner->id,
+            'username' => 'owner_only_reader',
+            'password' => 'encrypted-password',
+            'privilege' => 'read',
+        ]);
 
         $this->actingAs($viewer)->post(route('databases.inspect', $resource))
             ->assertSessionHas('success', 'Database inspection queued.');
+        $this->actingAs($viewer)->post(route('databases.users.retry', $databaseUser))->assertForbidden();
         $this->actingAs($viewer)->post(route('databases.users.store', $resource), [
             'username' => 'not allowed',
             'privilege' => 'invalid',
@@ -153,6 +239,7 @@ class DatabaseOperationsTest extends TestCase
         ])->assertStatus(422);
 
         $this->assertDatabaseCount('database_users', 0);
+        $this->assertSame(0, DatabaseOperationRun::query()->count());
         Queue::assertNothingPushed();
     }
 

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Scripts\Repository\ConfigureResourcesScript;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Scripts\Repository\ConfigureResourcesScript;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;

@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\IncidentNotifier;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\IncidentNotifier;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

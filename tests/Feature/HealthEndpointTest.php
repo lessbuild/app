@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\ApplicationReadiness;
+use App\Modules\Deployer\Services\ApplicationReadiness;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Enums\SignInMethod;
-use App\Models\SignInEvent;
-use App\Models\User;
-use App\Services\SignInRecorder;
+use App\Modules\Deployer\Enums\SignInMethod;
+use App\Modules\Deployer\Models\SignInEvent;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\SignInRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;

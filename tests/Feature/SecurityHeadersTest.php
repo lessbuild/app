@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Http\Middleware\TrustHosts;
-use App\Models\User;
+use App\Modules\Deployer\Http\Middleware\TrustHosts;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;
@@ -43,12 +43,51 @@ class SecurityHeadersTest extends TestCase
         $this->assertSame(0, preg_match('{'.$pattern.'}i', 'sub.control.example.test'));
     }
 
+    public function test_form_actions_allow_only_the_configured_platform_origins(): void
+    {
+        config([
+            'platform.dashboard_url' => 'https://buildpusher.example.test',
+            'platform.auth_url' => 'https://auth.example.test',
+            'platform.products.deployer.url' => 'https://deployer.example.test',
+            'platform.products.monitor.url' => 'https://monitor.example.test',
+            'platform.products.analytics.url' => 'https://analytics.example.test',
+        ]);
+
+        $policy = (string) $this->get('http://localhost/')
+            ->assertSuccessful()
+            ->headers->get('Content-Security-Policy');
+
+        foreach ([
+            'http://localhost',
+            'https://buildpusher.example.test',
+            'https://auth.example.test',
+            'https://deployer.example.test',
+            'https://monitor.example.test',
+            'https://analytics.example.test',
+        ] as $origin) {
+            $this->assertStringContainsString($origin, $policy);
+        }
+
+        $this->assertStringNotContainsString('attacker.example.test', $policy);
+    }
+
     public function test_hsts_is_sent_only_when_the_request_is_secure(): void
     {
-        $this->get('http://localhost/')->assertHeaderMissing('Strict-Transport-Security');
-        $this->get('https://localhost/')
+        $insecureResponse = $this->get('http://localhost/')
+            ->assertSuccessful()
+            ->assertHeaderMissing('Strict-Transport-Security');
+        $this->assertStringNotContainsString(
+            'upgrade-insecure-requests',
+            (string) $insecureResponse->headers->get('Content-Security-Policy'),
+        );
+
+        $secureResponse = $this->get('https://localhost/')
             ->assertSuccessful()
             ->assertHeader('Strict-Transport-Security', 'max-age=31536000');
+        $this->assertStringContainsString(
+            'upgrade-insecure-requests',
+            (string) $secureResponse->headers->get('Content-Security-Policy'),
+        );
     }
 
     public function test_only_the_loopback_reverse_proxy_can_assert_https(): void

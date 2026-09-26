@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\Project;
-use App\Models\User;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;
@@ -82,6 +82,9 @@ class ProjectEnvironmentTest extends TestCase
             ->assertOk()
             ->assertSee('data-project-environments', false)
             ->assertSee('data-project-environment', false)
+            ->assertSee('data-sheet-open="project-environment-navigation"', false)
+            ->assertSee('data-signal-side-sheet', false)
+            ->assertSee('Browse environments')
             ->assertSee('data-project-runtime-controls', false)
             ->assertSee('data-project-runtime', false)
             ->assertSee('data-project-variables', false)
@@ -121,10 +124,32 @@ class ProjectEnvironmentTest extends TestCase
         $response->assertOk();
 
         $content = $response->getContent();
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*\\btype="hidden")(?=[^>]*\\bname="deployment_locked")(?=[^>]*\\bvalue="0")[^>]*>/', $content);
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*\\btype="hidden")(?=[^>]*\\bname="deployment_window_enabled")(?=[^>]*\\bvalue="0")[^>]*>/', $content);
+        $this->assertMatchesRegularExpression('/<input(?=[^>]*\\btype="hidden")(?=[^>]*\\bname="automatic_rollback")(?=[^>]*\\bvalue="0")[^>]*>/', $content);
+        $this->assertStringContainsString('name="deployment_window_days[]"', $content);
+        $this->assertStringContainsString('list="deployment-timezones-'.$environment->id.'"', $content);
+        $this->assertStringContainsString('value="09:00"', $content);
+        $this->assertStringContainsString('value="17:00"', $content);
+        preg_match_all('/\bid="(environment-deployment-controls-[^"]+)"/', $content, $controlsIds);
+        $this->assertNotEmpty($controlsIds[1]);
+        $this->assertCount(count($controlsIds[1]), array_unique($controlsIds[1]));
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="environment-settings-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,
         );
+        $this->assertMatchesRegularExpression(
+            '/<input\b(?=[^>]*id="environment-settings-'.$environment->id.'-name")(?=[^>]*name="name")(?=[^>]*required="required")[^>]*>/',
+            $content,
+        );
+        $this->assertStringContainsString('for="environment-settings-'.$environment->id.'-name"', $content);
+        $this->assertStringContainsString('sm:col-span-2', $content);
+        $this->assertStringContainsString('<input type="hidden" name="is_protected" value="0">', $content);
+        $this->assertStringContainsString('<input type="hidden" name="requires_deployment_approval" value="0">', $content);
+        $this->assertStringContainsString('environment-settings-'.$environment->id.'-requires-deployment-approval', $content);
+        preg_match_all('/\bid="(environment-settings-[^"]+)"/', $content, $settingsIds);
+        $this->assertNotEmpty($settingsIds[1]);
+        $this->assertCount(count($settingsIds[1]), array_unique($settingsIds[1]));
         $this->assertDoesNotMatchRegularExpression(
             '/<dialog(?=[^>]*id="environment-deployment-controls-dialog-'.$environment->id.'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $content,

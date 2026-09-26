@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Repository;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\ActivateReleaseScript;
-use App\Scripts\Repository\ArtisanCommandsScript;
-use App\Scripts\Repository\InstallDependenciesScript;
-use App\Scripts\Repository\PurgeOldReleasesScript;
-use App\Scripts\Repository\SymlinkScript;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\ActivateReleaseScript;
+use App\Modules\Deployer\Scripts\Repository\ArtisanCommandsScript;
+use App\Modules\Deployer\Scripts\Repository\InstallDependenciesScript;
+use App\Modules\Deployer\Scripts\Repository\PurgeOldReleasesScript;
+use App\Modules\Deployer\Scripts\Repository\SymlinkScript;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;

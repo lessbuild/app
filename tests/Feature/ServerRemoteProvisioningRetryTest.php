@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Server\RetryRemoteServerProvisioningJob;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\ServerLogSnapshot;
-use App\Models\User;
-use App\Services\ManagedSsh;
-use App\Services\ProvisioningCallbackUrl;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\Server\RetryRemoteServerProvisioningJob;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerLogSnapshot;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\ProvisioningCallbackUrl;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;

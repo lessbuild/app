@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Server\InitialiseServerJob;
-use App\Jobs\Web\AddWebsiteJob;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
+use App\Modules\Deployer\Jobs\Server\InitialiseServerJob;
+use App\Modules\Deployer\Jobs\Web\AddWebsiteJob;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Bus;

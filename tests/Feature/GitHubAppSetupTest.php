@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\GitHubApp;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\GitHubApp;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Str;

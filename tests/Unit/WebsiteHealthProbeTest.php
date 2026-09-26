@@ -2,11 +2,11 @@
 
 namespace Tests\Unit;
 
-use App\Models\Server;
-use App\Models\Website;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
-use App\Services\WebsiteHealthProbe;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\WebsiteHealthProbe;
 use Mockery;
 use RuntimeException;
 use Symfony\Component\Process\Process;

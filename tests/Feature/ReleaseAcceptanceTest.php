@@ -2,17 +2,17 @@
 
 namespace Tests\Feature;
 
-use App\Models\BackupDestination;
-use App\Models\BackupRestore;
-use App\Models\Build;
-use App\Models\Environment;
-use App\Models\Project;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteBackup;
-use App\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Models\BackupDestination;
+use App\Modules\Deployer\Models\BackupRestore;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\Project;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteBackup;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Carbon;
 use Tests\TestCase;

@@ -2,7 +2,7 @@
 
 namespace Tests\Unit;
 
-use App\Abstracts\Publishable;
+use App\Modules\Deployer\Abstracts\Publishable;
 use Mockery;
 use RuntimeException;
 use Spatie\Ssh\Ssh;

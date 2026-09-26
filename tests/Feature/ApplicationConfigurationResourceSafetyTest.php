@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Scripts\Repository\ConfigureResourcesScript;
-use App\Scripts\Repository\SyncEnvironmentScript;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationReviews;
-use App\Services\DeploymentRequest;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Scripts\Repository\ConfigureResourcesScript;
+use App\Modules\Deployer\Scripts\Repository\SyncEnvironmentScript;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Services\DeploymentRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;

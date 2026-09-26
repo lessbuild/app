@@ -2,19 +2,19 @@
 
 namespace Tests\Feature;
 
-use App\Enums\OperationalDiagnosticCategory;
-use App\Enums\ServerDiagnosticFailureStage;
-use App\Exceptions\ServerDiagnosticException;
-use App\Http\Livewire\ServerShow;
-use App\Jobs\Server\RunServerDiagnosticJob;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\ServerDiagnosticSnapshot;
-use App\Models\User;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
-use App\Services\ServerDiagnosticOutputParser;
-use App\Services\ServerDiagnosticProbe;
+use App\Modules\Deployer\Enums\OperationalDiagnosticCategory;
+use App\Modules\Deployer\Enums\ServerDiagnosticFailureStage;
+use App\Modules\Deployer\Exceptions\ServerDiagnosticException;
+use App\Modules\Deployer\Http\Livewire\ServerShow;
+use App\Modules\Deployer\Jobs\Server\RunServerDiagnosticJob;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerDiagnosticSnapshot;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\ServerDiagnosticOutputParser;
+use App\Modules\Deployer\Services\ServerDiagnosticProbe;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Str;

@@ -1,0 +1,52 @@
+<?php
+
+namespace App\Modules\Deployer\Data;
+
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\OperationalIncident;
+use App\Modules\Deployer\Models\Repository;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Models\WebsiteLogSnapshot;
+use Carbon\CarbonImmutable;
+use Carbon\CarbonInterface;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Collection as BaseCollection;
+
+class ObservabilityEnvironmentContext
+{
+    public readonly CarbonImmutable $since;
+
+    /**
+     * Carry a secret-safe, bounded environment evidence read model.
+     *
+     * Build and health collections contain metadata only. Runtime-log snapshots
+     * deliberately exclude their encrypted bodies and operational incidents
+     * deliberately exclude encrypted summaries, resolutions and timeline bodies.
+     * Deployment observations contain only revision-bound outcome metadata; their
+     * remote error text, target details and lease fields are excluded.
+     *
+     * @param  Collection<int, Build>  $builds  Recent or active environment deployments.
+     * @param  BaseCollection<int, DeploymentObservationEvidence>  $deploymentObservations  Safe observations keyed by build ID.
+     * @param  Collection<int, WebsiteHealthCheck>  $healthChecks  Recent website observations.
+     * @param  Collection<int, WebsiteLogSnapshot>  $runtimeLogs  Current snapshot metadata.
+     * @param  Collection<int, OperationalIncident>  $incidents  Explicitly related incidents.
+     * @param  Collection<int, Repository>  $services  Authorized deployment services for the website.
+     */
+    public function __construct(
+        public readonly Environment $environment,
+        public readonly string $window,
+        public readonly ?int $serviceId,
+        public readonly string $deployment,
+        public readonly string $severity,
+        CarbonInterface $since,
+        public readonly Collection $builds,
+        public readonly BaseCollection $deploymentObservations,
+        public readonly Collection $healthChecks,
+        public readonly Collection $runtimeLogs,
+        public readonly Collection $incidents,
+        public readonly Collection $services,
+    ) {
+        $this->since = $since->toImmutable();
+    }
+}

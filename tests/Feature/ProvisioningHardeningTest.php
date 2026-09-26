@@ -2,21 +2,21 @@
 
 namespace Tests\Feature;
 
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
-use App\Models\User;
-use App\Scripts\Cache\InstallMemcachedScript;
-use App\Scripts\Cache\InstallRedisScript;
-use App\Scripts\Database\CreateMysqlDatabase;
-use App\Scripts\Database\InstallMysqlScript;
-use App\Scripts\Languages\InstallPHPScript;
-use App\Scripts\Server\ConfigureServerScript;
-use App\Scripts\Server\EndScript;
-use App\Scripts\Server\UpdateDependenciesScript;
-use App\Scripts\Web\AddWebsiteToCaddyScript;
-use App\Scripts\Web\InstallCaddyScript;
-use App\Services\ProvisioningScriptRenderer;
-use App\Services\ServerProvisioningPlan;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Scripts\Cache\InstallMemcachedScript;
+use App\Modules\Deployer\Scripts\Cache\InstallRedisScript;
+use App\Modules\Deployer\Scripts\Database\CreateMysqlDatabase;
+use App\Modules\Deployer\Scripts\Database\InstallMysqlScript;
+use App\Modules\Deployer\Scripts\Languages\InstallPHPScript;
+use App\Modules\Deployer\Scripts\Server\ConfigureServerScript;
+use App\Modules\Deployer\Scripts\Server\EndScript;
+use App\Modules\Deployer\Scripts\Server\UpdateDependenciesScript;
+use App\Modules\Deployer\Scripts\Web\AddWebsiteToCaddyScript;
+use App\Modules\Deployer\Scripts\Web\InstallCaddyScript;
+use App\Modules\Deployer\Services\ProvisioningScriptRenderer;
+use App\Modules\Deployer\Services\ServerProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Symfony\Component\Process\Process;
 use Tests\TestCase;

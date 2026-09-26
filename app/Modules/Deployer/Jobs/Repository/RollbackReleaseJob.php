@@ -1,0 +1,94 @@
+<?php
+
+namespace App\Modules\Deployer\Jobs\Repository;
+
+use App\Modules\Deployer\Actions\Repository\SwitchReleaseAction;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ProductDeletionFence;
+use App\Modules\Deployer\Services\Integration\RecordDeploymentSucceededOutboxEvent;
+use App\Modules\Deployer\Services\RepositoryDeploymentPlan;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+
+class RollbackReleaseJob implements ShouldQueue
+{
+    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+
+    /**
+     * Capture the queued rollback build carrying its retained release metadata.
+     *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
+     */
+    public function __construct(public Build $build) {}
+
+    /**
+     * Claim the rollback, activate its retained release, and persist output and successful completion only while the build still owns the deploying state.
+     *
+     * @param  SwitchReleaseAction  $releases  Action that validates and activates a retained release on the managed server.
+     */
+    public function handle(SwitchReleaseAction $releases, RecordDeploymentSucceededOutboxEvent $integrationEvents): void
+    {
+        $this->build->loadMissing('repository');
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $this->build->repository->organization_id)->exists()) {
+            Build::query()->whereKey($this->build->id)->where('status', Build::STATUS_QUEUED)->update([
+                'status' => Build::STATUS_CANCELED,
+                'finished_at' => now(),
+                'failure_message' => 'Rollback canceled because its workspace is being deleted.',
+            ]);
+
+            return;
+        }
+        $started = Build::query()
+            ->whereKey($this->build->id)
+            ->where('status', Build::STATUS_QUEUED)
+            ->update(['status' => Build::STATUS_DEPLOYING, 'started_at' => now()]);
+        if ($started === 0) {
+            return;
+        }
+
+        $this->build->refresh();
+        $output = $releases->handle($this->build);
+
+        DB::connection('deployer')->transaction(function () use ($output): void {
+            $locked = Build::query()->lockForUpdate()->findOrFail($this->build->id);
+            if ($locked->status !== Build::STATUS_DEPLOYING) {
+                return;
+            }
+            if ($output !== '') {
+                $locked->logs()->updateOrCreate(
+                    ['type' => Build::DEPLOYMENT_LOG_TYPE],
+                    ['log' => $output],
+                );
+            }
+            $locked->update([
+                'status' => Build::STATUS_SUCCEEDED,
+                'setup_stage' => app(RepositoryDeploymentPlan::class)->finalStage(),
+                'activated_at' => now(),
+                'built_at' => now(),
+                'finished_at' => now(),
+            ]);
+            $integrationEvents->record($locked);
+        });
+    }
+
+    /**
+     * Mark the rollback failed only while its build remains queued or deploying, preserving later terminal transitions.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        Build::query()
+            ->whereKey($this->build->id)
+            ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING])
+            ->update([
+                'status' => Build::STATUS_FAILED,
+                'finished_at' => now(),
+                'failure_message' => str($exception->getMessage())->limit(2000),
+            ]);
+    }
+}

@@ -1,0 +1,245 @@
+<?php
+
+namespace App\Core\Services\Connections;
+
+use App\Core\Exceptions\Connections\ProjectConnectionDeliveryBlocked;
+use App\Core\Models\ProjectConnection;
+use App\Core\Models\ProjectConnectionDelivery;
+use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
+
+final class ProcessProjectConnectionDelivery
+{
+    private const MAX_ATTEMPTS = 12;
+
+    public function __construct(private readonly ProjectConnectionDeliveryConsumerRegistry $consumers) {}
+
+    public function process(string $deliveryId): string
+    {
+        $delivery = DB::connection('core')->transaction(function () use ($deliveryId): ProjectConnectionDelivery|string|null {
+            $connectionId = ProjectConnectionDelivery::query()->whereKey($deliveryId)->value('project_connection_id');
+
+            if ($connectionId === null) {
+                return null;
+            }
+
+            $connection = ProjectConnection::query()
+                ->whereKey($connectionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $connection instanceof ProjectConnection) {
+                return null;
+            }
+
+            $delivery = ProjectConnectionDelivery::query()
+                ->whereKey($deliveryId)
+                ->where('project_connection_id', $connection->getKey())
+                ->where('status', 'pending')
+                ->where(fn ($query) => $query->whereNull('available_at')->orWhere('available_at', '<=', now()))
+                ->lockForUpdate()
+                ->first();
+
+            if ($delivery === null) {
+                return null;
+            }
+
+            if ($connection->status === 'disconnected' || $connection->disconnected_at !== null) {
+                $delivery->forceFill(['status' => 'discarded', 'available_at' => null, 'last_error_code' => 'connection_disconnected'])->save();
+
+                return 'discarded';
+            }
+            if ($connection->automation_paused_at !== null) {
+                return 'paused';
+            }
+
+            $delivery->forceFill([
+                'status' => 'processing',
+                'attempts' => $delivery->attempts + 1,
+                'last_attempted_at' => now(),
+            ])->save();
+
+            return $delivery->refresh();
+        });
+
+        if (is_string($delivery)) {
+            return $delivery;
+        }
+
+        if (! $delivery instanceof ProjectConnectionDelivery) {
+            return 'skipped';
+        }
+
+        try {
+            if ($delivery->event_version !== 1) {
+                throw new ProjectConnectionDeliveryBlocked('unsupported_event');
+            }
+
+            $connection = ProjectConnection::query()
+                ->with('targetResource')
+                ->findOrFail($delivery->project_connection_id);
+            $capabilities = (array) $connection->capabilities;
+            $targetProduct = $connection->targetResource?->product;
+
+            if (! is_string($targetProduct) || ! config("platform.products.{$targetProduct}.enabled", false)) {
+                throw new ProjectConnectionDeliveryBlocked('target_product_disabled');
+            }
+
+            $consumer = $this->consumers->resolve($delivery->event_type, $capabilities, $targetProduct);
+
+            if ($consumer === null) {
+                throw new ProjectConnectionDeliveryBlocked('unsupported_capability');
+            }
+
+            $consumer->consume(
+                deliveryId: (string) $delivery->getKey(),
+                connectionId: (string) $delivery->project_connection_id,
+                payload: (array) $delivery->payload,
+            );
+
+            return $this->markDelivered($delivery);
+        } catch (Throwable $exception) {
+            return $this->markFailure($delivery, $exception);
+        }
+    }
+
+    private function markDelivered(ProjectConnectionDelivery $delivery): string
+    {
+        return DB::connection('core')->transaction(function () use ($delivery): string {
+            $connectionId = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->value('project_connection_id');
+
+            if ($connectionId === null) {
+                return 'skipped';
+            }
+
+            $connection = ProjectConnection::query()
+                ->whereKey($connectionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $connection instanceof ProjectConnection) {
+                return 'skipped';
+            }
+
+            $locked = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->where('project_connection_id', $connection->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null) {
+                return 'skipped';
+            }
+
+            if ($locked->status !== 'processing') {
+                return $locked?->status ?? 'skipped';
+            }
+
+            // A recovered lease increments attempts. A slow worker must not
+            // commit over the newer worker's claim or final state.
+            if ($locked->attempts !== $delivery->attempts) {
+                return 'skipped';
+            }
+
+            $locked->forceFill([
+                'status' => 'delivered',
+                'delivered_at' => now(),
+                'available_at' => null,
+                'last_error_code' => null,
+                'last_error_at' => null,
+            ])->save();
+
+            if ($connection->disconnected_at === null) {
+                $connection->forceFill([
+                    'status' => 'active',
+                    'last_succeeded_at' => now(),
+                    'last_error_code' => null,
+                    'last_error_at' => null,
+                ])->save();
+            }
+
+            return 'delivered';
+        });
+    }
+
+    private function markFailure(ProjectConnectionDelivery $delivery, Throwable $exception): string
+    {
+        return DB::connection('core')->transaction(function () use ($delivery, $exception): string {
+            $connectionId = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->value('project_connection_id');
+
+            if ($connectionId === null) {
+                return 'skipped';
+            }
+
+            $connection = ProjectConnection::query()
+                ->whereKey($connectionId)
+                ->lockForUpdate()
+                ->first();
+
+            if (! $connection instanceof ProjectConnection) {
+                return 'skipped';
+            }
+
+            $locked = ProjectConnectionDelivery::query()
+                ->whereKey($delivery->getKey())
+                ->where('project_connection_id', $connection->getKey())
+                ->lockForUpdate()
+                ->first();
+
+            if ($locked === null) {
+                return 'skipped';
+            }
+
+            if ($locked->status !== 'processing') {
+                return $locked?->status ?? 'skipped';
+            }
+
+            // A recovered lease increments attempts. A stale failure must not
+            // overwrite the current attempt's processing or terminal state.
+            if ($locked->attempts !== $delivery->attempts) {
+                return 'skipped';
+            }
+
+            $disconnected = $connection->status === 'disconnected' || $connection->disconnected_at !== null;
+            $blocked = $disconnected
+                || $exception instanceof ProjectConnectionDeliveryBlocked
+                || $exception instanceof AuthorizationException
+                || $exception instanceof ModelNotFoundException
+                || $exception instanceof ValidationException
+                || ($exception instanceof HttpExceptionInterface && $exception->getStatusCode() < 500);
+            $terminal = $blocked || $locked->attempts >= self::MAX_ATTEMPTS;
+            $backoffSeconds = min(86400, 60 * (2 ** min(10, max(0, $locked->attempts - 1))));
+            $status = $disconnected ? 'discarded' : ($blocked ? 'blocked' : ($terminal ? 'failed' : 'pending'));
+            $errorCode = $disconnected
+                ? 'connection_disconnected'
+                : ($exception instanceof ProjectConnectionDeliveryBlocked
+                    ? $exception->reasonCode
+                    : ($blocked ? 'connection_authorization_failed' : 'target_delivery_failed'));
+
+            $locked->forceFill([
+                'status' => $status,
+                'available_at' => $status === 'pending' ? now()->addSeconds($backoffSeconds) : null,
+                'last_error_code' => $errorCode,
+                'last_error_at' => now(),
+            ])->save();
+
+            if ($terminal && ! $disconnected && $errorCode !== 'automation_paused') {
+                $connection->forceFill([
+                    'status' => 'failed',
+                    'last_error_code' => $errorCode,
+                    'last_error_at' => now(),
+                ])->save();
+            }
+
+            return $status;
+        });
+    }
+}

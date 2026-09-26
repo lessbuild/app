@@ -27,7 +27,7 @@ class ProductionErrorResponseTest extends TestCase
             ->assertDontSee('private-token-value')
             ->assertDontSee('RuntimeException');
 
-        preg_match('/Reference:<\/strong>\s*([0-9a-f-]{36})/i', $response->getContent(), $matches);
+        preg_match('/Reference:<\/strong>\s*<code[^>]*>([0-9a-f-]{36})<\/code>/i', $response->getContent(), $matches);
         $this->assertArrayHasKey(1, $matches);
         $incidentId = $matches[1];
         $response->assertHeader('x-incident-id', $incidentId);
@@ -92,7 +92,7 @@ class ProductionErrorResponseTest extends TestCase
             ->assertSee('Reference:')
             ->assertDontSee('private-explicit-error');
 
-        preg_match('/Reference:<\/strong>\s*([0-9a-f-]{36})/i', $response->getContent(), $matches);
+        preg_match('/Reference:<\/strong>\s*<code[^>]*>([0-9a-f-]{36})<\/code>/i', $response->getContent(), $matches);
         $this->assertArrayHasKey(1, $matches);
         $response->assertHeader('x-incident-id', $matches[1]);
         Log::shouldHaveReceived('error')->withArgs(

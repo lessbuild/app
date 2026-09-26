@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Server\OpenServerTroubleshootingSessionAction;
-use App\Actions\Server\RevokeServerTroubleshootingSessionAction;
-use App\Enums\ServerTroubleshootingFrameDirection;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\ServerTroubleshootingFrame;
-use App\Models\ServerTroubleshootingSession;
-use App\Models\User;
+use App\Modules\Deployer\Actions\Server\OpenServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Actions\Server\RevokeServerTroubleshootingSessionAction;
+use App\Modules\Deployer\Enums\ServerTroubleshootingFrameDirection;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerTroubleshootingFrame;
+use App\Modules\Deployer\Models\ServerTroubleshootingSession;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Tests\TestCase;

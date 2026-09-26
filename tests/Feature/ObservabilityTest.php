@@ -2,24 +2,26 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\DeliverAlertWebhookJob;
-use App\Jobs\Server\CollectServerMetricsJob;
-use App\Jobs\Web\RefreshWebsiteLogJob;
-use App\Models\AlertDestination;
-use App\Models\MetricAlertRule;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\StatusIncident;
-use App\Models\StatusPage;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
-use App\Models\WebsiteLogSnapshot;
-use App\Notifications\AlertEmailNotification;
-use App\Notifications\ConfirmStatusSubscriptionNotification;
-use App\Notifications\StatusIncidentNotification;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\DeliverAlertWebhookJob;
+use App\Modules\Deployer\Jobs\Server\CollectServerMetricsJob;
+use App\Modules\Deployer\Jobs\Web\RefreshWebsiteLogJob;
+use App\Modules\Deployer\Models\AlertDestination;
+use App\Modules\Deployer\Models\AlertOutboundDelivery;
+use App\Modules\Deployer\Models\MetricAlertRule;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\StatusIncident;
+use App\Modules\Deployer\Models\StatusPage;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Models\WebsiteLogSnapshot;
+use App\Modules\Deployer\Notifications\AlertEmailNotification;
+use App\Modules\Deployer\Notifications\ConfirmStatusSubscriptionNotification;
+use App\Modules\Deployer\Notifications\StatusIncidentNotification;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Support\PublicDnsResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,9 +59,12 @@ class ObservabilityTest extends TestCase
         $this->assertArrayNotHasKey('endpoint', $destination->toArray());
 
         $website->update(['provisioning_status' => Website::STATUS_FAILED, 'provisioning_error' => 'Caddy failed']);
+        $delivery = AlertOutboundDelivery::query()->where('destination_key', $destination->id)->sole();
+        $this->assertSame('failure', $delivery->payloadRecord->payload['event']);
+        $this->assertSame('website', $delivery->payloadRecord->payload['category']);
         Queue::assertPushed(DeliverAlertWebhookJob::class, fn (DeliverAlertWebhookJob $job): bool => $job->destinationId === $destination->id
-            && $job->payload['event'] === 'failure'
-            && $job->payload['category'] === 'website');
+            && $job->deliveryId === $delivery->id
+            && $job->payload === []);
     }
 
     public function test_observability_secondary_management_surfaces_are_collapsed_without_hiding_forms(): void
@@ -633,6 +638,9 @@ class ObservabilityTest extends TestCase
         Notification::fake();
         Http::preventStrayRequests();
         Http::fake(['https://8.8.8.8/*' => Http::response([], 202), 'https://events.pagerduty.com/*' => Http::response(['status' => 'success'], 202)]);
+        $dns = Mockery::mock(PublicDnsResolver::class);
+        $dns->shouldReceive('addresses')->once()->with('events.pagerduty.com')->andReturn(['8.8.8.8']);
+        $this->app->instance(PublicDnsResolver::class, $dns);
         [$owner] = $this->infrastructure();
         $payload = [
             'event' => 'failure', 'category' => 'deployment', 'resource_id' => 91,
@@ -729,6 +737,53 @@ class ObservabilityTest extends TestCase
         $this->get(route('status.subscriptions.unsubscribe', [$subscription, $unsubscribeToken]))
             ->assertRedirect(route('status.show', $page->slug));
         $this->assertDatabaseMissing('status_subscriptions', ['id' => $subscription->id]);
+    }
+
+    public function test_core_status_page_preserves_deployer_history_subscriptions_and_json_handoff(): void
+    {
+        Notification::fake();
+        [$owner, , $website] = $this->infrastructure();
+        $page = $owner->currentOrganization->statusPages()->create([
+            'created_by' => $owner->id,
+            'name' => 'Core-visible status',
+            'slug' => 'core-visible-status',
+            'description' => 'The shared Signal status view.',
+            'is_published' => true,
+        ]);
+        $page->websites()->attach($website);
+        $this->actingAs($owner)->post(route('observability.incidents.store'), [
+            'status_page_id' => $page->id,
+            'kind' => 'incident',
+            'status' => 'investigating',
+            'severity' => 'major',
+            'title' => 'Core-visible API latency',
+            'message' => 'The shared page should retain its incident timeline.',
+            'starts_at' => now()->format('Y-m-d H:i:s'),
+        ])->assertRedirect();
+
+        $this->get(route('core.status-pages.show', ['product' => 'deployer', 'slug' => $page->slug]))
+            ->assertOk()
+            ->assertSee('The shared Signal status view.')
+            ->assertSee('Core-visible API latency')
+            ->assertSee('Get status updates')
+            ->assertSee(route('status.report', $page->slug));
+        $this->get(route('status.show', $page->slug))
+            ->assertOk()
+            ->assertSee('Core-visible API latency');
+        $this->getJson(route('status.report', $page->slug))
+            ->assertOk()
+            ->assertJsonPath('incidents.0.status', 'investigating');
+
+        $this->post(route('core.status-pages.subscribe', ['product' => 'deployer', 'slug' => $page->slug]), [
+            'email' => 'Ops@Example.com',
+        ])
+            ->assertRedirect(route('core.status-pages.show', ['product' => 'deployer', 'slug' => $page->slug]))
+            ->assertSessionHas('status_subscription');
+
+        $subscription = $page->subscriptions()->sole();
+        $this->assertSame('ops@example.com', $subscription->email);
+        $this->assertNull($subscription->verified_at);
+        Notification::assertSentOnDemand(ConfirmStatusSubscriptionNotification::class);
     }
 
     /** @return array{User, Server, Website} */

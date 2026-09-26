@@ -1,29 +1,37 @@
-# Deployer
+# Buildpusher unified platform
 
-## Production domain
+Buildpusher runs the shared platform and Deployer, Monitor, and Analytics as modules
+of one Laravel application. The apex domain is the project dashboard, the `auth`
+subdomain owns sign-in, and each product subdomain retains its product-specific
+routes and interface. Caddy serves all five application hosts from the same release;
+`www` redirects to the apex. The checked-in reference configuration is
+[`deploy/Caddyfile`](deploy/Caddyfile).
 
-The production application URL is `https://buildpusher.com`. Caddy terminates TLS,
-redirects `www.buildpusher.com` to the apex domain, compresses responses, and proxies
-to the supervised Laravel listener on `127.0.0.1:8003`. The checked-in reference
-configuration is [`deploy/Caddyfile`](deploy/Caddyfile); install it at
-`/etc/caddy/Caddyfile`, validate with `caddy validate --config /etc/caddy/Caddyfile`,
-and reload Caddy. Laravel trusts only the loopback reverse proxy and the exact apex
-and `www` hostnames. Production sessions are encrypted, domain-scoped, and Secure.
-Production diagnostics include `caddy.service` in the required systemd service set,
-so the control panel reports a failed public edge alongside application or worker failures.
+The modules keep separate SQLite databases and subscription catalogs while sharing
+Core accounts and workspace projects. Core owns authentication sessions. Browser
+sessions are host-only; sign-in uses the central auth host and a short-lived, signed
+handoff rather than sharing a cookie across subdomains. Product databases are
+initialized independently with `php artisan platform:migrate core`, `deployer`,
+`monitor`, and `analytics`.
+See [`docs/unified-deployment.md`](docs/unified-deployment.md) for the deployment,
+database, queue, and migration procedures.
 
-DNS must contain an `A` record for `@` pointing to `174.138.39.41` and a `CNAME`
-for `www` pointing to `buildpusher.com`. Remove Namecheap parking or URL-forward
-records for both names. Caddy obtains and renews the public certificate automatically
-as soon as those records resolve to this server.
+Production diagnostics include `caddy.service` and the unified PHP-FPM service in
+the required system service set, so the control panel reports a failed public edge
+or PHP runtime alongside application and worker failures.
+
+DNS must point the apex, `www`, `auth`, `deployer`, `monitor`, and `analytics` hosts
+to this server. Caddy obtains and renews public certificates automatically when the
+records resolve and ports 80 and 443 reach the server.
 
 ## Account registration
 
 Fresh installations allow one bootstrap owner account and then close public
-registration automatically. Existing password and linked social accounts can
-continue signing in. Set `REGISTRATION_ENABLED=true` to allow additional email
-or social accounts, or set `REGISTRATION_ALLOW_FIRST_USER=false` when the first
-account will be inserted by another provisioning process.
+registration automatically. This deployment starts with an empty Core account
+database; previous account and product databases remain on disk for a later,
+explicit reconciliation or import. Set `REGISTRATION_ENABLED=true` to allow
+additional email or social accounts, or set
+`REGISTRATION_ALLOW_FIRST_USER=false` when another process provisions the first account.
 When registration is closed, public calls to action use `/request-access` instead
 of sending prospective customers into the sign-in screen. Requests are rate
 limited, honeypot protected, deduplicated by a normalized email hash, and store
@@ -132,28 +140,22 @@ incident. `PROVIDER_HEALTH_FAILURE_THRESHOLD` selects the supported default for 
 providers. Demo providers cover every threshold, including a three-failure GitLab state.
 The dashboard summarizes Healthy, Failed, and Unchecked provider credentials and
 includes failed providers in the active attention total with direct inventory links.
-Authenticated visits to the public root and the sidebar Dashboard link both enter
-the verified dashboard flow; signed-out visitors continue to see the landing page.
-The public landing page presents the full provision, release, observability, and
-recovery workflow with responsive navigation, descriptive page metadata,
-registration-aware calls to action, and a keyboard-visible content skip link.
-It publishes canonical Open Graph and summary-card metadata with a local SVG icon,
-retains section navigation without JavaScript, and enables smooth anchor scrolling
-only when the visitor has not requested reduced motion. Authenticated and auth-flow
-pages default to `noindex, nofollow` and do not emit public sharing metadata.
-The landing page omits the unused Livewire runtime, `robots.txt` directs crawlers away
-from private application routes, and legacy favicon requests permanently redirect to
-the local SVG. The systemd web service runs Laravel's static-aware router directly with
-PHP version advertising disabled instead of launching a second unsupervised child process.
-It names the currently supported cloud/source providers, explains recovery and concrete
-operational guardrails, and uses native disclosure controls for concise answers about
-hosting, release reuse, and credentials. A compact tabbed product stage covers overview,
-provisioning, deployments, website monitoring, server operations, and reusable recipes
-without stacking a separate full-height preview for every feature. These previews use
-illustrative data and responsive HTML/CSS instead of raster screenshots. The landing
-page uses the shared primary, secondary, tertiary, and accent theme tokens throughout
-and does not advertise subscription prices or resource tiers the application does not
-implement.
+`buildpusher.com/` is the public, indexable overview for Deployer, Monitor, and
+Analytics. The detailed product descriptions live at `/deployer`, `/monitor`, and
+`/analytics`; the three product subdomain roots enter their authenticated dashboards.
+The overview explains shared accounts and projects, connected product workflows, and
+independent app subscriptions. Each detail page uses the shared Signal navigation,
+cards, badges, buttons, feature panels, and footer. Deployer's page carries over all
+36 documented capabilities, its supported providers, representative workflow previews,
+guardrails, and product questions. Monitor and Analytics describe their current checks,
+telemetry, goals, reporting, and collaboration features. The pages use canonical Open
+Graph and summary-card metadata with the local SVG icon, responsive navigation, and a
+keyboard-visible content skip link; authenticated and auth-flow pages default to
+`noindex, nofollow` and do not emit public sharing metadata. The public pages omit the
+unused Livewire runtime, `robots.txt` directs crawlers away from private application
+routes, and legacy favicon requests permanently redirect to the local SVG. The systemd
+web service runs Laravel's static-aware router directly with PHP version advertising
+disabled instead of launching a second unsupervised child process.
 On mobile, the authenticated navigation opens above the app header, locks background
 scroll, uses the dynamic viewport and safe-area padding, and keeps every destination
 reachable in its own scrollable drawer. Opening and closing the drawer transfers

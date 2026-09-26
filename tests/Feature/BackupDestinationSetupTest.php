@@ -2,12 +2,12 @@
 
 namespace Tests\Feature;
 
-use App\Models\BackupDestination;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteBackup;
+use App\Modules\Deployer\Models\BackupDestination;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteBackup;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Support\Facades\DB;
@@ -50,20 +50,28 @@ class BackupDestinationSetupTest extends TestCase
         $destination = $this->destination($owner);
 
         $createDialogUrl = route('backups.index', ['dialog' => 'add-destination']);
-        $this->actingAs($owner)->get($createDialogUrl)
+        $createDialog = $this->actingAs($owner)->get($createDialogUrl)
             ->assertSuccessful()
             ->assertSee('id="backup-destination-create-dialog"', false)
-            ->assertSee('data-modal-initial-open="true"', false)
-            ->assertSee('name="_backup_destination_form" value="create"', false);
+            ->assertSee('data-modal-initial-open="true"', false);
+
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*\bname="_backup_destination_form")(?=[^>]*\bvalue="create")[^>]*>/s',
+            $createDialog->getContent(),
+        );
 
         $editDialogUrl = route('backups.index', ['dialog' => 'edit-destination-'.$destination->id]);
-        $this->actingAs($owner)->get($editDialogUrl)
+        $editDialog = $this->actingAs($owner)->get($editDialogUrl)
             ->assertSuccessful()
             ->assertSee('id="backup-destination-edit-'.$destination->id.'"', false)
             ->assertSee('data-modal-initial-open="true"', false)
-            ->assertSee('name="_backup_destination_form" value="edit"', false)
             ->assertDontSee('secret-key')
             ->assertDontSee('access-key');
+
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*\bname="_backup_destination_form")(?=[^>]*\bvalue="edit")[^>]*>/s',
+            $editDialog->getContent(),
+        );
     }
 
     public function test_backup_destination_validation_reopens_the_requested_dialog_without_flashing_credentials(): void

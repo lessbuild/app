@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\Provider;
-use App\Models\ServerCommandExecution;
-use App\Models\User;
-use App\Services\TwoFactorAuthentication;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\TwoFactorAuthentication;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -25,6 +25,8 @@ class AccountLifecycleTest extends TestCase
             ->assertSee('Terms of Service')
             ->assertSee('Acceptable use');
         $this->get('/')
+            ->assertOk()
+            ->assertSee('Ship. Monitor. Understand.')
             ->assertSee(route('privacy'))
             ->assertSee(route('terms'));
     }

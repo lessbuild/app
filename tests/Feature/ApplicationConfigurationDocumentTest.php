@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\ApplicationConfigurationDocument;
+use App\Modules\Deployer\Services\ApplicationConfigurationDocument;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;
 

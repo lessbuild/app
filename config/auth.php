@@ -1,6 +1,9 @@
 <?php
 
-use App\Models\User;
+use App\Core\Models\PlatformUser;
+use App\Modules\Analytics\Models\User as AnalyticsUser;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Monitor\Models\User as MonitorUser;
 
 return [
 
@@ -42,6 +45,26 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+
+        'platform' => [
+            'driver' => 'session',
+            'provider' => 'platform_users',
+        ],
+
+        'deployer' => [
+            'driver' => 'session',
+            'provider' => 'deployer_users',
+        ],
+
+        'monitor' => [
+            'driver' => 'session',
+            'provider' => 'monitor_users',
+        ],
+
+        'analytics' => [
+            'driver' => 'session',
+            'provider' => 'analytics_users',
+        ],
     ],
 
     /*
@@ -65,6 +88,26 @@ return [
         'users' => [
             'driver' => 'eloquent',
             'model' => User::class,
+        ],
+
+        'platform_users' => [
+            'driver' => 'core-platform',
+            'model' => PlatformUser::class,
+        ],
+
+        'deployer_users' => [
+            'driver' => 'eloquent',
+            'model' => User::class,
+        ],
+
+        'monitor_users' => [
+            'driver' => 'eloquent',
+            'model' => MonitorUser::class,
+        ],
+
+        'analytics_users' => [
+            'driver' => 'eloquent',
+            'model' => AnalyticsUser::class,
         ],
 
         // 'users' => [
@@ -92,6 +135,14 @@ return [
         'users' => [
             'provider' => 'users',
             'table' => 'password_resets',
+            'expire' => 60,
+            'throttle' => 60,
+        ],
+
+        'platform_users' => [
+            'provider' => 'platform_users',
+            'table' => 'password_reset_tokens',
+            'connection' => 'core',
             'expire' => 60,
             'throttle' => 60,
         ],

@@ -2,15 +2,15 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Web\CheckWebsiteHealthJob;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
-use App\Services\WebsiteHealthMonitor;
+use App\Modules\Deployer\Jobs\Web\CheckWebsiteHealthJob;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\WebsiteHealthMonitor;
 use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;

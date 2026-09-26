@@ -1,0 +1,117 @@
+@import 'tailwindcss';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+@source '../**/*.blade.php';
+@source '../**/*.js';
+
+@theme inline {
+    --font-sans: var(--font-body);
+    --font-mono: var(--font-code);
+    --color-page: var(--ui-page);
+    --color-surface: var(--ui-surface);
+    --color-surface-muted: var(--ui-surface-muted);
+    --color-surface-raised: var(--ui-surface-raised);
+    --color-ink: var(--ui-ink);
+    --color-muted: var(--ui-muted);
+    --color-subtle: var(--ui-subtle);
+    --color-line: var(--ui-line);
+    --color-primary: var(--ui-primary);
+    --color-primary-hover: var(--ui-primary-hover);
+    --color-primary-soft: var(--ui-primary-soft);
+    --color-on-primary: var(--ui-on-primary);
+    --color-success: var(--ui-success);
+    --color-success-soft: var(--ui-success-soft);
+    --color-warning: var(--ui-warning);
+    --color-warning-soft: var(--ui-warning-soft);
+    --color-danger: var(--ui-danger);
+    --color-danger-soft: var(--ui-danger-soft);
+    --color-info: var(--ui-info);
+    --color-info-soft: var(--ui-info-soft);
+    --radius-control: 0.6rem;
+    --radius-panel: 1rem;
+    --radius-card: 0.75rem;
+}
+
+:root {
+    --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    --font-code: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --brand-50: #fafafa;
+    --brand-100: #f4f4f5;
+    --brand-200: #e4e4e7;
+    --brand-300: #d4d4d8;
+    --brand-400: #a1a1aa;
+    --brand-500: #71717a;
+    --brand-600: #52525b;
+    --brand-700: #3f3f46;
+    --brand-800: #27272a;
+    --brand-900: #18181b;
+    --brand-950: #09090b;
+    --ui-page: #f4f4f5;
+    --ui-surface: #ffffff;
+    --ui-surface-muted: #f4f4f5;
+    --ui-surface-raised: #ffffff;
+    --ui-ink: #18181b;
+    --ui-muted: #52525b;
+    --ui-subtle: #71717a;
+    --ui-line: #e4e4e7;
+    --ui-primary: #3f3f46;
+    --ui-primary-hover: #27272a;
+    --ui-primary-soft: #f4f4f5;
+    --ui-on-primary: #ffffff;
+    --ui-success: #15803d;
+    --ui-success-soft: #f0fdf4;
+    --ui-warning: #a16207;
+    --ui-warning-soft: #fefce8;
+    --ui-danger: #b91c1c;
+    --ui-danger-soft: #fef2f2;
+    --ui-info: #2563eb;
+    --ui-info-soft: #eff6ff;
+}
+
+html.dark {
+    --ui-page: #09090b;
+    --ui-surface: #18181b;
+    --ui-surface-muted: #27272a;
+    --ui-surface-raised: #3f3f46;
+    --ui-ink: #fafafa;
+    --ui-muted: #d4d4d8;
+    --ui-subtle: #a1a1aa;
+    --ui-line: #3f3f46;
+    --ui-primary: #d4d4d8;
+    --ui-primary-hover: #f4f4f5;
+    --ui-primary-soft: #27272a;
+    --ui-on-primary: #18181b;
+    --ui-success: #86efac;
+    --ui-success-soft: #14532d;
+    --ui-warning: #fde047;
+    --ui-warning-soft: #713f12;
+    --ui-danger: #fca5a5;
+    --ui-danger-soft: #7f1d1d;
+    --ui-info: #93c5fd;
+    --ui-info-soft: #1e3a8a;
+}
+
+html { color-scheme: light; }
+html.dark { color-scheme: dark; }
+body { background: var(--ui-page); color: var(--ui-ink); }
+
+@layer components {
+    .ui-panel { @apply rounded-panel border border-line bg-surface shadow-sm; }
+    .ui-btn { @apply inline-flex items-center justify-center gap-2 rounded-control px-4 py-2.5 text-sm font-bold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary; }
+    .ui-btn-primary { @apply bg-primary text-on-primary hover:bg-primary-hover; }
+    .ui-btn-secondary { @apply border border-line bg-surface text-ink hover:bg-surface-muted; }
+    .ui-btn-ghost { @apply text-muted hover:bg-surface-muted hover:text-ink; }
+    .ui-input { @apply w-full rounded-control border border-line bg-surface px-3.5 py-2.5 text-sm text-ink outline-none placeholder:text-subtle focus:border-primary focus:ring-2 focus:ring-primary/20; }
+    .ui-label { @apply mb-1.5 block text-xs font-bold uppercase tracking-wider text-muted; }
+    .ui-eyebrow { @apply text-[0.68rem] font-extrabold uppercase tracking-[0.18em] text-subtle; }
+    .ui-icon-btn { @apply grid size-9 place-items-center rounded-control text-muted transition hover:bg-surface-muted hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary; }
+    .sidebar-link { @apply flex items-center gap-3 rounded-control px-3 py-2.5 text-sm font-semibold text-muted transition hover:bg-surface-muted hover:text-ink; }
+    .sidebar-link[aria-current="page"] { @apply bg-primary-soft text-ink; }
+    .metric-value { @apply text-2xl font-extrabold tracking-tight text-ink; }
+    .table-row { @apply border-t border-line text-sm; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; }
+}

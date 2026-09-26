@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Laravel\Sanctum\Sanctum;
@@ -56,6 +56,17 @@ class ApiPlanAccessTest extends TestCase
         $this->getJson('/api/v1/me')
             ->assertOk()
             ->assertJsonPath('data.organization.plan', 'free');
+    }
+
+    public function test_pre_scope_personal_tokens_keep_their_existing_workspace_behavior(): void
+    {
+        $user = User::factory()->create();
+        $legacyToken = $user->createToken('Existing integration', ['read'])->plainTextToken;
+
+        $this->withToken($legacyToken)
+            ->getJson('/api/v1/me')
+            ->assertOk()
+            ->assertJsonPath('data.organization.id', $user->current_organization_id);
     }
 
     public function test_api_requests_use_the_free_plan_limit_and_return_throttle_headers(): void

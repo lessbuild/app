@@ -3,9 +3,13 @@
 $applicationName = env('APP_NAME', 'Deployer');
 
 return [
+    // Keep the legacy Cashier owner-plan source until workspace subscriptions
+    // have been reconciled and the Core authority is explicitly enabled.
+    'plan_authority' => env('DEPLOYER_PLAN_AUTHORITY', 'legacy'),
     'enforce_limits' => (bool) env('BILLING_ENFORCE_LIMITS', true),
     'enforce_entitlements' => (bool) env('BILLING_ENFORCE_ENTITLEMENTS', true),
     'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
+    'portal_enabled' => (bool) env('DEPLOYER_STRIPE_PORTAL_ENABLED', true),
 
     'plans' => [
         'free' => [

@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Notifications\EmailReadinessNotification;
+use App\Modules\Deployer\Notifications\EmailReadinessNotification;
 use Illuminate\Support\Facades\Notification;
 use Tests\TestCase;
 

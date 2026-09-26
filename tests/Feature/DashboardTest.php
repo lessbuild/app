@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Models\Build;
-use App\Models\Provider;
-use App\Models\Recipe;
-use App\Models\RepositoryWebhookDelivery;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\PublicPlatformStatus;
-use App\Services\SystemHealth;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\PublicPlatformStatus;
+use App\Modules\Deployer\Services\SystemHealth;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;
@@ -24,20 +24,20 @@ class DashboardTest extends TestCase
     {
         $this->get('/')
             ->assertSuccessful()
-            ->assertSee('Deploy with clarity. Recover with confidence.')
-            ->assertSee('The release lifecycle, without the tool sprawl.')
-            ->assertSee('Connect. Provision. Deploy.')
-            ->assertSee(route('login'));
+            ->assertSee('Ship. Monitor. Understand.')
+            ->assertSee('Deployer')
+            ->assertSee('Monitor')
+            ->assertSee('Analytics');
     }
 
-    public function test_authenticated_root_visits_redirect_into_the_dashboard_verification_flow(): void
+    public function test_signed_in_visitors_can_open_the_public_homepage_and_dashboard_directly(): void
     {
         $verified = User::factory()->create(['email_verified_at' => now()]);
-        $this->actingAs($verified)->get('/')->assertRedirect(route('dashboard'));
+        $this->actingAs($verified)->get('/')->assertSuccessful()->assertSee('Ship. Monitor. Understand.');
         $this->get(route('dashboard'))->assertSuccessful();
 
         $unverified = User::factory()->unverified()->create();
-        $this->actingAs($unverified)->get('/')->assertRedirect(route('dashboard'));
+        $this->actingAs($unverified)->get('/')->assertSuccessful()->assertSee('Ship. Monitor. Understand.');
         $this->get(route('dashboard'))->assertRedirect(route('verification.notice'));
     }
 
@@ -46,37 +46,69 @@ class DashboardTest extends TestCase
         $this->get(route('dashboard'))->assertRedirect(route('login'));
     }
 
-    public function test_dashboard_has_a_signal_mobile_navigation_drawer(): void
+    public function test_dashboard_has_the_signal_topbar_mobile_application_menu(): void
     {
         $response = $this->actingAs(User::factory()->create())->get(route('dashboard'));
         $response->assertSuccessful()
-            ->assertSee('id="desktop-navigation"', false)
-            ->assertSee('id="app-mobile-nav"', false)
-            ->assertSee('x-trap.inert.noscroll="menu"', false)
-            ->assertSee('class="fixed inset-0 z-50 lg:hidden', false)
-            ->assertSee('class="relative flex h-full w-72 flex-col overflow-y-auto bg-surface', false)
-            ->assertSee('Search or jump to…')
-            ->assertSee('A focused space for deployments, infrastructure, and recovery.')
-            ->assertSee('Settings and support')
-            ->assertSee('>Deployments<', false)
-            ->assertSee('>Repositories<', false)
-            ->assertSee('>Recipes<', false)
-            ->assertSee('>Gallery<', false)
-            ->assertSee('>Billing<', false)
-            ->assertSee('>Costs<', false)
-            ->assertSee('>Settings<', false);
-        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Open navigation"'));
+            ->assertSee('data-topbar-shell', false)
+            ->assertSee('aria-label="Products"', false)
+            ->assertSee('id="signal-product-navigation"', false)
+            ->assertSee('aria-label="Deployer sections"', false)
+            ->assertSee('data-signal-menu', false)
+            ->assertSee('aria-label="Open application navigation"', false)
+            ->assertSee('aria-haspopup="dialog"', false)
+            ->assertSeeText('Search this workspace')
+            ->assertSeeText('Signal quick navigation')
+            ->assertSeeText('Deployments')
+            ->assertSeeText('Repositories')
+            ->assertSeeText('Recipes')
+            ->assertSeeText('Gallery')
+            ->assertSeeText('Billing')
+            ->assertSeeText('Costs')
+            ->assertSeeText('Settings');
+        $this->assertSame(1, substr_count($response->getContent(), 'aria-label="Open application navigation"'));
+
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+
+        foreach ([
+            'signal-mobile-product-navigation' => [
+                'dashboard' => ['Dashboard'],
+                'projects.index' => ['Applications'],
+                'builds.index' => ['Deployments'],
+                'repositories.index' => ['Repositories'],
+                'domains.index' => ['Domains'],
+                'databases.index' => ['Databases'],
+                'observability.index' => ['Observability'],
+            ],
+            'signal-mobile-profile-navigation' => [
+                'costs.index' => ['Costs'],
+                'billing.index' => ['Billing'],
+                'account.index' => ['Account', 'Settings'],
+            ],
+        ] as $navigationId => $destinations) {
+            foreach ($destinations as $routeName => $expectedLabels) {
+                $links = $xpath->query('//*[@id="'.$navigationId.'"]//a[@href="'.route($routeName).'"]');
+                $this->assertCount(count($expectedLabels), $links, implode(' / ', $expectedLabels).' must remain directly reachable from the mobile Signal menu.');
+                $actualLabels = array_map(static fn (\DOMNode $link): string => trim($link->textContent), iterator_to_array($links));
+                $this->assertSame($expectedLabels, $actualLabels);
+            }
+        }
+
+        $currentDashboard = $xpath->query('//*[@id="signal-mobile-product-navigation"]//a[@href="'.route('dashboard').'" and @aria-current="page"]');
+        $this->assertCount(1, $currentDashboard, 'The active destination must remain marked in the mobile Signal menu.');
     }
 
-    public function test_navigation_has_a_signal_header_and_edge_to_edge_bottom_bar(): void
+    public function test_navigation_uses_the_signal_topbar_and_product_sections(): void
     {
         $this->actingAs(User::factory()->create())->get(route('dashboard'))
             ->assertSuccessful()
-            ->assertSee('class="sticky top-0 z-30 flex h-[var(--header-height)] items-center justify-between', false)
-            ->assertSee('class="ui-bottom-nav lg:hidden"', false)
-            ->assertSee('class="ui-bottom-nav-link"', false)
-            ->assertSee('pb-24 sm:px-8 sm:py-10 lg:pb-10', false)
-            ->assertDontSee('fixed inset-x-3', false);
+            ->assertSee('class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur', false)
+            ->assertSee('id="signal-product-navigation"', false)
+            ->assertSee('aria-label="Products"', false)
+            ->assertDontSee('id="desktop-navigation"', false)
+            ->assertDontSee('ui-bottom-nav', false);
     }
 
     public function test_mobile_shell_uses_the_quick_navigation_space_without_a_legacy_footer(): void
@@ -86,9 +118,11 @@ class DashboardTest extends TestCase
             ->assertSee('data-mobile-shell', false)
             ->assertSee('data-mobile-main', false)
             ->assertSee('data-mobile-content', false)
+            ->assertSee('aria-controls="signal-command-palette"', false)
             ->assertSee('data-mobile-quick-navigation', false)
             ->assertDontSee('data-mobile-footer', false)
             ->assertDontSee('app-footer', false)
+            ->assertDontSee('ui-bottom-nav', false)
             ->assertSee('data-mobile-keyboard-open', false)
             ->assertSee('visualViewport', false);
     }
@@ -149,10 +183,13 @@ class DashboardTest extends TestCase
             ->assertSee(route('servers.index', ['dialog' => 'create-server']))
             ->assertSee(route('websites.index', ['dialog' => 'create-website']));
 
-        $this->assertMatchesRegularExpression(
-            '/<a href="'.preg_quote(route('dashboard'), '/').'"(?=[^>]*class="[^"]*app-sidebar-link[^"]*")(?=[^>]*aria-current="page")[^>]*>\s*<svg[^>]*>.*?Dashboard/s',
-            $response->getContent(),
-        );
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($response->getContent());
+        $xpath = new \DOMXPath($dom);
+        $currentDeployerLink = $xpath->query('//nav[@aria-label="Products" and contains(@class, "overflow-x-auto")]//a[@href="'.route('dashboard').'" and @aria-current="page"]');
+
+        $this->assertCount(1, $currentDeployerLink, 'The Deployer product must remain the active destination in the Signal topbar.');
+        $this->assertSame('Deployer', trim($currentDeployerLink->item(0)?->textContent ?? ''));
     }
 
     public function test_dashboard_hosts_creation_dialogs_and_keeps_creation_links_on_the_dashboard(): void

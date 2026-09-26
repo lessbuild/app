@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Repository\PublishRepositoryJob;
-use App\Models\Build;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\ApplicationConfigurationBuilds;
-use App\Services\ApplicationConfigurationDelivery;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationResults;
-use App\Services\ApplicationConfigurationReviews;
-use App\Services\DeploymentRequest;
-use App\Services\Runner;
+use App\Modules\Deployer\Jobs\Repository\PublishRepositoryJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\ApplicationConfigurationBuilds;
+use App\Modules\Deployer\Services\ApplicationConfigurationDelivery;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationResults;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Services\DeploymentRequest;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

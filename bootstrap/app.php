@@ -1,7 +1,7 @@
 <?php
 
-use App\Exceptions\Handler;
-use App\Http\Kernel;
+use App\Modules\Deployer\Exceptions\Handler;
+use App\Modules\Deployer\Http\Kernel;
 use Illuminate\Contracts\Debug\ExceptionHandler;
 use Illuminate\Foundation\Application;
 

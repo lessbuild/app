@@ -7,12 +7,16 @@
 
 @source "../views";
 @source "../js";
+@source "../../app/Core/Views/**/*.blade.php";
+@source "../../app/Modules/Deployer/Views/**/*.blade.php";
+@source "../../app/Modules/Monitor/Views/**/*.blade.php";
+@source "../../app/Modules/Analytics/Views/**/*.blade.php";
 @source inline("dark light");
 
 @plugin "@tailwindcss/forms";
 
 :root {
-    --mobile-quick-navigation-space: calc(4.5rem + env(safe-area-inset-bottom));
+    --mobile-quick-navigation-space: calc(4rem + env(safe-area-inset-bottom, 0px));
 }
 
 html {

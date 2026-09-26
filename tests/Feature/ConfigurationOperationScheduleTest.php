@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Console\Kernel;
+use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 use Tests\TestCase;
 
@@ -17,11 +18,22 @@ class ConfigurationOperationScheduleTest extends TestCase
         $this->assertSame('* * * * *', $event->expression);
         $this->assertTrue($event->withoutOverlapping);
         $this->assertTrue($event->runInBackground);
-        Schema::shouldReceive('hasTable')->with('configuration_operations')->times(3)->andReturn(true);
-        Schema::shouldReceive('hasTable')->with('configuration_operation_receipts')->times(3)->andReturn(false, true, true);
-        Schema::shouldReceive('hasColumn')->with('configuration_operations', 'retry_of_operation_id')->twice()->andReturn(false, true);
-        $this->assertFalse($event->filtersPass($this->app));
-        $this->assertFalse($event->filtersPass($this->app));
-        $this->assertTrue($event->filtersPass($this->app));
+        $schema = Schema::connection('deployer');
+        $schema->dropIfExists('configuration_operation_receipts');
+        $schema->dropIfExists('configuration_operations');
+
+        try {
+            $this->assertFalse($event->filtersPass($this->app));
+
+            $schema->create('configuration_operations', fn (Blueprint $table) => $table->id());
+            $schema->create('configuration_operation_receipts', fn (Blueprint $table) => $table->id());
+            $this->assertFalse($event->filtersPass($this->app));
+
+            $schema->table('configuration_operations', fn (Blueprint $table) => $table->unsignedBigInteger('retry_of_operation_id')->nullable());
+            $this->assertTrue($event->filtersPass($this->app));
+        } finally {
+            $schema->dropIfExists('configuration_operation_receipts');
+            $schema->dropIfExists('configuration_operations');
+        }
     }
 }

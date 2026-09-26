@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\ConfigurationOwnership;
-use App\Models\User;
+use App\Modules\Deployer\Models\ConfigurationOwnership;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;

@@ -1,21 +1,21 @@
 <?php
 
-use App\Models\Build;
-use App\Models\EnvironmentResource;
-use App\Models\OperationalIncident;
-use App\Models\Recipe;
-use App\Models\RepositoryWebhookDelivery;
-use App\Models\Server;
-use App\Models\ServerCommandExecution;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteBackup;
-use App\Notifications\FailureNotification;
-use App\Notifications\NotificationInbox;
-use App\Services\ApplicationConfigurationReconciler;
-use App\Services\ApplicationConfigurationReviews;
-use App\Services\IncidentNotifier;
-use App\Services\OperationalDiagnostics;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\EnvironmentResource;
+use App\Modules\Deployer\Models\OperationalIncident;
+use App\Modules\Deployer\Models\Recipe;
+use App\Modules\Deployer\Models\RepositoryWebhookDelivery;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerCommandExecution;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteBackup;
+use App\Modules\Deployer\Notifications\FailureNotification;
+use App\Modules\Deployer\Notifications\NotificationInbox;
+use App\Modules\Deployer\Services\ApplicationConfigurationReconciler;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Services\IncidentNotifier;
+use App\Modules\Deployer\Services\OperationalDiagnostics;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\File;
 use Illuminate\Testing\TestResponse;
@@ -366,6 +366,11 @@ class AssetLayoutFixtureTest extends TestCase
         ]))->assertOk()->assertSee('<form', false)->getContent());
         $server = $dashboardServer;
         $website = $dashboardWebsite;
+        $owner->recipes()->create([
+            'name' => 'Install observability agent',
+            'description' => 'Install the approved observability agent.',
+            'script' => 'echo install-observability-agent',
+        ]);
         File::put($directory.'/servers.html', $this->renderPage(route('servers.index'))->assertOk()
             ->assertSee('data-modal-trigger="server-create-dialog"', false)->getContent());
         File::put($directory.'/servers-dialog.html', $this->renderPage(route('servers.index', ['dialog' => 'create-server']))

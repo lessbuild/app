@@ -2,16 +2,16 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\Repository\RollbackReleaseJob;
-use App\Models\Build;
-use App\Models\PreviewDeployment;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\Size;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\AutomaticDeploymentRollback;
-use App\Services\DeploymentRequest;
+use App\Modules\Deployer\Jobs\Repository\RollbackReleaseJob;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\PreviewDeployment;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Size;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\AutomaticDeploymentRollback;
+use App\Modules\Deployer\Services\DeploymentRequest;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Tests\TestCase;

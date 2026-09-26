@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Services\DigitalOcean;
+use App\Modules\Deployer\Services\DigitalOcean;
 use Exception;
 use Illuminate\Support\Facades\Http;
 use InvalidArgumentException;

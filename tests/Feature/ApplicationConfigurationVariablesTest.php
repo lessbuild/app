@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\ApplicationConfigurationVariables;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationVariables;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Validation\ValidationException;
 use Tests\TestCase;

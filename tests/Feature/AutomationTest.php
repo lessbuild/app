@@ -2,17 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Jobs\ApplyEnvironmentRuntimeStateJob;
-use App\Jobs\RunScheduledTaskJob;
-use App\Jobs\WakeHibernatedEnvironmentJob;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Services\Entitlements;
-use App\Services\ManagedSsh;
-use App\Services\Runner;
-use App\Services\WorkflowConfiguration;
+use App\Modules\Deployer\Jobs\ApplyEnvironmentRuntimeStateJob;
+use App\Modules\Deployer\Jobs\RunScheduledTaskJob;
+use App\Modules\Deployer\Jobs\WakeHibernatedEnvironmentJob;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Services\Entitlements;
+use App\Modules\Deployer\Services\ManagedSsh;
+use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Services\WorkflowConfiguration;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -498,6 +499,123 @@ class AutomationTest extends TestCase
         Queue::assertNotPushed(ApplyEnvironmentRuntimeStateJob::class);
     }
 
+    public function test_persisted_api_tokens_filter_project_lists_and_deny_other_project_resources(): void
+    {
+        $owner = User::factory()->create();
+        $allowedProject = $owner->currentOrganization->projects()->create([
+            'created_by' => $owner->id,
+            'name' => 'Allowed API project',
+            'slug' => 'allowed-api-project',
+            'preset' => 'custom',
+        ]);
+        $blockedProject = $owner->currentOrganization->projects()->create([
+            'created_by' => $owner->id,
+            'name' => 'Blocked API project',
+            'slug' => 'blocked-api-project',
+            'preset' => 'custom',
+        ]);
+        $blockedEnvironment = $blockedProject->environments()->create([
+            'name' => 'Production',
+            'slug' => 'production',
+            'type' => 'production',
+            'branch' => 'main',
+        ]);
+        $plainTextToken = $owner->createToken('Single project', [
+            'read',
+            'manage',
+            'workspace:'.$owner->current_organization_id,
+            'project:'.$allowedProject->id,
+        ])->plainTextToken;
+
+        $this->withToken($plainTextToken)
+            ->getJson('/api/v1/projects')
+            ->assertOk()
+            ->assertJsonFragment(['name' => 'Allowed API project'])
+            ->assertJsonMissing(['name' => 'Blocked API project']);
+
+        $this->withToken($plainTextToken)
+            ->getJson('/api/v1/projects/'.$blockedProject->id)
+            ->assertForbidden();
+
+        $this->withToken($plainTextToken)
+            ->patchJson('/api/v1/environments/'.$blockedEnvironment->id.'/scale', ['replicas' => 2])
+            ->assertForbidden();
+    }
+
+    public function test_project_list_keeps_the_unpaged_v1_shape_and_offers_opt_in_cursor_pages(): void
+    {
+        $owner = User::factory()->create();
+        foreach (['First', 'Second', 'Third'] as $name) {
+            $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => $name.' app', 'slug' => str($name)->lower().'-app', 'preset' => 'custom']);
+        }
+        $outsider = User::factory()->create();
+        $outsider->currentOrganization->projects()->create(['created_by' => $outsider->id, 'name' => 'Private App', 'slug' => 'private', 'preset' => 'custom']);
+        Sanctum::actingAs($owner, ['read']);
+
+        $this->getJson('/api/v1/projects')->assertOk()->assertJsonCount(3, 'data')->assertJsonMissingPath('meta');
+
+        $first = $this->getJson('/api/v1/projects?limit=2')->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.limit', 2);
+        $this->assertSame(['First app', 'Second app'], array_column($first->json('data'), 'name'));
+        $cursor = $first->json('meta.next_cursor');
+        $this->assertIsString($cursor);
+
+        $last = $this->getJson('/api/v1/projects?limit=2&cursor='.urlencode($cursor))->assertOk()->assertJsonCount(1, 'data');
+        $this->assertSame(['Third app'], array_column($last->json('data'), 'name'));
+        $this->assertNull($last->json('meta.next_cursor'));
+        $last->assertJsonMissing(['name' => 'Private App']);
+
+        $this->getJson('/api/v1/projects?limit=0')->assertUnprocessable()->assertJsonValidationErrors('limit');
+        $this->getJson('/api/v1/projects?limit=101')->assertUnprocessable()->assertJsonValidationErrors('limit');
+        $this->getJson('/api/v1/projects?cursor=not-a-cursor')->assertUnprocessable()->assertJsonValidationErrors('cursor');
+        $this->getJson('/api/v1/projects?cursor='.urlencode(base64_encode(json_encode(['name' => 'x', '_pointsToNextItems' => true]))))
+            ->assertUnprocessable()->assertJsonValidationErrors('cursor');
+    }
+
+    public function test_deployment_list_keeps_newest_100_by_default_and_pages_through_all_history(): void
+    {
+        $owner = User::factory()->create();
+        $provider = $owner->providers()->create(['name' => 'GitHub', 'provider' => 'github', 'token' => 'provider-secret', 'description' => 'Source control']);
+        $server = $owner->servers()->create(['name' => 'Application server', 'provisioning_status' => 'active']);
+        $website = $owner->websites()->create([
+            'server_id' => $server->id, 'name' => 'Storefront site', 'url' => 'storefront.test',
+            'description' => 'Application', 'environment' => '', 'provisioning_status' => 'active',
+        ]);
+        $repository = $owner->repositories()->create([
+            'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'Storefront source',
+            'url' => 'github.com/example/storefront.git', 'branch' => 'main', 'description' => 'Source',
+        ]);
+        $builds = collect(range(1, 102))->map(fn (): Build => $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]));
+        Sanctum::actingAs($owner, ['read']);
+
+        $this->getJson('/api/v1/deployments')->assertOk()->assertJsonCount(100, 'data')->assertJsonMissingPath('meta');
+
+        $seen = [];
+        $cursor = null;
+        do {
+            $response = $this->getJson('/api/v1/deployments?limit=40'.($cursor === null ? '' : '&cursor='.urlencode($cursor)))->assertOk();
+            $seen = [...$seen, ...array_column($response->json('data'), 'id')];
+            $cursor = $response->json('meta.next_cursor');
+        } while ($cursor !== null && count($seen) < 200);
+
+        $this->assertSame($builds->pluck('id')->sortDesc()->values()->all(), $seen);
+    }
+
+    public function test_workspace_scoped_api_token_stops_working_after_the_account_switches_workspaces(): void
+    {
+        $owner = User::factory()->create();
+        $otherWorkspaceOwner = User::factory()->create();
+        $plainTextToken = $owner->createToken('Workspace token', [
+            'read',
+            'workspace:'.$owner->current_organization_id,
+        ])->plainTextToken;
+
+        $owner->forceFill(['current_organization_id' => $otherWorkspaceOwner->current_organization_id])->save();
+
+        $this->withToken($plainTextToken)
+            ->getJson('/api/v1/me')
+            ->assertForbidden();
+    }
+
     public function test_api_scale_and_runtime_preserve_envelopes_and_queue_shared_operations(): void
     {
         Queue::fake();
@@ -587,8 +705,14 @@ class AutomationTest extends TestCase
             ->assertSee('id="automation-workflows"', false)
             ->getContent();
 
-        $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
-        $this->assertMatchesRegularExpression('/<details\s+id="automation-quick-start"[^>]*\bopen\b[^>]*data-responsive-details/', $content);
+        $dom = new \DOMDocument;
+        @$dom->loadHTML($content);
+        $xpath = new \DOMXPath($dom);
+
+        foreach (['automation-tokens', 'automation-quick-start'] as $panelId) {
+            $panels = $xpath->query('//details[@id="'.$panelId.'" and @open and @data-responsive-details]');
+            $this->assertCount(1, $panels, "The {$panelId} panel must start open and use the responsive Signal disclosure.");
+        }
     }
 
     public function test_automation_surface_uses_compact_signal_panels_and_controls(): void
@@ -651,6 +775,12 @@ class AutomationTest extends TestCase
     public function test_token_composer_is_a_dialog_and_reopens_for_validation_errors(): void
     {
         $user = User::factory()->create();
+        $project = $user->currentOrganization->projects()->create([
+            'created_by' => $user->id,
+            'name' => 'Token scope project',
+            'slug' => 'token-scope-project',
+            'preset' => 'custom',
+        ]);
 
         $default = $this->actingAs($user)
             ->get(route('automation.index'))
@@ -663,10 +793,16 @@ class AutomationTest extends TestCase
         );
 
         $dialogUrl = route('automation.index', ['dialog' => 'create-token']);
+        $tokenDialog = $this->actingAs($user)->get($dialogUrl)->assertSuccessful();
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="automation-token-dialog")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
-            $this->actingAs($user)->get($dialogUrl)->assertSuccessful()->getContent(),
+            $tokenDialog->getContent(),
         );
+        $tokenDialog->assertSee('id="automation-token-name"', false)
+            ->assertSee('id="automation-token-expires-in-days"', false)
+            ->assertSee('id="automation-token-ability-read"', false)
+            ->assertSee('id="automation-token-project-'.$project->id.'"', false)
+            ->assertSee('Limit to projects (optional)');
 
         $response = $this->actingAs($user)
             ->from($dialogUrl)
@@ -721,6 +857,10 @@ class AutomationTest extends TestCase
         );
 
         $scheduleUrl = route('automation.index', ['dialog' => $scheduleDialogKey]);
+        $this->actingAs($user)->get($scheduleUrl)
+            ->assertSee('id="'.$scheduleDialogId.'-name"', false)
+            ->assertSee('id="'.$scheduleDialogId.'-cron-expression"', false)
+            ->assertSee('id="'.$scheduleDialogId.'-timezone"', false);
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="'.preg_quote($scheduleDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $this->actingAs($user)->get($scheduleUrl)->assertSuccessful()->getContent(),
@@ -742,9 +882,16 @@ class AutomationTest extends TestCase
             $invalidSchedule->getContent(),
         );
         $invalidSchedule->assertSee('The name field is required.');
+        $invalidSchedule->assertSee('value="not cron"', false)
+            ->assertSee('value="Not/AZone"', false);
         $this->assertDatabaseCount('deployment_schedules', 0);
 
         $taskUrl = route('automation.index', ['dialog' => $taskDialogKey]);
+        $this->actingAs($user)->get($taskUrl)
+            ->assertSee('id="'.$taskDialogId.'-name"', false)
+            ->assertSee('id="'.$taskDialogId.'-command"', false)
+            ->assertSee('id="'.$taskDialogId.'-without-overlapping"', false)
+            ->assertSee('id="'.$taskDialogId.'-alert-on-failure"', false);
         $this->assertMatchesRegularExpression(
             '/<dialog(?=[^>]*id="'.preg_quote($taskDialogId, '/').'")(?=[^>]*\sopen(?:\s|>))[^>]*>/',
             $this->actingAs($user)->get($taskUrl)->assertSuccessful()->getContent(),
@@ -770,7 +917,10 @@ class AutomationTest extends TestCase
             ->assertOk()
             ->assertSee('Copy this token now')
             ->getContent();
-        $this->assertMatchesRegularExpression('/<details\s+id="automation-tokens"[^>]*\bopen\b[^>]*>/', $tokenPage);
+        $tokenPageDom = new \DOMDocument;
+        @$tokenPageDom->loadHTML($tokenPage);
+        $tokenPageXpath = new \DOMXPath($tokenPageDom);
+        $this->assertCount(1, $tokenPageXpath->query('//details[@id="automation-tokens" and @open]'));
 
         $rotate = $this->post(route('automation.tokens.rotate', $token));
 
@@ -778,7 +928,7 @@ class AutomationTest extends TestCase
         $replacement = $user->tokens()->sole();
         $this->assertNotSame($token->id, $replacement->id);
         $this->assertNotSame($oldHash, $replacement->token);
-        $this->assertSame(['read', 'deploy'], $replacement->abilities);
+        $this->assertSame(['read', 'deploy', 'workspace:'.$user->current_organization_id], $replacement->abilities);
         $this->assertTrue($replacement->expires_at->isBetween(now()->addMonths(11), now()->addMonths(13)));
     }
 
@@ -794,11 +944,67 @@ class AutomationTest extends TestCase
         $response->assertRedirect()->assertSessionHas('plainTextToken');
         $plainTextToken = $response->getSession()->get('plainTextToken');
         $token = $user->tokens()->sole();
-        $this->assertSame(['read', 'deploy'], $token->abilities);
+        $this->assertSame(['read', 'deploy', 'workspace:'.$user->current_organization_id], $token->abilities);
         $this->assertTrue($token->expires_at->isBetween(now()->addDays(364), now()->addDays(366)));
         $this->assertIsString($plainTextToken);
         $this->assertNotSame($plainTextToken, $token->token);
         $this->assertStringNotContainsString($plainTextToken, (string) DB::table('personal_access_tokens')->whereKey($token->id)->value('token'));
+    }
+
+    public function test_rotating_a_legacy_token_binds_the_replacement_to_the_active_workspace(): void
+    {
+        $user = User::factory()->create();
+        $legacyToken = $user->createToken('Legacy automation', ['read', 'deploy'])->accessToken;
+
+        $this->actingAs($user)
+            ->post(route('automation.tokens.rotate', $legacyToken))
+            ->assertRedirect()
+            ->assertSessionHas('plainTextToken');
+
+        $replacement = $user->tokens()->sole();
+        $this->assertSame(['read', 'deploy', 'workspace:'.$user->current_organization_id], $replacement->abilities);
+        $this->assertNull($legacyToken->fresh());
+    }
+
+    public function test_new_token_can_be_limited_to_projects_in_the_current_workspace(): void
+    {
+        $user = User::factory()->create();
+        $allowedProject = $user->currentOrganization->projects()->create([
+            'created_by' => $user->id,
+            'name' => 'Allowed project',
+            'slug' => 'allowed-project',
+            'preset' => 'custom',
+        ]);
+        $otherWorkspaceOwner = User::factory()->create();
+        $foreignProject = $otherWorkspaceOwner->currentOrganization->projects()->create([
+            'created_by' => $otherWorkspaceOwner->id,
+            'name' => 'Foreign project',
+            'slug' => 'foreign-project',
+            'preset' => 'custom',
+        ]);
+
+        $this->actingAs($user)->post(route('automation.tokens.store'), [
+            'name' => 'Project-scoped token',
+            'abilities' => ['read'],
+            'project_ids' => [$allowedProject->id],
+            'expires_in_days' => 90,
+        ])->assertRedirect()->assertSessionHas('plainTextToken');
+
+        $token = $user->tokens()->sole();
+        $this->assertSame([
+            'read',
+            'workspace:'.$user->current_organization_id,
+            'project:'.$allowedProject->id,
+        ], $token->abilities);
+
+        $this->actingAs($user)->post(route('automation.tokens.store'), [
+            'name' => 'Foreign project token',
+            'abilities' => ['read'],
+            'project_ids' => [$foreignProject->id],
+            'expires_in_days' => 90,
+        ])->assertSessionHasErrors('project_ids.0');
+
+        $this->assertDatabaseCount('personal_access_tokens', 1);
     }
 
     public function test_token_creation_denies_non_owner_before_malformed_input_and_writes_nothing(): void

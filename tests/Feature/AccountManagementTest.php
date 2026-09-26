@@ -2,7 +2,7 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
+use App\Modules\Deployer\Models\User;
 use Illuminate\Auth\Events\OtherDeviceLogout;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Contracts\Notifications\Dispatcher;
@@ -324,12 +324,16 @@ class AccountManagementTest extends TestCase
             'auth_type' => 'github',
         ]);
 
-        $this->actingAs($user)->get(route('account.index'))
+        $response = $this->actingAs($user)->get(route('account.index'))
             ->assertSuccessful()
             ->assertSee('Connected accounts')
             ->assertSee(route('account.social.destroy', 'github'))
-            ->assertSee('name="social_provider" value="github"', false)
             ->assertSee('name="current_password"', false);
+
+        $this->assertMatchesRegularExpression(
+            '/<input(?=[^>]*\bname="social_provider")(?=[^>]*\bvalue="github")[^>]*>/s',
+            $response->getContent(),
+        );
 
         $this->delete(route('account.social.destroy', 'github'), ['social_provider' => 'github'])
             ->assertSessionHasErrors(['current_password'], errorBag: 'social');

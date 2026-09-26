@@ -1,9 +1,13 @@
 <?php
 
 use App\Providers\AppServiceProvider;
+use App\Core\Providers\CoreServiceProvider;
 use App\Providers\EventServiceProvider;
 use App\Providers\RouteServiceProvider;
 use App\Providers\TelescopeServiceProvider;
+use App\Modules\Analytics\Providers\AnalyticsServiceProvider;
+use App\Modules\Deployer\Providers\DeployerServiceProvider;
+use App\Modules\Monitor\Providers\MonitorServiceProvider;
 use Illuminate\Auth\AuthServiceProvider;
 use Illuminate\Auth\Passwords\PasswordResetServiceProvider;
 use Illuminate\Broadcasting\BroadcastServiceProvider;
@@ -41,7 +45,7 @@ return [
     |
     */
 
-    'name' => env('APP_NAME', 'Deployer'),
+    'name' => env('APP_NAME', 'Buildpusher'),
 
     /*
     |--------------------------------------------------------------------------
@@ -221,6 +225,10 @@ return [
         EventServiceProvider::class,
         RouteServiceProvider::class,
         TelescopeServiceProvider::class,
+        CoreServiceProvider::class,
+        DeployerServiceProvider::class,
+        MonitorServiceProvider::class,
+        AnalyticsServiceProvider::class,
 
     ],
 

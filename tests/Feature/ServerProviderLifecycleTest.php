@@ -2,18 +2,18 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Server\UpdateServerIpAction;
-use App\Contracts\ServerProvider;
-use App\Data\CloudServerData;
-use App\Data\CloudSshKeyData;
-use App\Jobs\Server\InitialiseServerJob;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\User;
-use App\Services\ServerProviderResolver;
-use App\Services\SshHostIdentity;
-use App\Services\SshKeyPair;
+use App\Modules\Deployer\Actions\Server\UpdateServerIpAction;
+use App\Modules\Deployer\Contracts\ServerProvider;
+use App\Modules\Deployer\Data\CloudServerData;
+use App\Modules\Deployer\Data\CloudSshKeyData;
+use App\Modules\Deployer\Jobs\Server\InitialiseServerJob;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ServerProviderResolver;
+use App\Modules\Deployer\Services\SshHostIdentity;
+use App\Modules\Deployer\Services\SshKeyPair;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Mockery;

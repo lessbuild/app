@@ -1,9 +1,9 @@
-@props(['name', 'bag' => 'default'])
+@props(['name', 'bag' => 'default', 'id' => null])
 
 @if ($errors->getBag($bag)->has($name))
-    <div data-form-error class="my-2">
-        <x-ui.alert tone="danger" role="alert">
+    <div @if($id) id="{{ $id }}" @endif data-form-error class="my-2" aria-live="polite">
+        <x-signal.ui.alert tone="danger" role="alert">
             {{ $errors->getBag($bag)->first($name) }}
-        </x-ui.alert>
+        </x-signal.ui.alert>
     </div>
 @endif

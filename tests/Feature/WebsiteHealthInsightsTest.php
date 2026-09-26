@@ -2,11 +2,11 @@
 
 namespace Tests\Feature;
 
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
-use App\Models\User;
-use App\Models\Website;
-use App\Models\WebsiteHealthCheck;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Models\Website;
+use App\Modules\Deployer\Models\WebsiteHealthCheck;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

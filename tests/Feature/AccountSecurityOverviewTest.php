@@ -2,8 +2,8 @@
 
 namespace Tests\Feature;
 
-use App\Models\User;
-use App\Services\ActivityRecorder;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ActivityRecorder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

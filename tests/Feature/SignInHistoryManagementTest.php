@@ -2,9 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\SignInEvent;
-use App\Models\User;
-use App\Notifications\AccountSecurityNotification;
+use App\Modules\Deployer\Models\SignInEvent;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Notifications\AccountSecurityNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Hash;
 use Tests\TestCase;

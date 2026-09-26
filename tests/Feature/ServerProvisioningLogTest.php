@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Models\Provider;
-use App\Models\Server;
-use App\Models\ServerLogSnapshot;
-use App\Models\User;
-use App\Scripts\Server\BaseScript;
-use App\Scripts\Server\EndScript;
-use App\Services\ProvisioningCallbackUrl;
-use App\Services\Runner;
+use App\Modules\Deployer\Models\Provider;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\ServerLogSnapshot;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Scripts\Server\BaseScript;
+use App\Modules\Deployer\Scripts\Server\EndScript;
+use App\Modules\Deployer\Services\ProvisioningCallbackUrl;
+use App\Modules\Deployer\Services\Runner;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\URL;
 use Mockery;

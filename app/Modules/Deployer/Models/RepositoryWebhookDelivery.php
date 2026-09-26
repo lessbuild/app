@@ -1,0 +1,50 @@
+<?php
+
+namespace App\Modules\Deployer\Models;
+
+use App\Modules\Deployer\Database\DeployerModel;
+
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+
+class RepositoryWebhookDelivery extends DeployerModel
+{
+    public const STATUS_RECEIVED = 'received';
+
+    public const STATUS_SKIPPED = 'skipped';
+
+    public const STATUS_QUEUED = 'queued';
+
+    public const STATUS_PENDING = 'pending';
+
+    public const STATUS_UNAVAILABLE = 'unavailable';
+
+    public const STATUS_SUPERSEDED = 'superseded';
+
+    public const STATUSES = [
+        self::STATUS_QUEUED,
+        self::STATUS_PENDING,
+        self::STATUS_UNAVAILABLE,
+        self::STATUS_SUPERSEDED,
+        self::STATUS_RECEIVED,
+        self::STATUS_SKIPPED,
+    ];
+
+    protected $guarded = [];
+
+    protected $casts = [
+        'changed_paths' => 'array',
+    ];
+
+    /** @return BelongsTo<Repository, $this> */
+    public function repository(): BelongsTo
+    {
+        return $this->belongsTo(Repository::class);
+    }
+
+    /** @return BelongsTo<Build, $this> */
+    public function build(): BelongsTo
+    {
+        return $this->belongsTo(Build::class);
+    }
+}

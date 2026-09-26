@@ -1,0 +1,170 @@
+<?php
+
+namespace App\Modules\Deployer\Jobs\Repository;
+
+use App\Modules\Deployer\Actions\Repository\PublishRepositoryAction;
+use App\Modules\Deployer\Exceptions\DeploymentScriptUploadException;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\ProductDeletionFence;
+use App\Modules\Deployer\Services\ApplicationConfigurationExecution;
+use App\Modules\Deployer\Services\AutomaticDeploymentRollback;
+use App\Modules\Deployer\Services\PreviewDeploymentLifecycle;
+use App\Modules\Deployer\Services\PreviewStackReadiness;
+use App\Modules\Deployer\Services\Runner;
+use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Foundation\Bus\Dispatchable;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
+
+class PublishRepositoryJob implements ShouldQueue
+{
+    use Dispatchable;
+    use InteractsWithQueue;
+    use Queueable;
+    use SerializesModels;
+
+    /**
+     * The build instance.
+     */
+    public Build $build;
+
+    /**
+     * Capture the build to claim and launch when the queue worker runs.
+     *
+     * Create a new job instance.
+     *
+     * @param  Build  $build  Build record whose persisted deployment state and relationships are used by this operation.
+     */
+    public function __construct(Build $build)
+    {
+        $this->build = $build;
+    }
+
+    /**
+     * Claim the queued deployment, start its remote script, and store the process identity without overwriting a terminal callback; skip builds whose claim is no longer valid.
+     *
+     * Execute the job.
+     *
+     * @param  Runner  $runner  SSH runner used to execute commands on the selected managed server.
+     *
+     * @throws \Exception
+     */
+    public function handle(Runner $runner): void
+    {
+        $this->build->refresh();
+        if (ProductDeletionFence::query()->where('kind', 'workspace')->where('source_id', (string) $this->build->repository->organization_id)->exists()) {
+            Build::query()->whereKey($this->build->id)->where('status', Build::STATUS_QUEUED)->update([
+                'status' => Build::STATUS_CANCELED,
+                'finished_at' => now(),
+                'failure_message' => 'Deployment canceled because its workspace is being deleted.',
+            ]);
+            if (Schema::connection('deployer')->hasTable('configuration_operations')) {
+                DB::connection('deployer')->table('configuration_operations')->where('build_id', $this->build->id)
+                    ->whereIn('status', ['pending', 'queued', 'running', 'applying', 'awaiting_dispatch'])
+                    ->update(['status' => 'failed', 'failure_code' => 'workspace_deletion_fence', 'completed_at' => now(), 'updated_at' => now()]);
+            }
+
+            return;
+        }
+        $started = app(ApplicationConfigurationExecution::class)->claim($this->build);
+        if ($started === null) {
+            $releaseName = $this->build->releaseIdentifier();
+            $releasePath = "/var/www/{$this->build->repository->website->deployment_slug}/releases/{$releaseName}";
+            $started = Build::query()->whereKey($this->build->id)->where('status', Build::STATUS_QUEUED)
+                ->update([
+                    'status' => Build::STATUS_DEPLOYING,
+                    'started_at' => now(),
+                    'last_heartbeat_at' => now(),
+                    'remote_process_path' => "/tmp/lessbuild-deployment-{$this->build->id}.sh",
+                    'failure_message' => null,
+                    'release_name' => $releaseName,
+                    'release_path' => $releasePath,
+                ]) === 1;
+        }
+        if (! $started) {
+            return;
+        }
+
+        $this->build->refresh();
+        try {
+            $process = (new PublishRepositoryAction($this->build, $runner))->handle();
+        } catch (DeploymentScriptUploadException $exception) {
+            $this->requeueAfterUploadFailure();
+
+            throw $exception;
+        }
+
+        $running = Build::query()
+            ->whereKey($this->build->id)
+            ->where('status', Build::STATUS_DEPLOYING)
+            ->update([
+                'status' => Build::STATUS_RUNNING,
+                'remote_process_id' => $process['id'],
+                'remote_process_path' => $process['path'],
+            ]);
+        if ($running === 0) {
+            Build::query()
+                ->whereKey($this->build->id)
+                ->whereIn('status', Build::TERMINAL_STATUSES)
+                ->update([
+                    'remote_process_id' => null,
+                    'remote_process_path' => null,
+                ]);
+        }
+    }
+
+    /**
+     * Return a build to the queue when no remote deployment process could exist yet.
+     *
+     * Upload failures are safe to retry because the remote script never reached the
+     * server. Clearing the launch lease lets the next queue attempt claim it again.
+     */
+    private function requeueAfterUploadFailure(): void
+    {
+        Build::query()
+            ->whereKey($this->build->id)
+            ->where('status', Build::STATUS_DEPLOYING)
+            ->whereNull('remote_process_id')
+            ->whereNotNull('remote_process_path')
+            ->update([
+                'status' => Build::STATUS_QUEUED,
+                'started_at' => null,
+                'last_heartbeat_at' => null,
+                'remote_process_path' => null,
+                'release_name' => null,
+                'release_path' => null,
+                'failure_message' => null,
+            ]);
+    }
+
+    /**
+     * Mark a still-active deployment failed, clear its remote identity, and ask the automatic rollback service to evaluate recovery.
+     *
+     * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
+     */
+    public function failed(\Throwable $exception): void
+    {
+        DB::connection('deployer')->transaction(function () use ($exception): void {
+            $locked = Build::query()
+                ->whereKey($this->build->id)
+                ->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+                ->lockForUpdate()
+                ->first();
+
+            $locked?->update([
+                'status' => Build::STATUS_FAILED,
+                'remote_process_id' => null,
+                'remote_process_path' => null,
+                'finished_at' => now(),
+                'failure_message' => str($exception->getMessage())->limit(2000),
+            ]);
+        });
+
+        app(PreviewStackReadiness::class)->recordFailure($this->build->fresh());
+        app(PreviewDeploymentLifecycle::class)->buildFinished($this->build->fresh());
+        app(AutomaticDeploymentRollback::class)->attempt($this->build->fresh());
+    }
+}

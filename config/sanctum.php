@@ -1,7 +1,7 @@
 <?php
 
-use App\Http\Middleware\EncryptCookies;
-use App\Http\Middleware\VerifyCsrfToken;
+use App\Modules\Deployer\Http\Middleware\EncryptCookies;
+use App\Modules\Deployer\Http\Middleware\VerifyCsrfToken;
 use Laravel\Sanctum\Sanctum;
 
 return [

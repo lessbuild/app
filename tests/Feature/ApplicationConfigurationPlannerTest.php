@@ -2,10 +2,10 @@
 
 namespace Tests\Feature;
 
-use App\Models\ConfigurationOwnership;
-use App\Models\User;
-use App\Services\ApplicationConfigurationPlanner;
-use App\Services\ApplicationConfigurationReviews;
+use App\Modules\Deployer\Models\ConfigurationOwnership;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Services\ApplicationConfigurationPlanner;
+use App\Modules\Deployer\Services\ApplicationConfigurationReviews;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Validation\ValidationException;

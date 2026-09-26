@@ -26,8 +26,10 @@ async function serveFixtures(page, { delays = {} } = {}) {
     const stylesheet = `/build/${manifest['resources/css/app.css'].file}`;
     const alpine = `/build/${manifest['resources/js/alpine.js'].file}`;
     const signalDrawer = `/build/${manifest['resources/js/signal-drawer.js'].file}`;
+    const signalOverlays = `/build/${manifest['resources/js/signal-overlays.js'].file}`;
     const signalThemeInit = `/build/${manifest['resources/js/signal-theme-init.js'].file}`;
     const signalTheme = `/build/${manifest['resources/js/signal-theme.js'].file}`;
+    const app = `/build/${manifest['resources/js/app.js'].file}`;
     await page.route('**/*', async (route) => {
         const pathname = new URL(route.request().url()).pathname;
         if (delays[pathname]) {
@@ -281,6 +283,8 @@ async function serveFixtures(page, { delays = {} } = {}) {
                 `<script type="module" src="${signalThemeInit}"></script>`,
                 `<script type="module" src="${signalTheme}"></script>`,
                 `<script type="module" src="${signalDrawer}"></script>`,
+                `<script type="module" src="${signalOverlays}"></script>`,
+                `<script type="module" src="${app}"></script>`,
             ].join('');
             html = html.replace('</head>', `${signalAssets}${script}</head>`);
             return route.fulfill({ contentType: 'text/html', body: html });
@@ -295,7 +299,7 @@ async function serveFixtures(page, { delays = {} } = {}) {
     });
 }
 
-test('public Signal navigation loads its standalone drawer behavior', async ({ page }) => {
+test('public Signal navigation exposes its mobile product menu', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await serveFixtures(page);
 
@@ -303,17 +307,15 @@ test('public Signal navigation loads its standalone drawer behavior', async ({ p
     await page.goto('http://buildpusher.test/landing', { waitUntil: 'networkidle' });
     expect((await drawerAsset).status()).toBe(200);
 
-    const toggle = page.locator('#navbarToggler');
-    const drawer = page.locator('#navbarCollapse');
+    const toggle = page.locator('summary[aria-label="Open product navigation"]');
+    const navigation = page.getByRole('navigation', { name: 'Mobile product navigation' });
+    await expect(toggle).toBeVisible();
+    await expect(navigation).toBeHidden();
     await toggle.click();
-    await expect(drawer).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(true);
-
-    await page.keyboard.press('Escape');
-    await expect(drawer).toBeHidden();
-    await expect(toggle).toBeFocused();
-    await expect.poll(() => page.evaluate(() => document.body.classList.contains('overflow-hidden'))).toBe(false);
+    await expect(navigation).toBeVisible();
+    await expect(navigation.getByRole('link', { name: 'Monitor', exact: true })).toBeVisible();
+    await toggle.click();
+    await expect(navigation).toBeHidden();
 });
 
 test('operational incident timeline opens as a contextual evidence dialog', async ({ page }) => {
@@ -396,6 +398,94 @@ test('primary creation workflows use accessible inventory dialogs', async ({ pag
     }
 });
 
+test('website create and edit forms use Signal fields and joined URL controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/websites?dialog=create-website', { waitUntil: 'networkidle' });
+    const createDialog = page.getByRole('dialog', { name: 'Add website', exact: true });
+    const createUrl = createDialog.locator('#website-create-url');
+    await expect(createDialog).toBeVisible();
+    await expect(createUrl).toBeVisible();
+    await expect(createDialog.locator('label[for="website-create-url"]')).toBeVisible();
+    await expect(createUrl).toHaveClass(/\bui-input\b/);
+    await expect(createUrl).toHaveClass(/\brounded-l-none\b/);
+    await expect(createDialog.locator('fieldset.ui-card')).toBeVisible();
+    await expect(createDialog.locator('[aria-hidden="true"]').filter({ hasText: 'http://' }).first()).toBeVisible();
+    await expect(createDialog.locator('button.ui-btn-primary', { hasText: 'Create website' })).toBeVisible();
+
+    await page.goto('http://buildpusher.test/websites/1?dialog=edit-website', { waitUntil: 'networkidle' });
+    const editDialog = page.getByRole('dialog', { name: 'Edit website', exact: true });
+    const editUrl = editDialog.locator('#website-edit-url');
+    await expect(editUrl).toBeVisible();
+    await expect(editDialog.locator('label[for="website-edit-url"]')).toBeVisible();
+    await expect(editDialog.locator('#website-edit-environment')).toHaveClass(/\bui-input\b/);
+    await expect(editDialog.locator('button.ui-btn-primary', { hasText: 'Save Website' })).toBeVisible();
+});
+
+test('repository create and edit forms use Signal controls and path-filter fields', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/repositories?dialog=create-repository', { waitUntil: 'networkidle' });
+    const createDialog = page.getByRole('dialog', { name: 'Add repository', exact: true });
+    const createUrl = createDialog.locator('#repository-create-url');
+    const createPaths = createDialog.locator('#repository-create-auto_deploy_include_paths');
+    await expect(createDialog).toBeVisible();
+    await expect(createUrl).toBeVisible();
+    await expect(createDialog.locator('label[for="repository-create-url"]')).toBeVisible();
+    await expect(createUrl).toHaveClass(/\bui-input\b/);
+    await expect(createUrl).toHaveClass(/\brounded-l-none\b/);
+    await expect(createDialog.locator('#repository-create-website_id')).toBeVisible();
+    await expect(createDialog.locator('#repository-create-provider_id')).toBeVisible();
+    await expect(createPaths).toHaveClass(/\bui-input\b/);
+    await expect(createDialog.locator('fieldset.ui-card')).toBeVisible();
+    await expect(createDialog.locator('button.ui-btn-primary', { hasText: 'Create Repository' })).toBeVisible();
+
+    await page.goto('http://buildpusher.test/repositories/1?dialog=edit-repository', { waitUntil: 'networkidle' });
+    const editDialog = page.getByRole('dialog', { name: 'Edit repository', exact: true });
+    const editPaths = editDialog.locator('#repository-edit-auto_deploy_include_paths');
+    await expect(editDialog.locator('#repository-edit-url')).toBeVisible();
+    await expect(editPaths).toHaveValue('apps/**');
+    await expect(editDialog.locator('#repository-edit-post_deployment_commands')).toHaveClass(/\bui-input\b/);
+    await expect(editDialog.locator('button.ui-btn-primary', { hasText: 'Save Repository' })).toBeVisible();
+});
+
+test('server creation and display-name dialogs use Signal controls', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 900 });
+    await page.emulateMedia({ colorScheme: 'light' });
+    await serveFixtures(page);
+
+    await page.goto('http://buildpusher.test/servers?dialog=create-server', { waitUntil: 'networkidle' });
+    const createDialog = page.getByRole('dialog', { name: 'Add server', exact: true });
+    await expect(createDialog).toBeVisible();
+
+    for (const field of ['provider_id', 'type', 'name', 'image', 'region', 'size']) {
+        const control = createDialog.locator(`#server-create-${field}`);
+        await expect(control).toBeVisible();
+        await expect(control).toHaveClass(/\bui-input\b/);
+        await expect(createDialog.locator(`label[for="server-create-${field}"]`)).toBeVisible();
+    }
+
+    const recipeChoices = createDialog.locator('input[name="recipes[]"]');
+    expect(await recipeChoices.count()).toBeGreaterThan(0);
+    for (const recipeChoice of await recipeChoices.all()) {
+        await expect(recipeChoice).toBeVisible();
+        await expect(recipeChoice.locator('xpath=ancestor::label')).toHaveClass(/\bui-choice\b/);
+    }
+    await expect(createDialog.locator('fieldset.ui-card')).toBeVisible();
+
+    await page.goto('http://buildpusher.test/servers/1?dialog=edit-display-name', { waitUntil: 'networkidle' });
+    const displayNameDialog = page.getByRole('dialog', { name: 'Edit server display name', exact: true });
+    const displayName = displayNameDialog.locator('#server-display-name');
+    await expect(displayName).toBeVisible();
+    await expect(displayName).toHaveClass(/\bui-input\b/);
+    await expect(displayNameDialog.locator('label[for="server-display-name"]')).toBeVisible();
+    await expect(displayNameDialog.locator('button.ui-btn-primary', { hasText: 'Save display name' })).toBeVisible();
+});
+
 test('dashboard creation actions open page-local dialogs without navigating to an inventory page', async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 900 });
     await page.emulateMedia({ colorScheme: 'light' });
@@ -451,9 +541,9 @@ test('mobile New app stays on the current page while opening the application dia
     expect(new URL(page.url()).searchParams.has('dialog')).toBe(false);
 
     await page.keyboard.press('Control+k');
-    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeVisible();
-    await page.locator('#command-palette-result-1').click();
-    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeHidden();
+    await expect(page.getByRole('dialog', { name: 'Search this workspace' })).toBeVisible();
+    await page.locator('#signal-command-palette [data-modal-trigger="application-create-dialog"]').click();
+    await expect(page.getByRole('dialog', { name: 'Search this workspace' })).toBeHidden();
     await expect(dialog).toBeVisible();
     expect(new URL(page.url()).pathname).toBe(initialUrl.pathname);
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-application');
@@ -468,10 +558,19 @@ test('dashboard workspace search opens in place and renders debounced results', 
     await page.route('**/search*', async (route) => {
         const url = new URL(route.request().url());
 
-        if (url.pathname === '/search' && url.searchParams.get('fragment') === 'workspace') {
+        if (url.pathname === '/search' && url.searchParams.get('q') === 'demo') {
             return route.fulfill({
-                contentType: 'text/html',
-                body: '<a href="/projects/1" data-palette-item role="option" class="block p-3">Demo result</a>',
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    query: 'demo',
+                    groups: [{
+                        product: 'deployer',
+                        label: 'Deployer · Applications',
+                        count: 1,
+                        results: [{ type: 'Application', title: 'Demo result', subtitle: '1 environment', url: '/projects/1' }],
+                    }],
+                    unavailable: [],
+                }),
             });
         }
 
@@ -483,13 +582,13 @@ test('dashboard workspace search opens in place and renders debounced results', 
     const initialPath = new URL(page.url()).pathname;
     await trigger.click();
 
-    const dialog = page.getByRole('dialog', { name: 'Search workspace', exact: true });
+    const dialog = page.getByRole('dialog', { name: 'Search this workspace', exact: true });
     await expect(dialog).toBeVisible();
-    await expect(page.locator('#command-palette-query')).toBeFocused();
+    await expect(page.locator('#signal-command-query')).toBeFocused();
     expect(new URL(page.url()).pathname).toBe(initialPath);
 
-    await page.locator('#command-palette-query').fill('demo');
-    await expect(dialog.getByRole('option', { name: 'Demo result', exact: true })).toBeVisible();
+    await page.locator('#signal-command-query').fill('demo');
+    await expect(dialog.getByRole('link', { name: /Demo result/ })).toBeVisible();
 
     await page.keyboard.press('Escape');
     await expect(dialog).toBeHidden();
@@ -518,7 +617,7 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
         await expect(dialog.locator('form[method="POST"]').first()).toBeVisible();
         if (workflow.query === 'edit-website' || workflow.query === 'edit-repository') {
             await expect(dialog.locator('.ui-input').first()).toBeVisible();
-            await expect(dialog.locator('.ui-panel').first()).toBeVisible();
+            await expect(dialog.locator('.ui-card').first()).toBeVisible();
         }
         expect(new URL(page.url()).searchParams.get('dialog')).toBe(workflow.query);
         expect(new URL(page.url()).pathname).toBe(initialPath);
@@ -539,6 +638,13 @@ test('provider, repository, and recipe edits open server-rendered dialogs', asyn
     await expect(recipeDialog).toBeVisible();
     await expect(recipeDialog.locator('form[method="POST"]')).toBeVisible();
     await expect(recipeDialog.locator('.ui-input').first()).toBeVisible();
+    for (const field of ['name', 'description', 'script', 'category']) {
+        await expect(recipeDialog.locator(`#recipe-edit-${field}`)).toBeVisible();
+        await expect(recipeDialog.locator(`label[for="recipe-edit-${field}"]`)).toBeVisible();
+    }
+    const publishChoice = recipeDialog.getByRole('checkbox', { name: 'Publish to the community gallery', exact: true });
+    await expect(publishChoice).toBeVisible();
+    await expect(publishChoice).toHaveAttribute('id', 'recipe-edit-is_published');
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^edit-recipe-\d+$/);
     expect(new URL(page.url()).pathname).toBe(recipeInitialPath);
     await expect(recipeDialog.locator('[data-modal-close]')).toBeFocused();
@@ -1618,8 +1724,8 @@ for (const colorScheme of ['light', 'dark']) {
                         await expect(toggle).toBeHidden();
                     }
                     await page.keyboard.press('Control+k');
-                    await expect(page.getByRole('dialog', { name: 'Search workspace' })).toBeVisible();
-                    await expect(page.locator('#command-palette-query')).toBeFocused();
+                    await expect(page.getByRole('dialog', { name: 'Search this workspace' })).toBeVisible();
+                    await expect(page.locator('#signal-command-query')).toBeFocused();
                     await page.keyboard.press('Escape');
                     const quickAction = page.locator('[data-mobile-quick-action="create"]');
                     await expect(quickAction).toHaveText('New app');
@@ -1977,7 +2083,9 @@ test('website inventory keeps Signal filters and mobile resource cards scannable
 
     const filters = page.locator('#websites-filters');
     await expect(filters.locator('.ui-input')).toHaveCount(3);
-    await expect(filters.locator('label.ui-choice')).toHaveCount(2);
+    await expect(filters.locator('label:has(input[type="checkbox"])')).toHaveCount(2);
+    await expect(filters.locator('input[type="checkbox"]')).toHaveCount(2);
+    await expect(filters.locator('label[for="search"]')).toHaveText('Search');
 
     const inventory = page.locator('[aria-label="Website inventory"]');
     await expect(inventory).toBeVisible();
@@ -2147,6 +2255,7 @@ test('server inventory keeps capacity and provisioning rows scannable on mobile'
     await expect(page.locator('#servers-insights .ui-stat')).toHaveCount(6);
     await expect(page.locator('#servers-filters')).toHaveClass(/\bui-filter-dialog\b/);
     await expect(page.locator('#servers-filters .ui-input')).toHaveCount(2);
+    await expect(page.locator('#servers-filters label:has(input[type="checkbox"])')).toHaveCount(1);
     await expect(page.locator('[data-server-card]')).toHaveCount(2);
     await expect(page.locator('[data-server-card]').first().locator('.ui-link')).toBeVisible();
     await expect(page.locator('[data-server-card]').first().locator('.ui-eyebrow')).toHaveCount(4);
@@ -2256,6 +2365,9 @@ test('credential workflows use compact accessible dialogs', async ({ page }) => 
     const tokenDialog = page.getByRole('dialog', { name: 'Create personal access token', exact: true });
     await tokenTrigger.click();
     await expect(tokenDialog).toBeVisible();
+    await expect(tokenDialog.getByLabel('Token name')).toBeVisible();
+    await expect(tokenDialog.getByLabel('Expires')).toBeVisible();
+    await expect(tokenDialog.getByRole('checkbox', { name: 'Read', exact: true })).toBeVisible();
     await expect(page.locator('#automation-token-dialog [data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toBe('create-token');
     await page.keyboard.press('Escape');
@@ -2279,6 +2391,9 @@ test('automation schedule and task composers use compact accessible dialogs', as
     const scheduleDialog = page.getByRole('dialog', { name: 'Add deployment schedule', exact: true }).first();
     await scheduleTrigger.click();
     await expect(scheduleDialog).toBeVisible();
+    await expect(scheduleDialog.getByLabel('Schedule name')).toBeVisible();
+    await expect(scheduleDialog.getByLabel('Cron expression')).toBeVisible();
+    await expect(scheduleDialog.getByLabel('Timezone')).toBeVisible();
     await expect(scheduleDialog.locator('[data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^deployment-schedule-/);
     await page.keyboard.press('Escape');
@@ -2289,6 +2404,11 @@ test('automation schedule and task composers use compact accessible dialogs', as
     const taskDialog = page.getByRole('dialog', { name: 'Add scheduled task', exact: true }).first();
     await taskTrigger.click();
     await expect(taskDialog).toBeVisible();
+    for (const label of ['Task name', 'Cron expression', 'Timezone', 'Command', 'Timeout seconds']) {
+        await expect(taskDialog.getByLabel(label)).toBeVisible();
+    }
+    await expect(taskDialog.getByRole('checkbox', { name: 'Prevent overlap', exact: true })).toBeVisible();
+    await expect(taskDialog.getByRole('checkbox', { name: 'Alert on failure', exact: true })).toBeVisible();
     await expect(taskDialog.locator('[data-modal-close]')).toBeFocused();
     expect(new URL(page.url()).searchParams.get('dialog')).toMatch(/^scheduled-task-/);
     await page.locator('[id^="automation-task-dialog-"] [data-modal-close]').click();
@@ -2364,6 +2484,23 @@ test('application detail composers use compact accessible dialogs', async ({ pag
     await expect(page.locator('[data-project-previews]')).toBeVisible();
     await expect(page.locator('.ui-local-nav__link', { hasText: 'Environments' })).toBeVisible();
 
+    const environmentTrigger = page.getByRole('button', { name: 'Browse environments', exact: true });
+    const environmentSheet = page.getByRole('dialog', { name: 'Environments', exact: true });
+    await environmentTrigger.click();
+    await expect(environmentSheet).toBeVisible();
+    await expect(environmentSheet.getByRole('button', { name: 'Close Environments' })).toBeFocused();
+    await expect(environmentSheet.getByRole('link').first()).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(environmentSheet).toBeHidden();
+    await expect(environmentTrigger).toBeFocused();
+
+    await environmentTrigger.click();
+    const environmentDestination = environmentSheet.getByRole('link').first();
+    const environmentHash = await environmentDestination.getAttribute('href');
+    await environmentDestination.click();
+    await expect(environmentSheet).toBeHidden();
+    expect(new URL(page.url()).hash).toBe(environmentHash);
+
     const workflows = [
         ['Add environment', 'Add environment', '#add-environment-dialog'],
         ['Edit settings', 'Environment settings', '[id^="environment-settings-dialog-"]'],
@@ -2389,6 +2526,21 @@ test('application detail composers use compact accessible dialogs', async ({ pag
         await trigger.click();
         await expect(dialog).toBeVisible();
         await expect(page.locator(`${dialogSelector} [data-modal-close]`)).toBeFocused();
+        if (triggerName === 'Edit settings') {
+            const name = dialog.locator('[name="name"]');
+            await expect(name).toBeVisible();
+            const nameId = await name.getAttribute('id');
+            await expect(dialog.locator(`label[for="${nameId}"]`)).toContainText('Name');
+            await expect(dialog.locator('[name="build_command"]')).toBeVisible();
+            await expect(dialog.locator('[name="is_protected"][type="checkbox"]')).toBeVisible();
+        }
+        if (triggerName === 'Edit controls') {
+            await expect(dialog.locator('[name="deployment_locked"][type="checkbox"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_window_days[]"][value="1"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_window_start"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_window_timezone"]')).toBeVisible();
+            await expect(dialog.locator('[name="deployment_strategy"]')).toBeVisible();
+        }
         const dialogKey = new URL(page.url()).searchParams.get('dialog');
         const expectedDialog = {
             'Add environment': /^add-environment$/,

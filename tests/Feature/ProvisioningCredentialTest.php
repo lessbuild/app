@@ -2,14 +2,14 @@
 
 namespace Tests\Feature;
 
-use App\Actions\Server\PrepareServerProvisioningAction;
-use App\Models\Enums\Server\ServerTypeEnum;
-use App\Models\Server;
-use App\Models\User;
-use App\Scripts\Database\InstallMysqlScript;
-use App\Scripts\Server\ConfigureServerScript;
-use App\Scripts\Web\InstallCaddyScript;
-use App\Services\ServerProvisioningPlan;
+use App\Modules\Deployer\Actions\Server\PrepareServerProvisioningAction;
+use App\Modules\Deployer\Models\Enums\Server\ServerTypeEnum;
+use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\User;
+use App\Modules\Deployer\Scripts\Database\InstallMysqlScript;
+use App\Modules\Deployer\Scripts\Server\ConfigureServerScript;
+use App\Modules\Deployer\Scripts\Web\InstallCaddyScript;
+use App\Modules\Deployer\Services\ServerProvisioningPlan;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
