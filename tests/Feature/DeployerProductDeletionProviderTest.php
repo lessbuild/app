@@ -13,8 +13,11 @@ use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\ConfigurationApplication;
 use App\Modules\Deployer\Models\ConfigurationOperation;
 use App\Modules\Deployer\Models\ConfigurationReview;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\EnvironmentBlueprintRecipe;
 use App\Modules\Deployer\Models\ProductDeletionFence;
 use App\Modules\Deployer\Models\ProductDeletionReceipt;
+use App\Modules\Deployer\Models\Project;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\RecipeReport;
 use App\Modules\Deployer\Models\ScheduledTaskRun;
@@ -81,6 +84,71 @@ class DeployerProductDeletionProviderTest extends TestCase
 
         $this->assertContains('deployer_account_has_foreign_owned_records', $preview->blockers);
         $this->assertTrue($provider->fresh()->exists);
+    }
+
+    public function test_account_preflight_blocks_foreign_workspace_blueprint_recipe_attribution(): void
+    {
+        $actor = User::factory()->create();
+        $foreignOwner = User::factory()->create();
+        $foreignWorkspace = $foreignOwner->currentOrganization;
+        $project = Project::query()->create([
+            'organization_id' => $foreignWorkspace->getKey(), 'name' => 'Retained project',
+            'slug' => 'retained-'.uniqid(), 'created_by' => $foreignOwner->getKey(),
+        ]);
+        $environment = Environment::query()->create([
+            'project_id' => $project->getKey(), 'name' => 'Staging', 'slug' => 'staging', 'type' => 'staging',
+        ]);
+        EnvironmentBlueprintRecipe::query()->create([
+            'step_id' => '01J8Y7Z9AABBCCDDEEFFGGHHII', 'actor_source_id' => $actor->getKey(),
+            'workspace_source_id' => $foreignWorkspace->getKey(), 'canonical_project_id' => 'core-project',
+            'canonical_environment_id' => 'core-environment', 'environment_key' => 'staging',
+            'environment_id' => $environment->getKey(), 'source_recipe_id' => 987654321,
+            'source_user_id' => $actor->getKey(), 'source_organization_id' => $foreignWorkspace->getKey(),
+            'source_name' => 'Prepared recipe', 'source_is_published' => false, 'position' => 0,
+            'script_snapshot' => 'echo retained', 'script_fingerprint' => str_repeat('a', 64),
+            'binding_fingerprint' => str_repeat('b', 64),
+        ]);
+
+        $preview = app(DeployerProductDeletionProvider::class)->inspect(new ProductDeletionTarget(
+            'deployer', 'account', (string) $actor->getKey(), (string) $actor->getKey(), 'core-account', 'core-actor',
+            [(string) $actor->currentOrganization->getKey()],
+        ));
+
+        $this->assertContains('deployer_account_has_foreign_owned_records', $preview->blockers);
+        $this->assertDatabaseCount('environment_blueprint_recipes', 1, 'deployer');
+    }
+
+    public function test_account_preflight_blocks_foreign_workspace_snapshot_attributed_to_personal_recipe_owner(): void
+    {
+        $deletingActor = User::factory()->create();
+        $workspaceOwner = User::factory()->create();
+        $foreignWorkspace = $workspaceOwner->currentOrganization;
+        $project = Project::query()->create([
+            'organization_id' => $foreignWorkspace->getKey(), 'name' => 'Retained project',
+            'slug' => 'retained-personal-'.uniqid(), 'created_by' => $workspaceOwner->getKey(),
+        ]);
+        $environment = Environment::query()->create([
+            'project_id' => $project->getKey(), 'name' => 'Staging', 'slug' => 'staging', 'type' => 'staging',
+        ]);
+        EnvironmentBlueprintRecipe::query()->create([
+            'step_id' => '01J8Y7Z9AABBCCDDEEFFGGHHIJ', 'actor_source_id' => $workspaceOwner->getKey(),
+            'workspace_source_id' => $foreignWorkspace->getKey(), 'canonical_project_id' => 'core-project',
+            'canonical_environment_id' => 'core-environment', 'environment_key' => 'staging',
+            'environment_id' => $environment->getKey(), 'source_recipe_id' => 987654322,
+            'source_user_id' => $deletingActor->getKey(), 'source_organization_id' => null,
+            'source_name' => 'Personal recipe snapshot', 'source_is_published' => false, 'position' => 0,
+            'script_snapshot' => 'echo retained', 'script_fingerprint' => str_repeat('c', 64),
+            'binding_fingerprint' => str_repeat('d', 64),
+        ]);
+
+        $preview = app(DeployerProductDeletionProvider::class)->inspect(new ProductDeletionTarget(
+            'deployer', 'account', (string) $deletingActor->getKey(), (string) $deletingActor->getKey(), 'core-account', 'core-actor',
+            [(string) $deletingActor->currentOrganization->getKey()],
+        ));
+
+        $this->assertNotSame((string) $deletingActor->getKey(), (string) $workspaceOwner->getKey());
+        $this->assertContains('deployer_account_has_foreign_owned_records', $preview->blockers);
+        $this->assertDatabaseCount('environment_blueprint_recipes', 1, 'deployer');
     }
 
     public function test_workspace_preflight_blocks_unassigned_user_owned_resources(): void

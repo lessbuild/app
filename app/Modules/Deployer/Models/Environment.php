@@ -3,9 +3,7 @@
 namespace App\Modules\Deployer\Models;
 
 use App\Modules\Deployer\Database\DeployerModel;
-
 use App\Modules\Deployer\Support\RepositoryPath;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Carbon;
@@ -152,6 +150,14 @@ class Environment extends DeployerModel
     public function resources(): HasMany
     {
         return $this->hasMany(EnvironmentResource::class);
+    }
+
+    /** @return HasMany<EnvironmentBlueprintRecipe, $this> */
+    public function blueprintRecipeSnapshots(): HasMany
+    {
+        return $this->hasMany(EnvironmentBlueprintRecipe::class)
+            ->orderBy('position')
+            ->orderBy('id');
     }
 
     /** @return HasMany<DeploymentSchedule, $this> */

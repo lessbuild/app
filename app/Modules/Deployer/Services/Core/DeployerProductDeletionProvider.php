@@ -582,6 +582,23 @@ final class DeployerProductDeletionProvider implements ProductDeletionProvider
                 return true;
             }
         }
+        if (Schema::connection('deployer')->hasTable('environment_blueprint_recipes')
+            && Schema::connection('deployer')->hasColumn('environment_blueprint_recipes', 'actor_source_id')
+            && Schema::connection('deployer')->hasColumn('environment_blueprint_recipes', 'workspace_source_id')) {
+            $hasSourceUserId = Schema::connection('deployer')->hasColumn('environment_blueprint_recipes', 'source_user_id');
+            $snapshots = $db->table('environment_blueprint_recipes')->where(function (Builder $attribution) use ($userId, $hasSourceUserId): void {
+                $attribution->where('actor_source_id', $userId);
+                if ($hasSourceUserId) {
+                    $attribution->orWhere('source_user_id', $userId);
+                }
+            });
+            if ($workspaceIds !== []) {
+                $snapshots->whereNotIn('workspace_source_id', $workspaceIds);
+            }
+            if ($snapshots->exists()) {
+                return true;
+            }
+        }
         if (Schema::connection('deployer')->hasTable('organization_invitations')
             && $db->table('organization_invitations')->where('invited_by', $userId)->whereNotIn('organization_id', $workspaceIds)->exists()) {
             return true;

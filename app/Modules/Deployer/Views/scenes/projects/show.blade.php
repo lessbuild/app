@@ -179,6 +179,52 @@
                     <div class="flex w-full flex-wrap gap-2 text-xs sm:w-auto"><span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->server?->label ?? __('No server') }}</span><span class="rounded-control border border-line bg-surface-muted px-3 py-2 text-muted">{{ $environment->website?->name ?? __('No site') }}</span><span class="rounded-control border border-line bg-surface-muted px-3 py-2 font-bold text-muted">{{ $environment->minimum_replicas }}–{{ $environment->maximum_replicas }}×</span><x-signal.ui.button :href="route('observability.environments.context', $environment)" variant="secondary">{{ __('Investigate evidence') }}</x-signal.ui.button></div>
                 </div>
 
+                @if($environment->prepared_recipe_snapshot_count > 0)
+                    <x-signal.ui.panel as="section" class="ui-panel rounded-none border-x-0 border-t-0 px-5 py-4" aria-label="{{ __('Prepared blueprint recipes') }}" data-prepared-blueprint-recipes>
+                        <div class="flex flex-wrap items-start justify-between gap-3">
+                            <div>
+                                <h3 class="font-bold text-ink">{{ __('Prepared blueprint recipes') }}</h3>
+                                <p class="mt-1 text-sm text-muted">{{ trans_choice(':count recipe reference was prepared for this environment.|:count recipe references were prepared for this environment.', $environment->prepared_recipe_snapshot_count, ['count' => $environment->prepared_recipe_snapshot_count]) }}</p>
+                                <p class="mt-1 text-xs text-muted">{{ __('Server attachment and script execution remain manual.') }}</p>
+                            </div>
+                        </div>
+                        @if($environment->blueprintRecipeSnapshots->isNotEmpty())
+                            <ol class="mt-3 space-y-2">
+                                @foreach($environment->blueprintRecipeSnapshots as $snapshot)
+                                    <li>
+                                        <x-signal.ui.panel class="ui-panel flex flex-wrap items-center gap-3 bg-surface-muted px-3 py-3" data-prepared-blueprint-recipe>
+                                            <div class="min-w-0 flex-1">
+                                                <p class="truncate text-sm font-bold text-ink">{{ $snapshot->source_name }}</p>
+                                                <p class="mt-1 text-xs text-muted">{{ __('Order :position', ['position' => $snapshot->position + 1]) }} · {{ __('Source revision: :revision', ['revision' => $snapshot->source_revision_at?->format('Y-m-d H:i:s') ?? __('unversioned')]) }}</p>
+                                                @if($snapshot->install_attempted_at)
+                                                    <p class="mt-1 text-xs text-muted">{{ __('A workspace copy was recorded; reopening it checks that the original copy still exists.') }}</p>
+                                                @endif
+                                            </div>
+                                            @if($canDeploy && in_array((string) $environment->getKey(), $canInstallBlueprintSnapshots, true))
+                                                <form method="POST" action="{{ route('projects.environments.blueprint-recipes.install', [$project, $environment, $snapshot]) }}" class="flex flex-wrap items-center gap-3">
+                                                    @csrf
+                                                    @if($snapshot->source_organization_id === null)
+                                                        <x-signal.ui.choice
+                                                            :id="'share-blueprint-recipe-'.$snapshot->id"
+                                                            name="share_with_workspace"
+                                                            value="1"
+                                                            :label="__('I agree to copy this personal recipe script into the shared workspace library.')"
+                                                            :restore="false"
+                                                            :checked="false"
+                                                            :show-errors="false"
+                                                        />
+                                                    @endif
+                                                    <x-signal.ui.button type="submit" variant="secondary">{{ $snapshot->install_attempted_at ? __('Open recorded recipe copy') : __('Copy saved snapshot to recipes') }}</x-signal.ui.button>
+                                                </form>
+                                            @endif
+                                        </x-signal.ui.panel>
+                                    </li>
+                                @endforeach
+                            </ol>
+                        @endif
+                    </x-signal.ui.panel>
+                @endif
+
                 @if(!$repository?->builds()->where('status', \App\Modules\Deployer\Models\Build::STATUS_SUCCEEDED)->exists())
                     @php
                         $readiness = [

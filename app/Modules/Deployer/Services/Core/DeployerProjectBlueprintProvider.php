@@ -9,7 +9,10 @@ use App\Core\Data\Blueprints\BlueprintResource;
 use App\Core\Data\Blueprints\BlueprintStepAttempt;
 use App\Core\Data\Blueprints\BlueprintTarget;
 use App\Core\Exceptions\Blueprints\BlueprintBlocked;
+use App\Core\Models\Project as CoreProject;
+use App\Core\Models\ProjectEnvironment as CoreProjectEnvironment;
 use App\Core\Models\ProjectResource;
+use App\Core\Models\Workspace as CoreWorkspace;
 use App\Core\Services\Blueprints\BlueprintAuthority;
 use App\Core\Services\Blueprints\BlueprintFingerprint;
 use App\Core\Services\Blueprints\BlueprintMessages;
@@ -17,6 +20,7 @@ use App\Core\Services\LegacyIdentityResolver;
 use App\Modules\Deployer\Actions\Project\ApplyApplicationTemplate;
 use App\Modules\Deployer\Models\BlueprintApplicationReceipt;
 use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\EnvironmentBlueprintRecipe;
 use App\Modules\Deployer\Models\EnvironmentProcess;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\ProductDeletionFence;
@@ -26,6 +30,7 @@ use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\ApplicationTemplateCatalog;
 use App\Modules\Deployer\Services\Entitlements;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
@@ -180,9 +185,10 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 if (! $state['workersAllowed'] && $template->processes !== []) {
                     $requirements[] = __('Add the template’s background processes for :environment after enabling the workers feature.', ['environment' => $environment->name]);
                 }
-                foreach ($entry['recipes'] as $recipe) {
-                    $requirements[] = __('Review and install recipe :recipe through Deployer for :environment; scripts are not run by blueprint setup.', [
-                        'recipe' => $recipe->name, 'environment' => $environment->name,
+                $preparedRecipeCount = $this->saveRecipeSnapshots($attempt, $entry, $environment, $context);
+                if ($preparedRecipeCount > 0) {
+                    $requirements[] = __('Deployer prepared :count recipe reference(s) for :environment. Attach a server, then review and install them through Deployer; blueprint setup does not attach recipes or run scripts.', [
+                        'count' => $preparedRecipeCount, 'environment' => $environment->name,
                     ]);
                 }
             }
@@ -379,17 +385,12 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 'key' => $key, 'mapping_id' => $mappingId,
                 'source_id' => $model?->getKey(), 'type' => $definition['type'], 'name' => $definition['name'],
                 'state' => $model ? $this->environmentState($model) : null,
-                'recipes' => collect($recipes)->map(fn (Recipe $recipe): array => [
-                    'id' => (string) $recipe->getKey(), 'name' => $recipe->name,
-                    'organization_id' => $recipe->organization_id ? (string) $recipe->organization_id : null,
-                    'user_id' => $recipe->user_id ? (string) $recipe->user_id : null,
-                    'updated_at' => $recipe->updated_at?->toISOString(),
-                ])->all(),
+                'recipes' => collect($recipes)->map(fn (Recipe $recipe): array => $this->recipeAuthority($recipe))->all(),
                 'desired' => [
                     'name' => $envAttributes['name'], 'type' => $envAttributes['type'],
                     'runtime_type' => $envAttributes['runtime_type'],
-                    'build_command_hash' => BlueprintFingerprint::make($envAttributes['build_command']),
-                    'start_command_hash' => BlueprintFingerprint::make($envAttributes['start_command']),
+                    'build_command_hash' => $this->scalarFingerprint($envAttributes['build_command']),
+                    'start_command_hash' => $this->scalarFingerprint($envAttributes['start_command']),
                     'container_port' => $envAttributes['container_port'], 'dockerfile_path' => $envAttributes['dockerfile_path'],
                 ],
             ];
@@ -407,8 +408,10 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
         }
         $requirements[] = __('Repository connection, secrets, infrastructure selection, and the first deployment require manual review.');
         foreach ($environments as $entry) {
-            foreach ($entry['recipes'] as $recipe) {
-                $requirements[] = __('Review and install recipe :recipe through Deployer; blueprint setup never runs recipe scripts.', ['recipe' => $recipe->name]);
+            if ($entry['recipes'] !== []) {
+                $requirements[] = __('Deployer will prepare :count recipe reference(s) for :environment. Attach a server, then review and install them through Deployer; blueprint setup does not attach recipes or run scripts.', [
+                    'count' => count($entry['recipes']), 'environment' => $entry['definition']['name'],
+                ]);
             }
         }
 
@@ -419,8 +422,8 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
             'project_mapping' => $this->projectMappingState($target),
             'role' => $organization->roleFor($actor), 'workers_allowed' => $workersAllowed,
             'template' => $configuration['template'], 'template_version' => $template->version(),
-            'template_runtime' => [$template->runtimeType, BlueprintFingerprint::make($template->buildCommand),
-                BlueprintFingerprint::make($template->startCommand), $template->containerPort, $template->dockerfilePath],
+            'template_runtime' => [$template->runtimeType, $this->scalarFingerprint($template->buildCommand),
+                $this->scalarFingerprint($template->startCommand), $template->containerPort, $template->dockerfilePath],
             'processes_hash' => BlueprintFingerprint::make($template->processes),
             'environments' => $authorityEnvironments,
         ];
@@ -480,8 +483,8 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
         if ((bool) ($authority['workers_allowed'] ?? false) !== $this->entitlements->allows($context['organization'], 'workers')
             || ($authority['template_version'] ?? null) !== $template->version()
             || ($authority['template_runtime'] ?? null) !== [
-                $template->runtimeType, BlueprintFingerprint::make($template->buildCommand),
-                BlueprintFingerprint::make($template->startCommand), $template->containerPort, $template->dockerfilePath,
+                $template->runtimeType, $this->scalarFingerprint($template->buildCommand),
+                $this->scalarFingerprint($template->startCommand), $template->containerPort, $template->dockerfilePath,
             ]
             || ($authority['processes_hash'] ?? null) !== BlueprintFingerprint::make($template->processes)) {
             throw new BlueprintBlocked('plan_changed');
@@ -515,6 +518,218 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
         return $recipe->organization_id !== null
             ? (string) $recipe->organization_id === (string) $organization->getKey() && $organization->permits($actor, 'deploy')
             : (string) $recipe->user_id === (string) $actor->getKey();
+    }
+
+    /** @return array<string, mixed> Non-secret evidence stored with the accepted Core preview. */
+    private function recipeAuthority(Recipe $recipe): array
+    {
+        $this->fingerprintKey();
+        try {
+            $script = (string) $recipe->script;
+            $metadataFingerprint = $this->hmacArray(['name' => $recipe->name, 'description' => $recipe->description]);
+            $scriptFingerprint = $this->scriptFingerprint($script);
+        } catch (BlueprintBlocked $exception) {
+            throw $exception;
+        } catch (\Throwable) {
+            throw new BlueprintBlocked('native_state_changed');
+        }
+
+        return [
+            'id' => (string) $recipe->getKey(),
+            'user_id' => $recipe->user_id === null ? null : (string) $recipe->user_id,
+            'organization_id' => $recipe->organization_id === null ? null : (string) $recipe->organization_id,
+            'source_recipe_id' => $recipe->source_recipe_id === null ? null : (string) $recipe->source_recipe_id,
+            'is_published' => (bool) $recipe->is_published,
+            'updated_at' => $this->timestamp($recipe->updated_at),
+            'revision_at' => $this->timestamp($recipe->source_revision_at ?? $recipe->gallery_revision_at),
+            'published_at' => $this->timestamp($recipe->published_at),
+            'gallery_revision_at' => $this->timestamp($recipe->gallery_revision_at),
+            'metadata_fingerprint' => $metadataFingerprint,
+            'script_fingerprint' => $scriptFingerprint,
+        ];
+    }
+
+    /** Persist each accepted source as an encrypted, ordered snapshot attached to its exact Deployer environment. */
+    private function saveRecipeSnapshots(BlueprintStepAttempt $attempt, array $entry, Environment $environment, array $context): int
+    {
+        if ($entry['recipes'] === []) {
+            return 0;
+        }
+        if (! Schema::connection('deployer')->hasTable('environment_blueprint_recipes')) {
+            throw new BlueprintBlocked('native_state_changed');
+        }
+        $canonicalEnvironmentId = $attempt->target->environments[$entry['key']]['id'] ?? null;
+        if ($canonicalEnvironmentId === null || (string) $entry['definition']['id'] !== (string) $canonicalEnvironmentId) {
+            throw new BlueprintBlocked('native_binding_changed');
+        }
+
+        foreach ($entry['recipes'] as $position => $recipe) {
+            try {
+                $script = (string) $recipe->script;
+                $scriptFingerprint = $this->scriptFingerprint($script);
+            } catch (BlueprintBlocked $exception) {
+                throw $exception;
+            } catch (\Throwable) {
+                throw new BlueprintBlocked('native_state_changed');
+            }
+            $attributes = [
+                'step_id' => $attempt->stepId,
+                'actor_source_id' => (int) $context['actor']->getKey(),
+                'workspace_source_id' => (int) $context['organization']->getKey(),
+                'canonical_project_id' => (string) $attempt->target->projectId,
+                'canonical_environment_id' => (string) $canonicalEnvironmentId,
+                'environment_key' => $entry['key'],
+                'environment_id' => (int) $environment->getKey(),
+                'source_recipe_id' => (int) $recipe->getKey(),
+                'source_user_id' => $recipe->organization_id === null && $recipe->user_id !== null ? (int) $recipe->user_id : null,
+                'source_organization_id' => $recipe->organization_id === null ? null : (int) $recipe->organization_id,
+                'source_gallery_recipe_id' => $recipe->source_recipe_id === null ? null : (int) $recipe->source_recipe_id,
+                'source_name' => $recipe->name,
+                'source_description' => $recipe->description,
+                'source_is_published' => (bool) $recipe->is_published,
+                'source_updated_at' => $this->timestamp($recipe->updated_at),
+                'source_revision_at' => $this->timestamp($recipe->source_revision_at ?? $recipe->gallery_revision_at),
+                'source_published_at' => $this->timestamp($recipe->published_at),
+                'source_gallery_revision_at' => $this->timestamp($recipe->gallery_revision_at),
+                'script_snapshot' => $script,
+                'script_fingerprint' => $scriptFingerprint,
+                'position' => $position,
+                'installed_recipe_id' => null,
+                'install_receipt_fingerprint' => null,
+                'install_attempted_at' => null,
+            ];
+            $attributes['binding_fingerprint'] = $this->snapshotBindingFingerprint($attributes);
+
+            $existing = EnvironmentBlueprintRecipe::query()
+                ->where('step_id', $attempt->stepId)
+                ->where('environment_id', $environment->getKey())
+                ->where('source_recipe_id', $recipe->getKey())
+                ->lockForUpdate()
+                ->first();
+            if ($existing !== null) {
+                $this->assertSnapshotMatches($existing, $attributes);
+
+                continue;
+            }
+
+            EnvironmentBlueprintRecipe::query()->create($attributes);
+        }
+
+        return count($entry['recipes']);
+    }
+
+    /** @param array<string, mixed> $expected */
+    private function assertSnapshotMatches(EnvironmentBlueprintRecipe $snapshot, array $expected): void
+    {
+        $expectedFingerprint = (string) $expected['binding_fingerprint'];
+        if (! hash_equals($expectedFingerprint, (string) $snapshot->binding_fingerprint)) {
+            throw new BlueprintBlocked('resource_conflict');
+        }
+        $this->assertSnapshotIntegrity($snapshot);
+    }
+
+    private function assertSnapshotIntegrity(EnvironmentBlueprintRecipe $snapshot): void
+    {
+        try {
+            $scriptFingerprint = $this->scriptFingerprint((string) $snapshot->script_snapshot);
+            $bindingFingerprint = $this->snapshotBindingFingerprint($this->snapshotAttributes($snapshot));
+        } catch (\Throwable) {
+            throw new BlueprintBlocked('resource_conflict');
+        }
+        if (! hash_equals((string) $snapshot->binding_fingerprint, $bindingFingerprint)
+            || ! hash_equals((string) $snapshot->script_fingerprint, $scriptFingerprint)) {
+            throw new BlueprintBlocked('resource_conflict');
+        }
+    }
+
+    /** @return array<string, mixed> */
+    private function snapshotAttributes(EnvironmentBlueprintRecipe $snapshot): array
+    {
+        return [
+            'step_id' => $snapshot->step_id,
+            'actor_source_id' => $snapshot->actor_source_id,
+            'workspace_source_id' => $snapshot->workspace_source_id,
+            'canonical_project_id' => $snapshot->canonical_project_id,
+            'canonical_environment_id' => $snapshot->canonical_environment_id,
+            'environment_key' => $snapshot->environment_key,
+            'environment_id' => $snapshot->environment_id,
+            'source_recipe_id' => $snapshot->source_recipe_id,
+            'source_user_id' => $snapshot->source_user_id,
+            'source_organization_id' => $snapshot->source_organization_id,
+            'source_gallery_recipe_id' => $snapshot->source_gallery_recipe_id,
+            'source_name' => $snapshot->source_name,
+            'source_description' => $snapshot->source_description,
+            'source_is_published' => $snapshot->source_is_published,
+            'source_updated_at' => $snapshot->source_updated_at,
+            'source_revision_at' => $snapshot->source_revision_at,
+            'source_published_at' => $snapshot->source_published_at,
+            'source_gallery_revision_at' => $snapshot->source_gallery_revision_at,
+            'script_fingerprint' => $snapshot->script_fingerprint,
+            'position' => $snapshot->position,
+        ];
+    }
+
+    /** @param array<string, mixed> $attributes */
+    private function snapshotBindingFingerprint(array $attributes): string
+    {
+        $attributes = array_intersect_key($attributes, array_fill_keys([
+            'step_id', 'actor_source_id', 'workspace_source_id', 'canonical_project_id', 'canonical_environment_id',
+            'environment_key', 'environment_id', 'source_recipe_id', 'source_user_id', 'source_organization_id',
+            'source_gallery_recipe_id', 'source_name', 'source_description', 'source_is_published',
+            'source_updated_at', 'source_revision_at', 'source_published_at', 'source_gallery_revision_at',
+            'script_fingerprint', 'position',
+        ], true));
+        $dateFields = ['source_updated_at', 'source_revision_at', 'source_published_at', 'source_gallery_revision_at'];
+        foreach ($dateFields as $field) {
+            $attributes[$field] = $this->timestamp($attributes[$field] ?? null);
+        }
+        $attributes['source_is_published'] = (bool) $attributes['source_is_published'];
+        $attributes['position'] = (int) $attributes['position'];
+        foreach (['actor_source_id', 'workspace_source_id', 'environment_id', 'source_recipe_id', 'source_user_id', 'source_organization_id', 'source_gallery_recipe_id'] as $field) {
+            $attributes[$field] = $attributes[$field] === null ? null : (string) $attributes[$field];
+        }
+        foreach (['step_id', 'canonical_project_id', 'canonical_environment_id', 'environment_key', 'source_name', 'source_description', 'script_fingerprint'] as $field) {
+            $attributes[$field] = $attributes[$field] === null ? null : (string) $attributes[$field];
+        }
+
+        return $this->hmacArray($attributes);
+    }
+
+    private function scriptFingerprint(string $script): string
+    {
+        return hash_hmac('sha256', $script, $this->fingerprintKey());
+    }
+
+    /** @param array<string, mixed> $value */
+    private function hmacArray(array $value): string
+    {
+        return hash_hmac('sha256', json_encode($value, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $this->fingerprintKey());
+    }
+
+    private function fingerprintKey(): string
+    {
+        $key = trim((string) config('app.key'));
+        if ($key === '') {
+            throw new BlueprintBlocked('native_state_changed');
+        }
+
+        return $key;
+    }
+
+    private function timestamp(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return $value instanceof \DateTimeInterface
+            ? $value->format('Y-m-d H:i:s')
+            : (string) $value;
+    }
+
+    private function scalarFingerprint(mixed $value): string
+    {
+        return BlueprintFingerprint::make(['value' => $value]);
     }
 
     private function validProcess(mixed $definition): bool
@@ -562,6 +777,7 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
         $savedResult = BlueprintProductResult::fromArray($receipt->result);
         $expectedKeys = array_fill_keys(array_keys($attempt->target->environments), true);
         $seenKeys = [];
+        $resolvedEnvironments = [];
         $projectResources = 0;
         foreach ($savedResult->resources as $resource) {
             if ($resource->type === 'project') {
@@ -594,18 +810,141 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
                 throw new BlueprintBlocked('native_access_changed');
             }
             $seenKeys[$resource->environmentKey] = true;
+            $resolvedEnvironments[$resource->environmentKey] = $environment;
         }
         if ($projectResources !== 1 || array_diff_key($expectedKeys, $seenKeys) !== []) {
             throw new BlueprintBlocked('invalid_product_result');
         }
 
-        foreach ($configuration['environment_recipes'] as $entry) {
-            foreach ($entry['recipe_ids'] as $recipeId) {
-                $recipe = Recipe::query()->find($recipeId);
-                if (! $recipe || ! $this->canUseRecipe($recipe, $context['actor'], $context['organization'])) {
-                    throw new BlueprintBlocked('native_access_changed');
-                }
+        $expectedSnapshotCount = 0;
+        $hasSnapshotTable = Schema::connection('deployer')->hasTable('environment_blueprint_recipes');
+        foreach (array_keys($attempt->target->environments) as $key) {
+            $expectedRecipeIds = collect($configuration['environment_recipes'])
+                ->firstWhere('environment', $key)['recipe_ids'] ?? [];
+            $expectedSnapshotCount += count($expectedRecipeIds);
+            if ($expectedRecipeIds !== [] && ! $hasSnapshotTable) {
+                throw new BlueprintBlocked('resource_conflict');
             }
+            $environment = $resolvedEnvironments[$key] ?? null;
+            if (! $environment) {
+                throw new BlueprintBlocked('invalid_product_result');
+            }
+            $canonicalEnvironmentId = $attempt->target->environments[$key]['id'] ?? null;
+            if ($expectedRecipeIds !== []) {
+                if ($canonicalEnvironmentId === null) {
+                    throw new BlueprintBlocked('resource_conflict');
+                }
+                $this->assertExactSnapshotBindings(
+                    $attempt,
+                    $context['project'],
+                    $environment,
+                    $key,
+                    (string) $canonicalEnvironmentId,
+                );
+            }
+
+            if (! $hasSnapshotTable) {
+                continue;
+            }
+
+            $snapshots = EnvironmentBlueprintRecipe::query()
+                ->where('step_id', $attempt->stepId)
+                ->where('environment_id', $environment->getKey())
+                ->orderBy('position')->orderBy('id')->get();
+            if ($snapshots->count() !== count($expectedRecipeIds)) {
+                throw new BlueprintBlocked('invalid_product_result');
+            }
+            foreach ($expectedRecipeIds as $position => $recipeId) {
+                /** @var EnvironmentBlueprintRecipe|null $snapshot */
+                $snapshot = $snapshots->get($position);
+                if ($snapshot === null || $canonicalEnvironmentId === null
+                    || (string) $snapshot->step_id !== (string) $attempt->stepId
+                    || (string) $snapshot->actor_source_id !== (string) $receipt->actor_source_id
+                    || (string) $snapshot->workspace_source_id !== (string) $receipt->workspace_source_id
+                    || (string) $snapshot->canonical_project_id !== (string) $attempt->target->projectId
+                    || (string) $snapshot->canonical_environment_id !== (string) $canonicalEnvironmentId
+                    || (string) $snapshot->environment_key !== (string) $key
+                    || (string) $snapshot->environment_id !== (string) $environment->getKey()
+                    || (string) $snapshot->source_recipe_id !== (string) $recipeId
+                    || (int) $snapshot->position !== $position) {
+                    throw new BlueprintBlocked('resource_conflict');
+                }
+                $this->assertSnapshotIntegrity($snapshot);
+            }
+        }
+        if ($hasSnapshotTable
+            && EnvironmentBlueprintRecipe::query()->where('step_id', $attempt->stepId)->count() !== $expectedSnapshotCount) {
+            throw new BlueprintBlocked('invalid_product_result');
+        }
+    }
+
+    private function assertExactSnapshotBindings(
+        BlueprintStepAttempt $attempt,
+        Project $nativeProject,
+        Environment $nativeEnvironment,
+        string $environmentKey,
+        string $canonicalEnvironmentId,
+    ): void {
+        $target = $attempt->target;
+        $canonicalWorkspaceId = $this->identities->canonicalIdForSource(
+            'deployer', 'organization', (string) $nativeProject->organization_id, 'workspace',
+        );
+        $workspaceSources = $canonicalWorkspaceId === null ? [] : $this->identities->sourceIdsForCanonical(
+            'deployer', 'organization', $canonicalWorkspaceId, 'workspace',
+        );
+        $workspace = $canonicalWorkspaceId === null ? null : CoreWorkspace::query()
+            ->whereKey($canonicalWorkspaceId)->where('status', 'active')->whereNull('archived_at')->first();
+        $project = CoreProject::query()->whereKey($target->projectId)->where('workspace_id', $target->workspaceId)
+            ->where('status', 'active')->whereNull('archived_at')->first();
+        $environment = CoreProjectEnvironment::query()->whereKey($canonicalEnvironmentId)
+            ->where('project_id', $target->projectId)->where('status', 'active')
+            ->where('environment_type', $nativeEnvironment->type)->first();
+
+        $projectMappings = ProjectResource::query()->where('project_id', $target->projectId)
+            ->where('product', 'deployer')->where('resource_type', 'project')->get();
+        $nativeProjectMappings = ProjectResource::query()->where('product', 'deployer')->where('resource_type', 'project')
+            ->where('resource_id', (string) $nativeProject->getKey())->get();
+        $environmentMappings = ProjectResource::query()->where('environment_id', $canonicalEnvironmentId)->where('product', 'deployer')
+            ->where('resource_type', 'environment')->get();
+        $nativeEnvironmentMappings = ProjectResource::query()->where('product', 'deployer')->where('resource_type', 'environment')
+            ->where('resource_id', (string) $nativeEnvironment->getKey())->get();
+
+        $projectMapping = $projectMappings->count() === 1 ? $projectMappings->first() : null;
+        $nativeProjectMapping = $nativeProjectMappings->count() === 1 ? $nativeProjectMappings->first() : null;
+        $projectMappingIsExact = $projectMapping !== null && $nativeProjectMapping !== null
+            && $projectMapping->status === 'active' && $nativeProjectMapping->status === 'active'
+            && (string) $projectMapping->resource_id === (string) $nativeProject->getKey()
+            && (string) $projectMapping->project_id === (string) $target->projectId
+            && $projectMapping->environment_id === null
+            && (string) $nativeProjectMapping->project_id === (string) $target->projectId
+            && $nativeProjectMapping->environment_id === null
+            && (string) $projectMapping->getKey() === (string) $nativeProjectMapping->getKey();
+        $acceptedProjectMappingWasAbsent = ($attempt->nativeAuthority['project_source_id'] ?? null) === null
+            && ($attempt->nativeAuthority['project_mapping'] ?? null) === [];
+        $projectMappingIsAbsent = $projectMappings->isEmpty() && $nativeProjectMappings->isEmpty();
+
+        $environmentMapping = $environmentMappings->count() === 1 ? $environmentMappings->first() : null;
+        $nativeEnvironmentMapping = $nativeEnvironmentMappings->count() === 1 ? $nativeEnvironmentMappings->first() : null;
+        $environmentMappingIsExact = $environmentMapping !== null && $nativeEnvironmentMapping !== null
+            && $environmentMapping->status === 'active' && $nativeEnvironmentMapping->status === 'active'
+            && (string) $environmentMapping->resource_id === (string) $nativeEnvironment->getKey()
+            && (string) $environmentMapping->project_id === (string) $target->projectId
+            && (string) $environmentMapping->environment_id === $canonicalEnvironmentId
+            && (string) $nativeEnvironmentMapping->project_id === (string) $target->projectId
+            && (string) $nativeEnvironmentMapping->environment_id === $canonicalEnvironmentId
+            && (string) $environmentMapping->getKey() === (string) $nativeEnvironmentMapping->getKey();
+        $acceptedEnvironment = collect($attempt->nativeAuthority['environments'] ?? [])->firstWhere('key', $environmentKey);
+        $acceptedEnvironmentMappingWasAbsent = is_array($acceptedEnvironment)
+            && ($acceptedEnvironment['mapping_id'] ?? null) === null
+            && ($acceptedEnvironment['source_id'] ?? null) === null;
+        $environmentMappingIsAbsent = $environmentMappings->isEmpty() && $nativeEnvironmentMappings->isEmpty();
+
+        if ($canonicalWorkspaceId !== $target->workspaceId || count($workspaceSources) !== 1
+            || (string) $workspaceSources[0] !== (string) $nativeProject->organization_id || $workspace === null
+            || $project === null || $environment === null
+            || (! $projectMappingIsExact && ! ($acceptedProjectMappingWasAbsent && $projectMappingIsAbsent))
+            || (! $environmentMappingIsExact && ! ($acceptedEnvironmentMappingWasAbsent && $environmentMappingIsAbsent))) {
+            throw new BlueprintBlocked('resource_conflict');
         }
     }
 
@@ -632,11 +971,11 @@ final class DeployerProjectBlueprintProvider implements ProjectBlueprintProvider
             'id' => (string) $environment->getKey(), 'name' => $environment->name, 'slug' => $environment->slug,
             'type' => $environment->type, 'branch' => $environment->branch,
             'runtime_type' => $environment->runtime_type, 'runtime_version' => $environment->runtime_version,
-            'build_command_hash' => is_string($environment->build_command) ? BlueprintFingerprint::make($environment->build_command) : null,
-            'start_command_hash' => is_string($environment->start_command) ? BlueprintFingerprint::make($environment->start_command) : null,
+            'build_command_hash' => is_string($environment->build_command) ? $this->scalarFingerprint($environment->build_command) : null,
+            'start_command_hash' => is_string($environment->start_command) ? $this->scalarFingerprint($environment->start_command) : null,
             'processes' => $environment->processes()->orderBy('id')->get()->map(fn (EnvironmentProcess $process): array => [
                 'id' => (string) $process->getKey(), 'name' => $process->name, 'type' => $process->type,
-                'command_hash' => BlueprintFingerprint::make($process->command),
+                'command_hash' => $this->scalarFingerprint($process->command),
                 'replicas' => $process->replicas, 'restart_policy' => $process->restart_policy,
                 'restart_delay_seconds' => $process->restart_delay_seconds, 'is_enabled' => $process->is_enabled,
             ])->all(),

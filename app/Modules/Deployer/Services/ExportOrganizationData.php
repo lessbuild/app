@@ -8,6 +8,7 @@ use App\Modules\Deployer\Models\BackupRestore;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\DeploymentSchedule;
 use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\EnvironmentBlueprintRecipe;
 use App\Modules\Deployer\Models\EnvironmentProcess;
 use App\Modules\Deployer\Models\EnvironmentResource;
 use App\Modules\Deployer\Models\EnvironmentVariable;
@@ -34,6 +35,7 @@ use Generator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use RuntimeException;
 
 final class ExportOrganizationData
@@ -75,6 +77,7 @@ final class ExportOrganizationData
                 'invitation',
                 'project',
                 'environment',
+                'environment_blueprint_recipe_metadata',
                 'environment_variable_metadata',
                 'environment_process',
                 'environment_resource_metadata',
@@ -109,6 +112,7 @@ final class ExportOrganizationData
                 'alert_endpoints_and_signing_secrets_are_excluded' => true,
                 'invitation_token_hashes_and_status_subscriber_records_are_excluded' => true,
                 'workflow_and_secret_bearing_configuration_bodies_are_excluded' => true,
+                'blueprint_recipe_script_bodies_ciphertext_and_fingerprints_are_excluded' => true,
             ],
         ]);
 
@@ -166,6 +170,8 @@ final class ExportOrganizationData
             ->select(['id', 'project_id', 'server_id', 'website_id', 'name', 'slug', 'type', 'branch', 'is_protected', 'requires_deployment_approval', 'minimum_replicas', 'maximum_replicas', 'hibernate_after_minutes', 'status', 'created_at', 'updated_at']), [
                 'id', 'project_id', 'server_id', 'website_id', 'name', 'slug', 'type', 'branch', 'is_protected', 'requires_deployment_approval', 'minimum_replicas', 'maximum_replicas', 'hibernate_after_minutes', 'status', 'created_at', 'updated_at',
             ]);
+
+        yield from $this->blueprintRecipeRecords($organization);
 
         yield from $this->cursorRecords('environment_variable_metadata', EnvironmentVariable::query()
             ->whereIn('environment_id', $this->environmentIds($organization))
@@ -328,6 +334,118 @@ final class ExportOrganizationData
             ->select(['id', 'organization_id', 'created_by', 'name', 'type', 'events', 'is_active', 'last_delivered_at', 'last_failed_at', 'created_at', 'updated_at']), [
                 'id', 'organization_id', 'created_by', 'name', 'type', 'events', 'is_active', 'last_delivered_at', 'last_failed_at', 'created_at', 'updated_at',
             ]);
+    }
+
+    /** @return Generator<int, array{type: string, data: array<string, mixed>}> */
+    private function blueprintRecipeRecords(Organization $organization): Generator
+    {
+        if (! Schema::connection('deployer')->hasTable('environment_blueprint_recipes')) {
+            return;
+        }
+
+        $fields = [
+            'id', 'step_id', 'workspace_source_id', 'canonical_project_id', 'canonical_environment_id',
+            'environment_key', 'environment_id', 'source_recipe_id', 'source_organization_id',
+            'source_gallery_recipe_id', 'source_name', 'source_description', 'source_is_published',
+            'source_updated_at', 'source_revision_at', 'source_published_at', 'source_gallery_revision_at',
+            'position', 'created_at', 'updated_at',
+        ];
+        $key = trim((string) config('app.key'));
+        $integrityFields = ['actor_source_id', 'source_user_id', 'script_fingerprint'];
+        $query = EnvironmentBlueprintRecipe::query()
+            ->whereIn('environment_id', $this->environmentIds($organization))
+            ->where(fn ($sources) => $sources->where('source_organization_id', $organization->getKey())
+                ->orWhere(fn ($personal) => $personal->whereNull('source_organization_id')->whereNotNull('installed_recipe_id')))
+            ->select([
+                ...$fields, ...$integrityFields,
+                'binding_fingerprint', 'installed_recipe_id', 'install_attempted_at', 'install_receipt_fingerprint',
+            ])->orderBy('id');
+
+        foreach ($query->cursor() as $snapshot) {
+            if ($snapshot->source_organization_id === null && ! $this->hasValidPersonalSharingReceipt($snapshot, $organization, $key)) {
+                continue;
+            }
+
+            yield $this->modelRecord('environment_blueprint_recipe_metadata', $snapshot, $fields);
+        }
+    }
+
+    private function hasValidPersonalSharingReceipt(EnvironmentBlueprintRecipe $snapshot, Organization $organization, string $key): bool
+    {
+        if ($key === '' || $snapshot->installed_recipe_id === null || $snapshot->install_attempted_at === null
+            || $snapshot->install_receipt_fingerprint === null || $snapshot->binding_fingerprint === null) {
+            return false;
+        }
+
+        try {
+            $bindingFingerprint = $this->snapshotBindingFingerprint($snapshot, $key);
+            if (! hash_equals((string) $snapshot->binding_fingerprint, $bindingFingerprint)) {
+                return false;
+            }
+
+            $expected = hash_hmac('sha256', json_encode([
+                'purpose' => 'blueprint-recipe-snapshot-install',
+                'binding_fingerprint' => $bindingFingerprint,
+                'workspace_id' => (string) $organization->getKey(),
+                'recipe_id' => (string) $snapshot->installed_recipe_id,
+            ], JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE), $key);
+        } catch (\Throwable) {
+            return false;
+        }
+
+        return hash_equals((string) $snapshot->install_receipt_fingerprint, $expected);
+    }
+
+    private function snapshotBindingFingerprint(EnvironmentBlueprintRecipe $snapshot, string $key): string
+    {
+        $attributes = [
+            'step_id' => $snapshot->step_id,
+            'actor_source_id' => $snapshot->actor_source_id,
+            'workspace_source_id' => $snapshot->workspace_source_id,
+            'canonical_project_id' => $snapshot->canonical_project_id,
+            'canonical_environment_id' => $snapshot->canonical_environment_id,
+            'environment_key' => $snapshot->environment_key,
+            'environment_id' => $snapshot->environment_id,
+            'source_recipe_id' => $snapshot->source_recipe_id,
+            'source_user_id' => $snapshot->source_user_id,
+            'source_organization_id' => $snapshot->source_organization_id,
+            'source_gallery_recipe_id' => $snapshot->source_gallery_recipe_id,
+            'source_name' => $snapshot->source_name,
+            'source_description' => $snapshot->source_description,
+            'source_is_published' => (bool) $snapshot->source_is_published,
+            'source_updated_at' => $this->snapshotTimestamp($snapshot->source_updated_at),
+            'source_revision_at' => $this->snapshotTimestamp($snapshot->source_revision_at),
+            'source_published_at' => $this->snapshotTimestamp($snapshot->source_published_at),
+            'source_gallery_revision_at' => $this->snapshotTimestamp($snapshot->source_gallery_revision_at),
+            'script_fingerprint' => (string) $snapshot->script_fingerprint,
+            'position' => (int) $snapshot->position,
+        ];
+        foreach ([
+            'actor_source_id', 'workspace_source_id', 'environment_id', 'source_recipe_id', 'source_user_id',
+            'source_organization_id', 'source_gallery_recipe_id',
+        ] as $field) {
+            $attributes[$field] = $attributes[$field] === null ? null : (string) $attributes[$field];
+        }
+        foreach ([
+            'step_id', 'canonical_project_id', 'canonical_environment_id', 'environment_key', 'source_name',
+            'source_description', 'script_fingerprint',
+        ] as $field) {
+            $attributes[$field] = $attributes[$field] === null ? null : (string) $attributes[$field];
+        }
+
+        return hash_hmac('sha256', json_encode(
+            $attributes,
+            JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE,
+        ), $key);
+    }
+
+    private function snapshotTimestamp(mixed $value): ?string
+    {
+        if ($value === null) {
+            return null;
+        }
+
+        return $value instanceof \DateTimeInterface ? $value->format('Y-m-d H:i:s') : (string) $value;
     }
 
     /** @param array<int, string> $fields
