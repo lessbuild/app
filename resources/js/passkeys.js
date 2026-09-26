@@ -126,6 +126,7 @@ const fetchOptions = async (url) => {
     return (await response.json()).options;
 };
 
+// Sign-in and sudo-mode confirmation share one flow: fetch options, ask the device, post the credential, follow the redirect.
 document.querySelectorAll('[data-passkey-login]').forEach((button) => {
     button.addEventListener('click', async () => {
         if (!navigator.credentials?.get) {

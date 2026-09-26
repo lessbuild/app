@@ -27,6 +27,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property string $name
  * @property string $email
  * @property string|null $current_account_id
+ * @property string|null $password
+ * @property string|null $two_factor_secret
+ * @property \Illuminate\Support\Carbon|null $two_factor_confirmed_at
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]

@@ -5,6 +5,8 @@ declare(strict_types=1);
 use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Settings\ProfileController;
+use App\Http\Controllers\Settings\SecurityController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -16,4 +18,9 @@ Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name(
 Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
+
+    Route::redirect('/settings', '/settings/profile')->name('settings');
+    Route::get('/settings/profile', ProfileController::class)->name('settings.profile');
+    // Security changes need a recent password (or passkey) confirmation, like Fortify's own 2FA and passkey routes.
+    Route::get('/settings/security', SecurityController::class)->middleware('password.confirm')->name('settings.security');
 });

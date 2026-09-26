@@ -247,6 +247,12 @@
         transition: border-color 160ms ease, background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
     }
 
+    .ui-local-nav__link[aria-current="page"] {
+        border-color: var(--ui-line);
+        background-color: var(--ui-surface);
+        color: var(--ui-ink);
+    }
+
     .ui-local-nav__link:hover,
     .ui-local-nav__link:focus-visible {
         border-color: var(--ui-line);
