@@ -21,6 +21,8 @@ interface WorkspaceMonitorConfigurationAdministrationProvider
     /** @param array<string, mixed> $data */
     public function updateMonitor(PlatformUser $user, Workspace $workspace, string $monitorReference, array $data): MonitorMutationResult;
 
+    public function archiveMonitor(PlatformUser $user, Workspace $workspace, string $monitorReference, int $version): MonitorMutationResult;
+
     /** @param array<string, mixed> $data */
     public function createHttpCheck(PlatformUser $user, Workspace $workspace, string $environmentReference, array $data): MonitorMutationResult;
 }

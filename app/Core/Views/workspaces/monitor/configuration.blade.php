@@ -125,6 +125,16 @@
                     @else
                         <p class="mt-3 text-sm text-muted">{{ __('Your Monitor role can view this check but cannot change it.') }}</p>
                     @endif
+                    @if ($check['can_archive'])
+                        <x-signal.ui.disclosure :title="__('Archive this check')" class="mt-4">
+                            <p class="mt-3 text-xs leading-5 text-muted dark:text-subtle">{{ __('Archiving stops scheduled checks, closes any open incident without marking recovery, and revokes heartbeat or queue keys. History stays in Monitor.') }}</p>
+                            <form method="POST" action="{{ route('core.workspace.monitor.configuration.checks.archive', $workspace) }}" class="mt-4 flex flex-wrap items-center gap-3">
+                                @csrf @method('DELETE')<x-signal.ui.input type="hidden" name="monitor_reference" :value="$check['reference']" /><x-signal.ui.input type="hidden" name="version" :value="$check['version']" />
+                                <x-signal.ui.checkbox :id="'monitor-check-'.$loop->index.'-archive-confirm'" name="confirm" value="1" :required="true" :restore="false">{{ __('I understand this check will stop running.') }}</x-signal.ui.checkbox>
+                                <x-signal.ui.button type="submit" variant="danger">{{ __('Archive check') }}</x-signal.ui.button>
+                            </form>
+                        </x-signal.ui.disclosure>
+                    @endif
                 </x-signal.ui.card>
             @empty
                 <x-signal.ui.empty-state :title="__('No mapped checks match this search')" :description="__('Create a public HTTP check from an active mapped environment above. Existing checks in authorized mapped environments can be renamed, paused, resumed, or rescheduled here.')" icon="pulse" />

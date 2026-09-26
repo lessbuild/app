@@ -47,6 +47,11 @@ final class SaveWorkspaceMonitorConfigurationRequest extends WorkspaceMonitorAdm
                 'slug' => ['required', 'string', 'max:80', 'regex:/\A[a-z0-9]+(?:-[a-z0-9]+)*\z/'],
                 'status' => ['required', Rule::in(['active', 'paused'])],
             ],
+            'archiveCheck' => [
+                'monitor_reference' => ['required', 'string', 'max:4096'],
+                'version' => ['required', 'integer', 'min:0'],
+                'confirm' => ['accepted'],
+            ],
             'updateMonitor' => [
                 'monitor_reference' => ['required', 'string', 'max:4096'],
                 'name' => ['required', 'string', 'max:120', 'not_regex:/[\x00-\x1F\x7F]/u'],

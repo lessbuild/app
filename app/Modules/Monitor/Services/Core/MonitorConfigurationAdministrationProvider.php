@@ -168,6 +168,25 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
         return new MonitorMutationResult(true, 'check_updated', $monitorReference);
     }
 
+    /** Archive one exactly mapped check through Monitor's native archive, which closes its incident and revokes heartbeat/queue keys. */
+    public function archiveMonitor(PlatformUser $user, CoreWorkspace $workspace, string $monitorReference, int $version): MonitorMutationResult
+    {
+        ['workspace' => $sourceWorkspace, 'user' => $actor] = $this->requiredContext($user, $workspace);
+        $id = $this->context->sourceId($monitorReference, 'monitor', $sourceWorkspace);
+
+        $this->context->mutate($user, $workspace, $sourceWorkspace, $actor, function (Workspace $locked) use ($id, $version, $actor, $user, $workspace, $sourceWorkspace): void {
+            $monitor = Monitor::query()->forWorkspace($locked)->visibleTo($actor, $locked)
+                ->with('environment.application')->whereKey($id)->firstOrFail();
+            Gate::forUser($actor)->authorize('delete', $monitor);
+            $environment = $monitor->environment;
+            abort_if($environment === null || $this->environmentBinding($environment, $user, $workspace, $sourceWorkspace) === null, 404);
+
+            $this->changes->archive($monitor, $locked, $actor, $version);
+        });
+
+        return new MonitorMutationResult(true, 'check_archived', $monitorReference);
+    }
+
     public function createHttpCheck(PlatformUser $user, CoreWorkspace $workspace, string $environmentReference, array $data): MonitorMutationResult
     {
         $data = Validator::make($data, [
@@ -436,6 +455,7 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
                         'trigger_checks' => (int) $monitor->trigger_checks,
                         'recovery_checks' => (int) $monitor->recovery_checks,
                         'can_update' => Gate::forUser($actor)->allows('update', $monitor),
+                        'can_archive' => $actor->hasVerifiedEmail() && Gate::forUser($actor)->allows('delete', $monitor),
                     ];
                 }
                 $total++;

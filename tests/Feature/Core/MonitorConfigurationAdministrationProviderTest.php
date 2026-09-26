@@ -312,6 +312,40 @@ final class MonitorConfigurationAdministrationProviderTest extends TestCase
         $this->assertFalse($this->check->fresh()->enabled);
     }
 
+    public function test_check_archive_uses_native_archive_with_role_and_stale_version_fencing(): void
+    {
+        $provider = app(MonitorConfigurationAdministrationProvider::class);
+        $reference = app(MonitorAdministrationContext::class)
+            ->reference('monitor', $this->check->getKey(), $this->monitorWorkspace);
+        $this->assertTrue($provider->snapshot($this->actor, $this->workspace)->checks->items()[0]['can_archive']);
+
+        try {
+            $provider->archiveMonitor($this->actor, $this->workspace, $reference, 7);
+            $this->fail('A stale archive request must not archive a newer check configuration.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(409, $exception->getStatusCode());
+        }
+        $this->assertFalse($this->check->fresh()->trashed());
+
+        $this->monitorWorkspace->members()->updateExistingPivot($this->monitorActor->getKey(), ['role' => 'viewer']);
+        $this->assertFalse($provider->snapshot($this->actor, $this->workspace)->checks->items()[0]['can_archive']);
+        try {
+            $provider->archiveMonitor($this->actor, $this->workspace, $reference, 0);
+            $this->fail('The native read-only role must not archive checks.');
+        } catch (AuthorizationException) {
+            $this->assertFalse($this->check->fresh()->trashed());
+        }
+
+        $this->monitorWorkspace->members()->updateExistingPivot($this->monitorActor->getKey(), ['role' => 'owner']);
+        $result = $provider->archiveMonitor($this->actor, $this->workspace, $reference, 0);
+
+        $this->assertSame('check_archived', $result->status);
+        $archived = Monitor::withTrashed()->findOrFail($this->check->getKey());
+        $this->assertTrue($archived->trashed());
+        $this->assertFalse($archived->enabled);
+        $this->assertNull($archived->next_check_at);
+    }
+
     public function test_core_creates_a_bounded_http_check_only_for_the_exact_active_environment_mapping(): void
     {
         $environmentReference = app(MonitorAdministrationContext::class)

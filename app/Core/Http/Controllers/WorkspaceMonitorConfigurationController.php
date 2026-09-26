@@ -73,6 +73,18 @@ final class WorkspaceMonitorConfigurationController
         return to_route('core.workspace.monitor.configuration.index', $workspace)->with('status', __('Monitor check settings saved.'));
     }
 
+    public function archiveCheck(SaveWorkspaceMonitorConfigurationRequest $request, Workspace $workspace, WorkspaceProjectAccess $access, WorkspaceMonitorAdministrationRegistry $providers): RedirectResponse
+    {
+        $user = $this->authorizeWorkspace($request, $workspace, $access);
+        $provider = $providers->configuration();
+        abort_if($provider === null, 503);
+        $data = $request->validated();
+        $provider->archiveMonitor($user, $workspace, $data['monitor_reference'], (int) $data['version']);
+
+        return to_route('core.workspace.monitor.configuration.index', $workspace)
+            ->with('status', __('Check archived. Its history is kept in Monitor; archiving does not mean the service recovered.'));
+    }
+
     public function createCheck(SaveWorkspaceMonitorConfigurationRequest $request, Workspace $workspace, WorkspaceProjectAccess $access, WorkspaceMonitorAdministrationRegistry $providers): RedirectResponse
     {
         $user = $this->authorizeWorkspace($request, $workspace, $access);
