@@ -19,6 +19,9 @@
     @if (session('status'))
         <x-signal.ui.alert tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>
     @endif
+    @if (session('notice'))
+        <x-signal.ui.alert tone="info" role="status">{{ session('notice') }}</x-signal.ui.alert>
+    @endif
 
     {{ $slot }}
 </x-signal.layouts.app>

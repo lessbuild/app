@@ -47,6 +47,12 @@ class Project extends Model
         return $this->hasMany(Environment::class);
     }
 
+    /** @return HasMany<Domain, $this> */
+    public function domains(): HasMany
+    {
+        return $this->hasMany(Domain::class);
+    }
+
     /** @return HasMany<EnabledService, $this> */
     public function enabledServices(): HasMany
     {

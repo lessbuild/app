@@ -28,4 +28,24 @@ final class ProjectRuleViolation extends DomainException
     {
         return new self('name', __('This project already has an environment with that name.'));
     }
+
+    public static function invalidHostname(): self
+    {
+        return new self('hostname', __('Enter a public hostname such as shop.example.com.'));
+    }
+
+    public static function domainAlreadyAdded(): self
+    {
+        return new self('hostname', __('This project already has that domain.'));
+    }
+
+    public static function domainVerifiedElsewhere(): self
+    {
+        return new self('domain', __('Another project has already verified this domain. Remove it there first.'));
+    }
+
+    public static function environmentNotInProject(): self
+    {
+        return new self('environment_id', __('Choose one of this project’s environments.'));
+    }
 }

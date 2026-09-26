@@ -11,6 +11,7 @@ use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Projects\DomainController;
 use App\Http\Controllers\Projects\EnvironmentController;
 use App\Http\Controllers\Projects\ProjectController;
 use App\Http\Controllers\Projects\ServiceController;
@@ -44,6 +45,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::delete('/', [ProjectController::class, 'destroy'])->middleware('password.confirm')->name('projects.destroy');
         Route::post('/environments', [EnvironmentController::class, 'store'])->name('projects.environments.store');
         Route::delete('/environments/{environment}', [EnvironmentController::class, 'destroy'])->name('projects.environments.destroy');
+        Route::get('/domains', [DomainController::class, 'index'])->name('projects.domains');
+        Route::post('/domains', [DomainController::class, 'store'])->middleware('throttle:30,1')->name('projects.domains.store');
+        Route::post('/domains/{domain}/verify', [DomainController::class, 'verify'])->middleware('throttle:20,1')->name('projects.domains.verify');
+        Route::delete('/domains/{domain}', [DomainController::class, 'destroy'])->name('projects.domains.destroy');
         Route::get('/services/{service}', [ServiceController::class, 'show'])->name('projects.services.show');
         Route::post('/services/{service}', [ServiceController::class, 'store'])->name('projects.services.store');
         Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('projects.services.destroy');

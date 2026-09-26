@@ -70,6 +70,8 @@ final class ShellComposer
                 : new NavLink($card->name, $children[0]->url, false, $card->icon, $children);
         }
 
+        $links[] = new NavLink(__('Domains'), route('projects.domains', $project), $this->request->routeIs('projects.domains'), 'globe-alt');
+
         if ($overview->canManage) {
             $links[] = new NavLink(__('Add a service'), route('projects.show', $project).'#services-heading', false, 'plus-circle');
             $links[] = new NavLink(__('Settings'), route('projects.settings', $project), $this->request->routeIs('projects.settings'), 'cog');

@@ -28,6 +28,9 @@ enum AuditAction: string
     case ProjectDeleted = 'project.deleted';
     case EnvironmentCreated = 'environment.created';
     case EnvironmentDeleted = 'environment.deleted';
+    case DomainAdded = 'domain.added';
+    case DomainVerified = 'domain.verified';
+    case DomainRemoved = 'domain.removed';
     case ServiceEnabled = 'service.enabled';
     case ServiceDisabled = 'service.disabled';
     case MemberServiceAccessChanged = 'member.service_access';
@@ -63,6 +66,9 @@ enum AuditAction: string
             self::ProjectDeleted => __('Deleted the project :project', ['project' => $value('project')]),
             self::EnvironmentCreated => __('Added the :environment environment to :project', ['environment' => $value('environment'), 'project' => $value('project')]),
             self::EnvironmentDeleted => __('Removed the :environment environment from :project', ['environment' => $value('environment'), 'project' => $value('project')]),
+            self::DomainAdded => __('Added :domain to :project', ['domain' => $value('domain'), 'project' => $value('project')]),
+            self::DomainVerified => __('Verified :domain for :project', ['domain' => $value('domain'), 'project' => $value('project')]),
+            self::DomainRemoved => __('Removed :domain from :project', ['domain' => $value('domain'), 'project' => $value('project')]),
             self::ServiceEnabled => __('Turned on :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::ServiceDisabled => __('Turned off :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::MemberServiceAccessChanged => __('Set :member’s services to :services', ['member' => $value('member'), 'services' => $value('services')]),

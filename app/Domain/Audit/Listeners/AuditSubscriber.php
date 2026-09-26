@@ -24,6 +24,9 @@ use App\Domain\Identity\Events\SocialIdentityConnected;
 use App\Domain\Identity\Events\SocialIdentityDisconnected;
 use App\Domain\Identity\Events\UserDeleting;
 use App\Domain\Identity\Models\User;
+use App\Domain\Projects\Events\DomainAdded;
+use App\Domain\Projects\Events\DomainRemoved;
+use App\Domain\Projects\Events\DomainVerified;
 use App\Domain\Projects\Events\EnvironmentCreated;
 use App\Domain\Projects\Events\EnvironmentDeleted;
 use App\Domain\Projects\Events\ProjectCreated;
@@ -61,6 +64,9 @@ final class AuditSubscriber
             ProjectDeleted::class => 'projectDeleted',
             EnvironmentCreated::class => 'environmentCreated',
             EnvironmentDeleted::class => 'environmentDeleted',
+            DomainAdded::class => 'domainChanged',
+            DomainVerified::class => 'domainChanged',
+            DomainRemoved::class => 'domainChanged',
             ServiceEnabled::class => 'serviceEnabled',
             ServiceDisabled::class => 'serviceDisabled',
             ProfileUpdated::class => 'profileUpdated',
@@ -158,6 +164,17 @@ final class AuditSubscriber
     public function environmentDeleted(EnvironmentDeleted $event): void
     {
         $this->record->handle(AuditAction::EnvironmentDeleted, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'environment' => $event->name]);
+    }
+
+    public function domainChanged(DomainAdded|DomainVerified|DomainRemoved $event): void
+    {
+        $action = match (true) {
+            $event instanceof DomainAdded => AuditAction::DomainAdded,
+            $event instanceof DomainVerified => AuditAction::DomainVerified,
+            default => AuditAction::DomainRemoved,
+        };
+        $project = $event->domain->project;
+        $this->record->handle($action, $event->actor, $project->account_id, ['project' => $project->name, 'domain' => $event->domain->displayName()]);
     }
 
     public function serviceEnabled(ServiceEnabled $event): void
