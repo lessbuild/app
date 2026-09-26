@@ -5,6 +5,7 @@
 ])
 
 @php($sections = array_filter([
+    'account.members' => __('Members'),
     'account.audit-log' => auth()->user()?->can('viewAuditLog', $account) ? __('Audit log') : null,
 ]))
 

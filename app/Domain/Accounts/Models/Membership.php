@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $account_id
  * @property string $user_id
  * @property AccountRole $role
+ * @property \Illuminate\Support\Carbon|null $created_at
  * @property-read Account $account
  * @property-read User $user
  */

@@ -14,6 +14,9 @@
             </a>
             <nav aria-label="{{ __('Main') }}" class="flex flex-wrap items-center gap-2">
                 <x-signal.ui.button :href="route('dashboard')" variant="quiet" size="sm" :aria-current="request()->routeIs('dashboard') ? 'page' : null">{{ __('Dashboard') }}</x-signal.ui.button>
+                @if (auth()->user()?->current_account_id)
+                    <x-signal.ui.button :href="route('account.members')" variant="quiet" size="sm" :aria-current="request()->routeIs('account.*') ? 'page' : null">{{ __('Account') }}</x-signal.ui.button>
+                @endif
                 <x-signal.ui.button :href="route('settings.profile')" variant="quiet" size="sm" :aria-current="request()->routeIs('settings.*') ? 'page' : null">{{ __('Settings') }}</x-signal.ui.button>
                 <form method="POST" action="{{ route('logout') }}">
                     @csrf

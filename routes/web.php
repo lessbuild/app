@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Http\Controllers\Account\AuditLogController;
+use App\Http\Controllers\Account\MembersController;
 use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
@@ -27,6 +28,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
 
+    Route::redirect('/account', '/account/members')->name('account');
+    Route::get('/account/members', [MembersController::class, 'index'])->name('account.members');
+    Route::post('/account/invitations', [MembersController::class, 'invite'])->middleware('throttle:20,1')->name('account.invitations.store');
+    Route::delete('/account/invitations/{invitation}', [MembersController::class, 'revokeInvitation'])->name('account.invitations.destroy');
+    Route::put('/account/members/{membership}', [MembersController::class, 'updateRole'])->name('account.members.update');
+    Route::delete('/account/members/{membership}', [MembersController::class, 'remove'])->name('account.members.destroy');
     Route::get('/account/audit-log', AuditLogController::class)->name('account.audit-log');
 
     Route::redirect('/settings', '/settings/profile')->name('settings');
