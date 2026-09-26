@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Modules\Deployer\Models\AlertDestination;
+use App\Modules\Deployer\Models\AlertOutboundDelivery;
 use App\Modules\Deployer\Models\BackupDestination;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\ConfigurationApplication;
@@ -29,6 +30,7 @@ use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Models\WebsiteBackup;
 use App\Modules\Deployer\Models\WebsiteBackupSchedule;
 use App\Modules\Deployer\Policies\AlertDestinationPolicy;
+use App\Modules\Deployer\Policies\AlertOutboundDeliveryPolicy;
 use App\Modules\Deployer\Policies\BackupDestinationPolicy;
 use App\Modules\Deployer\Policies\BuildPolicy;
 use App\Modules\Deployer\Policies\ConfigurationApplicationPolicy;
@@ -71,6 +73,7 @@ class AuthServiceProvider extends ServiceProvider
      */
     protected $policies = [
         AlertDestination::class => AlertDestinationPolicy::class,
+        AlertOutboundDelivery::class => AlertOutboundDeliveryPolicy::class,
         Build::class => BuildPolicy::class,
         BackupDestination::class => BackupDestinationPolicy::class,
         ConfigurationApplication::class => ConfigurationApplicationPolicy::class,

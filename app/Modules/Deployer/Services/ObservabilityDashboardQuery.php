@@ -2,6 +2,7 @@
 
 namespace App\Modules\Deployer\Services;
 
+use App\Modules\Deployer\Models\AlertOutboundDelivery;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\Organization;
 use App\Modules\Deployer\Models\StatusIncident;
@@ -18,6 +19,11 @@ class ObservabilityDashboardQuery
      */
     public function for(Organization $organization, ?User $actor = null): array
     {
+        $canViewOutboundHistory = $actor !== null
+            && (int) $actor->current_organization_id === (int) $organization->id
+            && $organization->permits($actor, 'view')
+            && app(DeployerProjectAccess::class)->canAccessWorkspaceResources($actor);
+
         $incidents = StatusIncident::query()
             ->whereHas('statusPage', fn ($query) => $query->where('organization_id', $organization->id)
                 ->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->statusPages($query, $actor)))
@@ -28,6 +34,16 @@ class ObservabilityDashboardQuery
 
         return [
             'destinations' => $organization->alertDestinations()->latest()->get(),
+            'alertDeliveries' => $canViewOutboundHistory
+                ? $organization->alertOutboundDeliveries()
+                    ->with([
+                        'destination:id,organization_id,name,is_active,events',
+                        'attempts' => fn ($query) => $query->orderByDesc('number')->limit(AlertOutboundDelivery::MAX_ATTEMPTS_PER_CYCLE * (AlertOutboundDelivery::MAX_MANUAL_RETRIES + 1)),
+                    ])
+                    ->latest('created_at')
+                    ->limit(25)
+                    ->get()
+                : collect(),
             'statusPages' => $organization->statusPages()->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->statusPages($query, $actor))->with('websites')->latest()->get(),
             'websites' => $organization->websites()->when($actor !== null, fn ($query) => app(DeployerProjectAccess::class)->websites($query, $actor))->orderBy('name')->get(),
             'environmentProjects' => $organization->projects()

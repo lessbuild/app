@@ -3,16 +3,16 @@
 namespace App\Modules\Deployer\Jobs;
 
 use App\Modules\Deployer\Models\AlertDestination;
-use App\Modules\Deployer\Notifications\AlertEmailNotification;
-use App\Modules\Deployer\Support\PublicIpAddress;
+use App\Modules\Deployer\Models\AlertOutboundDelivery;
+use App\Modules\Deployer\Models\AlertOutboundDeliveryAttempt;
+use App\Modules\Deployer\Services\DeliverAlertWebhookDelivery;
+use App\Modules\Deployer\Services\QueueAlertWebhookDelivery;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Facades\Notification;
-use RuntimeException;
+use Illuminate\Support\Facades\DB;
 
 class DeliverAlertWebhookJob implements ShouldQueue
 {
@@ -22,114 +22,96 @@ class DeliverAlertWebhookJob implements ShouldQueue
 
     public array $backoff = [10, 60, 300];
 
+    public ?string $deliveryId = null;
+
+    public int $generation = 0;
+
     /**
      * Capture the alert destination and event payload for asynchronous delivery.
      *
-     * @param  array<string, mixed>  $payload  Alert event data including event, title, and message, with optional category and resource_id.
+     * @param  array<string, mixed>  $payload  Legacy-compatible queued event data; the authoritative retry copy is encrypted in the outbox.
      * @param  int  $destinationId  Alert destination identifier reloaded before applying event subscriptions.
      */
-    public function __construct(public int $destinationId, public array $payload) {}
-
-    /**
-     * Deliver subscribed events to an active email or public HTTPS destination and record success; skip inactive or unsubscribed destinations and let delivery failures reach queue retry handling.
-     */
-    public function handle(): void
+    public function __construct(public int $destinationId, public array $payload, ?string $deliveryId = null, int $generation = 0)
     {
-        $destination = AlertDestination::query()->find($this->destinationId);
-        if (! $destination?->is_active || ! in_array($this->payload['event'] ?? null, $destination->events ?? [], true)) {
-            return;
-        }
-        if ($destination->type === 'email') {
-            Notification::route('mail', $destination->endpoint)->notify(new AlertEmailNotification($this->payload));
-            $destination->update(['last_delivered_at' => now(), 'last_failed_at' => null, 'last_error' => null]);
-
-            return;
-        }
-
-        $endpoint = $destination->type === 'pagerduty'
-            ? 'https://events.pagerduty.com/v2/enqueue'
-            : $destination->endpoint;
-        $this->assertPublicEndpoint($endpoint);
-        $body = match ($destination->type) {
-            'slack' => ['text' => "*{$this->payload['title']}*\n{$this->payload['message']}"],
-            'discord' => ['content' => "**{$this->payload['title']}**\n{$this->payload['message']}", 'allowed_mentions' => ['parse' => []]],
-            'teams' => [
-                'type' => 'message',
-                'attachments' => [[
-                    'contentType' => 'application/vnd.microsoft.card.adaptive',
-                    'contentUrl' => null,
-                    'content' => [
-                        '$schema' => 'https://adaptivecards.io/schemas/adaptive-card.json',
-                        'type' => 'AdaptiveCard',
-                        'version' => '1.2',
-                        'body' => [
-                            ['type' => 'TextBlock', 'weight' => 'Bolder', 'text' => (string) $this->payload['title']],
-                            ['type' => 'TextBlock', 'wrap' => true, 'text' => (string) $this->payload['message']],
-                        ],
-                    ],
-                ]],
-            ],
-            'pagerduty' => [
-                'routing_key' => $destination->endpoint,
-                'event_action' => ($this->payload['event'] ?? null) === 'recovery' ? 'resolve' : 'trigger',
-                'dedup_key' => (string) ($this->payload['dedup_key'] ?? (($this->payload['category'] ?? 'event').'-'.($this->payload['resource_id'] ?? 0))),
-                'payload' => [
-                    'summary' => (string) ($this->payload['title'] ?? config('app.name', 'Deployer').' alert'),
-                    'source' => config('app.name', 'Deployer'),
-                    'severity' => 'error',
-                    'custom_details' => ['message' => (string) ($this->payload['message'] ?? '')],
-                ],
-            ],
-            default => $this->payload,
-        };
-        $json = json_encode($body, JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES);
-        $signature = hash_hmac('sha256', $json, $destination->signing_secret);
-        $response = Http::withoutRedirecting()
-            ->timeout(10)
-            ->connectTimeout(5)
-            ->withHeaders([
-                'User-Agent' => 'BuildPusher-Alerts/1.0',
-                'X-BuildPusher-Signature' => 'sha256='.$signature,
-                'X-BuildPusher-Event' => (string) $this->payload['event'],
-            ])
-            ->withBody($json, 'application/json')
-            ->send('POST', $endpoint);
-        if (! $response->successful()) {
-            throw new RuntimeException("Alert destination returned HTTP {$response->status()}.");
-        }
-        $destination->update(['last_delivered_at' => now(), 'last_failed_at' => null, 'last_error' => null]);
+        $this->deliveryId = $deliveryId;
+        $this->generation = $generation;
     }
 
     /**
-     * Record a bounded delivery error and failure timestamp when the queue exhausts this alert job.
+     * Process the durable destination-scoped delivery while preserving queued jobs serialized before the outbox migration.
+     */
+    public function handle(?QueueAlertWebhookDelivery $outbox = null, ?DeliverAlertWebhookDelivery $deliveries = null): void
+    {
+        $outbox ??= app(QueueAlertWebhookDelivery::class);
+        $deliveries ??= app(DeliverAlertWebhookDelivery::class);
+        $delivery = $outbox->ensure($this->destinationId, $this->payload, $this->deliveryId);
+        if ($delivery === null) {
+            return;
+        }
+        if ($this->deliveryId === null && $delivery->generation !== 0) {
+            return;
+        }
+        $this->deliveryId = (string) $delivery->id;
+        $deliveries->process($this->deliveryId, $this->generation);
+    }
+
+    /**
+     * Record a fixed sanitized failure code when the queue exhausts this alert job.
      *
      * @param  \Throwable  $exception  Failure delivered by the queue after this job cannot complete successfully.
      */
     public function failed(\Throwable $exception): void
     {
-        AlertDestination::query()->whereKey($this->destinationId)->update([
-            'last_failed_at' => now(),
-            'last_error' => str($exception->getMessage())->limit(1000),
-        ]);
-    }
+        $query = AlertOutboundDelivery::query()->where('alert_destination_id', $this->destinationId);
+        if ($this->deliveryId !== null) {
+            $query->whereKey($this->deliveryId);
+        } elseif (is_string($this->payload['id'] ?? null)) {
+            $query->where('payload_id', $this->payload['id']);
+        } else {
+            AlertDestination::query()->whereKey($this->destinationId)->update([
+                'last_failed_at' => now('UTC'), 'last_error' => 'worker_failed',
+            ]);
 
-    /**
-     * Require HTTPS and DNS results consisting entirely of public addresses before issuing an alert request.
-     *
-     * @param  string  $endpoint  Destination URL, or the fixed PagerDuty event endpoint after resolving the destination type.
-     *
-     * @throws RuntimeException If HTTPS, hostname resolution, or public-address validation fails.
-     */
-    private function assertPublicEndpoint(string $endpoint): void
-    {
-        $parts = parse_url($endpoint);
-        $host = $parts['host'] ?? null;
-        if (($parts['scheme'] ?? null) !== 'https' || ! is_string($host) || $host === '') {
-            throw new RuntimeException('Alert destinations must use HTTPS.');
+            return;
         }
-        $addresses = filter_var($host, FILTER_VALIDATE_IP) ? [$host] : (gethostbynamel($host) ?: []);
-        if ($addresses === [] || collect($addresses)->contains(fn (string $ip): bool => ! PublicIpAddress::isValid($ip))) {
-            throw new RuntimeException('Alert destination does not resolve to a public address.');
+        $delivery = $query->first();
+        if ($delivery === null) {
+            return;
         }
+
+        DB::connection('deployer')->transaction(function () use ($delivery): void {
+            $locked = AlertOutboundDelivery::query()->whereKey($delivery->id)->lockForUpdate()->first();
+            if ($locked === null || in_array($locked->status, [
+                AlertOutboundDelivery::STATUS_DELIVERED,
+                AlertOutboundDelivery::STATUS_CANCELLED,
+                AlertOutboundDelivery::STATUS_FAILED,
+                AlertOutboundDelivery::STATUS_UNCERTAIN,
+            ], true) || $locked->generation !== $this->generation) {
+                return;
+            }
+            $wasSending = $locked->status === AlertOutboundDelivery::STATUS_SENDING;
+            $terminalStatus = $wasSending ? AlertOutboundDelivery::STATUS_UNCERTAIN : AlertOutboundDelivery::STATUS_FAILED;
+            $errorCode = $wasSending ? 'worker_interrupted' : 'worker_failed';
+            AlertOutboundDeliveryAttempt::query()
+                ->where('alert_outbound_delivery_id', $locked->id)
+                ->where('number', $locked->attempt_count)
+                ->whereNull('finished_at')
+                ->update([
+                    'status' => $terminalStatus,
+                    'error_code' => $errorCode,
+                    'finished_at' => now('UTC'),
+                ]);
+            $locked->forceFill([
+                'status' => $terminalStatus,
+                'error_code' => $errorCode,
+                'processing_token' => null,
+                'next_attempt_at' => null,
+                'failed_at' => now('UTC'),
+            ])->save();
+            AlertDestination::query()->whereKey($locked->alert_destination_id)->update([
+                'last_failed_at' => now('UTC'), 'last_error' => $errorCode,
+            ]);
+        }, attempts: 3);
     }
 }

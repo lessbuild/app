@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Modules\Deployer\Jobs\DeliverAlertWebhookJob;
+use App\Modules\Deployer\Models\AlertOutboundDeliveryPayload;
 use App\Modules\Deployer\Models\OperationalIncident;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\User;
@@ -64,8 +65,8 @@ class OperationalIncidentTest extends TestCase
             ->values();
 
         $this->assertCount(2, $alerts);
-        $first = $alerts[0]->payload;
-        $second = $alerts[1]->payload;
+        $first = AlertOutboundDeliveryPayload::query()->whereKey($alerts[0]->deliveryId)->sole()->payload;
+        $second = AlertOutboundDeliveryPayload::query()->whereKey($alerts[1]->deliveryId)->sole()->payload;
         $this->assertSame($first['incident_id'], $second['incident_id']);
         $this->assertSame("server-{$server->id}", $first['dedup_key']);
         $this->assertSame($first['dedup_key'], $second['dedup_key']);

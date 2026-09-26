@@ -12,10 +12,12 @@ use App\Modules\Deployer\Actions\Observability\DeleteMetricAlertRuleAction;
 use App\Modules\Deployer\Actions\Observability\DeleteObservabilityInvestigationViewAction;
 use App\Modules\Deployer\Actions\Observability\DeleteStatusPageAction;
 use App\Modules\Deployer\Actions\Observability\QueueAlertDestinationTestAction;
+use App\Modules\Deployer\Actions\Observability\RetryAlertOutboundDeliveryAction;
 use App\Modules\Deployer\Actions\Observability\UpdateStatusIncidentAction;
 use App\Modules\Deployer\Actions\Observability\UpdateStatusPageAction;
 use App\Modules\Deployer\Data\ObservabilityInvestigationViewData;
 use App\Modules\Deployer\Http\Requests\ObservabilityContextRequest;
+use App\Modules\Deployer\Http\Requests\RetryAlertOutboundDeliveryRequest;
 use App\Modules\Deployer\Http\Requests\StoreAlertDestinationRequest;
 use App\Modules\Deployer\Http\Requests\StoreMetricAlertRuleRequest;
 use App\Modules\Deployer\Http\Requests\StoreObservabilityInvestigationViewRequest;
@@ -24,6 +26,7 @@ use App\Modules\Deployer\Http\Requests\StoreStatusPageRequest;
 use App\Modules\Deployer\Http\Requests\UpdateStatusIncidentRequest;
 use App\Modules\Deployer\Http\Requests\UpdateStatusPageRequest;
 use App\Modules\Deployer\Models\AlertDestination;
+use App\Modules\Deployer\Models\AlertOutboundDelivery;
 use App\Modules\Deployer\Models\Environment;
 use App\Modules\Deployer\Models\MetricAlertRule;
 use App\Modules\Deployer\Models\ObservabilityInvestigationView;
@@ -213,6 +216,19 @@ class ObservabilityController extends Controller
         $queueTest->handle($destination);
 
         return back()->with('success', __('Test alert queued.'));
+    }
+
+    /** Require current-workspace manager authorization and explicit confirmation before the single bounded outbound retry. */
+    public function retryAlertDelivery(
+        RetryAlertOutboundDeliveryRequest $request,
+        AlertOutboundDelivery $delivery,
+        RetryAlertOutboundDeliveryAction $retryDelivery,
+    ): RedirectResponse {
+        $this->authorize('retry', $delivery);
+        $retryDelivery->handle($delivery, $request->user());
+
+        return to_route('observability.index', ['section' => 'alert-delivery-history'])
+            ->with('success', __('Alert delivery retry queued.'));
     }
 
     /**

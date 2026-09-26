@@ -6,6 +6,7 @@ use App\Modules\Deployer\Jobs\DeliverAlertWebhookJob;
 use App\Modules\Deployer\Jobs\Server\CollectServerMetricsJob;
 use App\Modules\Deployer\Jobs\Web\RefreshWebsiteLogJob;
 use App\Modules\Deployer\Models\AlertDestination;
+use App\Modules\Deployer\Models\AlertOutboundDelivery;
 use App\Modules\Deployer\Models\MetricAlertRule;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Server;
@@ -20,6 +21,7 @@ use App\Modules\Deployer\Notifications\ConfirmStatusSubscriptionNotification;
 use App\Modules\Deployer\Notifications\StatusIncidentNotification;
 use App\Modules\Deployer\Services\ManagedSsh;
 use App\Modules\Deployer\Services\Runner;
+use App\Modules\Deployer\Support\PublicDnsResolver;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
@@ -57,9 +59,12 @@ class ObservabilityTest extends TestCase
         $this->assertArrayNotHasKey('endpoint', $destination->toArray());
 
         $website->update(['provisioning_status' => Website::STATUS_FAILED, 'provisioning_error' => 'Caddy failed']);
+        $delivery = AlertOutboundDelivery::query()->where('destination_key', $destination->id)->sole();
+        $this->assertSame('failure', $delivery->payloadRecord->payload['event']);
+        $this->assertSame('website', $delivery->payloadRecord->payload['category']);
         Queue::assertPushed(DeliverAlertWebhookJob::class, fn (DeliverAlertWebhookJob $job): bool => $job->destinationId === $destination->id
-            && $job->payload['event'] === 'failure'
-            && $job->payload['category'] === 'website');
+            && $job->deliveryId === $delivery->id
+            && $job->payload === []);
     }
 
     public function test_observability_secondary_management_surfaces_are_collapsed_without_hiding_forms(): void
@@ -633,6 +638,9 @@ class ObservabilityTest extends TestCase
         Notification::fake();
         Http::preventStrayRequests();
         Http::fake(['https://8.8.8.8/*' => Http::response([], 202), 'https://events.pagerduty.com/*' => Http::response(['status' => 'success'], 202)]);
+        $dns = Mockery::mock(PublicDnsResolver::class);
+        $dns->shouldReceive('addresses')->once()->with('events.pagerduty.com')->andReturn(['8.8.8.8']);
+        $this->app->instance(PublicDnsResolver::class, $dns);
         [$owner] = $this->infrastructure();
         $payload = [
             'event' => 'failure', 'category' => 'deployment', 'resource_id' => 91,

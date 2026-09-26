@@ -40,6 +40,12 @@ final class DeployerSchedule
             ->when(fn (): bool => Schema::connection('deployer')->hasTable('observability_investigation_views'))
             ->withoutOverlapping()
             ->runInBackground();
+        $schedule->command('buildpusher:alert-deliveries:reconcile')
+            ->everyMinute()
+            ->when(fn (): bool => Schema::connection('deployer')->hasTable('alert_outbound_deliveries')
+                && Schema::connection('deployer')->hasTable('alert_outbound_delivery_payloads'))
+            ->withoutOverlapping()
+            ->runInBackground();
         $schedule->command('buildpusher:troubleshooting:sessions:expire')
             ->everyMinute()
             ->when(fn (): bool => Schema::connection('deployer')->hasTable('server_troubleshooting_sessions'))

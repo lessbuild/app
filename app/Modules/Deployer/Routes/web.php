@@ -315,6 +315,7 @@ Route::middleware([
         Route::post('observability/metric-rules', [ObservabilityController::class, 'storeMetricRule'])->name('observability.metric-rules.store');
         Route::delete('observability/metric-rules/{rule}', [ObservabilityController::class, 'destroyMetricRule'])->name('observability.metric-rules.destroy');
         Route::post('observability/destinations/{destination}/test', [ObservabilityController::class, 'testDestination'])->name('observability.destinations.test');
+        Route::post('observability/alert-deliveries/{delivery}/retry', [ObservabilityController::class, 'retryAlertDelivery'])->name('observability.alert-deliveries.retry');
         Route::delete('observability/destinations/{destination}', [ObservabilityController::class, 'destroyDestination'])->name('observability.destinations.destroy');
         Route::post('observability/status-pages', [ObservabilityController::class, 'storeStatusPage'])->name('observability.status-pages.store');
         Route::patch('observability/status-pages/{statusPage}', [ObservabilityController::class, 'updateStatusPage'])->name('observability.status-pages.update');

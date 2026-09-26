@@ -2,14 +2,17 @@
 
 namespace App\Modules\Deployer\Actions\Observability;
 
-use App\Modules\Deployer\Jobs\DeliverAlertWebhookJob;
 use App\Modules\Deployer\Models\AlertDestination;
 use App\Modules\Deployer\Services\Entitlements;
+use App\Modules\Deployer\Services\QueueAlertWebhookDelivery;
 use Illuminate\Support\Str;
 
 class QueueAlertDestinationTestAction
 {
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(
+        private readonly Entitlements $entitlements,
+        private readonly QueueAlertWebhookDelivery $deliveries,
+    ) {}
 
     /**
      * Queue the existing bounded test payload for an authorized alert destination.
@@ -17,7 +20,7 @@ class QueueAlertDestinationTestAction
     public function handle(AlertDestination $destination): void
     {
         $this->entitlements->enforce($destination->organization, 'alerts');
-        DeliverAlertWebhookJob::dispatch($destination->id, [
+        $this->deliveries->enqueue($destination, [
             'id' => (string) Str::uuid(),
             'event' => 'failure',
             'category' => 'test',

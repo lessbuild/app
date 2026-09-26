@@ -3,7 +3,6 @@
 namespace App\Modules\Deployer\Services;
 
 use App\Modules\Deployer\Data\OperationalIncidentAlert;
-use App\Modules\Deployer\Jobs\DeliverAlertWebhookJob;
 use App\Modules\Deployer\Models\AlertDestination;
 use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\MetricAlertRule;
@@ -188,12 +187,13 @@ class IncidentNotifier
         if ($incident) {
             $payload = [...$payload, ...$incident->deliveryMetadata()];
         }
+        $outbox = app(QueueAlertWebhookDelivery::class);
         AlertDestination::query()
             ->where('organization_id', $organizationId)
             ->where('is_active', true)
             ->get()
             ->filter(fn ($destination): bool => in_array($event, $destination->events ?? [], true))
-            ->each(fn ($destination) => DeliverAlertWebhookJob::dispatch($destination->id, $payload));
+            ->each(fn (AlertDestination $destination) => $outbox->enqueue($destination, $payload));
     }
 
     /**

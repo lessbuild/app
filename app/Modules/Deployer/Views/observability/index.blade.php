@@ -107,6 +107,7 @@
             <a href="#server-telemetry" class="ui-local-nav__link">{{ __('Telemetry') }}</a>
             <a href="#correlated-signals" class="ui-local-nav__link">{{ __('Deployment signals') }}</a>
             <a href="#alert-destinations" class="ui-local-nav__link">{{ __('Alert destinations') }}</a>
+            <a href="#alert-delivery-history" class="ui-local-nav__link">{{ __('Alert delivery history') }}</a>
             <a href="#status-pages" class="ui-local-nav__link">{{ __('Status pages') }}</a>
             <a href="#status-incident-timeline" class="ui-local-nav__link">{{ __('Status updates') }}</a>
         </x-signal.ui.local-nav>
@@ -362,6 +363,8 @@
             </x-signal.ui.panel>
         </x-signal.ui.panel>
     </div>
+
+    @include('observability._outbound-deliveries')
 
     <x-signal.ui.panel as="section" id="status-incident-timeline" class="ui-panel mt-6 scroll-mt-24 p-5 sm:p-6" aria-labelledby="status-incident-timeline-title">
         <p class="ui-eyebrow">{{ __('Communication timeline') }}</p>

@@ -3,8 +3,6 @@
 namespace App\Modules\Deployer\Models;
 
 use App\Modules\Deployer\Database\DeployerModel;
-
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -106,6 +104,12 @@ class Organization extends DeployerModel
     public function alertDestinations(): HasMany
     {
         return $this->hasMany(AlertDestination::class);
+    }
+
+    /** @return HasMany<AlertOutboundDelivery, $this> */
+    public function alertOutboundDeliveries(): HasMany
+    {
+        return $this->hasMany(AlertOutboundDelivery::class);
     }
 
     /** @return HasMany<StatusPage, $this> */
