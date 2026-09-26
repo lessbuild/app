@@ -3,6 +3,7 @@
 namespace Tests\Modules\Analytics\Feature;
 
 use App\Core\Models\AnalyticsCheckoutAttempt;
+use App\Core\Models\BillingCustomer;
 use App\Core\Models\CurrentProductSubscription;
 use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
@@ -15,8 +16,10 @@ use App\Modules\Analytics\Services\Billing\AnalyticsBillingAccess;
 use App\Modules\Analytics\Services\Billing\AnalyticsBillingCatalog;
 use App\Modules\Analytics\Services\Billing\AnalyticsBillingCheckout;
 use App\Modules\Analytics\Services\Billing\AnalyticsBillingException;
+use App\Modules\Analytics\Services\Billing\ReconcileAnalyticsCheckoutAttempt;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request as ClientRequest;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -119,13 +122,7 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
             if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
                 $checkoutPosts++;
 
-                return Http::response([
-                    'id' => 'cs_test_analyticsfixture123',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_analyticsfixture123',
-                    'status' => 'open',
-                    'expires_at' => now()->addHour()->timestamp,
-                    'customer' => null,
-                ], 200);
+                return Http::response($this->providerCheckoutResponse($request, 'cs_test_analyticsfixture123'), 200);
             }
 
             if ($path === '/v1/checkout/sessions/cs_test_analyticsfixture123') {
@@ -134,8 +131,11 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
                 return Http::response([
                     'id' => 'cs_test_analyticsfixture123',
                     'url' => 'https://checkout.stripe.com/c/pay/cs_test_analyticsfixture123',
+                    'mode' => 'subscription',
+                    'client_reference_id' => $attemptId,
                     'status' => 'open',
                     'expires_at' => now()->addHour()->timestamp,
+                    'customer' => null,
                     'metadata' => [
                         'product' => 'analytics',
                         'core_workspace_id' => $coreWorkspaceId,
@@ -222,8 +222,11 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
                 return Http::response([
                     'id' => 'cs_test_existingfixture123',
                     'url' => 'https://checkout.stripe.com/c/pay/cs_test_existingfixture123',
+                    'mode' => 'subscription',
+                    'client_reference_id' => $openId,
                     'status' => 'open',
                     'expires_at' => now()->addHour()->timestamp,
+                    'customer' => null,
                     'metadata' => [
                         'product' => 'analytics',
                         'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
@@ -272,13 +275,7 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
             if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
                 $providerKeys[] = $request->header('Idempotency-Key')[0] ?? null;
 
-                return Http::response([
-                    'id' => 'cs_test_recoveredfixture123',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_recoveredfixture123',
-                    'status' => 'open',
-                    'expires_at' => now()->addHour()->timestamp,
-                    'customer' => null,
-                ], 200);
+                return Http::response($this->providerCheckoutResponse($request, 'cs_test_recoveredfixture123'), 200);
             }
 
             return Http::response(['error' => 'Unexpected test request.'], 404);
@@ -334,6 +331,442 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
         $this->assertSame(1, AnalyticsCheckoutAttempt::query()->count());
     }
 
+    public function test_recovered_completed_session_blocks_new_checkout_until_core_subscription_projection(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $this->actingAs($actor['platform_user'], 'platform');
+        $this->initializeLegacyPlanSlot($fixture['core_workspace']);
+        $this->configureBilling();
+        $attempt = $this->makeAttempt(
+            $fixture, $actor['platform_user'], 'analytics-recovered-complete-key-2026',
+            'completed', 'cs_test_recoveredcomplete123', 'sub_recoveredcomplete123',
+        );
+        Http::fake(function (ClientRequest $request) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/prices/price_fixture_pro') {
+                return Http::response($this->providerPrice(), 200);
+            }
+
+            return Http::response(['error' => 'No new Checkout Session may be created.'], 409);
+        });
+
+        try {
+            $this->startCheckout($fixture['analytics_workspace'], $actor['platform_user'], 'analytics-second-after-complete-2026');
+            $this->fail('A recovered paid Session must keep the slot reserved until signed Core projection.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('awaiting signed subscription reconciliation', $exception->getMessage());
+        }
+        $this->assertSame('completed', $attempt->fresh()->status);
+        Http::assertNotSent(fn (ClientRequest $request): bool => parse_url($request->url(), PHP_URL_PATH) === '/v1/checkout/sessions'
+            && $request->method() === 'POST');
+    }
+
+    public function test_historical_subscription_row_without_current_slot_pointer_does_not_release_completed_attempt(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $this->actingAs($actor['platform_user'], 'platform');
+        $this->initializeLegacyPlanSlot($fixture['core_workspace']);
+        $this->configureBilling();
+        $attempt = $this->makeAttempt(
+            $fixture, $actor['platform_user'], 'analytics-historical-complete-key-2026',
+            'completed', 'cs_test_historical123', 'sub_historical123',
+        );
+        $customer = BillingCustomer::query()->create([
+            'workspace_id' => $fixture['core_workspace']->getKey(), 'provider' => 'stripe',
+            'provider_account_key' => 'acct_fixture123', 'provider_customer_id' => 'cus_test_historical123',
+            'status' => 'active',
+        ]);
+        ProductSubscription::query()->create([
+            'workspace_id' => $fixture['core_workspace']->getKey(), 'billing_customer_id' => $customer->getKey(),
+            'product' => 'analytics', 'provider' => 'stripe', 'provider_account_key' => 'acct_fixture123',
+            'provider_subscription_id' => 'sub_historical123', 'provider_price_id' => 'price_fixture_pro',
+            'plan_key' => 'pro', 'status' => 'canceled', 'quantity' => 1,
+            'metadata' => ['billing_state' => ['checkout_attempt_id' => (string) $attempt->getKey()]],
+        ]);
+        Http::fake(function (ClientRequest $request) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/prices/price_fixture_pro') {
+                return Http::response($this->providerPrice(), 200);
+            }
+
+            return Http::response(['error' => 'No new Checkout Session may be created.'], 409);
+        });
+
+        try {
+            $this->startCheckout($fixture['analytics_workspace'], $actor['platform_user'], 'analytics-after-historical-2026');
+            $this->fail('A historical row cannot settle a paid checkout while the Core slot is still legacy.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('awaiting signed subscription reconciliation', $exception->getMessage());
+        }
+        Http::assertNotSent(fn (ClientRequest $request): bool => parse_url($request->url(), PHP_URL_PATH) === '/v1/checkout/sessions'
+            && $request->method() === 'POST');
+    }
+
+    public function test_stale_local_cancellation_does_not_allow_renewal_while_provider_subscription_is_live(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $this->actingAs($actor['platform_user'], 'platform');
+        $renewal = $this->initializeCanceledAnalyticsSlot($fixture, $actor['platform_user']);
+        $this->configureBilling();
+        $checkoutPosts = 0;
+        Http::fake(function (ClientRequest $request) use (&$checkoutPosts, $fixture, $renewal) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/prices/price_fixture_pro') {
+                return Http::response($this->providerPrice(), 200);
+            }
+            if ($path === '/v1/subscriptions/'.$renewal['subscription']->provider_subscription_id) {
+                return Http::response($this->providerSubscriptionFor($fixture, $renewal, [
+                    'status' => 'active',
+                    'cancel_at_period_end' => true,
+                ]), 200);
+            }
+            if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
+                $checkoutPosts++;
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        try {
+            $this->startCheckout($fixture['analytics_workspace'], $actor['platform_user'], 'analytics-stale-cancel-key-2026');
+            $this->fail('A locally canceled subscription must not renew while Stripe reports it as active.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('terminal Analytics subscription', $exception->getMessage());
+        }
+
+        $this->assertSame(0, $checkoutPosts);
+    }
+
+    public function test_canceled_slot_purchase_availability_fails_closed_when_stripe_is_unreachable(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $renewal = $this->initializeCanceledAnalyticsSlot($fixture, $actor['platform_user']);
+        $this->configureBilling();
+        Http::fake(function (ClientRequest $request) use ($renewal) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/subscriptions/'.$renewal['subscription']->provider_subscription_id) {
+                throw new ConnectionException('Stripe is temporarily unreachable.');
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        $available = app(AnalyticsBillingCheckout::class)->purchaseAvailable(
+            $fixture['analytics_workspace'],
+            $fixture['core_workspace'],
+            'acct_fixture123',
+        );
+
+        $this->assertFalse($available);
+        $this->actingAs($actor['platform_user'], 'platform')
+            ->get(route('analytics.workspaces.billing', $fixture['analytics_workspace']))
+            ->assertOk();
+    }
+
+    public function test_renewal_is_blocked_when_customer_has_another_live_analytics_subscription(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $this->actingAs($actor['platform_user'], 'platform');
+        $renewal = $this->initializeCanceledAnalyticsSlot($fixture, $actor['platform_user']);
+        $this->configureBilling();
+        $other = $this->providerSubscriptionFor($fixture, $renewal, [
+            'id' => 'sub_test_otheranalyticsfixture123',
+            'status' => 'active',
+            'metadata' => [
+                'product' => 'analytics',
+                'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
+                'analytics_workspace_id' => (string) $fixture['analytics_workspace']->getKey(),
+                'provider_account_key' => 'acct_fixture123',
+                'checkout_attempt_id' => '01K6F4VYGW0H8K9JDKBN6T5N3P',
+            ],
+        ]);
+        $checkoutPosts = 0;
+        Http::fake(function (ClientRequest $request) use (&$checkoutPosts, $renewal, $other, $fixture) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/prices/price_fixture_pro') {
+                return Http::response($this->providerPrice(), 200);
+            }
+            if ($path === '/v1/subscriptions/'.$renewal['subscription']->provider_subscription_id) {
+                return Http::response($this->providerSubscriptionFor($fixture, $renewal), 200);
+            }
+            if ($path === '/v1/subscriptions') {
+                return Http::response(['data' => [
+                    $this->providerSubscriptionFor($fixture, $renewal),
+                    $other,
+                ], 'has_more' => false], 200);
+            }
+            if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
+                $checkoutPosts++;
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        try {
+            $this->startCheckout($fixture['analytics_workspace'], $actor['platform_user'], 'analytics-multiple-live-key-2026');
+            $this->fail('A second live Analytics subscription for the workspace must prevent renewal checkout.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('another live Analytics subscription', $exception->getMessage());
+        }
+
+        $this->assertSame(0, $checkoutPosts);
+    }
+
+    public function test_verified_canceled_subscription_renews_on_its_existing_customer_and_exact_workspace(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $this->actingAs($actor['platform_user'], 'platform');
+        $renewal = $this->initializeCanceledAnalyticsSlot($fixture, $actor['platform_user']);
+        $historicalAttempt = $this->makeAttempt(
+            $fixture, $actor['platform_user'], 'analytics-earlier-paid-key-2026',
+            'completed', 'cs_test_earlierpaid123', 'sub_test_earlierpaid123',
+        );
+        AnalyticsCheckoutAttempt::query()->whereKey($historicalAttempt->getKey())
+            ->update(['created_at' => now('UTC')->subDay()]);
+        $historicalSubscription = ProductSubscription::query()->create([
+            'workspace_id' => $fixture['core_workspace']->getKey(),
+            'billing_customer_id' => $renewal['customer']->getKey(),
+            'product' => 'analytics', 'provider' => 'stripe', 'provider_account_key' => 'acct_fixture123',
+            'provider_subscription_id' => 'sub_test_earlierpaid123', 'provider_price_id' => 'price_fixture_pro',
+            'plan_key' => 'pro', 'status' => 'canceled', 'quantity' => 1,
+            'metadata' => ['billing_state' => ['checkout_attempt_id' => (string) $historicalAttempt->getKey()]],
+        ]);
+        $this->configureBilling();
+        $posted = null;
+        Http::fake(function (ClientRequest $request) use (&$posted, $fixture, $renewal, $historicalAttempt, $historicalSubscription) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/prices/price_fixture_pro') {
+                return Http::response($this->providerPrice(), 200);
+            }
+            if ($path === '/v1/subscriptions/'.$renewal['subscription']->provider_subscription_id) {
+                return Http::response($this->providerSubscriptionFor($fixture, $renewal), 200);
+            }
+            if ($path === '/v1/subscriptions') {
+                return Http::response(['data' => [
+                    $this->providerSubscriptionFor($fixture, $renewal),
+                    $this->providerSubscriptionFor($fixture, [
+                        'attempt' => $historicalAttempt, 'customer' => $renewal['customer'], 'subscription' => $historicalSubscription,
+                    ]),
+                ], 'has_more' => false], 200);
+            }
+            if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
+                $posted = $request->data();
+
+                return Http::response($this->providerCheckoutResponse(
+                    $request,
+                    'cs_test_analyticsrenewalfixture123',
+                    customerId: $renewal['customer']->provider_customer_id,
+                ), 200);
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        $result = $this->startCheckout($fixture['analytics_workspace'], $actor['platform_user'], 'analytics-renewal-key-2026');
+
+        $this->assertSame('cs_test_analyticsrenewalfixture123', $result['id']);
+        $this->assertSame($renewal['customer']->provider_customer_id, $posted['customer']);
+        $this->assertSame('analytics', $posted['metadata']['product']);
+        $this->assertSame((string) $fixture['core_workspace']->getKey(), $posted['metadata']['core_workspace_id']);
+        $this->assertSame((string) $fixture['analytics_workspace']->getKey(), $posted['metadata']['analytics_workspace_id']);
+        $attempt = AnalyticsCheckoutAttempt::query()->whereNull('provider_subscription_id')->orderByDesc('created_at')->firstOrFail();
+        $this->assertSame($renewal['customer']->provider_customer_id, $attempt->provider_customer_id);
+        $this->assertSame((string) $attempt->getKey(), $posted['metadata']['checkout_attempt_id']);
+    }
+
+    public function test_aged_uncertain_attempt_operator_reconciliation_attaches_a_matching_provider_session(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $attempt = $this->makeAttempt($fixture, $actor['platform_user'], 'analytics-operator-session-key-2026', 'failed');
+        AnalyticsCheckoutAttempt::query()->whereKey($attempt->getKey())->update(['created_at' => now('UTC')->subHours(13)]);
+        $attempt = $attempt->fresh();
+        $this->configureBilling();
+        $metadata = [
+            'product' => 'analytics',
+            'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
+            'analytics_workspace_id' => (string) $fixture['analytics_workspace']->getKey(),
+            'provider_account_key' => 'acct_fixture123',
+            'checkout_attempt_id' => (string) $attempt->getKey(),
+        ];
+        Http::fake(function (ClientRequest $request) use ($attempt, $metadata) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/checkout/sessions') {
+                parse_str((string) parse_url($request->url(), PHP_URL_QUERY), $query);
+                $session = [
+                    'id' => 'cs_test_operatorfoundfixture123',
+                    'object' => 'checkout.session',
+                    'mode' => 'subscription',
+                    'client_reference_id' => (string) $attempt->getKey(),
+                    'status' => 'open',
+                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_operatorfoundfixture123',
+                    'expires_at' => now()->addHour()->timestamp,
+                    'customer' => null,
+                    'subscription' => null,
+                    'metadata' => $metadata,
+                ];
+
+                return Http::response([
+                    'data' => ($query['status'] ?? null) === 'open' ? [$session] : [],
+                    'has_more' => false,
+                ], 200);
+            }
+            if ($path === '/v1/checkout/sessions/cs_test_operatorfoundfixture123') {
+                return Http::response([
+                    'id' => 'cs_test_operatorfoundfixture123',
+                    'object' => 'checkout.session',
+                    'mode' => 'subscription',
+                    'client_reference_id' => (string) $attempt->getKey(),
+                    'status' => 'open',
+                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_operatorfoundfixture123',
+                    'expires_at' => now()->addHour()->timestamp,
+                    'customer' => null,
+                    'subscription' => null,
+                    'metadata' => $metadata,
+                ], 200);
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        $result = app(ReconcileAnalyticsCheckoutAttempt::class)->handle((string) $attempt->getKey(), apply: true);
+
+        $this->assertSame('provider_session_found', $result['result']);
+        $this->assertTrue($result['changed']);
+        $this->assertSame('cs_test_operatorfoundfixture123', $attempt->fresh()->provider_checkout_session_id);
+        $this->assertSame('open', $attempt->fresh()->status);
+    }
+
+    public function test_aged_uncertain_attempt_stays_exclusive_after_negative_provider_inventory(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $attempt = $this->makeAttempt($fixture, $actor['platform_user'], 'analytics-operator-absent-key-2026', 'failed');
+        AnalyticsCheckoutAttempt::query()->whereKey($attempt->getKey())->update(['created_at' => now('UTC')->subHours(13)]);
+        $attempt = $attempt->fresh();
+        $this->configureBilling();
+        Http::fake(function (ClientRequest $request) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/checkout/sessions') {
+                return Http::response(['data' => [], 'has_more' => false], 200);
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        $inspection = app(ReconcileAnalyticsCheckoutAttempt::class)->handle((string) $attempt->getKey());
+        $this->assertSame('provider_session_absent', $inspection['result']);
+        $this->assertSame('failed', $attempt->fresh()->status);
+
+        $applied = app(ReconcileAnalyticsCheckoutAttempt::class)->handle((string) $attempt->getKey(), apply: true);
+        $this->assertSame('provider_session_absent', $applied['result']);
+        $this->assertFalse($applied['changed']);
+        $this->assertSame('failed', $attempt->fresh()->status);
+        $this->assertNull($attempt->fresh()->provider_checkout_session_id);
+    }
+
+    public function test_operator_reconciliation_rejects_expired_session_with_missing_subscription_field(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $attempt = $this->makeAttempt($fixture, $actor['platform_user'], 'analytics-malformed-session-key-2026', 'failed');
+        AnalyticsCheckoutAttempt::query()->whereKey($attempt->getKey())->update(['created_at' => now('UTC')->subHours(13)]);
+        $this->configureBilling();
+        $metadata = [
+            'product' => 'analytics',
+            'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
+            'analytics_workspace_id' => (string) $fixture['analytics_workspace']->getKey(),
+            'provider_account_key' => 'acct_fixture123',
+            'checkout_attempt_id' => (string) $attempt->getKey(),
+        ];
+        Http::fake(function (ClientRequest $request) use ($attempt, $metadata) {
+            $path = parse_url($request->url(), PHP_URL_PATH);
+            if ($path === '/v1/account') {
+                return Http::response(['id' => 'acct_fixture123'], 200);
+            }
+            if ($path === '/v1/checkout/sessions') {
+                return Http::response([
+                    'data' => ($request->data()['status'] ?? null) === 'expired'
+                        ? [['id' => 'cs_test_malformed123', 'status' => 'expired', 'customer' => null,
+                            'client_reference_id' => (string) $attempt->getKey(), 'metadata' => $metadata]] : [],
+                    'has_more' => false,
+                ], 200);
+            }
+            if ($path === '/v1/checkout/sessions/cs_test_malformed123') {
+                return Http::response([
+                    'id' => 'cs_test_malformed123', 'mode' => 'subscription', 'status' => 'expired',
+                    'client_reference_id' => (string) $attempt->getKey(), 'customer' => null,
+                    'metadata' => $metadata,
+                ], 200);
+            }
+
+            return Http::response(['error' => 'Unexpected test request.'], 404);
+        });
+
+        try {
+            app(ReconcileAnalyticsCheckoutAttempt::class)->handle((string) $attempt->getKey(), apply: true);
+            $this->fail('A missing subscription field cannot prove an expired session has no paid subscription.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('incomplete Analytics Checkout Session', $exception->getMessage());
+        }
+        $this->assertSame('failed', $attempt->fresh()->status);
+        $this->assertNull($attempt->fresh()->provider_checkout_session_id);
+    }
+
+    public function test_operator_reconciliation_rejects_an_attempt_from_another_stripe_account(): void
+    {
+        $fixture = $this->workspaceFixture();
+        $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
+        $attempt = $this->makeAttempt($fixture, $actor['platform_user'], 'analytics-other-account-attempt-2026', 'failed');
+        AnalyticsCheckoutAttempt::query()->whereKey($attempt->getKey())->update([
+            'created_at' => now('UTC')->subHours(13), 'provider_account_key' => 'acct_other123',
+        ]);
+        $this->configureBilling();
+        Http::fake([
+            'https://api.stripe.com/v1/account' => Http::response(['id' => 'acct_fixture123'], 200),
+        ]);
+
+        try {
+            app(ReconcileAnalyticsCheckoutAttempt::class)->handle((string) $attempt->getKey(), apply: true);
+            $this->fail('A different configured Stripe account cannot reconcile this attempt.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('another Stripe account', $exception->getMessage());
+        }
+        $this->assertSame('failed', $attempt->fresh()->status);
+        $this->assertNull($attempt->fresh()->provider_checkout_session_id);
+        Http::assertSentCount(1);
+    }
+
     public function test_same_failed_attempt_replays_with_its_stable_provider_idempotency_key(): void
     {
         $fixture = $this->workspaceFixture();
@@ -355,13 +788,7 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
             if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
                 $providerKeys[] = $request->header('Idempotency-Key')[0] ?? null;
 
-                return Http::response([
-                    'id' => 'cs_test_replayfixture123',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_replayfixture123',
-                    'status' => 'open',
-                    'expires_at' => now()->addHour()->timestamp,
-                    'customer' => null,
-                ], 200);
+                return Http::response($this->providerCheckoutResponse($request, 'cs_test_replayfixture123'), 200);
             }
 
             return Http::response(['error' => 'Unexpected test request.'], 404);
@@ -447,8 +874,11 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
                 return Http::response([
                     'id' => 'cs_test_expiringfixture123',
                     'url' => 'https://checkout.stripe.com/c/pay/cs_test_expiringfixture123',
+                    'mode' => 'subscription',
+                    'client_reference_id' => $attemptId,
                     'status' => 'open',
                     'expires_at' => now()->subMinute()->timestamp,
+                    'customer' => null,
                     'metadata' => [
                         'product' => 'analytics',
                         'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
@@ -496,13 +926,12 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
                 return Http::response($this->providerPrice(), 200);
             }
             if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
-                return Http::response([
-                    'id' => 'cs_test_createexpiredfixture123',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_createexpiredfixture123',
-                    'status' => 'expired',
-                    'expires_at' => now()->subMinute()->timestamp,
-                    'customer' => null,
-                ], 200);
+                return Http::response($this->providerCheckoutResponse(
+                    $request,
+                    'cs_test_createexpiredfixture123',
+                    status: 'expired',
+                    expiresAt: now()->subMinute()->timestamp,
+                ), 200);
             }
 
             return Http::response(['error' => 'Unexpected test request.'], 404);
@@ -552,9 +981,12 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
                 return Http::response([
                     'id' => 'cs_test_expiredfixture123',
                     'url' => 'https://checkout.stripe.com/c/pay/cs_test_expiredfixture123',
+                    'mode' => 'subscription',
+                    'client_reference_id' => $attemptId,
                     'status' => 'expired',
                     'expires_at' => now()->subMinute()->timestamp,
                     'subscription' => null,
+                    'customer' => null,
                     'metadata' => [
                         'product' => 'analytics',
                         'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
@@ -567,13 +999,7 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
             if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
                 $newSessions++;
 
-                return Http::response([
-                    'id' => 'cs_test_afterexpiryfixture123',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_afterexpiryfixture123',
-                    'status' => 'open',
-                    'expires_at' => now()->addHour()->timestamp,
-                    'customer' => null,
-                ], 200);
+                return Http::response($this->providerCheckoutResponse($request, 'cs_test_afterexpiryfixture123'), 200);
             }
 
             return Http::response(['error' => 'Unexpected test request.'], 404);
@@ -601,7 +1027,7 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
         $this->assertSame(1, $newSessions);
     }
 
-    public function test_completed_history_does_not_block_a_new_checkout_attempt(): void
+    public function test_unbound_completed_history_blocks_a_new_checkout_attempt(): void
     {
         $fixture = $this->workspaceFixture();
         $actor = $this->addActor($fixture, role: 'billing', nativeRole: 'viewer', withGrant: true);
@@ -641,27 +1067,23 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
             if ($path === '/v1/checkout/sessions' && $request->method() === 'POST') {
                 $checkoutPosts++;
 
-                return Http::response([
-                    'id' => 'cs_test_newfixture123',
-                    'url' => 'https://checkout.stripe.com/c/pay/cs_test_newfixture123',
-                    'status' => 'open',
-                    'expires_at' => now()->addHour()->timestamp,
-                    'customer' => null,
-                ], 200);
+                return Http::response($this->providerCheckoutResponse($request, 'cs_test_newfixture123'), 200);
             }
 
             return Http::response(['error' => 'Unexpected test request.'], 404);
         });
 
-        $result = $this->startCheckout(
-            $fixture['analytics_workspace'],
-            $actor['platform_user'],
-            'analytics-new-key-after-history-2026',
-        );
-
-        $this->assertSame('cs_test_newfixture123', $result['id']);
-        $this->assertFalse($result['reused']);
-        $this->assertSame(1, $checkoutPosts);
+        try {
+            $this->startCheckout(
+                $fixture['analytics_workspace'],
+                $actor['platform_user'],
+                'analytics-new-key-after-history-2026',
+            );
+            $this->fail('A completed attempt without an exact Core projection cannot release the purchase slot.');
+        } catch (AnalyticsBillingException $exception) {
+            $this->assertStringContainsString('awaiting signed subscription reconciliation', $exception->getMessage());
+        }
+        $this->assertSame(0, $checkoutPosts);
     }
 
     public function test_corrupt_current_core_plan_snapshot_blocks_checkout_before_provider_calls(): void
@@ -856,6 +1278,86 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
         return $subscription;
     }
 
+    /** @param array{analytics_workspace:AnalyticsWorkspace,core_workspace:CoreWorkspace} $fixture
+     * @return array{attempt:AnalyticsCheckoutAttempt,customer:BillingCustomer,subscription:ProductSubscription}
+     */
+    private function initializeCanceledAnalyticsSlot(array $fixture, PlatformUser $actor): array
+    {
+        $this->initializeLegacyPlanSlot($fixture['core_workspace']);
+        $attempt = $this->makeAttempt(
+            $fixture,
+            $actor,
+            'analytics-original-paid-key-2026',
+            'completed',
+            'cs_test_originalpaidfixture123',
+            'sub_test_originalpaidfixture123',
+        );
+        $customer = BillingCustomer::query()->create([
+            'workspace_id' => $fixture['core_workspace']->getKey(),
+            'provider' => 'stripe',
+            'provider_account_key' => 'acct_fixture123',
+            'provider_customer_id' => 'cus_test_analyticsfixture123',
+            'status' => 'active',
+        ]);
+        $attempt->forceFill(['provider_customer_id' => $customer->provider_customer_id])->save();
+        $subscription = ProductSubscription::query()->create([
+            'workspace_id' => $fixture['core_workspace']->getKey(),
+            'billing_customer_id' => $customer->getKey(),
+            'product' => 'analytics',
+            'provider' => 'stripe',
+            'provider_account_key' => 'acct_fixture123',
+            'provider_subscription_id' => 'sub_test_originalpaidfixture123',
+            'provider_price_id' => 'price_fixture_pro',
+            'plan_key' => 'pro',
+            'status' => 'canceled',
+            'quantity' => 1,
+            'metadata' => [
+                'plan_snapshot' => $this->plan('price_fixture_pro')['snapshot'],
+                'billing_state' => [
+                    'source' => 'analytics_stripe',
+                    'checkout_attempt_id' => (string) $attempt->getKey(),
+                    'cancel_at_period_end' => false,
+                ],
+            ],
+        ]);
+        CurrentProductSubscription::query()
+            ->where('workspace_id', $fixture['core_workspace']->getKey())
+            ->where('product', 'analytics')
+            ->firstOrFail()
+            ->forceFill(['product_subscription_id' => $subscription->getKey()])
+            ->save();
+
+        return ['attempt' => $attempt, 'customer' => $customer, 'subscription' => $subscription];
+    }
+
+    /** @param array{analytics_workspace:AnalyticsWorkspace,core_workspace:CoreWorkspace} $fixture
+     * @param  array{attempt:AnalyticsCheckoutAttempt,customer:BillingCustomer,subscription:ProductSubscription}  $renewal
+     * @param  array<string, mixed>  $overrides
+     * @return array<string, mixed>
+     */
+    private function providerSubscriptionFor(array $fixture, array $renewal, array $overrides = []): array
+    {
+        return array_replace_recursive([
+            'id' => (string) $renewal['subscription']->provider_subscription_id,
+            'object' => 'subscription',
+            'livemode' => false,
+            'status' => 'canceled',
+            'cancel_at_period_end' => false,
+            'customer' => $renewal['customer']->provider_customer_id,
+            'metadata' => [
+                'product' => 'analytics',
+                'core_workspace_id' => (string) $fixture['core_workspace']->getKey(),
+                'analytics_workspace_id' => (string) $fixture['analytics_workspace']->getKey(),
+                'provider_account_key' => 'acct_fixture123',
+                'checkout_attempt_id' => (string) $renewal['attempt']->getKey(),
+            ],
+            'items' => ['data' => [[
+                'quantity' => 1,
+                'price' => ['id' => 'price_fixture_pro'],
+            ]]],
+        ], $overrides);
+    }
+
     /** @param array{analytics_workspace:AnalyticsWorkspace,core_workspace:CoreWorkspace} $fixture */
     private function makeAttempt(
         array $fixture,
@@ -950,6 +1452,28 @@ final class AnalyticsBillingAuthorizationTest extends TestCase
                 'interval_count' => 1,
                 'usage_type' => 'licensed',
             ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    private function providerCheckoutResponse(
+        ClientRequest $request,
+        string $sessionId,
+        string $status = 'open',
+        ?string $customerId = null,
+        ?int $expiresAt = null,
+    ): array {
+        $parameters = $request->data();
+
+        return [
+            'id' => $sessionId,
+            'url' => 'https://checkout.stripe.com/c/pay/'.$sessionId,
+            'mode' => $parameters['mode'] ?? null,
+            'client_reference_id' => $parameters['client_reference_id'] ?? null,
+            'metadata' => $parameters['metadata'] ?? [],
+            'status' => $status,
+            'expires_at' => $expiresAt ?? now()->addHour()->timestamp,
+            'customer' => $customerId ?? ($parameters['customer'] ?? null),
         ];
     }
 

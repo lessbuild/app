@@ -169,6 +169,7 @@ final class AnalyticsBillingCheckoutTest extends TestCase
             'https://api.stripe.com/v1/checkout/sessions' => Http::response([
                 'id' => 'cs_test_fixture123',
                 'url' => 'https://checkout.stripe.com/c/pay/cs_test_fixture123',
+                'mode' => 'subscription',
                 'status' => 'open',
                 'expires_at' => now()->addHour()->timestamp,
                 'customer' => null,

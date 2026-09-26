@@ -9,6 +9,12 @@ use Illuminate\Support\Facades\Http;
 /** Analytics-only Stripe transport. Every operation first verifies the configured account. */
 final class AnalyticsStripeClient
 {
+    public const REQUEST_TIMEOUT_SECONDS = 10;
+
+    private const MAX_CHECKOUT_INVENTORY_ROWS = 1000;
+
+    private const MAX_SUBSCRIPTION_INVENTORY_ROWS = 1000;
+
     private ?string $verifiedAccountId = null;
 
     private ?string $verifiedConfigurationHash = null;
@@ -67,7 +73,7 @@ final class AnalyticsStripeClient
     }
 
     /** @param array<string, mixed> $parameters
-     * @return array{id:string,url:string,status:?string,expires_at:?int,customer_id:?string}
+     * @return array{id:string,url:string,status:?string,expires_at:?int,customer_id:?string,mode:?string,client_reference_id:?string,metadata:?array<string,mixed>}
      */
     public function createCheckoutSession(array $parameters, string $idempotencyKey): array
     {
@@ -87,12 +93,34 @@ final class AnalyticsStripeClient
             throw new AnalyticsBillingException('Stripe returned an invalid Analytics checkout session.');
         }
 
+        $metadata = is_array($session['metadata'] ?? null) ? $session['metadata'] : null;
+        $customerId = $this->referenceId($session['customer'] ?? null);
+        $metadataMatches = true;
+        if (is_array($parameters['metadata'] ?? null)) {
+            foreach ($parameters['metadata'] as $key => $value) {
+                if (! is_array($metadata) || ($metadata[$key] ?? null) !== $value) {
+                    $metadataMatches = false;
+                    break;
+                }
+            }
+        }
+        if ((isset($parameters['mode']) && ($session['mode'] ?? null) !== $parameters['mode'])
+            || (isset($parameters['client_reference_id'])
+                && ($session['client_reference_id'] ?? null) !== $parameters['client_reference_id'])
+            || (isset($parameters['customer']) && $customerId !== $parameters['customer'])
+            || ! $metadataMatches) {
+            throw new AnalyticsBillingException('Stripe returned an Analytics Checkout Session with a conflicting workspace binding.');
+        }
+
         return [
             'id' => $session['id'],
             'url' => $session['url'],
             'status' => is_string($session['status'] ?? null) ? $session['status'] : null,
             'expires_at' => is_int($session['expires_at'] ?? null) ? $session['expires_at'] : null,
-            'customer_id' => $this->referenceId($session['customer'] ?? null),
+            'customer_id' => $customerId,
+            'mode' => is_string($session['mode'] ?? null) ? $session['mode'] : null,
+            'client_reference_id' => is_string($session['client_reference_id'] ?? null) ? $session['client_reference_id'] : null,
+            'metadata' => $metadata,
         ];
     }
 
@@ -161,6 +189,128 @@ final class AnalyticsStripeClient
         return $subscription;
     }
 
+    /** @return list<array<string, mixed>> */
+    public function listSubscriptionsForCustomer(string $customerId): array
+    {
+        $this->assertId($customerId, 'cus');
+        $subscriptions = [];
+        $cursor = null;
+        $seenCursors = [];
+
+        do {
+            $parameters = ['customer' => $customerId, 'status' => 'all', 'limit' => 100];
+            if ($cursor !== null) {
+                $parameters['starting_after'] = $cursor;
+            }
+            $response = $this->authorizedRequest()->get($this->endpoint('v1/subscriptions'), $parameters);
+            $this->assertSuccessful($response, 'list Analytics customer subscriptions');
+            $page = $response->json();
+            if (! is_array($page) || ! is_array($page['data'] ?? null) || ! is_bool($page['has_more'] ?? null)) {
+                throw new AnalyticsBillingException('Stripe returned an invalid Analytics subscription list.');
+            }
+            if (count($subscriptions) + count($page['data']) > self::MAX_SUBSCRIPTION_INVENTORY_ROWS) {
+                throw new AnalyticsBillingException('The Analytics subscription inventory is too large for safe renewal.');
+            }
+
+            foreach ($page['data'] as $subscription) {
+                if (! is_array($subscription)
+                    || ! is_string($subscription['id'] ?? null)
+                    || ! preg_match('/^sub_[A-Za-z0-9]+$/', $subscription['id'])
+                    || ! is_string($subscription['status'] ?? null)
+                    || $this->referenceId($subscription['customer'] ?? null) !== $customerId) {
+                    throw new AnalyticsBillingException('Stripe returned an invalid Analytics subscription list.');
+                }
+                $subscriptions[] = $subscription;
+            }
+
+            if ($page['has_more']) {
+                $last = $page['data'][array_key_last($page['data'])] ?? null;
+                $next = is_array($last) ? ($last['id'] ?? null) : null;
+                if (! is_string($next) || isset($seenCursors[$next])) {
+                    throw new AnalyticsBillingException('Stripe returned an incomplete Analytics subscription list.');
+                }
+                $seenCursors[$next] = true;
+                $cursor = $next;
+            } else {
+                $cursor = null;
+            }
+        } while ($cursor !== null);
+
+        return $subscriptions;
+    }
+
+    /**
+     * List every Checkout Session status in an attempt's creation window. Stripe
+     * does not support filtering by client_reference_id, so callers must inspect
+     * the returned session metadata and paginate every status completely.
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function listCheckoutSessions(int $createdFrom, int $createdTo, ?string $customerId = null): array
+    {
+        if ($createdFrom < 0 || $createdTo < $createdFrom) {
+            throw new AnalyticsBillingException('The Analytics checkout reconciliation window is invalid.');
+        }
+        if ($customerId !== null) {
+            $this->assertId($customerId, 'cus');
+        }
+
+        $sessions = [];
+        $scanned = 0;
+        foreach (['open', 'complete', 'expired'] as $status) {
+            $cursor = null;
+            $seenCursors = [];
+            do {
+                $parameters = [
+                    'created' => ['gte' => $createdFrom, 'lte' => $createdTo],
+                    'status' => $status,
+                    'limit' => 100,
+                ];
+                if ($customerId !== null) {
+                    $parameters['customer'] = $customerId;
+                }
+                if ($cursor !== null) {
+                    $parameters['starting_after'] = $cursor;
+                }
+                $response = $this->authorizedRequest()->get($this->endpoint('v1/checkout/sessions'), $parameters);
+                $this->assertSuccessful($response, 'list Analytics Checkout Sessions');
+                $page = $response->json();
+                if (! is_array($page) || ! is_array($page['data'] ?? null) || ! is_bool($page['has_more'] ?? null)) {
+                    throw new AnalyticsBillingException('Stripe returned an invalid Analytics Checkout Session list.');
+                }
+                $scanned += count($page['data']);
+                if ($scanned > self::MAX_CHECKOUT_INVENTORY_ROWS) {
+                    throw new AnalyticsBillingException('The Analytics Checkout Session inventory is too large for safe reconciliation.');
+                }
+
+                foreach ($page['data'] as $session) {
+                    if (! is_array($session)
+                        || ! is_string($session['id'] ?? null)
+                        || ! preg_match('/^cs_(?:test_|live_)?[A-Za-z0-9]+$/', $session['id'])
+                        || ($session['status'] ?? null) !== $status
+                        || ($customerId !== null && $this->referenceId($session['customer'] ?? null) !== $customerId)) {
+                        throw new AnalyticsBillingException('Stripe returned an invalid Analytics Checkout Session list.');
+                    }
+                    $sessions[$session['id']] = $session;
+                }
+
+                if ($page['has_more']) {
+                    $last = $page['data'][array_key_last($page['data'])] ?? null;
+                    $next = is_array($last) ? ($last['id'] ?? null) : null;
+                    if (! is_string($next) || isset($seenCursors[$next])) {
+                        throw new AnalyticsBillingException('Stripe returned an incomplete Analytics Checkout Session list.');
+                    }
+                    $seenCursors[$next] = true;
+                    $cursor = $next;
+                } else {
+                    $cursor = null;
+                }
+            } while ($cursor !== null);
+        }
+
+        return array_values($sessions);
+    }
+
     /** @return array<string, mixed> */
     public function retrieveCheckoutSession(string $sessionId): array
     {
@@ -227,7 +377,7 @@ final class AnalyticsStripeClient
 
         return Http::withBasicAuth((string) config('analytics.billing.stripe.secret'), '')
             ->acceptJson()
-            ->timeout(10);
+            ->timeout(self::REQUEST_TIMEOUT_SECONDS);
     }
 
     private function endpoint(string $path): string

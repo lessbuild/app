@@ -49,11 +49,13 @@ final class AnalyticsBillingCheckout
                 return false;
             }
 
-            $this->assertCurrentCorePlan($workspace, $coreWorkspace);
-            $this->assertPurchaseSlotAvailable($coreWorkspace, $providerAccountKey);
+            $this->assertCurrentCorePlan($workspace, $coreWorkspace, allowCanceledPaidSlot: true);
+            $this->assertPurchaseSlotAvailable($workspace, $coreWorkspace, $providerAccountKey);
 
             return true;
         } catch (AnalyticsBillingException|AuthorizationException) {
+            return false;
+        } catch (Throwable) {
             return false;
         }
     }
@@ -85,11 +87,11 @@ final class AnalyticsBillingCheckout
             throw new AnalyticsBillingException('The selected Analytics plan is unavailable.');
         }
 
-        $this->assertCurrentCorePlan($workspace, $context->coreWorkspace);
+        $this->assertCurrentCorePlan($workspace, $context->coreWorkspace, allowCanceledPaidSlot: true);
         $this->returnTargets->assertAllowed($successUrl, $workspace, 'success');
         $this->returnTargets->assertAllowed($cancelUrl, $workspace, 'cancel');
         $this->assertPriceMatchesCatalog($plan);
-        $customerId = $this->assertPurchaseSlotAvailable($context->coreWorkspace, $context->providerAccountKey);
+        $customerId = $this->assertPurchaseSlotAvailable($workspace, $context->coreWorkspace, $context->providerAccountKey);
         $priceTerms = $this->catalog->priceTerms($plan);
         $priceTermsHash = $this->catalog->termsHash($plan);
 
@@ -114,6 +116,7 @@ final class AnalyticsBillingCheckout
             $keyHash,
             $requestFingerprint,
             (string) $context->actor->getKey(),
+            $customerId,
         );
 
         if ($attempt->provider_checkout_session_id !== null) {
@@ -128,8 +131,11 @@ final class AnalyticsBillingCheckout
 
         // Authorization may change while the request is preparing the provider call.
         $context = $this->access->authorize($workspace, $actor);
-        $this->assertCurrentCorePlan($workspace, $context->coreWorkspace);
-        $customerId = $this->assertPurchaseSlotAvailable($context->coreWorkspace, $context->providerAccountKey);
+        $this->assertCurrentCorePlan($workspace, $context->coreWorkspace, allowCanceledPaidSlot: true);
+        $customerId = $this->assertPurchaseSlotAvailable($workspace, $context->coreWorkspace, $context->providerAccountKey);
+        if ($customerId !== $attempt->provider_customer_id) {
+            throw new AnalyticsBillingException('The Analytics billing customer changed during checkout preparation.');
+        }
         if ($context->providerAccountKey === '' || $context->providerAccountKey !== $attempt->provider_account_key) {
             throw new AuthorizationException('Analytics billing account access changed during checkout.');
         }
@@ -286,10 +292,33 @@ final class AnalyticsBillingCheckout
         }
     }
 
-    private function assertCurrentCorePlan(AnalyticsWorkspace $analyticsWorkspace, CoreWorkspace $coreWorkspace): void
-    {
+    private function assertCurrentCorePlan(
+        AnalyticsWorkspace $analyticsWorkspace,
+        CoreWorkspace $coreWorkspace,
+        bool $allowCanceledPaidSlot = false,
+    ): void {
         $resolution = $this->planAuthority->resolve($analyticsWorkspace);
-        $snapshot = $resolution->snapshot;
+        $current = CurrentProductSubscription::query()
+            ->with('subscription')
+            ->where('workspace_id', $coreWorkspace->getKey())
+            ->where('product', self::PRODUCT)
+            ->first();
+        $subscription = $current?->subscription;
+        $metadata = $subscription?->metadata;
+        $storedSnapshot = is_array($metadata) ? ($metadata['plan_snapshot'] ?? null) : null;
+        $terminalPaidRenewal = $allowCanceledPaidSlot
+            && ! $resolution->available
+            && $resolution->unavailableReason === 'subscription_status_not_entitled'
+            && in_array($resolution->subscriptionStatus, ['canceled', 'incomplete_expired'], true)
+            && $current instanceof CurrentProductSubscription
+            && $subscription instanceof ProductSubscription
+            && $subscription->provider === 'stripe'
+            && $subscription->plan_key !== 'legacy_access'
+            && in_array($subscription->status, ['canceled', 'incomplete_expired'], true)
+            && is_array($storedSnapshot);
+        $snapshot = $terminalPaidRenewal ? $storedSnapshot : $resolution->snapshot;
+        $planKey = $terminalPaidRenewal ? $subscription->plan_key : $resolution->planKey;
+        $planName = $terminalPaidRenewal ? ($snapshot['name'] ?? null) : $resolution->planName;
         $entitlements = $snapshot['entitlements'] ?? null;
         $limits = $snapshot['limits'] ?? null;
         $requiredLimits = [
@@ -301,22 +330,22 @@ final class AnalyticsBillingCheckout
             'export_retention_hours',
         ];
 
-        if (! $resolution->available
+        if ((! $resolution->available && ! $terminalPaidRenewal)
             || $resolution->product !== ProductKey::Analytics
             || $resolution->workspaceId !== (string) $coreWorkspace->getKey()
-            || ! is_string($resolution->planKey)
-            || $resolution->planKey === ''
-            || ! is_string($resolution->planName)
-            || trim($resolution->planName) === ''
+            || ! is_string($planKey)
+            || $planKey === ''
+            || ! is_string($planName)
+            || trim($planName) === ''
             || ! is_array($entitlements)
             || ! array_is_list($entitlements)
-            || $resolution->entitlements !== $entitlements
+            || (! $terminalPaidRenewal && $resolution->entitlements !== $entitlements)
             || ! is_array($limits)
-            || $resolution->limits !== $limits
+            || (! $terminalPaidRenewal && $resolution->limits !== $limits)
             || ! is_string($snapshot['name'] ?? null)
             || trim($snapshot['name']) === ''
             || $snapshot['name'] !== trim($snapshot['name'])
-            || $snapshot['name'] !== $resolution->planName
+            || $snapshot['name'] !== $planName
             || (array_key_exists('description', $snapshot) && ! is_string($snapshot['description']))) {
             throw new AnalyticsBillingException('The current Core Analytics plan could not be confirmed.');
         }
@@ -329,7 +358,7 @@ final class AnalyticsBillingCheckout
         if (count(array_unique($entitlements)) !== count($entitlements)) {
             throw new AnalyticsBillingException('The current Core Analytics plan snapshot is invalid.');
         }
-        if ($resolution->planKey !== 'legacy_access' && $entitlements === []) {
+        if ($planKey !== 'legacy_access' && $entitlements === []) {
             throw new AnalyticsBillingException('The current Core Analytics plan has no approved entitlements.');
         }
 
@@ -346,27 +375,18 @@ final class AnalyticsBillingCheckout
             }
         }
 
-        $current = CurrentProductSubscription::query()
-            ->with('subscription')
-            ->where('workspace_id', $coreWorkspace->getKey())
-            ->where('product', self::PRODUCT)
-            ->first();
-        $subscription = $current?->subscription;
-        $metadata = $subscription?->metadata;
-        $storedSnapshot = is_array($metadata) ? ($metadata['plan_snapshot'] ?? null) : null;
-
         if (! $current instanceof CurrentProductSubscription
             || (string) $current->workspace_id !== (string) $coreWorkspace->getKey()
             || $current->product !== self::PRODUCT
             || ! $subscription instanceof ProductSubscription
             || (string) $subscription->workspace_id !== (string) $coreWorkspace->getKey()
             || $subscription->product !== self::PRODUCT
-            || $subscription->plan_key !== $resolution->planKey
+            || $subscription->plan_key !== $planKey
             || $storedSnapshot !== $snapshot) {
             throw new AnalyticsBillingException('The current Core Analytics plan binding is invalid.');
         }
 
-        $isLegacyBaseline = $resolution->planKey === 'legacy_access';
+        $isLegacyBaseline = $planKey === 'legacy_access';
         if (in_array('*', $entitlements, true)) {
             if (! $isLegacyBaseline
                 || $entitlements !== ['*']
@@ -411,6 +431,7 @@ final class AnalyticsBillingCheckout
         string $keyHash,
         string $requestFingerprint,
         string $initiatedByUserId,
+        ?string $providerCustomerId,
     ): AnalyticsCheckoutAttempt {
         return DB::connection('core')->transaction(function () use (
             $coreWorkspace,
@@ -423,6 +444,7 @@ final class AnalyticsBillingCheckout
             $keyHash,
             $requestFingerprint,
             $initiatedByUserId,
+            $providerCustomerId,
         ): AnalyticsCheckoutAttempt {
             // SQLite starts deferred transactions. This targeted write acquires its
             // database-wide write reservation before any attempt or plan-slot reads.
@@ -443,7 +465,7 @@ final class AnalyticsBillingCheckout
                 throw new AuthorizationException('The Analytics workspace is not available for billing.');
             }
 
-            $this->assertCurrentCorePlan($analyticsWorkspace, $lockedWorkspace);
+            $this->assertCurrentCorePlan($analyticsWorkspace, $lockedWorkspace, allowCanceledPaidSlot: $providerCustomerId !== null);
 
             $matching = AnalyticsCheckoutAttempt::query()
                 ->where('provider_account_key', $accountKey)
@@ -466,21 +488,26 @@ final class AnalyticsBillingCheckout
                     || $this->catalog->storedTermsHash($matching->price_terms ?? []) !== $priceTermsHash) {
                     throw new AnalyticsBillingException('The stored Analytics checkout approval is invalid.');
                 }
+
+                if ($providerCustomerId !== null
+                    && $matching->provider_customer_id !== null
+                    && $matching->provider_customer_id !== $providerCustomerId) {
+                    throw new AnalyticsBillingException('The Analytics checkout attempt is bound to another Stripe customer.');
+                }
+                if ($providerCustomerId !== null && $matching->provider_customer_id === null) {
+                    $matching->forceFill(['provider_customer_id' => $providerCustomerId])->save();
+                }
             }
 
             $activeAttempts = AnalyticsCheckoutAttempt::query()
                 ->where('provider_account_key', $accountKey)
                 ->where('core_workspace_id', $lockedWorkspace->getKey())
-                ->where(function ($query): void {
-                    $query->whereIn('status', ['pending', 'open', 'failed'])
-                        ->orWhere(function ($completed): void {
-                            $completed->where('status', 'completed')
-                                ->whereNull('provider_subscription_id');
-                        });
-                })
+                ->whereIn('status', ['pending', 'open', 'failed', 'completed'])
                 ->orderByDesc('created_at')
                 ->lockForUpdate()
-                ->get();
+                ->get()
+                ->filter(fn (AnalyticsCheckoutAttempt $candidate): bool => $candidate->status !== 'completed'
+                    || ! $this->hasProjectedSubscription($candidate));
 
             if ($activeAttempts->count() > 1) {
                 throw new AnalyticsBillingException('More than one Analytics checkout is awaiting reconciliation for this workspace.');
@@ -501,8 +528,7 @@ final class AnalyticsBillingCheckout
                     return $activeAttempt;
                 }
 
-                if ($activeAttempt->status === 'completed'
-                    && $activeAttempt->provider_subscription_id === null) {
+                if ($activeAttempt->status === 'completed') {
                     throw new AnalyticsBillingException('The completed Analytics checkout is awaiting signed subscription reconciliation.');
                 }
 
@@ -547,12 +573,70 @@ final class AnalyticsBillingCheckout
                 'price_terms_hash' => $priceTermsHash,
                 'idempotency_key_hash' => $keyHash,
                 'request_fingerprint' => $requestFingerprint,
+                'provider_customer_id' => $providerCustomerId,
                 'status' => 'pending',
             ]);
         }, attempts: 3);
     }
 
-    /** @param array{id:string,url:string,status:?string,expires_at:?int,customer_id:?string} $session */
+    private function hasProjectedSubscription(AnalyticsCheckoutAttempt $attempt): bool
+    {
+        if (! is_string($attempt->provider_subscription_id) || $attempt->provider_subscription_id === '') {
+            return false;
+        }
+
+        $subscriptions = ProductSubscription::query()
+            ->where('workspace_id', $attempt->core_workspace_id)
+            ->where('product', self::PRODUCT)
+            ->where('provider', 'stripe')
+            ->where('provider_account_key', $attempt->provider_account_key)
+            ->where('provider_subscription_id', $attempt->provider_subscription_id)
+            ->get();
+
+        if ($subscriptions->count() !== 1
+            || data_get($subscriptions->first()->metadata, 'billing_state.checkout_attempt_id') !== (string) $attempt->getKey()) {
+            return false;
+        }
+
+        $current = CurrentProductSubscription::query()
+            ->with('subscription')
+            ->where('workspace_id', $attempt->core_workspace_id)
+            ->where('product', self::PRODUCT)
+            ->first();
+
+        if (! $current instanceof CurrentProductSubscription) {
+            return false;
+        }
+        if ((string) $current->product_subscription_id === (string) $subscriptions->first()->getKey()) {
+            return true;
+        }
+
+        // A prior completed checkout may have been replaced by a later, fully
+        // projected renewal. The current Stripe slot must prove that later
+        // completion; a legacy pointer cannot settle a recovered paid attempt.
+        $currentSubscription = $current->subscription;
+        if (! $currentSubscription instanceof ProductSubscription
+            || $currentSubscription->provider !== 'stripe'
+            || $currentSubscription->provider_account_key !== $attempt->provider_account_key
+            || (string) $currentSubscription->workspace_id !== (string) $attempt->core_workspace_id
+            || ! is_string($currentSubscription->provider_subscription_id)) {
+            return false;
+        }
+        $newerAttemptId = data_get($currentSubscription->metadata, 'billing_state.checkout_attempt_id');
+        $newerAttempt = is_string($newerAttemptId) ? AnalyticsCheckoutAttempt::query()->find($newerAttemptId) : null;
+
+        return $newerAttempt instanceof AnalyticsCheckoutAttempt
+            && $newerAttempt->status === 'completed'
+            && (string) $newerAttempt->core_workspace_id === (string) $attempt->core_workspace_id
+            && (string) $newerAttempt->analytics_workspace_id === (string) $attempt->analytics_workspace_id
+            && $newerAttempt->provider_account_key === $attempt->provider_account_key
+            && $newerAttempt->provider_subscription_id === $currentSubscription->provider_subscription_id
+            && $newerAttempt->created_at !== null
+            && $attempt->created_at !== null
+            && $newerAttempt->created_at->gt($attempt->created_at);
+    }
+
+    /** @param array{id:string,url:string,status:?string,expires_at:?int,customer_id:?string,mode:?string,client_reference_id:?string,metadata:?array<string,mixed>} $session */
     private function recordSession(AnalyticsCheckoutAttempt $attempt, array $session): void
     {
         DB::connection('core')->transaction(function () use ($attempt, $session): void {
@@ -564,6 +648,10 @@ final class AnalyticsBillingCheckout
             if ($fresh->provider_checkout_session_id !== null
                 && $fresh->provider_checkout_session_id !== $session['id']) {
                 throw new AnalyticsBillingException('Stripe returned a conflicting Analytics checkout session.');
+            }
+            if ($fresh->provider_customer_id !== null
+                && $fresh->provider_customer_id !== $session['customer_id']) {
+                throw new AnalyticsBillingException('Stripe returned a Checkout Session for another Analytics customer.');
             }
 
             $status = match ($session['status']) {
@@ -613,6 +701,13 @@ final class AnalyticsBillingCheckout
             }
         }
 
+        if (($session['mode'] ?? null) !== 'subscription'
+            || ($session['client_reference_id'] ?? null) !== (string) $attempt->getKey()
+            || ($attempt->provider_customer_id !== null
+                && $this->providerReferenceId($session['customer'] ?? null) !== $attempt->provider_customer_id)) {
+            throw new AnalyticsBillingException('The stored Analytics checkout session binding is invalid.');
+        }
+
         $status = is_string($session['status'] ?? null) ? $session['status'] : null;
         $url = $session['url'] ?? null;
         $expiresAt = is_int($session['expires_at'] ?? null) ? $session['expires_at'] : null;
@@ -657,8 +752,11 @@ final class AnalyticsBillingCheckout
             && ! isset($parts['pass']);
     }
 
-    private function assertPurchaseSlotAvailable(CoreWorkspace $workspace, string $accountKey): ?string
-    {
+    private function assertPurchaseSlotAvailable(
+        AnalyticsWorkspace $analyticsWorkspace,
+        CoreWorkspace $workspace,
+        string $accountKey,
+    ): ?string {
         $current = CurrentProductSubscription::query()
             ->with('subscription.billingCustomer')
             ->where('workspace_id', $workspace->getKey())
@@ -692,7 +790,7 @@ final class AnalyticsBillingCheckout
             ->where('product', self::PRODUCT)
             ->where('provider', 'stripe')
             ->where('provider_account_key', $accountKey)
-            ->whereIn('status', ['active', 'trialing', 'past_due', 'unpaid', 'incomplete'])
+            ->whereIn('status', ['active', 'trialing', 'past_due', 'unpaid', 'incomplete', 'paused'])
             ->exists()) {
             throw new AnalyticsBillingException('This Analytics workspace already has a Stripe subscription.');
         }
@@ -701,7 +799,87 @@ final class AnalyticsBillingCheckout
             throw new AnalyticsBillingException('The current Analytics subscription must be managed before starting another checkout.');
         }
 
-        return $this->validatedCustomerForSubscription($subscription, $workspace, $accountKey)->provider_customer_id;
+        $customer = $this->validatedCustomerForSubscription($subscription, $workspace, $accountKey);
+        $this->assertProviderConfirmedTerminalSubscription($analyticsWorkspace, $workspace, $accountKey, $subscription, $customer);
+
+        return $customer->provider_customer_id;
+    }
+
+    private function assertProviderConfirmedTerminalSubscription(
+        AnalyticsWorkspace $analyticsWorkspace,
+        CoreWorkspace $workspace,
+        string $accountKey,
+        ProductSubscription $subscription,
+        BillingCustomer $customer,
+    ): void {
+        $subscriptionId = $subscription->provider_subscription_id;
+        if (! is_string($subscriptionId) || $subscriptionId === '') {
+            throw new AnalyticsBillingException('The canceled Analytics subscription has no provider identity.');
+        }
+
+        $attempt = AnalyticsCheckoutAttempt::query()
+            ->where('provider_account_key', $accountKey)
+            ->where('core_workspace_id', $workspace->getKey())
+            ->where('analytics_workspace_id', $analyticsWorkspace->getKey())
+            ->where('provider_subscription_id', $subscriptionId)
+            ->first();
+        $provider = $this->stripe->retrieveSubscription($subscriptionId);
+        $metadata = is_array($provider['metadata'] ?? null) ? $provider['metadata'] : [];
+        $providerCustomerId = $this->providerReferenceId($provider['customer'] ?? null);
+        $items = data_get($provider, 'items.data');
+        $item = is_array($items) && count($items) === 1 && is_array($items[0]) ? $items[0] : null;
+        $price = is_array($item) ? ($item['price'] ?? null) : null;
+        $priceId = is_array($price) ? ($price['id'] ?? null) : $price;
+
+        if (($provider['object'] ?? null) !== 'subscription'
+            || ($provider['id'] ?? null) !== $subscriptionId
+            || ($provider['livemode'] ?? null) !== $this->stripe->liveMode()
+            || ! in_array($provider['status'] ?? null, ['canceled', 'incomplete_expired'], true)
+            || $priceId !== $subscription->provider_price_id
+            || (int) ($item['quantity'] ?? 0) !== 1
+            || $providerCustomerId !== $customer->provider_customer_id
+            || ($metadata['product'] ?? null) !== self::PRODUCT
+            || ($metadata['core_workspace_id'] ?? null) !== (string) $workspace->getKey()
+            || ($metadata['analytics_workspace_id'] ?? null) !== (string) $analyticsWorkspace->getKey()
+            || ($metadata['provider_account_key'] ?? null) !== $accountKey
+            || ! $attempt instanceof AnalyticsCheckoutAttempt
+            || ($metadata['checkout_attempt_id'] ?? null) !== (string) $attempt->getKey()
+            || $attempt->status !== 'completed'
+            || $attempt->provider_checkout_session_id === null
+            || (string) $attempt->provider_subscription_id !== $subscriptionId
+            || (string) $attempt->provider_customer_id !== $customer->provider_customer_id) {
+            throw new AnalyticsBillingException('Stripe has not confirmed a terminal Analytics subscription bound to this workspace.');
+        }
+
+        foreach ($this->stripe->listSubscriptionsForCustomer($customer->provider_customer_id) as $candidate) {
+            $candidateMetadata = is_array($candidate['metadata'] ?? null) ? $candidate['metadata'] : [];
+            if (($candidateMetadata['product'] ?? null) !== self::PRODUCT) {
+                continue;
+            }
+
+            if (($candidateMetadata['core_workspace_id'] ?? null) !== (string) $workspace->getKey()
+                || ($candidateMetadata['analytics_workspace_id'] ?? null) !== (string) $analyticsWorkspace->getKey()) {
+                throw new AnalyticsBillingException('The Stripe customer has another Analytics workspace subscription binding.');
+            }
+
+            if ((string) ($candidate['id'] ?? '') !== $subscriptionId
+                && ! in_array($candidate['status'] ?? null, ['canceled', 'incomplete_expired'], true)) {
+                throw new AnalyticsBillingException('The Stripe customer already has another live Analytics subscription.');
+            }
+        }
+    }
+
+    private function providerReferenceId(mixed $value): ?string
+    {
+        if (is_string($value) && $value !== '') {
+            return $value;
+        }
+
+        if (is_array($value) && is_string($value['id'] ?? null) && $value['id'] !== '') {
+            return $value['id'];
+        }
+
+        return null;
     }
 
     /** @return array{subscription:ProductSubscription,customer:BillingCustomer} */
