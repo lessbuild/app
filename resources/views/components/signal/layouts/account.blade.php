@@ -8,6 +8,7 @@
     'account.members' => __('Members'),
     'account.api-tokens' => auth()->user()?->can('manageApiTokens', $account) ? __('API tokens') : null,
     'account.audit-log' => auth()->user()?->can('viewAuditLog', $account) ? __('Audit log') : null,
+    'account.settings' => auth()->user()?->can('update', $account) ? __('Settings') : null,
 ]))
 
 {{-- Account-level pages; Phase 2 moves these links into the account sidebar. --}}

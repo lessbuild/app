@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Audit\Listeners;
 
 use App\Domain\Accounts\Events\AccountCreated;
+use App\Domain\Accounts\Events\AccountRenamed;
 use App\Domain\Accounts\Events\InvitationAccepted;
 use App\Domain\Accounts\Events\InvitationRevoked;
 use App\Domain\Accounts\Events\MemberInvited;
@@ -39,6 +40,7 @@ final class AuditSubscriber
     {
         return [
             AccountCreated::class => 'accountCreated',
+            AccountRenamed::class => 'accountRenamed',
             MemberInvited::class => 'memberInvited',
             InvitationRevoked::class => 'invitationRevoked',
             InvitationAccepted::class => 'invitationAccepted',
@@ -63,6 +65,11 @@ final class AuditSubscriber
     public function accountCreated(AccountCreated $event): void
     {
         $this->record->handle(AuditAction::AccountCreated, $event->owner, $event->account->id, ['name' => $event->account->name]);
+    }
+
+    public function accountRenamed(AccountRenamed $event): void
+    {
+        $this->record->handle(AuditAction::AccountRenamed, $event->actor, $event->account->id, ['from' => $event->from, 'to' => $event->account->name]);
     }
 
     public function memberInvited(MemberInvited $event): void

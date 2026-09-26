@@ -219,13 +219,15 @@
 
     .ui-local-nav {
         margin-top: 1.25rem;
+        /* The nav scrolls sideways on narrow screens instead of widening the page. */
+        overflow-x: auto;
     }
 
     .ui-local-nav__scroll {
         display: flex;
-        min-width: max-content;
+        width: max-content;
+        min-width: 100%;
         gap: 0.25rem;
-        overflow-x: auto;
         border: 1px solid var(--ui-line);
         border-radius: var(--radius-control-value);
         background: var(--ui-surface-muted);

@@ -7,6 +7,7 @@ namespace App\Domain\Audit\Enums;
 enum AuditAction: string
 {
     case AccountCreated = 'account.created';
+    case AccountRenamed = 'account.renamed';
     case MemberInvited = 'member.invited';
     case InvitationRevoked = 'invitation.revoked';
     case InvitationAccepted = 'invitation.accepted';
@@ -32,6 +33,7 @@ enum AuditAction: string
 
         return match ($this) {
             self::AccountCreated => __('Created the account :name', ['name' => $value('name')]),
+            self::AccountRenamed => __('Renamed the account from :from to :to', ['from' => $value('from'), 'to' => $value('to')]),
             self::MemberInvited => __('Invited :email as :role', ['email' => $value('email'), 'role' => $value('role')]),
             self::InvitationRevoked => __('Revoked the invitation for :email', ['email' => $value('email')]),
             self::InvitationAccepted => __('Joined as :role', ['role' => $value('role')]),
