@@ -9,6 +9,7 @@ use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Settings\PrivacyController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SessionsController;
@@ -46,6 +47,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/settings/security', SecurityController::class)->middleware('password.confirm')->name('settings.security');
     Route::post('/settings/security/social/{provider}', [SocialSignInController::class, 'connect'])->middleware(['password.confirm', 'throttle:10,1'])->name('social.connect');
     Route::get('/settings/sessions', [SessionsController::class, 'index'])->name('settings.sessions');
+    Route::get('/settings/privacy', [PrivacyController::class, 'index'])->name('settings.privacy');
+    Route::get('/settings/privacy/export', [PrivacyController::class, 'export'])->middleware('throttle:6,1')->name('settings.privacy.export');
+    Route::delete('/settings/privacy/user', [PrivacyController::class, 'destroy'])->middleware('password.confirm')->name('settings.privacy.destroy');
     Route::delete('/settings/sessions', [SessionsController::class, 'destroyOthers'])->name('settings.sessions.destroy-others');
     Route::delete('/settings/sessions/{session}', [SessionsController::class, 'destroy'])->name('settings.sessions.destroy');
     Route::delete('/settings/security/social/{provider}', [SocialSignInController::class, 'disconnect'])->middleware('password.confirm')->name('social.disconnect');

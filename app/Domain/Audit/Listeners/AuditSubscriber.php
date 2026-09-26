@@ -14,11 +14,13 @@ use App\Domain\Api\Events\ApiTokenCreated;
 use App\Domain\Api\Events\ApiTokenRevoked;
 use App\Domain\Audit\Actions\RecordAuditEntry;
 use App\Domain\Audit\Enums\AuditAction;
+use App\Domain\Audit\Models\AuditEntry;
 use App\Domain\Identity\Events\BrowsersSignedOut;
 use App\Domain\Identity\Events\PasswordChanged;
 use App\Domain\Identity\Events\ProfileUpdated;
 use App\Domain\Identity\Events\SocialIdentityConnected;
 use App\Domain\Identity\Events\SocialIdentityDisconnected;
+use App\Domain\Identity\Events\UserDeleting;
 use App\Domain\Identity\Models\User;
 use Illuminate\Events\Dispatcher;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
@@ -54,6 +56,7 @@ final class AuditSubscriber
             BrowsersSignedOut::class => 'browsersSignedOut',
             ApiTokenCreated::class => 'apiTokenCreated',
             ApiTokenRevoked::class => 'apiTokenRevoked',
+            UserDeleting::class => 'forgetPersonalEntries',
         ];
     }
 
@@ -160,6 +163,12 @@ final class AuditSubscriber
     public function apiTokenRevoked(ApiTokenRevoked $event): void
     {
         $this->record->handle(AuditAction::ApiTokenRevoked, $event->actor, $event->token->account_id, ['name' => $event->token->name]);
+    }
+
+    /** A deleted user's own security log goes with them; shared accounts keep their record of what the person did. */
+    public function forgetPersonalEntries(UserDeleting $event): void
+    {
+        AuditEntry::query()->whereNull('account_id')->where('actor_id', $event->user->id)->delete();
     }
 
     /**

@@ -7,6 +7,7 @@
     'settings.profile' => __('Profile'),
     'settings.security' => __('Security'),
     'settings.sessions' => __('Sessions'),
+    'settings.privacy' => __('Privacy'),
 ])
 
 <x-signal.layouts.app :title="$title" :description="$description">
