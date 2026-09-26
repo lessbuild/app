@@ -158,6 +158,31 @@ final class MonitorCredentialMutationProviderTest extends TestCase
         $this->assertSecretAbsentFromReceipts([(string) $secret, $rotatedSecret]);
     }
 
+    public function test_core_monitor_credential_response_shows_the_secret_once_without_persisting_it(): void
+    {
+        $payload = [
+            'idempotency_key' => (string) Str::uuid(),
+            'product' => 'monitor',
+            'credential_type' => 'ingest-token',
+            'target_key' => 'monitor:environment:'.$this->environment->getKey(),
+            'name' => 'Core ingestion token',
+            'expires_in_days' => 60,
+        ];
+        $response = $this->actingAs($this->actor, 'platform')->post(route('core.workspace.credentials.store', $this->workspace), $payload);
+        $response->assertOk()->assertHeader('Referrer-Policy', 'no-referrer')->assertSee('Copy this secret now.');
+        $this->assertStringContainsString('no-store', (string) $response->headers->get('Cache-Control'));
+        preg_match('/bcn_[A-Za-z0-9]{64}/', $response->getContent(), $matches);
+        $secret = $matches[0] ?? null;
+        $this->assertIsString($secret);
+        $this->assertSame(hash('sha256', $secret), DB::connection('monitor')->table('ingest_tokens')->value('token_hash'));
+        $this->assertStringNotContainsString($secret, json_encode(session()->all(), JSON_THROW_ON_ERROR));
+        $this->assertSecretAbsentFromReceipts([$secret]);
+
+        $this->post(route('core.workspace.credentials.store', $this->workspace), $payload)
+            ->assertOk()->assertDontSee($secret)->assertSee('one-time secret is no longer available');
+        $this->assertSame(1, DB::connection('monitor')->table('ingest_tokens')->count());
+    }
+
     public function test_current_core_grant_and_environment_project_mapping_are_required_even_for_replay(): void
     {
         $first = $this->createIngest((string) Str::uuid());

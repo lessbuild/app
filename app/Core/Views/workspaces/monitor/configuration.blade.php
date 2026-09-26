@@ -1,5 +1,5 @@
 <x-signal.layouts.platform :title="__('Monitor configuration')" :description="__('Edit mapped Monitor application, environment, and check settings.')" :navigation="[]" :account-user="$user" :current-workspace="$workspace" :workspaces="$workspaces" :context-projects="$contextProjects">
-    <x-signal.ui.page-header :eyebrow="$workspace->name" :title="__('Applications, environments, and checks')" :description="__('Core updates existing mapped Monitor resources through Monitor’s policies and native configuration actions.')">
+    <x-signal.ui.page-header :eyebrow="$workspace->name" :title="__('Applications, environments, and checks')" :description="__('Core edits mapped Monitor resources and creates bounded public HTTP checks through Monitor’s native policies and actions.')">
         <x-slot:actions>
             <x-signal.ui.button :href="route('core.workspace.monitor.alerts', $workspace)" variant="secondary">{{ __('Alert rules') }}</x-signal.ui.button>
             <x-signal.ui.button :href="route('core.workspace.monitor.integrations', $workspace)" variant="secondary">{{ __('Ingestion setup') }}</x-signal.ui.button>
@@ -11,7 +11,7 @@
     @if ($errors->any()) <x-signal.ui.alert tone="danger" class="mt-5">{{ $errors->first() }}</x-signal.ui.alert> @endif
 
     <x-signal.ui.alert tone="info" class="mt-6">
-        {{ __('This page edits resources that already have current Core project mappings. Create Monitor applications and environments in Monitor so its one-time ingestion credential flow can complete safely. Ingestion tokens, target URLs, authentication secrets, deletion, and restoration stay in Monitor.') }}
+        {{ __('Create Monitor applications and environments in Monitor, then manage their current Core mappings here. For active mapped environments, Core can create an enabled HTTP GET check to a public health URL; credentials, query strings, and fragments are not accepted. Ingestion tokens, authenticated probes, other check types, deletion, and restoration stay in Monitor or the credential inventory.') }}
     </x-signal.ui.alert>
 
     <section aria-labelledby="monitor-applications-heading" class="mt-8">
@@ -74,6 +74,20 @@
                     @else
                         <p class="mt-3 text-sm text-muted">{{ __('Your Monitor role can view this environment but cannot change it.') }}</p>
                     @endif
+                    @if ($environment['can_create_check'])
+                        <x-signal.ui.disclosure :title="__('Create an HTTP check for this environment')" class="mt-4">
+                            <p class="mt-3 text-xs leading-5 text-muted dark:text-subtle">{{ __('Monitor sends a public GET probe on the selected schedule. New checks expect HTTP 200–299 and use two failures to open and two successes to recover an incident.') }}</p>
+                            <form method="POST" action="{{ route('core.workspace.monitor.configuration.checks.create', $workspace) }}" class="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+                                @csrf
+                                <x-signal.ui.input type="hidden" name="environment_reference" :value="$environment['reference']" />
+                                <x-signal.ui.input-field :id="'monitor-env-'.$loop->index.'-check-name'" name="name" :label="__('Check name')" maxlength="120" required :restore="false" />
+                                <x-signal.ui.input-field :id="'monitor-env-'.$loop->index.'-check-url'" name="request_url" :label="__('Public health URL')" type="url" maxlength="2048" placeholder="https://status.example.com/health" required :restore="false" />
+                                <x-signal.ui.select-field :id="'monitor-env-'.$loop->index.'-check-interval'" name="interval_minutes" :label="__('Interval')"><option value="5" selected>{{ __('Every 5 minutes') }}</option>@foreach ([1, 15, 30, 60] as $interval)<option value="{{ $interval }}">{{ $interval === 60 ? __('Every hour') : __('Every :minutes minutes', ['minutes' => $interval]) }}</option>@endforeach</x-signal.ui.select-field>
+                                <x-signal.ui.input-field :id="'monitor-env-'.$loop->index.'-check-timeout'" name="timeout_seconds" :label="__('Timeout seconds')" type="number" min="1" max="20" value="5" required :restore="false" />
+                                <x-signal.ui.button type="submit" variant="primary" class="self-end">{{ __('Create HTTP check') }}</x-signal.ui.button>
+                            </form>
+                        </x-signal.ui.disclosure>
+                    @endif
                 </x-signal.ui.card>
             @empty
                 <x-signal.ui.empty-state :title="__('No mapped Monitor environments')" :description="__('Mapped Monitor environments will appear here for configuration.')" icon="layers" />
@@ -113,7 +127,7 @@
                     @endif
                 </x-signal.ui.card>
             @empty
-                <x-signal.ui.empty-state :title="__('No mapped checks match this search')" :description="__('Create checks in Monitor. Existing checks in authorized mapped environments can be renamed, paused, resumed, or rescheduled here.')" icon="pulse" />
+                <x-signal.ui.empty-state :title="__('No mapped checks match this search')" :description="__('Create a public HTTP check from an active mapped environment above. Existing checks in authorized mapped environments can be renamed, paused, resumed, or rescheduled here.')" icon="pulse" />
             @endforelse
         </div>
         @if ($snapshot->checks->hasPages())<nav class="mt-4" aria-label="{{ __('Monitor check pages') }}">{{ $snapshot->checks->links() }}</nav>@endif

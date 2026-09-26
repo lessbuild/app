@@ -9,9 +9,12 @@ use App\Core\Models\LegacyIdentityMap;
 use App\Core\Models\PlatformUser;
 use App\Core\Models\Project;
 use App\Core\Models\ProjectEnvironment;
+use App\Core\Models\ProjectMembership;
 use App\Core\Models\ProjectProduct;
 use App\Core\Models\ProjectResource;
 use App\Core\Models\Workspace as CoreWorkspace;
+use App\Core\Models\WorkspaceMembership;
+use App\Core\Models\WorkspaceProductAccess;
 use App\Core\Services\Identity\ProductWorkspaceAccess;
 use App\Core\Services\LegacyIdentityResolver;
 use App\Core\Services\Search\WorkspaceSearchPattern;
@@ -23,11 +26,13 @@ use App\Modules\Monitor\Models\Monitor;
 use App\Modules\Monitor\Models\User;
 use App\Modules\Monitor\Models\Workspace;
 use App\Modules\Monitor\Services\ChangeMonitor;
+use App\Modules\Monitor\Services\PublicHttpTarget;
 use App\Modules\Monitor\Services\SuspendHeartbeats;
 use App\Modules\Monitor\Services\SuspendQueueMonitors;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorResult;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Paginator;
 use Illuminate\Support\Facades\Validator;
@@ -46,6 +51,7 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
         private readonly ChangeMonitor $changes,
         private readonly SuspendHeartbeats $heartbeats,
         private readonly SuspendQueueMonitors $queues,
+        private readonly PublicHttpTarget $httpTargets,
     ) {
         $this->context = new MonitorAdministrationContext($identities, $workspaceAccess, $productAccess);
     }
@@ -162,6 +168,89 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
         return new MonitorMutationResult(true, 'check_updated', $monitorReference);
     }
 
+    public function createHttpCheck(PlatformUser $user, CoreWorkspace $workspace, string $environmentReference, array $data): MonitorMutationResult
+    {
+        $data = Validator::make($data, [
+            'name' => ['required', 'string', 'max:120', 'not_regex:/[\x00-\x1F\x7F]/u'],
+            'request_url' => ['required', 'string', 'max:2048'],
+            'interval_minutes' => ['required', 'integer', Rule::in([1, 5, 15, 30, 60])],
+            'timeout_seconds' => ['required', 'integer', 'between:1,20'],
+        ])->validate();
+        $target = $this->httpTargets->parse($data['request_url']);
+        $parts = parse_url($data['request_url']);
+        if ($target === null || ! is_array($parts) || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) {
+            throw ValidationException::withMessages([
+                'request_url' => __('Use a public HTTP or HTTPS health URL without credentials, query strings, or fragments.'),
+            ]);
+        }
+
+        ['workspace' => $sourceWorkspace, 'user' => $actor] = $this->requiredContext($user, $workspace);
+        $id = $this->context->sourceId($environmentReference, 'environment', $sourceWorkspace);
+        $nativeEnvironment = Environment::query()->whereKey($id)->firstOrFail();
+        $applicationId = (string) $nativeEnvironment->application_id;
+        $environmentResources = ProjectResource::query()->where('product', 'monitor')->where('resource_type', 'environment')
+            ->where('resource_id', $id)->get();
+        abort_unless($environmentResources->count() === 1, 404);
+        $projectId = (string) $environmentResources->sole()->project_id;
+        $created = null;
+
+        // Begin Core without locking it, then let Monitor acquire its native locks first. Core's
+        // current authority/mapping reads run inside that source transaction and remain locked
+        // through its commit. SQLite needs a writer reservation before those reads because it
+        // ignores FOR UPDATE and cannot safely promote a stale WAL snapshot.
+        // Do not retry this outer callback: the two product databases do not share an atomic commit.
+        DB::connection('core')->transaction(function () use (
+            $user, $workspace, $sourceWorkspace, $actor, $id, $applicationId, $projectId, $data, &$created,
+        ): void {
+            $this->context->mutate($user, $workspace, $sourceWorkspace, $actor, function (Workspace $locked) use (
+                $id, $applicationId, $projectId, $data, $actor, $user, $workspace, $sourceWorkspace, &$created,
+            ): void {
+                $environmentRef = Environment::query()->whereKey($id)->firstOrFail();
+                $application = Application::query()->whereBelongsTo($locked)->lockForUpdate()->findOrFail($environmentRef->application_id);
+                $environment = Environment::query()->whereBelongsTo($application)->lockForUpdate()->findOrFail($id);
+                abort_unless((string) $environment->application_id === $applicationId, 404);
+                Gate::forUser($actor)->authorize('create', [Monitor::class, $locked]);
+                Gate::forUser($actor)->authorize('update', $environment);
+                abort_unless($environment->status === 'active', 409, 'Resume this environment before creating an enabled HTTP check.');
+
+                $this->reserveCoreHttpCheckWriter($user);
+                $this->lockCoreHttpCheckAuthority($user, $workspace, $sourceWorkspace, $actor, $applicationId, $id, $projectId);
+
+                $created = $this->changes->save($locked, $actor, [
+                    'check_type' => 'http',
+                    'environment_id' => (int) $environment->getKey(),
+                    'name' => trim($data['name']),
+                    'request_url' => $data['request_url'],
+                    'method' => 'GET',
+                    'status_min' => 200,
+                    'status_max' => 299,
+                    'timeout_seconds' => (int) $data['timeout_seconds'],
+                    'interval_minutes' => (int) $data['interval_minutes'],
+                    'trigger_checks' => 2,
+                    'recovery_checks' => 2,
+                    'enabled' => true,
+                    'destinations' => [],
+                    'opened' => true,
+                    'recovered' => true,
+                ]);
+            });
+        });
+
+        abort_unless($created instanceof Monitor, 500);
+
+        return new MonitorMutationResult(true, 'check_created', $this->context->reference('monitor', $created->getKey(), $sourceWorkspace));
+    }
+
+    private function reserveCoreHttpCheckWriter(PlatformUser $user): void
+    {
+        if (DB::connection('core')->getDriverName() !== 'sqlite') {
+            return;
+        }
+
+        $reserved = DB::connection('core')->table('users')->where('id', $user->getKey())->update(['id' => DB::raw('id')]);
+        abort_unless($reserved === 1, 404);
+    }
+
     /** @return LengthAwarePaginator<int, array<string, mixed>> */
     private function applications(PlatformUser $user, CoreWorkspace $workspace, Workspace $sourceWorkspace, User $actor, array $filters): LengthAwarePaginator
     {
@@ -210,6 +299,12 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
                     'slug' => (string) $environment->slug,
                     'status' => (string) $environment->status,
                     'can_update' => Gate::forUser($actor)->allows('update', $environment),
+                    'can_create_check' => $environment->status === 'active'
+                        && $binding['resource']->status === 'active'
+                        && $binding['canonical_environment']->status === 'active'
+                        && $actor->hasVerifiedEmail()
+                        && Gate::forUser($actor)->allows('update', $environment)
+                        && Gate::forUser($actor)->allows('create', [Monitor::class, $sourceWorkspace]),
                 ];
             });
     }
@@ -390,7 +485,7 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
         return ['resource' => $resource, 'project' => $project];
     }
 
-    /** @return array{resource: ProjectResource, project: Project}|null */
+    /** @return array{resource: ProjectResource, project: Project, canonical_environment: ProjectEnvironment}|null */
     private function environmentBinding(Environment $environment, PlatformUser $user, CoreWorkspace $workspace, Workspace $sourceWorkspace): ?array
     {
         $application = $environment->application;
@@ -420,7 +515,116 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
             return null;
         }
 
-        return ['resource' => $resource, 'project' => $applicationBinding['project']];
+        return [
+            'resource' => $resource,
+            'project' => $applicationBinding['project'],
+            'canonical_environment' => $canonicalEnvironment,
+        ];
+    }
+
+    private function lockCoreHttpCheckAuthority(
+        PlatformUser $user,
+        CoreWorkspace $workspace,
+        Workspace $sourceWorkspace,
+        User $actor,
+        string $applicationId,
+        string $environmentId,
+        string $projectId,
+    ): void {
+        $lockedUser = PlatformUser::query()->whereKey($user->getKey())->lockForUpdate()->first();
+        abort_unless($lockedUser !== null && $lockedUser->status === 'active', 404);
+
+        $lockedWorkspace = CoreWorkspace::query()->whereKey($workspace->getKey())->lockForUpdate()->first();
+        abort_unless($lockedWorkspace !== null && $lockedWorkspace->status === 'active' && $lockedWorkspace->archived_at === null, 404);
+
+        $memberships = WorkspaceMembership::query()->where('workspace_id', $lockedWorkspace->getKey())
+            ->where('user_id', $lockedUser->getKey())->orderBy('id')->lockForUpdate()->get();
+        abort_unless($memberships->count() === 1, 404);
+        $membership = $memberships->sole();
+        abort_unless($membership->status === 'active' && $membership->revoked_at === null
+            && ($membership->expires_at === null || $membership->expires_at->isFuture()), 404);
+
+        $grants = WorkspaceProductAccess::query()->where('membership_id', $membership->getKey())
+            ->where('product', 'monitor')->orderBy('id')->lockForUpdate()->get();
+        abort_unless($grants->count() === 1, 404);
+        $grant = $grants->sole();
+        abort_unless($grant->status === 'active' && $grant->revoked_at === null
+            && ($grant->expires_at === null || $grant->expires_at->isFuture()), 404);
+
+        $projectMemberships = ProjectMembership::query()->where('project_id', $projectId)
+            ->where('user_id', $lockedUser->getKey())->orderBy('id')->lockForUpdate()->get();
+        abort_unless($projectMemberships->count() === 1, 404);
+        $projectMembership = $projectMemberships->sole();
+        abort_unless($projectMembership->status === 'active' && $projectMembership->revoked_at === null, 404);
+
+        $products = ProjectProduct::query()->where('project_id', $projectId)->where('product', 'monitor')
+            ->orderBy('id')->lockForUpdate()->get();
+        abort_unless($products->count() === 1 && $products->sole()->status === 'active', 404);
+
+        $project = Project::query()->whereKey($projectId)->where('workspace_id', $lockedWorkspace->getKey())
+            ->lockForUpdate()->first();
+        abort_unless($project !== null && $project->status === 'active' && $project->archived_at === null, 404);
+
+        $environmentResources = ProjectResource::query()->where('product', 'monitor')->where('resource_type', 'environment')
+            ->where('resource_id', $environmentId)->orderBy('id')->lockForUpdate()->get();
+        abort_unless($environmentResources->count() === 1, 404);
+        $environmentResource = $environmentResources->sole();
+        abort_unless((string) $environmentResource->project_id === (string) $project->getKey()
+            && $environmentResource->environment_id !== null && $environmentResource->status === 'active', 404);
+
+        $environmentIdentities = LegacyIdentityMap::query()->where('source_product', 'monitor')->where('source_entity', 'environment')
+            ->where('source_id', $environmentId)->orderBy('id')->lockForUpdate()->get();
+        abort_unless($environmentIdentities->count() === 1, 404);
+        $environmentIdentity = $environmentIdentities->sole();
+        abort_unless($environmentIdentity->status === 'reconciled'
+            && $environmentIdentity->canonical_entity === 'project_environment', 404);
+
+        $canonicalEnvironment = ProjectEnvironment::query()->whereKey($environmentIdentity->canonical_id)
+            ->where('project_id', $project->getKey())->lockForUpdate()->first();
+        abort_unless($canonicalEnvironment !== null && $canonicalEnvironment->status === 'active'
+            && (string) $environmentResource->environment_id === (string) $canonicalEnvironment->getKey(), 404);
+
+        $workspaceIdentities = LegacyIdentityMap::query()->where('source_product', 'monitor')->where('source_entity', 'workspace')
+            ->where(function (Builder $query) use ($workspace, $sourceWorkspace): void {
+                $query->where('source_id', (string) $sourceWorkspace->getKey())
+                    ->orWhere(fn (Builder $canonical): Builder => $canonical->where('canonical_entity', 'workspace')
+                        ->where('canonical_id', (string) $workspace->getKey()));
+            })->orderBy('source_id')->orderBy('id')->lockForUpdate()->get();
+        $sourceWorkspaceIds = $workspaceIdentities->where('canonical_entity', 'workspace')
+            ->where('canonical_id', (string) $workspace->getKey())->pluck('source_id')->map(strval(...))->all();
+        $sourceWorkspaceIdentity = $workspaceIdentities->where('source_id', (string) $sourceWorkspace->getKey())->values();
+        abort_unless($sourceWorkspaceIds === [(string) $sourceWorkspace->getKey()] && $sourceWorkspaceIdentity->count() === 1, 404);
+        $workspaceIdentity = $sourceWorkspaceIdentity->sole();
+        abort_unless($workspaceIdentity->status === 'reconciled' && $workspaceIdentity->canonical_entity === 'workspace'
+            && (string) $workspaceIdentity->canonical_id === (string) $workspace->getKey(), 404);
+
+        $userIdentities = LegacyIdentityMap::query()->where('source_product', 'monitor')->where('source_entity', 'user')
+            ->where(function (Builder $query) use ($user, $actor): void {
+                $query->where('source_id', (string) $actor->getKey())
+                    ->orWhere(fn (Builder $canonical): Builder => $canonical->where('canonical_entity', 'user')
+                        ->where('canonical_id', (string) $user->getKey()));
+            })->orderBy('source_id')->orderBy('id')->lockForUpdate()->get();
+        $sourceUserIds = $userIdentities->where('canonical_entity', 'user')->where('canonical_id', (string) $user->getKey())
+            ->pluck('source_id')->map(strval(...))->all();
+        $sourceUserIdentity = $userIdentities->where('source_id', (string) $actor->getKey())->values();
+        abort_unless($sourceUserIds === [(string) $actor->getKey()] && $sourceUserIdentity->count() === 1, 404);
+        $userIdentity = $sourceUserIdentity->sole();
+        abort_unless($userIdentity->status === 'reconciled' && $userIdentity->canonical_entity === 'user'
+            && (string) $userIdentity->canonical_id === (string) $user->getKey(), 404);
+
+        $applicationResources = ProjectResource::query()->where('product', 'monitor')->where('resource_type', 'application')
+            ->where('resource_id', $applicationId)->orderBy('id')->lockForUpdate()->get();
+        abort_unless($applicationResources->count() === 1, 404);
+        $applicationResource = $applicationResources->sole();
+        abort_unless((string) $applicationResource->project_id === (string) $project->getKey()
+            && $applicationResource->environment_id === null && $applicationResource->status === 'active', 404);
+
+        $applicationIdentities = LegacyIdentityMap::query()->where('source_product', 'monitor')->where('source_entity', 'application')
+            ->where('source_id', $applicationId)->orderBy('id')->lockForUpdate()->get();
+        abort_unless($applicationIdentities->count() === 1, 404);
+        $applicationIdentity = $applicationIdentities->sole();
+        abort_unless($applicationIdentity->status === 'reconciled' && $applicationIdentity->canonical_entity === 'project'
+            && (string) $applicationIdentity->canonical_id === (string) $project->getKey(), 404);
     }
 
     private function activeProject(PlatformUser $user, CoreWorkspace $workspace, string $projectId): ?Project

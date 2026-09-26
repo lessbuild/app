@@ -25,10 +25,13 @@ use App\Modules\Monitor\Policies\WorkspacePolicy;
 use App\Modules\Monitor\Services\Core\MonitorAdministrationContext;
 use App\Modules\Monitor\Services\Core\MonitorConfigurationAdministrationProvider;
 use Illuminate\Auth\Access\AuthorizationException;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
 use Tests\TestCase;
 
@@ -51,11 +54,15 @@ final class MonitorConfigurationAdministrationProviderTest extends TestCase
 
     private Monitor $check;
 
+    private string $coreDatabasePath = '';
+
     protected function setUp(): void
     {
         parent::setUp();
+        $this->coreDatabasePath = sys_get_temp_dir().'/buildpusher-monitor-core-'.Str::uuid().'.sqlite';
+        $this->assertTrue(touch($this->coreDatabasePath));
         config([
-            'database.connections.core.database' => ':memory:',
+            'database.connections.core.database' => $this->coreDatabasePath,
             'database.connections.monitor.database' => ':memory:',
             'platform.products.monitor.enabled' => true,
             'platform.products.monitor.auth_authority' => 'core',
@@ -136,6 +143,23 @@ final class MonitorConfigurationAdministrationProviderTest extends TestCase
             'name' => 'Production', 'status' => 'active', 'mapped_at' => now(),
         ]);
         app(WorkspaceMonitorAdministrationRegistry::class)->registerConfiguration(app(MonitorConfigurationAdministrationProvider::class));
+    }
+
+    protected function tearDown(): void
+    {
+        if (config('database.connections.core_concurrent') !== null) {
+            DB::purge('core_concurrent');
+        }
+        DB::purge('core');
+        if ($this->coreDatabasePath !== '') {
+            foreach ([$this->coreDatabasePath, $this->coreDatabasePath.'-wal', $this->coreDatabasePath.'-shm'] as $path) {
+                if (is_file($path)) {
+                    @unlink($path);
+                }
+            }
+        }
+
+        parent::tearDown();
     }
 
     public function test_snapshot_lists_only_mapped_resources_and_omits_probe_targets_and_credentials(): void
@@ -286,6 +310,252 @@ final class MonitorConfigurationAdministrationProviderTest extends TestCase
 
         $this->assertSame('Public endpoint', $this->check->fresh()->name);
         $this->assertFalse($this->check->fresh()->enabled);
+    }
+
+    public function test_core_creates_a_bounded_http_check_only_for_the_exact_active_environment_mapping(): void
+    {
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+
+        $result = app(MonitorConfigurationAdministrationProvider::class)->createHttpCheck(
+            $this->actor,
+            $this->workspace,
+            $environmentReference,
+            [
+                'name' => 'Public readiness', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 6,
+            ],
+        );
+
+        $created = Monitor::query()->where('name', 'Public readiness')->sole();
+        $this->assertTrue($result->succeeded);
+        $this->assertSame('check_created', $result->status);
+        $this->assertSame((int) $this->environment->getKey(), $created->environment_id);
+        $this->assertSame('http', $created->type);
+        $this->assertSame('https://health.example.test/ready', $created->request_url);
+        $this->assertSame('GET', $created->method);
+        $this->assertSame(200, $created->status_min);
+        $this->assertSame(299, $created->status_max);
+        $this->assertSame(5, $created->interval_minutes);
+        $this->assertSame(6, $created->timeout_seconds);
+        $this->assertSame(2, $created->trigger_checks);
+        $this->assertSame(2, $created->recovery_checks);
+        $this->assertTrue($created->enabled);
+
+        $snapshot = app(MonitorConfigurationAdministrationProvider::class)->snapshot($this->actor, $this->workspace);
+        $serialized = json_encode($snapshot?->checks->items(), JSON_THROW_ON_ERROR);
+        $this->assertStringContainsString('Public readiness', $serialized);
+        $this->assertStringNotContainsString('health.example.test', $serialized);
+        $this->assertStringNotContainsString('request_url', $serialized);
+    }
+
+    public function test_check_creation_fails_closed_when_core_environment_mapping_is_ambiguous(): void
+    {
+        $canonicalEnvironment = ProjectEnvironment::query()->where('project_id', $this->project->getKey())->firstOrFail();
+        $mapping = ProjectResource::query()->where('product', 'monitor')->where('resource_type', 'environment')
+            ->where('resource_id', (string) $this->environment->getKey())->firstOrFail();
+        // Simulate corrupted duplicate source mappings that the database's normal unique index prevents.
+        DB::connection('core')->statement('DROP INDEX project_resources_product_resource_type_resource_id_unique');
+        ProjectResource::query()->forceCreate([
+            'id' => (string) Str::ulid(), 'project_id' => $this->project->getKey(),
+            'environment_id' => $canonicalEnvironment->getKey(), 'product' => 'monitor', 'resource_type' => 'environment',
+            'resource_id' => (string) $this->environment->getKey(), 'name' => $mapping->name, 'status' => 'active', 'mapped_at' => now(),
+        ]);
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+
+        try {
+            app(MonitorConfigurationAdministrationProvider::class)->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                'name' => 'Ambiguous mapping check', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 5,
+            ]);
+            $this->fail('A duplicated native-to-Core environment mapping must not receive a new check.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(404, $exception->getStatusCode());
+        }
+
+        $this->assertSame(1, Monitor::query()->count());
+    }
+
+    public function test_check_creation_rejects_a_paused_core_environment_mapping(): void
+    {
+        ProjectEnvironment::query()->where('project_id', $this->project->getKey())->update(['status' => 'paused']);
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+
+        try {
+            app(MonitorConfigurationAdministrationProvider::class)->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                'name' => 'Paused mapping check', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 5,
+            ]);
+            $this->fail('An active native environment cannot bypass a paused canonical Core environment.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(404, $exception->getStatusCode());
+        }
+
+        $this->assertSame(1, Monitor::query()->count());
+    }
+
+    public function test_check_creation_is_hidden_when_either_core_environment_binding_is_paused(): void
+    {
+        $provider = app(MonitorConfigurationAdministrationProvider::class);
+        $environmentResource = ProjectResource::query()->where('product', 'monitor')->where('resource_type', 'environment')
+            ->where('resource_id', (string) $this->environment->getKey())->firstOrFail();
+        $canonicalEnvironment = ProjectEnvironment::query()->where('project_id', $this->project->getKey())->firstOrFail();
+
+        $active = $provider->snapshot($this->actor, $this->workspace);
+        $this->assertTrue($active?->environments->items()[0]['can_create_check']);
+
+        $environmentResource->update(['status' => 'paused']);
+        $pausedResource = $provider->snapshot($this->actor, $this->workspace);
+        $this->assertFalse($pausedResource?->environments->items()[0]['can_create_check']);
+
+        $environmentResource->update(['status' => 'active']);
+        $canonicalEnvironment->update(['status' => 'paused']);
+        $pausedCanonical = $provider->snapshot($this->actor, $this->workspace);
+        $this->assertFalse($pausedCanonical?->environments->items()[0]['can_create_check']);
+    }
+
+    public function test_check_creation_rechecks_current_core_project_access_after_reference_issue(): void
+    {
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+        ProjectMembership::query()->where('project_id', $this->project->getKey())->where('user_id', $this->actor->getKey())
+            ->update(['status' => 'revoked', 'revoked_at' => now()]);
+
+        try {
+            app(MonitorConfigurationAdministrationProvider::class)->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                'name' => 'Revoked project access check', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 5,
+            ]);
+            $this->fail('A Core project membership revoked after reference issuance must block the native write.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(404, $exception->getStatusCode());
+        }
+
+        $this->assertSame(1, Monitor::query()->count());
+    }
+
+    public function test_check_creation_rechecks_current_project_archive_state_before_native_write(): void
+    {
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+        $this->project->update(['status' => 'archived', 'archived_at' => now()]);
+
+        try {
+            app(MonitorConfigurationAdministrationProvider::class)->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                'name' => 'Archived project check', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 5,
+            ]);
+            $this->fail('A project archived after reference issuance must block the native write.');
+        } catch (HttpExceptionInterface $exception) {
+            $this->assertSame(404, $exception->getStatusCode());
+        }
+
+        $this->assertSame(1, Monitor::query()->count());
+    }
+
+    public function test_sqlite_wal_check_creation_fails_closed_when_core_authority_changes_after_snapshot(): void
+    {
+        $mode = DB::connection('core')->selectOne('PRAGMA journal_mode = WAL');
+        $this->assertSame('wal', strtolower((string) ($mode->journal_mode ?? '')));
+        config(['database.connections.core_concurrent' => config('database.connections.core')]);
+        DB::purge('core_concurrent');
+        $concurrent = DB::connection('core_concurrent');
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+        $interleaveRevocation = true;
+        $revocationCommitted = false;
+
+        DB::listen(function (QueryExecuted $query) use ($concurrent, &$interleaveRevocation, &$revocationCommitted): void {
+            if (! $interleaveRevocation || $revocationCommitted || $query->connectionName !== 'monitor'
+                || ! str_contains(strtolower($query->sql), 'environments')
+                || DB::connection('core')->transactionLevel() === 0) {
+                return;
+            }
+
+            $revocationCommitted = $concurrent->table('project_memberships')
+                ->where('project_id', $this->project->getKey())->where('user_id', $this->actor->getKey())
+                ->update(['status' => 'revoked', 'revoked_at' => now()]) === 1;
+        });
+
+        try {
+            app(MonitorConfigurationAdministrationProvider::class)->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                'name' => 'Stale SQLite authority check', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 5,
+            ]);
+            $this->fail('A WAL transaction with a stale Core snapshot must not promote to the writer or create a check.');
+        } catch (QueryException) {
+            $this->assertTrue($revocationCommitted, 'The concurrent Core revocation must commit between the snapshot read and writer reservation.');
+        } finally {
+            $interleaveRevocation = false;
+            DB::purge('core_concurrent');
+        }
+
+        $this->assertSame('revoked', ProjectMembership::query()->where('project_id', $this->project->getKey())
+            ->where('user_id', $this->actor->getKey())->value('status'));
+        $this->assertSame(1, Monitor::query()->count());
+    }
+
+    public function test_check_creation_does_not_flash_probe_target_on_validation_redirects(): void
+    {
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+        $target = 'https://health.example.test/ready?token=do-not-flash-monitor-target';
+
+        $this->actingAs($this->actor, 'platform')->post(route('core.workspace.monitor.configuration.checks.create', $this->workspace), [
+            'environment_reference' => $environmentReference, 'name' => 'Invalid target', 'request_url' => $target,
+            'interval_minutes' => 5, 'timeout_seconds' => 5,
+        ])->assertRedirect()->assertSessionHasErrors('request_url');
+        $oldInput = session()->get('_old_input', []);
+        $this->assertArrayNotHasKey('request_url', $oldInput);
+        $this->assertStringNotContainsString('do-not-flash-monitor-target', json_encode(session()->all(), JSON_THROW_ON_ERROR));
+
+        $this->post(route('core.workspace.monitor.configuration.checks.create', $this->workspace), [
+            'environment_reference' => $environmentReference, 'name' => 'Invalid cadence',
+            'request_url' => 'https://health.example.test/ready/do-not-flash-cadence-target',
+            'interval_minutes' => 2, 'timeout_seconds' => 5,
+        ])->assertRedirect()->assertSessionHasErrors('interval_minutes');
+        $oldInput = session()->get('_old_input', []);
+        $this->assertArrayNotHasKey('request_url', $oldInput);
+        $this->assertStringNotContainsString('do-not-flash-cadence-target', json_encode(session()->all(), JSON_THROW_ON_ERROR));
+        $this->assertSame(1, Monitor::query()->count());
+    }
+
+    public function test_check_creation_rechecks_native_manager_role_and_rejects_unsafe_targets_and_cadence(): void
+    {
+        $provider = app(MonitorConfigurationAdministrationProvider::class);
+        $environmentReference = app(MonitorAdministrationContext::class)
+            ->reference('environment', $this->environment->getKey(), $this->monitorWorkspace);
+        $this->monitorWorkspace->members()->updateExistingPivot($this->monitorActor->getKey(), ['role' => 'member']);
+
+        try {
+            $provider->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                'name' => 'Unauthorized check', 'request_url' => 'https://health.example.test/ready',
+                'interval_minutes' => 5, 'timeout_seconds' => 5,
+            ]);
+            $this->fail('A native Monitor contributor cannot create checks.');
+        } catch (AuthorizationException) {
+            $this->assertSame(1, Monitor::query()->count());
+        }
+
+        $this->monitorWorkspace->members()->updateExistingPivot($this->monitorActor->getKey(), ['role' => 'owner']);
+        foreach ([
+            ['request_url' => 'https://health.example.test/ready?token=secret', 'interval_minutes' => 5],
+            ['request_url' => 'https://health.example.test/ready', 'interval_minutes' => 2],
+        ] as $invalid) {
+            try {
+                $provider->createHttpCheck($this->actor, $this->workspace, $environmentReference, [
+                    'name' => 'Invalid check', 'request_url' => $invalid['request_url'],
+                    'interval_minutes' => $invalid['interval_minutes'], 'timeout_seconds' => 5,
+                ]);
+                $this->fail('Unsafe targets and unsupported cadence must be rejected.');
+            } catch (ValidationException $exception) {
+                $this->assertNotEmpty($exception->errors());
+            }
+        }
+
+        $this->assertSame(1, Monitor::query()->count());
     }
 
     public function test_core_project_membership_is_required_for_snapshot_and_direct_put_even_with_product_grant(): void

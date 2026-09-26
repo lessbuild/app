@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Arr;
+use Illuminate\Validation\ValidationException;
 
 final class WorkspaceMonitorConfigurationController
 {
@@ -69,6 +71,23 @@ final class WorkspaceMonitorConfigurationController
         $provider->updateMonitor($user, $workspace, $reference, $data);
 
         return to_route('core.workspace.monitor.configuration.index', $workspace)->with('status', __('Monitor check settings saved.'));
+    }
+
+    public function createCheck(SaveWorkspaceMonitorConfigurationRequest $request, Workspace $workspace, WorkspaceProjectAccess $access, WorkspaceMonitorAdministrationRegistry $providers): RedirectResponse
+    {
+        $user = $this->authorizeWorkspace($request, $workspace, $access);
+        $provider = $providers->configuration();
+        abort_if($provider === null, 503);
+        $data = $request->validated();
+        $environmentReference = $data['environment_reference'];
+        unset($data['environment_reference']);
+        try {
+            $provider->createHttpCheck($user, $workspace, $environmentReference, $data);
+        } catch (ValidationException $exception) {
+            return back()->withInput(Arr::except($request->input(), ['request_url']))->withErrors($exception->errors());
+        }
+
+        return to_route('core.workspace.monitor.configuration.index', $workspace)->with('status', __('HTTP check created. Monitor will run it on its schedule.'));
     }
 
     private function authorizeWorkspace(Request $request, Workspace $workspace, WorkspaceProjectAccess $access): PlatformUser

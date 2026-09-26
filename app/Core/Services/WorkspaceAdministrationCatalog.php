@@ -41,7 +41,7 @@ final class WorkspaceAdministrationCatalog
         ],
         'monitor' => [
             ['label' => 'Monitor overview', 'description' => 'Review current service health, incidents, and telemetry activity.', 'route' => 'monitor.dashboard'],
-            ['label' => 'Applications, environments, and checks', 'description' => 'Configure mapped monitored services, environments, and scheduled checks; open Monitor for creation and ingestion credentials.', 'route' => 'core.workspace.monitor.configuration.index'],
+            ['label' => 'Applications, environments, and checks', 'description' => 'Edit mapped Monitor services and environments, create public HTTP checks, and open Monitor for resource creation and ingestion credentials.', 'route' => 'core.workspace.monitor.configuration.index'],
             ['label' => 'Dashboards and reports', 'description' => 'Create dashboards and review saved reliability views.', 'route' => 'monitor.dashboards.index'],
             ['label' => 'Telemetry events', 'description' => 'Search received application events and inspect event payload context.', 'route' => 'monitor.events.index'],
             ['label' => 'Issues and errors', 'description' => 'Review grouped errors and telemetry issues.', 'route' => 'monitor.issues.index'],
@@ -52,7 +52,7 @@ final class WorkspaceAdministrationCatalog
             ['label' => 'Status pages', 'description' => 'Create and publish customer-facing Monitor status pages.', 'route' => 'core.workspace.monitor-status-pages.index'],
             ['label' => 'Alert destinations', 'description' => 'Manage notification targets and delivery history.', 'route' => 'core.workspace.monitor.destinations'],
             ['label' => 'Alert rules', 'description' => 'Tune alert conditions and escalation routing.', 'route' => 'core.workspace.monitor.alerts'],
-            ['label' => 'Monitors and checks', 'description' => 'Edit mapped existing check settings; open Monitor to create checks and configure probe targets.', 'route' => 'core.workspace.monitor.configuration.index'],
+            ['label' => 'Monitors and checks', 'description' => 'Create public HTTP checks in active mapped environments and edit existing check settings; open Monitor for other check types and authenticated probes.', 'route' => 'core.workspace.monitor.configuration.index'],
             ['label' => 'Service objectives', 'description' => 'Set service-level objectives and review reliability targets.', 'route' => 'core.workspace.monitor.service-objectives'],
             ['label' => 'Maintenance windows', 'description' => 'Schedule planned maintenance and suppress alert notifications; ingestion continues.', 'route' => 'core.workspace.monitor.maintenance-windows'],
             ['label' => 'Integrations', 'description' => 'Read telemetry setup guidance and open Monitor to manage source connections.', 'route' => 'core.workspace.monitor.integrations'],
