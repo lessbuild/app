@@ -68,7 +68,20 @@ class PlatformUser extends Authenticatable implements MustVerifyEmailContract, P
             'password_set_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'preferences' => 'array',
+            'is_platform_admin' => 'boolean',
+            'platform_admin_granted_at' => 'datetime',
         ];
+    }
+
+    public function isPlatformAdmin(): bool
+    {
+        return $this->status === 'active' && (bool) $this->is_platform_admin;
+    }
+
+    /** A second factor is an enrolled authenticator app or at least one passkey. */
+    public function hasSecondFactor(): bool
+    {
+        return $this->twoFactorEnabled() || $this->passkeys()->exists();
     }
 
     /** @return HasMany<WorkspaceMembership, $this> */
