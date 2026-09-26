@@ -8,11 +8,13 @@ use App\Domain\Accounts\Actions\ChangeMemberRole;
 use App\Domain\Accounts\Actions\InviteMember;
 use App\Domain\Accounts\Actions\RemoveMember;
 use App\Domain\Accounts\Actions\RevokeInvitation;
+use App\Domain\Accounts\Actions\SetServiceAccess;
 use App\Domain\Accounts\Enums\AccountRole;
 use App\Domain\Accounts\Models\Account;
 use App\Domain\Accounts\Queries\MembersOverviewQuery;
 use App\Domain\Identity\Models\User;
 use App\Http\Requests\Account\InviteMemberRequest;
+use App\Platform\ServiceRegistry;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
@@ -23,12 +25,14 @@ use Illuminate\Validation\Rule;
 /** Members of the signed-in user's current account; the actions enforce who may do what. */
 final class MembersController
 {
+    public function __construct(private readonly ServiceRegistry $services) {}
+
     public function index(#[CurrentUser] User $user, MembersOverviewQuery $query): View
     {
         $account = $this->account($user);
         Gate::authorize('view', $account);
 
-        return view('account.members', ['account' => $account, 'overview' => $query->handle($account, $user)]);
+        return view('account.members', ['account' => $account, 'overview' => $query->handle($account, $user), 'services' => $this->services->all()]);
     }
 
     public function invite(InviteMemberRequest $request, #[CurrentUser] User $user, InviteMember $invite): RedirectResponse
@@ -51,6 +55,20 @@ final class MembersController
         $updated = $change->handle($user, $this->account($user)->memberships()->findOrFail($membership), AccountRole::from($validated['role']));
 
         return to_route('account.members')->with('status', __(':name is now :role.', ['name' => $updated->user->name, 'role' => $updated->role->label()]));
+    }
+
+    public function updateServices(Request $request, #[CurrentUser] User $user, string $membership, SetServiceAccess $setAccess): RedirectResponse
+    {
+        $validated = $request->validate([
+            'access' => ['required', Rule::in(['all', 'some'])],
+            'services' => ['array'],
+            'services.*' => ['string', Rule::in($this->services->keys())],
+        ]);
+        /** @var list<string> $services */
+        $services = $validated['services'] ?? [];
+        $updated = $setAccess->handle($user, $this->account($user)->memberships()->findOrFail($membership), $validated['access'] === 'all' ? null : $services);
+
+        return to_route('account.members')->with('status', __('Service access saved for :name.', ['name' => $updated->user->name]));
     }
 
     public function remove(#[CurrentUser] User $user, string $membership, RemoveMember $remove): RedirectResponse

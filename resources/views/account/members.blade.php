@@ -37,6 +37,31 @@
                             @endif
                         </p>
                         <p class="mt-1 break-all text-xs text-muted">{{ $member->email }}</p>
+                        @if ($member->serviceAccess !== null)
+                            <p class="mt-1 text-xs text-muted">
+                                {{ __('Services: :services', ['services' => $member->serviceAccess === [] ? __('none') : collect($services)->filter(fn ($service) => in_array($service->key(), $member->serviceAccess, true))->map->name()->implode(', ')]) }}
+                            </p>
+                        @endif
+                        @if ($member->canLimitServices)
+                            <details class="mt-2 text-sm" @if ($errors->has('services') && old('membership') === $member->membershipId) open @endif>
+                                <summary class="cursor-pointer font-bold text-primary">{{ __('Service access') }}</summary>
+                                <form method="POST" action="{{ route('account.members.services', $member->membershipId) }}" class="mt-3 grid gap-3 rounded-panel border border-line bg-surface-muted p-4">
+                                    @csrf
+                                    @method('PUT')
+                                    <fieldset class="grid gap-2">
+                                        <legend class="sr-only">{{ __('Which services :name can use', ['name' => $member->name]) }}</legend>
+                                        <x-signal.ui.choice type="radio" :id="'access-all-'.$member->membershipId" name="access" value="all" :label="__('Every service, including new ones')" :checked="$member->serviceAccess === null" :restore="false" :error-key="false" />
+                                        <x-signal.ui.choice type="radio" :id="'access-some-'.$member->membershipId" name="access" value="some" :label="__('Only these services:')" :checked="$member->serviceAccess !== null" :restore="false" :error-key="false" />
+                                        <div class="grid gap-1 pl-6 sm:grid-cols-2">
+                                            @foreach ($services as $service)
+                                                <x-signal.ui.checkbox :id="'services-'.$member->membershipId.'-'.$service->key()" name="services[]" :value="$service->key()" :checked="in_array($service->key(), $member->serviceAccess ?? [], true)" :restore="false" :error-key="false">{{ $service->name() }}</x-signal.ui.checkbox>
+                                            @endforeach
+                                        </div>
+                                    </fieldset>
+                                    <div><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Save service access') }}</x-signal.ui.button></div>
+                                </form>
+                            </details>
+                        @endif
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         @if ($member->manageable)

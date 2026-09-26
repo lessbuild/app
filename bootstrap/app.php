@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Domain\Accounts\Exceptions\AccountRuleViolation;
 use App\Domain\Identity\Exceptions\IdentityRuleViolation;
 use App\Domain\Projects\Exceptions\ProjectRuleViolation;
+use App\Http\Middleware\ProjectContext;
 use App\Http\Middleware\ResolveTokenAccount;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'token.account' => ResolveTokenAccount::class,
+            'project.context' => ProjectContext::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

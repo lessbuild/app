@@ -10,6 +10,9 @@ use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Projects\EnvironmentController;
+use App\Http\Controllers\Projects\ProjectController;
+use App\Http\Controllers\Projects\ServiceController;
 use App\Http\Controllers\Settings\PrivacyController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
@@ -31,12 +34,27 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/invitations/{token}', [InvitationController::class, 'store'])->middleware('throttle:10,1')->name('invitations.accept');
 
+    Route::get('/projects/create', [ProjectController::class, 'create'])->name('projects.create');
+    Route::post('/projects', [ProjectController::class, 'store'])->middleware('throttle:30,1')->name('projects.store');
+    Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
+        Route::get('/', [ProjectController::class, 'show'])->name('projects.show');
+        Route::get('/settings', [ProjectController::class, 'edit'])->name('projects.settings');
+        Route::put('/settings', [ProjectController::class, 'update'])->name('projects.update');
+        Route::delete('/', [ProjectController::class, 'destroy'])->middleware('password.confirm')->name('projects.destroy');
+        Route::post('/environments', [EnvironmentController::class, 'store'])->name('projects.environments.store');
+        Route::delete('/environments/{environment}', [EnvironmentController::class, 'destroy'])->name('projects.environments.destroy');
+        Route::get('/services/{service}', [ServiceController::class, 'show'])->name('projects.services.show');
+        Route::post('/services/{service}', [ServiceController::class, 'store'])->name('projects.services.store');
+        Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('projects.services.destroy');
+    });
+
     Route::redirect('/account', '/account/members')->name('account');
     Route::get('/account/members', [MembersController::class, 'index'])->name('account.members');
     Route::post('/account/invitations', [MembersController::class, 'invite'])->middleware('throttle:20,1')->name('account.invitations.store');
     Route::delete('/account/invitations/{invitation}', [MembersController::class, 'revokeInvitation'])->name('account.invitations.destroy');
     Route::put('/account/members/{membership}', [MembersController::class, 'updateRole'])->name('account.members.update');
     Route::delete('/account/members/{membership}', [MembersController::class, 'remove'])->name('account.members.destroy');
+    Route::put('/account/members/{membership}/services', [MembersController::class, 'updateServices'])->name('account.members.services');
     Route::get('/account/api-tokens', [ApiTokensController::class, 'index'])->name('account.api-tokens');
     Route::post('/account/api-tokens', [ApiTokensController::class, 'store'])->middleware(['password.confirm', 'throttle:20,1'])->name('account.api-tokens.store');
     Route::delete('/account/api-tokens/{token}', [ApiTokensController::class, 'destroy'])->whereNumber('token')->name('account.api-tokens.destroy');

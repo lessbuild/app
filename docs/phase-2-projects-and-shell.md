@@ -15,7 +15,7 @@ Design notes for Phase 2 of [the plan](platform-v2-plan.md). Journeys come first
 
 1. **Sign up → first project → domain → services.** After registering (or accepting an invitation to an account with no projects), the dashboard points to "Create your first project". The create form asks only for a name. It creates Production and opens the project's overview, whose checklist says: add a domain (optional), then pick services. Each service card on the overview has an Enable button.
 2. **Enable a service from inside a project.** The project sidebar lists enabled services, plus "Add a service". A service that isn't enabled opens its enable page: what it does, and an Enable button (a tier picker in Phase 3). Enabling it returns you to that service's page.
-3. **Invite a teammate.** Account → Members (done in Phase 1). New in Phase 2: an optional "Only these services" choice on invite and on a member's row.
+3. **Invite a teammate.** Account → Members (done in Phase 1). New in Phase 2: an optional "Only these services" choice on a member's row (and later on the invitation itself).
 4. **Upgrade one service**: Phase 3.
 5. **Incident → release → traffic impact**: Phase 4.
 

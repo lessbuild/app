@@ -37,7 +37,9 @@ final class MembersOverviewQuery
                 role: $membership->role,
                 joinedAt: $membership->created_at ? CarbonImmutable::instance($membership->created_at) : null,
                 isYou: $membership->user_id === $viewer->id,
-                manageable: $canManage && $membership->user_id !== $viewer->id && ($viewerRole?->canAssign($membership->role) ?? false),
+                manageable: $manageable = $canManage && $membership->user_id !== $viewer->id && ($viewerRole?->canAssign($membership->role) ?? false),
+                serviceAccess: $membership->service_access,
+                canLimitServices: $manageable && ! in_array($membership->role, [AccountRole::Owner, AccountRole::Admin], true),
             ));
 
         $invitations = $canManage
