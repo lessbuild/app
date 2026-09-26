@@ -64,6 +64,7 @@ use App\Modules\Monitor\Services\Core\MonitorProjectSummary;
 use App\Modules\Monitor\Services\Core\MonitorResourceDestinationProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceLinkProvider;
 use App\Modules\Monitor\Services\Core\MonitorResourceRestorationProvider;
+use App\Modules\Monitor\Services\Core\MonitorServiceObjectiveAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorSettingsAdministrationProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceActivityProvider;
 use App\Modules\Monitor\Services\Core\MonitorWorkspaceCredentialMutationProvider;
@@ -171,6 +172,7 @@ final class MonitorServiceProvider extends ModuleServiceProvider
         app(WorkspaceMonitorAdministrationRegistry::class)->registerSettings(app(MonitorSettingsAdministrationProvider::class));
         app(WorkspaceMonitorAdministrationRegistry::class)->registerConfiguration(app(MonitorConfigurationAdministrationProvider::class));
         app(WorkspaceMonitorAdministrationRegistry::class)->registerMaintenanceWindows(app(MonitorMaintenanceWindowAdministrationProvider::class));
+        app(WorkspaceMonitorAdministrationRegistry::class)->registerServiceObjectives(app(MonitorServiceObjectiveAdministrationProvider::class));
         app(ProjectConnectionDiagnosticRegistry::class)->register('monitor', app(MonitorProjectConnectionDiagnosticProvider::class));
         app(ProjectResourceDestinationRegistry::class)->register('monitor', app(MonitorResourceDestinationProvider::class));
         app(ProjectProductSummaryRegistry::class)->register('monitor', app(MonitorProjectSummary::class));

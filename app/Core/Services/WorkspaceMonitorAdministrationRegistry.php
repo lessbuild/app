@@ -6,6 +6,7 @@ use App\Core\Contracts\WorkspaceMonitorAlertAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorConfigurationAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorDestinationAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorMaintenanceWindowAdministrationProvider;
+use App\Core\Contracts\WorkspaceMonitorServiceObjectiveAdministrationProvider;
 use App\Core\Contracts\WorkspaceMonitorSettingsAdministrationProvider;
 
 /** Keeps Monitor's administration domains independently replaceable and typed. */
@@ -20,6 +21,8 @@ final class WorkspaceMonitorAdministrationRegistry
     private ?WorkspaceMonitorConfigurationAdministrationProvider $configuration = null;
 
     private ?WorkspaceMonitorMaintenanceWindowAdministrationProvider $maintenanceWindows = null;
+
+    private ?WorkspaceMonitorServiceObjectiveAdministrationProvider $serviceObjectives = null;
 
     public function registerConfiguration(WorkspaceMonitorConfigurationAdministrationProvider $provider): void
     {
@@ -46,6 +49,11 @@ final class WorkspaceMonitorAdministrationRegistry
         $this->maintenanceWindows = $provider;
     }
 
+    public function registerServiceObjectives(WorkspaceMonitorServiceObjectiveAdministrationProvider $provider): void
+    {
+        $this->serviceObjectives = $provider;
+    }
+
     public function alerts(): ?WorkspaceMonitorAlertAdministrationProvider
     {
         return $this->alerts;
@@ -69,5 +77,10 @@ final class WorkspaceMonitorAdministrationRegistry
     public function maintenanceWindows(): ?WorkspaceMonitorMaintenanceWindowAdministrationProvider
     {
         return $this->maintenanceWindows;
+    }
+
+    public function serviceObjectives(): ?WorkspaceMonitorServiceObjectiveAdministrationProvider
+    {
+        return $this->serviceObjectives;
     }
 }

@@ -2,6 +2,7 @@
 
 use App\Core\Http\Controllers\WorkspaceMonitorAdministrationController;
 use App\Core\Http\Controllers\WorkspaceMonitorMaintenanceWindowController;
+use App\Core\Http\Controllers\WorkspaceMonitorServiceObjectiveController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:platform')->prefix('/workspaces/{workspace}/monitor')->name('core.workspace.monitor.')->group(function (): void {
@@ -29,4 +30,8 @@ Route::middleware('auth:platform')->prefix('/workspaces/{workspace}/monitor')->n
     Route::post('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'store'])->middleware('throttle:30,1')->name('maintenance-windows.store');
     Route::patch('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'update'])->middleware('throttle:30,1')->name('maintenance-windows.update');
     Route::delete('/maintenance-windows', [WorkspaceMonitorMaintenanceWindowController::class, 'destroy'])->middleware('throttle:30,1')->name('maintenance-windows.destroy');
+    Route::get('/service-objectives', [WorkspaceMonitorServiceObjectiveController::class, 'index'])->name('service-objectives');
+    Route::post('/service-objectives', [WorkspaceMonitorServiceObjectiveController::class, 'store'])->middleware('throttle:30,1')->name('service-objectives.store');
+    Route::patch('/service-objectives', [WorkspaceMonitorServiceObjectiveController::class, 'update'])->middleware('throttle:30,1')->name('service-objectives.update');
+    Route::delete('/service-objectives', [WorkspaceMonitorServiceObjectiveController::class, 'archive'])->middleware('throttle:30,1')->name('service-objectives.archive');
 });

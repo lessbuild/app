@@ -53,7 +53,7 @@ final class WorkspaceAdministrationCatalog
             ['label' => 'Alert destinations', 'description' => 'Manage notification targets and delivery history.', 'route' => 'core.workspace.monitor.destinations'],
             ['label' => 'Alert rules', 'description' => 'Tune alert conditions and escalation routing.', 'route' => 'core.workspace.monitor.alerts'],
             ['label' => 'Monitors and checks', 'description' => 'Edit mapped existing check settings; open Monitor to create checks and configure probe targets.', 'route' => 'core.workspace.monitor.configuration.index'],
-            ['label' => 'Service objectives', 'description' => 'Set service-level objectives and review reliability targets.', 'route' => 'monitor.objectives.index'],
+            ['label' => 'Service objectives', 'description' => 'Set service-level objectives and review reliability targets.', 'route' => 'core.workspace.monitor.service-objectives'],
             ['label' => 'Maintenance windows', 'description' => 'Schedule planned maintenance and suppress alert notifications; ingestion continues.', 'route' => 'core.workspace.monitor.maintenance-windows'],
             ['label' => 'Integrations', 'description' => 'Read telemetry setup guidance and open Monitor to manage source connections.', 'route' => 'core.workspace.monitor.integrations'],
             ['label' => 'Data and privacy', 'description' => 'Review Monitor data controls and exports.', 'route' => 'core.workspace.monitor.settings'],
