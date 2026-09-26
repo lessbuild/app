@@ -142,12 +142,12 @@ final class AuditSubscriber
 
     public function projectCreated(ProjectCreated $event): void
     {
-        $this->record->handle(AuditAction::ProjectCreated, $event->actor, $event->project->account_id, ['project' => $event->project->name]);
+        $this->record->handle(AuditAction::ProjectCreated, $event->actor, $event->project->account_id, ['project' => $event->project->name], $event->project->id);
     }
 
     public function projectUpdated(ProjectUpdated $event): void
     {
-        $this->record->handle(AuditAction::ProjectUpdated, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'previous_name' => $event->previousName]);
+        $this->record->handle(AuditAction::ProjectUpdated, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'previous_name' => $event->previousName], $event->project->id);
     }
 
     public function projectDeleted(ProjectDeleted $event): void
@@ -158,12 +158,12 @@ final class AuditSubscriber
     public function environmentCreated(EnvironmentCreated $event): void
     {
         $project = $event->environment->project;
-        $this->record->handle(AuditAction::EnvironmentCreated, $event->actor, $project->account_id, ['project' => $project->name, 'environment' => $event->environment->name]);
+        $this->record->handle(AuditAction::EnvironmentCreated, $event->actor, $project->account_id, ['project' => $project->name, 'environment' => $event->environment->name], $project->id);
     }
 
     public function environmentDeleted(EnvironmentDeleted $event): void
     {
-        $this->record->handle(AuditAction::EnvironmentDeleted, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'environment' => $event->name]);
+        $this->record->handle(AuditAction::EnvironmentDeleted, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'environment' => $event->name], $event->project->id);
     }
 
     public function domainChanged(DomainAdded|DomainVerified|DomainRemoved $event): void
@@ -174,17 +174,17 @@ final class AuditSubscriber
             default => AuditAction::DomainRemoved,
         };
         $project = $event->domain->project;
-        $this->record->handle($action, $event->actor, $project->account_id, ['project' => $project->name, 'domain' => $event->domain->displayName()]);
+        $this->record->handle($action, $event->actor, $project->account_id, ['project' => $project->name, 'domain' => $event->domain->displayName()], $project->id);
     }
 
     public function serviceEnabled(ServiceEnabled $event): void
     {
-        $this->record->handle(AuditAction::ServiceEnabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)]);
+        $this->record->handle(AuditAction::ServiceEnabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)], $event->project->id);
     }
 
     public function serviceDisabled(ServiceDisabled $event): void
     {
-        $this->record->handle(AuditAction::ServiceDisabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)]);
+        $this->record->handle(AuditAction::ServiceDisabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)], $event->project->id);
     }
 
     public function profileUpdated(ProfileUpdated $event): void

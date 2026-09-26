@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property string|null $account_id
+ * @property string|null $project_id
  * @property string|null $actor_id
  * @property string|null $actor_name
  * @property string|null $actor_email

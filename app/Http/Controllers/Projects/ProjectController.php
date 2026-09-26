@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Projects;
 
+use App\Domain\Audit\Queries\ProjectActivityQuery;
 use App\Domain\Identity\Models\User;
 use App\Domain\Projects\Actions\CreateProject;
 use App\Domain\Projects\Actions\DeleteProject;
@@ -38,9 +39,14 @@ final class ProjectController
         return to_route('projects.show', $project)->with('status', __('Project created. Next, turn on the services you need.'));
     }
 
-    public function show(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query, ProjectChecklistQuery $checklist): View
+    public function show(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query, ProjectChecklistQuery $checklist, ProjectActivityQuery $activity): View
     {
-        return view('projects.show', ['overview' => $query->handle($project, $user), 'checklist' => $checklist->handle($project, $user)]);
+        return view('projects.show', [
+            'overview' => $query->handle($project, $user),
+            'checklist' => $checklist->handle($project, $user),
+            'activity' => $activity->handle($project->id),
+            'canViewAuditLog' => $user->can('viewAuditLog', $project->account),
+        ]);
     }
 
     public function dismissChecklist(#[CurrentUser] User $user, Project $project, DismissChecklist $dismiss): RedirectResponse

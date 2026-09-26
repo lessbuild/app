@@ -15,13 +15,14 @@ final class RecordAuditEntry
     public function __construct(private readonly RequestOrigin $origin) {}
 
     /** @param array<string, scalar|null> $context */
-    public function handle(AuditAction $action, ?User $actor, ?string $accountId = null, array $context = []): void
+    public function handle(AuditAction $action, ?User $actor, ?string $accountId = null, array $context = [], ?string $projectId = null): void
     {
         $userAgent = $this->origin->userAgent();
 
         $entry = new AuditEntry;
         $entry->forceFill([
             'account_id' => $accountId,
+            'project_id' => $projectId,
             'actor_id' => $actor?->id,
             'actor_name' => $actor?->name,
             'actor_email' => $actor?->email,

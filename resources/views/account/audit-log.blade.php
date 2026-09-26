@@ -1,4 +1,16 @@
 <x-signal.layouts.account :account="$account" :title="__('Audit log')" :description="__('Who changed what in this account over the last :days days.', ['days' => $retentionDays])">
+    @if ($projects !== [])
+        <form method="GET" action="{{ route('account.audit-log') }}" class="flex flex-wrap items-end gap-3">
+            <x-signal.ui.select-field name="project" :label="__('Project')" :show-errors="false" field-class="min-w-56">
+                <option value="">{{ __('All of :account', ['account' => $account->name]) }}</option>
+                @foreach ($projects as $project)
+                    <option value="{{ $project['id'] }}" @selected($projectId === $project['id'])>{{ $project['name'] }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
+            <x-signal.ui.button type="submit" variant="secondary">{{ __('Show') }}</x-signal.ui.button>
+        </form>
+    @endif
+
     @if ($entries->isEmpty())
         <x-signal.ui.empty-state :title="__('Nothing recorded yet')" :description="__('Invitations, role changes and other account changes will appear here.')" />
     @else

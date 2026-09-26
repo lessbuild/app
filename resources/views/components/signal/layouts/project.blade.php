@@ -7,7 +7,7 @@
 @php($project = $overview->project)
 
 {{-- Project pages. The sidebar (ShellComposer) lists the project's sections. --}}
-<x-signal.layouts.app :title="$title.' · '.$project->name" :description="$description">
+<x-signal.layouts.app :title="$title === $project->name ? $title : $title.' · '.$project->name" :description="$description">
     <x-signal.ui.page-header
         :eyebrow="$project->account->name"
         :title="$title"

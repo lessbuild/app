@@ -14,10 +14,11 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
 final class AccountAuditLogQuery
 {
     /** @return CursorPaginator<int, AuditEntryView> */
-    public function handle(Account $account, int $perPage = 50): CursorPaginator
+    public function handle(Account $account, ?string $projectId = null, int $perPage = 50): CursorPaginator
     {
         return AuditEntry::query()
             ->where('account_id', $account->id)
+            ->when($projectId !== null, fn ($query) => $query->where('project_id', $projectId))
             ->orderByDesc('created_at')
             ->orderByDesc('id')
             ->cursorPaginate($perPage)
