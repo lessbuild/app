@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Domain\Accounts\Exceptions\AccountRuleViolation;
 use App\Domain\Identity\Exceptions\IdentityRuleViolation;
+use App\Domain\Projects\Exceptions\ProjectRuleViolation;
 use App\Http\Middleware\ResolveTokenAccount;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -35,6 +36,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->map(
             AccountRuleViolation::class,
             fn (AccountRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
+        );
+        $exceptions->map(
+            ProjectRuleViolation::class,
+            fn (ProjectRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
         );
         $exceptions->map(
             IdentityRuleViolation::class,

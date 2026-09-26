@@ -23,6 +23,14 @@ enum AuditAction: string
     case SocialConnected = 'social.connected';
     case SocialDisconnected = 'social.disconnected';
     case BrowsersSignedOut = 'sessions.signed_out';
+    case ProjectCreated = 'project.created';
+    case ProjectUpdated = 'project.updated';
+    case ProjectDeleted = 'project.deleted';
+    case EnvironmentCreated = 'environment.created';
+    case EnvironmentDeleted = 'environment.deleted';
+    case ServiceEnabled = 'service.enabled';
+    case ServiceDisabled = 'service.disabled';
+    case MemberServiceAccessChanged = 'member.service_access';
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenRevoked = 'api_token.revoked';
 
@@ -50,6 +58,14 @@ enum AuditAction: string
             self::PasskeyRemoved => __('Removed the passkey “:name”', ['name' => $value('name')]),
             self::SocialConnected => __('Connected :provider', ['provider' => $value('provider')]),
             self::SocialDisconnected => __('Disconnected :provider', ['provider' => $value('provider')]),
+            self::ProjectCreated => __('Created the project :project', ['project' => $value('project')]),
+            self::ProjectUpdated => __('Updated the project :project', ['project' => $value('project')]),
+            self::ProjectDeleted => __('Deleted the project :project', ['project' => $value('project')]),
+            self::EnvironmentCreated => __('Added the :environment environment to :project', ['environment' => $value('environment'), 'project' => $value('project')]),
+            self::EnvironmentDeleted => __('Removed the :environment environment from :project', ['environment' => $value('environment'), 'project' => $value('project')]),
+            self::ServiceEnabled => __('Turned on :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
+            self::ServiceDisabled => __('Turned off :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
+            self::MemberServiceAccessChanged => __('Set :member’s services to :services', ['member' => $value('member'), 'services' => $value('services')]),
             self::ApiTokenCreated => __('Created the API token “:name” (:scopes)', ['name' => $value('name'), 'scopes' => $value('scopes')]),
             self::ApiTokenRevoked => __('Revoked the API token “:name”', ['name' => $value('name')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),

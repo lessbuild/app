@@ -11,6 +11,7 @@ use App\Domain\Accounts\Events\InvitationRevoked;
 use App\Domain\Accounts\Events\MemberInvited;
 use App\Domain\Accounts\Events\MemberRemoved;
 use App\Domain\Accounts\Events\MemberRoleChanged;
+use App\Domain\Accounts\Events\MemberServiceAccessChanged;
 use App\Domain\Api\Events\ApiTokenCreated;
 use App\Domain\Api\Events\ApiTokenRevoked;
 use App\Domain\Audit\Actions\RecordAuditEntry;
@@ -23,6 +24,14 @@ use App\Domain\Identity\Events\SocialIdentityConnected;
 use App\Domain\Identity\Events\SocialIdentityDisconnected;
 use App\Domain\Identity\Events\UserDeleting;
 use App\Domain\Identity\Models\User;
+use App\Domain\Projects\Events\EnvironmentCreated;
+use App\Domain\Projects\Events\EnvironmentDeleted;
+use App\Domain\Projects\Events\ProjectCreated;
+use App\Domain\Projects\Events\ProjectDeleted;
+use App\Domain\Projects\Events\ProjectUpdated;
+use App\Domain\Projects\Events\ServiceDisabled;
+use App\Domain\Projects\Events\ServiceEnabled;
+use App\Platform\ServiceRegistry;
 use Illuminate\Events\Dispatcher;
 use Laravel\Fortify\Events\RecoveryCodesGenerated;
 use Laravel\Fortify\Events\TwoFactorAuthenticationConfirmed;
@@ -33,7 +42,7 @@ use Laravel\Passkeys\Events\PasskeyRegistered;
 /** Writes the audit log from the other contexts' domain events; those contexts don't know it exists. */
 final class AuditSubscriber
 {
-    public function __construct(private readonly RecordAuditEntry $record) {}
+    public function __construct(private readonly RecordAuditEntry $record, private readonly ServiceRegistry $services) {}
 
     /** @return array<class-string, string> */
     public function subscribe(Dispatcher $events): array
@@ -46,6 +55,14 @@ final class AuditSubscriber
             InvitationAccepted::class => 'invitationAccepted',
             MemberRemoved::class => 'memberRemoved',
             MemberRoleChanged::class => 'memberRoleChanged',
+            MemberServiceAccessChanged::class => 'memberServiceAccessChanged',
+            ProjectCreated::class => 'projectCreated',
+            ProjectUpdated::class => 'projectUpdated',
+            ProjectDeleted::class => 'projectDeleted',
+            EnvironmentCreated::class => 'environmentCreated',
+            EnvironmentDeleted::class => 'environmentDeleted',
+            ServiceEnabled::class => 'serviceEnabled',
+            ServiceDisabled::class => 'serviceDisabled',
             ProfileUpdated::class => 'profileUpdated',
             PasswordChanged::class => 'passwordChanged',
             TwoFactorAuthenticationConfirmed::class => 'twoFactorEnabled',
@@ -106,6 +123,51 @@ final class AuditSubscriber
             'from' => $event->from->label(),
             'to' => $event->to->label(),
         ]);
+    }
+
+    public function memberServiceAccessChanged(MemberServiceAccessChanged $event): void
+    {
+        $services = $event->membership->service_access;
+        $this->record->handle(AuditAction::MemberServiceAccessChanged, $event->actor, $event->membership->account_id, [
+            'member' => $this->person($event->membership->user),
+            'services' => $services === null ? __('all services') : ($services === [] ? __('none') : implode(', ', array_map($this->serviceName(...), $services))),
+        ]);
+    }
+
+    public function projectCreated(ProjectCreated $event): void
+    {
+        $this->record->handle(AuditAction::ProjectCreated, $event->actor, $event->project->account_id, ['project' => $event->project->name]);
+    }
+
+    public function projectUpdated(ProjectUpdated $event): void
+    {
+        $this->record->handle(AuditAction::ProjectUpdated, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'previous_name' => $event->previousName]);
+    }
+
+    public function projectDeleted(ProjectDeleted $event): void
+    {
+        $this->record->handle(AuditAction::ProjectDeleted, $event->actor, $event->accountId, ['project' => $event->name]);
+    }
+
+    public function environmentCreated(EnvironmentCreated $event): void
+    {
+        $project = $event->environment->project;
+        $this->record->handle(AuditAction::EnvironmentCreated, $event->actor, $project->account_id, ['project' => $project->name, 'environment' => $event->environment->name]);
+    }
+
+    public function environmentDeleted(EnvironmentDeleted $event): void
+    {
+        $this->record->handle(AuditAction::EnvironmentDeleted, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'environment' => $event->name]);
+    }
+
+    public function serviceEnabled(ServiceEnabled $event): void
+    {
+        $this->record->handle(AuditAction::ServiceEnabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)]);
+    }
+
+    public function serviceDisabled(ServiceDisabled $event): void
+    {
+        $this->record->handle(AuditAction::ServiceDisabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)]);
     }
 
     public function profileUpdated(ProfileUpdated $event): void
@@ -189,6 +251,11 @@ final class AuditSubscriber
         if ($user instanceof User && ($when === null || $when($user))) {
             $this->record->handle($action, $user, context: $context);
         }
+    }
+
+    private function serviceName(string $key): string
+    {
+        return $this->services->find($key)?->name() ?? $key;
     }
 
     private function person(User $user): string

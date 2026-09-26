@@ -18,6 +18,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $account_id
  * @property string $user_id
  * @property AccountRole $role
+ * @property list<string>|null $service_access null means every service
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property-read Account $account
  * @property-read User $user
@@ -29,7 +30,15 @@ class Membership extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['role' => AccountRole::class];
+        return ['role' => AccountRole::class, 'service_access' => 'array'];
+    }
+
+    /** Owners and admins always reach every service; others may be limited to a list. */
+    public function canUseService(string $service): bool
+    {
+        return in_array($this->role, [AccountRole::Owner, AccountRole::Admin], true)
+            || $this->service_access === null
+            || in_array($service, $this->service_access, true);
     }
 
     /** @return BelongsTo<Account, $this> */
