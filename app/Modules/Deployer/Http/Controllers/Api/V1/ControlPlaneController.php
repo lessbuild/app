@@ -35,9 +35,12 @@ use App\Modules\Deployer\Services\ControlPlaneAccess;
 use App\Modules\Deployer\Services\Core\DeployerProjectAccess;
 use App\Modules\Deployer\Services\DeploymentLauncher;
 use App\Modules\Deployer\Services\WorkflowConfiguration;
+use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Pagination\Cursor;
 use Illuminate\Support\Collection;
+use Illuminate\Validation\ValidationException;
 
 class ControlPlaneController extends Controller
 {
@@ -63,17 +66,24 @@ class ControlPlaneController extends Controller
 
     /**
      * Require read ability and return current-workspace applications with their environment summaries.
+     * Sending limit or cursor opts into ID-ordered cursor pages; omitting both keeps the original unpaged response.
      */
     public function projects(Request $request): JsonResponse
     {
         $this->api($request, 'read');
+        $page = $this->cursorPage($request);
         $projectIds = $this->controlPlaneAccess->projectIds($request);
-        $projects = $request->user()->workspaceProjects()
+        $query = $request->user()->workspaceProjects()
             ->when($projectIds !== null, fn ($query) => $query->whereIn('id', $projectIds))
-            ->with('environments:id,project_id,name,slug,type,branch,desired_replicas,hibernated_at')
-            ->get();
+            ->with('environments:id,project_id,name,slug,type,branch,desired_replicas,hibernated_at');
 
-        return response()->json(['data' => $projects->map(fn (Project $project) => $this->projectData($project))]);
+        if ($page === null) {
+            return response()->json(['data' => $query->get()->map(fn (Project $project) => $this->projectData($project))]);
+        }
+
+        $projects = $query->reorder()->orderBy('id')->cursorPaginate($page['limit'], ['*'], 'cursor', $page['cursor']);
+
+        return $this->cursorPageResponse($projects, fn (Project $project) => $this->projectData($project), $page['limit']);
     }
 
     /**
@@ -88,19 +98,26 @@ class ControlPlaneController extends Controller
     }
 
     /**
-     * Require read ability and return at most 100 recent deployments belonging to the current workspace.
+     * Require read ability and return current-workspace deployments. Without limit or cursor this keeps the
+     * original newest-100 response; with either, it returns newest-first ID-ordered cursor pages covering all history.
      */
     public function deployments(Request $request): JsonResponse
     {
         $this->api($request, 'read');
+        $page = $this->cursorPage($request);
         $projectIds = $this->controlPlaneAccess->projectIds($request);
-        $builds = Build::query()
+        $query = Build::query()
             ->tap(fn ($query) => app(DeployerProjectAccess::class)->builds($query, $request->user()))
             ->whereHas('repository', fn ($query) => $query->where('organization_id', $request->user()->current_organization_id))
-            ->when($projectIds !== null, fn ($query) => $query->whereHas('environment', fn ($environment) => $environment->whereIn('project_id', $projectIds)))
-            ->latest()->limit(100)->get();
+            ->when($projectIds !== null, fn ($query) => $query->whereHas('environment', fn ($environment) => $environment->whereIn('project_id', $projectIds)));
 
-        return response()->json(['data' => $builds->map(fn (Build $build) => $this->buildData($build))]);
+        if ($page === null) {
+            return response()->json(['data' => $query->latest()->limit(100)->get()->map(fn (Build $build) => $this->buildData($build))]);
+        }
+
+        $builds = $query->orderByDesc('id')->cursorPaginate($page['limit'], ['*'], 'cursor', $page['cursor']);
+
+        return $this->cursorPageResponse($builds, fn (Build $build) => $this->buildData($build), $page['limit']);
     }
 
     /**
@@ -329,6 +346,42 @@ class ControlPlaneController extends Controller
     /**
      * Require the API entitlement, the workspace network policy, and the requested token ability; abort with 403 on denial.
      */
+    /**
+     * Read the opt-in cursor page request; null keeps a collection endpoint's original v1 response.
+     *
+     * @return array{limit: int, cursor: Cursor|null}|null
+     */
+    private function cursorPage(Request $request): ?array
+    {
+        if (! $request->query->has('limit') && ! $request->query->has('cursor')) {
+            return null;
+        }
+
+        $validated = $request->validate([
+            'limit' => ['sometimes', 'integer', 'between:1,100'],
+            'cursor' => ['sometimes', 'string', 'max:1024'],
+        ]);
+        $cursor = null;
+        if (isset($validated['cursor'])) {
+            // The cursor only positions the page; every page re-applies the same workspace and project filters.
+            $cursor = Cursor::fromEncoded($validated['cursor']);
+            $position = $cursor?->toArray()['id'] ?? null;
+            if ($cursor === null || ! (is_int($position) || (is_string($position) && ctype_digit($position)))) {
+                throw ValidationException::withMessages(['cursor' => __('The cursor is invalid.')]);
+            }
+        }
+
+        return ['limit' => (int) ($validated['limit'] ?? 25), 'cursor' => $cursor];
+    }
+
+    private function cursorPageResponse(CursorPaginator $page, callable $transform, int $limit): JsonResponse
+    {
+        return response()->json([
+            'data' => collect($page->items())->map($transform)->values(),
+            'meta' => ['limit' => $limit, 'next_cursor' => $page->nextCursor()?->encode()],
+        ]);
+    }
+
     private function api(Request $request, string $ability): void
     {
         $this->controlPlaneAccess->enforce($request, $ability);

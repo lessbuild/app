@@ -7,6 +7,7 @@ use App\Modules\Deployer\Jobs\RunScheduledTaskJob;
 use App\Modules\Deployer\Jobs\WakeHibernatedEnvironmentJob;
 use App\Modules\Deployer\Models\Provider;
 use App\Modules\Deployer\Models\Server;
+use App\Modules\Deployer\Models\Build;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Models\Website;
 use App\Modules\Deployer\Services\Entitlements;
@@ -539,6 +540,64 @@ class AutomationTest extends TestCase
         $this->withToken($plainTextToken)
             ->patchJson('/api/v1/environments/'.$blockedEnvironment->id.'/scale', ['replicas' => 2])
             ->assertForbidden();
+    }
+
+    public function test_project_list_keeps_the_unpaged_v1_shape_and_offers_opt_in_cursor_pages(): void
+    {
+        $owner = User::factory()->create();
+        foreach (['First', 'Second', 'Third'] as $name) {
+            $owner->currentOrganization->projects()->create(['created_by' => $owner->id, 'name' => $name.' app', 'slug' => str($name)->lower().'-app', 'preset' => 'custom']);
+        }
+        $outsider = User::factory()->create();
+        $outsider->currentOrganization->projects()->create(['created_by' => $outsider->id, 'name' => 'Private App', 'slug' => 'private', 'preset' => 'custom']);
+        Sanctum::actingAs($owner, ['read']);
+
+        $this->getJson('/api/v1/projects')->assertOk()->assertJsonCount(3, 'data')->assertJsonMissingPath('meta');
+
+        $first = $this->getJson('/api/v1/projects?limit=2')->assertOk()->assertJsonCount(2, 'data')->assertJsonPath('meta.limit', 2);
+        $this->assertSame(['First app', 'Second app'], array_column($first->json('data'), 'name'));
+        $cursor = $first->json('meta.next_cursor');
+        $this->assertIsString($cursor);
+
+        $last = $this->getJson('/api/v1/projects?limit=2&cursor='.urlencode($cursor))->assertOk()->assertJsonCount(1, 'data');
+        $this->assertSame(['Third app'], array_column($last->json('data'), 'name'));
+        $this->assertNull($last->json('meta.next_cursor'));
+        $last->assertJsonMissing(['name' => 'Private App']);
+
+        $this->getJson('/api/v1/projects?limit=0')->assertUnprocessable()->assertJsonValidationErrors('limit');
+        $this->getJson('/api/v1/projects?limit=101')->assertUnprocessable()->assertJsonValidationErrors('limit');
+        $this->getJson('/api/v1/projects?cursor=not-a-cursor')->assertUnprocessable()->assertJsonValidationErrors('cursor');
+        $this->getJson('/api/v1/projects?cursor='.urlencode(base64_encode(json_encode(['name' => 'x', '_pointsToNextItems' => true]))))
+            ->assertUnprocessable()->assertJsonValidationErrors('cursor');
+    }
+
+    public function test_deployment_list_keeps_newest_100_by_default_and_pages_through_all_history(): void
+    {
+        $owner = User::factory()->create();
+        $provider = $owner->providers()->create(['name' => 'GitHub', 'provider' => 'github', 'token' => 'provider-secret', 'description' => 'Source control']);
+        $server = $owner->servers()->create(['name' => 'Application server', 'provisioning_status' => 'active']);
+        $website = $owner->websites()->create([
+            'server_id' => $server->id, 'name' => 'Storefront site', 'url' => 'storefront.test',
+            'description' => 'Application', 'environment' => '', 'provisioning_status' => 'active',
+        ]);
+        $repository = $owner->repositories()->create([
+            'provider_id' => $provider->id, 'website_id' => $website->id, 'name' => 'Storefront source',
+            'url' => 'github.com/example/storefront.git', 'branch' => 'main', 'description' => 'Source',
+        ]);
+        $builds = collect(range(1, 102))->map(fn (): Build => $repository->builds()->create(['status' => Build::STATUS_SUCCEEDED]));
+        Sanctum::actingAs($owner, ['read']);
+
+        $this->getJson('/api/v1/deployments')->assertOk()->assertJsonCount(100, 'data')->assertJsonMissingPath('meta');
+
+        $seen = [];
+        $cursor = null;
+        do {
+            $response = $this->getJson('/api/v1/deployments?limit=40'.($cursor === null ? '' : '&cursor='.urlencode($cursor)))->assertOk();
+            $seen = [...$seen, ...array_column($response->json('data'), 'id')];
+            $cursor = $response->json('meta.next_cursor');
+        } while ($cursor !== null && count($seen) < 200);
+
+        $this->assertSame($builds->pluck('id')->sortDesc()->values()->all(), $seen);
     }
 
     public function test_workspace_scoped_api_token_stops_working_after_the_account_switches_workspaces(): void
