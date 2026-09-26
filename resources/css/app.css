@@ -1,9 +1,277 @@
-@import 'tailwindcss';
+@import "tailwindcss" source(none);
+@custom-variant dark (&:where(.dark, .dark *));
+@import "./signal/theme.css";
+@import "./signal/presets.css";
+@import "./signal/components.css";
+@import "./components/ui.css";
 
-@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
-@source '../../storage/framework/views/*.php';
+@source "../views";
+@source "../js";
+@source "../../app/**/*.php";
+@source inline("dark light");
 
-@theme {
-    --font-sans: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji',
-        'Segoe UI Symbol', 'Noto Color Emoji';
+@plugin "@tailwindcss/forms";
+
+:root {
+    --mobile-quick-navigation-space: calc(4rem + env(safe-area-inset-bottom, 0px));
+}
+
+html {
+    overscroll-behavior-x: none;
+}
+
+html:has(dialog[data-modal-sheet][open]:not([data-filter-dialog])),
+html[data-modal-open],
+body:has(dialog[data-modal-sheet][open]:not([data-filter-dialog])),
+body[data-modal-open] {
+    overflow: hidden;
+    overscroll-behavior-y: none;
+}
+
+@media (max-width: 63.999rem) {
+    html:has(dialog[data-filter-dialog][open]),
+    body:has(dialog[data-filter-dialog][open]) {
+        overflow: hidden;
+        overscroll-behavior-y: none;
+    }
+}
+
+body,
+button,
+a,
+[role="button"] {
+    -webkit-tap-highlight-color: transparent;
+}
+
+[data-mobile-main] {
+    scroll-margin-top: 4rem;
+}
+
+[data-mobile-content] {
+    scroll-padding-bottom: var(--mobile-quick-navigation-space);
+}
+
+[data-mobile-quick-navigation] {
+    transition: transform 180ms ease;
+}
+
+[data-mobile-quick-navigation] a,
+[data-mobile-quick-navigation] button {
+    touch-action: manipulation;
+}
+
+@media (max-width: 63.999rem) {
+    [data-mobile-shell] {
+        padding-bottom: var(--mobile-quick-navigation-space);
+    }
+
+    [data-mobile-shell] [data-mobile-main] {
+        min-height: 100svh;
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] {
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] [data-mobile-quick-navigation] {
+        pointer-events: none;
+        transform: translateY(100%);
+    }
+
+    [data-mobile-shell][data-mobile-keyboard-open] [data-mobile-content] {
+        scroll-padding-bottom: 1rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-mobile-quick-navigation] {
+        transition: none;
+    }
+
+    [data-modal-content][aria-busy="true"]::after {
+        animation: none;
+    }
+}
+
+[x-cloak] {
+    display: none !important;
+}
+
+#main-content,
+#main-content .grid,
+#main-content .flex,
+#main-content .grid > *,
+#main-content .flex > * {
+    min-width: 0;
+}
+
+#main-content input,
+#main-content select,
+#main-content textarea,
+#main-content pre {
+    max-width: 100%;
+}
+
+[data-modal-content][aria-busy="true"] {
+    position: relative;
+    min-height: 4rem;
+    opacity: 0.72;
+}
+
+[data-modal-content][aria-busy="true"]::after {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    width: 1rem;
+    height: 1rem;
+    border: 2px solid var(--ui-line);
+    border-top-color: var(--ui-primary);
+    border-radius: 9999px;
+    animation: ui-feedback-spin 700ms linear infinite;
+    content: "";
+}
+
+@keyframes ui-feedback-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.ui-filter-dialog-trigger {
+    display: flex;
+    min-height: 3rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    width: 100%;
+    margin-top: 2rem;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--radius-control-value);
+    background: var(--ui-surface);
+    padding: 0.75rem 1rem;
+    font-weight: 700;
+    text-align: left;
+}
+
+@media (min-width: 64rem) {
+    dialog.ui-filter-dialog {
+        display: block;
+        position: relative;
+        width: 100%;
+        max-width: none;
+        max-height: none;
+        margin: 2rem 0 0;
+        overflow: visible;
+        box-shadow: none;
+    }
+
+    dialog.ui-filter-dialog::backdrop {
+        display: none;
+    }
+
+}
+
+@media (max-width: 63.999rem) {
+    dialog.ui-filter-dialog {
+        width: 100%;
+        max-width: none;
+        max-height: calc(100dvh - 1rem);
+        margin: auto 0 0;
+        border-radius: var(--radius-panel-value) var(--radius-panel-value) 0 0;
+    }
+
+    html[data-modal-js-ready] dialog.ui-filter-dialog:not([open]) {
+        display: none;
+    }
+
+    dialog.ui-filter-dialog [data-filter-panel]::before {
+        width: 2.5rem;
+        height: 0.25rem;
+        flex: 0 0 auto;
+        align-self: center;
+        margin-top: 0.5rem;
+        border-radius: 9999px;
+        background-color: var(--ui-line);
+        content: "";
+    }
+
+    dialog.ui-filter-dialog [data-filter-dialog-body] {
+        padding-bottom: max(1rem, env(safe-area-inset-bottom));
+    }
+}
+
+/* A closed dialog is not interactive without JavaScript. Keep the same form
+   readable inline so GET filters remain usable in the server-rendered fallback. */
+html:not([data-modal-js-ready]) dialog.ui-filter-dialog {
+    position: relative;
+    inset: auto;
+    width: 100%;
+    height: auto;
+    max-height: none;
+    margin: 2rem 0 0;
+    border: 1px solid var(--ui-line);
+    border-radius: var(--radius-control-value);
+    background: var(--ui-surface);
+}
+
+html:not([data-modal-js-ready]) dialog.ui-filter-dialog [data-filter-panel] {
+    display: block;
+    overflow: visible;
+    border-radius: var(--radius-control-value);
+    box-shadow: none;
+}
+
+html:not([data-modal-js-ready]) dialog.ui-filter-dialog [data-filter-dialog-body] {
+    overflow: visible;
+    padding-bottom: 1rem;
+}
+
+html:not([data-modal-js-ready]) [data-filter-dialog-close] {
+    display: none;
+}
+
+/* Keep editable controls at the iOS zoom threshold on narrow screens. */
+@media (max-width: 639px) {
+    #main-content input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+    #main-content select,
+    #main-content textarea {
+        font-size: 1rem;
+        scroll-margin-block: 6rem;
+    }
+
+    #main-content dialog[data-modal-sheet] [data-modal-body] input:not([type='checkbox']):not([type='radio']):not([type='hidden']),
+    #main-content dialog[data-modal-sheet] [data-modal-body] select,
+    #main-content dialog[data-modal-sheet] [data-modal-body] textarea {
+        scroll-margin-block: 4rem;
+    }
+
+    [data-form-error] .ui-alert,
+    [data-form-error-summary] {
+        padding: 0.75rem 0.875rem;
+        font-size: 0.8125rem;
+    }
+
+    [data-form-error-summary] ul {
+        padding-left: 1rem;
+    }
+}
+
+/* Status and notice panels use colour as an outline, not as a full surface.
+   Buttons, progress indicators, and compact badges keep their filled states. */
+#main-content .border:is(
+    .bg-red-50,
+    .bg-orange-50,
+    .bg-amber-50,
+    .bg-yellow-50,
+    .bg-green-50,
+    .bg-emerald-50,
+    .bg-cyan-50,
+    .bg-sky-50,
+    .bg-blue-50,
+    .bg-indigo-50,
+    .bg-violet-50,
+    .bg-purple-50,
+    .bg-rose-50
+) {
+    background-color: var(--ui-surface);
 }

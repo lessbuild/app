@@ -1,0 +1,239 @@
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-mono: var(--font-code);
+  --font-code: var(--font-code-family);
+  --color-brand-50: var(--brand-50);
+  --color-brand-100: var(--brand-100);
+  --color-brand-200: var(--brand-200);
+  --color-brand-300: var(--brand-300);
+  --color-brand-400: var(--brand-400);
+  --color-brand-500: var(--brand-500);
+  --color-brand-600: var(--brand-600);
+  --color-brand-700: var(--brand-700);
+  --color-brand-800: var(--brand-800);
+  --color-brand-900: var(--brand-900);
+  --color-brand-950: var(--brand-950);
+  --color-page: var(--ui-page);
+  --color-surface: var(--ui-surface);
+  --color-surface-muted: var(--ui-surface-muted);
+  --color-surface-raised: var(--ui-surface-raised);
+  --color-ink: var(--ui-ink);
+  --color-muted: var(--ui-muted);
+  --color-subtle: var(--ui-subtle);
+  --color-line: var(--ui-line);
+  --color-primary: var(--ui-primary);
+  --color-primary-hover: var(--ui-primary-hover);
+  --color-primary-soft: var(--ui-primary-soft);
+  --color-on-primary: var(--ui-on-primary);
+  --color-on-danger: var(--ui-on-danger);
+  --color-success: var(--ui-success);
+  --color-success-soft: var(--ui-success-soft);
+  --color-warning: var(--ui-warning);
+  --color-warning-soft: var(--ui-warning-soft);
+  --color-danger: var(--ui-danger);
+  --color-danger-soft: var(--ui-danger-soft);
+  --color-info: var(--ui-info);
+  --color-info-soft: var(--ui-info-soft);
+  --color-emphasis: var(--ui-emphasis);
+  --color-emphasis-ink: var(--ui-emphasis-ink);
+  --color-emphasis-muted: var(--ui-emphasis-muted);
+  --color-selected: var(--ui-selected);
+  --color-selected-ink: var(--ui-selected-ink);
+  --color-disabled: var(--ui-disabled);
+  --color-disabled-ink: var(--ui-disabled-ink);
+  --color-focus: var(--ui-focus);
+  --color-product-navy: var(--product-navy);
+  --radius-control: var(--radius-control-value);
+  --radius-panel: var(--radius-panel-value);
+  --radius-card: var(--radius-card-value);
+  --radius-pill: 999px;
+  --spacing-section: var(--density-section-y);
+  --spacing-control: var(--density-control-y);
+  --size-icon-sm: 1rem;
+  --size-icon-md: 1.25rem;
+  --size-icon-lg: 1.5rem;
+  --border-strength: 1px;
+  --motion-fast: 160ms;
+  --motion-base: 240ms;
+  --shadow-soft: var(--shadow-soft-value);
+  --shadow-panel: var(--shadow-panel-value);
+  --container-content: var(--content-width);
+  --container-reading: var(--reading-width);
+}
+
+:root {
+  --font-body: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-code-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  --font-code: var(--font-code-family);
+
+  /* Replace this brand scale to re-skin the entire starter. */
+  --brand-50: #f6f3ff;
+  --brand-100: #eee8ff;
+  --brand-200: #ded4ff;
+  --brand-300: #c5b4ff;
+  --brand-400: #a78bfa;
+  --brand-500: #8b5cf6;
+  --brand-600: #7544ed;
+  --brand-700: #6633d4;
+  --brand-800: #5429ae;
+  --brand-900: #45248d;
+  --brand-950: #2b155f;
+
+  --ui-page: #f4f7fb;
+  --ui-surface: #ffffff;
+  --ui-surface-muted: #edf2f8;
+  --ui-surface-raised: #ffffff;
+  --ui-ink: #101828;
+  --ui-muted: #586982;
+  --ui-subtle: #8492a8;
+  --ui-line: #dbe3ee;
+  --ui-primary: var(--brand-600);
+  --ui-primary-hover: var(--brand-700);
+  --ui-primary-soft: var(--brand-50);
+  --ui-on-primary: #ffffff;
+  --ui-on-danger: #ffffff;
+  --ui-success: #138a62;
+  --ui-success-soft: #e9f8f1;
+  --ui-warning: #a16207;
+  --ui-warning-soft: #fff7df;
+  --ui-danger: #c2414d;
+  --ui-danger-soft: #fff0f1;
+  --ui-info: #2865b9;
+  --ui-info-soft: #eaf3ff;
+  --ui-emphasis: #111a33;
+  --ui-emphasis-ink: #ffffff;
+  --ui-emphasis-muted: #c3cce0;
+  --ui-selected: var(--brand-50);
+  --ui-selected-ink: var(--brand-800);
+  --ui-disabled: #e7ecf3;
+  --ui-disabled-ink: #97a3b6;
+  --ui-focus: var(--brand-400);
+  --product-navy: #172a4b;
+  --product-deploy: #2563eb;
+  --product-deploy-soft: #eaf1ff;
+  --product-monitor: #129b78;
+  --product-monitor-soft: #e8f7f2;
+  --product-analytics: #7050df;
+  --product-analytics-soft: #f0edff;
+  --product-terminal: #0b1426;
+  --radius-control-value: 0.8rem;
+  --radius-panel-value: 1.35rem;
+  --radius-card-value: 1rem;
+  --shadow-soft-value: 0 1px 2px rgb(16 24 40 / 0.06), 0 8px 24px rgb(16 24 40 / 0.035);
+  --shadow-panel-value: 0 1px 2px rgb(16 24 40 / 0.05), 0 18px 44px rgb(16 24 40 / 0.06);
+  --sidebar-width: 16rem;
+  --header-height: 4rem;
+  --content-width: 78rem;
+  --reading-width: 48rem;
+  --page-gutter: 1.25rem;
+  --density-control-y: 0.7rem;
+  --density-section-y: 6rem;
+}
+
+.dark {
+  --ui-page: #17191c;
+  --ui-surface: #222428;
+  --ui-surface-muted: #2c2f34;
+  --ui-surface-raised: #33363c;
+  --ui-ink: #f4f4f5;
+  --ui-muted: #c0c2c7;
+  --ui-subtle: #989ba2;
+  --ui-line: #464a52;
+  --ui-primary: var(--brand-400);
+  --ui-primary-hover: var(--brand-300);
+  --ui-primary-soft: color-mix(in srgb, var(--brand-500) 17%, var(--ui-surface));
+  --ui-on-primary: var(--brand-950);
+  --product-deploy: #8ab4ff;
+  --product-deploy-soft: color-mix(in srgb, #2563eb 20%, var(--ui-surface));
+  --product-monitor: #5dd6b4;
+  --product-monitor-soft: color-mix(in srgb, #129b78 20%, var(--ui-surface));
+  --product-analytics: #b5a0ff;
+  --product-analytics-soft: color-mix(in srgb, #7050df 20%, var(--ui-surface));
+  --ui-success: #6ee7b7;
+  --ui-success-soft: #1d493a;
+  --ui-warning: #f4c16e;
+  --ui-warning-soft: #4a371b;
+  --ui-danger: #fb9299;
+  --ui-danger-soft: #51272f;
+  --ui-on-danger: #2d171b;
+  --ui-info: #93c5fd;
+  --ui-info-soft: #263e59;
+  --ui-emphasis: #383b42;
+  --ui-emphasis-ink: #ffffff;
+  --ui-emphasis-muted: #d0d2d7;
+  --ui-selected: color-mix(in srgb, var(--brand-500) 18%, var(--ui-surface));
+  --ui-selected-ink: #e4e4e7;
+  --ui-disabled: #373a40;
+  --ui-disabled-ink: #8f9299;
+  --ui-focus: #e4e4e7;
+  --shadow-soft-value: 0 1px 3px rgb(0 0 0 / 0.24), 0 16px 36px rgb(0 0 0 / 0.16);
+  --shadow-panel-value: 0 1px 2px rgb(0 0 0 / 0.28), 0 22px 60px rgb(0 0 0 / 0.22);
+}
+
+html[data-density="compact"] { --density-control-y: 0.55rem; --density-section-y: 4.5rem; }
+html[data-density="comfortable"] { --density-control-y: 0.82rem; --density-section-y: 7rem; }
+html[data-corners="subtle"] { --radius-control-value: 0.2rem; --radius-panel-value: 0.5rem; --radius-card-value: 0.35rem; }
+html[data-corners="soft"] { --radius-control-value: 0.45rem; --radius-panel-value: 0.85rem; --radius-card-value: 0.65rem; }
+html[data-corners="rounded"] { --radius-control-value: 1rem; --radius-panel-value: 1.6rem; --radius-card-value: 1.2rem; }
+html[data-font="editorial"] { --font-heading: Georgia, "Times New Roman", serif; }
+html:not([data-font="editorial"]) { --font-heading: var(--font-body); }
+html[data-preset="editorial"] { --ui-page: #faf8f4; --ui-surface-muted: #f3efe8; --ui-line: #e5ddd1; }
+html.dark[data-preset="editorial"] { --ui-page: #171513; --ui-surface: #211e1a; --ui-surface-muted: #2b2722; --ui-line: #403a31; }
+html[data-preset="compact"] { --shadow-soft-value: 0 1px 2px rgb(16 24 40 / 0.05); --shadow-panel-value: 0 8px 22px rgb(16 24 40 / 0.06); }
+
+html {
+  color-scheme: light;
+  scroll-behavior: smooth;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html[data-contrast="high"] {
+  --ui-muted: #40516a;
+  --ui-subtle: #53657d;
+  --ui-line: #aebdce;
+  --ui-disabled: #d7e0ea;
+  --ui-disabled-ink: #4e627b;
+}
+
+html.dark[data-contrast="high"] {
+  --ui-muted: #f0f0f1;
+  --ui-subtle: #d5d6da;
+  --ui-line: #8b8f97;
+  --ui-disabled: #41454c;
+  --ui-disabled-ink: #e0e1e4;
+}
+
+html[data-motion="reduced"] *,
+html[data-motion="reduced"] *::before,
+html[data-motion="reduced"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  scroll-behavior: auto !important;
+  transition-duration: 0.01ms !important;
+}
+
+body {
+  min-width: 320px;
+  background: var(--ui-page);
+  color: var(--ui-ink);
+  font-family: var(--font-body);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+h1, h2, h3, h4, h5, h6 { font-family: var(--font-heading, var(--font-body)); }
+
+.ui-skip-link { position: fixed; top: 0.75rem; left: 0.75rem; z-index: 100; transform: translateY(-150%); border-radius: var(--radius-control-value); background: var(--ui-emphasis); color: var(--ui-emphasis-ink); padding: 0.7rem 0.9rem; font-size: 0.8rem; font-weight: 800; transition: transform 160ms ease; }
+.ui-skip-link:focus { transform: translateY(0); }
+
+::selection {
+  background: var(--ui-selected);
+  color: var(--ui-selected-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
