@@ -10,6 +10,8 @@ use App\Domain\Accounts\Events\InvitationRevoked;
 use App\Domain\Accounts\Events\MemberInvited;
 use App\Domain\Accounts\Events\MemberRemoved;
 use App\Domain\Accounts\Events\MemberRoleChanged;
+use App\Domain\Api\Events\ApiTokenCreated;
+use App\Domain\Api\Events\ApiTokenRevoked;
 use App\Domain\Audit\Actions\RecordAuditEntry;
 use App\Domain\Audit\Enums\AuditAction;
 use App\Domain\Identity\Events\BrowsersSignedOut;
@@ -50,6 +52,8 @@ final class AuditSubscriber
             SocialIdentityConnected::class => 'socialConnected',
             SocialIdentityDisconnected::class => 'socialDisconnected',
             BrowsersSignedOut::class => 'browsersSignedOut',
+            ApiTokenCreated::class => 'apiTokenCreated',
+            ApiTokenRevoked::class => 'apiTokenRevoked',
         ];
     }
 
@@ -143,6 +147,19 @@ final class AuditSubscriber
     public function browsersSignedOut(BrowsersSignedOut $event): void
     {
         $this->record->handle(AuditAction::BrowsersSignedOut, $event->user, context: ['count' => $event->count]);
+    }
+
+    public function apiTokenCreated(ApiTokenCreated $event): void
+    {
+        $this->record->handle(AuditAction::ApiTokenCreated, $event->actor, $event->token->account_id, [
+            'name' => $event->token->name,
+            'scopes' => implode(', ', $event->token->abilities),
+        ]);
+    }
+
+    public function apiTokenRevoked(ApiTokenRevoked $event): void
+    {
+        $this->record->handle(AuditAction::ApiTokenRevoked, $event->actor, $event->token->account_id, ['name' => $event->token->name]);
     }
 
     /**

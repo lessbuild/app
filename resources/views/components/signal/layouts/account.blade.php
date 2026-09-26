@@ -6,6 +6,7 @@
 
 @php($sections = array_filter([
     'account.members' => __('Members'),
+    'account.api-tokens' => auth()->user()?->can('manageApiTokens', $account) ? __('API tokens') : null,
     'account.audit-log' => auth()->user()?->can('viewAuditLog', $account) ? __('Audit log') : null,
 ]))
 

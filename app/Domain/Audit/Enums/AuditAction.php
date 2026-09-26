@@ -22,6 +22,8 @@ enum AuditAction: string
     case SocialConnected = 'social.connected';
     case SocialDisconnected = 'social.disconnected';
     case BrowsersSignedOut = 'sessions.signed_out';
+    case ApiTokenCreated = 'api_token.created';
+    case ApiTokenRevoked = 'api_token.revoked';
 
     /** @param array<string, mixed> $context */
     public function describe(array $context): string
@@ -46,6 +48,8 @@ enum AuditAction: string
             self::PasskeyRemoved => __('Removed the passkey “:name”', ['name' => $value('name')]),
             self::SocialConnected => __('Connected :provider', ['provider' => $value('provider')]),
             self::SocialDisconnected => __('Disconnected :provider', ['provider' => $value('provider')]),
+            self::ApiTokenCreated => __('Created the API token “:name” (:scopes)', ['name' => $value('name'), 'scopes' => $value('scopes')]),
+            self::ApiTokenRevoked => __('Revoked the API token “:name”', ['name' => $value('name')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),
         };
     }

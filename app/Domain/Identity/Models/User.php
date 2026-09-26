@@ -6,6 +6,7 @@ namespace App\Domain\Identity\Models;
 
 use App\Domain\Accounts\Models\Account;
 use App\Domain\Accounts\Models\Membership;
+use App\Domain\Api\Models\ApiToken;
 use Database\Factories\UserFactory;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
@@ -21,6 +22,7 @@ use Illuminate\Notifications\Notifiable;
 use Laravel\Fortify\Contracts\PasskeyUser;
 use Laravel\Fortify\PasskeyAuthenticatable;
 use Laravel\Fortify\TwoFactorAuthenticatable;
+use Laravel\Sanctum\HasApiTokens;
 
 /**
  * @property string $id
@@ -36,6 +38,9 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
 #[UseFactory(UserFactory::class)]
 class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
+    /** @use HasApiTokens<ApiToken> */
+    use HasApiTokens;
+
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasUlids, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 

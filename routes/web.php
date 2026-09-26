@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\Account\ApiTokensController;
 use App\Http\Controllers\Account\AuditLogController;
 use App\Http\Controllers\Account\MembersController;
 use App\Http\Controllers\Accounts\InvitationController;
@@ -34,6 +35,9 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::delete('/account/invitations/{invitation}', [MembersController::class, 'revokeInvitation'])->name('account.invitations.destroy');
     Route::put('/account/members/{membership}', [MembersController::class, 'updateRole'])->name('account.members.update');
     Route::delete('/account/members/{membership}', [MembersController::class, 'remove'])->name('account.members.destroy');
+    Route::get('/account/api-tokens', [ApiTokensController::class, 'index'])->name('account.api-tokens');
+    Route::post('/account/api-tokens', [ApiTokensController::class, 'store'])->middleware(['password.confirm', 'throttle:20,1'])->name('account.api-tokens.store');
+    Route::delete('/account/api-tokens/{token}', [ApiTokensController::class, 'destroy'])->whereNumber('token')->name('account.api-tokens.destroy');
     Route::get('/account/audit-log', AuditLogController::class)->name('account.audit-log');
 
     Route::redirect('/settings', '/settings/profile')->name('settings');
