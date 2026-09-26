@@ -317,7 +317,9 @@ final class MonitorConfigurationAdministrationProviderTest extends TestCase
         $provider = app(MonitorConfigurationAdministrationProvider::class);
         $reference = app(MonitorAdministrationContext::class)
             ->reference('monitor', $this->check->getKey(), $this->monitorWorkspace);
-        $this->assertTrue($provider->snapshot($this->actor, $this->workspace)->checks->items()[0]['can_archive']);
+        $ownerSnapshot = $provider->snapshot($this->actor, $this->workspace);
+        $this->assertTrue($ownerSnapshot->checks->items()[0]['can_archive']);
+        $this->assertSame(route('monitor.applications.show', $this->application->getKey()), $ownerSnapshot->applications->items()[0]['archive_url']);
 
         try {
             $provider->archiveMonitor($this->actor, $this->workspace, $reference, 7);
@@ -626,6 +628,8 @@ final class MonitorConfigurationAdministrationProviderTest extends TestCase
         $this->assertFalse($snapshot->applications->items()[0]['can_update']);
         $this->assertFalse($snapshot->environments->items()[0]['can_update']);
         $this->assertFalse($snapshot->checks->items()[0]['can_update']);
+        $this->assertNull($snapshot->applications->items()[0]['archive_url']);
+        $this->assertNull($snapshot->environments->items()[0]['archive_url']);
 
         try {
             app(MonitorConfigurationAdministrationProvider::class)->updateApplication(

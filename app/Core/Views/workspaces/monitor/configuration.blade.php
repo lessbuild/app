@@ -42,6 +42,9 @@
                     @else
                         <p class="mt-3 text-sm text-muted">{{ __('Your Monitor role can view this application but cannot change it.') }}</p>
                     @endif
+                    @if ($application['archive_url'])
+                        <p class="mt-4 text-xs text-muted">{{ __('Archive and restore applications in Monitor so their ingestion keys and Core restoration history stay consistent.') }} <a href="{{ $application['archive_url'] }}" class="font-bold text-ink underline">{{ __('Open in Monitor to archive') }}</a></p>
+                    @endif
                 </x-signal.ui.card>
             @empty
                 <x-signal.ui.empty-state :title="__('No mapped Monitor applications')" :description="__('Create or link an application in Monitor, then return here to edit its mapped configuration.')" icon="layers" />
@@ -87,6 +90,9 @@
                                 <x-signal.ui.button type="submit" variant="primary" class="self-end">{{ __('Create HTTP check') }}</x-signal.ui.button>
                             </form>
                         </x-signal.ui.disclosure>
+                    @endif
+                    @if ($environment['archive_url'])
+                        <p class="mt-4 text-xs text-muted">{{ __('Archive and restore environments in Monitor so their ingestion keys and Core restoration history stay consistent.') }} <a href="{{ $environment['archive_url'] }}" class="font-bold text-ink underline">{{ __('Open in Monitor to archive') }}</a></p>
                     @endif
                 </x-signal.ui.card>
             @empty

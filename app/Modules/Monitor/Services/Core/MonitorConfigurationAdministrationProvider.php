@@ -35,6 +35,7 @@ use Illuminate\Pagination\LengthAwarePaginator as LengthAwarePaginatorResult;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Paginator;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
@@ -292,6 +293,10 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
                     'framework_version' => (string) ($application->framework_version ?? ''),
                     'accent' => (string) ($application->accent ?? 'violet'),
                     'can_update' => Gate::forUser($actor)->allows('update', $application),
+                    // Archive stays Monitor-owned so Core's restoration provenance is not bypassed.
+                    'archive_url' => Gate::forUser($actor)->allows('delete', $application) && Route::has('monitor.applications.show')
+                        ? route('monitor.applications.show', $application->getKey())
+                        : null,
                 ];
             });
     }
@@ -318,6 +323,9 @@ final class MonitorConfigurationAdministrationProvider implements WorkspaceMonit
                     'slug' => (string) $environment->slug,
                     'status' => (string) $environment->status,
                     'can_update' => Gate::forUser($actor)->allows('update', $environment),
+                    'archive_url' => Gate::forUser($actor)->allows('delete', $environment) && Route::has('monitor.environments.show')
+                        ? route('monitor.environments.show', [$environment->application_id, $environment->getKey()])
+                        : null,
                     'can_create_check' => $environment->status === 'active'
                         && $binding['resource']->status === 'active'
                         && $binding['canonical_environment']->status === 'active'
