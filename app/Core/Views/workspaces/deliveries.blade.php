@@ -67,7 +67,7 @@
                 @foreach ($deliveries as $delivery)
                     @php
                         $deliveryTone = match ($delivery->status) {
-                            'accepted', 'received' => 'success',
+                            'accepted', 'delivered', 'received' => 'success',
                             'queued', 'pending', 'sending', 'retrying' => 'warning',
                             'failed', 'unavailable', 'uncertain' => 'danger',
                             default => 'neutral',

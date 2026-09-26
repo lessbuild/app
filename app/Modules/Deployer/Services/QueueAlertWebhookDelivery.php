@@ -7,6 +7,10 @@ use App\Modules\Deployer\Models\AlertDestination;
 use App\Modules\Deployer\Models\AlertOutboundDelivery;
 use App\Modules\Deployer\Models\AlertOutboundDeliveryAttempt;
 use App\Modules\Deployer\Models\AlertOutboundDeliveryPayload;
+use App\Modules\Deployer\Models\Build;
+use App\Modules\Deployer\Models\Environment;
+use App\Modules\Deployer\Models\ScheduledTask;
+use App\Modules\Deployer\Models\Website;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
@@ -227,12 +231,15 @@ final class QueueAlertWebhookDelivery
                 }
 
                 $now = now('UTC');
+                $attribution = $this->attribution((int) $destination->organization_id, $payload);
                 $delivery = AlertOutboundDelivery::query()->create([
                     'id' => (string) Str::uuid(),
                     'payload_id' => $payload['id'],
                     'destination_key' => $destination->id,
                     'organization_id' => $destination->organization_id,
                     'alert_destination_id' => $destination->id,
+                    'environment_id' => $attribution['environment_id'],
+                    'website_id' => $attribution['website_id'],
                     'destination_type' => $destination->type,
                     'event' => $payload['event'],
                     'status' => AlertOutboundDelivery::STATUS_QUEUED,
@@ -258,6 +265,54 @@ final class QueueAlertWebhookDelivery
                 ->first();
 
             return [$existing, false];
+        }
+    }
+
+    /**
+     * Attribute the alert to its source environment or website within the destination's workspace; server,
+     * provider, and metric alerts stay workspace-scoped. Attribution never blocks delivery.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return array{environment_id: int|null, website_id: int|null}
+     */
+    private function attribution(int $organizationId, array $payload): array
+    {
+        $none = ['environment_id' => null, 'website_id' => null];
+        $resourceId = $payload['resource_id'] ?? null;
+        if (! is_int($resourceId) && ! (is_string($resourceId) && ctype_digit($resourceId))) {
+            return $none;
+        }
+
+        try {
+            $fromEnvironment = function (?Environment $environment) use ($organizationId, $none): array {
+                return $environment !== null && (int) $environment->project?->organization_id === $organizationId
+                    ? ['environment_id' => (int) $environment->getKey(), 'website_id' => $environment->website_id === null ? null : (int) $environment->website_id]
+                    : $none;
+            };
+
+            switch ($payload['category'] ?? null) {
+                case 'scheduled_task':
+                    return $fromEnvironment(ScheduledTask::query()->find((int) $resourceId)?->environment);
+                case 'deployment':
+                    $build = Build::query()->find((int) $resourceId);
+                    $attributed = $fromEnvironment($build?->environment);
+                    if ($attributed['environment_id'] !== null) {
+                        return $attributed;
+                    }
+                    $repository = $build?->repository;
+
+                    return $repository !== null && (int) $repository->organization_id === $organizationId && $repository->website_id !== null
+                        ? ['environment_id' => null, 'website_id' => (int) $repository->website_id]
+                        : $none;
+                case 'website':
+                    $website = Website::query()->whereKey((int) $resourceId)->where('organization_id', $organizationId)->first(['id']);
+
+                    return $website === null ? $none : ['environment_id' => null, 'website_id' => (int) $website->getKey()];
+                default:
+                    return $none;
+            }
+        } catch (Throwable) {
+            return $none;
         }
     }
 

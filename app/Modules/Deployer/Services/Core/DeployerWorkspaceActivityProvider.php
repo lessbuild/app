@@ -35,6 +35,7 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
         private readonly DeployerOperationalActivity $operationalActivity,
         private readonly DeployerRepositoryWebhookActivity $repositoryWebhookActivity,
         private readonly RepositoryDeploymentPlan $deploymentPlan,
+        private readonly DeployerAlertDeliveryActivity $alertDeliveryActivity,
     ) {}
 
     /**
@@ -58,7 +59,11 @@ final class DeployerWorkspaceActivityProvider implements WorkspaceActivityProvid
             $mappedEnvironments = $this->mappedEnvironments($user, $projects);
 
             return new WorkspaceWebhookDeliverySnapshot(
-                $this->repositoryWebhookActivity->deliveryHistoryForMappedEnvironments($mappedEnvironments, $limit),
+                $this->repositoryWebhookActivity->deliveryHistoryForMappedEnvironments($mappedEnvironments, $limit)
+                    ->concat($this->alertDeliveryActivity->deliveryHistoryForMappedEnvironments($mappedEnvironments, $limit))
+                    ->sortByDesc(fn ($delivery): int => $delivery->recordedAt->getTimestamp())
+                    ->take(max(1, min(100, $limit)))
+                    ->values(),
             );
         } catch (LostConnectionException|QueryException) {
             return new WorkspaceWebhookDeliverySnapshot(collect(), available: false);

@@ -14,6 +14,9 @@ return new class extends Migration
             $table->foreignId('organization_id')->constrained()->cascadeOnDelete();
             $table->unsignedBigInteger('destination_key');
             $table->foreignId('alert_destination_id')->nullable()->constrained()->nullOnDelete();
+            // Source attribution for project-scoped history; plain IDs so deleting a resource keeps its alert history.
+            $table->unsignedBigInteger('environment_id')->nullable();
+            $table->unsignedBigInteger('website_id')->nullable();
             $table->string('destination_type', 20);
             $table->string('event', 16);
             $table->string('status', 16)->default('queued');
@@ -34,6 +37,8 @@ return new class extends Migration
             $table->index(['status', 'next_attempt_at', 'id'], 'alert_outbound_due_index');
             $table->index(['organization_id', 'created_at', 'id'], 'alert_outbound_workspace_index');
             $table->index(['alert_destination_id', 'created_at', 'id'], 'alert_outbound_destination_index');
+            $table->index(['environment_id', 'created_at'], 'alert_outbound_environment_index');
+            $table->index(['website_id', 'created_at'], 'alert_outbound_website_index');
         });
 
         // The retry body is encrypted and kept separately from visible delivery history.

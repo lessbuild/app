@@ -7,6 +7,7 @@ use App\Modules\Deployer\Models\AlertDestination;
 use App\Modules\Deployer\Models\AlertOutboundDelivery;
 use App\Modules\Deployer\Models\AlertOutboundDeliveryAttempt;
 use App\Modules\Deployer\Models\AlertOutboundDeliveryPayload;
+use App\Modules\Deployer\Models\ScheduledTask;
 use App\Modules\Deployer\Models\User;
 use App\Modules\Deployer\Services\AlertWebhookTargetResolver;
 use App\Modules\Deployer\Services\AlertWebhookTransport;
@@ -261,6 +262,37 @@ class AlertOutboundDeliveryTest extends TestCase
         $this->assertSame('retry_window_expired', $delivery->fresh()->error_code);
         $this->assertDatabaseMissing('alert_outbound_delivery_payloads', ['alert_outbound_delivery_id' => $delivery->id]);
         $this->assertDatabaseHas('alert_outbound_deliveries', ['id' => $delivery->id]);
+    }
+
+    public function test_enqueue_attributes_same_workspace_sources_and_never_foreign_ones(): void
+    {
+        Queue::fake();
+        [$owner, $destination] = $this->destination();
+        $project = $owner->currentOrganization->projects()->create(['name' => 'Storefront', 'slug' => 'storefront', 'created_by' => $owner->id]);
+        $environment = $project->environments()->create(['name' => 'Production', 'slug' => 'production', 'type' => 'production']);
+        $task = ScheduledTask::query()->create([
+            'environment_id' => $environment->id, 'created_by' => $owner->id, 'name' => 'Nightly',
+            'command' => 'php artisan inspire', 'cron_expression' => '0 0 * * *',
+        ]);
+        $foreign = User::factory()->create();
+        $foreignEnvironment = $foreign->currentOrganization->projects()
+            ->create(['name' => 'Foreign', 'slug' => 'foreign', 'created_by' => $foreign->id])
+            ->environments()->create(['name' => 'Foreign environment', 'slug' => 'foreign', 'type' => 'staging']);
+        $foreignTask = ScheduledTask::query()->create([
+            'environment_id' => $foreignEnvironment->id, 'created_by' => $foreign->id, 'name' => 'Foreign nightly',
+            'command' => 'php artisan inspire', 'cron_expression' => '0 0 * * *',
+        ]);
+
+        $own = app(QueueAlertWebhookDelivery::class)->enqueue($destination, [...$this->payload(), 'category' => 'scheduled_task', 'resource_id' => $task->id]);
+        $crossWorkspace = app(QueueAlertWebhookDelivery::class)->enqueue($destination, [...$this->payload(), 'category' => 'scheduled_task', 'resource_id' => $foreignTask->id]);
+        $missing = app(QueueAlertWebhookDelivery::class)->enqueue($destination, $this->payload());
+
+        $this->assertSame($environment->id, $own?->environment_id);
+        $this->assertNull($crossWorkspace?->environment_id);
+        $this->assertNull($crossWorkspace?->website_id);
+        $this->assertNull($missing?->environment_id);
+        $this->assertNull($missing?->website_id);
+        Queue::assertPushedTimes(DeliverAlertWebhookJob::class, 3);
     }
 
     /** @return array{User, AlertDestination} */

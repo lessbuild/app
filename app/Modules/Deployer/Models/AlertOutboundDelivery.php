@@ -42,6 +42,8 @@ class AlertOutboundDelivery extends DeployerModel
         'cycle_attempts' => 'integer',
         'manual_retry_count' => 'integer',
         'generation' => 'integer',
+        'environment_id' => 'integer',
+        'website_id' => 'integer',
         'http_status' => 'integer',
         'dispatched_at' => 'immutable_datetime',
         'next_attempt_at' => 'immutable_datetime',

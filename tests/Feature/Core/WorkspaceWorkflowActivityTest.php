@@ -2931,6 +2931,56 @@ final class WorkspaceWorkflowActivityTest extends TestCase
         });
     }
 
+    public function test_deployer_alert_delivery_history_is_project_mapped_and_workspace_bound(): void
+    {
+        config(['platform.products.deployer.auth_authority' => 'core']);
+        $this->addIdentityMap('user', '17', 'user', $this->userId);
+        $this->addIdentityMap('organization', '50', 'workspace', $this->workspaceId);
+        $this->seedDeployerProjectAndBuilds();
+        Schema::connection('deployer')->create('alert_outbound_deliveries', function (Blueprint $table): void {
+            $table->uuid('id')->primary();
+            $table->unsignedBigInteger('organization_id');
+            $table->unsignedBigInteger('environment_id')->nullable();
+            $table->unsignedBigInteger('website_id')->nullable();
+            $table->string('destination_type', 20);
+            $table->string('event', 16);
+            $table->string('status', 16);
+            $table->unsignedInteger('attempt_count')->default(0);
+            $table->timestamps(6);
+        });
+        $row = fn (string $id, int $organization, ?int $environment, string $status, $at): array => [
+            'id' => $id, 'organization_id' => $organization, 'environment_id' => $environment, 'website_id' => null,
+            'destination_type' => 'slack', 'event' => 'failure', 'status' => $status, 'attempt_count' => 3,
+            'created_at' => $at, 'updated_at' => $at,
+        ];
+        DB::connection('deployer')->table('alert_outbound_deliveries')->insert([
+            $row('00000000-0000-4000-8000-000000000001', 50, 41, 'failed', now()),
+            $row('00000000-0000-4000-8000-000000000002', 999, 41, 'failed', now()),
+            $row('00000000-0000-4000-8000-000000000003', 50, null, 'failed', now()),
+            $row('00000000-0000-4000-8000-000000000004', 50, 999, 'failed', now()),
+            $row('00000000-0000-4000-8000-000000000005', 50, 41, 'delivered', now()->subDays(31)),
+        ]);
+
+        $history = app(WorkspaceWebhookDeliveryProviderRegistry::class)
+            ->get('deployer')
+            ?->recentWebhookDeliveriesForWorkspace(
+                PlatformUser::query()->findOrFail($this->userId),
+                Workspace::query()->findOrFail($this->workspaceId),
+                collect([CoreProject::query()->findOrFail($this->projectId)]),
+                30,
+            );
+
+        $this->assertNotNull($history);
+        $this->assertTrue($history->available);
+        $alerts = $history->deliveries->filter(fn ($delivery): bool => str_starts_with($delivery->key, 'deployer:alert-delivery:'))->values();
+        $this->assertCount(1, $alerts);
+        $this->assertSame('deployer:alert-delivery:00000000-0000-4000-8000-000000000001', $alerts[0]->key);
+        $this->assertSame('Checkout app', $alerts[0]->projectName);
+        $this->assertSame('Failure alert to Slack', $alerts[0]->title);
+        $this->assertSame('failed', $alerts[0]->status);
+        $this->assertSame(3, $alerts[0]->attemptCount);
+    }
+
     private function createDeployerRepositoryWebhookActivityTable(): void
     {
         Schema::connection('deployer')->create('repository_webhook_deliveries', function (Blueprint $table): void {
