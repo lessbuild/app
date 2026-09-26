@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Auth;
 
+use App\Auth\Listeners\RecordSignInActivity;
 use App\Domain\Identity\Actions\ConnectSocialIdentity;
 use App\Domain\Identity\Actions\DisconnectSocialIdentity;
 use App\Domain\Identity\Actions\SignInWithSocialProfile;
@@ -99,7 +100,7 @@ final class SocialSignInController
         $request->session()->regenerate();
         if ($result->user->hasEnabledTwoFactorAuthentication()) {
             // Hand over to Fortify's challenge, exactly as a password sign-in would.
-            $request->session()->put(['login.id' => $result->user->getKey(), 'login.remember' => false]);
+            $request->session()->put(['login.id' => $result->user->getKey(), 'login.remember' => false, RecordSignInActivity::PENDING_METHOD => $provider->value]);
 
             return to_route('two-factor.login');
         }

@@ -6,6 +6,7 @@
 @php($sections = [
     'settings.profile' => __('Profile'),
     'settings.security' => __('Security'),
+    'settings.sessions' => __('Sessions'),
 ])
 
 <x-signal.layouts.app :title="$title" :description="$description">

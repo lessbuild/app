@@ -8,6 +8,7 @@ use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
+use App\Http\Controllers\Settings\SessionsController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -30,5 +31,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     // Security changes need a recent password (or passkey) confirmation, like Fortify's own 2FA and passkey routes.
     Route::get('/settings/security', SecurityController::class)->middleware('password.confirm')->name('settings.security');
     Route::post('/settings/security/social/{provider}', [SocialSignInController::class, 'connect'])->middleware(['password.confirm', 'throttle:10,1'])->name('social.connect');
+    Route::get('/settings/sessions', [SessionsController::class, 'index'])->name('settings.sessions');
+    Route::delete('/settings/sessions', [SessionsController::class, 'destroyOthers'])->name('settings.sessions.destroy-others');
+    Route::delete('/settings/sessions/{session}', [SessionsController::class, 'destroy'])->name('settings.sessions.destroy');
     Route::delete('/settings/security/social/{provider}', [SocialSignInController::class, 'disconnect'])->middleware('password.confirm')->name('social.disconnect');
 });

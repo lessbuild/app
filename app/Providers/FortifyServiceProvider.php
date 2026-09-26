@@ -8,16 +8,21 @@ use App\Auth\Fortify\CreateNewUser;
 use App\Auth\Fortify\ResetUserPassword;
 use App\Auth\Fortify\UpdateUserPassword;
 use App\Auth\Fortify\UpdateUserProfileInformation;
+use App\Auth\Listeners\RecordSignInActivity;
 use App\Domain\Identity\Enums\SocialProvider;
 use App\Domain\Identity\Models\User;
 use App\Services\SocialSignIn\SocialSignInGateway;
+use Illuminate\Auth\Events\Failed;
+use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Str;
 use Laravel\Fortify\Actions\RedirectIfTwoFactorAuthenticatable;
+use Laravel\Fortify\Events\TwoFactorAuthenticationFailed;
 use Laravel\Fortify\Fortify;
 
 final class FortifyServiceProvider extends ServiceProvider
@@ -45,6 +50,10 @@ final class FortifyServiceProvider extends ServiceProvider
                 ))
                 : [],
         ]));
+
+        Event::listen(Login::class, [RecordSignInActivity::class, 'login']);
+        Event::listen(Failed::class, [RecordSignInActivity::class, 'failed']);
+        Event::listen(TwoFactorAuthenticationFailed::class, [RecordSignInActivity::class, 'twoFactorFailed']);
 
         RateLimiter::for('login', function (Request $request): Limit {
             $throttleKey = Str::transliterate(Str::lower($request->string(Fortify::username())->toString()).'|'.$request->ip());
