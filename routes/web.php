@@ -6,6 +6,7 @@ use App\Http\Controllers\Account\ApiTokensController;
 use App\Http\Controllers\Account\AuditLogController;
 use App\Http\Controllers\Account\MembersController;
 use App\Http\Controllers\Account\SettingsController as AccountSettingsController;
+use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Accounts\InvitationController;
 use App\Http\Controllers\Auth\SocialSignInController;
 use App\Http\Controllers\ComponentGalleryController;
@@ -48,6 +49,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::delete('/services/{service}', [ServiceController::class, 'destroy'])->name('projects.services.destroy');
     });
 
+    Route::post('/accounts/{account}/switch', SwitchAccountController::class)->name('accounts.switch');
     Route::redirect('/account', '/account/members')->name('account');
     Route::get('/account/members', [MembersController::class, 'index'])->name('account.members');
     Route::post('/account/invitations', [MembersController::class, 'invite'])->middleware('throttle:20,1')->name('account.invitations.store');
