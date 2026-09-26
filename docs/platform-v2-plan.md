@@ -54,7 +54,7 @@ This supersedes `docs/core-boundary-and-integration-plan-2026-09-26.md` and the 
 
 ## Code architecture (SOLID, modern Laravel)
 
-- **Stack**: Laravel 13, PHP 8.5, Livewire 4, Tailwind 4, Alpine, Vite, Fortify, Cashier, Sanctum, Horizon (Redis queues), and the database engine chosen in Phase 0 (default **PostgreSQL**).
+- **Stack**: Laravel 13, PHP 8.5, Livewire 4, Tailwind 4, Alpine, Vite, Fortify, Cashier, Sanctum, Horizon (Redis queues), and **PostgreSQL** in production (decided in Phase 0). Local development and the default test run use SQLite; CI also runs every test against PostgreSQL 17, so engine-specific behaviour is caught.
 - **Layout**, one directory per bounded context:
   `app/Domain/{Accounts,Identity,Projects,Billing,Deploy,Infrastructure,Monitoring,Analytics,Alerts,Incidents,StatusPages,Notifications,Api,Admin}`. Each has `Models`, `Actions` (one public `handle()`, one use case), `Data` (readonly DTOs), `Enums`, `Events`, `Listeners`, `Jobs`, `Policies`, `Queries` (read models), `Contracts`.
 - **Other homes**: `app/Http` holds thin controllers, Form Requests and Livewire components that only call Actions and Queries. `app/Services/*` holds wrappers for external systems (Stripe, GitHub, cloud providers, SSH, DNS), each behind an interface so tests use fakes.
