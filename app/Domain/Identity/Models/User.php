@@ -18,6 +18,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Fortify\Contracts\PasskeyUser;
+use Laravel\Fortify\PasskeyAuthenticatable;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 /**
  * @property string $id
@@ -26,12 +29,12 @@ use Illuminate\Notifications\Notifiable;
  * @property string|null $current_account_id
  */
 #[Fillable(['name', 'email', 'password'])]
-#[Hidden(['password', 'remember_token'])]
+#[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 #[UseFactory(UserFactory::class)]
-class User extends Authenticatable implements MustVerifyEmail
+class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 {
     /** @use HasFactory<UserFactory> */
-    use HasFactory, HasUlids, Notifiable;
+    use HasFactory, HasUlids, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /** @return array<string, string> */
     protected function casts(): array
@@ -39,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'two_factor_confirmed_at' => 'datetime',
         ];
     }
 
