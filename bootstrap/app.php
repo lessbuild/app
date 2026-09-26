@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Accounts\Exceptions\AccountRuleViolation;
+use App\Domain\Identity\Exceptions\IdentityRuleViolation;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -26,5 +27,9 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->map(
             AccountRuleViolation::class,
             fn (AccountRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
+        );
+        $exceptions->map(
+            IdentityRuleViolation::class,
+            fn (IdentityRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
         );
     })->create();

@@ -1,6 +1,9 @@
 @php($user = auth()->user())
 <x-signal.layouts.auth :title="__('Confirm it’s you')" :eyebrow="__('Account security')" :heading="__('Confirm it’s you')" :description="__('This is a sensitive action. Confirm your identity to continue; you won’t be asked again for a while.')">
     <div class="grid gap-5">
+        @if ($errors->getBag('social')->any())
+            <x-signal.ui.alert tone="danger" role="alert">{{ $errors->getBag('social')->first() }}</x-signal.ui.alert>
+        @endif
         @if ($user?->password !== null)
             <form method="POST" action="{{ route('password.confirm.store') }}" class="grid gap-5">
                 @csrf
@@ -25,5 +28,12 @@
                 <p data-passkey-status role="status" aria-live="polite" class="min-h-5 text-sm text-muted"></p>
             </div>
         @endif
+
+        @foreach ($socialProviders as $provider)
+            <form method="POST" action="{{ route('social.confirm', $provider) }}">
+                @csrf
+                <x-signal.ui.button type="submit" variant="secondary" class="w-full justify-center">{{ __('Confirm with :provider', ['provider' => $provider->label()]) }}</x-signal.ui.button>
+            </form>
+        @endforeach
     </div>
 </x-signal.layouts.auth>

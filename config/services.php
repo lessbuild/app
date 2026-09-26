@@ -30,6 +30,23 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    // Social sign-in. Callback URL for each: {APP_URL}/auth/{provider}/callback
+    'github' => [
+        'client_id' => env('GITHUB_CLIENT_ID'),
+        'client_secret' => env('GITHUB_CLIENT_SECRET'),
+    ],
+
+    'gitlab' => [
+        'client_id' => env('GITLAB_CLIENT_ID'),
+        'client_secret' => env('GITLAB_CLIENT_SECRET'),
+        'host' => env('GITLAB_HOST', 'https://gitlab.com'),
+    ],
+
+    'bitbucket' => [
+        'client_id' => env('BITBUCKET_CLIENT_ID'),
+        'client_secret' => env('BITBUCKET_CLIENT_SECRET'),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

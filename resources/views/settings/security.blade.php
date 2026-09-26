@@ -6,6 +6,10 @@
     'two-factor-authentication-disabled' => __('Two-factor authentication is off.'),
     'recovery-codes-generated' => __('New recovery codes were created. The old ones no longer work.'),
     'passkey-deleted' => __('Passkey removed.'),
+    'social-connected' => __('Account connected. You can now sign in with it.'),
+    'social-already-connected' => __('That account was already connected.'),
+    'social-disconnected' => __('Account disconnected.'),
+    'social-not-connected' => __('That account wasn’t connected.'),
 ])
 
 <x-signal.layouts.settings :title="__('Security')" :description="__('How you sign in to :app.', ['app' => config('app.name')])">
@@ -125,6 +129,45 @@
                 <div><x-signal.ui.button type="submit" variant="primary">{{ __('Add a passkey') }}</x-signal.ui.button></div>
             </form>
             <p data-passkey-status role="status" aria-live="polite" class="min-h-5 text-sm text-muted"></p>
+        </div>
+    </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section :title="__('Connected accounts')" :description="__('Sign in with GitHub, GitLab or Bitbucket. An account is only connected from here, never matched by email alone.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @if ($errors->getBag('social')->any())
+                <x-signal.ui.alert tone="danger" role="alert">{{ $errors->getBag('social')->first() }}</x-signal.ui.alert>
+            @endif
+            <ul class="grid gap-3" aria-label="{{ __('Sign-in providers') }}">
+                @foreach ($providers as $row)
+                    <li class="flex flex-wrap items-center justify-between gap-4 rounded-panel border border-line p-4">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <p class="text-sm font-bold text-ink">{{ $row['provider']->label() }}</p>
+                                <x-signal.ui.badge :tone="$row['identity'] ? 'success' : 'neutral'">{{ $row['identity'] ? __('Connected') : __('Not connected') }}</x-signal.ui.badge>
+                            </div>
+                            @if ($row['identity'])
+                                <p class="mt-1 break-all text-xs leading-5 text-muted">
+                                    {{ $row['identity']->email ?? __('No email shared') }} · {{ __('Connected :time', ['time' => $row['identity']->connectedAt?->diffForHumans() ?? __('recently')]) }}
+                                </p>
+                            @elseif (! $row['configured'])
+                                <p class="mt-1 text-xs leading-5 text-muted">{{ __('Not available yet.') }}</p>
+                            @endif
+                        </div>
+                        @if ($row['identity'])
+                            <form method="POST" action="{{ route('social.disconnect', $row['provider']) }}">
+                                @csrf
+                                @method('DELETE')
+                                <x-signal.ui.button type="submit" variant="quiet" :aria-label="__('Disconnect :provider', ['provider' => $row['provider']->label()])">{{ __('Disconnect') }}</x-signal.ui.button>
+                            </form>
+                        @elseif ($row['configured'])
+                            <form method="POST" action="{{ route('social.connect', $row['provider']) }}">
+                                @csrf
+                                <x-signal.ui.button type="submit" variant="secondary">{{ __('Connect :provider', ['provider' => $row['provider']->label()]) }}</x-signal.ui.button>
+                            </form>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
         </div>
     </x-signal.ui.settings-section>
 </x-signal.layouts.settings>

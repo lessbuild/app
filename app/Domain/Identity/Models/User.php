@@ -67,6 +67,12 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         return $this->belongsTo(Account::class, 'current_account_id');
     }
 
+    /** @return HasMany<SocialIdentity, $this> */
+    public function socialIdentities(): HasMany
+    {
+        return $this->hasMany(SocialIdentity::class);
+    }
+
     public function membershipIn(Account $account): ?Membership
     {
         return $this->memberships()->whereBelongsTo($account)->first();

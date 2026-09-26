@@ -1,4 +1,7 @@
 <x-signal.layouts.auth :title="__('Sign in')" :heading="__('Sign in')" :description="__('One account for Deploy, Monitoring, Analytics and everything else on :app.', ['app' => config('app.name')])">
+    @error('social')
+        <x-signal.ui.alert tone="danger" role="alert" class="mb-5">{{ $message }}</x-signal.ui.alert>
+    @enderror
     <form method="POST" action="{{ route('login.store') }}" class="grid gap-5">
         @csrf
         <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="username webauthn" required autofocus />
@@ -26,6 +29,7 @@
             <p data-passkey-status role="status" aria-live="polite" class="min-h-5 text-sm text-muted"></p>
         </div>
     </form>
+    @include('auth.partials.social-sign-in')
 
     <x-slot:footer>
         {{ __('New here?') }}

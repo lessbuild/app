@@ -6,7 +6,9 @@ namespace App\Domain\Identity\Queries;
 
 use App\Domain\Identity\Data\PasskeySummary;
 use App\Domain\Identity\Data\SecuritySettings;
+use App\Domain\Identity\Data\SocialIdentitySummary;
 use App\Domain\Identity\Enums\TwoFactorState;
+use App\Domain\Identity\Models\SocialIdentity;
 use App\Domain\Identity\Models\User;
 use Carbon\CarbonImmutable;
 use Laravel\Fortify\Fortify;
@@ -35,6 +37,12 @@ final class SecuritySettingsQuery
             lastUsedAt: $passkey->last_used_at ? CarbonImmutable::instance($passkey->last_used_at) : null,
         ))->all());
 
+        $socialIdentities = array_values($user->socialIdentities()->oldest()->get()->map(fn (SocialIdentity $identity): SocialIdentitySummary => new SocialIdentitySummary(
+            provider: $identity->provider,
+            email: $identity->email,
+            connectedAt: $identity->created_at ? CarbonImmutable::instance($identity->created_at) : null,
+        ))->all());
+
         return new SecuritySettings(
             hasPassword: $user->password !== null,
             twoFactor: $state,
@@ -42,6 +50,7 @@ final class SecuritySettingsQuery
             pendingQrCodeSvg: $state === TwoFactorState::Pending ? $user->twoFactorQrCodeSvg() : null,
             recoveryCodes: $recoveryCodes,
             passkeys: $passkeys,
+            socialIdentities: $socialIdentities,
         );
     }
 }

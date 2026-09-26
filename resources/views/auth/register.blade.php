@@ -7,6 +7,7 @@
         <x-signal.ui.input-field name="password_confirmation" :label="__('Confirm password')" type="password" autocomplete="new-password" required :restore="false" />
         <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">{{ __('Create account') }}</x-signal.ui.button>
     </form>
+    <div class="mt-5">@include('auth.partials.social-sign-in')</div>
 
     <x-slot:footer>
         {{ __('Already have an account?') }}

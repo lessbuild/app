@@ -8,6 +8,9 @@ use App\Auth\Fortify\CreateNewUser;
 use App\Auth\Fortify\ResetUserPassword;
 use App\Auth\Fortify\UpdateUserPassword;
 use App\Auth\Fortify\UpdateUserProfileInformation;
+use App\Domain\Identity\Enums\SocialProvider;
+use App\Domain\Identity\Models\User;
+use App\Services\SocialSignIn\SocialSignInGateway;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -27,13 +30,21 @@ final class FortifyServiceProvider extends ServiceProvider
         Fortify::resetUserPasswordsUsing(ResetUserPassword::class);
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
-        Fortify::loginView(fn (): View => view('auth.login'));
-        Fortify::registerView(fn (): View => view('auth.register'));
+        Fortify::loginView(fn (): View => view('auth.login', ['socialProviders' => $this->configuredProviders()]));
+        Fortify::registerView(fn (): View => view('auth.register', ['socialProviders' => $this->configuredProviders()]));
         Fortify::requestPasswordResetLinkView(fn (): View => view('auth.forgot-password'));
         Fortify::resetPasswordView(fn (Request $request): View => view('auth.reset-password', ['request' => $request]));
         Fortify::verifyEmailView(fn (): View => view('auth.verify-email'));
         Fortify::twoFactorChallengeView(fn (): View => view('auth.two-factor-challenge'));
-        Fortify::confirmPasswordView(fn (): View => view('auth.confirm-password'));
+        // Passwordless users confirm with a passkey or by signing in again with a provider they connected.
+        Fortify::confirmPasswordView(fn (Request $request): View => view('auth.confirm-password', [
+            'socialProviders' => $request->user() instanceof User
+                ? array_values(array_filter(
+                    $this->configuredProviders(),
+                    fn (SocialProvider $provider): bool => $request->user()->socialIdentities()->where('provider', $provider)->exists(),
+                ))
+                : [],
+        ]));
 
         RateLimiter::for('login', function (Request $request): Limit {
             $throttleKey = Str::transliterate(Str::lower($request->string(Fortify::username())->toString()).'|'.$request->ip());
@@ -46,5 +57,13 @@ final class FortifyServiceProvider extends ServiceProvider
 
             return Limit::perMinute(10)->by((is_string($credentialId) && $credentialId !== '' ? $credentialId : $request->session()->getId()).'|'.$request->ip());
         });
+    }
+
+    /** @return list<SocialProvider> */
+    private function configuredProviders(): array
+    {
+        $gateway = $this->app->make(SocialSignInGateway::class);
+
+        return array_values(array_filter(SocialProvider::cases(), $gateway->configured(...)));
     }
 }
