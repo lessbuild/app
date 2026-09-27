@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Http\Controllers\Account\AcceptInvitationController;
 use App\Http\Controllers\Account\ChangeMemberRoleController;
 use App\Http\Controllers\Account\ChangePlanController;
+use App\Http\Controllers\Account\CheckProviderConnectionController;
 use App\Http\Controllers\Account\CreateApiTokenController;
 use App\Http\Controllers\Account\DeleteAccountController;
+use App\Http\Controllers\Account\DeleteProviderController;
 use App\Http\Controllers\Account\EditAccountSettingsController;
 use App\Http\Controllers\Account\InviteMemberController;
 use App\Http\Controllers\Account\OpenBillingPortalController;
@@ -20,8 +22,12 @@ use App\Http\Controllers\Account\ShowAuditLogController;
 use App\Http\Controllers\Account\ShowBillingController;
 use App\Http\Controllers\Account\ShowInvitationController;
 use App\Http\Controllers\Account\ShowMembersController;
+use App\Http\Controllers\Account\ShowProviderController;
+use App\Http\Controllers\Account\ShowProvidersController;
+use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
+use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DownloadExportController;
@@ -43,6 +49,19 @@ use App\Http\Controllers\Auth\HandleProviderCallbackController;
 use App\Http\Controllers\Auth\RedirectToProviderController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Infrastructure\ConfirmServerImportController;
+use App\Http\Controllers\Infrastructure\CreateServerController;
+use App\Http\Controllers\Infrastructure\CreateServerImportController;
+use App\Http\Controllers\Infrastructure\DeleteServerController;
+use App\Http\Controllers\Infrastructure\InspectServerImportController;
+use App\Http\Controllers\Infrastructure\RecordServerProvisioningController;
+use App\Http\Controllers\Infrastructure\RenameServerController;
+use App\Http\Controllers\Infrastructure\RetryServerInitializationController;
+use App\Http\Controllers\Infrastructure\RetryServerProvisioningController;
+use App\Http\Controllers\Infrastructure\ShowServerController;
+use App\Http\Controllers\Infrastructure\ShowServerImportController;
+use App\Http\Controllers\Infrastructure\ShowServersController;
+use App\Http\Controllers\Infrastructure\StoreServerController;
 use App\Http\Controllers\Monitoring\ArchiveAlertDestinationController;
 use App\Http\Controllers\Monitoring\ArchiveAlertRuleController;
 use App\Http\Controllers\Monitoring\ArchiveMonitorController;
@@ -175,6 +194,10 @@ Route::get('/status/{slug}', ShowPublicStatusPageController::class)->where('slug
 Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.report');
 Route::post('/status/{slug}/subscribe', SubscribeToStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe');
 
+// Provisioning scripts report here (Deployer's URLs); signed, expiring, and CSRF-exempt.
+Route::post('/servers/{server}/provisioning/callback/{event}', RecordServerProvisioningController::class)->whereNumber('server')->whereIn('event', ['status', 'failed', 'log'])
+    ->middleware(['signed', 'throttle:600,1'])->name('callbacks.server');
+
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::get('/auth/{provider}/redirect', RedirectToProviderController::class)->middleware(['guest', 'throttle:20,1'])->name('social.redirect');
@@ -210,6 +233,21 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::post('/sites/{site}/exports', RequestExportController::class)->whereNumber('site')->middleware('throttle:10,1')->name('exports.store');
             Route::get('/exports/{token}', ShowExportController::class)->name('exports.show');
             Route::get('/exports/{token}/download', DownloadExportController::class)->name('exports.download');
+        });
+
+        Route::prefix('/infrastructure')->middleware('service:infrastructure')->name('infrastructure.')->group(function (): void {
+            Route::get('/servers', ShowServersController::class)->name('servers');
+            Route::get('/servers/create', CreateServerController::class)->name('servers.create');
+            Route::post('/servers', StoreServerController::class)->middleware('throttle:10,1')->name('servers.store');
+            Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->name('servers.show');
+            Route::put('/servers/{server}', RenameServerController::class)->whereNumber('server')->middleware('throttle:30,1')->name('servers.update');
+            Route::delete('/servers/{server}', DeleteServerController::class)->whereNumber('server')->middleware(['password.confirm', 'throttle:10,1'])->name('servers.destroy');
+            Route::post('/servers/{server}/initialization/retry', RetryServerInitializationController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.initialization.retry');
+            Route::post('/servers/{server}/provisioning/retry', RetryServerProvisioningController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.provisioning.retry');
+            Route::get('/imports/create', CreateServerImportController::class)->name('imports.create');
+            Route::post('/imports', InspectServerImportController::class)->middleware('throttle:10,1')->name('imports.store');
+            Route::get('/imports/{assessment}', ShowServerImportController::class)->whereNumber('assessment')->name('imports.show');
+            Route::post('/imports/{assessment}/confirm', ConfirmServerImportController::class)->whereNumber('assessment')->middleware('throttle:6,1')->name('imports.confirm');
         });
 
         Route::prefix('/monitoring')->middleware('service:monitoring')->name('monitoring.')->group(function (): void {
@@ -327,6 +365,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
     Route::get('/account/audit-log', ShowAuditLogController::class)->name('account.audit-log');
+    Route::get('/account/providers', ShowProvidersController::class)->name('account.providers');
+    Route::post('/account/providers', StoreProviderController::class)->middleware('throttle:20,1')->name('account.providers.store');
+    Route::get('/account/providers/{provider}', ShowProviderController::class)->whereNumber('provider')->name('account.providers.show');
+    Route::put('/account/providers/{provider}', UpdateProviderController::class)->whereNumber('provider')->middleware('throttle:20,1')->name('account.providers.update');
+    Route::delete('/account/providers/{provider}', DeleteProviderController::class)->whereNumber('provider')->middleware('password.confirm')->name('account.providers.destroy');
+    Route::post('/account/providers/{provider}/check', CheckProviderConnectionController::class)->whereNumber('provider')->middleware('throttle:10,1')->name('account.providers.check');
     Route::get('/account/settings', EditAccountSettingsController::class)->name('account.settings');
     Route::put('/account/settings', RenameAccountController::class)->name('account.settings.update');
     Route::delete('/account/settings', DeleteAccountController::class)->middleware('password.confirm')->name('account.settings.destroy');

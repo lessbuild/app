@@ -1,0 +1,100 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Enums\ProviderType;
+use Carbon\CarbonImmutable;
+use Database\Factories\ProviderFactory;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Carbon;
+
+/**
+ * An account's credential for a cloud, DNS or Git host. The token is encrypted and never shown again.
+ *
+ * @property int $id
+ * @property string $account_id
+ * @property string|null $created_by
+ * @property string $name
+ * @property string|null $description
+ * @property ProviderType $type
+ * @property string $credential_type
+ * @property string|null $external_id
+ * @property string $token
+ * @property string $connection_status unchecked, healthy or failed
+ * @property CarbonImmutable|null $connection_checked_at
+ * @property bool $connection_monitoring_enabled
+ * @property int $connection_check_interval_minutes
+ * @property int $connection_failure_threshold
+ * @property int $connection_failure_count
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property Carbon|null $deleted_at
+ * @property-read Account $account
+ * @property-read User|null $creator
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Server> $servers
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, ProviderConnectionCheck> $connectionChecks
+ */
+#[Hidden(['token'])]
+#[Table(dateFormat: 'Y-m-d H:i:s.u')]
+#[UseFactory(ProviderFactory::class)]
+class Provider extends Model
+{
+    /** @use HasFactory<ProviderFactory> */
+    use HasFactory, SoftDeletes;
+
+    public const CHECK_INTERVALS = [60, 360, 720, 1440];
+
+    public const FAILURE_THRESHOLDS = [1, 2, 3, 5];
+
+    /** @return BelongsTo<Account, $this> */
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function creator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /** @return HasMany<Server, $this> */
+    public function servers(): HasMany
+    {
+        return $this->hasMany(Server::class);
+    }
+
+    /** @return HasMany<ProviderConnectionCheck, $this> */
+    public function connectionChecks(): HasMany
+    {
+        return $this->hasMany(ProviderConnectionCheck::class);
+    }
+
+    public function hasAttachedResources(): bool
+    {
+        return $this->servers()->exists();
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'type' => ProviderType::class,
+            'token' => 'encrypted',
+            'connection_checked_at' => 'immutable_datetime',
+            'connection_monitoring_enabled' => 'boolean',
+            'connection_check_interval_minutes' => 'integer',
+            'connection_failure_threshold' => 'integer',
+            'connection_failure_count' => 'integer',
+        ];
+    }
+}

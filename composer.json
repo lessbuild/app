@@ -16,6 +16,8 @@
         "laravel/socialite": "^5.31",
         "laravel/tinker": "^3.0",
         "livewire/livewire": "^4.4",
+        "phpseclib/phpseclib": "~4.0.1",
+        "spatie/ssh": "^1.13",
         "stripe/stripe-php": "^19.0"
     },
     "require-dev": {

@@ -144,6 +144,7 @@ final class ShellComposer
             $links[] = new NavLink(__('Audit log'), route('account.audit-log'), $this->request->routeIs('account.audit-log'), 'clock');
         }
         if ($user->can('update', $account)) {
+            $links[] = new NavLink(__('Providers'), route('account.providers'), $this->request->routeIs('account.providers*'), 'server');
             $links[] = new NavLink(__('Settings'), route('account.settings'), $this->request->routeIs('account.settings'), 'cog');
         }
 

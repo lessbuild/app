@@ -9,6 +9,8 @@ use App\Actions\Billing\ReportUsage;
 use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
+use App\Models\Provider;
+use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
@@ -157,3 +159,34 @@ Artisan::command('issues:send-digest {--account= : Only this account} {--from= :
     return $totals['failed'] === 0 ? 0 : 1;
 })->purpose('Send the daily issue digest');
 Schedule::command('issues:send-digest')->dailyAt('08:00')->withoutOverlapping(60)->onOneServer();
+
+Artisan::command('providers:check {--provider=* : Only these provider IDs}', function (ProviderHealthMonitor $monitor): int {
+    $ids = array_values(array_filter(array_map('intval', (array) $this->option('provider')), fn (int $id): bool => $id > 0));
+    $query = Provider::query()->where('connection_monitoring_enabled', true)->orderByRaw('connection_checked_at IS NOT NULL')->orderBy('connection_checked_at')->orderBy('id');
+    if ($ids !== []) {
+        $query->whereKey($ids);
+    } else {
+        $query->where(function ($query): void {
+            $query->whereNull('connection_checked_at');
+            foreach (Provider::CHECK_INTERVALS as $minutes) {
+                // The command runs every five minutes; a minute's slack keeps a check from slipping a whole interval.
+                $query->orWhere(fn ($query) => $query->where('connection_check_interval_minutes', $minutes)->where('connection_checked_at', '<=', now()->subMinutes($minutes - 1)));
+            }
+        });
+    }
+    $checked = $failed = $discarded = 0;
+    foreach ($query->limit(max(1, (int) config('infrastructure.provider_check_batch_size')))->get() as $provider) {
+        $result = $monitor->check($provider, automatic: true);
+        if (! $result['recorded']) {
+            $discarded++;
+
+            continue;
+        }
+        $checked++;
+        $failed += (int) ! $result['successful'];
+    }
+    $this->info("Checked {$checked} providers; {$failed} failed; {$discarded} discarded.");
+
+    return 0;
+})->purpose('Check provider credentials that are due, and tell their creators when a connection fails or recovers');
+Schedule::command('providers:check')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();

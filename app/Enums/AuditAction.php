@@ -52,6 +52,13 @@ enum AuditAction: string
     case IngestTokenCreated = 'ingest_token.created';
     case IngestTokenRotated = 'ingest_token.rotated';
     case IngestTokenRevoked = 'ingest_token.revoked';
+    case ProviderCreated = 'provider.created';
+    case ProviderUpdated = 'provider.updated';
+    case ProviderDeleted = 'provider.deleted';
+    case ServerCreated = 'server.created';
+    case ServerImported = 'server.imported';
+    case ServerRenamed = 'server.renamed';
+    case ServerDeleted = 'server.deleted';
     case DashboardCreated = 'dashboard.created';
     case DashboardUpdated = 'dashboard.updated';
     case DashboardDeleted = 'dashboard.deleted';
@@ -116,6 +123,13 @@ enum AuditAction: string
             self::IngestTokenCreated => __('Created the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRotated => __('Replaced the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRevoked => __('Revoked the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
+            self::ProviderCreated => __('Connected :type as “:provider”', ['type' => $value('type'), 'provider' => $value('provider')]),
+            self::ProviderUpdated => __('Changed the provider “:provider”', ['provider' => $value('provider')]),
+            self::ProviderDeleted => __('Removed the provider “:provider”', ['provider' => $value('provider')]),
+            self::ServerCreated => __('Created the server :server on :provider', ['server' => $value('server'), 'provider' => $value('provider')]),
+            self::ServerImported => __('Imported the server :server (:ip)', ['server' => $value('server'), 'ip' => $value('ip')]),
+            self::ServerRenamed => __('Renamed the server :server to :name', ['server' => $value('server'), 'name' => $value('name')]),
+            self::ServerDeleted => __('Deleted the server :server', ['server' => $value('server')]),
             self::DashboardCreated => __('Created the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardUpdated => __('Changed the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardDeleted => __('Deleted the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),

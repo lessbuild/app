@@ -157,14 +157,20 @@ trait MonitoringHelpers
     /** Put an account on a paid Monitoring tier (pro, team or scale). */
     protected function onMonitoringTier(Account|Project|Environment $subject, string $tier): void
     {
+        $this->onTier($subject, 'monitoring', $tier);
+    }
+
+    /** Put the account on a service's tier. */
+    protected function onTier(Account|Project|Environment $subject, string $service, string $tier): void
+    {
         $accountId = match (true) {
             $subject instanceof Environment => $subject->project->account_id,
             $subject instanceof Project => $subject->account_id,
             default => $subject->id,
         };
-        $selection = BillingSelection::query()->where('account_id', $accountId)->where('service', 'monitoring')
+        $selection = BillingSelection::query()->where('account_id', $accountId)->where('service', $service)
             ->where('kind', SelectionKind::Tier)->first() ?? new BillingSelection;
-        $selection->forceFill(['account_id' => $accountId, 'service' => 'monitoring', 'kind' => SelectionKind::Tier, 'item_key' => $tier, 'quantity' => 1])->save();
+        $selection->forceFill(['account_id' => $accountId, 'service' => $service, 'kind' => SelectionKind::Tier, 'item_key' => $tier, 'quantity' => 1])->save();
     }
 
     /**

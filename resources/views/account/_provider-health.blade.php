@@ -1,0 +1,1 @@
+<x-signal.ui.badge :tone="match ($provider->connection_status) { 'healthy' => 'success', 'failed' => 'danger', default => 'neutral' }">{{ match ($provider->connection_status) { 'healthy' => __('Connected'), 'failed' => __('Can’t connect'), default => __('Not checked') } }}</x-signal.ui.badge>
