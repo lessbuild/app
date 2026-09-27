@@ -7,6 +7,7 @@ import './signal-topbar';
 import './signal-shell';
 import './passkeys';
 import './terminal-open';
+import './page-tabs';
 
 window.Alpine = Alpine;
 Alpine.start();

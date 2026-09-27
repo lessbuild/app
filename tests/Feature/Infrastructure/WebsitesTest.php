@@ -147,6 +147,20 @@ final class WebsitesTest extends TestCase
         $this->actingAs($viewer)->post($this->base, $this->website())->assertForbidden();
     }
 
+    public function test_the_website_page_renders_every_tab_and_shows_the_requested_one(): void
+    {
+        $website = Website::factory()->create(['server_id' => $this->server->id]);
+        $hidden = function (string $url): array {
+            preg_match_all('/<section\b[^>]*\bdata-page-panel="([a-z]+)"[^>]*>/', (string) $this->actingAs($this->owner)->get($url)->assertOk()->getContent(), $panels, PREG_SET_ORDER);
+
+            return collect($panels)->mapWithKeys(fn (array $panel): array => [$panel[1] => str_contains($panel[0], ' hidden')])->all();
+        };
+
+        // Every tab's panel is on the page (switching needs no request); only the requested one is shown.
+        $this->assertSame(['overview' => true, 'domains' => false, 'database' => true, 'backups' => true, 'settings' => true], $hidden("{$this->base}/{$website->id}?tab=domains"));
+        $this->assertFalse($hidden("{$this->base}/{$website->id}?tab=nonsense")['overview']);
+    }
+
     /**
      * @param  array<string, mixed>  $overrides
      * @return array<string, mixed>

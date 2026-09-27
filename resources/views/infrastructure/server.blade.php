@@ -44,8 +44,8 @@
 
     <x-signal.ui.page-tabs :tabs="$tabs" :current="$tab" :url="route('infrastructure.servers.show', [$project, $server->id])" />
 
-    @if ($server->provisioning_status === 'active')
-        @if ($tab === 'overview')
+    <x-signal.ui.page-tab-panel name="overview" :current="$tab">
+        @if ($server->provisioning_status === 'active')
         @php($latest = $metrics->last())
         <x-signal.ui.card class="grid gap-4 p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -76,9 +76,14 @@
                 <p class="text-xs text-muted">{{ __('Last reading :time · up :days days · :processes processes', ['time' => $latest->recorded_at->diffForHumans(), 'days' => intdiv($latest->uptime_seconds, 86400), 'processes' => $latest->process_count]) }}</p>
             @endif
         </x-signal.ui.card>
+        @else
+            <x-signal.ui.card class="p-5 text-sm text-muted">{{ __('Resources, alerts and diagnostics appear once the server is active.') }}</x-signal.ui.card>
         @endif
+    </x-signal.ui.page-tab-panel>
 
-        @if ($tab === 'alerts')
+    @if ($server->provisioning_status === 'active')
+
+        <x-signal.ui.page-tab-panel name="alerts" :current="$tab">
         <x-signal.ui.settings-section id="alerts" :title="__('Alerts')" :description="__('Owners and admins get an email and an inbox message when a reading stays past a threshold, and when it recovers.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @if ($alertRules->isEmpty())
@@ -119,9 +124,9 @@
                 @endif
             </div>
         </x-signal.ui.settings-section>
-        @endif
+        </x-signal.ui.page-tab-panel>
 
-        @if ($tab === 'diagnostics')
+        <x-signal.ui.page-tab-panel name="diagnostics" :current="$tab">
         <x-signal.ui.settings-section id="diagnostics" :title="__('Diagnostics')" :description="$diagnostics?->finished_at ? __('Last run :time', ['time' => $diagnostics->finished_at->diffForHumans()]) : __('A read-only check of SSH, root access, PHP, storage, disk, memory and processes.')">
             <div class="grid gap-3 p-4 sm:p-6">
                 @if ($diagnostics?->isRunning())
@@ -136,10 +141,10 @@
                 <form method="POST" action="{{ route('infrastructure.servers.diagnostics', [$project, $server->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Run diagnostics') }}</x-signal.ui.button></form>
             </div>
         </x-signal.ui.settings-section>
-        @endif
+        </x-signal.ui.page-tab-panel>
     @endif
 
-    @if ($tab === 'logs')
+    <x-signal.ui.page-tab-panel name="logs" :current="$tab">
     <x-signal.ui.settings-section :title="__('Logs')" :description="$log?->refreshed_at ? __('Fetched :time', ['time' => $log->refreshed_at->diffForHumans()]) : __('The last 200 lines of each log.')">
         <div class="grid gap-3 p-4 sm:p-6">
             <nav aria-label="{{ __('Logs') }}" class="flex flex-wrap gap-2">
@@ -160,9 +165,10 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
-    @endif
+    </x-signal.ui.page-tab-panel>
 
-    @if ($canManage && $tab === 'settings')
+    @if ($canManage)
+    <x-signal.ui.page-tab-panel name="settings" :current="$tab">
         <x-signal.ui.settings-section :title="__('Name')" :description="__('Shown in the app. The server’s hostname stays :name.', ['name' => $server->name])">
             <form method="POST" action="{{ route('infrastructure.servers.update', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">
                 @csrf
@@ -178,5 +184,6 @@
                 <x-signal.overlays.delete-confirmation id="delete-server" :route="route('infrastructure.servers.destroy', [$project, $server->id])" :title="__('Delete :server?', ['server' => $server->label()])" :description="$server->provider ? __('The machine and its data are deleted at the provider. This can’t be undone.') : __('Nothing on the server is changed.')" :submit-label="__('Delete server')" />
             </div>
         </x-signal.ui.settings-section>
+    </x-signal.ui.page-tab-panel>
     @endif
 </x-signal.layouts.project>

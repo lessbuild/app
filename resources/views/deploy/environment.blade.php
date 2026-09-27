@@ -11,7 +11,7 @@
 
     <x-signal.ui.page-tabs :tabs="$tabs" :current="$tab" :url="route('deploy.environments.show', [$project, $environment])" />
 
-    @if ($tab === 'controls')
+    <x-signal.ui.page-tab-panel name="controls" :current="$tab">
     <x-signal.ui.settings-section id="controls" :title="__('Deployment controls')" :description="__('Lock deploys during an incident or freeze, or allow them only in a weekly window.')">
         <form method="POST" action="{{ route('deploy.environments.controls', [$project, $environment]) }}" class="grid items-start gap-4 p-4 sm:grid-cols-2 sm:p-6">
             @csrf
@@ -31,9 +31,9 @@
             @if ($canManage)<div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save controls') }}</x-signal.ui.button></div>@endif
         </form>
     </x-signal.ui.settings-section>
-    @endif
+    </x-signal.ui.page-tab-panel>
 
-    @if ($tab === 'settings')
+    <x-signal.ui.page-tab-panel name="settings" :current="$tab">
     <x-signal.ui.settings-section id="settings" :title="__('How deploys run')" :description="__('Approval, strategy, safety nets, runtime and replicas.')">
         <form method="POST" action="{{ route('deploy.environments.settings', [$project, $environment]) }}" class="grid items-start gap-4 p-4 sm:grid-cols-2 sm:p-6">
             @csrf
@@ -72,9 +72,9 @@
             @if ($canManage)<div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save settings') }}</x-signal.ui.button></div>@endif
         </form>
     </x-signal.ui.settings-section>
-    @endif
+    </x-signal.ui.page-tab-panel>
 
-    @if ($tab === 'variables')
+    <x-signal.ui.page-tab-panel name="variables" :current="$tab">
     <x-signal.ui.settings-section id="variables" :title="__('Variables')" :description="__('Written into .env on each deploy (runtime), exported while building (build), or both. Secrets aren’t shown again.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @if ($environment->variables->isNotEmpty())
@@ -114,9 +114,9 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
-    @endif
+    </x-signal.ui.page-tab-panel>
 
-    @if ($tab === 'processes')
+    <x-signal.ui.page-tab-panel name="processes" :current="$tab">
     <x-signal.ui.settings-section id="processes" :title="__('Workers and scheduler')" :description="__('Long-running processes each deploy restarts as systemd units, like queue workers or the scheduler.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @foreach ($environment->processes as $process)
@@ -141,9 +141,9 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
-    @endif
+    </x-signal.ui.page-tab-panel>
 
-    @if ($tab === 'resources')
+    <x-signal.ui.page-tab-panel name="resources" :current="$tab">
     <x-signal.ui.settings-section id="resources" :title="__('Resources')" :description="__('Databases, caches and storage. Their variables go into .env; managed Redis and Valkey are set up on the server.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @foreach ($environment->resources as $resource)
@@ -170,5 +170,5 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
-    @endif
+    </x-signal.ui.page-tab-panel>
 </x-signal.layouts.project>
