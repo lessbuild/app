@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Actions\Analytics\DispatchPendingBatches;
+use App\Actions\Analytics\PruneAnalyticsData;
 use App\Actions\Billing\ApplyEndedSelections;
 use App\Actions\Billing\ReportUsage;
 use App\Actions\Notifications\WarnAboutExpiringTokens;
@@ -29,3 +31,14 @@ Artisan::command('billing:report-usage', function (ReportUsage $report): void {
 })->purpose('Send new metered usage to Stripe');
 Schedule::command('billing:apply-ended')->hourly();
 Schedule::command('billing:report-usage')->hourlyAt(5);
+
+Artisan::command('analytics:dispatch-pending {--limit=500}', function (DispatchPendingBatches $dispatch): void {
+    $this->info("Dispatched {$dispatch->handle((int) $this->option('limit'))} pending batches.");
+})->purpose('Queue analytics batches that are waiting or failed');
+Artisan::command('analytics:prune {--days= : Override event and visit retention days}', function (PruneAnalyticsData $prune): void {
+    $days = $this->option('days');
+    $counts = $prune->handle(is_numeric($days) ? (int) $days : null);
+    $this->info("Pruned {$counts['events']} events, {$counts['visits']} visits, {$counts['batches']} batches, {$counts['aggregates']} aggregates and {$counts['exports']} exports.");
+})->purpose('Remove analytics data past its retention');
+Schedule::command('analytics:dispatch-pending')->everyMinute()->withoutOverlapping();
+Schedule::command('analytics:prune')->daily()->withoutOverlapping();

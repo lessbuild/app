@@ -90,7 +90,7 @@ final class ProjectPagesTest extends TestCase
             ->assertSee(route('projects.services.show', [$project->id, 'analytics']), false)
             ->assertSee(__('You don’t have access to :service in this account.', ['service' => 'Deploy']));
         $this->actingAs($member)->get("/projects/{$project->id}/services/deploy")->assertForbidden();
-        $this->actingAs($member)->get("/projects/{$project->id}/services/analytics")->assertOk();
+        $this->actingAs($member)->get("/projects/{$project->id}/services/analytics")->assertRedirect(route('analytics.overview', $project));
 
         $this->actingAs($this->owner)->put("/account/members/{$membership->id}/services", ['access' => 'all'])->assertRedirect('/account/members');
         $this->assertNull($membership->refresh()->service_access);

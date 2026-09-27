@@ -1,0 +1,40 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Analytics;
+
+use App\Models\AnalyticsSite;
+use App\Models\User;
+use App\Queries\Projects\VerifiedHostnamesQuery;
+use Illuminate\Support\Facades\Gate;
+
+final class VerifySite
+{
+    public function __construct(private readonly VerifiedHostnamesQuery $verified) {}
+
+    /**
+     * A site may collect once one of its hostnames is a verified domain of its project, or a subdomain of one,
+     * so nobody can point a tracker at a website they don't control. Returns whether it is verified.
+     */
+    public function handle(User $actor, AnalyticsSite $site): bool
+    {
+        Gate::forUser($actor)->authorize('manageService', [$site->project, 'analytics']);
+        if ($site->isVerified()) {
+            return true;
+        }
+
+        $verified = $this->verified->handle($site->project);
+        foreach ($site->domains as $domain) {
+            foreach ($verified as $owned) {
+                if ($domain === $owned || str_ends_with($domain, '.'.$owned)) {
+                    $site->forceFill(['verified_at' => now()])->save();
+
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+}

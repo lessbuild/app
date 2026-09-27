@@ -59,6 +59,12 @@ class Project extends Model
         return $this->hasMany(Domain::class);
     }
 
+    /** @return HasMany<AnalyticsSite, $this> */
+    public function analyticsSites(): HasMany
+    {
+        return $this->hasMany(AnalyticsSite::class);
+    }
+
     /** @return HasMany<EnabledService, $this> */
     public function enabledServices(): HasMany
     {

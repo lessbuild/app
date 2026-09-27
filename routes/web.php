@@ -22,6 +22,13 @@ use App\Http\Controllers\Account\ShowInvitationController;
 use App\Http\Controllers\Account\ShowMembersController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
+use App\Http\Controllers\Analytics\DeleteSiteController;
+use App\Http\Controllers\Analytics\ShowOverviewController;
+use App\Http\Controllers\Analytics\ShowSiteController;
+use App\Http\Controllers\Analytics\ShowSitesController;
+use App\Http\Controllers\Analytics\StoreSiteController;
+use App\Http\Controllers\Analytics\UpdateSiteController;
+use App\Http\Controllers\Analytics\VerifySiteController;
 use App\Http\Controllers\Auth\ConfirmWithProviderController;
 use App\Http\Controllers\Auth\ConnectProviderController;
 use App\Http\Controllers\Auth\DisconnectProviderController;
@@ -87,6 +94,16 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/projects/create', CreateProjectController::class)->name('projects.create');
     Route::post('/projects', StoreProjectController::class)->middleware('throttle:30,1')->name('projects.store');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
+        Route::prefix('/analytics')->middleware('service:analytics')->name('analytics.')->group(function (): void {
+            Route::get('/', ShowOverviewController::class)->name('overview');
+            Route::get('/sites', ShowSitesController::class)->name('sites');
+            Route::post('/sites', StoreSiteController::class)->middleware('throttle:30,1')->name('sites.store');
+            Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->name('sites.show');
+            Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->name('sites.update');
+            Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware('throttle:20,1')->name('sites.verify');
+            Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware('password.confirm')->name('sites.destroy');
+        });
+
         Route::get('/', ShowProjectController::class)->name('projects.show');
         Route::delete('/checklist', DismissChecklistController::class)->name('projects.checklist.dismiss');
         Route::get('/settings', EditProjectSettingsController::class)->name('projects.settings');

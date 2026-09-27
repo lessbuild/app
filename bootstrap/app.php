@@ -3,9 +3,11 @@
 declare(strict_types=1);
 
 use App\Exceptions\AccountRuleViolation;
+use App\Exceptions\AnalyticsRuleViolation;
 use App\Exceptions\BillingRuleViolation;
 use App\Exceptions\IdentityRuleViolation;
 use App\Exceptions\ProjectRuleViolation;
+use App\Http\Middleware\EnsureServiceEnabled;
 use App\Http\Middleware\ProjectContext;
 use App\Http\Middleware\ResolveTokenAccount;
 use Illuminate\Foundation\Application;
@@ -31,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'ability' => CheckForAnyAbility::class,
             'token.account' => ResolveTokenAccount::class,
             'project.context' => ProjectContext::class,
+            'service' => EnsureServiceEnabled::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
@@ -45,6 +48,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->map(
             ProjectRuleViolation::class,
             fn (ProjectRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
+        );
+        $exceptions->map(
+            AnalyticsRuleViolation::class,
+            fn (AnalyticsRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
         );
         $exceptions->map(
             BillingRuleViolation::class,

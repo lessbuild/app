@@ -55,7 +55,7 @@ final class ShellComposer
     /** @return list<NavLink> */
     private function primaryNav(User $user, Account $account, ?Project $project): array
     {
-        $service = $this->request->route('service');
+        $service = $this->currentService();
         $links = [new NavLink(__('Projects'), route('dashboard'), ! is_string($service) && $this->request->routeIs('dashboard', 'projects.*'), 'tasks')];
 
         foreach ($this->services->all() as $definition) {
@@ -75,7 +75,7 @@ final class ShellComposer
     /** @return array{0: string, 1: list<NavLink>} */
     private function sections(User $user, ?Account $account, ?Project $project): array
     {
-        $service = $this->request->route('service');
+        $service = $this->currentService();
         $definition = is_string($service) ? $this->services->find($service) : null;
 
         if ($project !== null && $definition !== null) {
@@ -111,6 +111,22 @@ final class ShellComposer
         }
 
         return ['', []];
+    }
+
+    /** The service whose pages are showing: the generic {service} pages, or a service's own routes (e.g. analytics.*). */
+    private function currentService(): ?string
+    {
+        $service = $this->request->route('service');
+        if (is_string($service)) {
+            return $service;
+        }
+        foreach ($this->services->keys() as $key) {
+            if ($this->request->routeIs($key.'.*')) {
+                return $key;
+            }
+        }
+
+        return null;
     }
 
     /** @return list<NavLink> */
