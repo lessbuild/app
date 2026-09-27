@@ -37,6 +37,7 @@ final class InfrastructureService implements PlatformService
     {
         return [
             new ServiceNavItem(__('Servers'), route('infrastructure.servers', $projectId), 'infrastructure.servers*|infrastructure.imports*'),
+            new ServiceNavItem(__('Websites'), route('infrastructure.websites', $projectId), 'infrastructure.websites*'),
         ];
     }
 

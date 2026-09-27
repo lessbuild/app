@@ -53,23 +53,36 @@ use App\Http\Controllers\Infrastructure\CancelServerCommandController;
 use App\Http\Controllers\Infrastructure\ConfirmServerImportController;
 use App\Http\Controllers\Infrastructure\CreateServerController;
 use App\Http\Controllers\Infrastructure\CreateServerImportController;
+use App\Http\Controllers\Infrastructure\CreateWebsiteController;
 use App\Http\Controllers\Infrastructure\DeleteServerCommandController;
 use App\Http\Controllers\Infrastructure\DeleteServerController;
+use App\Http\Controllers\Infrastructure\DeleteWebsiteController;
+use App\Http\Controllers\Infrastructure\DeleteWebsiteDomainController;
 use App\Http\Controllers\Infrastructure\ExportServerCommandsController;
 use App\Http\Controllers\Infrastructure\InspectServerImportController;
+use App\Http\Controllers\Infrastructure\IssueTemporaryDomainController;
 use App\Http\Controllers\Infrastructure\RecordServerProvisioningController;
+use App\Http\Controllers\Infrastructure\RecordWebsiteProvisioningController;
 use App\Http\Controllers\Infrastructure\RefreshServerLogController;
 use App\Http\Controllers\Infrastructure\RenameServerController;
 use App\Http\Controllers\Infrastructure\RerunServerCommandController;
 use App\Http\Controllers\Infrastructure\RetryServerInitializationController;
 use App\Http\Controllers\Infrastructure\RetryServerProvisioningController;
+use App\Http\Controllers\Infrastructure\RetryWebsiteProvisioningController;
 use App\Http\Controllers\Infrastructure\RunServerDiagnosticsController;
 use App\Http\Controllers\Infrastructure\ShowServerCommandsController;
 use App\Http\Controllers\Infrastructure\ShowServerController;
 use App\Http\Controllers\Infrastructure\ShowServerImportController;
 use App\Http\Controllers\Infrastructure\ShowServersController;
+use App\Http\Controllers\Infrastructure\ShowWebsiteController;
+use App\Http\Controllers\Infrastructure\ShowWebsitesController;
 use App\Http\Controllers\Infrastructure\StoreServerCommandController;
 use App\Http\Controllers\Infrastructure\StoreServerController;
+use App\Http\Controllers\Infrastructure\StoreWebsiteController;
+use App\Http\Controllers\Infrastructure\StoreWebsiteDomainController;
+use App\Http\Controllers\Infrastructure\StoreWebsiteImportController;
+use App\Http\Controllers\Infrastructure\SyncWebsiteDomainController;
+use App\Http\Controllers\Infrastructure\UpdateWebsiteController;
 use App\Http\Controllers\Monitoring\ArchiveAlertDestinationController;
 use App\Http\Controllers\Monitoring\ArchiveAlertRuleController;
 use App\Http\Controllers\Monitoring\ArchiveMonitorController;
@@ -206,6 +219,9 @@ Route::post('/status/{slug}/subscribe', SubscribeToStatusPageController::class)-
 Route::post('/servers/{server}/provisioning/callback/{event}', RecordServerProvisioningController::class)->whereNumber('server')->whereIn('event', ['status', 'failed', 'log'])
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.server');
 
+Route::post('/websites/{website}/provisioning/callback/{event}', RecordWebsiteProvisioningController::class)->whereNumber('website')->whereIn('event', ['status', 'failed', 'log'])
+    ->middleware(['signed', 'throttle:600,1'])->name('callbacks.website');
+
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::get('/auth/{provider}/redirect', RedirectToProviderController::class)->middleware(['guest', 'throttle:20,1'])->name('social.redirect');
@@ -260,6 +276,18 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::delete('/servers/{server}/commands/{execution}', DeleteServerCommandController::class)->whereNumber(['server', 'execution'])->name('servers.commands.destroy');
             Route::post('/servers/{server}/logs/{type}', RefreshServerLogController::class)->whereNumber('server')->middleware('throttle:20,1')->name('servers.logs.refresh');
             Route::post('/servers/{server}/diagnostics', RunServerDiagnosticsController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.diagnostics');
+            Route::get('/websites', ShowWebsitesController::class)->name('websites');
+            Route::get('/websites/create', CreateWebsiteController::class)->name('websites.create');
+            Route::post('/websites', StoreWebsiteController::class)->middleware('throttle:20,1')->name('websites.store');
+            Route::post('/websites/import', StoreWebsiteImportController::class)->middleware('throttle:10,1')->name('websites.import');
+            Route::get('/websites/{website}', ShowWebsiteController::class)->whereNumber('website')->name('websites.show');
+            Route::put('/websites/{website}', UpdateWebsiteController::class)->whereNumber('website')->middleware('throttle:20,1')->name('websites.update');
+            Route::delete('/websites/{website}', DeleteWebsiteController::class)->whereNumber('website')->middleware(['password.confirm', 'throttle:10,1'])->name('websites.destroy');
+            Route::post('/websites/{website}/retry', RetryWebsiteProvisioningController::class)->whereNumber('website')->middleware('throttle:10,1')->name('websites.retry');
+            Route::post('/websites/{website}/domains', StoreWebsiteDomainController::class)->whereNumber('website')->middleware('throttle:20,1')->name('websites.domains.store');
+            Route::post('/websites/{website}/domains/temporary', IssueTemporaryDomainController::class)->whereNumber('website')->middleware('throttle:10,1')->name('websites.domains.temporary');
+            Route::post('/websites/{website}/domains/{domain}/sync', SyncWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware('throttle:20,1')->name('websites.domains.sync');
+            Route::delete('/websites/{website}/domains/{domain}', DeleteWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware('throttle:20,1')->name('websites.domains.destroy');
             Route::get('/imports/create', CreateServerImportController::class)->name('imports.create');
             Route::post('/imports', InspectServerImportController::class)->middleware('throttle:10,1')->name('imports.store');
             Route::get('/imports/{assessment}', ShowServerImportController::class)->whereNumber('assessment')->name('imports.show');

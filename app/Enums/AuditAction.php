@@ -59,6 +59,12 @@ enum AuditAction: string
     case ServerImported = 'server.imported';
     case ServerRenamed = 'server.renamed';
     case ServerDeleted = 'server.deleted';
+    case WebsiteCreated = 'website.created';
+    case WebsiteImported = 'website.imported';
+    case WebsiteUpdated = 'website.updated';
+    case WebsiteDeleted = 'website.deleted';
+    case WebsiteDomainAdded = 'website_domain.added';
+    case WebsiteDomainRemoved = 'website_domain.removed';
     case DashboardCreated = 'dashboard.created';
     case DashboardUpdated = 'dashboard.updated';
     case DashboardDeleted = 'dashboard.deleted';
@@ -130,6 +136,12 @@ enum AuditAction: string
             self::ServerImported => __('Imported the server :server (:ip)', ['server' => $value('server'), 'ip' => $value('ip')]),
             self::ServerRenamed => __('Renamed the server :server to :name', ['server' => $value('server'), 'name' => $value('name')]),
             self::ServerDeleted => __('Deleted the server :server', ['server' => $value('server')]),
+            self::WebsiteCreated => __('Created the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),
+            self::WebsiteImported => __('Imported the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),
+            self::WebsiteUpdated => __('Changed the website :website', ['website' => $value('website')]),
+            self::WebsiteDeleted => __('Deleted the website :website', ['website' => $value('website')]),
+            self::WebsiteDomainAdded => __('Added :domain to the website :website', ['domain' => $value('domain'), 'website' => $value('website')]),
+            self::WebsiteDomainRemoved => __('Removed :domain from the website :website', ['domain' => $value('domain'), 'website' => $value('website')]),
             self::DashboardCreated => __('Created the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardUpdated => __('Changed the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardDeleted => __('Deleted the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
