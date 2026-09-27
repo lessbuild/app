@@ -16,6 +16,9 @@ interface PlatformService
     /** Stable identifier stored in the database, e.g. `deploy`. */
     public function key(): string;
 
+    /**
+     * The service's product name, as the sidebar, billing and enable pages show it.
+     */
     public function name(): string;
 
     /** One sentence for enable pages and the overview's service cards. */
@@ -24,10 +27,18 @@ interface PlatformService
     /** Icon name in the Signal icon sprite. */
     public function icon(): string;
 
-    /** @return list<ServiceNavItem> the service's pages inside a project, first one is its landing page */
+    /**
+     * The service's pages inside a project, in sidebar order. The first is the landing page the service card links to.
+     *
+     * @return list<ServiceNavItem> the service's pages inside a project, first one is its landing page
+     */
     public function navItems(string $projectId): array;
 
-    /** @return list<ApiScope> */
+    /**
+     * The API token scopes this service adds (its read and write scopes), offered on the token form.
+     *
+     * @return list<ApiScope>
+     */
     public function apiScopes(): array;
 
     /** Tiers, add-ons and meters this service sells. */

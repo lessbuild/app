@@ -7,6 +7,10 @@ namespace App\Platform\Catalog;
 /** Monitor's plans, prices and limits, unchanged so nobody's bill moves at cutover. */
 final class MonitoringCatalog
 {
+    /**
+     * Monitor's Free, Pro, Team and Scale tiers with their event, retention, application and seat limits and feature
+     * flags, plus the events meter that counts usage against each tier's monthly allowance.
+     */
     public static function billing(): ServiceBilling
     {
         return new ServiceBilling(
@@ -21,6 +25,9 @@ final class MonitoringCatalog
     }
 
     /**
+     * Builds a tier from Monitor's plan table, turning dollars into cents and the positional limits into entitlement
+     * keys, so the table above stays readable.
+     *
      * @param  list<string>  $features
      * @param  list<string>  $flags
      */

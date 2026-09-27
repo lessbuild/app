@@ -6,7 +6,16 @@ namespace App\Platform\Catalog;
 
 final readonly class AddOn
 {
-    /** @param array<string, int> $grants per unit bought: entitlement key => extra amount */
+    /**
+     * Something bought in units on top of a tier, such as extra seats or events.
+     *
+     * @param  string  $key  Stable identifier stored on billing items.
+     * @param  string  $name  Shown on the billing page.
+     * @param  ?int  $monthlyCentsPerUnit  Price per unit per month; null until it's priced, which keeps it off sale.
+     * @param  string  $description  One line on the billing page explaining what a unit adds.
+     * @param  int  $maxQuantity  The most units one account may buy.
+     * @param  array<string, int>  $grants  per unit bought: entitlement key => extra amount
+     */
     public function __construct(
         public string $key,
         public string $name,

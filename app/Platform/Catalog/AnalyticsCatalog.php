@@ -7,6 +7,9 @@ namespace App\Platform\Catalog;
 /** Analytics has never been billed. Paid tiers wait for the owner's pricing (see docs/phase-3-billing.md). */
 final class AnalyticsCatalog
 {
+    /**
+     * A single free tier. Analytics was never billed, and paid tiers wait for pricing.
+     */
     public static function billing(): ServiceBilling
     {
         return new ServiceBilling([

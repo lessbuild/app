@@ -8,6 +8,8 @@ namespace App\Platform\Catalog;
 final readonly class ServiceBilling
 {
     /**
+     * Builds a service's catalogue. The first tier is the one every project starts on.
+     *
      * @param  list<Tier>  $tiers
      * @param  list<AddOn>  $addOns
      * @param  list<Meter>  $meters
@@ -18,11 +20,17 @@ final readonly class ServiceBilling
         public array $meters = [],
     ) {}
 
+    /**
+     * The tier a project is on until someone chooses another: the first, which is free.
+     */
     public function defaultTier(): Tier
     {
         return $this->tiers[0];
     }
 
+    /**
+     * Finds a tier by key, or null when the service doesn't sell one with that key.
+     */
     public function tier(string $key): ?Tier
     {
         foreach ($this->tiers as $tier) {
@@ -34,6 +42,9 @@ final readonly class ServiceBilling
         return null;
     }
 
+    /**
+     * Finds an add-on by key, or null when the service doesn't sell one with that key.
+     */
     public function addOn(string $key): ?AddOn
     {
         foreach ($this->addOns as $addOn) {

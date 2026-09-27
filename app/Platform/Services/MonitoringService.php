@@ -13,26 +13,42 @@ use App\Platform\ServiceNavItem;
 /** Uptime, DNS, TLS, TCP, heartbeat and queue monitors with incidents and alerts (ported from the standalone Monitor app). */
 final class MonitoringService implements PlatformService
 {
+    /**
+     * Stored on projects and billing items as `monitoring`.
+     */
     public function key(): string
     {
         return 'monitoring';
     }
 
+    /**
+     * Shown as "Monitoring".
+     */
     public function name(): string
     {
         return 'Monitoring';
     }
 
+    /**
+     * Describes Monitoring on the service cards.
+     */
     public function tagline(): string
     {
         return __('Uptime checks, errors, traces and alerts for every environment.');
     }
 
+    /**
+     * A check mark, standing for passing checks.
+     */
     public function icon(): string
     {
         return 'check-circle';
     }
 
+    /**
+     * Monitors, incidents, issues, telemetry events and traces, metrics and dashboards, releases, SLOs,
+     * alerting, status pages and the telemetry setup.
+     */
     public function navItems(string $projectId): array
     {
         return [
@@ -49,11 +65,17 @@ final class MonitoringService implements PlatformService
         ];
     }
 
+    /**
+     * Monitoring read and write.
+     */
     public function apiScopes(): array
     {
         return [ApiScope::MonitoringRead, ApiScope::MonitoringWrite];
     }
 
+    /**
+     * Monitor's tiers and usage meters, carried over unchanged.
+     */
     public function billing(): ServiceBilling
     {
         return MonitoringCatalog::billing();

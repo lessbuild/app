@@ -9,9 +9,17 @@ use InvalidArgumentException;
 /** Every service the platform offers, in registration (display) order. */
 final class ServiceRegistry
 {
-    /** @var array<string, PlatformService> */
+    /**
+     * The registered services keyed by their `key()`, in registration order.
+     *
+     * @var array<string, PlatformService>
+     */
     private array $services = [];
 
+    /**
+     * Adds a service. Keys are stored in the database, so a second service with the same key is a programming error and
+     * throws.
+     */
     public function register(PlatformService $service): void
     {
         if (isset($this->services[$service->key()])) {
@@ -20,23 +28,37 @@ final class ServiceRegistry
         $this->services[$service->key()] = $service;
     }
 
-    /** @return list<PlatformService> */
+    /**
+     * Every service, in the order they were registered, which is the order the shell lists them.
+     *
+     * @return list<PlatformService>
+     */
     public function all(): array
     {
         return array_values($this->services);
     }
 
+    /**
+     * Whether a key names a registered service, used to validate service keys from requests.
+     */
     public function has(string $key): bool
     {
         return isset($this->services[$key]);
     }
 
+    /**
+     * The service with this key, or null.
+     */
     public function find(string $key): ?PlatformService
     {
         return $this->services[$key] ?? null;
     }
 
-    /** @return list<string> */
+    /**
+     * Every registered key, in display order.
+     *
+     * @return list<string>
+     */
     public function keys(): array
     {
         return array_keys($this->services);

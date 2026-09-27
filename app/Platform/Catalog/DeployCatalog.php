@@ -7,6 +7,10 @@ namespace App\Platform\Catalog;
 /** Deployer's plans, prices and limits, unchanged so nobody's bill moves at cutover. Servers count toward Infrastructure. */
 final class DeployCatalog
 {
+    /**
+     * Deployer's Free, Starter, Pro, Team and Business tiers with their website, preview, server and member limits and
+     * feature flags.
+     */
     public static function billing(): ServiceBilling
     {
         return new ServiceBilling([
@@ -20,6 +24,9 @@ final class DeployCatalog
     }
 
     /**
+     * Builds a tier from Deployer's plan table, turning dollars into cents and the positional limits into entitlement
+     * keys, so the table above stays readable.
+     *
      * @param  list<string>  $features
      * @param  list<string>  $flags
      */

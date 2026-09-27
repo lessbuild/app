@@ -7,6 +7,10 @@ namespace App\Platform\Catalog;
 /** Servers have always been part of Deployer's plans; Deploy's tier sets the server limit until Infrastructure is priced on its own. */
 final class InfrastructureCatalog
 {
+    /**
+     * A single free "included" tier: Infrastructure isn't priced on its own yet, and the server limit lives on Deploy's
+     * tiers.
+     */
     public static function billing(): ServiceBilling
     {
         return new ServiceBilling([

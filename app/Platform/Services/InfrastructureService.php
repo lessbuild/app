@@ -13,26 +13,41 @@ use App\Platform\ServiceNavItem;
 /** Servers on the account's cloud providers (ported from the Deployer module). Servers belong to the account; every project lists them. */
 final class InfrastructureService implements PlatformService
 {
+    /**
+     * Stored on projects and billing items as `infrastructure`.
+     */
     public function key(): string
     {
         return 'infrastructure';
     }
 
+    /**
+     * Shown as "Infrastructure".
+     */
     public function name(): string
     {
         return 'Infrastructure';
     }
 
+    /**
+     * Describes Infrastructure on the service cards.
+     */
     public function tagline(): string
     {
         return __('Servers, databases, domains and backups on the providers you choose.');
     }
 
+    /**
+     * A server.
+     */
     public function icon(): string
     {
         return 'server';
     }
 
+    /**
+     * Servers (and imports), websites, load balancers, backups and costs.
+     */
     public function navItems(string $projectId): array
     {
         return [
@@ -44,11 +59,17 @@ final class InfrastructureService implements PlatformService
         ];
     }
 
+    /**
+     * Infrastructure read and write.
+     */
     public function apiScopes(): array
     {
         return [ApiScope::InfrastructureRead, ApiScope::InfrastructureWrite];
     }
 
+    /**
+     * A single included tier; server limits come from the Deploy plan for now.
+     */
     public function billing(): ServiceBilling
     {
         return InfrastructureCatalog::billing();
