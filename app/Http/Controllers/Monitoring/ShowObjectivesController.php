@@ -24,7 +24,7 @@ final class ShowObjectivesController
             'overview' => $overview->handle($project, $user),
             'objectives' => $objectives,
             'reports' => collect($objectives)->mapWithKeys(fn (ServiceLevelObjective $objective): array => [$objective->id => $reports->forObjective($objective)])->all(),
-            'canManage' => $user->can('manageService', [$project, 'monitoring']),
+            'canManage' => $user->can('create', [ServiceLevelObjective::class, $project]),
         ]);
     }
 }

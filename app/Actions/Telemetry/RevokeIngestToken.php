@@ -23,7 +23,7 @@ final class RevokeIngestToken
         DB::transaction(function () use ($actor, $token): void {
             $environment = Environment::query()->findOrFail($token->environment_id);
             $project = Project::query()->lockForUpdate()->findOrFail($environment->project_id);
-            Gate::forUser($actor)->authorize('manageService', [$project, 'monitoring']);
+            Gate::forUser($actor)->authorize('delete', $token);
             $token = $environment->ingestTokens()->lockForUpdate()->findOrFail($token->id);
             if ($token->revoked_at !== null) {
                 return;

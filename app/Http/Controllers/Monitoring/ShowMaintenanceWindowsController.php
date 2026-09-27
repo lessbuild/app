@@ -22,7 +22,7 @@ final class ShowMaintenanceWindowsController
         return view('monitoring.maintenance', [
             'overview' => $overview->handle($project, $user),
             'windows' => $windows,
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('create', [MaintenanceWindow::class, $project]),
         ]);
     }
 }

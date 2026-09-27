@@ -20,7 +20,7 @@ final class IncidentPolicy
 
     public function update(User $user, Incident $record): bool
     {
-        return $this->managesMonitoring($user, $record->project);
+        return $this->live($record) && $this->managesMonitoring($user, $record->project);
     }
 
     public function delete(User $user, Incident $record): bool

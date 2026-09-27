@@ -20,7 +20,7 @@ final class IngestTokenPolicy
 
     public function update(User $user, IngestToken $record): bool
     {
-        return $this->managesMonitoring($user, $record->environment->project);
+        return $this->live($record) && $this->managesMonitoring($user, $record->environment->project);
     }
 
     public function delete(User $user, IngestToken $record): bool

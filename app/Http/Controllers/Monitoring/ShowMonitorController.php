@@ -21,7 +21,7 @@ final class ShowMonitorController
             'overview' => $overview->handle($project, $user),
             'monitor' => $monitor,
             'history' => $history->handle($monitor),
-            'canManage' => $user->can('manageService', [$project, 'monitoring']) && ! $monitor->trashed(),
+            'canManage' => $user->can('update', $monitor),
             'issuedKey' => session('issued_key'),
         ]);
     }

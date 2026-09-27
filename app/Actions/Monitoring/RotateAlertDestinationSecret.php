@@ -7,6 +7,7 @@ namespace App\Actions\Monitoring;
 use App\Actions\Audit\RecordAuditEntry;
 use App\Enums\AlertDestinationType;
 use App\Enums\AuditAction;
+use App\Exceptions\StateConflict;
 use App\Models\Account;
 use App\Models\AlertDestination;
 use App\Models\User;
@@ -23,10 +24,10 @@ final class RotateAlertDestinationSecret
     {
         return DB::transaction(function () use ($account, $actor, $destination, $version): AlertDestination {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('update', $destination);
             $destination = AlertDestination::forAccount($account)->lockForUpdate()->findOrFail($destination->id);
-            abort_unless($destination->state_version === $version, 409, __('This destination changed. Refresh before trying again.'));
-            abort_unless($destination->type === AlertDestinationType::Webhook, 409, __('Only signed webhooks have a signing key.'));
+            StateConflict::unlessVersion($destination->state_version, $version, __('This destination changed. Refresh before trying again.'));
+            StateConflict::unless($destination->type === AlertDestinationType::Webhook, __('Only signed webhooks have a signing key.'));
             $destination->forceFill(['signing_secret' => Str::random(64)]);
             $destination->forceFill(['state_version' => $destination->state_version + 1, 'target_revision' => $destination->target_revision + 1])->save();
             $this->audit->handle(AuditAction::AlertDestinationRotated, $actor, $account->id, [

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\Models\Monitor;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectMonitorsQuery;
@@ -18,7 +19,7 @@ final class ShowMonitorsController
         return view('monitoring.monitors', [
             'overview' => $overview->handle($project, $user),
             'monitors' => $monitors->handle($project),
-            'canManage' => $user->can('manageService', [$project, 'monitoring']),
+            'canManage' => $user->can('create', [Monitor::class, $project]),
         ]);
     }
 }

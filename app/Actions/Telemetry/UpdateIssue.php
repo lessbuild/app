@@ -6,6 +6,7 @@ namespace App\Actions\Telemetry;
 
 use App\Enums\AccountRole;
 use App\Enums\IssueStatus;
+use App\Exceptions\StateConflict;
 use App\Models\Issue;
 use App\Models\Membership;
 use App\Models\Project;
@@ -29,10 +30,10 @@ final class UpdateIssue
     {
         return DB::transaction(function () use ($issue, $actor, $data): Issue {
             $project = Project::query()->lockForUpdate()->findOrFail($issue->project_id);
-            Gate::forUser($actor)->authorize('manageService', [$project, 'monitoring']);
+            Gate::forUser($actor)->authorize('update', $issue);
             $issue = Issue::query()->whereBelongsTo($project)->lockForUpdate()->findOrFail($issue->id);
             $issue->setRelation('project', $project);
-            abort_unless($issue->state_version === (int) $data['version'], 409, __('This issue changed since you opened it. Refresh before trying again.'));
+            StateConflict::unlessVersion($issue->state_version, (int) $data['version'], __('This issue changed since you opened it. Refresh before trying again.'));
 
             $now = CarbonImmutable::now('UTC');
             $before = ['status' => $issue->status->value, 'assignee_id' => $issue->assignee_id, 'snoozed_until' => $issue->snoozed_until?->toISOString()];
@@ -43,7 +44,7 @@ final class UpdateIssue
                 }
                 $issue->forceFill(['assignee_id' => $assigneeId]);
             } elseif ($data['action'] === 'snooze') {
-                abort_unless(in_array($issue->status, [IssueStatus::Open, IssueStatus::Snoozed], true), 409, __('Reopen this issue before snoozing it.'));
+                StateConflict::unless(in_array($issue->status, [IssueStatus::Open, IssueStatus::Snoozed], true), __('Reopen this issue before snoozing it.'));
                 $issue->forceFill(['status' => IssueStatus::Snoozed, 'snoozed_until' => $now->addMinutes((int) ($data['snooze_minutes'] ?? 60)), 'resolved_at' => null]);
             } else {
                 $status = match ($data['action']) {

@@ -20,7 +20,7 @@ final class IssuePolicy
 
     public function update(User $user, Issue $record): bool
     {
-        return $this->managesMonitoring($user, $record->project);
+        return $this->live($record) && $this->managesMonitoring($user, $record->project);
     }
 
     public function delete(User $user, Issue $record): bool

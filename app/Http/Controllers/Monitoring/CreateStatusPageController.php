@@ -10,13 +10,11 @@ use App\Queries\Monitoring\StatusPagesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Gate;
 
 final class CreateStatusPageController
 {
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, StatusPagesQuery $pages): View
     {
-        Gate::authorize('update', $project->account);
 
         return view('monitoring.status-page-form', [
             'overview' => $overview->handle($project, $user),

@@ -19,7 +19,6 @@ final class RevokeMonitorKeyController
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, RotateHeartbeatToken $heartbeats, RotateQueueToken $queues): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];
-        abort_unless(in_array($monitor->type, ['heartbeat', 'queue'], true), 404);
         $monitor->type === 'heartbeat'
             ? $heartbeats->handle($user, $monitor, $version, revoke: true)
             : $queues->handle($user, $monitor, $version, revoke: true);

@@ -10,6 +10,8 @@ use App\Models\User;
 use App\Services\Monitoring\MonitorChanges;
 use App\Services\Monitoring\TelemetryRedactor;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 final class SaveServiceLevelObjective
 {
@@ -23,10 +25,13 @@ final class SaveServiceLevelObjective
     public function handle(Project $project, User $actor, array $data, ?ServiceLevelObjective $objective = null): ServiceLevelObjective
     {
         return DB::transaction(function () use ($project, $actor, $data, $objective): ServiceLevelObjective {
+            Gate::forUser($actor)->authorize($objective === null ? 'create' : 'update', $objective ?? [ServiceLevelObjective::class, $project]);
             $environment = $this->changes->lockScope($project, $actor, (string) $data['environment_id']);
             if ($objective !== null) {
                 $objective = ServiceLevelObjective::query()->lockForUpdate()->findOrFail($objective->id);
-                abort_unless($objective->environment_id === $environment->id, 422, __('The environment can’t be changed. Create a separate objective.'));
+                if ($objective->environment_id !== $environment->id) {
+                    throw ValidationException::withMessages(['environment_id' => __('The environment can’t be changed. Create a separate objective.')]);
+                }
             }
             $objective ??= new ServiceLevelObjective;
             $redacted = $this->redactor->redact([

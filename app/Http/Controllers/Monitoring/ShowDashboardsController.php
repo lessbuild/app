@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\Models\Dashboard;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Monitoring\DashboardsQuery;
@@ -21,7 +22,7 @@ final class ShowDashboardsController
             'overview' => $overview->handle($project, $user),
             'dashboards' => $dashboards->handle($project->account_id),
             'limit' => $entitlements->for($project->account)->limit('monitoring.dashboards.max'),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('create', [Dashboard::class, $project]),
         ]);
     }
 }

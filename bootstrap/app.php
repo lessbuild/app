@@ -7,6 +7,7 @@ use App\Exceptions\AnalyticsRuleViolation;
 use App\Exceptions\BillingRuleViolation;
 use App\Exceptions\IdentityRuleViolation;
 use App\Exceptions\ProjectRuleViolation;
+use App\Exceptions\StateConflict;
 use App\Http\Middleware\AuthenticateIngestToken;
 use App\Http\Middleware\DecodeTelemetryPayload;
 use App\Http\Middleware\EnsureServiceEnabled;
@@ -21,6 +22,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 use Laravel\Sanctum\Http\Middleware\CheckAbilities;
 use Laravel\Sanctum\Http\Middleware\CheckForAnyAbility;
+use Symfony\Component\HttpKernel\Exception\ConflictHttpException;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -58,6 +60,7 @@ return Application::configure(basePath: dirname(__DIR__))
             AccountRuleViolation::class,
             fn (AccountRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
         );
+        $exceptions->map(StateConflict::class, fn (StateConflict $conflict): ConflictHttpException => new ConflictHttpException($conflict->getMessage(), $conflict));
         $exceptions->map(
             ProjectRuleViolation::class,
             fn (ProjectRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),

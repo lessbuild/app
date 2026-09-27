@@ -21,6 +21,7 @@ use App\Support\Monitoring\QueueMonitorSettings;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 final class SaveMonitor
@@ -51,6 +52,7 @@ final class SaveMonitor
     public function handle(Project $project, User $actor, array $data, ?Monitor $monitor = null): Monitor
     {
         return DB::transaction(function () use ($project, $actor, $data, $monitor): Monitor {
+            Gate::forUser($actor)->authorize($monitor === null ? 'create' : 'update', $monitor ?? [Monitor::class, $project]);
             $environment = $this->changes->lockScope($project, $actor, (string) $data['environment_id']);
             $isNew = $monitor === null;
             if (! $isNew) {

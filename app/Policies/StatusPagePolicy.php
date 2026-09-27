@@ -21,7 +21,7 @@ final class StatusPagePolicy
 
     public function update(User $user, StatusPage $record): bool
     {
-        return $this->managesAccount($user, $record->account_id);
+        return $this->live($record) && $this->managesAccount($user, $record->account_id);
     }
 
     public function delete(User $user, StatusPage $record): bool

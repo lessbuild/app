@@ -12,6 +12,7 @@ use App\Services\Monitoring\IncidentLifecycle;
 use App\Services\Monitoring\MonitorChanges;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 final class ArchiveMonitor
 {
@@ -26,6 +27,7 @@ final class ArchiveMonitor
     {
         DB::transaction(function () use ($monitor, $actor, $version): void {
             $project = $monitor->environment->project;
+            Gate::forUser($actor)->authorize('delete', $monitor);
             $environment = $this->changes->lockScope($project, $actor, $monitor->environment_id);
             $monitor = Monitor::query()->where('environment_id', $environment->id)->lockForUpdate()->findOrFail($monitor->id);
             $this->changes->version($monitor, $version);

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\Models\AlertRule;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectAlertRulesQuery;
@@ -19,7 +20,7 @@ final class ShowAlertRulesController
         return view('monitoring.rules', [
             'overview' => $overview->handle($project, $user),
             'rules' => $rules->handle($project),
-            'canManage' => $user->can('manageService', [$project, 'monitoring']),
+            'canManage' => $user->can('create', [AlertRule::class, $project]),
         ]);
     }
 }

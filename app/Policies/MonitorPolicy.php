@@ -20,7 +20,7 @@ final class MonitorPolicy
 
     public function update(User $user, Monitor $record): bool
     {
-        return $this->managesMonitoring($user, $record->environment->project) && $user->hasVerifiedEmail();
+        return $this->live($record) && $this->managesMonitoring($user, $record->environment->project) && $user->hasVerifiedEmail();
     }
 
     /** Heartbeat and queue monitors have a key their jobs sign in with. */

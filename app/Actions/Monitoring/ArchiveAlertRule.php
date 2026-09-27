@@ -6,12 +6,14 @@ namespace App\Actions\Monitoring;
 
 use App\Actions\Audit\RecordAuditEntry;
 use App\Enums\AuditAction;
+use App\Exceptions\StateConflict;
 use App\Models\AlertRule;
 use App\Models\User;
 use App\Services\Monitoring\IncidentLifecycle;
 use App\Services\Monitoring\MonitorChanges;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 final class ArchiveAlertRule
 {
@@ -26,9 +28,10 @@ final class ArchiveAlertRule
     {
         DB::transaction(function () use ($rule, $actor, $version): void {
             $project = $rule->environment->project;
+            Gate::forUser($actor)->authorize('delete', $rule);
             $environment = $this->changes->lockScope($project, $actor, $rule->environment_id);
             $rule = AlertRule::query()->whereBelongsTo($environment)->lockForUpdate()->findOrFail($rule->id);
-            abort_unless($rule->state_version === $version, 409, __('This alert rule changed. Refresh before trying again.'));
+            StateConflict::unlessVersion($rule->state_version, $version, __('This alert rule changed. Refresh before trying again.'));
             $incident = $rule->incidents()->where('active_slot', true)->lockForUpdate()->first();
             if ($incident !== null) {
                 $this->lifecycle->close($incident, 'rule_archived', CarbonImmutable::now('UTC'), $actor);

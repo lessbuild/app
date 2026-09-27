@@ -15,13 +15,11 @@ use App\Services\Billing\Entitlements;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 final class CreateAlertRuleController
 {
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
     {
-        Gate::authorize('manageService', [$project, 'monitoring']);
 
         return view('monitoring.rule-form', [
             'overview' => $overview->handle($project, $user),

@@ -26,7 +26,7 @@ final class ShowAlertRuleController
             'routes' => $rule->destinations()->get(),
             'escalations' => $rule->escalations()->get(),
             'escalationLimit' => $entitlements->for($project->account)->limit('monitoring.escalation_steps.max'),
-            'canManage' => $user->can('manageService', [$project, 'monitoring']) && ! $rule->trashed(),
+            'canManage' => $user->can('update', $rule),
         ]);
     }
 }

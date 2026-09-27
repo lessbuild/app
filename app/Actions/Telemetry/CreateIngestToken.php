@@ -8,6 +8,7 @@ use App\Actions\Audit\RecordAuditEntry;
 use App\Data\Telemetry\IssuedIngestToken;
 use App\Enums\AuditAction;
 use App\Models\Environment;
+use App\Models\IngestToken;
 use App\Models\Project;
 use App\Models\User;
 use App\Services\Telemetry\IngestTokens;
@@ -24,7 +25,7 @@ final class CreateIngestToken
     {
         return DB::transaction(function () use ($actor, $environment, $name, $expiresAt): IssuedIngestToken {
             $project = Project::query()->lockForUpdate()->findOrFail($environment->project_id);
-            Gate::forUser($actor)->authorize('manageService', [$project, 'monitoring']);
+            Gate::forUser($actor)->authorize('create', [IngestToken::class, $project]);
             $environment = Environment::query()->lockForUpdate()->findOrFail($environment->id);
             $issued = $this->tokens->issue($environment, $actor, trim($name), $expiresAt);
             $this->audit->handle(AuditAction::IngestTokenCreated, $actor, $project->account_id, [

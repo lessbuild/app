@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Monitoring;
 
 use App\Enums\AccountRole;
+use App\Exceptions\StateConflict;
 use App\Models\Incident;
 use App\Models\Membership;
 use App\Models\User;
@@ -30,8 +31,8 @@ final class UpdateIncident
             $locked = $this->locks->find($incident->id);
             abort_unless($locked !== null && $locked->project !== null, 404);
             $incident = $locked;
-            Gate::forUser($actor)->authorize('manageService', [$incident->project, 'monitoring']);
-            abort_unless($incident->state_version === (int) $data['version'], 409, __('This incident changed. Refresh before trying again.'));
+            Gate::forUser($actor)->authorize('update', $incident);
+            StateConflict::unlessVersion($incident->state_version, (int) $data['version'], __('This incident changed. Refresh before trying again.'));
 
             if ($data['action'] === 'assign') {
                 $assigneeId = ($data['assignee_id'] ?? '') === '' ? null : (string) $data['assignee_id'];
@@ -43,7 +44,7 @@ final class UpdateIncident
                 }
                 $incident->forceFill(['assignee_id' => $assigneeId]);
             } elseif ($data['action'] === 'acknowledge') {
-                abort_if($incident->status === 'resolved', 409, __('This incident is already closed.'));
+                StateConflict::unless(! ($incident->status === 'resolved'), __('This incident is already closed.'));
                 if ($incident->status === 'acknowledged') {
                     return $incident;
                 }

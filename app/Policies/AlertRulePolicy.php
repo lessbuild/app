@@ -15,12 +15,12 @@ final class AlertRulePolicy
 
     public function create(User $user, Project $project): bool
     {
-        return $this->managesMonitoring($user, $project);
+        return $this->managesMonitoring($user, $project) && $user->hasVerifiedEmail();
     }
 
     public function update(User $user, AlertRule $record): bool
     {
-        return $this->managesMonitoring($user, $record->environment->project);
+        return $this->live($record) && $this->managesMonitoring($user, $record->environment->project) && $user->hasVerifiedEmail();
     }
 
     public function delete(User $user, AlertRule $record): bool

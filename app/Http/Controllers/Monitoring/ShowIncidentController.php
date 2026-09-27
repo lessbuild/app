@@ -22,7 +22,7 @@ final class ShowIncidentController
             'incident' => $incident,
             'activities' => $incident->activities()->with('actor')->latest('id')->limit(100)->get(),
             'assignees' => $incidents->assignees($project),
-            'canRespond' => $user->can('manageService', [$project, 'monitoring']),
+            'canRespond' => $user->can('update', $incident),
         ]);
     }
 }

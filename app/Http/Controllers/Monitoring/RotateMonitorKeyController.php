@@ -19,7 +19,6 @@ final class RotateMonitorKeyController
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, RotateHeartbeatToken $heartbeats, RotateQueueToken $queues): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];
-        abort_unless(in_array($monitor->type, ['heartbeat', 'queue'], true), 404);
         $key = $monitor->type === 'heartbeat' ? $heartbeats->handle($user, $monitor, $version) : $queues->handle($user, $monitor, $version);
 
         return to_route('monitoring.monitors.show', [$project, $monitor->id])->with('issued_key', $key);

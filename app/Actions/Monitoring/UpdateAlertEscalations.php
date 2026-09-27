@@ -6,12 +6,14 @@ namespace App\Actions\Monitoring;
 
 use App\Actions\Audit\RecordAuditEntry;
 use App\Enums\AuditAction;
+use App\Exceptions\StateConflict;
 use App\Models\AlertDestination;
 use App\Models\AlertRule;
 use App\Models\User;
 use App\Services\Billing\Entitlements;
 use App\Services\Monitoring\MonitorChanges;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 
 final class UpdateAlertEscalations
@@ -27,9 +29,10 @@ final class UpdateAlertEscalations
     {
         DB::transaction(function () use ($rule, $actor, $data): void {
             $project = $rule->environment->project;
+            Gate::forUser($actor)->authorize('update', $rule);
             $environment = $this->changes->lockScope($project, $actor, $rule->environment_id);
             $rule = AlertRule::query()->whereBelongsTo($environment)->lockForUpdate()->findOrFail($rule->id);
-            abort_unless($rule->state_version === (int) $data['version'], 409, __('This alert rule changed. Refresh before trying again.'));
+            StateConflict::unlessVersion($rule->state_version, (int) $data['version'], __('This alert rule changed. Refresh before trying again.'));
 
             $steps = collect($data['escalations'] ?? [])
                 ->filter(fn (array $step): bool => filled($step['destination_id'] ?? null))

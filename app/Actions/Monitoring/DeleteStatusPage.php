@@ -21,7 +21,7 @@ final class DeleteStatusPage
     {
         DB::transaction(function () use ($account, $actor, $page): void {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('delete', $page);
             $page = StatusPage::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($page->id);
             $page->delete();
             $this->audit->handle(AuditAction::StatusPageDeleted, $actor, $account->id, ['page' => $page->name, 'slug' => $page->slug]);

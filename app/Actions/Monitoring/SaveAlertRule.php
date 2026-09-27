@@ -7,6 +7,7 @@ namespace App\Actions\Monitoring;
 use App\Actions\Audit\RecordAuditEntry;
 use App\Enums\AlertMetric;
 use App\Enums\AuditAction;
+use App\Exceptions\StateConflict;
 use App\Models\AlertRule;
 use App\Models\MetricSeries;
 use App\Models\Project;
@@ -18,6 +19,7 @@ use App\Services\Monitoring\TelemetryRedactor;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
 
 final class SaveAlertRule
 {
@@ -39,10 +41,11 @@ final class SaveAlertRule
     public function handle(Project $project, User $actor, array $data, ?AlertRule $rule = null): AlertRule
     {
         return DB::transaction(function () use ($project, $actor, $data, $rule): AlertRule {
+            Gate::forUser($actor)->authorize($rule === null ? 'create' : 'update', $rule ?? [AlertRule::class, $project]);
             $environment = $this->changes->lockScope($project, $actor, (string) $data['environment_id']);
             if ($rule !== null) {
                 $rule = AlertRule::query()->whereBelongsTo($environment)->lockForUpdate()->findOrFail($rule->id);
-                abort_unless($rule->state_version === (int) $data['version'], 409, __('This alert rule changed. Refresh before trying again.'));
+                StateConflict::unlessVersion($rule->state_version, (int) $data['version'], __('This alert rule changed. Refresh before trying again.'));
             }
 
             $now = CarbonImmutable::now('UTC');

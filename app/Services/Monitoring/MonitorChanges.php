@@ -4,29 +4,27 @@ declare(strict_types=1);
 
 namespace App\Services\Monitoring;
 
+use App\Exceptions\StateConflict;
 use App\Models\Environment;
 use App\Models\Monitor;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Gate;
 
 /** Shared steps for changing a monitor: locking, authorising, version checks and cancelling pending checks. */
 final class MonitorChanges
 {
-    /** Lock the project and the environment (in that order) and check the actor may manage the project's monitors. */
+    /** Lock the project and the environment (in that order). The caller has authorised the change against the record's policy. */
     public function lockScope(Project $project, User $actor, string $environmentId): Environment
     {
         $project = Project::query()->lockForUpdate()->findOrFail($project->id);
-        Gate::forUser($actor)->authorize('manageService', [$project, 'monitoring']);
-        abort_unless($actor->hasVerifiedEmail(), 403);
 
         return Environment::query()->where('project_id', $project->id)->lockForUpdate()->findOrFail($environmentId);
     }
 
     public function version(Monitor $monitor, int $version): void
     {
-        abort_unless($monitor->state_version === $version, 409, __('This monitor changed. Refresh before trying again.'));
+        StateConflict::unlessVersion($monitor->state_version, $version, __('This monitor changed. Refresh before trying again.'));
     }
 
     public function cancelChecks(Monitor $monitor): void

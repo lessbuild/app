@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Monitoring;
 
+use App\Exceptions\StateConflict;
 use App\Models\Account;
 use App\Models\AlertDelivery;
 use App\Models\AlertDestination;
@@ -20,10 +21,10 @@ final class SendTestAlert
     {
         return DB::transaction(function () use ($account, $actor, $destination, $version): AlertDelivery {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('update', $destination);
             $destination = AlertDestination::forAccount($account)->lockForUpdate()->findOrFail($destination->id);
-            abort_unless($destination->state_version === $version, 409, __('This destination changed. Refresh before trying again.'));
-            abort_unless($destination->enabled, 409, __('Turn this destination on before sending a test.'));
+            StateConflict::unlessVersion($destination->state_version, $version, __('This destination changed. Refresh before trying again.'));
+            StateConflict::unless($destination->enabled, __('Turn this destination on before sending a test.'));
 
             return $this->alerts->queue($destination, [
                 'event' => 'test', 'title' => 'Test notification', 'incident_id' => null,

@@ -29,7 +29,7 @@ final class SaveStatusUpdate
     {
         $update = DB::transaction(function () use ($page, $actor, $data, $update): StatusUpdate {
             $page = StatusPage::query()->lockForUpdate()->findOrFail($page->id);
-            Gate::forUser($actor)->authorize('update', $page->account);
+            Gate::forUser($actor)->authorize('update', $page);
             $isNew = $update === null;
             $update = $isNew ? new StatusUpdate : $page->updates()->lockForUpdate()->findOrFail($update->id);
             $closed = in_array($data['status'], ['resolved', 'completed'], true);

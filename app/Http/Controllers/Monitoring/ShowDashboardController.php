@@ -23,7 +23,7 @@ final class ShowDashboardController
             'dashboard' => $dashboard,
             'rangeLabel' => __(TelemetrySummaryQuery::RANGES[$dashboard->range] ?? 'Last 24 hours'),
             'widgets' => $report->handle($dashboard),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('update', $dashboard),
         ]);
     }
 }

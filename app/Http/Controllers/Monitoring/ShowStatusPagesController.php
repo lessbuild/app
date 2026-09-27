@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Monitoring;
 
 use App\Models\Project;
+use App\Models\StatusPage;
 use App\Models\User;
 use App\Queries\Monitoring\StatusPagesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -19,7 +20,7 @@ final class ShowStatusPagesController
         return view('monitoring.status-pages', [
             'overview' => $overview->handle($project, $user),
             'pages' => $pages->handle($project->account_id),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('create', [StatusPage::class, $project]),
         ]);
     }
 }

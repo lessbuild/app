@@ -20,7 +20,7 @@ final class DeleteDashboard
     {
         DB::transaction(function () use ($account, $actor, $dashboard): void {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('delete', $dashboard);
             $dashboard = Dashboard::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($dashboard->id);
             $dashboard->delete();
             $this->audit->handle(AuditAction::DashboardDeleted, $actor, $account->id, ['dashboard' => $dashboard->name]);

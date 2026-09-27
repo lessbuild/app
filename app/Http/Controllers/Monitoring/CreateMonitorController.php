@@ -12,13 +12,11 @@ use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 final class CreateMonitorController
 {
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
-        Gate::authorize('manageService', [$project, 'monitoring']);
         $type = $request->string('check_type')->toString();
 
         return view('monitoring.monitor-form', [

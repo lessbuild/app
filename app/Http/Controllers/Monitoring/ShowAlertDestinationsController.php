@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Monitoring;
 
+use App\Models\AlertDestination;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Monitoring\AlertDestinationsQuery;
@@ -20,7 +21,7 @@ final class ShowAlertDestinationsController
             'overview' => $overview->handle($project, $user),
             'destinations' => $destinations->handle($project->account_id),
             'members' => $destinations->recipients($project->account_id),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('create', [AlertDestination::class, $project]),
         ]);
     }
 }

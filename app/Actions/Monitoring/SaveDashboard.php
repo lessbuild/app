@@ -27,7 +27,7 @@ final class SaveDashboard
     {
         return DB::transaction(function () use ($account, $actor, $data, $dashboard): Dashboard {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize($dashboard === null ? 'create' : 'update', $dashboard ?? [Dashboard::class, $account]);
             $isNew = $dashboard === null;
             if ($isNew) {
                 $decision = $this->entitlements->for($account)->allows('monitoring.dashboards.max', Dashboard::query()->where('account_id', $account->id)->count() + 1);

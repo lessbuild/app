@@ -29,7 +29,7 @@ final class SaveStatusPage
     {
         return DB::transaction(function () use ($account, $actor, $data, $page): StatusPage {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize($page === null ? 'create' : 'update', $page ?? [StatusPage::class, $account]);
             $isNew = $page === null;
             $page = $isNew
                 ? new StatusPage

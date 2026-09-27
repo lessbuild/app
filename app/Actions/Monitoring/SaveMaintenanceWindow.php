@@ -23,7 +23,7 @@ final class SaveMaintenanceWindow
     {
         return DB::transaction(function () use ($account, $actor, $data, $window): MaintenanceWindow {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize($window === null ? 'create' : 'update', $window ?? [MaintenanceWindow::class, $account]);
             $maintenanceWindow = $window === null
                 ? new MaintenanceWindow(['account_id' => $account->id, 'created_by' => $actor->id])
                 : MaintenanceWindow::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($window->id);

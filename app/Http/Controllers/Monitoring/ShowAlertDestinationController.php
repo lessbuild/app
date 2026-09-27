@@ -22,7 +22,7 @@ final class ShowAlertDestinationController
             'destination' => $destination,
             'deliveries' => $destination->deliveries()->latest('created_at')->limit(50)->get(),
             'members' => $destinations->recipients($project->account_id),
-            'canManage' => $user->can('update', $project->account) && ! $destination->trashed(),
+            'canManage' => $user->can('update', $destination),
             'issuedKey' => session('issued_key'),
         ]);
     }

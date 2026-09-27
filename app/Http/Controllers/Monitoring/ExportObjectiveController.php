@@ -18,7 +18,6 @@ final class ExportObjectiveController
 {
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ServiceObjectiveReport $reports, ServiceObjectiveReportExporter $exporter, Entitlements $entitlements): Response
     {
-        abort_unless($entitlements->for($project->account)->has('monitoring.slo_reports'), 403, __('SLO reports come with Monitoring Team and Scale.'));
         $report = $reports->forObjective($objective);
 
         return response($exporter->csv($objective, $report), 200, [

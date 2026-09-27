@@ -10,13 +10,11 @@ use App\Models\User;
 use App\Services\Telemetry\TelemetryQueue;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 final class RetryIngestReceiptController
 {
     public function __invoke(#[CurrentUser] User $user, Project $project, IngestReceipt $receipt, TelemetryQueue $queue): RedirectResponse
     {
-        Gate::authorize('manageService', [$project, 'monitoring']);
         abort_unless($queue->retry($receipt->id), 409, __('Only failed deliveries with a kept payload can be retried.'));
 
         return to_route('monitoring.ingest.deliveries', [$project, $receipt->environment_id])

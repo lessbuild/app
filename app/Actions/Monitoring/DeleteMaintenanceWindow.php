@@ -16,7 +16,7 @@ final class DeleteMaintenanceWindow
     {
         DB::transaction(function () use ($account, $actor, $window): void {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('delete', $window);
             MaintenanceWindow::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($window->id)->delete();
         }, attempts: 3);
     }

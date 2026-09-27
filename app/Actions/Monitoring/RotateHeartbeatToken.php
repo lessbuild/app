@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Monitoring;
 
+use App\Exceptions\StateConflict;
 use App\Models\Monitor;
 use App\Models\User;
 use App\Services\Monitoring\MonitorQueue;
@@ -21,11 +22,9 @@ final class RotateHeartbeatToken
     {
         return DB::transaction(function () use ($actor, $monitor, $version, $revoke): ?string {
             $monitor = $this->queue->lockMonitor($monitor->id);
-            abort_unless($monitor !== null && ! $monitor->trashed(), 404);
-            Gate::forUser($actor)->authorize('manageService', [$monitor->environment->project, 'monitoring']);
-            abort_unless($actor->hasVerifiedEmail(), 403);
-            abort_unless($monitor->type === 'heartbeat', 404);
-            abort_unless($monitor->state_version === $version, 409, __('This monitor changed. Refresh before trying again.'));
+            abort_unless($monitor !== null && ! $monitor->trashed() && $monitor->type === 'heartbeat', 404);
+            Gate::forUser($actor)->authorize('rotateKey', $monitor);
+            StateConflict::unlessVersion($monitor->state_version, $version, __('This monitor changed. Refresh before trying again.'));
             if ($revoke) {
                 $this->suspension->heartbeat($monitor, revoke: true);
 

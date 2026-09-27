@@ -24,7 +24,7 @@ final class ShowStatusPageController
             'report' => $report->handle($page),
             'updates' => $page->updates()->orderByDesc('starts_at')->orderByDesc('id')->limit(50)->get(),
             'subscribers' => $page->subscriptions()->whereNotNull('verified_at')->count(),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('update', $page),
         ]);
     }
 }

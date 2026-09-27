@@ -26,7 +26,7 @@ final class ShowObjectiveController
             'report' => $reports->forObjective($objective),
             'burnRate' => $plan->has('monitoring.slo_burn_rate') ? $burnRates->forObjective($objective) : null,
             'canExport' => $plan->has('monitoring.slo_reports'),
-            'canManage' => $user->can('manageService', [$project, 'monitoring']),
+            'canManage' => $user->can('update', $objective),
         ]);
     }
 }
