@@ -16,7 +16,7 @@
             <span class="shrink-0 text-xl text-muted transition-transform group-open:rotate-45" aria-hidden="true">+</span>
         </x-signal.ui.card>
 @else
-    <div class="grid gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.5fr)]">
+    <div @if ($id) id="{{ $id }}" @endif class="grid scroll-mt-6 gap-6 lg:grid-cols-[minmax(0,.85fr)_minmax(0,1.5fr)]">
 @endif
     <div class="hidden lg:block">
         <div class="px-4 sm:px-0">

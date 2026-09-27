@@ -63,6 +63,8 @@ use Illuminate\Support\Str;
  * @property-read Monitor|null $healthMonitor
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteDomain> $domains
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteLog> $logs
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteBackupSchedule> $backupSchedules
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteBackup> $backups
  */
 #[Hidden(['env_file', 'database_password', 'provisioning_token'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
@@ -159,6 +161,18 @@ class Website extends Model
     public function logs(): HasMany
     {
         return $this->hasMany(WebsiteLog::class);
+    }
+
+    /** @return HasMany<WebsiteBackupSchedule, $this> */
+    public function backupSchedules(): HasMany
+    {
+        return $this->hasMany(WebsiteBackupSchedule::class);
+    }
+
+    /** @return HasMany<WebsiteBackup, $this> */
+    public function backups(): HasMany
+    {
+        return $this->hasMany(WebsiteBackup::class);
     }
 
     public function databaseIdentifier(): string

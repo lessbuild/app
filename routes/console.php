@@ -6,6 +6,7 @@ use App\Actions\Analytics\DispatchPendingBatches;
 use App\Actions\Analytics\PruneAnalyticsData;
 use App\Actions\Billing\ApplyEndedSelections;
 use App\Actions\Billing\ReportUsage;
+use App\Actions\Infrastructure\QueueWebsiteBackup;
 use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
@@ -13,7 +14,10 @@ use App\Jobs\Infrastructure\CollectServerMetrics;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
+use App\Models\Website;
+use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
+use App\Services\Billing\Entitlements;
 use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
@@ -25,6 +29,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
+use Illuminate\Validation\ValidationException;
 
 Artisan::command('inspire', function () {
     $this->comment(Inspiring::quote());
@@ -247,3 +252,23 @@ Artisan::command('domains:check {--limit=100 : Most domains to check}', function
     return 0;
 })->purpose('Check that website domains point at their server and their TLS certificates are valid');
 Schedule::command('domains:check')->hourly()->withoutOverlapping(30)->onOneServer();
+
+Artisan::command('backups:run', function (QueueWebsiteBackup $queue, Entitlements $entitlements): int {
+    $now = CarbonImmutable::now('UTC');
+    $queued = 0;
+    WebsiteBackupSchedule::query()->with(['website.account', 'destination'])->whereHas('website', fn ($query) => $query->where('provisioning_status', Website::STATUS_ACTIVE))
+        ->orderBy('id')->eachById(function (WebsiteBackupSchedule $schedule) use ($queue, $entitlements, $now, &$queued): void {
+            if (! $schedule->isDue($now) || ! $entitlements->for($schedule->website->account)->has('deploy.backups')) {
+                return;
+            }
+            try {
+                $queued += (int) ($queue->handle($schedule->website, $schedule->destination, schedule: $schedule) !== null);
+            } catch (ValidationException) {
+                // The website stopped being live since the query ran; the next run picks it up.
+            }
+        });
+    $this->info("Queued {$queued} website backups.");
+
+    return 0;
+})->purpose('Queue scheduled website backups that are due');
+Schedule::command('backups:run')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();

@@ -65,6 +65,10 @@ enum AuditAction: string
     case WebsiteDeleted = 'website.deleted';
     case WebsiteDomainAdded = 'website_domain.added';
     case WebsiteDomainRemoved = 'website_domain.removed';
+    case BackupDestinationCreated = 'backup_destination.created';
+    case BackupDestinationUpdated = 'backup_destination.updated';
+    case BackupDestinationDeleted = 'backup_destination.deleted';
+    case WebsiteBackupRestored = 'website_backup.restored';
     case DashboardCreated = 'dashboard.created';
     case DashboardUpdated = 'dashboard.updated';
     case DashboardDeleted = 'dashboard.deleted';
@@ -142,6 +146,10 @@ enum AuditAction: string
             self::WebsiteDeleted => __('Deleted the website :website', ['website' => $value('website')]),
             self::WebsiteDomainAdded => __('Added :domain to the website :website', ['domain' => $value('domain'), 'website' => $value('website')]),
             self::WebsiteDomainRemoved => __('Removed :domain from the website :website', ['domain' => $value('domain'), 'website' => $value('website')]),
+            self::BackupDestinationCreated => __('Added the backup destination “:destination”', ['destination' => $value('destination')]),
+            self::BackupDestinationUpdated => __('Changed the backup destination “:destination”', ['destination' => $value('destination')]),
+            self::BackupDestinationDeleted => __('Removed the backup destination “:destination”', ['destination' => $value('destination')]),
+            self::WebsiteBackupRestored => __('Restored the website :website from the backup of :date', ['website' => $value('website'), 'date' => $value('date')]),
             self::DashboardCreated => __('Created the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardUpdated => __('Changed the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardDeleted => __('Deleted the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),

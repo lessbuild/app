@@ -1,0 +1,1 @@
+<x-signal.ui.badge :tone="match ($status) { 'succeeded' => 'success', 'failed' => 'danger', 'running' => 'info', default => 'neutral' }">{{ match ($status) { 'succeeded' => __('Done'), 'failed' => __('Failed'), 'running' => __('Running'), default => __('Queued') } }}</x-signal.ui.badge>

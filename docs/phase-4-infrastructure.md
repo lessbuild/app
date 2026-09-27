@@ -35,6 +35,15 @@ Design notes for the Infrastructure service in Phase 4 of [the plan](platform-v2
 - **Domains**: the primary domain follows the website's URL; aliases and redirects are added to Caddy (`ApplyWebsiteDomains`). With a Cloudflare provider the A/AAAA record is kept pointing at the server (in the longest matching zone, not proxied). `TEMPORARY_APP_DOMAIN` enables random temporary hostnames. `domains:check` (hourly) records whether DNS points at the server and when the certificate expires (warning at 21 days).
 - The troubleshooting terminal from Deployer (a broker process streaming an SSH PTY through the database) isn't ported: nothing in the unified app's UI used it. It's listed as an open item.
 
+## Health and backups (part 4)
+
+- **Health checks** on a website linked to an environment are Monitoring HTTP monitors (`WebsiteHealthChecks::sync`), so failures open incidents and use Monitoring's alert routing. **Server alert rules** (one server or the whole account) tell owners and admins after enough breaching readings in a row, and again on recovery.
+- **Backup destinations** belong to the account (Infrastructure → Backups): S3-compatible buckets (DigitalOcean Spaces, Amazon S3, Cloudflare R2, others), with keys and a generated restic password stored encrypted. "Check connection" writes, reads and deletes a test object with Signature V4 requests. The endpoint, bucket and prefix are fixed once backups are stored there; a destination in use can't be deleted.
+- **Backups** run restic on the website's server over `ServerShell`: a MySQL dump, the `.env` and `shared/storage`, one repository per website (`{prefix}/websites/{id}`), pruned to the schedule's retention. One backup per website at a time; a failed run is retried once. Schedules are daily or weekly at a UTC time; `backups:run` (every five minutes) queues the due ones. Running and scheduling need the `deploy.backups` plan flag (Pro and above); restoring works on any plan.
+- **Restores** put a snapshot over the live site in maintenance mode, keeping a safety copy of the database, `.env` and storage and rolling back if any step (including the health check) fails. They need owner or admin rights and password confirmation.
+- **Verification** restores a snapshot into a temporary directory and database on the same server, checks the dump, runs `php artisan migrate:status` against it, and removes both; the script's `BP_*` markers record which stage passed. The Backups page shows when a backup, a restore and a verified restore last succeeded.
+- Deployer also blocked backups and restores during a deployment; that check returns with Deploy.
+
 ## Public contracts kept
 
 - Server and website provisioning callback URLs and their signed parameters, so anything mid-setup at cutover still reports in.

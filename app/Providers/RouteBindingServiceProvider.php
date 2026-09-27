@@ -8,6 +8,7 @@ use App\Models\AlertDelivery;
 use App\Models\AlertDestination;
 use App\Models\AlertRule;
 use App\Models\AnalyticsSite;
+use App\Models\BackupDestination;
 use App\Models\Dashboard;
 use App\Models\Deployment;
 use App\Models\Environment;
@@ -52,6 +53,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'provider' => [Provider::class, 'account', ['account.providers*']],
         'server' => [Server::class, 'account', ['infrastructure.*']],
         'website' => [Website::class, 'account', ['infrastructure.*']],
+        'backupDestination' => [BackupDestination::class, 'account', ['infrastructure.*']],
         'destination' => [AlertDestination::class, 'account', ['monitoring.*']],
         'window' => [MaintenanceWindow::class, 'account', ['monitoring.*']],
         'page' => [StatusPage::class, 'account', ['monitoring.*']],

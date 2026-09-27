@@ -2,7 +2,7 @@
 @php($secrets = session('secrets'))
 
 <x-signal.layouts.project :overview="$overview" :title="$website->name" :description="$website->url.($website->server ? ' · '.$website->server->label() : '')">
-    @foreach (['retry', 'domain', 'server_id', 'dns_provider_id'] as $key)
+    @foreach (['retry', 'domain', 'server_id', 'dns_provider_id', 'backup'] as $key)
         @error($key)<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
     @endforeach
     @if (is_array($secrets) && isset($secrets['database']))
@@ -109,6 +109,99 @@
                         <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Get a temporary domain') }}</x-signal.ui.button>
                     </form>
                 @endif
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="backups" :title="__('Backups')" :description="__('The database, .env file and shared storage, sent with restic to a backup destination. Times are UTC.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @if ($canManage && ! $canBackUp)
+                <x-signal.ui.alert tone="info">{{ __('Managed backups come with the Pro Deploy plan and above. Backups already taken can still be restored.') }}</x-signal.ui.alert>
+            @elseif ($canBackUp && $backupDestinations->isEmpty())
+                <p class="text-sm text-muted">{{ __('Add a backup destination first.') }} <a href="{{ route('infrastructure.backups', $project) }}" class="font-bold text-primary hover:underline">{{ __('Backup destinations') }}</a></p>
+            @endif
+
+            @if ($schedules->isNotEmpty())
+                <ul class="divide-y divide-line text-sm">
+                    @foreach ($schedules as $schedule)
+                        <li class="flex flex-wrap items-center justify-between gap-3 py-2">
+                            <span>{{ $schedule->frequency === 'weekly' ? __('Every :day at :time', ['day' => \Carbon\CarbonImmutable::now()->startOfWeek(\Carbon\CarbonInterface::SUNDAY)->addDays((int) $schedule->weekday)->dayName, 'time' => $schedule->run_at]) : __('Every day at :time', ['time' => $schedule->run_at]) }} → {{ $schedule->destination->name }} · {{ trans_choice('keeps :count snapshot|keeps :count snapshots', $schedule->retention_count) }}</span>
+                            @if ($canManage)
+                                <form method="POST" action="{{ route('infrastructure.websites.backup-schedules.destroy', [$project, $website->id, $schedule->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            @endif
+
+            @if ($canBackUp && $backupDestinations->isNotEmpty())
+                <div class="grid gap-4 lg:grid-cols-2">
+                    <form method="POST" action="{{ route('infrastructure.websites.backups.store', [$project, $website->id]) }}" class="grid content-start items-start gap-4 rounded-panel border border-line bg-surface-muted p-4">
+                        @csrf
+                        <x-signal.ui.select-field id="backup-now-destination" name="backup_destination_id" :label="__('Back up now to')">
+                            @foreach ($backupDestinations as $destination)
+                                <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <div><x-signal.ui.button type="submit" variant="secondary" :disabled="$website->provisioning_status !== 'active'">{{ __('Back up now') }}</x-signal.ui.button></div>
+                    </form>
+                    <form method="POST" action="{{ route('infrastructure.websites.backup-schedules.store', [$project, $website->id]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-2">
+                        @csrf
+                        <x-signal.ui.select-field id="schedule-destination" name="backup_destination_id" :label="__('Schedule backups to')">
+                            @foreach ($backupDestinations as $destination)
+                                <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.select-field id="schedule-frequency" name="frequency" :label="__('How often')">
+                            <option value="daily">{{ __('Every day') }}</option>
+                            <option value="weekly" @selected(old('frequency') === 'weekly')>{{ __('Every week') }}</option>
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.select-field id="schedule-weekday" name="weekday" :label="__('Day (weekly)')">
+                            @foreach ([0, 1, 2, 3, 4, 5, 6] as $day)
+                                <option value="{{ $day }}" @selected((string) old('weekday', '0') === (string) $day)>{{ \Carbon\CarbonImmutable::now()->startOfWeek(\Carbon\CarbonInterface::SUNDAY)->addDays($day)->dayName }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.input-field id="schedule-time" name="run_at" type="time" :label="__('Time (UTC)')" value="02:00" required />
+                        <x-signal.ui.input-field id="schedule-retention" name="retention_count" type="number" min="1" max="365" :label="__('Snapshots to keep')" value="14" required />
+                        <div class="self-end"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save schedule') }}</x-signal.ui.button></div>
+                    </form>
+                </div>
+            @endif
+
+            @if ($backups->isEmpty())
+                <p class="text-sm text-muted">{{ __('No backups yet.') }}</p>
+            @else
+                <ul class="divide-y divide-line">
+                    @foreach ($backups as $backup)
+                        @php($restore = $backup->restores->first())
+                        @php($verification = $backup->verifications->first())
+                        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+                            <div class="min-w-0 text-sm">
+                                <p class="flex flex-wrap items-center gap-2"><span class="font-bold text-ink">{{ $backup->created_at?->toDayDateTimeString() }}</span> @include('infrastructure._backup-status', ['status' => $backup->status]) <span class="text-xs text-muted">{{ $backup->destination->name }}@if ($backup->size_bytes !== null) · {{ \Illuminate\Support\Number::fileSize($backup->size_bytes, maxPrecision: 1) }}@endif @if ($backup->website_backup_schedule_id) · {{ __('scheduled') }}@endif</span></p>
+                                @if ($backup->error)<p class="text-xs text-danger">{{ $backup->error }}</p>@endif
+                                @if ($restore)<p class="text-xs text-muted">{{ __('Restore:') }} {{ __($restore->status) }}@if ($restore->error) · <span class="text-danger">{{ $restore->error }}</span>@endif</p>@endif
+                                @if ($verification)<p class="text-xs text-muted">{{ __('Verification:') }} {{ __($verification->status) }}@if ($verification->error) · <span class="text-danger">{{ $verification->error }}</span>@endif</p>@endif
+                            </div>
+                            @if ($backup->isRestorable())
+                                <div class="flex gap-1">
+                                    @if ($canBackUp)
+                                        <form method="POST" action="{{ route('infrastructure.websites.backups.verify', [$project, $website->id, $backup->id]) }}">@csrf<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Verify') }}</x-signal.ui.button></form>
+                                    @endif
+                                    @if ($canManage)
+                                        <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="restore-backup-{{ $backup->id }}">{{ __('Restore') }}</x-signal.ui.button>
+                                        <x-signal.overlays.modal :id="'restore-backup-'.$backup->id" :title="__('Restore this backup?')" :description="__('The live database, .env file and shared storage are replaced with the backup from :date. The website is in maintenance mode meanwhile, and put back as it was if any step fails.', ['date' => $backup->created_at?->toDayDateTimeString()])">
+                                            <form method="POST" action="{{ route('infrastructure.websites.backups.restore', [$project, $website->id, $backup->id]) }}" class="flex justify-end gap-3">
+                                                @csrf
+                                                <x-signal.ui.button type="button" variant="secondary" data-modal-close>{{ __('Cancel') }}</x-signal.ui.button>
+                                                <x-signal.ui.button type="submit" variant="danger">{{ __('Restore') }}</x-signal.ui.button>
+                                            </form>
+                                        </x-signal.overlays.modal>
+                                    @endif
+                                </div>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
             @endif
         </div>
     </x-signal.ui.settings-section>
