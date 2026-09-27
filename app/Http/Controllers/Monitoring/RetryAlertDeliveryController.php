@@ -16,7 +16,10 @@ final class RetryAlertDeliveryController
 {
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $delivery, RetryAlertDelivery $retry): RedirectResponse
     {
-        $generation = (int) $request->validate(['generation' => ['required', 'integer', 'min:0']])['generation'];
+        $generation = (int) $request->validate(
+            ['generation' => ['required', 'integer', 'min:0'], 'confirm' => ['accepted']],
+            ['confirm.accepted' => __('Confirm that you checked the previous attempt and understand a retry may send a duplicate.')],
+        )['generation'];
         $target = AlertDelivery::query()->where('account_id', $project->account_id)->findOrFail($delivery);
         $retry->handle($project->account, $user, $target, $generation);
 

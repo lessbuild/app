@@ -61,6 +61,7 @@
                         <form method="POST" action="{{ route('monitoring.deliveries.retry', [$project, $delivery->id]) }}">
                             @csrf
                             <input type="hidden" name="generation" value="{{ $delivery->generation }}">
+                            <x-signal.ui.checkbox :id="'retry-confirm-'.$delivery->id" name="confirm" value="1" required :restore="false" label-class="text-xs font-normal">{{ __('It may send a duplicate') }}</x-signal.ui.checkbox>
                             <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Retry') }}</x-signal.ui.button>
                         </form>
                     @endif

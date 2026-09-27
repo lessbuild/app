@@ -42,6 +42,7 @@ use Illuminate\Support\Carbon;
  * @property-read Account $account
  * @property-read Project|null $project
  * @property-read Monitor|null $monitor
+ * @property-read AlertRule|null $alertRule
  * @property-read User|null $acknowledgedBy
  * @property-read User|null $assignee
  * @property-read \Illuminate\Database\Eloquent\Collection<int, IncidentActivity> $activities
@@ -79,9 +80,16 @@ class Incident extends Model
     }
 
     /** What opened the incident. Telemetry alert rules join monitors as sources with Monitoring part 3. */
-    public function source(): ?Monitor
+    /** @return BelongsTo<AlertRule, $this> */
+    public function alertRule(): BelongsTo
     {
-        return $this->monitor;
+        return $this->belongsTo(AlertRule::class)->withTrashed();
+    }
+
+    /** What opened the incident: a monitor, or an alert rule on telemetry. */
+    public function source(): Monitor|AlertRule|null
+    {
+        return $this->monitor_id !== null ? $this->monitor : $this->alertRule;
     }
 
     /** @return BelongsTo<User, $this> */

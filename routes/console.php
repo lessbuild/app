@@ -10,6 +10,7 @@ use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Services\Monitoring\AlertDeliveryRunner;
+use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
 use App\Services\Telemetry\TelemetryQueue;
 use Illuminate\Foundation\Inspiring;
@@ -104,3 +105,16 @@ Artisan::command('issues:wake {--limit=100 : Maximum snoozed issues to reopen (1
 Schedule::command('telemetry:recover')->everyMinute()->withoutOverlapping(5)->onOneServer();
 Schedule::command('telemetry:prune')->dailyAt('02:30')->withoutOverlapping(30)->onOneServer();
 Schedule::command('issues:wake')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('alerts:evaluate {--limit=100 : Maximum due rules to evaluate (1-1000)}', function (AlertRuleEvaluator $rules): int {
+    $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
+    if ($limit === false) {
+        $this->error('The limit must be an integer between 1 and 1000.');
+
+        return 2;
+    }
+    $this->info('Evaluated '.$rules->evaluate($limit).' alert rules.');
+
+    return 0;
+})->purpose('Evaluate telemetry alert rules and open or recover incidents');
+Schedule::command('alerts:evaluate')->everyMinute()->withoutOverlapping(5)->onOneServer();

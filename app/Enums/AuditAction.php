@@ -44,6 +44,11 @@ enum AuditAction: string
     case AlertDestinationUpdated = 'alert_destination.updated';
     case AlertDestinationRotated = 'alert_destination.rotated';
     case AlertDestinationArchived = 'alert_destination.archived';
+    case AlertRuleCreated = 'alert_rule.created';
+    case AlertRuleUpdated = 'alert_rule.updated';
+    case AlertRuleArchived = 'alert_rule.archived';
+    case AlertRoutingUpdated = 'alert_routing.updated';
+    case AlertEscalationsUpdated = 'alert_escalations.updated';
     case IngestTokenCreated = 'ingest_token.created';
     case IngestTokenRotated = 'ingest_token.rotated';
     case IngestTokenRevoked = 'ingest_token.revoked';
@@ -95,6 +100,11 @@ enum AuditAction: string
             self::AlertDestinationUpdated => __('Changed the alert destination “:destination”', ['destination' => $value('destination')]),
             self::AlertDestinationRotated => __('Replaced the signing key of “:destination”', ['destination' => $value('destination')]),
             self::AlertDestinationArchived => __('Archived the alert destination “:destination”', ['destination' => $value('destination')]),
+            self::AlertRuleCreated => __('Added the alert rule “:rule” to :project', ['rule' => $value('rule'), 'project' => $value('project')]),
+            self::AlertRuleUpdated => __('Changed the alert rule “:rule” in :project', ['rule' => $value('rule'), 'project' => $value('project')]),
+            self::AlertRuleArchived => __('Archived the alert rule “:rule” in :project', ['rule' => $value('rule'), 'project' => $value('project')]),
+            self::AlertRoutingUpdated => __('Changed where “:rule” alerts go', ['rule' => $value('rule')]),
+            self::AlertEscalationsUpdated => __('Changed the escalation steps of “:rule”', ['rule' => $value('rule')]),
             self::IngestTokenCreated => __('Created the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRotated => __('Replaced the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRevoked => __('Revoked the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),

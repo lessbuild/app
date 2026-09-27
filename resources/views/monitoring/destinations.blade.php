@@ -1,6 +1,8 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="__('Alert destinations')" :description="__('Where incident alerts go. Destinations belong to :account and any project’s monitors can use them.', ['account' => $project->account->name])">
+    @include('monitoring._alerts-tabs')
+
     @if ($destinations === [])
         <x-signal.ui.empty-state icon="share" :title="__('No alert destinations yet')" :description="__('Send alerts to a member’s email, a signed webhook, Slack, Microsoft Teams, Discord or PagerDuty.')" />
     @else

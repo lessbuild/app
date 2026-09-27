@@ -6,6 +6,7 @@ namespace App\Services\Monitoring;
 
 use App\Models\AlertDelivery;
 use App\Models\AlertDestination;
+use App\Models\AlertRule;
 use App\Models\Incident;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -22,13 +23,13 @@ final class AlertDispatcher
         if (DB::transactionLevel() === 0 || ! in_array($event, ['opened', 'recovered'], true)) {
             throw new LogicException('Alert outbox writes require an incident transition transaction.');
         }
-        $monitor = $incident->source();
-        $environment = $monitor?->environment;
+        $source = $incident->source();
+        $environment = $source?->environment;
         $project = $environment?->project;
-        if ($monitor === null || $environment === null || $project === null || $monitor->trashed() || ! $monitor->enabled) {
+        if ($source === null || $environment === null || $project === null || $source->trashed() || ! $source->enabled) {
             return;
         }
-        $destinations = $monitor->destinations()->where('account_id', $project->account_id)
+        $destinations = $source->destinations()->where('account_id', $project->account_id)
             ->where('enabled', true)->wherePivot($event, true)->orderBy('alert_destinations.id')->lockForUpdate()->get();
         $payload = $this->redactor->redact([
             'event' => $event, 'title' => $incident->title, 'incident_id' => $incident->id,
@@ -46,18 +47,33 @@ final class AlertDispatcher
             }
             $this->queue($destination, $payload, $incident);
         }
-        // Escalations belong to telemetry alert rules (Monitoring part 3).
+        if ($event !== 'opened' || ! $source instanceof AlertRule) {
+            return;
+        }
+        // Escalation steps are queued now for later; the runner cancels them if the incident recovers first.
+        $immediate = $destinations->modelKeys();
+        foreach ($source->escalations()->with('destination')->where('enabled', true)->get() as $escalation) {
+            $destination = $escalation->destination;
+            if (in_array($destination->id, $immediate, true) || $destination->account_id !== $project->account_id || ! $destination->enabled
+                || $destination->deliveries()->whereBelongsTo($incident)->where('event', 'escalated')->exists()) {
+                continue;
+            }
+            $this->queue($destination, [
+                ...$payload, 'event' => 'escalated',
+                'escalation' => ['step' => $escalation->position + 1, 'delay_minutes' => $escalation->delay_minutes],
+            ], $incident, CarbonImmutable::now('UTC')->addMinutes($escalation->delay_minutes));
+        }
     }
 
     /** @param array<string, mixed> $payload */
-    public function queue(AlertDestination $destination, array $payload, ?Incident $incident = null): AlertDelivery
+    public function queue(AlertDestination $destination, array $payload, ?Incident $incident = null, ?CarbonImmutable $sendAt = null): AlertDelivery
     {
         $delivery = new AlertDelivery;
         $delivery->forceFill([
             'account_id' => $destination->account_id, 'alert_destination_id' => $destination->id,
             'incident_id' => $incident?->id, 'event' => $payload['event'], 'target_revision' => $destination->target_revision,
             'payload' => $payload, 'status' => 'queued', 'generation' => 0, 'attempt_count' => 0, 'cycle_attempts' => 0,
-            'next_attempt_at' => CarbonImmutable::now('UTC'),
+            'next_attempt_at' => $sendAt ?? CarbonImmutable::now('UTC'),
         ])->save();
         $this->queue->dispatch($delivery);
 

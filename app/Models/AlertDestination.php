@@ -72,6 +72,18 @@ class AlertDestination extends Model
         return $this->belongsToMany(Monitor::class)->withPivot(['opened', 'recovered']);
     }
 
+    /** @return BelongsToMany<AlertRule, $this> */
+    public function alertRules(): BelongsToMany
+    {
+        return $this->belongsToMany(AlertRule::class)->withPivot(['opened', 'recovered']);
+    }
+
+    /** @return HasMany<AlertEscalation, $this> */
+    public function escalations(): HasMany
+    {
+        return $this->hasMany(AlertEscalation::class);
+    }
+
     /** @return HasMany<AlertDelivery, $this> */
     public function deliveries(): HasMany
     {

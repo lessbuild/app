@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
+use App\Enums\AccountRole;
 use App\Enums\AlertDestinationType;
 use App\Models\Account;
 use App\Models\AlertDestination;
 use App\Models\Membership;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 
@@ -20,7 +22,17 @@ class AlertDestinationFactory extends Factory
     {
         return $this->state(fn (): array => [
             'type' => AlertDestinationType::Email, 'endpoint_url' => null, 'signing_secret' => null,
-            'recipient_user_id' => fn (array $attributes): string => Membership::query()->where('account_id', $attributes['account_id'])->orderBy('created_at')->valueOrFail('user_id'),
+            'recipient_user_id' => function (array $attributes): string {
+                $member = Membership::query()->where('account_id', $attributes['account_id'])->orderBy('created_at')->value('user_id');
+                if (is_string($member)) {
+                    return $member;
+                }
+                $user = User::factory()->create();
+                $membership = new Membership;
+                $membership->forceFill(['account_id' => $attributes['account_id'], 'user_id' => $user->id, 'role' => AccountRole::Owner])->save();
+
+                return $user->id;
+            },
         ]);
     }
 

@@ -193,7 +193,7 @@ final class MonitoringPagesTest extends TestCase
 
         $delivery->forceFill(['status' => AlertDeliveryStatus::Failed, 'next_attempt_at' => null])->save();
         $this->actingAs($this->owner)->get("{$base}/{$destination->id}")->assertSee(__('Retry'));
-        $this->actingAs($this->owner)->post("/projects/{$this->project->id}/monitoring/deliveries/{$delivery->id}/retry", ['generation' => 0])->assertRedirect();
+        $this->actingAs($this->owner)->post("/projects/{$this->project->id}/monitoring/deliveries/{$delivery->id}/retry", ['generation' => 0, 'confirm' => '1'])->assertRedirect();
         $this->assertSame(AlertDeliveryStatus::Queued, $delivery->fresh()?->status);
 
         $this->actingAs($this->owner)->post("{$base}/{$destination->id}/rotate", ['version' => 0])->assertRedirect();

@@ -9,6 +9,7 @@ use App\Enums\AlertDeliveryStatus;
 use App\Enums\AlertDestinationType;
 use App\Models\AlertDelivery;
 use App\Models\AlertDeliveryAttempt;
+use App\Models\AlertRule;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -158,7 +159,7 @@ final class AlertDeliveryRunner
         }
         $routeExists = match ($delivery->event) {
             'opened', 'recovered' => $rule->destinations()->whereKey($destination->id)->wherePivot($delivery->event, true)->exists(),
-            // Escalations arrive with telemetry alert rules (Monitoring part 3).
+            'escalated' => $rule instanceof AlertRule && $rule->escalations()->where('alert_destination_id', $destination->id)->where('enabled', true)->exists(),
             default => false,
         };
         if (! $routeExists) {

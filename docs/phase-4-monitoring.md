@@ -4,7 +4,7 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 
 1. **Monitors, incidents, alerts and maintenance.**
 2. **Telemetry**: ingest (`/api/v1/ingest`, OTLP, deployments), events, issues, traces, releases and the service map.
-3. Alert rules on telemetry, and escalations.
+3. **Alert rules** on telemetry, escalations and service level objectives.
 4. Status pages (`/status/{slug}`).
 5. Metrics, dashboards, SLOs and usage metering.
 
@@ -26,6 +26,13 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 - **Retention**: `telemetry:prune` deletes events and finished receipts older than the tier's `monitoring.retention.days`.
 - **Incidents** show deployments to the same environment shortly before they opened (`monitoring.deployment_context.minutes`: 0 on Free, 60/120/240 on paid tiers).
 - Old Monitor's “legacy replay” (matching retries against events stored before receipts existed) isn't ported: the importer copies event identities, so retries after cutover still deduplicate.
+
+## Alert rules and SLOs (part 3)
+
+- **Alert rules** belong to an environment and optionally one service. They watch request error rate, request duration, exception count, a metric (threshold or, on paid tiers, anomaly), a log pattern, or an SLO's burn rate (paid). `alerts:evaluate` runs every minute over data at least a minute old; too few samples, stale data or gaps count as “no data”, never as recovered. Rules open and close incidents in the same `incidents` table as monitors (`alert_rule_id`), so the incidents pages, deliveries and maintenance windows work the same.
+- **Routing**: each rule picks account destinations and whether each hears about openings, recoveries or both. **Escalations** (Pro and above, `monitoring.escalation_steps.max`) alert one more destination after each delay while the incident stays open; recovering or archiving cancels pending steps.
+- **Service level objectives** set an availability or latency target over a rolling window. The page shows compliance and error budget; burn-rate analysis is on paid tiers and CSV reports on Team and Scale (`monitoring.slo_burn_rate`, `monitoring.slo_reports`).
+- Retrying a failed alert delivery needs a confirmation, because the destination may already have received it.
 
 ## Access
 

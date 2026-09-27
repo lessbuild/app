@@ -1,0 +1,54 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Monitoring;
+
+use App\Models\Project;
+use App\Models\ServiceLevelObjective;
+use App\Models\User;
+use App\Services\Monitoring\MonitorChanges;
+use App\Services\Monitoring\TelemetryRedactor;
+use Illuminate\Support\Facades\DB;
+
+final class SaveServiceLevelObjective
+{
+    public function __construct(private readonly TelemetryRedactor $redactor, private readonly MonitorChanges $changes) {}
+
+    /**
+     * Create or change a service level objective: an availability or latency target over a rolling window.
+     *
+     * @param  array<string, mixed>  $data  validated by ServiceLevelObjectiveRequest
+     */
+    public function handle(Project $project, User $actor, array $data, ?ServiceLevelObjective $objective = null): ServiceLevelObjective
+    {
+        return DB::transaction(function () use ($project, $actor, $data, $objective): ServiceLevelObjective {
+            $environment = $this->changes->lockScope($project, $actor, (string) $data['environment_id']);
+            if ($objective !== null) {
+                $objective = ServiceLevelObjective::query()->lockForUpdate()->findOrFail($objective->id);
+                abort_unless($objective->environment_id === $environment->id, 422, __('The environment can’t be changed. Create a separate objective.'));
+            }
+            $objective ??= new ServiceLevelObjective;
+            $redacted = $this->redactor->redact([
+                'name' => $data['name'],
+                'service' => $data['service'] ?? null,
+                'route' => $data['route'] ?? null,
+            ]);
+            $objective->forceFill([
+                'environment_id' => $environment->id,
+                'name' => $redacted['name'],
+                'indicator' => $data['indicator'],
+                'service' => filled($redacted['service']) ? $redacted['service'] : null,
+                'route' => filled($redacted['route']) ? $redacted['route'] : null,
+                'target' => (float) $data['target'],
+                'window_days' => (int) $data['window_days'],
+                'latency_threshold_ms' => $data['indicator'] === 'latency' ? (float) $data['latency_threshold_ms'] : null,
+                'status_min' => $data['indicator'] === 'availability' ? (int) $data['status_min'] : 200,
+                'status_max' => $data['indicator'] === 'availability' ? (int) $data['status_max'] : 399,
+                'enabled' => (bool) $data['enabled'],
+            ])->save();
+
+            return $objective;
+        }, attempts: 3);
+    }
+}

@@ -6,9 +6,9 @@ namespace App\Queries\Telemetry;
 
 use App\Models\Project;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTextSearch;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
 
 final class EventsQuery
 {
@@ -39,7 +39,7 @@ final class EventsQuery
             $query->where('duration_ms', '>=', (float) $filters['min_duration']);
         }
         if (isset($filters['q'])) {
-            $this->containsText($query, $filters['q']);
+            EventTextSearch::apply($query, $filters['q']);
         }
 
         [$from, $to] = $window;
@@ -89,20 +89,5 @@ final class EventsQuery
         };
 
         return [$until->subMinutes($minutes), $until];
-    }
-
-    /** @param Builder<TelemetryEvent> $query */
-    private function containsText(Builder $query, string $text): void
-    {
-        $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $text).'%';
-        // The message, body and indexed name inside the stored payload, per database.
-        $payloadText = DB::getDriverName() === 'pgsql'
-            ? ["payload->>'message'", "payload->>'body'", "payload#>>'{record,body,stringValue}'", "payload#>>'{_beacon,indexed_fields,name}'"]
-            : ["json_extract(payload, '$.message')", "json_extract(payload, '$.body')", "json_extract(payload, '$.record.body.stringValue')", "json_extract(payload, '$._beacon.indexed_fields.name')"];
-        $query->where(function (Builder $search) use ($pattern, $payloadText): void {
-            foreach (['name', 'route', 'service', 'trace_id', 'span_id', ...$payloadText] as $column) {
-                $search->whereRaw($column." LIKE ? ESCAPE '!'", [$pattern], 'or');
-            }
-        });
     }
 }

@@ -1,6 +1,8 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="__('Maintenance')" :description="__('During a maintenance window no monitor in :account opens an incident or sends alerts. Checks keep running and are recorded.', ['account' => $project->account->name])">
+    @include('monitoring._alerts-tabs')
+
     @if ($windows->isEmpty())
         <x-signal.ui.empty-state icon="clock" :title="__('No maintenance scheduled')" :description="__('Schedule a window before planned work so expected failures don’t page anyone.')" />
     @else
