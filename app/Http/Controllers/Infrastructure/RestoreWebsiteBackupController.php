@@ -17,6 +17,6 @@ final class RestoreWebsiteBackupController
     {
         $restore->handle($user, $website->backups()->findOrFail((int) $backup));
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('backups')->with('status', __('Restore started. If any step fails, the website is put back as it was.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'backups'])->with('status', __('Restore started. If any step fails, the website is put back as it was.'));
     }
 }

@@ -18,6 +18,6 @@ final class UpdateRepositoryController
     {
         $save->handle($user, $project, $request->repository(), $repository);
 
-        return to_route('deploy.repositories.show', [$project, $repository->id])->with('status', __('Repository saved. The next deploy uses these settings.'));
+        return to_route('deploy.repositories.show', [$project, $repository->id, 'tab' => 'settings'])->with('status', __('Repository saved. The next deploy uses these settings.'));
     }
 }

@@ -11,6 +11,7 @@ use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Infrastructure\ServerLogs;
 use App\Services\Infrastructure\ServerProvisioningPlan;
+use App\Support\PageTabs;
 use Carbon\CarbonImmutable;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -22,7 +23,15 @@ final class ShowServerController
     {
         $logType = is_string($request->query('log')) && array_key_exists($request->query('log'), ServerLogs::TYPES) ? $request->query('log') : 'provisioning';
 
+        $active = $server->provisioning_status === Server::STATUS_ACTIVE;
+        $tabs = array_filter([
+            'overview' => __('Overview'), 'alerts' => $active ? __('Alerts') : null, 'diagnostics' => $active ? __('Diagnostics') : null,
+            'logs' => __('Logs'), 'settings' => $user->can('update', $server) ? __('Settings') : null,
+        ]);
+
         return view('infrastructure.server', [
+            'tabs' => $tabs,
+            'tab' => PageTabs::current($request->query('tab', $request->has('log') ? 'logs' : null), $tabs),
             'overview' => $overview->handle($project, $user),
             'server' => $server,
             'finalStage' => $plan->finalStage($server),

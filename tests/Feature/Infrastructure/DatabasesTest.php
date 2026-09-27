@@ -55,7 +55,7 @@ final class DatabasesTest extends TestCase
         $command = $this->shell->ran[0]['command'];
         $this->assertStringContainsString("MYSQL_PWD='mysql-secret' mysql --protocol=socket -u root", $command);
         $this->assertStringContainsString("table_schema = 'shop_live'", str_replace("'\\''", "'", $command));
-        $this->actingAs($this->owner)->get($this->base)->assertSee('5 MB')->assertSee('orders, users', false);
+        $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertSee('5 MB')->assertSee('orders, users', false);
 
         $this->shell->reply('', 1, 'Access denied');
         $this->command('databases:inspect')->expectsOutput('Queued 1 database inspections.');
@@ -63,7 +63,7 @@ final class DatabasesTest extends TestCase
 
         $viewer = User::factory()->create();
         $this->addMember($this->project, $viewer, AccountRole::Viewer);
-        $this->actingAs($viewer)->get($this->base)->assertOk()->assertSee('The database couldn’t be inspected.')->assertDontSee('Inspect now');
+        $this->actingAs($viewer)->get("{$this->base}?tab=database")->assertOk()->assertSee('The database couldn’t be inspected.')->assertDontSee('Inspect now');
         $this->actingAs($viewer)->post("{$this->base}/database/inspect")->assertForbidden();
     }
 
@@ -80,7 +80,7 @@ final class DatabasesTest extends TestCase
         $grant = $this->shell->ran[0]['command'];
         $this->assertStringContainsString('GRANT SELECT, SHOW VIEW ON `shop_live`.*', $grant);
         $this->actingAs($this->owner)->post("{$this->base}/database/users", ['username' => 'reporting', 'privilege' => 'admin'])->assertSessionHasErrors('username');
-        $this->actingAs($this->owner)->get($this->base)->assertSee('reporting')->assertSee('Read only');
+        $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertSee('reporting')->assertSee('Read only');
 
         $this->travel(8)->days();
         $this->command('databases:expire-users')->expectsOutput('Removing 1 expired database users.');
@@ -111,7 +111,7 @@ final class DatabasesTest extends TestCase
         $command = (string) (collect($this->shell->ran)->last()['command'] ?? '');
         $this->assertStringContainsString('--add-drop-table shop_live | MYSQL_PWD=', $command);
         $this->assertStringEndsWith('mysql --protocol=socket -u root shop_staging', $command);
-        $this->actingAs($this->owner)->get($this->base)->assertSee('Shop → Shop staging');
+        $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertSee('Shop → Shop staging');
     }
 
     public function test_database_tools_need_the_plan_but_removing_users_does_not(): void
@@ -120,7 +120,7 @@ final class DatabasesTest extends TestCase
         $user->forceFill(['website_id' => $this->website->id, 'username' => 'old_tool', 'password' => 'x', 'privilege' => 'read', 'status' => 'active'])->save();
         $this->onTier($this->project, 'deploy', 'free');
 
-        $this->actingAs($this->owner)->get($this->base)->assertSee('Database tools come with the Pro Deploy plan')->assertDontSee('Add user');
+        $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertSee('Database tools come with the Pro Deploy plan')->assertDontSee('Add user');
         $this->actingAs($this->owner)->post("{$this->base}/database/inspect")->assertForbidden();
         $this->actingAs($this->owner)->post("{$this->base}/database/users", ['username' => 'tool', 'privilege' => 'read'])->assertForbidden();
         $this->actingAs($this->owner)->delete("{$this->base}/database/users/{$user->id}")->assertRedirect();

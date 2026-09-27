@@ -24,6 +24,6 @@ final class StoreEnvironmentVariableController
         ]);
         $save->handle($user, $environment, ['key' => $data['key'], 'value' => (string) ($data['value'] ?? ''), 'is_secret' => $request->boolean('is_secret'), 'scope' => $data['scope'], 'rotation_due_at' => $data['rotation_due_at'] ?? null]);
 
-        return to_route('deploy.environments.show', [$project, $environment])->withFragment('variables')->with('status', __(':key saved.', ['key' => $data['key']]));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => 'variables'])->with('status', __(':key saved.', ['key' => $data['key']]));
     }
 }

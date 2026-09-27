@@ -15,14 +15,23 @@ use App\Queries\Infrastructure\BackupsQuery;
 use App\Queries\Infrastructure\WebsitesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Infrastructure\WebsiteProvisioner;
+use App\Support\PageTabs;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
+use Illuminate\Http\Request;
 
 final class ShowWebsiteController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, ProjectOverviewQuery $overview, WebsitesQuery $websites, BackupsQuery $backups): View
+    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, ProjectOverviewQuery $overview, WebsitesQuery $websites, BackupsQuery $backups): View
     {
+        $tabs = array_filter([
+            'overview' => __('Overview'), 'domains' => __('Domains'), 'database' => __('Database'), 'backups' => __('Backups'),
+            'settings' => $user->can('update', $website) ? __('Settings') : null,
+        ]);
+
         return view('infrastructure.website', [
+            'tabs' => $tabs,
+            'tab' => PageTabs::current($request->query('tab'), $tabs),
             'overview' => $overview->handle($project, $user),
             'website' => $website,
             'finalStage' => WebsiteProvisioner::finalStage(),

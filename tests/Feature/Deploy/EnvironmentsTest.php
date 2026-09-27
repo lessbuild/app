@@ -65,7 +65,7 @@ final class EnvironmentsTest extends TestCase
         $this->actingAs($this->owner)->post("{$this->base}/variables", ['key' => 'bad-key', 'value' => 'x', 'scope' => 'runtime'])->assertSessionHasErrors('key');
         $secret = EnvironmentVariable::query()->where('key', 'STRIPE_SECRET')->sole();
         $this->assertSame([2, 'sk_live_2', 2], [$secret->current_version, $secret->value, $secret->versions()->count()]);
-        $this->actingAs($this->owner)->get($this->base)->assertOk()->assertSee('STRIPE_SECRET')->assertDontSee('sk_live_2')->assertSee('Shop');
+        $this->actingAs($this->owner)->get("{$this->base}?tab=variables")->assertOk()->assertSee('STRIPE_SECRET')->assertDontSee('sk_live_2')->assertSee('Shop');
 
         $this->actingAs($this->owner)->post("{$this->base}/processes", ['name' => 'queue', 'type' => 'worker', 'command' => 'php artisan queue:work', 'replicas' => 2, 'restart_policy' => 'always', 'restart_delay_seconds' => 5])->assertRedirect();
         $this->actingAs($this->owner)->post("{$this->base}/processes", ['name' => 'scheduler', 'type' => 'scheduler', 'command' => 'php artisan schedule:work', 'replicas' => 4, 'restart_policy' => 'always', 'restart_delay_seconds' => 5]);

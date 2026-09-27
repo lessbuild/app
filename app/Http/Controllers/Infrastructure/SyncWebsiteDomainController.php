@@ -15,6 +15,6 @@ final class SyncWebsiteDomainController
     {
         $warning = $sync->handle($website->domains()->whereNotNull('dns_provider_id')->findOrFail((int) $domain));
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->with($warning === null ? 'status' : 'notice', $warning ?? __('DNS record updated.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'domains'])->with($warning === null ? 'status' : 'notice', $warning ?? __('DNS record updated.'));
     }
 }

@@ -18,6 +18,6 @@ final class DeleteServerAlertRuleController
     {
         $delete->handle($project->account, $user, ServerAlertRule::query()->where('account_id', $project->account_id)->findOrFail((int) $rule));
 
-        return to_route('infrastructure.servers.show', [$project, $server->id])->withFragment('alerts')->with('status', __('Alert removed.'));
+        return to_route('infrastructure.servers.show', [$project, $server->id, 'tab' => 'alerts'])->with('status', __('Alert removed.'));
     }
 }

@@ -17,6 +17,6 @@ final class RefreshServerLogController
     {
         $queued = $refresh->handle($project->account, $user, $server, $type);
 
-        return to_route('infrastructure.servers.show', [$project, $server->id, 'log' => $type])->with('status', $queued ? __('Fetching the log.') : __('Logs are only available for active servers.'));
+        return to_route('infrastructure.servers.show', [$project, $server->id, 'log' => $type, 'tab' => 'logs'])->with('status', $queued ? __('Fetching the log.') : __('Logs are only available for active servers.'));
     }
 }

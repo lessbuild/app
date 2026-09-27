@@ -98,7 +98,7 @@ final class InfrastructureHealthTest extends TestCase
         $this->reading(95);
         Notification::assertSentToTimes($this->owner, ServerAlertChanged::class, 2);
 
-        $this->actingAs($this->owner)->get($base)->assertSee('Disk almost full')->assertSee('this server');
+        $this->actingAs($this->owner)->get("{$base}?tab=alerts")->assertSee('Disk almost full')->assertSee('this server');
         $this->actingAs($member)->post("{$base}/alerts", ['name' => 'x', 'metric' => 'cpu_percent', 'operator' => 'gte', 'threshold' => 1, 'consecutive_breaches' => 1, 'cooldown_minutes' => 5, 'scope' => 'account'])->assertForbidden();
         $this->actingAs($this->owner)->delete("{$base}/alerts/{$rule->id}")->assertRedirect();
         $this->assertModelMissing($rule);

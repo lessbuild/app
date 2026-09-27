@@ -17,6 +17,6 @@ final class DeleteBackupScheduleController
     {
         $delete->handle($user, $website->backupSchedules()->findOrFail((int) $schedule));
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('backups')->with('status', __('Backup schedule removed.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'backups'])->with('status', __('Backup schedule removed.'));
     }
 }

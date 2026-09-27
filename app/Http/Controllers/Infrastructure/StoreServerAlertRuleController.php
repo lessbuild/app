@@ -30,6 +30,6 @@ final class StoreServerAlertRuleController
         ]);
         $save->handle($project->account, $user, $data['scope'] === 'server' ? $server : null, $data);
 
-        return to_route('infrastructure.servers.show', [$project, $server->id])->withFragment('alerts')->with('status', __('Alert added.'));
+        return to_route('infrastructure.servers.show', [$project, $server->id, 'tab' => 'alerts'])->with('status', __('Alert added.'));
     }
 }

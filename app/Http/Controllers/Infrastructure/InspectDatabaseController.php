@@ -17,7 +17,7 @@ final class InspectDatabaseController
     {
         $snapshot = $inspect->handle($website, $user);
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('database')
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'database'])
             ->with('status', $snapshot === null ? __('An inspection is already running.') : __('Inspecting the database.'));
     }
 }

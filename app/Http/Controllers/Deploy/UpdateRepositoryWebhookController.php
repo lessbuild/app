@@ -17,7 +17,7 @@ final class UpdateRepositoryWebhookController
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Repository $repository, SetRepositoryWebhook $set): RedirectResponse
     {
         $secret = $set->handle($user, $repository, $request->isMethod('POST'));
-        $redirect = to_route('deploy.repositories.show', [$project, $repository->id])->withFragment('webhook');
+        $redirect = to_route('deploy.repositories.show', [$project, $repository->id, 'tab' => 'webhook']);
 
         return $secret === null
             ? $redirect->with('status', __('Push deploys are off.'))

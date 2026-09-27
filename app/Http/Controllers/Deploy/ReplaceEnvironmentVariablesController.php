@@ -19,6 +19,6 @@ final class ReplaceEnvironmentVariablesController
         $request->validate(['variables' => ['present', 'nullable', 'string', 'max:200000']]);
         $count = $replace->handle($user, $environment, (string) $request->input('variables', ''));
 
-        return to_route('deploy.environments.show', [$project, $environment])->withFragment('variables')->with('status', trans_choice(':count variable set.|:count variables set.', $count));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => 'variables'])->with('status', trans_choice(':count variable set.|:count variables set.', $count));
     }
 }

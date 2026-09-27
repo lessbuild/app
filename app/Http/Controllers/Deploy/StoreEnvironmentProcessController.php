@@ -29,6 +29,6 @@ final class StoreEnvironmentProcessController
             'restart_policy' => (string) $data['restart_policy'], 'restart_delay_seconds' => (int) $data['restart_delay_seconds'], 'is_enabled' => ! $request->has('disabled'),
         ]);
 
-        return to_route('deploy.environments.show', [$project, $environment])->withFragment('processes')->with('status', __('Process saved. It starts with the next deploy.'));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => 'processes'])->with('status', __('Process saved. It starts with the next deploy.'));
     }
 }

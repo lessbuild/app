@@ -17,6 +17,6 @@ final class DeleteWebsiteDomainController
     {
         $delete->handle($project->account, $user, $website->domains()->findOrFail((int) $domain));
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->with('status', __('Domain removed.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'domains'])->with('status', __('Domain removed.'));
     }
 }

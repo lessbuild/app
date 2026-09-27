@@ -26,6 +26,6 @@ final class StoreBackupScheduleController
         ]);
         $save->handle($user, $website, $data);
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('backups')->with('status', __('Backup schedule saved.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'backups'])->with('status', __('Backup schedule saved.'));
     }
 }

@@ -23,6 +23,6 @@ final class StoreEnvironmentResourceController
         ]);
         $save->handle($user, $environment, ['name' => $data['name'], 'type' => $data['type'], 'is_managed' => $request->boolean('is_managed'), 'variables' => $data['variables'] ?? null]);
 
-        return to_route('deploy.environments.show', [$project, $environment])->withFragment('resources')->with('status', __('Resource saved.'));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => 'resources'])->with('status', __('Resource saved.'));
     }
 }

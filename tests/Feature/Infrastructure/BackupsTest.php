@@ -127,7 +127,7 @@ final class BackupsTest extends TestCase
         $this->assertStringContainsString("RESTIC_REPOSITORY='s3:https://ams3.digitaloceanspaces.com/shop-backups/buildpusher/websites/{$this->website->id}'", $script);
         $this->assertStringContainsString("--keep-last 14 --tag 'website:{$this->website->id}'", $script);
         $this->assertNotNull($this->reload($destination)->last_verified_at);
-        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}")->assertSee('Done')->assertSee('2 KB')->assertSee('Verify');
+        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}?tab=backups")->assertSee('Done')->assertSee('2 KB')->assertSee('Verify');
         $this->actingAs($this->owner)->get("{$this->base}/backups")->assertSee('Shop')->assertSee('2 KB')->assertSee('Last backup')->assertSee('ago');
 
         // One at a time per website.
@@ -160,7 +160,7 @@ final class BackupsTest extends TestCase
         $this->actingAs($this->owner)->post("{$this->base}/websites/{$this->website->id}/backup-schedules", ['backup_destination_id' => BackupDestination::factory()->create()->id, 'frequency' => 'daily', 'run_at' => '02:00', 'retention_count' => 7])->assertNotFound();
         $this->actingAs($this->owner)->post("{$this->base}/websites/{$this->website->id}/backup-schedules", ['backup_destination_id' => $destination->id, 'frequency' => 'daily', 'run_at' => '02:00', 'retention_count' => 7])->assertRedirect();
         $schedule = WebsiteBackupSchedule::query()->sole();
-        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}")->assertSee('Every day at 02:00');
+        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}?tab=backups")->assertSee('Every day at 02:00');
 
         Queue::fake();
         $this->travelTo(now('UTC')->setTime(1, 0));
@@ -176,7 +176,7 @@ final class BackupsTest extends TestCase
         $this->travelTo(now('UTC')->addDay());
         $this->onTier($this->project, 'deploy', 'free');
         $this->command('backups:run')->expectsOutput('Queued 0 website backups.');
-        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}")->assertSee('Managed backups come with the Pro Deploy plan')->assertDontSee('Back up now');
+        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}?tab=backups")->assertSee('Managed backups come with the Pro Deploy plan')->assertDontSee('Back up now');
         $this->actingAs($this->owner)->post("{$this->base}/websites/{$this->website->id}/backups", ['backup_destination_id' => $destination->id])->assertForbidden();
 
         $this->actingAs($this->owner)->delete("{$this->base}/websites/{$this->website->id}/backup-schedules/{$schedule->id}")->assertRedirect();
@@ -231,7 +231,7 @@ final class BackupsTest extends TestCase
         $this->actingAs($this->owner)->post("{$this->base}/websites/{$this->website->id}/backups/{$backup->id}/verify");
         $this->assertSame('cleanup', BackupVerification::query()->latest('id')->firstOrFail()->failure_stage);
 
-        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}")->assertSee('The temporary directory or database couldn’t be removed.');
+        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}?tab=backups")->assertSee('The temporary directory or database couldn’t be removed.');
     }
 
     /** @param array<string, mixed> $attributes */

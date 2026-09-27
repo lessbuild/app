@@ -30,6 +30,6 @@ final class UpdateDeploymentControlsController
             'end' => $request->filled('end') ? $request->string('end')->toString() : null, 'timezone' => $request->filled('timezone') ? $request->string('timezone')->toString() : null,
         ]);
 
-        return to_route('deploy.environments.show', [$project, $environment])->withFragment('controls')->with('status', __('Deployment controls saved.'));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => 'controls'])->with('status', __('Deployment controls saved.'));
     }
 }

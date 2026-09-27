@@ -20,6 +20,6 @@ final class CopyWebsiteDatabaseController
         $target = Website::query()->where('account_id', $website->account_id)->findOrFail($request->integer('target_website_id'));
         $copy->handle($user, $website, $target, $request->string('confirmation')->toString());
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('database')->with('status', __('Copying the database into :website.', ['website' => $target->name]));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'database'])->with('status', __('Copying the database into :website.', ['website' => $target->name]));
     }
 }

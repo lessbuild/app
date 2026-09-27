@@ -21,7 +21,7 @@ final class StoreWebsiteBackupController
         $destination = BackupDestination::query()->where('account_id', $website->account_id)->findOrFail($request->integer('backup_destination_id'));
         $backup = $queue->handle($website, $destination, $user);
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('backups')
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'backups'])
             ->with('status', $backup === null ? __('A backup is already running for this website.') : __('Backup started.'));
     }
 }

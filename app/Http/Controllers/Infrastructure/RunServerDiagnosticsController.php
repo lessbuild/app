@@ -17,6 +17,6 @@ final class RunServerDiagnosticsController
     {
         $diagnose->handle($project->account, $user, $server);
 
-        return to_route('infrastructure.servers.show', [$project, $server->id])->withFragment('diagnostics');
+        return to_route('infrastructure.servers.show', [$project, $server->id, 'tab' => 'diagnostics']);
     }
 }

@@ -17,6 +17,6 @@ final class VerifyWebsiteBackupController
     {
         $verify->handle($user, $website->backups()->findOrFail((int) $backup));
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('backups')->with('status', __('Verification started. The live website isn’t touched.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'backups'])->with('status', __('Verification started. The live website isn’t touched.'));
     }
 }

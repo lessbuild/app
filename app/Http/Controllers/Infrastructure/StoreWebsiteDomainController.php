@@ -18,6 +18,6 @@ final class StoreWebsiteDomainController
     {
         [$domain, $warning] = $save->handle($project->account, $user, $website, $request->domain());
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->with($warning === null ? 'status' : 'notice', $warning ?? __(':domain added.', ['domain' => $domain->hostname]));
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'domains'])->with($warning === null ? 'status' : 'notice', $warning ?? __(':domain added.', ['domain' => $domain->hostname]));
     }
 }

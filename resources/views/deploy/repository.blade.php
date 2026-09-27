@@ -25,6 +25,9 @@
         @endif
     </x-signal.ui.card>
 
+    <x-signal.ui.page-tabs :tabs="$tabs" :current="$tab" :url="route('deploy.repositories.show', [$project, $repository->id])" />
+
+    @if ($tab === 'deploys')
     <x-signal.ui.settings-section :title="__('Deploys')" :description="__('Newest first. Open one for its log, or to redeploy or roll back.')">
         @if ($builds->isEmpty())
             <p class="p-4 text-sm text-muted sm:p-6">{{ __('No deploys yet.') }}</p>
@@ -45,6 +48,9 @@
         @endif
     </x-signal.ui.settings-section>
 
+    @endif
+
+    @if ($tab === 'webhook')
     <x-signal.ui.settings-section id="webhook" :title="__('Push deploys')" :description="__('A webhook from :host deploys each push to :branch.', ['host' => $repository->provider?->type->repositoryHost() ?? __('your Git host'), 'branch' => $repository->branch])">
         <div class="grid gap-4 p-4 sm:p-6">
             <p class="text-sm">{{ $repository->webhook_enabled ? __('On') : __('Off') }}@if ($repository->webhook_last_received_at) · {{ __('last push :when', ['when' => $repository->webhook_last_received_at->diffForHumans()]) }}@endif</p>
@@ -66,7 +72,9 @@
         </div>
     </x-signal.ui.settings-section>
 
-    @if ($canManage)
+    @endif
+
+    @if ($canManage && $tab === 'settings')
         <x-signal.ui.settings-section :title="__('Settings')" :description="__('Changes apply to the next deploy.')">
             <form method="POST" action="{{ route('deploy.repositories.update', [$project, $repository->id]) }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
                 @csrf

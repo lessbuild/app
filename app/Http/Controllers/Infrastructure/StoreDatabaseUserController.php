@@ -24,7 +24,7 @@ final class StoreDatabaseUserController
         ]);
         [$databaseUser, $password] = $create->handle($user, $website, $data);
 
-        return to_route('infrastructure.websites.show', [$project, $website->id])->withFragment('database')
+        return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'database'])
             ->with('secrets', ['database_user' => $password, 'database_user_name' => $databaseUser->username])
             ->with('status', __('Database user added.'));
     }

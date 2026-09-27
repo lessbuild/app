@@ -22,6 +22,6 @@ final class DeleteEnvironmentSettingController
         };
         $delete->handle($user, $record->findOrFail((int) $setting));
 
-        return to_route('deploy.environments.show', [$project, $environment])->withFragment($kind)->with('status', __('Removed. The server changes with the next deploy.'));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => $kind])->with('status', __('Removed. The server changes with the next deploy.'));
     }
 }

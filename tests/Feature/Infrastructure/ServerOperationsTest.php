@@ -108,7 +108,7 @@ final class ServerOperationsTest extends TestCase
     public function test_logs_metrics_and_diagnostics_are_read_over_ssh(): void
     {
         $this->shell->reply("Start-Date: 2026-09-01\n");
-        $this->actingAs($this->owner)->post("{$this->base}/logs/apt")->assertRedirect("{$this->base}?log=apt");
+        $this->actingAs($this->owner)->post("{$this->base}/logs/apt")->assertRedirect("{$this->base}?log=apt&tab=logs");
         $this->actingAs($this->owner)->get("{$this->base}?log=apt")->assertOk()->assertSee('Start-Date: 2026-09-01');
         $this->assertStringContainsString('/var/log/apt/history.log', $this->shell->ran[0]['command']);
 
@@ -125,7 +125,7 @@ final class ServerOperationsTest extends TestCase
         $checks = array_column($snapshot->checks ?? [], 'passed', 'name');
         $this->assertTrue($checks['PHP runtime']);
         $this->assertFalse($checks['Disk utilization']);
-        $this->actingAs($this->owner)->get($this->base)->assertSee('Used 95%')->assertSee('PHP 8.4.1 available');
+        $this->actingAs($this->owner)->get("{$this->base}?tab=diagnostics")->assertSee('Used 95%')->assertSee('PHP 8.4.1 available');
 
         $this->shell->reply('garbage');
         $this->actingAs($this->owner)->post("{$this->base}/diagnostics");

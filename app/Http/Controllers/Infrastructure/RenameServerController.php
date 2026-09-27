@@ -19,6 +19,6 @@ final class RenameServerController
         $validated = $request->validate(['display_name' => ['nullable', 'string', 'max:80', 'not_regex:/[\x00-\x1F\x7F]/u']]);
         $rename->handle($project->account, $user, $server, is_string($validated['display_name'] ?? null) ? $validated['display_name'] : null);
 
-        return to_route('infrastructure.servers.show', [$project, $server->id])->with('status', __('Server renamed.'));
+        return to_route('infrastructure.servers.show', [$project, $server->id, 'tab' => 'settings'])->with('status', __('Server renamed.'));
     }
 }

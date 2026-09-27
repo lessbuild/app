@@ -47,6 +47,9 @@
         </dl>
     </x-signal.ui.card>
 
+    <x-signal.ui.page-tabs :tabs="$tabs" :current="$tab" :url="route('infrastructure.websites.show', [$project, $website->id])" />
+
+    @if ($tab === 'overview')
     @if ($log)
         <x-signal.ui.settings-section :title="__('Setup log')" :description="__('The last run of the setup script.')">
             <x-signal.ui.code-block class="m-4 max-h-96 overflow-auto whitespace-pre-wrap sm:m-6" :code="$log" />
@@ -71,7 +74,9 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
+    @endif
 
+    @if ($tab === 'domains')
     <x-signal.ui.settings-section :title="__('Domains')" :description="__('Aliases serve the website too; redirects send visitors elsewhere. The primary domain changes with the website’s domain setting.')">
         <div class="grid gap-4 p-4 sm:p-6">
             <ul class="divide-y divide-line">
@@ -121,7 +126,9 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
+    @endif
 
+    @if ($tab === 'database')
     <x-signal.ui.settings-section id="database" :title="__('Database')" :description="__('The MySQL database :database on the website’s server: its size and tables, extra logins, and copying it into another website.', ['database' => $website->databaseIdentifier()])">
         <div class="grid gap-5 p-4 sm:p-6">
             @if ($canManage && ! $canManageDatabase)
@@ -223,7 +230,9 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
+    @endif
 
+    @if ($tab === 'backups')
     <x-signal.ui.settings-section id="backups" :title="__('Backups')" :description="__('The database, .env file and shared storage, sent with restic to a backup destination. Times are UTC.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @if ($canManage && ! $canBackUp)
@@ -316,8 +325,9 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
+    @endif
 
-    @if ($canManage)
+    @if ($canManage && $tab === 'settings')
         <x-signal.ui.settings-section :title="__('Settings')" :description="__('A new server, domain or .env sets the website up again. Moving servers keeps the old copy until the new one is live.')">
             <form method="POST" action="{{ route('infrastructure.websites.update', [$project, $website->id]) }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
                 @csrf
