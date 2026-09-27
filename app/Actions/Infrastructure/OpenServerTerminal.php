@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Infrastructure;
 
 use App\Actions\Audit\RecordAuditEntry;
+use App\Data\Infrastructure\TerminalSize;
 use App\Enums\AuditAction;
 use App\Jobs\Infrastructure\RunServerTerminal;
 use App\Models\Server;
@@ -40,7 +41,8 @@ final class OpenServerTerminal
             $session = new ServerTerminalSession;
             $session->forceFill([
                 'server_id' => $locked->id, 'user_id' => $actor->id, 'token_hash' => hash('sha256', $token), 'status' => 'connecting',
-                'columns' => max(20, min(240, $columns)), 'rows' => max(5, min(100, $rows)),
+                'columns' => max(TerminalSize::MIN_COLUMNS, min(TerminalSize::MAX_COLUMNS, $columns)),
+                'rows' => max(TerminalSize::MIN_ROWS, min(TerminalSize::MAX_ROWS, $rows)),
                 'expires_at' => now()->addMinutes((int) config('infrastructure.terminal.session_minutes')),
                 'idle_expires_at' => now()->addMinutes((int) config('infrastructure.terminal.idle_minutes')),
             ])->save();

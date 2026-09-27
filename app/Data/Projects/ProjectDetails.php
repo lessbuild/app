@@ -6,6 +6,12 @@ namespace App\Data\Projects;
 
 final readonly class ProjectDetails
 {
+    /**
+     * The editable details of a project.
+     *
+     * @param  string  $name  The project's name.
+     * @param  ?string  $description  An optional line about what the project is.
+     */
     public function __construct(
         public string $name,
         public ?string $description = null,

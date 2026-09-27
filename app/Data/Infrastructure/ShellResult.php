@@ -7,8 +7,18 @@ namespace App\Data\Infrastructure;
 /** What a command run over SSH printed and how it exited. */
 final readonly class ShellResult
 {
+    /**
+     * The result of running a command on a server.
+     *
+     * @param  string  $output  What it wrote to standard output.
+     * @param  string  $errorOutput  What it wrote to standard error.
+     * @param  ?int  $exitCode  Its exit code; null when the connection dropped before it finished.
+     */
     public function __construct(public string $output, public string $errorOutput, public ?int $exitCode) {}
 
+    /**
+     * Whether the command finished with exit code 0.
+     */
     public function successful(): bool
     {
         return $this->exitCode === 0;

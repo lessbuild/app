@@ -33,10 +33,4 @@ return [
         'output_frame_bytes' => 16384,
         'max_pending_output_bytes' => 1048576,
     ],
-    'troubleshooting' => [
-        'terminal_min_columns' => 20,
-        'terminal_max_columns' => 240,
-        'terminal_min_rows' => 5,
-        'terminal_max_rows' => 100,
-    ],
 ];

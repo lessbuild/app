@@ -6,7 +6,17 @@ namespace App\Data\Monitoring;
 
 final readonly class MonitorObservation
 {
-    /** @param array<string, mixed> $details Safe summary included in incidents and notifications.
+    /**
+     * The result of one monitor check, before it's stored.
+     *
+     * @param  string  $outcome  `up`, `down` or `unknown`.
+     * @param  string  $reason  A stable reason code, turned into words by `label()`.
+     * @param  ?int  $httpStatus  The response status, for HTTP checks.
+     * @param  ?float  $durationMs  How long the whole check took.
+     * @param  ?float  $dnsMs  Time spent resolving the hostname.
+     * @param  ?float  $connectMs  Time spent opening the connection.
+     * @param  ?float  $ttfbMs  Time to the response's first byte.
+     * @param  array<string, mixed>  $details  Safe summary included in incidents and notifications.
      * @param  array<string, list<string>>  $evidence  Private record values stored only in encrypted check history.
      */
     public function __construct(
@@ -21,7 +31,12 @@ final readonly class MonitorObservation
         public array $evidence = [],
     ) {}
 
-    /** @return array<string, mixed> */
+    /**
+     * The observation as stored on the check and snapshotted onto incidents. Evidence is left out on purpose: it may
+     * hold record values, so it only goes into the encrypted check history.
+     *
+     * @return array<string, mixed>
+     */
     public function toArray(): array
     {
         return [
@@ -32,6 +47,10 @@ final readonly class MonitorObservation
         ];
     }
 
+    /**
+     * The sentence shown for a reason code on check history, incidents and alerts. Unknown codes read as "Awaiting a
+     * check".
+     */
     public static function label(?string $reason): string
     {
         return match ($reason) {

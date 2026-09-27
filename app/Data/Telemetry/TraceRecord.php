@@ -8,18 +8,43 @@ use App\Models\TelemetryEvent;
 
 final readonly class TraceRecord
 {
+    /**
+     * Whole seconds of the event's start, from the precise OTLP timestamp when there is one, else from `occurred_at`.
+     */
     public int $seconds;
 
+    /**
+     * The nanoseconds past `$seconds`, so spans in the same millisecond still order correctly.
+     */
     public int $nanoseconds;
 
+    /**
+     * The span's length, from its start and end timestamps when both are valid, else the stored duration. Null when
+     * unknown or nonsensical (negative or infinite).
+     */
     public ?float $durationMs;
 
+    /**
+     * Whether the event is a span in the trace: it has a span ID and is either an OTLP trace or a request, query or job
+     * event. Logs and metrics with a span ID are shown as events attached to the trace instead.
+     */
     public bool $isSpan;
 
+    /**
+     * Whether the event failed: error or critical severity, an exception, or a 5xx status.
+     */
     public bool $hasError;
 
+    /**
+     * Whether the event is a warning or a 4xx response.
+     */
     public bool $hasWarning;
 
+    /**
+     * Works out the timing and state of one event in a trace waterfall.
+     *
+     * @param  TelemetryEvent  $event  The stored telemetry event.
+     */
     public function __construct(public TelemetryEvent $event)
     {
         $start = OtlpTimestamp::isValid($event->timestamp_unix_nano)
@@ -49,12 +74,18 @@ final readonly class TraceRecord
             || ($event->status_code >= 400 && $event->status_code < 500);
     }
 
+    /**
+     * How far after `$origin` (normally the trace's first event) this event started, for placing it on the waterfall.
+     */
     public function millisecondsSince(self $origin): float
     {
         return round(($this->seconds - $origin->seconds) * 1_000
             + ($this->nanoseconds - $origin->nanoseconds) / 1_000_000, 6);
     }
 
+    /**
+     * What to call the event on the waterfall: its name, else its route, else "Unnamed" and its type.
+     */
     public function name(): string
     {
         return filled($this->event->name)
@@ -62,21 +93,33 @@ final readonly class TraceRecord
             : (filled($this->event->route) ? $this->event->route : 'Unnamed '.$this->event->type);
     }
 
+    /**
+     * The service that emitted the event, or "Unspecified service".
+     */
     public function service(): string
     {
         return filled($this->event->service) ? $this->event->service : 'Unspecified service';
     }
 
+    /**
+     * The waterfall colour: red for errors, amber for warnings, accent for spans and neutral for other events.
+     */
     public function tone(): string
     {
         return $this->hasError ? 'danger' : ($this->hasWarning ? 'warning' : ($this->isSpan ? 'accent' : 'neutral'));
     }
 
+    /**
+     * The duration formatted for display.
+     */
     public function durationLabel(): string
     {
         return self::formatDuration($this->durationMs);
     }
 
+    /**
+     * Formats milliseconds with up to six decimals and no trailing zeros, or "Not reported" when unknown.
+     */
     public static function formatDuration(?float $milliseconds): string
     {
         if ($milliseconds === null) {

@@ -9,9 +9,14 @@ use SensitiveParameter;
 
 final readonly class NewApiToken
 {
+    /**
+     * A token that has just been created, with the one chance to see its secret.
+     *
+     * @param  ApiToken  $token  The stored token.
+     * @param  string  $plainText  Shown to the creator once; only its hash is stored.
+     */
     public function __construct(
         public ApiToken $token,
-        /** Shown to the creator once; only its hash is stored. */
         #[SensitiveParameter] public string $plainText,
     ) {}
 }

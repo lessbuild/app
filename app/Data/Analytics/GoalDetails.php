@@ -6,11 +6,18 @@ namespace App\Data\Analytics;
 
 final readonly class GoalDetails
 {
+    /**
+     * The settings of an analytics goal.
+     *
+     * @param  string  $name  The goal's name.
+     * @param  string  $kind  path or event
+     * @param  string  $matchType  exact or prefix
+     * @param  string  $matchValue  The path or event name to match.
+     * @param  bool  $active  Whether the goal is counted; paused goals keep their history.
+     */
     public function __construct(
         public string $name,
-        /** path or event */
         public string $kind,
-        /** exact or prefix */
         public string $matchType,
         public string $matchValue,
         public bool $active = true,

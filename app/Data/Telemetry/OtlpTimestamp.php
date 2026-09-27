@@ -9,12 +9,23 @@ use InvalidArgumentException;
 
 final readonly class OtlpTimestamp
 {
+    /**
+     * Use `fromUnixNano()`, which validates the value first.
+     *
+     * @param  string  $unixNano  The timestamp in nanoseconds as a canonical decimal string. OTLP timestamps are
+     *                            unsigned 64-bit, beyond what a PHP int holds, so they stay strings.
+     * @param  int  $seconds  The whole seconds since the Unix epoch.
+     * @param  int  $nanoseconds  The remaining nanoseconds (0 to 999,999,999).
+     */
     private function __construct(
         public string $unixNano,
         public int $seconds,
         public int $nanoseconds,
     ) {}
 
+    /**
+     * Whether a value is an unsigned 64-bit integer, given as an int or a string of digits.
+     */
     public static function isValid(mixed $value): bool
     {
         if ((! is_int($value) && ! is_string($value)) || preg_match('/\A[0-9]{1,20}\z/D', (string) $value) !== 1) {
@@ -26,6 +37,9 @@ final readonly class OtlpTimestamp
         return strlen($canonical) < 20 || strcmp($canonical, '18446744073709551615') <= 0;
     }
 
+    /**
+     * Parses an OTLP nanosecond timestamp; null stays null, and anything that isn't an unsigned 64-bit integer throws.
+     */
     public static function fromUnixNano(mixed $value): ?self
     {
         if ($value === null) {
@@ -43,6 +57,9 @@ final readonly class OtlpTimestamp
         return new self($canonical, (int) substr($padded, 0, -9), (int) substr($padded, -9));
     }
 
+    /**
+     * The timestamp in UTC with microsecond precision, which is as fine as Carbon goes.
+     */
     public function iso8601(): string
     {
         return CarbonImmutable::createFromTimestampUTC($this->seconds)
@@ -50,6 +67,10 @@ final readonly class OtlpTimestamp
             ->format('Y-m-d\TH:i:s.u\Z');
     }
 
+    /**
+     * The time from this timestamp to `$end` in milliseconds, computed from the split seconds and nanoseconds so no
+     * precision is lost to floats.
+     */
     public function millisecondsUntil(self $end): float
     {
         return round(($end->seconds - $this->seconds) * 1_000

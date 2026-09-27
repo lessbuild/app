@@ -15,7 +15,16 @@ final readonly class ServerCost
 
     public const UNALLOCATED = 'unallocated';
 
-    /** @param list<string> $projects names of projects whose websites run on the server */
+    /**
+     * One server's line on the costs page.
+     *
+     * @param  Server  $server  The server.
+     * @param  ?float  $monthly  What it costs per month, when known.
+     * @param  ?float  $averageCpu  Its average CPU use over the last hour, as a percentage; null without samples.
+     * @param  int  $websites  How many websites run on it.
+     * @param  bool  $idle  Whether it looks unused: no websites, or at least six samples in the last hour averaging under 10% CPU.
+     * @param  list<string>  $projects  names of projects whose websites run on the server
+     */
     public function __construct(
         public Server $server,
         public ?float $monthly,
@@ -25,6 +34,9 @@ final readonly class ServerCost
         public array $projects,
     ) {}
 
+    /**
+     * How the cost splits across projects: all to one project, shared between several, or not attributed to any.
+     */
     public function attribution(): string
     {
         return match (count($this->projects)) {

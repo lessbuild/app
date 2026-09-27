@@ -8,17 +8,30 @@ use Carbon\CarbonInterface;
 
 final readonly class PlanChange
 {
+    /**
+     * Use the named constructors, which say what happened.
+     *
+     * @param  string  $outcome  `changed`, `unchanged`, `scheduled` or `checkout`.
+     * @param  ?string  $checkoutUrl  Where to send the person to pay, for `checkout`.
+     * @param  ?CarbonInterface  $effectiveAt  When a scheduled change happens.
+     */
     private function __construct(
         public string $outcome,
         public ?string $checkoutUrl = null,
         public ?CarbonInterface $effectiveAt = null,
     ) {}
 
+    /**
+     * The new tier applies now.
+     */
     public static function changed(): self
     {
         return new self('changed');
     }
 
+    /**
+     * The account was already on that tier.
+     */
     public static function unchanged(): self
     {
         return new self('unchanged');

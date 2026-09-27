@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Infrastructure;
 
-use App\Data\Infrastructure\ServerTroubleshootingTerminalSize;
+use App\Data\Infrastructure\TerminalSize;
 use RuntimeException;
 use Spatie\Ssh\Ssh;
 use Symfony\Component\Process\InputStream;
@@ -81,7 +81,7 @@ class ManagedSsh extends Ssh
      *
      * @throws RuntimeException If a pinned host and private key were not configured.
      */
-    public function interactiveCommand(ServerTroubleshootingTerminalSize $size): array
+    public function interactiveCommand(TerminalSize $size): array
     {
         if ($this->temporaryPrivateKey === null || $this->temporaryKnownHosts === null) {
             throw new RuntimeException('A pinned SSH identity is required for an interactive connection.');
@@ -123,7 +123,7 @@ class ManagedSsh extends Ssh
      */
     public function interactiveProcess(
         InputStream $input,
-        ServerTroubleshootingTerminalSize $size,
+        TerminalSize $size,
     ): Process {
         return new Process($this->interactiveCommand($size), null, null, $input, null);
     }

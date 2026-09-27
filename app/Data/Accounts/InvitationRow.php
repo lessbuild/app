@@ -9,6 +9,15 @@ use Carbon\CarbonImmutable;
 
 final readonly class InvitationRow
 {
+    /**
+     * A pending invitation on the members page.
+     *
+     * @param  string  $id  The invitation's ID, used to revoke it.
+     * @param  string  $email  Who it was sent to.
+     * @param  AccountRole  $role  The role they'll get when they accept.
+     * @param  ?string  $invitedBy  The name of whoever sent it, when they're still around.
+     * @param  CarbonImmutable  $expiresAt  When the link stops working.
+     */
     public function __construct(
         public string $id,
         public string $email,

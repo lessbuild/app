@@ -10,8 +10,12 @@ use App\Models\Project;
 final readonly class ProjectOverview
 {
     /**
+     * Everything the project overview page shows.
+     *
+     * @param  Project  $project  The project.
      * @param  list<Environment>  $environments  production first
      * @param  list<ServiceCard>  $services  every registered service, in registry order
+     * @param  bool  $canManage  Whether the viewer may change the project and its services.
      */
     public function __construct(
         public Project $project,
@@ -20,7 +24,11 @@ final readonly class ProjectOverview
         public bool $canManage,
     ) {}
 
-    /** @return list<ServiceCard> */
+    /**
+     * The services turned on in this project, in registry order.
+     *
+     * @return list<ServiceCard>
+     */
     public function enabledServices(): array
     {
         return array_values(array_filter($this->services, fn (ServiceCard $service): bool => $service->enabled));

@@ -6,7 +6,15 @@ namespace App\Data\Projects;
 
 final readonly class ProjectCard
 {
-    /** @param list<string> $serviceNames enabled services, in registry order */
+    /**
+     * One project on the projects list.
+     *
+     * @param  string  $id  The project's ID.
+     * @param  string  $name  The project's name.
+     * @param  ?string  $description  The project's description, if it has one.
+     * @param  list<string>  $serviceNames  enabled services, in registry order
+     * @param  int  $environmentCount  How many environments it has.
+     */
     public function __construct(
         public string $id,
         public string $name,

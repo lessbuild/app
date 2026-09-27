@@ -8,7 +8,25 @@ use Carbon\CarbonImmutable;
 
 final readonly class NormalizedEvent
 {
-    /** @param array<string, mixed>|null $properties */
+    /**
+     * One pageview or custom event, cleaned up and ready to store.
+     *
+     * @param  string  $eventId  The client's ID for the event, so a resent batch doesn't count twice.
+     * @param  string  $type  `pageview` or `event`.
+     * @param  CarbonImmutable  $occurredAt  When we received it (never the client's clock).
+     * @param  string  $path  The page path, without query string.
+     * @param  ?string  $referrerHost  The site the visitor came from.
+     * @param  ?string  $utmSource  The `utm_source` campaign tag.
+     * @param  ?string  $utmMedium  The `utm_medium` campaign tag.
+     * @param  ?string  $utmCampaign  The `utm_campaign` campaign tag.
+     * @param  ?string  $deviceCategory  Desktop, mobile or tablet, as the tracker reported it.
+     * @param  ?string  $browser  The browser's name.
+     * @param  ?string  $operatingSystem  The operating system's name.
+     * @param  ?string  $visitorHash  A hash that rotates daily, so visitors can be counted within a day but not followed
+     *                                across days.
+     * @param  ?string  $sessionId  The tracker's session ID, used to group a visit's pages.
+     * @param  array<string, mixed>|null  $properties
+     */
     public function __construct(
         public string $eventId,
         public string $type,
@@ -26,7 +44,11 @@ final readonly class NormalizedEvent
         public ?array $properties,
     ) {}
 
-    /** @return array<string, mixed> */
+    /**
+     * The event as a row for `analytics_events`, for a bulk insert.
+     *
+     * @return array<string, mixed>
+     */
     public function toDatabase(int $siteId, int $batchId, CarbonImmutable $receivedAt): array
     {
         return [

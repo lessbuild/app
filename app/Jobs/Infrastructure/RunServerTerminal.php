@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs\Infrastructure;
 
 use App\Contracts\Infrastructure\TerminalConnection;
-use App\Data\Infrastructure\ServerTroubleshootingTerminalSize;
+use App\Data\Infrastructure\TerminalSize;
 use App\Models\ServerTerminalSession;
 use App\Services\Infrastructure\ServerTerminal;
 use App\Services\Infrastructure\TerminalFrames;
@@ -44,7 +44,7 @@ final class RunServerTerminal implements ShouldQueue
         }
         $connection = null;
         try {
-            $connection = $terminals->connect($session->server, new ServerTroubleshootingTerminalSize($session->columns, $session->rows));
+            $connection = $terminals->connect($session->server, new TerminalSize($session->columns, $session->rows));
             $session->forceFill(['status' => 'connected', 'connected_at' => now(), 'broker_seen_at' => now()])->save();
             $reason = $this->relay($session, $connection, $frames);
         } catch (Throwable $exception) {

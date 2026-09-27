@@ -9,8 +9,19 @@ use App\Services\Monitoring\TelemetryRedactor;
 
 final readonly class ReleaseIdentity
 {
+    /**
+     * Use `from()` or `fromEvent()`, which validate the labels first.
+     *
+     * @param  string  $version  The release version, such as a tag or commit.
+     * @param  ?string  $service  The service the release is of, when the telemetry names one.
+     * @param  ?string  $namespace  The service namespace, for telemetry that groups services.
+     */
     private function __construct(public string $version, public ?string $service, public ?string $namespace) {}
 
+    /**
+     * A release identity from raw labels, or null when the version is missing or any label is too long, has control
+     * characters, or was redacted.
+     */
     public static function from(mixed $version, mixed $service = null, mixed $namespace = null): ?self
     {
         if (! self::validLabel($version, 128) || ! self::validLabel($service, 100, true) || ! self::validLabel($namespace, 100, true)) {
@@ -20,7 +31,12 @@ final readonly class ReleaseIdentity
         return new self(trim($version), is_string($service) && trim($service) !== '' ? trim($service) : null, is_string($namespace) && trim($namespace) !== '' ? trim($namespace) : null);
     }
 
-    /** @param array<string, mixed> $event */
+    /**
+     * The release an ingested event belongs to, read from `service.version`, `service.name` and `service.namespace` in
+     * its resource attributes (OTLP) or attributes (JSON; the event's own `service` wins there).
+     *
+     * @param  array<string, mixed>  $event
+     */
     public static function fromEvent(array $event, IngestSource $source): ?self
     {
         if ($source !== IngestSource::Json) {
@@ -38,16 +54,27 @@ final readonly class ReleaseIdentity
             : null;
     }
 
+    /**
+     * A fixed-length key for the namespace and service together, used in unique indexes where the labels themselves
+     * could be too long.
+     */
     public function serviceHash(): string
     {
         return hash('sha256', json_encode([$this->namespace, $this->service], JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE));
     }
 
+    /**
+     * A fixed-length key for the version, for the same reason.
+     */
     public function versionHash(): string
     {
         return hash('sha256', $this->version);
     }
 
+    /**
+     * Whether a label is safe to store: within the length limit, not blank unless optional, not a redaction placeholder,
+     * and free of control characters.
+     */
     private static function validLabel(mixed $value, int $limit, bool $optional = false): bool
     {
         if ($value === null) {

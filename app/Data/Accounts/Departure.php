@@ -11,6 +11,9 @@ use App\Models\Membership;
 final readonly class Departure
 {
     /**
+     * What deleting a person would do to each account they belong to, worked out before anything changes so the
+     * confirmation page can show it and blocked deletions can be explained.
+     *
      * @param  list<Account>  $toDelete  accounts where they are the only member
      * @param  list<Membership>  $toLeave  shared accounts that keep another owner
      * @param  list<Account>  $blockedBy  shared accounts where they are the only owner

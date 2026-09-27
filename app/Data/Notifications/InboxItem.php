@@ -8,6 +8,15 @@ use Carbon\CarbonImmutable;
 
 final readonly class InboxItem
 {
+    /**
+     * One notification in the inbox.
+     *
+     * @param  string  $id  The notification's ID, used to mark it read.
+     * @param  string  $title  The headline.
+     * @param  string  $body  The detail line.
+     * @param  bool  $read  Whether the person has already seen it.
+     * @param  CarbonImmutable  $at  When it was sent.
+     */
     public function __construct(
         public string $id,
         public string $title,

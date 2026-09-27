@@ -6,6 +6,15 @@ namespace App\Data\Monitoring;
 
 final readonly class TlsCertificateInspection
 {
+    /**
+     * What a TLS check learned about a certificate, or why it couldn't learn it.
+     *
+     * @param  ?string  $error  A reason code when the certificate couldn't be read or verified.
+     * @param  ?int  $validFrom  When the certificate becomes valid, as a Unix timestamp.
+     * @param  ?int  $validUntil  When it expires, as a Unix timestamp.
+     * @param  ?string  $fingerprint  Its SHA-256 fingerprint, so a replaced certificate can be told apart.
+     * @param  ?float  $connectMs  How long the TLS connection took.
+     */
     public function __construct(
         public ?string $error = null,
         public ?int $validFrom = null,
@@ -14,6 +23,10 @@ final readonly class TlsCertificateInspection
         public ?float $connectMs = null,
     ) {}
 
+    /**
+     * The result for a failed connection: network and TLS errors mean the target failed, anything else means the checker
+     * itself had a problem.
+     */
     public static function fromCurlFailure(int $errorCode): self
     {
         return new self(error: in_array($errorCode, [

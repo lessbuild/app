@@ -14,9 +14,12 @@ use App\Models\QueueWorker;
 final readonly class MonitorHistory
 {
     /**
+     * A monitor's recent history for its detail page.
+     *
      * @param  list<MonitorCheck>  $checks  newest first
      * @param  list<Incident>  $incidents  newest first
      * @param  list<HeartbeatRun>  $runs  heartbeat monitors only, newest first
+     * @param  ?QueueSnapshot  $snapshot  The latest queue report, for queue monitors.
      * @param  list<QueueWorker>  $workers  queue monitors only: workers seen recently
      */
     public function __construct(

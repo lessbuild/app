@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Infrastructure;
 
 use App\Contracts\Infrastructure\TerminalConnection;
-use App\Data\Infrastructure\ServerTroubleshootingTerminalSize;
+use App\Data\Infrastructure\TerminalSize;
 use App\Models\Server;
 use App\Services\Infrastructure\ServerTerminal;
 use RuntimeException;
@@ -16,7 +16,7 @@ final class FakeServerTerminal extends ServerTerminal
     /** @var list<string> */
     public array $written = [];
 
-    public ?ServerTroubleshootingTerminalSize $size = null;
+    public ?TerminalSize $size = null;
 
     public bool $refuse = false;
 
@@ -24,7 +24,7 @@ final class FakeServerTerminal extends ServerTerminal
 
     public function __construct() {}
 
-    public function connect(Server $server, ServerTroubleshootingTerminalSize $size): TerminalConnection
+    public function connect(Server $server, TerminalSize $size): TerminalConnection
     {
         if ($this->refuse) {
             throw new RuntimeException('The SSH connection couldn’t be opened.');

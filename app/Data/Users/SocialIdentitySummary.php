@@ -9,6 +9,13 @@ use Carbon\CarbonImmutable;
 
 final readonly class SocialIdentitySummary
 {
+    /**
+     * A provider account connected to the signed-in person, for the security page.
+     *
+     * @param  SocialProvider  $provider  Which provider it is.
+     * @param  ?string  $email  The email the provider reported when it was connected.
+     * @param  ?CarbonImmutable  $connectedAt  When it was connected.
+     */
     public function __construct(
         public SocialProvider $provider,
         public ?string $email,

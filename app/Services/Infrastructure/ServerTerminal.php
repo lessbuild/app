@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Contracts\Infrastructure\TerminalConnection;
-use App\Data\Infrastructure\ServerTroubleshootingTerminalSize;
+use App\Data\Infrastructure\TerminalSize;
 use App\Models\Server;
 use Closure;
 use RuntimeException;
@@ -19,7 +19,7 @@ class ServerTerminal
     public function __construct(private readonly Runner $runner) {}
 
     /** @throws RuntimeException with a message safe to show */
-    public function connect(Server $server, ServerTroubleshootingTerminalSize $size): TerminalConnection
+    public function connect(Server $server, TerminalSize $size): TerminalConnection
     {
         if ($server->provisioning_status !== Server::STATUS_ACTIVE || $server->ssh_host_key === null || $server->public_ip === null || $server->ssh_private_key === null) {
             throw new RuntimeException('The server needs to be active with a pinned SSH host key.');
