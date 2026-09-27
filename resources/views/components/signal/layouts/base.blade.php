@@ -1,6 +1,8 @@
 @props([
     'title' => null,
     'description' => null,
+    'indexable' => false,
+    'canonical' => null,
 ])
 
 @php($pageTitle = $title ? $title.' · '.config('app.name') : config('app.name'))
@@ -24,7 +26,10 @@
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
         <meta name="theme-color" content="#f4f7fb" data-theme-color>
-        <meta name="robots" content="noindex, nofollow">
+        <meta name="robots" content="{{ $indexable ? 'index, follow' : 'noindex, nofollow' }}">
+        @if ($canonical)
+            <link rel="canonical" href="{{ $canonical }}">
+        @endif
         <title>{{ $pageTitle }}</title>
         @if ($description)
             <meta name="description" content="{{ $description }}">

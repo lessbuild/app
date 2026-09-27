@@ -5,7 +5,7 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 1. **Monitors, incidents, alerts and maintenance.**
 2. **Telemetry**: ingest (`/api/v1/ingest`, OTLP, deployments), events, issues, traces, releases and the service map.
 3. **Alert rules** on telemetry, escalations and service level objectives.
-4. Status pages (`/status/{slug}`).
+4. **Status pages** (`/status/{slug}`), merging Monitor's and Deployer's.
 5. Metrics, dashboards, SLOs and usage metering.
 
 ## Model
@@ -33,6 +33,16 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 - **Routing**: each rule picks account destinations and whether each hears about openings, recoveries or both. **Escalations** (Pro and above, `monitoring.escalation_steps.max`) alert one more destination after each delay while the incident stays open; recovering or archiving cancels pending steps.
 - **Service level objectives** set an availability or latency target over a rolling window. The page shows compliance and error budget; burn-rate analysis is on paid tiers and CSV reports on Team and Scale (`monitoring.slo_burn_rate`, `monitoring.slo_reports`).
 - Retrying a failed alert delivery needs a confirmation, because the destination may already have received it.
+
+## Status pages (part 4)
+
+- A **status page** belongs to the account and shows up to 25 of its monitors (from any project) as components, in a chosen order. Archived monitors drop off the public page. Pages start as drafts; `/status/{slug}` only serves published ones.
+- Each component shows its current state, open monitor incidents and 30 days of completed checks from the monitor's current configuration (`UptimeHistory`; unknown results don't count against uptime). Monitor incidents resolved in the last 30 days are listed too.
+- **Status updates** (from Deployer) are incident or maintenance notices the team writes: status (investigating → identified → monitoring → resolved, or scheduled → in progress → completed), impact, message and an optional review (what happened, what we did, what's next). An open incident makes the page “degraded”, a critical one “major outage”, maintenance in progress “under maintenance”.
+- **Subscribers** confirm their address by email; each posted or changed update on a published page emails confirmed subscribers (queued, after commit). Addresses and unsubscribe tokens are encrypted. The unsubscribe link asks before unsubscribing (mail scanners open links); the POST also serves one-click `List-Unsubscribe-Post`.
+- Managing pages and posting updates needs account settings access (owners and admins), like destinations and maintenance windows; anyone who can use Monitoring sees them.
+- Public URLs kept: `/status/{slug}` (both apps), `/status/{slug}/report.json` (Deployer's shape plus `state` and per-component `state`/`open_incidents`), `POST /status/{slug}/subscribe`, `/status/subscriptions/{id}/confirm/{token}` and `/unsubscribe/{token}`. The unified app's `/status/{deployer|monitor}/{slug}` redirects permanently.
+- **For the importer (Phase 7):** Monitor and Deployer pages share one slug namespace, so colliding slugs need a decision per page. Subscriptions must keep their IDs (they're in emailed links). Deployer pages listed websites; they become monitors once Infrastructure is ported.
 
 ## Access
 

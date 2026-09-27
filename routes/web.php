@@ -50,10 +50,13 @@ use App\Http\Controllers\Monitoring\ArchiveObjectiveController;
 use App\Http\Controllers\Monitoring\CreateAlertRuleController;
 use App\Http\Controllers\Monitoring\CreateMonitorController;
 use App\Http\Controllers\Monitoring\CreateObjectiveController;
+use App\Http\Controllers\Monitoring\CreateStatusPageController;
 use App\Http\Controllers\Monitoring\DeleteMaintenanceWindowController;
+use App\Http\Controllers\Monitoring\DeleteStatusPageController;
 use App\Http\Controllers\Monitoring\EditAlertRuleController;
 use App\Http\Controllers\Monitoring\EditMonitorController;
 use App\Http\Controllers\Monitoring\EditObjectiveController;
+use App\Http\Controllers\Monitoring\EditStatusPageController;
 use App\Http\Controllers\Monitoring\ExportObjectiveController;
 use App\Http\Controllers\Monitoring\RetryAlertDeliveryController;
 use App\Http\Controllers\Monitoring\RevokeMonitorKeyController;
@@ -71,11 +74,15 @@ use App\Http\Controllers\Monitoring\ShowMonitorController;
 use App\Http\Controllers\Monitoring\ShowMonitorsController;
 use App\Http\Controllers\Monitoring\ShowObjectiveController;
 use App\Http\Controllers\Monitoring\ShowObjectivesController;
+use App\Http\Controllers\Monitoring\ShowStatusPageController;
+use App\Http\Controllers\Monitoring\ShowStatusPagesController;
 use App\Http\Controllers\Monitoring\StoreAlertDestinationController;
 use App\Http\Controllers\Monitoring\StoreAlertRuleController;
 use App\Http\Controllers\Monitoring\StoreMaintenanceWindowController;
 use App\Http\Controllers\Monitoring\StoreMonitorController;
 use App\Http\Controllers\Monitoring\StoreObjectiveController;
+use App\Http\Controllers\Monitoring\StoreStatusPageController;
+use App\Http\Controllers\Monitoring\StoreStatusUpdateController;
 use App\Http\Controllers\Monitoring\UpdateAlertDestinationController;
 use App\Http\Controllers\Monitoring\UpdateAlertEscalationsController;
 use App\Http\Controllers\Monitoring\UpdateAlertRoutingController;
@@ -84,6 +91,8 @@ use App\Http\Controllers\Monitoring\UpdateIncidentController;
 use App\Http\Controllers\Monitoring\UpdateMaintenanceWindowController;
 use App\Http\Controllers\Monitoring\UpdateMonitorController;
 use App\Http\Controllers\Monitoring\UpdateObjectiveController;
+use App\Http\Controllers\Monitoring\UpdateStatusPageController;
+use App\Http\Controllers\Monitoring\UpdateStatusUpdateController;
 use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Notifications\OpenNotificationController;
 use App\Http\Controllers\Notifications\ShowNotificationsController;
@@ -113,6 +122,13 @@ use App\Http\Controllers\Settings\ShowSecurityController;
 use App\Http\Controllers\Settings\ShowSessionsController;
 use App\Http\Controllers\Settings\SignOutBrowserController;
 use App\Http\Controllers\Settings\SignOutOtherBrowsersController;
+use App\Http\Controllers\StatusPages\ConfirmStatusSubscriptionController;
+use App\Http\Controllers\StatusPages\RedirectLegacyStatusPageController;
+use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
+use App\Http\Controllers\StatusPages\ShowStatusPageReportController;
+use App\Http\Controllers\StatusPages\ShowUnsubscribeController;
+use App\Http\Controllers\StatusPages\SubscribeToStatusPageController;
+use App\Http\Controllers\StatusPages\UnsubscribeFromStatusPageController;
 use App\Http\Controllers\Telemetry\CreateIngestTokenController;
 use App\Http\Controllers\Telemetry\RetryIngestReceiptController;
 use App\Http\Controllers\Telemetry\RevokeIngestTokenController;
@@ -138,6 +154,15 @@ Route::redirect('/', '/dashboard');
 Route::get('/_gallery', ComponentGalleryController::class)->name('gallery');
 
 Route::get('/invitations/{token}', ShowInvitationController::class)->name('invitations.show');
+
+// Public status pages (the old apps' URLs).
+Route::get('/status/subscriptions/{subscription}/confirm/{token}', ConfirmStatusSubscriptionController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.confirm');
+Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', ShowUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
+Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe.store');
+Route::get('/status/{product}/{slug}', RedirectLegacyStatusPageController::class)->whereIn('product', ['deployer', 'monitor'])->where('slug', '[a-z0-9-]+');
+Route::get('/status/{slug}', ShowPublicStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.show');
+Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.report');
+Route::post('/status/{slug}/subscribe', SubscribeToStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe');
 
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
@@ -201,6 +226,16 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::post('/maintenance', StoreMaintenanceWindowController::class)->middleware('throttle:30,1')->name('maintenance.store');
             Route::put('/maintenance/{window}', UpdateMaintenanceWindowController::class)->whereNumber('window')->middleware('throttle:30,1')->name('maintenance.update');
             Route::delete('/maintenance/{window}', DeleteMaintenanceWindowController::class)->whereNumber('window')->middleware('throttle:30,1')->name('maintenance.destroy');
+
+            Route::get('/status-pages', ShowStatusPagesController::class)->name('status-pages');
+            Route::get('/status-pages/create', CreateStatusPageController::class)->name('status-pages.create');
+            Route::post('/status-pages', StoreStatusPageController::class)->middleware('throttle:30,1')->name('status-pages.store');
+            Route::get('/status-pages/{page}', ShowStatusPageController::class)->whereNumber('page')->name('status-pages.show');
+            Route::get('/status-pages/{page}/edit', EditStatusPageController::class)->whereNumber('page')->name('status-pages.edit');
+            Route::put('/status-pages/{page}', UpdateStatusPageController::class)->whereNumber('page')->middleware('throttle:30,1')->name('status-pages.update');
+            Route::delete('/status-pages/{page}', DeleteStatusPageController::class)->whereNumber('page')->middleware('throttle:30,1')->name('status-pages.destroy');
+            Route::post('/status-pages/{page}/updates', StoreStatusUpdateController::class)->whereNumber('page')->middleware('throttle:30,1')->name('status-pages.updates.store');
+            Route::put('/status-pages/{page}/updates/{update}', UpdateStatusUpdateController::class)->whereNumber(['page', 'update'])->middleware('throttle:30,1')->name('status-pages.updates.update');
 
             Route::get('/rules', ShowAlertRulesController::class)->name('rules');
             Route::get('/rules/create', CreateAlertRuleController::class)->name('rules.create');

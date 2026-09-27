@@ -30,8 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Stripe signs its webhooks; there is no session or CSRF token.
-        $middleware->validateCsrfTokens(except: ['webhooks/stripe']);
+        // Stripe signs its webhooks; there is no session or CSRF token. One-click unsubscribe (RFC 8058) posts from the mail client with the token in the URL.
+        $middleware->validateCsrfTokens(except: ['webhooks/stripe', 'status/subscriptions/*/unsubscribe/*']);
         // Monitor signals are checked byte for byte; monitor secrets are stored exactly as typed.
         $middleware->prepend([ReceiveMonitorSignal::class, DecodeTelemetryPayload::class]);
         $signal = fn (Request $request): bool => $request->is('api/v1/heartbeats/*', 'api/v1/queues/*', 'api/v1/ingest', 'api/v1/otlp/v1/*', 'api/v1/deployments');

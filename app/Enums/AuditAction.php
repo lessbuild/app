@@ -52,6 +52,11 @@ enum AuditAction: string
     case IngestTokenCreated = 'ingest_token.created';
     case IngestTokenRotated = 'ingest_token.rotated';
     case IngestTokenRevoked = 'ingest_token.revoked';
+    case StatusPageCreated = 'status_page.created';
+    case StatusPageUpdated = 'status_page.updated';
+    case StatusPageDeleted = 'status_page.deleted';
+    case StatusUpdatePosted = 'status_update.posted';
+    case StatusUpdateChanged = 'status_update.changed';
 
     /** @param array<string, mixed> $context */
     public function describe(array $context): string
@@ -108,6 +113,11 @@ enum AuditAction: string
             self::IngestTokenCreated => __('Created the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRotated => __('Replaced the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRevoked => __('Revoked the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
+            self::StatusPageCreated => __('Created the status page “:page”', ['page' => $value('page')]),
+            self::StatusPageUpdated => __('Changed the status page “:page”', ['page' => $value('page')]),
+            self::StatusPageDeleted => __('Deleted the status page “:page”', ['page' => $value('page')]),
+            self::StatusUpdatePosted => __('Posted “:title” on the status page “:page”', ['title' => $value('title'), 'page' => $value('page')]),
+            self::StatusUpdateChanged => __('Updated “:title” on the status page “:page” (:status)', ['title' => $value('title'), 'page' => $value('page'), 'status' => $value('status')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),
         };
     }
