@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Domain\Accounts\Exceptions\AccountRuleViolation;
+use App\Domain\Billing\Exceptions\BillingRuleViolation;
 use App\Domain\Identity\Exceptions\IdentityRuleViolation;
 use App\Domain\Projects\Exceptions\ProjectRuleViolation;
 use App\Http\Middleware\ProjectContext;
@@ -23,6 +24,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        // Stripe signs its webhooks; there is no session or CSRF token.
+        $middleware->validateCsrfTokens(except: ['webhooks/stripe']);
         $middleware->alias([
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
@@ -42,6 +45,10 @@ return Application::configure(basePath: dirname(__DIR__))
         $exceptions->map(
             ProjectRuleViolation::class,
             fn (ProjectRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
+        );
+        $exceptions->map(
+            BillingRuleViolation::class,
+            fn (BillingRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
         );
         $exceptions->map(
             IdentityRuleViolation::class,

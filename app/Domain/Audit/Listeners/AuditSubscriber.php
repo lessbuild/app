@@ -17,6 +17,7 @@ use App\Domain\Api\Events\ApiTokenRevoked;
 use App\Domain\Audit\Actions\RecordAuditEntry;
 use App\Domain\Audit\Enums\AuditAction;
 use App\Domain\Audit\Models\AuditEntry;
+use App\Domain\Billing\Events\ServiceTierChanged;
 use App\Domain\Identity\Events\BrowsersSignedOut;
 use App\Domain\Identity\Events\PasswordChanged;
 use App\Domain\Identity\Events\ProfileUpdated;
@@ -82,6 +83,7 @@ final class AuditSubscriber
             ApiTokenCreated::class => 'apiTokenCreated',
             ApiTokenRevoked::class => 'apiTokenRevoked',
             UserDeleting::class => 'forgetPersonalEntries',
+            ServiceTierChanged::class => 'planChanged',
         ];
     }
 
@@ -185,6 +187,17 @@ final class AuditSubscriber
     public function serviceDisabled(ServiceDisabled $event): void
     {
         $this->record->handle(AuditAction::ServiceDisabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)], $event->project->id);
+    }
+
+    public function planChanged(ServiceTierChanged $event): void
+    {
+        $billing = $this->services->find($event->service)?->billing();
+        $this->record->handle(AuditAction::PlanChanged, $event->actor, $event->account->id, [
+            'service' => $this->serviceName($event->service),
+            'from' => $billing?->tier($event->from)->name ?? $event->from,
+            'to' => $billing?->tier($event->to)->name ?? $event->to,
+            'effective_at' => $event->effectiveAt?->toFormattedDateString(),
+        ]);
     }
 
     public function profileUpdated(ProfileUpdated $event): void

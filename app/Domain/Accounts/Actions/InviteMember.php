@@ -10,6 +10,7 @@ use App\Domain\Accounts\Exceptions\AccountRuleViolation;
 use App\Domain\Accounts\Models\Account;
 use App\Domain\Accounts\Models\AccountInvitation;
 use App\Domain\Accounts\Notifications\AccountInvitationNotification;
+use App\Domain\Billing\Support\Entitlements;
 use App\Domain\Identity\Models\User;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -18,6 +19,8 @@ use Illuminate\Support\Str;
 
 final class InviteMember
 {
+    public function __construct(private readonly Entitlements $entitlements) {}
+
     public const EXPIRES_AFTER_DAYS = 7;
 
     /** Invite an email address; re-inviting the same address replaces its previous pending invitation. */
@@ -30,6 +33,12 @@ final class InviteMember
         $email = Str::lower(trim($data->email));
         if ($account->members()->whereRaw('lower(email) = ?', [$email])->exists()) {
             throw AccountRuleViolation::alreadyMember();
+        }
+        // Pending invitations hold a seat; re-inviting the same address replaces its invitation.
+        $seats = $account->memberships()->count() + $account->invitations()->pending()->where('email', '!=', $email)->count() + 1;
+        $decision = $this->entitlements->for($account)->allows('account.members.max', $seats);
+        if (! $decision->allowed) {
+            throw new AccountRuleViolation('email', (string) $decision->reason);
         }
 
         $token = Str::random(48);

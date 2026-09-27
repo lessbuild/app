@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Platform;
 
+use App\Domain\Billing\Catalog\ServiceBilling;
+use App\Domain\Billing\Catalog\Tier;
 use App\Platform\ServiceRegistry;
 use App\Platform\Services\PlaceholderService;
 use InvalidArgumentException;
@@ -19,9 +21,9 @@ final class ServiceRegistryTest extends TestCase
     public function test_keys_are_unique(): void
     {
         $registry = new ServiceRegistry;
-        $registry->register(new PlaceholderService('x', 'X', 'x', 'cog', []));
+        $registry->register(new PlaceholderService('x', 'X', 'x', 'cog', [], new ServiceBilling([new Tier('free', 'Free', 0, 'x')])));
 
         $this->expectException(InvalidArgumentException::class);
-        $registry->register(new PlaceholderService('x', 'Another X', 'x', 'cog', []));
+        $registry->register(new PlaceholderService('x', 'Another X', 'x', 'cog', [], new ServiceBilling([new Tier('free', 'Free', 0, 'x')])));
     }
 }

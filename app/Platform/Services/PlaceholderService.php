@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Platform\Services;
 
 use App\Domain\Api\Enums\ApiScope;
+use App\Domain\Billing\Catalog\ServiceBilling;
 use App\Platform\PlatformService;
 use App\Platform\ServiceNavItem;
 
@@ -21,6 +22,7 @@ final readonly class PlaceholderService implements PlatformService
         private string $tagline,
         private string $icon,
         private array $apiScopes,
+        private ServiceBilling $billing,
     ) {}
 
     public function key(): string
@@ -51,5 +53,10 @@ final readonly class PlaceholderService implements PlatformService
     public function apiScopes(): array
     {
         return $this->apiScopes;
+    }
+
+    public function billing(): ServiceBilling
+    {
+        return $this->billing;
     }
 }

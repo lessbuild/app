@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Platform;
 
 use App\Domain\Api\Enums\ApiScope;
+use App\Domain\Billing\Catalog\ServiceBilling;
 
 /**
  * A product on the platform (Deploy, Monitoring…). The shell, onboarding and later billing read services
@@ -28,4 +29,7 @@ interface PlatformService
 
     /** @return list<ApiScope> */
     public function apiScopes(): array;
+
+    /** Tiers, add-ons and meters this service sells. */
+    public function billing(): ServiceBilling;
 }

@@ -120,6 +120,9 @@ final class ShellComposer
         if ($user->can('manageApiTokens', $account)) {
             $links[] = new NavLink(__('API tokens'), route('account.api-tokens'), $this->request->routeIs('account.api-tokens'), 'key');
         }
+        if ($user->can('viewBilling', $account)) {
+            $links[] = new NavLink(__('Billing'), route('account.billing'), $this->request->routeIs('account.billing'), 'tasks');
+        }
         if ($user->can('viewAuditLog', $account)) {
             $links[] = new NavLink(__('Audit log'), route('account.audit-log'), $this->request->routeIs('account.audit-log'), 'clock');
         }

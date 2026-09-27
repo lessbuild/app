@@ -34,6 +34,7 @@ enum AuditAction: string
     case ServiceEnabled = 'service.enabled';
     case ServiceDisabled = 'service.disabled';
     case MemberServiceAccessChanged = 'member.service_access';
+    case PlanChanged = 'billing.plan_changed';
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenRevoked = 'api_token.revoked';
 
@@ -72,6 +73,9 @@ enum AuditAction: string
             self::ServiceEnabled => __('Turned on :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::ServiceDisabled => __('Turned off :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::MemberServiceAccessChanged => __('Set :member’s services to :services', ['member' => $value('member'), 'services' => $value('services')]),
+            self::PlanChanged => ($context['effective_at'] ?? null) !== null
+                ? __('Scheduled :service to move from :from to :to on :date', ['service' => $value('service'), 'from' => $value('from'), 'to' => $value('to'), 'date' => $value('effective_at')])
+                : __('Changed :service from :from to :to', ['service' => $value('service'), 'from' => $value('from'), 'to' => $value('to')]),
             self::ApiTokenCreated => __('Created the API token “:name” (:scopes)', ['name' => $value('name'), 'scopes' => $value('scopes')]),
             self::ApiTokenRevoked => __('Revoked the API token “:name”', ['name' => $value('name')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),

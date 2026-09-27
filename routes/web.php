@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Account\ApiTokensController;
 use App\Http\Controllers\Account\AuditLogController;
+use App\Http\Controllers\Account\BillingController;
 use App\Http\Controllers\Account\MembersController;
 use App\Http\Controllers\Account\SettingsController as AccountSettingsController;
 use App\Http\Controllers\Account\SwitchAccountController;
@@ -22,6 +23,7 @@ use App\Http\Controllers\Settings\PrivacyController;
 use App\Http\Controllers\Settings\ProfileController;
 use App\Http\Controllers\Settings\SecurityController;
 use App\Http\Controllers\Settings\SessionsController;
+use App\Http\Controllers\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/dashboard');
@@ -29,6 +31,8 @@ Route::redirect('/', '/dashboard');
 Route::get('/_gallery', ComponentGalleryController::class)->name('gallery');
 
 Route::get('/invitations/{token}', [InvitationController::class, 'show'])->name('invitations.show');
+
+Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::get('/auth/{provider}/redirect', [SocialSignInController::class, 'redirect'])->middleware(['guest', 'throttle:20,1'])->name('social.redirect');
 // Shared by sign-in, connecting a provider and sudo-mode confirmation; the controller tells them apart.
@@ -75,6 +79,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/account/api-tokens', [ApiTokensController::class, 'index'])->name('account.api-tokens');
     Route::post('/account/api-tokens', [ApiTokensController::class, 'store'])->middleware(['password.confirm', 'throttle:20,1'])->name('account.api-tokens.store');
     Route::delete('/account/api-tokens/{token}', [ApiTokensController::class, 'destroy'])->whereNumber('token')->name('account.api-tokens.destroy');
+    Route::get('/account/billing', [BillingController::class, 'index'])->name('account.billing');
+    Route::post('/account/billing/portal', [BillingController::class, 'portal'])->name('account.billing.portal');
+    Route::post('/account/billing/{service}', [BillingController::class, 'changeTier'])->middleware('throttle:20,1')->name('account.billing.change');
+    Route::post('/account/billing/{service}/resume', [BillingController::class, 'resume'])->name('account.billing.resume');
     Route::get('/account/audit-log', AuditLogController::class)->name('account.audit-log');
     Route::get('/account/settings', [AccountSettingsController::class, 'edit'])->name('account.settings');
     Route::put('/account/settings', [AccountSettingsController::class, 'update'])->name('account.settings.update');
