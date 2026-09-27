@@ -10,7 +10,6 @@ use App\Models\MetricSample;
 use App\Models\MetricSeries;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Feature\Monitoring\MonitoringHelpers;
@@ -185,7 +184,7 @@ final class MetricIngestionTest extends TestCase
     public function test_projection_is_atomic_with_usage_and_event_persistence(): void
     {
         $this->collector();
-        DB::unprepared("CREATE TRIGGER reject_metric_usage BEFORE INSERT ON telemetry_usage_entries BEGIN SELECT RAISE(ABORT, 'usage unavailable'); END");
+        $this->rejectInserts('telemetry_usage_entries', 'reject_metric_usage', 'usage unavailable');
         Exceptions::fake();
 
         $this->postJson(route('api.otlp', ['signal' => 'metrics']), $this->otlp())->assertServerError();

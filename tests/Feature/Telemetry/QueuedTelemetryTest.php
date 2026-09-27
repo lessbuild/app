@@ -138,7 +138,7 @@ final class QueuedTelemetryTest extends TestCase
         $token = $this->collector();
         $receipt = $this->enqueue();
         $originalJobId = $receipt->queue_job_uuid;
-        DB::unprepared("CREATE TRIGGER reject_usage BEFORE INSERT ON telemetry_usage_entries BEGIN SELECT RAISE(ABORT, 'meter unavailable'); END");
+        $this->rejectInserts('telemetry_usage_entries', 'reject_usage', 'meter unavailable');
         Exceptions::fake();
 
         $this->workOne();
@@ -158,7 +158,7 @@ final class QueuedTelemetryTest extends TestCase
         $this->assertSame(0, Artisan::call('telemetry:recover'));
         $this->assertStringContainsString('Recovered 0 ingestion deliveries.', Artisan::output());
         $this->assertSame(1, $receipt->refresh()->generation);
-        DB::unprepared('DROP TRIGGER reject_usage');
+        $this->allowInserts('telemetry_usage_entries', 'reject_usage');
         $this->workOne();
 
         $this->assertSame(IngestStatus::Completed, $receipt->refresh()->status);
@@ -176,7 +176,7 @@ final class QueuedTelemetryTest extends TestCase
         $this->freezeTime();
         $this->collector();
         $receipt = $this->enqueue();
-        DB::unprepared("CREATE TRIGGER reject_usage BEFORE INSERT ON telemetry_usage_entries BEGIN SELECT RAISE(ABORT, 'meter unavailable'); END");
+        $this->rejectInserts('telemetry_usage_entries', 'reject_usage', 'meter unavailable');
         Exceptions::fake();
 
         foreach ([0, 5, 30, 120, 300] as $delay) {
@@ -193,7 +193,7 @@ final class QueuedTelemetryTest extends TestCase
             $this->assertDatabaseEmpty($table);
         }
 
-        DB::unprepared('DROP TRIGGER reject_usage');
+        $this->allowInserts('telemetry_usage_entries', 'reject_usage');
         $this->assertTrue(app(TelemetryQueue::class)->retry($receipt->id));
         app(ProcessTelemetryReceipt::class)->failed($receipt->id, 1);
         app(ProcessTelemetryReceipt::class)->process($receipt->id, 1);
@@ -209,7 +209,7 @@ final class QueuedTelemetryTest extends TestCase
     public function test_returns_500_without_accepting_data_if_the_durable_job_cannot_be_written(): void
     {
         $this->collector();
-        DB::unprepared("CREATE TRIGGER reject_job BEFORE INSERT ON jobs BEGIN SELECT RAISE(ABORT, 'queue unavailable'); END");
+        $this->rejectInserts('jobs', 'reject_job', 'queue unavailable');
         Exceptions::fake();
 
         $this->postJson(route('api.ingest'), ['batch_id' => 'queue-down', 'events' => [['type' => 'log']]])->assertInternalServerError();

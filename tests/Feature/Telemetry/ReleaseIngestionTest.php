@@ -167,7 +167,7 @@ final class ReleaseIngestionTest extends TestCase
         $release = Release::factory()->for($environment->project)->create([
             'version' => 'v1', 'service' => null, 'first_seen_at' => '2026-09-21T10:00:00Z', 'last_seen_at' => '2026-09-21T10:00:00Z',
         ]);
-        DB::unprepared("CREATE TRIGGER reject_release_usage BEFORE INSERT ON telemetry_usage_entries BEGIN SELECT RAISE(ABORT, 'meter unavailable'); END");
+        $this->rejectInserts('telemetry_usage_entries', 'reject_release_usage', 'meter unavailable');
         Exceptions::fake();
 
         $this->postJson(route('api.ingest'), ['batch_id' => 'rollback', 'events' => [

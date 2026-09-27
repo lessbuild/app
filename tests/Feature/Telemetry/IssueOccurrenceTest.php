@@ -16,7 +16,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\Feature\Monitoring\MonitoringHelpers;
@@ -227,7 +226,7 @@ final class IssueOccurrenceTest extends TestCase
     public function test_worker_failure_rolls_back_occurrence_link_counts_and_audit_together(): void
     {
         $environment = $this->collector();
-        DB::unprepared("CREATE TRIGGER reject_usage BEFORE INSERT ON telemetry_usage_entries BEGIN SELECT RAISE(ABORT, 'meter unavailable'); END");
+        $this->rejectInserts('telemetry_usage_entries', 'reject_usage', 'meter unavailable');
         Exceptions::fake();
 
         $this->postJson(route('api.ingest'), ['batch_id' => 'issue-test', 'events' => [['type' => 'exception', 'name' => 'Rollback failure']]])->assertInternalServerError();

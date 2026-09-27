@@ -313,7 +313,7 @@ final class IngestReceiptTest extends TestCase
     public function test_an_accounting_write_failure_rolls_back_events_receipts_issues_and_counters(): void
     {
         $environment = $this->authenticateCollector();
-        DB::unprepared("CREATE TRIGGER reject_usage BEFORE INSERT ON telemetry_usage_entries BEGIN SELECT RAISE(ABORT, 'meter unavailable'); END");
+        $this->rejectInserts('telemetry_usage_entries', 'reject_usage', 'meter unavailable');
         Exceptions::fake();
 
         $this->postJson(route('api.ingest'), [

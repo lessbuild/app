@@ -14,6 +14,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Notifications\IncidentAlertNotification;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\DB;
 use stdClass;
 
 trait MonitoringHelpers
@@ -78,5 +79,32 @@ trait MonitoringHelpers
         $membership->forceFill(['account_id' => $accountId, 'user_id' => $user->id, 'role' => $role, 'service_access' => $services])->save();
 
         return $membership;
+    }
+
+    /**
+     * Make every insert into a table fail, to test that a write failure rolls everything back (SQLite and Postgres).
+     *
+     * @param  literal-string  $table
+     * @param  literal-string  $trigger
+     * @param  literal-string  $message
+     */
+    protected function rejectInserts(string $table, string $trigger, string $message): void
+    {
+        if (DB::getDriverName() === 'pgsql') {
+            DB::unprepared("CREATE FUNCTION {$trigger}() RETURNS trigger AS \$\$ BEGIN RAISE EXCEPTION '{$message}'; END; \$\$ LANGUAGE plpgsql");
+            DB::unprepared("CREATE TRIGGER {$trigger} BEFORE INSERT ON {$table} FOR EACH ROW EXECUTE FUNCTION {$trigger}()");
+
+            return;
+        }
+        DB::unprepared("CREATE TRIGGER {$trigger} BEFORE INSERT ON {$table} BEGIN SELECT RAISE(ABORT, '{$message}'); END");
+    }
+
+    /**
+     * @param  literal-string  $table
+     * @param  literal-string  $trigger
+     */
+    protected function allowInserts(string $table, string $trigger): void
+    {
+        DB::unprepared(DB::getDriverName() === 'pgsql' ? "DROP TRIGGER {$trigger} ON {$table}" : "DROP TRIGGER {$trigger}");
     }
 }

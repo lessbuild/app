@@ -15,7 +15,6 @@ use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Exceptions;
 use LogicException;
 use PHPUnit\Framework\Attributes\DataProvider;
@@ -262,7 +261,7 @@ final class DeploymentRecordingTest extends TestCase
     public function test_database_failure_rolls_back_new_release_and_deployment_together(): void
     {
         $this->collector();
-        DB::unprepared("CREATE TRIGGER reject_deployment BEFORE INSERT ON deployments BEGIN SELECT RAISE(ABORT, 'write unavailable'); END");
+        $this->rejectInserts('deployments', 'reject_deployment', 'write unavailable');
         Exceptions::fake();
 
         $this->postJson(route('api.deployments.store'), $this->payload())->assertInternalServerError();
