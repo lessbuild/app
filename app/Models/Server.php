@@ -130,6 +130,12 @@ class Server extends Model
         return $this->hasMany(Website::class);
     }
 
+    /** @return HasMany<ServerTerminalSession, $this> */
+    public function terminalSessions(): HasMany
+    {
+        return $this->hasMany(ServerTerminalSession::class);
+    }
+
     /** @return HasMany<ServerCommandExecution, $this> */
     public function commandExecutions(): HasMany
     {

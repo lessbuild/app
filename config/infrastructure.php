@@ -22,6 +22,17 @@ return [
     'cloudflare_api_url' => (string) env('CLOUDFLARE_API_URL', 'https://api.cloudflare.com/client/v4'),
     // How many due providers `providers:check` checks per run (every five minutes).
     'provider_check_batch_size' => (int) env('PROVIDER_CHECK_BATCH_SIZE', 50),
+    // The troubleshooting terminal: each open terminal holds one worker on this queue until it closes.
+    'terminal' => [
+        'connection' => (string) env('TERMINAL_QUEUE_CONNECTION', 'database'),
+        'queue' => (string) env('TERMINAL_QUEUE', 'terminals'),
+        'session_minutes' => 30,
+        'idle_minutes' => 10,
+        'poll_milliseconds' => 50,
+        'max_input_bytes' => 8192,
+        'output_frame_bytes' => 16384,
+        'max_pending_output_bytes' => 1048576,
+    ],
     'troubleshooting' => [
         'terminal_min_columns' => 20,
         'terminal_max_columns' => 240,

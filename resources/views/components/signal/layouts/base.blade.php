@@ -36,6 +36,7 @@
         @endif
         <x-signal.theme-boot />
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+        @stack('head')
     </head>
     <body class="antialiased transition-colors">
         {{ $slot }}

@@ -9,6 +9,7 @@
     "devDependencies": {
         "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.0.0",
+        "@xterm/xterm": "^6.0.0",
         "alpinejs": "^3.17.4",
         "concurrently": "^10.0.3",
         "laravel-vite-plugin": "^3.1",

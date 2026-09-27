@@ -43,4 +43,10 @@ final class ServerPolicy
     {
         return $this->update($user, $server);
     }
+
+    /** A root shell: the same people who may run commands, on a server with a pinned host key. */
+    public function openTerminal(User $user, Server $server): bool
+    {
+        return $this->runCommands($user, $server);
+    }
 }

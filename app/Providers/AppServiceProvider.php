@@ -86,6 +86,8 @@ class AppServiceProvider extends ServiceProvider
         // Telemetry ingest: per key (or IP before a key is known); deployments have their own, lower limit.
         RateLimiter::for('ingest', fn (Request $request): Limit => Limit::perMinute(240)->by(self::ingestKey($request)));
         RateLimiter::for('deployments', fn (Request $request): Limit => Limit::perMinute(60)->by('deployments:'.self::ingestKey($request)));
+        // The terminal page polls for output several times a second and posts keystrokes as they're typed.
+        RateLimiter::for('terminal', fn (Request $request): Limit => Limit::perMinute(1200)->by('terminal:'.(string) $request->user()?->getAuthIdentifier().'|'.(string) $request->route()?->originalParameter('terminal')));
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(120)->by((string) ($request->user()?->currentAccessToken()?->getKey() ?? $request->ip())));
     }
 

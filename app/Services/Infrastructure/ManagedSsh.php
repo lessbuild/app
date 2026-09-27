@@ -88,7 +88,7 @@ class ManagedSsh extends Ssh
         }
 
         $remoteCommand = sprintf(
-            'stty rows %d cols %d 2>/dev/null || true; exec bash --noprofile --norc -i',
+            'export TERM=xterm-256color; stty rows %d cols %d 2>/dev/null || true; exec bash --noprofile --norc -i',
             $size->rows,
             $size->columns,
         );

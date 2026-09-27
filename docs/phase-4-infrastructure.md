@@ -33,7 +33,12 @@ Design notes for the Infrastructure service in Phase 4 of [the plan](platform-v2
 - Setup runs over SSH and reports each stage to signed callbacks (`/websites/{website}/provisioning/callback/{status,failed,log}`, unchanged). Changing the server, domain or `.env` sets it up again; a move keeps the old copy until the new one is live, then removes it (retryable if that fails). Deleting removes the files, Caddy site and database from the server in the background.
 - **Import** adopts an application already in `/var/www/{slug}` without touching it.
 - **Domains**: the primary domain follows the website's URL; aliases and redirects are added to Caddy (`ApplyWebsiteDomains`). With a Cloudflare provider the A/AAAA record is kept pointing at the server (in the longest matching zone, not proxied). `TEMPORARY_APP_DOMAIN` enables random temporary hostnames. `domains:check` (hourly) records whether DNS points at the server and when the certificate expires (warning at 21 days).
-- The troubleshooting terminal from Deployer (a broker process streaming an SSH PTY through the database) isn't ported: nothing in the unified app's UI used it. It's listed as an open item.
+- **Troubleshooting terminal** (added at the owner's request; Deployer had the API but no page): owners and admins open a root shell on an active server with a pinned host key from the server page (after confirming their password). It's sized to the browser window when opened, lasts at most 30 minutes, and closes after 10 idle minutes. Opening another one on the same server replaces it.
+  - **Broker:** `RunServerTerminal` runs on the `terminals` queue (`TERMINAL_QUEUE_CONNECTION`, default `database`) and holds `ssh -tt` with the pinned host key for the session's lifetime. **Production needs a worker for that queue with at least as many processes as terminals expected at once**, e.g. `php artisan queue:work database --queue=terminals --timeout=1920`. Deployer started a systemd unit per session instead.
+  - **Relay:** keystrokes and output travel as encrypted, sequenced frames in the database. They're deleted as soon as the other side takes them; xterm.js posts keystrokes and polls output.
+  - **Access:** a terminal only works for the person who opened it, in the same browser session (a token kept in their session), and stops working if they lose admin rights.
+  - **Cleanup:** `terminals:expire` (every minute) closes expired sessions and fails ones no worker picked up (a sign the `terminals` worker isn't running) or whose worker died. It also removes leftover frames.
+  - **Audit and limits:** opening and closing are in the audit log; what's typed isn't kept. The window size is fixed when the terminal opens.
 
 ## Health and backups (part 4)
 

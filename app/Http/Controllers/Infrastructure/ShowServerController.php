@@ -33,6 +33,7 @@ final class ShowServerController
             'diagnostics' => $server->diagnosticSnapshot,
             'alertRules' => ServerAlertRule::query()->where('account_id', $project->account_id)->where(fn ($query) => $query->whereNull('server_id')->orWhere('server_id', $server->id))->orderBy('name')->get(),
             'canManage' => $user->can('update', $server),
+            'canOpenTerminal' => $user->can('openTerminal', $server),
         ]);
     }
 }

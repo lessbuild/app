@@ -17,6 +17,8 @@ use App\Models\DatabaseUser;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
+use App\Models\ServerTerminalFrame;
+use App\Models\ServerTerminalSession;
 use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
@@ -297,3 +299,25 @@ Artisan::command('databases:inspect', function (RequestDatabaseInspection $inspe
     return 0;
 })->purpose('Record the size, connections and tables of every live website database');
 Schedule::command('databases:inspect')->dailyAt('04:20')->withoutOverlapping(60)->onOneServer();
+
+Artisan::command('terminals:expire', function (): int {
+    $now = now();
+    $stale = ServerTerminalSession::query()->whereIn('status', ServerTerminalSession::ACTIVE)->where(fn ($query) => $query
+        ->where('expires_at', '<=', $now)->orWhere('idle_expires_at', '<=', $now)
+        ->orWhere(fn ($query) => $query->where('status', 'connecting')->where('created_at', '<=', $now->copy()->subMinutes(2)))
+        ->orWhere(fn ($query) => $query->where('status', 'connected')->where('broker_seen_at', '<=', $now->copy()->subMinute())))->get();
+    foreach ($stale as $session) {
+        [$status, $reason] = match (true) {
+            $session->hasExpired() => ['expired', 'expired'],
+            $session->status === 'connecting' => ['failed', 'no terminal worker is running'],
+            default => ['failed', 'the terminal worker stopped'],
+        };
+        $session->forceFill(['status' => $status, 'close_reason' => $reason, 'closed_at' => $now])->save();
+    }
+    $pruned = ServerTerminalFrame::query()->where(fn ($query) => $query->where('created_at', '<=', $now->copy()->subMinutes(10))
+        ->orWhereIn('server_terminal_session_id', ServerTerminalSession::query()->whereNotIn('status', ServerTerminalSession::ACTIVE)->select('id')))->delete();
+    $this->info("Closed {$stale->count()} terminals; removed {$pruned} frames.");
+
+    return 0;
+})->purpose('Close expired or abandoned troubleshooting terminals and remove their leftover frames');
+Schedule::command('terminals:expire')->everyMinute()->withoutOverlapping(5)->onOneServer();

@@ -24,6 +24,7 @@ use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Release;
 use App\Models\Server;
+use App\Models\ServerTerminalSession;
 use App\Models\ServiceLevelObjective;
 use App\Models\StatusPage;
 use App\Models\TelemetryEvent;
@@ -45,10 +46,10 @@ use Illuminate\Support\ServiceProvider;
 final class RouteBindingServiceProvider extends ServiceProvider
 {
     /**
-     * Parameter => [model, scope, route names]. Scope is 'account', 'project' (a project_id column) or 'environment'
-     * (an environment_id in the project). The route filter matters: other routes reuse names like `{provider}`.
+     * Parameter => [model, scope, route names]. Scope is 'account', 'project' (a project_id column), 'environment'
+     * (an environment_id in the project) or 'server' (a server_id matching the route's already-bound `{server}`). The route filter matters: other routes reuse names like `{provider}`.
      *
-     * @var array<string, array{class-string<Model>, 'account'|'project'|'environment', list<string>}>
+     * @var array<string, array{class-string<Model>, 'account'|'project'|'environment'|'server', list<string>}>
      */
     private const BINDINGS = [
         'provider' => [Provider::class, 'account', ['account.providers*']],
@@ -56,6 +57,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'website' => [Website::class, 'account', ['infrastructure.*']],
         'backupDestination' => [BackupDestination::class, 'account', ['infrastructure.*']],
         'loadBalancer' => [LoadBalancer::class, 'account', ['infrastructure.*']],
+        'terminal' => [ServerTerminalSession::class, 'server', ['infrastructure.*']],
         'destination' => [AlertDestination::class, 'account', ['monitoring.*']],
         'window' => [MaintenanceWindow::class, 'account', ['monitoring.*']],
         'page' => [StatusPage::class, 'account', ['monitoring.*']],
@@ -92,6 +94,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         match ($scope) {
             'account' => $query->where('account_id', $this->accountId($route)),
             'project' => $query->where('project_id', $this->project($route)->id),
+            'server' => $query->where('server_id', $route->parameter('server') instanceof Server ? $route->parameter('server')->id : 0),
             default => $query->whereIn('environment_id', Environment::query()->where('project_id', $this->project($route)->id)->select('id')),
         };
         $key = (new $model)->getKeyType() === 'int' ? (ctype_digit($value) ? (int) $value : 0) : $value;

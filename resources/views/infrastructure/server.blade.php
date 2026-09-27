@@ -47,8 +47,19 @@
         <x-signal.ui.card class="grid gap-4 p-5">
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-extrabold text-ink">{{ __('Resources') }}</h2>
-                <x-signal.ui.button :href="route('infrastructure.servers.commands', [$project, $server->id])" variant="secondary" size="sm">{{ __('Commands') }}</x-signal.ui.button>
+                <div class="flex flex-wrap gap-2">
+                    <x-signal.ui.button :href="route('infrastructure.servers.commands', [$project, $server->id])" variant="secondary" size="sm">{{ __('Commands') }}</x-signal.ui.button>
+                    @if ($canOpenTerminal && $server->ssh_host_key)
+                        <form method="POST" action="{{ route('infrastructure.servers.terminal.store', [$project, $server->id]) }}" data-terminal-open>
+                            @csrf
+                            <input type="hidden" name="columns" value="120">
+                            <input type="hidden" name="rows" value="32">
+                            <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Open terminal') }}</x-signal.ui.button>
+                        </form>
+                    @endif
+                </div>
             </div>
+            @error('terminal')<p class="text-sm text-danger">{{ $message }}</p>@enderror
             @if ($latest === null)
                 <p class="text-sm text-muted">{{ __('Metrics are collected every five minutes. The first reading appears shortly.') }}</p>
             @else

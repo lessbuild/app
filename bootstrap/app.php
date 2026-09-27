@@ -38,8 +38,10 @@ return Application::configure(basePath: dirname(__DIR__))
         // Monitor signals are checked byte for byte; monitor secrets are stored exactly as typed.
         $middleware->prepend([ReceiveMonitorSignal::class, DecodeTelemetryPayload::class]);
         $signal = fn (Request $request): bool => $request->is('api/v1/heartbeats/*', 'api/v1/queues/*', 'api/v1/ingest', 'api/v1/otlp/v1/*', 'api/v1/deployments', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*');
-        $middleware->trimStrings(except: [$signal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret', 'env_file', 'ssh_private_key', 'token']);
-        $middleware->convertEmptyStringsToNull(except: [$signal]);
+        // Terminal keystrokes (Enter, spaces, control characters) must reach the shell untouched.
+        $terminal = fn (Request $request): bool => $request->is('projects/*/infrastructure/servers/*/terminal/*/input');
+        $middleware->trimStrings(except: [$signal, $terminal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret', 'env_file', 'ssh_private_key', 'token']);
+        $middleware->convertEmptyStringsToNull(except: [$signal, $terminal]);
         $middleware->alias([
             'account.can' => AuthorizeCurrentAccount::class,
             'abilities' => CheckAbilities::class,

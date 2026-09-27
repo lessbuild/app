@@ -69,6 +69,8 @@ enum AuditAction: string
     case BackupDestinationUpdated = 'backup_destination.updated';
     case BackupDestinationDeleted = 'backup_destination.deleted';
     case WebsiteBackupRestored = 'website_backup.restored';
+    case ServerTerminalOpened = 'server_terminal.opened';
+    case ServerTerminalClosed = 'server_terminal.closed';
     case DashboardCreated = 'dashboard.created';
     case DashboardUpdated = 'dashboard.updated';
     case DashboardDeleted = 'dashboard.deleted';
@@ -149,6 +151,8 @@ enum AuditAction: string
             self::BackupDestinationCreated => __('Added the backup destination “:destination”', ['destination' => $value('destination')]),
             self::BackupDestinationUpdated => __('Changed the backup destination “:destination”', ['destination' => $value('destination')]),
             self::BackupDestinationDeleted => __('Removed the backup destination “:destination”', ['destination' => $value('destination')]),
+            self::ServerTerminalOpened => __('Opened a terminal on the server :server', ['server' => $value('server')]),
+            self::ServerTerminalClosed => __('Closed a terminal on the server :server', ['server' => $value('server')]),
             self::WebsiteBackupRestored => __('Restored the website :website from the backup of :date', ['website' => $value('website'), 'date' => $value('date')]),
             self::DashboardCreated => __('Created the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::DashboardUpdated => __('Changed the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
