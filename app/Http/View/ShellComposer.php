@@ -106,6 +106,7 @@ final class ShellComposer
                 new NavLink(__('Profile'), route('settings.profile'), $this->request->routeIs('settings.profile')),
                 new NavLink(__('Security'), route('settings.security'), $this->request->routeIs('settings.security')),
                 new NavLink(__('Sessions'), route('settings.sessions'), $this->request->routeIs('settings.sessions')),
+                new NavLink(__('Notifications'), route('settings.notifications'), $this->request->routeIs('settings.notifications')),
                 new NavLink(__('Privacy'), route('settings.privacy'), $this->request->routeIs('settings.privacy')),
             ]];
         }

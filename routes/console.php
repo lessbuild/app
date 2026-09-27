@@ -12,7 +12,10 @@ use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
+use App\Services\Telemetry\IssueDigest;
 use App\Services\Telemetry\TelemetryQueue;
+use App\Services\Telemetry\UsageAlerts;
+use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -118,3 +121,39 @@ Artisan::command('alerts:evaluate {--limit=100 : Maximum due rules to evaluate (
     return 0;
 })->purpose('Evaluate telemetry alert rules and open or recover incidents');
 Schedule::command('alerts:evaluate')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('usage:send-alerts {--account= : Only this account} {--at= : Evaluate usage at this UTC time}', function (UsageAlerts $alerts): int {
+    try {
+        $at = is_string($this->option('at')) ? CarbonImmutable::parse($this->option('at'), 'UTC') : null;
+    } catch (Throwable) {
+        $this->error('The at timestamp is invalid.');
+
+        return 2;
+    }
+    $totals = $alerts->send($at, is_string($this->option('account')) ? $this->option('account') : null);
+    $this->info(sprintf('Usage alerts: %d sent, %d skipped, %d failed.', $totals['sent'], $totals['skipped'], $totals['failed']));
+
+    return $totals['failed'] === 0 ? 0 : 1;
+})->purpose('Email account owners when Monitoring usage reaches 80% and 100% of the monthly allowance');
+Schedule::command('usage:send-alerts')->hourly()->withoutOverlapping(10)->onOneServer();
+
+Artisan::command('issues:send-digest {--account= : Only this account} {--from= : Inclusive UTC start} {--until= : Exclusive UTC end}', function (IssueDigest $digest): int {
+    try {
+        $until = is_string($this->option('until')) ? CarbonImmutable::parse($this->option('until'), 'UTC') : CarbonImmutable::now('UTC')->startOfMinute();
+        $from = is_string($this->option('from')) ? CarbonImmutable::parse($this->option('from'), 'UTC') : $until->subDay();
+    } catch (Throwable) {
+        $this->error('The from or until timestamp is invalid.');
+
+        return 2;
+    }
+    if ($from->greaterThanOrEqualTo($until)) {
+        $this->error('The from timestamp must be before the until timestamp.');
+
+        return 2;
+    }
+    $totals = $digest->send($from, $until, is_string($this->option('account')) ? $this->option('account') : null);
+    $this->info(sprintf('Issue digests: %d sent, %d skipped, %d failed.', $totals['sent'], $totals['skipped'], $totals['failed']));
+
+    return $totals['failed'] === 0 ? 0 : 1;
+})->purpose('Send the daily issue digest');
+Schedule::command('issues:send-digest')->dailyAt('08:00')->withoutOverlapping(60)->onOneServer();

@@ -48,6 +48,9 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 
 - **Metrics explorer** (Monitoring → Metrics): the project's metric series, searchable by name, unit or resource, each with a chart (value, or rate per second for cumulative counters), the latest samples linked to their events, and the series' resource identity. On Pro and above unusual shifts are marked (`monitoring.anomalies`). Collector setups for 19 common stacks are listed under the table (`Support/Telemetry/MetricCollectorProfiles`).
 - **Dashboards** belong to the account (like Monitor's workspace dashboards) and cover every project: telemetry summary with a trend, event mix, open incidents, monitor health, SLO health and projects, over 24 hours, 7 or 30 days. The number is limited by `monitoring.dashboards.max` (1 on Free, 5 Pro, 15 Team, unlimited Scale). Account admins manage them; anyone who can use Monitoring reads them. The telemetry numbers come from `Queries/Telemetry/TelemetrySummaryQuery`.
+- **Usage alerts** (`usage:send-alerts`, hourly): account owners with a verified address get an email and an inbox entry when this month's events reach 80% and 100% of `monitoring.events.monthly` (only the higher one if both are passed between runs). Unlimited plans get none.
+- **Issue digest** (`issues:send-digest`, 08:00 UTC): new and resolved issues across the account's projects in the last day, and open/critical/snoozed counts, for accounts with `monitoring.issue_digest`. Owners get it by default; owners, admins and members who can use Monitoring change it under Settings → Notifications (per account). Quiet days send nothing.
+- Both use a delivery ledger (`usage_alert_deliveries`, `issue_digest_deliveries`, `Services/Monitoring/EmailDeliveryLedger`) so each email goes out once per period however often the command runs; a failed send is retried on the next run.
 
 ## Access
 
