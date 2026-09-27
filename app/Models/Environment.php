@@ -91,6 +91,12 @@ class Environment extends Model
         return $this->hasMany(Deployment::class);
     }
 
+    /** @return HasMany<Repository, $this> */
+    public function repositories(): HasMany
+    {
+        return $this->hasMany(Repository::class);
+    }
+
     /** @return HasMany<EnvironmentVariable, $this> */
     public function variables(): HasMany
     {

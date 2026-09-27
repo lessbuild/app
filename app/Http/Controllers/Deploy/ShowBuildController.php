@@ -18,10 +18,14 @@ final class ShowBuildController
     {
         return view('deploy.build', [
             'overview' => $overview->handle($project, $user),
-            'build' => $build->load(['repository.provider', 'website', 'environment', 'requester', 'approver', 'rolledBackFrom', 'redeployedFrom']),
+            'build' => $build->load(['repository.provider', 'website', 'environment', 'requester', 'approver', 'rolledBackFrom', 'redeployedFrom', 'promotedFrom.environment', 'promotions.environment']),
             'stages' => array_map(fn (string $class): string => $class::$title, $plan->scripts()),
             'canDeploy' => $user->can('deploy', $build->repository),
             'canApprove' => $user->can('approve', $build),
+            'promotionTargets' => $build->status === Build::STATUS_SUCCEEDED && $build->environment !== null
+                ? $project->environments()->whereHas('repositories', fn ($query) => $query->where('url', $build->repository->url))->get()
+                    ->filter(fn (\App\Models\Environment $environment): bool => $environment->kind->rank() > $build->environment->kind->rank())->values()
+                : collect(),
         ]);
     }
 }

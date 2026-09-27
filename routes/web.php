@@ -55,6 +55,7 @@ use App\Http\Controllers\Deploy\ConnectGitHubAppController;
 use App\Http\Controllers\Deploy\CreateRepositoryController;
 use App\Http\Controllers\Deploy\DeleteEnvironmentSettingController;
 use App\Http\Controllers\Deploy\DeleteRepositoryController;
+use App\Http\Controllers\Deploy\PromoteBuildController;
 use App\Http\Controllers\Deploy\RecordBuildCallbackController;
 use App\Http\Controllers\Deploy\RedeployBuildController;
 use App\Http\Controllers\Deploy\ReplaceEnvironmentVariablesController;
@@ -348,6 +349,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::get('/builds/{build}', ShowBuildController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.show');
             Route::post('/builds/{build}/redeploy', RedeployBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.redeploy');
             Route::post('/builds/{build}/rollback', RollbackBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.rollback');
+            Route::post('/builds/{build}/promote', PromoteBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.promote');
             Route::post('/builds/{build}/cancel', CancelBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.cancel');
             Route::post('/builds/{build}/review', ReviewBuildController::class)->whereNumber('build')->middleware(['can:approve,build', 'throttle:20,1'])->name('builds.review');
         });

@@ -4,6 +4,17 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Analytics\CollectEventsController;
 use App\Http\Controllers\Analytics\PreflightCollectController;
+use App\Http\Controllers\Api\V1\Deploy\DeployEnvironmentController;
+use App\Http\Controllers\Api\V1\Deploy\ListDeploymentsController;
+use App\Http\Controllers\Api\V1\Deploy\ListProjectsController;
+use App\Http\Controllers\Api\V1\Deploy\PromoteDeploymentController;
+use App\Http\Controllers\Api\V1\Deploy\ReplaceEnvironmentVariablesController;
+use App\Http\Controllers\Api\V1\Deploy\RollbackDeploymentController;
+use App\Http\Controllers\Api\V1\Deploy\ScaleEnvironmentController;
+use App\Http\Controllers\Api\V1\Deploy\ShowDeploymentController;
+use App\Http\Controllers\Api\V1\Deploy\ShowDeploymentLogController;
+use App\Http\Controllers\Api\V1\Deploy\ShowMeController;
+use App\Http\Controllers\Api\V1\Deploy\ShowProjectController;
 use App\Http\Controllers\Api\V1\ShowAccountController;
 use App\Http\Controllers\Deploy\ReceiveGitHubAppWebhookController;
 use App\Http\Controllers\Deploy\ReceiveRepositoryWebhookController;
@@ -21,6 +32,23 @@ use Illuminate\Support\Facades\Route;
 // Token API. Every route needs a token (auth:sanctum), resolves the token's account and checks scopes.
 Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
     Route::get('/account', ShowAccountController::class)->middleware('abilities:account:read')->name('api.v1.account');
+
+    // Deployer API v1 (a public contract): the same paths, fields and status codes, over v2 tokens with Deploy scopes.
+    Route::middleware('abilities:deploy:read')->group(function (): void {
+        Route::get('/me', ShowMeController::class)->name('api.v1.me');
+        Route::get('/projects', ListProjectsController::class)->name('api.v1.projects');
+        Route::get('/projects/{project}', ShowProjectController::class)->name('api.v1.projects.show');
+        Route::get('/deployments', ListDeploymentsController::class)->name('api.v1.deployments');
+        Route::get('/deployments/{build}', ShowDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.show');
+        Route::get('/deployments/{build}/log', ShowDeploymentLogController::class)->whereNumber('build')->name('api.v1.deployments.log');
+    });
+    Route::middleware('abilities:deploy:write')->group(function (): void {
+        Route::post('/deployments/{build}/rollback', RollbackDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.rollback');
+        Route::post('/deployments/{build}/promote', PromoteDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.promote');
+        Route::post('/environments/{environment}/deploy', DeployEnvironmentController::class)->name('api.v1.environments.deploy');
+        Route::patch('/environments/{environment}/scale', ScaleEnvironmentController::class)->name('api.v1.environments.scale');
+        Route::put('/environments/{environment}/variables', ReplaceEnvironmentVariablesController::class)->name('api.v1.environments.variables');
+    });
 });
 
 // Public contract from the old Analytics app: the tracker posts here without a token.

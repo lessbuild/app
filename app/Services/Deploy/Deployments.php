@@ -7,9 +7,11 @@ namespace App\Services\Deploy;
 use App\Jobs\Deploy\PublishBuild;
 use App\Jobs\Deploy\SwitchRelease;
 use App\Models\Build;
+use App\Models\Membership;
 use App\Models\Repository;
 use App\Models\User;
 use App\Models\Website;
+use App\Notifications\BuildAwaitingApproval;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -71,6 +73,8 @@ class Deployments
             ])->save();
             if ($build->status === Build::STATUS_QUEUED) {
                 PublishBuild::dispatch($build->id)->afterCommit();
+            } else {
+                DB::afterCommit(fn () => $this->notifyApprovers($build));
             }
 
             return $build;
@@ -89,5 +93,14 @@ class Deployments
         if ($rollback !== null) {
             $failed->forceFill(['automatic_rollback_build_id' => $rollback->id])->save();
         }
+    }
+
+    /** Tell the people who could approve a waiting build (members with Deploy access, other than whoever asked for it). */
+    private function notifyApprovers(Build $build): void
+    {
+        $build->loadMissing(['repository', 'website', 'environment', 'requester', 'promotedFrom.environment']);
+        Membership::query()->where('account_id', $build->website->account_id)->with('user')->get()
+            ->filter(fn (Membership $membership): bool => $membership->user_id !== $build->requested_by && $membership->user->can('approve', $build))
+            ->each(fn (Membership $membership) => $membership->user->notify(new BuildAwaitingApproval($build)));
     }
 }

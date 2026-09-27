@@ -26,6 +26,10 @@
         </dl>
         @if ($build->rolledBackFrom)<p class="text-sm text-muted">{{ __('Rolled back to the release from deploy #:id.', ['id' => $build->rolledBackFrom->id]) }}</p>@endif
         @if ($build->redeployedFrom)<p class="text-sm text-muted">{{ __('Redeploy of #:id.', ['id' => $build->redeployedFrom->id]) }}</p>@endif
+        @if ($build->promotedFrom)<p class="text-sm text-muted">{{ __('Promoted from deploy #:id in :environment.', ['id' => $build->promotedFrom->id, 'environment' => $build->promotedFrom->environment->name ?? '—']) }}@if ($build->promotion_note) {{ __('Note: :note', ['note' => $build->promotion_note]) }}@endif</p>@endif
+        @foreach ($build->promotions as $promotion)
+            <p class="text-sm text-muted">{{ __('Promoted to :environment as', ['environment' => $promotion->environment->name ?? '—']) }} <a href="{{ route('deploy.builds.show', [$project, $promotion->id]) }}" class="font-bold text-primary hover:underline">#{{ $promotion->id }}</a>.</p>
+        @endforeach
         @if ($build->failure_message)<p class="text-sm text-danger">{{ $build->failure_message }}</p>@endif
         @if ($build->approval_note)<p class="text-sm text-muted">{{ __('Note: :note', ['note' => $build->approval_note]) }}</p>@endif
 
@@ -39,6 +43,22 @@
         @elseif ($build->status === 'awaiting_approval')
             <p class="text-sm text-muted">{{ __('Waiting for someone else with deploy rights to approve it.') }}</p>
         @endif
+
+        @if ($promotionTargets->isNotEmpty())
+            <form method="POST" action="{{ route('deploy.builds.promote', [$project, $build->id]) }}" class="flex flex-wrap items-end gap-3 border-t border-line pt-4">
+                @csrf
+                <x-signal.ui.select-field name="environment_id" :label="__('Promote this commit to')">
+                    @foreach ($promotionTargets as $target)
+                        <option value="{{ $target->id }}">{{ $target->name }}</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.input-field name="note" :label="__('Note (optional)')" maxlength="2000" />
+                <x-signal.ui.button type="submit" variant="primary">{{ __('Promote') }}</x-signal.ui.button>
+            </form>
+        @endif
+        @foreach (['promote'] as $key)
+            @error($key)<p class="text-sm text-danger" role="alert">{{ $message }}</p>@enderror
+        @endforeach
 
         @if ($canDeploy)
             <div class="flex flex-wrap gap-2">

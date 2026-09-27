@@ -20,4 +20,15 @@ enum EnvironmentKind: string
             self::Preview => __('Preview'),
         };
     }
+
+    /** Where the environment sits on the way to production: builds are promoted to a higher rank only. */
+    public function rank(): int
+    {
+        return match ($this) {
+            self::Preview => 0,
+            self::Development => 1,
+            self::Staging => 2,
+            self::Production => 3,
+        };
+    }
 }

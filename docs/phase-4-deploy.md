@@ -75,6 +75,18 @@ The parts, in dependency order:
 - **Resources:** managed MySQL (the website's own database), managed Redis or Valkey, or external services described by variables. They need `deploy.resources`.
 - Hibernation and scaling schedules come with automation (part 6).
 
+## Promotion and the API (part 4a)
+
+- **Promotion:** a succeeded build of a known commit can be promoted to a later environment of the same project (preview → development → staging → production). It ships through the target environment's repository for the same Git address and host, with that environment's approval, locks and windows. The new build records `promoted_from_build_id` and a note, and both build pages show the lineage.
+- **Approval alerts:** when a build waits for approval, the people who could approve it are told by email and in the inbox. That's members with Deploy access, other than whoever asked for the deploy.
+- **Deployer API v1:** the same paths, fields and status codes, now authenticated with v2 API tokens (`deploy:read` to read, `deploy:write` to change) and limited to the token's account and the person's Deploy access.
+  - Reads: `GET /api/v1/me`, `/projects`, `/projects/{project}`, `/deployments` (optional `limit`/`cursor` pages), `/deployments/{build}`, `/deployments/{build}/log`.
+  - Writes: `POST /deployments/{build}/rollback`, `/deployments/{build}/promote` (`target_environment_id`, `promotion_note`), `/environments/{environment}/deploy`, `PATCH /environments/{environment}/scale` (`replicas`, applied with the next deploy), `PUT /environments/{environment}/variables` (`variables`).
+- **Differences from Deployer:**
+  - Project and environment IDs are v2 ULIDs. Phase 6 maps old numeric IDs for existing tokens and scripts.
+  - Old tokens' workspace and project claims become v2 account tokens.
+  - `runtime` (hibernate/wake) and `workflow` arrive with automation (part 6); the configuration routes arrive with part 4b.
+
 ## Public contracts kept
 
 - Build callback URLs and their signed parameters.

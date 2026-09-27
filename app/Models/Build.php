@@ -54,6 +54,8 @@ use Illuminate\Support\Carbon;
  * @property string|null $observation_status observing, passed or failed
  * @property CarbonImmutable|null $observation_deadline_at
  * @property string|null $observation_error
+ * @property int|null $promoted_from_build_id the build in an earlier environment whose commit this one ships
+ * @property string|null $promotion_note
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -64,6 +66,8 @@ use Illuminate\Support\Carbon;
  * @property-read User|null $approver
  * @property-read Build|null $rolledBackFrom
  * @property-read Build|null $redeployedFrom
+ * @property-read Build|null $promotedFrom
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, Build> $promotions
  */
 #[Hidden(['environment_payload', 'log'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
@@ -134,6 +138,18 @@ class Build extends Model
     public function redeployedFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'redeployed_from_build_id');
+    }
+
+    /** @return BelongsTo<Build, $this> */
+    public function promotedFrom(): BelongsTo
+    {
+        return $this->belongsTo(self::class, 'promoted_from_build_id');
+    }
+
+    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<Build, $this> */
+    public function promotions(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(self::class, 'promoted_from_build_id');
     }
 
     public function isActive(): bool
