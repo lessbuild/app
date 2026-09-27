@@ -19,12 +19,26 @@ final class RemoveLoadBalancer implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt; a failed removal is shown so someone can try again.
+     */
     public int $tries = 1;
 
+    /**
+     * How long removing the proxy configuration may take.
+     */
     public int $timeout = 120;
 
+    /**
+     * Removes a load balancer's proxy configuration from its server and then the load balancer.
+     *
+     * @param  int  $loadBalancerId  The load balancer being removed.
+     */
     public function __construct(public readonly int $loadBalancerId) {}
 
+    /**
+     * Removes the configuration and deletes the record once the server confirms.
+     */
     public function handle(ServerShell $shell, LoadBalancerConfiguration $configuration): void
     {
         $balancer = LoadBalancer::query()->with('server')->whereKey($this->loadBalancerId)->where('status', 'removing')->first();
@@ -46,6 +60,9 @@ final class RemoveLoadBalancer implements ShouldQueue
         $balancer->delete();
     }
 
+    /**
+     * Marks the removal failed with the server's error, keeping the record so it can be retried.
+     */
     public function failed(Throwable $exception): void
     {
         LoadBalancer::query()->whereKey($this->loadBalancerId)->where('status', 'removing')

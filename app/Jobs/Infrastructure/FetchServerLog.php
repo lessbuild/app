@@ -19,12 +19,27 @@ final class FetchServerLog implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Reading a log over SSH can fail briefly, so it gets three tries.
+     */
     public int $tries = 3;
 
+    /**
+     * Seconds between tries.
+     */
     public int $backoff = 10;
 
+    /**
+     * Refreshes the stored copy of one of a server's logs.
+     *
+     * @param  int  $serverId  The server.
+     * @param  string  $type  Which log, one of ServerLogs::TYPES.
+     */
     public function __construct(public readonly int $serverId, public readonly string $type) {}
 
+    /**
+     * Reads the log's tail from an active server into its snapshot.
+     */
     public function handle(ServerLogs $logs): void
     {
         $server = Server::query()->find($this->serverId);
@@ -41,6 +56,9 @@ final class FetchServerLog implements ShouldQueue
         $snapshot->update(['status' => ServerLogSnapshot::STATUS_READY, 'log' => $logs->read($server, $this->type), 'error' => null, 'refreshed_at' => CarbonImmutable::now('UTC')]);
     }
 
+    /**
+     * Marks the snapshot failed with the reason.
+     */
     public function failed(Throwable $exception): void
     {
         ServerLogSnapshot::query()->where('server_id', $this->serverId)->where('type', $this->type)

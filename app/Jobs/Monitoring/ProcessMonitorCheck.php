@@ -14,19 +14,39 @@ final class ProcessMonitorCheck implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * One attempt: a check is a measurement at a moment, and repeating it later would record the wrong time.
+     */
     public int $tries = 1;
 
+    /**
+     * How long a check may take, which covers the slowest check type.
+     */
     public int $timeout = MonitorQueue::TIMEOUT;
 
+    /**
+     * A check that times out is failed rather than retried, for the same reason.
+     */
     public bool $failOnTimeout = true;
 
+    /**
+     * Runs one scheduled monitor check.
+     *
+     * @param  string  $checkId  The queued check.
+     */
     public function __construct(public readonly string $checkId) {}
 
+    /**
+     * Runs the check and records the result.
+     */
     public function handle(MonitorCheckRunner $runner): void
     {
         $runner->process($this->checkId);
     }
 
+    /**
+     * Records that the checker was interrupted, so the check reads "unknown" instead of staying queued.
+     */
     public function failed(?Throwable $exception): void
     {
         app(MonitorCheckRunner::class)->interrupt($this->checkId);

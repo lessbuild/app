@@ -13,18 +13,29 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
-class ProcessEventBatch implements ShouldQueue
+final class ProcessEventBatch implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Rebuilding aggregates can hit a lock or deadlock, so it gets three tries.
+     */
     public int $tries = 3;
 
+    /**
+     * Folds a batch of collected analytics events into the site's visits, goal conversions and report aggregates.
+     *
+     * @param  int  $batchId  The ingestion batch.
+     */
     public function __construct(public int $batchId) {}
 
+    /**
+     * Rebuilds everything the batch touches in one transaction, marks it processed, and moves the site's "last
+     * processed" time forward.
+     */
     public function handle(
         RebuildSiteVisits $rebuildSiteVisits,
         RebuildGoalConversions $rebuildGoalConversions,
@@ -53,6 +64,9 @@ class ProcessEventBatch implements ShouldQueue
         });
     }
 
+    /**
+     * Marks the batch failed with the reason.
+     */
     public function failed(?Throwable $exception): void
     {
         AnalyticsIngestionBatch::query()->whereKey($this->batchId)->update([

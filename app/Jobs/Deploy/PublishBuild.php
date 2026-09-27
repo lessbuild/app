@@ -20,12 +20,28 @@ final class PublishBuild implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Starting the deploy script can fail on a busy server, so it gets three tries.
+     */
     public int $tries = 3;
 
+    /**
+     * Seconds between tries.
+     */
     public int $backoff = 15;
 
+    /**
+     * Starts a queued deploy on its website's server.
+     *
+     * @param  int  $buildId  The queued build to start.
+     */
     public function __construct(public readonly int $buildId) {}
 
+    /**
+     * Claims the build, names its release and uploads the deploy script to run in the background on the server. The
+     * script reports its progress back; if uploading fails, the build is put back in the queue so the retry starts it
+     * cleanly.
+     */
     public function handle(RemoteScriptRunner $runner, DeploymentScript $script): void
     {
         $build = Build::query()->with(['website.server', 'repository.provider'])->find($this->buildId);
@@ -59,6 +75,9 @@ final class PublishBuild implements ShouldQueue
             ->update(['status' => Build::STATUS_RUNNING, 'remote_process_id' => $process['id'], 'remote_process_path' => $process['path']]);
     }
 
+    /**
+     * Marks a build that never started as failed, with the reason.
+     */
     public function failed(Throwable $exception): void
     {
         $build = Build::query()->whereKey($this->buildId)->whereIn('status', [Build::STATUS_QUEUED, Build::STATUS_DEPLOYING])->first();

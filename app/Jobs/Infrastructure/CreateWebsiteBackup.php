@@ -20,12 +20,27 @@ final class CreateWebsiteBackup implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Two attempts, since a backup can fail on a busy server or storage.
+     */
     public int $tries = 2;
 
+    /**
+     * Backing up a large website can take up to an hour.
+     */
     public int $timeout = 3600;
 
+    /**
+     * Takes a restic snapshot of a website's files and database.
+     *
+     * @param  int  $backupId  The queued backup.
+     */
     public function __construct(public readonly int $backupId) {}
 
+    /**
+     * Claims the backup, runs the backup script, and stores the snapshot ID and size restic reports. On failure the
+     * backup is put back in the queue so the retry can claim it.
+     */
     public function handle(ServerShell $shell, BackupScripts $scripts): void
     {
         if (WebsiteBackup::query()->whereKey($this->backupId)->where('status', WebsiteBackup::STATUS_QUEUED)
@@ -56,6 +71,9 @@ final class CreateWebsiteBackup implements ShouldQueue
         $backup->destination->forceFill(['last_verified_at' => now(), 'last_error' => null])->save();
     }
 
+    /**
+     * Marks the backup failed once attempts run out.
+     */
     public function failed(Throwable $exception): void
     {
         WebsiteBackup::query()->whereKey($this->backupId)->whereIn('status', [WebsiteBackup::STATUS_QUEUED, WebsiteBackup::STATUS_RUNNING])->first()

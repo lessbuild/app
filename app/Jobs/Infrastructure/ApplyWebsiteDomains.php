@@ -19,19 +19,40 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Seconds during which another apply for the same website isn't queued, so several quick domain changes apply once.
+     */
     public int $uniqueFor = 120;
 
+    /**
+     * Reloading Caddy can fail briefly, so it gets three tries.
+     */
     public int $tries = 3;
 
+    /**
+     * Seconds between tries.
+     */
     public int $backoff = 10;
 
+    /**
+     * Writes a website's domains into its Caddy site and reloads Caddy.
+     *
+     * @param  int  $websiteId  The website.
+     */
     public function __construct(public readonly int $websiteId) {}
 
+    /**
+     * One apply per website at a time.
+     */
     public function uniqueId(): string
     {
         return (string) $this->websiteId;
     }
 
+    /**
+     * Writes the site configuration, validates the whole Caddyfile, and reloads. Validation first means a bad domain
+     * can't take down other websites on the server.
+     */
     public function handle(ServerShell $shell, WebsiteCaddyConfiguration $caddy): void
     {
         $website = Website::query()->with(['server', 'domains'])->find($this->websiteId);

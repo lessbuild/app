@@ -20,12 +20,26 @@ final class RestoreWebsiteBackup implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt: the restore script puts the website back as it was if it fails, and running it twice isn't safe.
+     */
     public int $tries = 1;
 
+    /**
+     * Restores of large websites can take up to an hour.
+     */
     public int $timeout = 3600;
 
+    /**
+     * Restores a website from one of its backups.
+     *
+     * @param  int  $restoreId  The queued restore.
+     */
     public function __construct(public readonly int $restoreId) {}
 
+    /**
+     * Claims the restore and runs the restore script on the website's server, recording success or the script's error.
+     */
     public function handle(ServerShell $shell, BackupScripts $scripts): void
     {
         if (BackupRestore::query()->whereKey($this->restoreId)->where('status', 'queued')
@@ -48,6 +62,9 @@ final class RestoreWebsiteBackup implements ShouldQueue
         $restore->forceFill(['status' => 'succeeded', 'completed_at' => now()])->save();
     }
 
+    /**
+     * Marks the restore failed with the reason.
+     */
     public function failed(Throwable $exception): void
     {
         BackupRestore::query()->whereKey($this->restoreId)->first()

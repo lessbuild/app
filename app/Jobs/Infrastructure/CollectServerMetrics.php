@@ -16,15 +16,29 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Seconds during which another collection for the same server isn't queued, so a slow server can't pile them up.
+     */
     public int $uniqueFor = 240;
 
+    /**
+     * Samples an active server's load, CPU, memory, disk, network and process counts.
+     *
+     * @param  int  $serverId  The server.
+     */
     public function __construct(public readonly int $serverId) {}
 
+    /**
+     * One collection per server at a time.
+     */
     public function uniqueId(): string
     {
         return (string) $this->serverId;
     }
 
+    /**
+     * Collects a sample if the server is still active.
+     */
     public function handle(ServerMetricsCollector $collector): void
     {
         $server = Server::query()->whereKey($this->serverId)->where('provisioning_status', Server::STATUS_ACTIVE)->first();

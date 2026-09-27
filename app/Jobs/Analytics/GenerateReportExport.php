@@ -11,19 +11,30 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
-use Illuminate\Queue\SerializesModels;
 use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 use Throwable;
 
-class GenerateReportExport implements ShouldQueue
+final class GenerateReportExport implements ShouldQueue
 {
-    use Dispatchable, InteractsWithQueue, Queueable, SerializesModels;
+    use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Two attempts, since building a large report can time out once.
+     */
     public int $tries = 2;
 
+    /**
+     * Builds the CSV for an analytics report export.
+     *
+     * @param  int  $exportId  The requested export.
+     */
     public function __construct(public int $exportId) {}
 
+    /**
+     * Runs the report with the export's filters and writes each metric and breakdown row to a CSV on the local disk.
+     * Finished or expired exports are skipped.
+     */
     public function handle(AnalyticsReportQuery $report): void
     {
         $export = AnalyticsExport::query()->with('site')->find($this->exportId);
@@ -71,6 +82,9 @@ class GenerateReportExport implements ShouldQueue
         }
     }
 
+    /**
+     * Marks the export failed with the reason.
+     */
     public function failed(?Throwable $exception): void
     {
         AnalyticsExport::query()->whereKey($this->exportId)->update([

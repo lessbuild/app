@@ -24,12 +24,28 @@ final class InitialiseServer implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * A new cloud server can take a few minutes to get its public IP, so this retries up to ten times.
+     */
     public int $tries = 10;
 
+    /**
+     * Seconds between tries.
+     */
     public int $backoff = 10;
 
+    /**
+     * Waits for a newly created cloud server's public IP and records its SSH host key.
+     *
+     * @param  int  $serverId  The server.
+     * @param  string  $attempt  The initialisation token, so a job from an earlier attempt does nothing.
+     */
     public function __construct(public readonly int $serverId, public readonly string $attempt) {}
 
+    /**
+     * Asks the provider for the server's addresses, pins its SSH host key, and moves it on to provisioning. Throws (and
+     * so retries) while the IP isn't there yet.
+     */
     public function handle(ServerProviderResolver $providers, SshHostIdentity $hostIdentity): void
     {
         if ($this->attempt()->whereIn('provisioning_status', [Server::STATUS_QUEUED, Server::STATUS_WAITING_FOR_IP])
@@ -52,6 +68,9 @@ final class InitialiseServer implements ShouldQueue
             ->update(['provisioning_status' => Server::STATUS_PROVISIONING, 'provisioning_failure_phase' => null, 'initialization_token' => null]);
     }
 
+    /**
+     * Marks the server failed at initialisation once retries run out.
+     */
     public function failed(Throwable $exception): void
     {
         $this->attempt()->whereIn('provisioning_status', [Server::STATUS_QUEUED, Server::STATUS_WAITING_FOR_IP])->update([
@@ -60,7 +79,11 @@ final class InitialiseServer implements ShouldQueue
         ]);
     }
 
-    /** @return Builder<Server> */
+    /**
+     * The server, only while it's still on this initialisation attempt.
+     *
+     * @return Builder<Server>
+     */
     private function attempt(): Builder
     {
         return Server::query()->whereKey($this->serverId)->where('initialization_token', $this->attempt);

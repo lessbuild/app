@@ -25,17 +25,29 @@ final class RunServerTerminal implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt: a terminal is a live connection, and reconnecting would lose what was on screen.
+     */
     public int $tries = 1;
 
     /** The session's time limit plus room to hang up. */
     public int $timeout;
 
+    /**
+     * Holds a troubleshooting terminal open for as long as the session lasts, on the terminal queue so it doesn't block
+     * other jobs.
+     *
+     * @param  string  $sessionId  The session waiting to connect.
+     */
     public function __construct(public readonly string $sessionId)
     {
         $this->timeout = (int) config('infrastructure.terminal.session_minutes') * 60 + 120;
         $this->onConnection((string) config('infrastructure.terminal.connection'))->onQueue((string) config('infrastructure.terminal.queue'));
     }
 
+    /**
+     * Opens the shell, marks the session connected, relays until it ends, and records why it ended.
+     */
     public function handle(ServerTerminal $terminals, TerminalFrames $frames): void
     {
         $session = ServerTerminalSession::query()->with('server')->whereKey($this->sessionId)->where('status', 'connecting')->first();
@@ -57,6 +69,9 @@ final class RunServerTerminal implements ShouldQueue
         $this->finish($session, $reason === 'expired' ? 'expired' : 'closed', $reason);
     }
 
+    /**
+     * Closes the session as failed when the worker itself stopped.
+     */
     public function failed(Throwable $exception): void
     {
         $session = ServerTerminalSession::query()->find($this->sessionId);
@@ -65,7 +80,12 @@ final class RunServerTerminal implements ShouldQueue
         }
     }
 
-    /** @return string why it ended */
+    /**
+     * Moves keystrokes to the shell and output to the browser until the session is closed, expires or the shell exits,
+     * heartbeating every five seconds so a dead worker can be noticed.
+     *
+     * @return string why it ended
+     */
     private function relay(ServerTerminalSession $session, TerminalConnection $connection, TerminalFrames $frames): string
     {
         $pause = max(0, (int) config('infrastructure.terminal.poll_milliseconds')) * 1000;
@@ -96,6 +116,9 @@ final class RunServerTerminal implements ShouldQueue
         }
     }
 
+    /**
+     * Closes the session with a status and short reason, unless it's already closed.
+     */
     private function finish(ServerTerminalSession $session, string $status, string $reason): void
     {
         ServerTerminalSession::query()->whereKey($session->id)->whereIn('status', ServerTerminalSession::ACTIVE)

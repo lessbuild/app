@@ -19,8 +19,14 @@ final class VerifyWebsiteBackup implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt; a failed verification is a result worth keeping, and someone can run another.
+     */
     public int $tries = 1;
 
+    /**
+     * Restoring a large snapshot to check it can take up to an hour.
+     */
     public int $timeout = 3600;
 
     private const MESSAGES = [
@@ -31,8 +37,18 @@ final class VerifyWebsiteBackup implements ShouldQueue
         'cleanup' => 'The temporary directory or database couldn’t be removed.',
     ];
 
+    /**
+     * Proves a backup can be restored: restores it into a temporary directory and database, checks them, and removes
+     * them again.
+     *
+     * @param  int  $verificationId  The queued verification.
+     */
     public function __construct(public readonly int $verificationId) {}
 
+    /**
+     * Claims the verification, runs the verification script, and reads the stage markers it prints to decide which stage
+     * (if any) failed.
+     */
     public function handle(ServerShell $shell, BackupScripts $scripts): void
     {
         if (BackupVerification::query()->whereKey($this->verificationId)->where('status', 'queued')
@@ -69,6 +85,9 @@ final class VerifyWebsiteBackup implements ShouldQueue
         ]);
     }
 
+    /**
+     * Marks an unfinished verification failed at the restore stage.
+     */
     public function failed(Throwable $exception): void
     {
         $verification = BackupVerification::query()->find($this->verificationId);
@@ -77,7 +96,11 @@ final class VerifyWebsiteBackup implements ShouldQueue
         }
     }
 
-    /** @param array<string, string> $checks */
+    /**
+     * Stores the outcome, the per-check statuses, a message for the failed stage and how long it took.
+     *
+     * @param  array<string, string>  $checks
+     */
     private function finish(BackupVerification $verification, ?string $stage, array $checks = []): void
     {
         $verification->forceFill([

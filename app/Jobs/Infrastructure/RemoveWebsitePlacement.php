@@ -20,12 +20,30 @@ final class RemoveWebsitePlacement implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * Removing files can fail while the server is busy, so it gets three tries.
+     */
     public int $tries = 3;
 
+    /**
+     * Seconds between tries.
+     */
     public int $backoff = 10;
 
+    /**
+     * Cleans a website off a server it no longer runs on (after a move or deletion): its Caddy site, files, database and
+     * database users.
+     *
+     * @param  int  $websiteId  The website, which may be deleted by now.
+     * @param  int  $serverId  The server it was on.
+     * @param  string  $slug  The website's directory and database name on that server, checked again before use because it goes into shell commands.
+     */
     public function __construct(public readonly int $websiteId, public readonly int $serverId, public readonly string $slug) {}
 
+    /**
+     * Removes everything the website had on the server and clears the pending cleanup. A server that no longer exists
+     * has nothing to clean.
+     */
     public function handle(ServerShell $shell): void
     {
         if (preg_match('/\A[a-z0-9][a-z0-9-]{0,31}\z/', $this->slug) !== 1) {
@@ -47,6 +65,9 @@ final class RemoveWebsitePlacement implements ShouldQueue
         Website::withTrashed()->whereKey($this->websiteId)->where('previous_server_id', $this->serverId)->update(['previous_server_id' => null, 'placement_cleanup_error' => null]);
     }
 
+    /**
+     * Records why cleanup failed, so the website page can show it.
+     */
     public function failed(Throwable $exception): void
     {
         Website::withTrashed()->whereKey($this->websiteId)->update(['placement_cleanup_error' => Str::limit($exception->getMessage(), 2000)]);

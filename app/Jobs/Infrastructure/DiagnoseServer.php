@@ -19,10 +19,23 @@ final class DiagnoseServer implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt; someone can run the diagnostic again.
+     */
     public int $tries = 1;
 
+    /**
+     * Runs the connectivity and health diagnostic on a server.
+     *
+     * @param  int  $snapshotId  The snapshot to fill in.
+     * @param  string  $attempt  The run's token, so a job from an earlier run does nothing.
+     */
     public function __construct(public readonly int $snapshotId, public readonly string $attempt) {}
 
+    /**
+     * Runs the checks and stores them, or records which stage failed (server state, host identity, transport or
+     * response).
+     */
     public function handle(ServerDiagnostics $diagnostics): void
     {
         if (ServerDiagnosticSnapshot::query()->whereKey($this->snapshotId)->where('attempt_token', $this->attempt)->where('status', 'queued')
@@ -40,12 +53,19 @@ final class DiagnoseServer implements ShouldQueue
         }
     }
 
+    /**
+     * Records a transport failure when the job itself couldn't finish.
+     */
     public function failed(Throwable $exception): void
     {
         $this->finish(['status' => 'failed', 'failure_stage' => 'transport', 'error' => 'The diagnostic couldn’t finish.']);
     }
 
-    /** @param array<string, mixed> $values */
+    /**
+     * Stores the outcome on the snapshot, if it's still this run's, and releases its lease.
+     *
+     * @param  array<string, mixed>  $values
+     */
     private function finish(array $values): void
     {
         ServerDiagnosticSnapshot::query()->whereKey($this->snapshotId)->where('attempt_token', $this->attempt)->first()

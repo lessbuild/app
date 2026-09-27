@@ -20,10 +20,23 @@ final class SwitchRelease implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt: switching the `current` symlink either happened or failed, and the deploy is finished either way.
+     */
     public int $tries = 1;
 
+    /**
+     * Makes an already-built release live again, for rollbacks and redeploys of a build whose release is still on the
+     * server.
+     *
+     * @param  int  $buildId  The queued build to activate.
+     */
     public function __construct(public readonly int $buildId) {}
 
+    /**
+     * Claims the build, points the website at its release and finishes the deploy as succeeded, or as failed with the
+     * server's error.
+     */
     public function handle(RemoteDeployments $remote, FinishBuild $finish, RepositoryDeploymentPlan $plan): void
     {
         $now = CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.u');

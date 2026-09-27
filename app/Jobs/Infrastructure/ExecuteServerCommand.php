@@ -19,17 +19,34 @@ final class ExecuteServerCommand implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt: commands aren't safe to repeat.
+     */
     public int $tries = 1;
 
+    /**
+     * The SSH command timeout plus room to record the result.
+     */
     public int $timeout;
 
+    /**
+     * A command that times out is failed, never run again.
+     */
     public bool $failOnTimeout = true;
 
+    /**
+     * Runs a command someone typed on the server page.
+     *
+     * @param  int  $executionId  The queued execution.
+     */
     public function __construct(public readonly int $executionId)
     {
         $this->timeout = max(2, (int) config('infrastructure.ssh_command_timeout') + 15);
     }
 
+    /**
+     * Claims the execution, runs the command over SSH on the active server and stores its exit code and output.
+     */
     public function handle(ServerShell $shell): void
     {
         if (ServerCommandExecution::query()->whereKey($this->executionId)->where('status', 'queued')
@@ -47,12 +64,20 @@ final class ExecuteServerCommand implements ShouldQueue
         $this->finish($result->successful() ? 'succeeded' : 'failed', $output !== '' ? $output : ($result->successful() ? 'Finished without output.' : 'Failed without output.'), $result->exitCode);
     }
 
+    /**
+     * Records that the command couldn't be run, if it hadn't finished.
+     */
     public function failed(Throwable $exception): void
     {
         $this->finish('failed', 'Couldn’t run the command: '.$exception->getMessage(), null, ['queued', 'running']);
     }
 
-    /** @param list<string> $from */
+    /**
+     * Stores the result, keeping the tail of long output. Only an execution still in one of `$from` is updated, so a
+     * late failure can't overwrite a result.
+     *
+     * @param  list<string>  $from
+     */
     private function finish(string $status, string $output, ?int $exitCode, array $from = ['running']): void
     {
         $execution = ServerCommandExecution::query()->whereKey($this->executionId)->whereIn('status', $from)->first();

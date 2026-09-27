@@ -20,12 +20,27 @@ final class InspectDatabase implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt; someone can run another inspection.
+     */
     public int $tries = 1;
 
+    /**
+     * Listing tables of a large database can take a few minutes.
+     */
     public int $timeout = 300;
 
+    /**
+     * Reads a website's database size, tables and connection count.
+     *
+     * @param  int  $snapshotId  The queued snapshot to fill in.
+     */
     public function __construct(public readonly int $snapshotId) {}
 
+    /**
+     * Claims the snapshot, runs the inspection on the server, stores what it reports, and removes the website's
+     * snapshots older than 30 days.
+     */
     public function handle(ServerShell $shell, DatabaseCommands $commands): void
     {
         if (DatabaseSnapshot::query()->whereKey($this->snapshotId)->where('status', 'queued')->update(['status' => 'running']) === 0) {
@@ -51,6 +66,9 @@ final class InspectDatabase implements ShouldQueue
         DatabaseSnapshot::query()->where('website_id', $snapshot->website_id)->where('created_at', '<', now()->subDays(30))->delete();
     }
 
+    /**
+     * Marks the snapshot failed.
+     */
     public function failed(Throwable $exception): void
     {
         DatabaseSnapshot::query()->whereKey($this->snapshotId)->first()?->forceFill(['status' => 'failed', 'error' => $exception->getMessage(), 'collected_at' => now()])->save();

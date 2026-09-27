@@ -20,12 +20,27 @@ final class ApplyLoadBalancer implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * One attempt; a failed apply is shown so someone can fix it and try again.
+     */
     public int $tries = 1;
 
+    /**
+     * How long writing and reloading the proxy configuration may take.
+     */
     public int $timeout = 120;
 
+    /**
+     * Writes a load balancer's configuration to its proxy server.
+     *
+     * @param  int  $loadBalancerId  The pending load balancer.
+     */
     public function __construct(public readonly int $loadBalancerId) {}
 
+    /**
+     * Applies the configuration on the active proxy server and marks the load balancer active, or failed with Caddy's
+     * error.
+     */
     public function handle(ServerShell $shell, LoadBalancerConfiguration $configuration): void
     {
         $balancer = LoadBalancer::query()->with(['server', 'nodes.server'])->whereKey($this->loadBalancerId)->where('status', 'pending')->first();
@@ -48,6 +63,9 @@ final class ApplyLoadBalancer implements ShouldQueue
         LoadBalancer::query()->whereKey($balancer->id)->where('status', 'pending')->update(['status' => 'active', 'last_error' => null, 'applied_at' => now()->format('Y-m-d H:i:s.u')]);
     }
 
+    /**
+     * Marks a still-pending load balancer failed with the reason.
+     */
     public function failed(Throwable $exception): void
     {
         LoadBalancer::query()->whereKey($this->loadBalancerId)->where('status', 'pending')->update(['status' => 'failed', 'last_error' => str($exception->getMessage())->limit(2000)->toString()]);

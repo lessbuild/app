@@ -19,14 +19,32 @@ final class ManageDatabaseUser implements ShouldQueue
 {
     use Dispatchable, InteractsWithQueue, Queueable;
 
+    /**
+     * MySQL changes can fail while the server is busy, so they get three tries.
+     */
     public int $tries = 3;
 
+    /**
+     * Seconds between tries.
+     */
     public int $backoff = 30;
 
+    /**
+     * How long a user change may take.
+     */
     public int $timeout = 120;
 
+    /**
+     * Creates, updates or removes a website's extra database user on its server.
+     *
+     * @param  int  $userId  The database user.
+     * @param  string  $operation  `apply` to create or update it, `remove` to drop it.
+     */
     public function __construct(public readonly int $userId, public readonly string $operation) {}
 
+    /**
+     * Runs the change when the user is still waiting for it, then marks it active or deletes it.
+     */
     public function handle(ServerShell $shell, DatabaseCommands $commands): void
     {
         $user = DatabaseUser::query()->with('website.server')->find($this->userId);
@@ -46,6 +64,9 @@ final class ManageDatabaseUser implements ShouldQueue
         $user->forceFill(['status' => 'active', 'error' => null, 'applied_at' => now()])->save();
     }
 
+    /**
+     * Marks the user failed with MySQL's error.
+     */
     public function failed(Throwable $exception): void
     {
         DatabaseUser::query()->whereKey($this->userId)->first()?->forceFill(['status' => 'failed', 'error' => str($exception->getMessage())->limit(1000)->toString()])->save();
