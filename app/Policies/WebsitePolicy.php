@@ -18,21 +18,33 @@ final class WebsitePolicy
 {
     use ChecksAccountRole;
 
+    /**
+     * Seeing a website: account members who may view projects and use Infrastructure.
+     */
     public function view(User $user, Website $website): bool
     {
         return $this->allows($user, $website->account_id, AccountPermission::ViewProjects, 'infrastructure');
     }
 
+    /**
+     * Adding a website: people who manage the account's settings.
+     */
     public function create(User $user, Account|Project $scope): bool
     {
-        return $this->allows($user, $scope instanceof Project ? $scope->account_id : $scope->id, AccountPermission::ManageSettings);
+        return $this->allows($user, $this->accountIdOf($scope), AccountPermission::ManageSettings);
     }
 
+    /**
+     * Changing a website's settings, domains and environment variables: people who manage the account's settings.
+     */
     public function update(User $user, Website $website): bool
     {
         return $this->allows($user, $website->account_id, AccountPermission::ManageSettings);
     }
 
+    /**
+     * Removing a website, allowed to the same people as update.
+     */
     public function delete(User $user, Website $website): bool
     {
         return $this->update($user, $website);

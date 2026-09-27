@@ -11,11 +11,18 @@ use Illuminate\Auth\Access\Response;
 /** Builds follow their repository; approving needs deploy rights and someone other than whoever asked for the deploy. */
 final class BuildPolicy
 {
+    /**
+     * Seeing a deploy and its log: whoever may see its repository.
+     */
     public function view(User $user, Build $build): bool
     {
         return $user->can('view', $build->repository);
     }
 
+    /**
+     * Approving or rejecting a deploy that waits for approval: someone who may deploy the repository, and not the person
+     * who asked for the deploy.
+     */
     public function approve(User $user, Build $build): Response
     {
         if (! $user->can('deploy', $build->repository)) {

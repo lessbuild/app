@@ -13,18 +13,11 @@ final class IncidentPolicy
 {
     use ManagesMonitoring;
 
-    public function create(User $user, Project $project): bool
-    {
-        return $this->managesMonitoring($user, $project);
-    }
-
+    /**
+     * Acknowledging, assigning, resolving or annotating an incident: people who manage Monitoring in the incident's project.
+     */
     public function update(User $user, Incident $record): bool
     {
         return $this->live($record) && $this->managesMonitoring($user, $record->project);
-    }
-
-    public function delete(User $user, Incident $record): bool
-    {
-        return $this->update($user, $record);
     }
 }

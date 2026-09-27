@@ -21,14 +21,20 @@ final class ServerPolicy
 {
     use ChecksAccountRole;
 
+    /**
+     * Seeing a server: account members who may view projects and use Infrastructure.
+     */
     public function view(User $user, Server $server): bool
     {
         return $this->allows($user, $server->account_id, AccountPermission::ViewProjects, 'infrastructure');
     }
 
+    /**
+     * Creating or importing a server: people who manage the account's settings.
+     */
     public function create(User $user, Account|Project $scope): bool
     {
-        return $this->allows($user, $scope instanceof Project ? $scope->account_id : $scope->id, AccountPermission::ManageSettings);
+        return $this->allows($user, $this->accountIdOf($scope), AccountPermission::ManageSettings);
     }
 
     /** Setting the account's infrastructure budget: owners and admins, with cost controls on the Deploy plan. */
@@ -44,16 +50,25 @@ final class ServerPolicy
             : Response::deny(__('Budgets come with the Pro Deploy plan and above.'));
     }
 
+    /**
+     * Changing a server's settings, firewall and services: people who manage the account's settings.
+     */
     public function update(User $user, Server $server): bool
     {
         return $this->allows($user, $server->account_id, AccountPermission::ManageSettings);
     }
 
+    /**
+     * Deleting a server, allowed to the same people as update.
+     */
     public function delete(User $user, Server $server): bool
     {
         return $this->update($user, $server);
     }
 
+    /**
+     * Running commands and scripts over SSH, allowed to the same people as update, since that is root access.
+     */
     public function runCommands(User $user, Server $server): bool
     {
         return $this->update($user, $server);

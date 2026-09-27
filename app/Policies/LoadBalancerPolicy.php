@@ -18,6 +18,10 @@ final class LoadBalancerPolicy
 {
     use ChecksAccountRole;
 
+    /**
+     * Creating a load balancer: the account's settings managers, on a Deploy plan with high availability. The denial
+     * says which plan is needed.
+     */
     public function create(User $user, Account|Project $scope): Response
     {
         $account = $scope instanceof Project ? $scope->account : $scope;
@@ -36,11 +40,17 @@ final class LoadBalancerPolicy
         return $this->allows($user, $project->account_id, AccountPermission::ManageSettings);
     }
 
+    /**
+     * Changing one of the account's load balancers: the account's settings managers, on any plan.
+     */
     public function update(User $user, LoadBalancer $balancer): bool
     {
         return $this->allows($user, $balancer->account_id, AccountPermission::ManageSettings);
     }
 
+    /**
+     * Removing a load balancer, allowed to the same people as update.
+     */
     public function delete(User $user, LoadBalancer $balancer): bool
     {
         return $this->update($user, $balancer);

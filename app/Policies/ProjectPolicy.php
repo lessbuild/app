@@ -6,27 +6,37 @@ namespace App\Policies;
 
 use App\Enums\AccountPermission;
 use App\Models\Account;
-use App\Models\Membership;
 use App\Models\Project;
 use App\Models\User;
+use App\Policies\Concerns\ChecksAccountRole;
 
+/**
+ * Projects and the services inside them. Seeing a project needs the account's view permission; changing it needs
+ * the manage permission. Service abilities also respect a membership limited to some services.
+ */
 final class ProjectPolicy
 {
+    use ChecksAccountRole;
+
+    /** Creating a project in the account. */
     public function create(User $user, Account $account): bool
     {
-        return $this->permits($this->membership($user, $account->id), AccountPermission::ManageProjects);
+        return $this->allows($user, $account->id, AccountPermission::ManageProjects);
     }
 
+    /** Opening the project's overview, settings and activity. */
     public function view(User $user, Project $project): bool
     {
-        return $this->permits($this->membership($user, $project->account_id), AccountPermission::ViewProjects);
+        return $this->allows($user, $project->account_id, AccountPermission::ViewProjects);
     }
 
+    /** Changing the project's details, environments and domains. */
     public function update(User $user, Project $project): bool
     {
-        return $this->permits($this->membership($user, $project->account_id), AccountPermission::ManageProjects);
+        return $this->allows($user, $project->account_id, AccountPermission::ManageProjects);
     }
 
+    /** Deleting the project, which the same people who manage it may do. */
     public function delete(User $user, Project $project): bool
     {
         return $this->update($user, $project);
@@ -35,32 +45,21 @@ final class ProjectPolicy
     /** See a service's pages inside the project. */
     public function useService(User $user, Project $project, string $service): bool
     {
-        $membership = $this->membership($user, $project->account_id);
-
-        return $this->permits($membership, AccountPermission::ViewProjects) && ($membership?->canUseService($service) ?? false);
+        return $this->allows($user, $project->account_id, AccountPermission::ViewProjects, $service);
     }
 
     /** Turn a service on or off, or change its settings. */
     public function manageService(User $user, Project $project, string $service): bool
     {
-        $membership = $this->membership($user, $project->account_id);
-
-        return $this->permits($membership, AccountPermission::ManageProjects) && ($membership?->canUseService($service) ?? false);
+        return $this->allows($user, $project->account_id, AccountPermission::ManageProjects, $service);
     }
 
-    /** Deploy configuration of the project (documents, reviews and their deploys). */
+    /**
+     * Deploy configuration of the project (documents, reviews and their deploys). A separate ability because route
+     * middleware can't pass the literal service name to manageService.
+     */
     public function manageDeploy(User $user, Project $project): bool
     {
         return $this->manageService($user, $project, 'deploy');
-    }
-
-    private function membership(User $user, string $accountId): ?Membership
-    {
-        return Membership::query()->where('account_id', $accountId)->where('user_id', $user->id)->first();
-    }
-
-    private function permits(?Membership $membership, AccountPermission $permission): bool
-    {
-        return $membership?->role->allows($permission) ?? false;
     }
 }

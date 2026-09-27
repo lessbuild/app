@@ -16,16 +16,25 @@ final class BackupDestinationPolicy
 {
     use ChecksAccountRole;
 
+    /**
+     * Adding a storage destination for backups: people who manage the account's settings.
+     */
     public function create(User $user, Account|Project $scope): bool
     {
-        return $this->allows($user, $scope instanceof Project ? $scope->account_id : $scope->id, AccountPermission::ManageSettings);
+        return $this->allows($user, $this->accountIdOf($scope), AccountPermission::ManageSettings);
     }
 
+    /**
+     * Changing a destination's credentials or settings: the same people.
+     */
     public function update(User $user, BackupDestination $destination): bool
     {
         return $this->allows($user, $destination->account_id, AccountPermission::ManageSettings);
     }
 
+    /**
+     * Removing a destination, allowed to the same people as update.
+     */
     public function delete(User $user, BackupDestination $destination): bool
     {
         return $this->update($user, $destination);

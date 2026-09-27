@@ -15,21 +15,33 @@ final class RepositoryPolicy
 {
     use ChecksAccountRole;
 
+    /**
+     * Seeing a repository and its deploys: account members who may view projects and use Deploy.
+     */
     public function view(User $user, Repository $repository): bool
     {
         return $this->allows($user, $repository->project->account_id, AccountPermission::ViewProjects, 'deploy');
     }
 
+    /**
+     * Connecting a repository to a project: members who may manage projects and use Deploy.
+     */
     public function create(User $user, Project $project): bool
     {
         return $this->allows($user, $project->account_id, AccountPermission::ManageProjects, 'deploy');
     }
 
+    /**
+     * Changing a repository's branch, commands and webhook: the same people as create.
+     */
     public function update(User $user, Repository $repository): bool
     {
         return $this->allows($user, $repository->project->account_id, AccountPermission::ManageProjects, 'deploy');
     }
 
+    /**
+     * Disconnecting a repository, allowed to the same people as update.
+     */
     public function delete(User $user, Repository $repository): bool
     {
         return $this->update($user, $repository);

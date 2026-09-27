@@ -16,6 +16,10 @@ trait ManagesMonitoring
 {
     use ChecksAccountRole;
 
+    /**
+     * Whether the person may manage Monitoring in the project. A missing project (a record whose project was deleted) is
+     * refused.
+     */
     private function managesMonitoring(User $user, ?Project $project): bool
     {
         return $project !== null && $user->can('manageService', [$project, 'monitoring']);
@@ -27,14 +31,12 @@ trait ManagesMonitoring
         return ! in_array(SoftDeletes::class, class_uses_recursive($record), true) || $record->getAttribute('deleted_at') === null;
     }
 
+    /**
+     * Whether the person may manage the settings of the account, for Monitoring records that belong to the account
+     * rather than one project (destinations, dashboards, status pages).
+     */
     private function managesAccount(User $user, Account|Project|string $scope): bool
     {
-        $accountId = match (true) {
-            $scope instanceof Project => $scope->account_id,
-            $scope instanceof Account => $scope->id,
-            default => $scope,
-        };
-
-        return $this->allows($user, $accountId, AccountPermission::ManageSettings);
+        return $this->allows($user, $this->accountIdOf($scope), AccountPermission::ManageSettings);
     }
 }
