@@ -1,0 +1,124 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use Carbon\CarbonImmutable;
+use Database\Factories\IncidentFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Attributes\UseFactory;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property int $id
+ * @property string $account_id
+ * @property string|null $project_id
+ * @property int|null $alert_rule_id
+ * @property int|null $monitor_id
+ * @property bool|null $active_slot
+ * @property string $title
+ * @property string $status
+ * @property int $state_version
+ * @property array<string, mixed> $rule_snapshot
+ * @property array<string, mixed> $opening_observation
+ * @property array<string, mixed> $latest_observation
+ * @property CarbonImmutable $opened_at
+ * @property CarbonImmutable $last_breached_at
+ * @property CarbonImmutable|null $acknowledged_at
+ * @property string|null $acknowledged_by
+ * @property string|null $assignee_id
+ * @property CarbonImmutable|null $resolved_at
+ * @property string|null $closure_reason
+ * @property int|null $legacy_id
+ * @property Carbon|null $created_at
+ * @property Carbon|null $updated_at
+ * @property-read Project|null $project
+ * @property-read Monitor|null $monitor
+ * @property-read User|null $acknowledgedBy
+ * @property-read User|null $assignee
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, IncidentActivity> $activities
+ */
+#[Table(dateFormat: 'Y-m-d H:i:s.u')]
+#[UseFactory(IncidentFactory::class)]
+class Incident extends Model
+{
+    /** @use HasFactory<IncidentFactory> */
+    use HasFactory;
+
+    /** @param Builder<Incident> $query */
+    #[Scope]
+    protected function forAccount(Builder $query, Account $account): void
+    {
+        $query->where('account_id', $account->id);
+    }
+
+    /** @return BelongsTo<Project, $this> */
+    public function project(): BelongsTo
+    {
+        return $this->belongsTo(Project::class);
+    }
+
+    /** @return BelongsTo<Monitor, $this> */
+    public function monitor(): BelongsTo
+    {
+        return $this->belongsTo(Monitor::class)->withTrashed();
+    }
+
+    /** What opened the incident. Telemetry alert rules join monitors as sources with Monitoring part 3. */
+    public function source(): ?Monitor
+    {
+        return $this->monitor;
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function acknowledgedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'acknowledged_by');
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function assignee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'assignee_id');
+    }
+
+    /** @return HasMany<IncidentActivity, $this> */
+    public function activities(): HasMany
+    {
+        return $this->hasMany(IncidentActivity::class);
+    }
+
+    public function statusLabel(): string
+    {
+        return match ($this->status) {
+            'acknowledged' => 'Acknowledged',
+            'resolved' => match ($this->closure_reason) {
+                'recovered' => 'Recovered',
+                'rule_changed' => 'Closed: rule changed',
+                'rule_archived' => 'Closed: rule archived',
+                'monitor_changed' => 'Closed: monitor changed',
+                'monitor_archived' => 'Closed: monitor archived',
+                default => 'Closed',
+            },
+            default => 'Open',
+        };
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return [
+            'active_slot' => 'boolean', 'state_version' => 'integer',
+            'rule_snapshot' => 'array', 'opening_observation' => 'array', 'latest_observation' => 'array',
+            'opened_at' => 'immutable_datetime', 'last_breached_at' => 'immutable_datetime',
+            'acknowledged_at' => 'immutable_datetime', 'resolved_at' => 'immutable_datetime',
+        ];
+    }
+}

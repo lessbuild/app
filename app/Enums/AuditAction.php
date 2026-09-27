@@ -37,6 +37,13 @@ enum AuditAction: string
     case PlanChanged = 'billing.plan_changed';
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenRevoked = 'api_token.revoked';
+    case MonitorCreated = 'monitor.created';
+    case MonitorUpdated = 'monitor.updated';
+    case MonitorArchived = 'monitor.archived';
+    case AlertDestinationCreated = 'alert_destination.created';
+    case AlertDestinationUpdated = 'alert_destination.updated';
+    case AlertDestinationRotated = 'alert_destination.rotated';
+    case AlertDestinationArchived = 'alert_destination.archived';
 
     /** @param array<string, mixed> $context */
     public function describe(array $context): string
@@ -78,6 +85,13 @@ enum AuditAction: string
                 : __('Changed :service from :from to :to', ['service' => $value('service'), 'from' => $value('from'), 'to' => $value('to')]),
             self::ApiTokenCreated => __('Created the API token “:name” (:scopes)', ['name' => $value('name'), 'scopes' => $value('scopes')]),
             self::ApiTokenRevoked => __('Revoked the API token “:name”', ['name' => $value('name')]),
+            self::MonitorCreated => __('Added the monitor “:monitor” to :project', ['monitor' => $value('monitor'), 'project' => $value('project')]),
+            self::MonitorUpdated => __('Changed the monitor “:monitor” in :project', ['monitor' => $value('monitor'), 'project' => $value('project')]),
+            self::MonitorArchived => __('Archived the monitor “:monitor” in :project', ['monitor' => $value('monitor'), 'project' => $value('project')]),
+            self::AlertDestinationCreated => __('Added the alert destination “:destination”', ['destination' => $value('destination')]),
+            self::AlertDestinationUpdated => __('Changed the alert destination “:destination”', ['destination' => $value('destination')]),
+            self::AlertDestinationRotated => __('Replaced the signing key of “:destination”', ['destination' => $value('destination')]),
+            self::AlertDestinationArchived => __('Archived the alert destination “:destination”', ['destination' => $value('destination')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),
         };
     }

@@ -5,15 +5,24 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\DnsResolver;
+use App\Contracts\Monitoring\DnsRecordResolver;
+use App\Contracts\Monitoring\DnsResolver as MonitoringDnsResolver;
+use App\Contracts\Monitoring\TcpConnector;
+use App\Contracts\Monitoring\TlsCertificateInspector;
 use App\Contracts\PaymentProvider;
 use App\Contracts\RequestOrigin;
 use App\Http\HttpRequestOrigin;
 use App\Http\View\ShellComposer;
 use App\Listeners\AuditSubscriber;
+use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
 use App\Models\ApiToken;
 use App\Services\Billing\PaymentProviderFactory;
 use App\Services\Dns\SystemDnsResolver;
+use App\Services\Monitoring\NativeDnsRecordResolver;
+use App\Services\Monitoring\NativeDnsResolver;
+use App\Services\Monitoring\NativeTcpConnector;
+use App\Services\Monitoring\NativeTlsCertificateInspector;
 use App\Services\SocialSignIn\SocialiteSignInGateway;
 use App\Services\SocialSignIn\SocialSignInGateway;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -34,6 +43,10 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(SocialSignInGateway::class, SocialiteSignInGateway::class);
         $this->app->bind(RequestOrigin::class, HttpRequestOrigin::class);
         $this->app->bind(DnsResolver::class, SystemDnsResolver::class);
+        $this->app->bind(MonitoringDnsResolver::class, NativeDnsResolver::class);
+        $this->app->bind(DnsRecordResolver::class, NativeDnsRecordResolver::class);
+        $this->app->bind(TlsCertificateInspector::class, NativeTlsCertificateInspector::class);
+        $this->app->bind(TcpConnector::class, NativeTcpConnector::class);
         $this->app->singleton(PaymentProvider::class, fn ($app): PaymentProvider => PaymentProviderFactory::make($app['config']));
     }
 
@@ -44,10 +57,19 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::subscribe(AuditSubscriber::class);
         Event::subscribe(NotificationSubscriber::class);
+        Event::subscribe(IncidentAssigneeSubscriber::class);
         View::composer('components.signal.layouts.app', ShellComposer::class);
 
         Sanctum::usePersonalAccessTokenModel(ApiToken::class);
         RateLimiter::for('collect', fn (Request $request): Limit => Limit::perMinute((int) config('analytics.collect_rate_per_minute', 120))->by($request->ip().'|'.(string) $request->route('publicId')));
+        // Heartbeat and queue signals: a per-IP limit before authentication, then a per-monitor limit after it.
+        RateLimiter::for('heartbeat-ingress', fn (Request $request): Limit => Limit::perMinute(240)->by('heartbeat-ip:'.$request->ip()));
+        RateLimiter::for('heartbeats', fn (Request $request): Limit => Limit::perMinute(60)->by('heartbeat-monitor:'.(string) $request->attributes->get('heartbeat_monitor_id')));
+        RateLimiter::for('queue-ingress', fn (Request $request): Limit => Limit::perMinute(2400)->by('queue-ip:'.$request->ip()));
+        RateLimiter::for('queue-signals', fn (Request $request): Limit => Limit::perMinute($request->routeIs('api.queues.snapshots.store') ? 60 : 600)
+            ->by('queue-monitor:'.(string) $request->attributes->get('queue_monitor_id').':'.(string) $request->route()?->getName()));
+        // Three test alerts a minute per destination, so a test can't be used to flood someone's inbox or channel.
+        RateLimiter::for('alert-tests', fn (Request $request): Limit => Limit::perMinute(3)->by('alert-test:'.(string) $request->route('destination')));
         RateLimiter::for('api', fn (Request $request): Limit => Limit::perMinute(120)->by((string) ($request->user()?->currentAccessToken()?->getKey() ?? $request->ip())));
     }
 }

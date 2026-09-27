@@ -1,0 +1,38 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Monitoring;
+
+use App\Enums\AlertDeliveryStatus;
+use App\Models\Account;
+use App\Models\AlertDelivery;
+use App\Models\User;
+use App\Services\Monitoring\AlertDeliveryQueue;
+use App\Services\Monitoring\AlertDeliveryRunner;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+
+final class RetryAlertDelivery
+{
+    public function __construct(private readonly AlertDeliveryQueue $queue, private readonly AlertDeliveryRunner $runner) {}
+
+    /** Start a failed delivery over, with a fresh set of attempts. */
+    public function handle(Account $account, User $actor, AlertDelivery $delivery, int $generation): void
+    {
+        DB::transaction(function () use ($account, $actor, $delivery, $generation): void {
+            $delivery = $this->queue->lock($delivery->id);
+            abort_unless($delivery !== null && $delivery->account_id === $account->id, 404);
+            Gate::forUser($actor)->authorize('update', $delivery->account);
+            abort_unless($delivery->generation === $generation && $delivery->status->retryable(), 409, __('This delivery changed or can’t be retried.'));
+            $delivery->forceFill(['target_revision' => $delivery->destination->target_revision]);
+            abort_if($this->runner->cancellation($delivery) !== null, 409, __('This destination or incident route is no longer active.'));
+            $delivery->forceFill([
+                'status' => AlertDeliveryStatus::Queued, 'cycle_attempts' => 0,
+                'failed_at' => null, 'accepted_at' => null, 'last_error_code' => null, 'http_status' => null,
+                'processing_token' => null, 'next_attempt_at' => now('UTC'),
+            ])->save();
+            $this->runner->redispatch($delivery);
+        }, attempts: 3);
+    }
+}

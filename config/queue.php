@@ -46,6 +46,26 @@ return [
             'after_commit' => false,
         ],
 
+        // Monitor checks and alert deliveries run on their own queues in the
+        // primary database, so a check or delivery row and its job commit together.
+        'checks' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'checks',
+            'retry_after' => 120,
+            'after_commit' => false,
+        ],
+
+        'alerts' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'alerts',
+            'retry_after' => 120,
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),

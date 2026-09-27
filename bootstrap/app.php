@@ -9,6 +9,7 @@ use App\Exceptions\IdentityRuleViolation;
 use App\Exceptions\ProjectRuleViolation;
 use App\Http\Middleware\EnsureServiceEnabled;
 use App\Http\Middleware\ProjectContext;
+use App\Http\Middleware\ReceiveMonitorSignal;
 use App\Http\Middleware\ResolveTokenAccount;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -28,6 +29,11 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         // Stripe signs its webhooks; there is no session or CSRF token.
         $middleware->validateCsrfTokens(except: ['webhooks/stripe']);
+        // Monitor signals are checked byte for byte; monitor secrets are stored exactly as typed.
+        $middleware->prepend(ReceiveMonitorSignal::class);
+        $signal = fn (Request $request): bool => $request->is('api/v1/heartbeats/*', 'api/v1/queues/*');
+        $middleware->trimStrings(except: [$signal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret']);
+        $middleware->convertEmptyStringsToNull(except: [$signal]);
         $middleware->alias([
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
@@ -37,6 +43,7 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        $exceptions->dontFlash(['endpoint_url', 'signing_secret', 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected']);
         $exceptions->shouldRenderJsonWhen(
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );

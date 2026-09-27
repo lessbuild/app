@@ -1,0 +1,36 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Monitoring;
+
+use App\Models\Account;
+use App\Models\AlertDelivery;
+use App\Models\AlertDestination;
+use App\Models\User;
+use App\Services\Monitoring\AlertDispatcher;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Gate;
+
+final class SendTestAlert
+{
+    public function __construct(private readonly AlertDispatcher $alerts) {}
+
+    public function handle(Account $account, User $actor, AlertDestination $destination, int $version): AlertDelivery
+    {
+        return DB::transaction(function () use ($account, $actor, $destination, $version): AlertDelivery {
+            $account = Account::query()->lockForUpdate()->findOrFail($account->id);
+            Gate::forUser($actor)->authorize('update', $account);
+            $destination = AlertDestination::forAccount($account)->lockForUpdate()->findOrFail($destination->id);
+            abort_unless($destination->state_version === $version, 409, __('This destination changed. Refresh before trying again.'));
+            abort_unless($destination->enabled, 409, __('Turn this destination on before sending a test.'));
+
+            return $this->alerts->queue($destination, [
+                'event' => 'test', 'title' => 'Test notification', 'incident_id' => null,
+                'application' => config('app.name').' test', 'project' => config('app.name').' test',
+                'environment' => 'Test only', 'url' => null,
+                'rule' => null, 'observation' => null, 'opened_at' => null, 'resolved_at' => null,
+            ]);
+        }, attempts: 3);
+    }
+}

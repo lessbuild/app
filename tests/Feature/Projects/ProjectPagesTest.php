@@ -42,7 +42,8 @@ final class ProjectPagesTest extends TestCase
             ->assertSee(__('Turn on :service', ['service' => 'Monitoring']));
 
         $this->actingAs($this->owner)->post("/projects/{$project->id}/services/monitoring")->assertRedirect("/projects/{$project->id}/services/monitoring");
-        $this->actingAs($this->owner)->get("/projects/{$project->id}/services/monitoring")->assertOk()->assertSee(__(':service is on for :project', ['service' => 'Monitoring', 'project' => 'Storefront']));
+        $this->actingAs($this->owner)->get("/projects/{$project->id}/services/monitoring")->assertRedirect(route('monitoring.monitors', $project));
+        $this->actingAs($this->owner)->get(route('monitoring.monitors', $project))->assertOk()->assertSee(__('Add your first monitor'));
         $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertSee('Storefront')->assertSee('Monitoring');
 
         $this->actingAs($this->owner)->delete("/projects/{$project->id}/services/monitoring")->assertRedirect("/projects/{$project->id}");
