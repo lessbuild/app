@@ -24,6 +24,7 @@ use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Billing\Entitlements;
 use App\Services\Infrastructure\ProviderHealthMonitor;
+use App\Services\Infrastructure\ServerPricing;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
@@ -321,3 +322,11 @@ Artisan::command('terminals:expire', function (): int {
     return 0;
 })->purpose('Close expired or abandoned troubleshooting terminals and remove their leftover frames');
 Schedule::command('terminals:expire')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('servers:sync-costs', function (ServerPricing $pricing): int {
+    $priced = $pricing->refresh(Server::query()->whereNotNull('provider_id')->with('provider')->get());
+    $this->info("Priced {$priced} servers.");
+
+    return 0;
+})->purpose('Record what each cloud server costs a month from its provider’s current size catalog');
+Schedule::command('servers:sync-costs')->dailyAt('05:10')->withoutOverlapping(60)->onOneServer();

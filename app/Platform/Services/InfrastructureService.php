@@ -40,6 +40,7 @@ final class InfrastructureService implements PlatformService
             new ServiceNavItem(__('Websites'), route('infrastructure.websites', $projectId), 'infrastructure.websites*'),
             new ServiceNavItem(__('Load balancers'), route('infrastructure.load-balancers', $projectId), 'infrastructure.load-balancers*'),
             new ServiceNavItem(__('Backups'), route('infrastructure.backups', $projectId), 'infrastructure.backups*'),
+            new ServiceNavItem(__('Costs'), route('infrastructure.costs', $projectId), 'infrastructure.costs*'),
         ];
     }
 

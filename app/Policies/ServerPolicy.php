@@ -10,6 +10,8 @@ use App\Models\Project;
 use App\Models\Server;
 use App\Models\User;
 use App\Policies\Concerns\ChecksAccountRole;
+use App\Services\Billing\Entitlements;
+use Illuminate\Auth\Access\Response;
 
 /**
  * Servers belong to the account. Anyone who can use Infrastructure sees them, reads their logs and runs diagnostics;
@@ -27,6 +29,19 @@ final class ServerPolicy
     public function create(User $user, Account|Project $scope): bool
     {
         return $this->allows($user, $scope instanceof Project ? $scope->account_id : $scope->id, AccountPermission::ManageSettings);
+    }
+
+    /** Setting the account's infrastructure budget: owners and admins, with cost controls on the Deploy plan. */
+    public function manageCosts(User $user, Account|Project $scope): Response
+    {
+        $account = $scope instanceof Project ? $scope->account : $scope;
+        if (! $this->allows($user, $account->id, AccountPermission::ManageSettings)) {
+            return Response::deny();
+        }
+
+        return app(Entitlements::class)->for($account)->has('deploy.cost_controls')
+            ? Response::allow()
+            : Response::deny(__('Budgets come with the Pro Deploy plan and above.'));
     }
 
     public function update(User $user, Server $server): bool

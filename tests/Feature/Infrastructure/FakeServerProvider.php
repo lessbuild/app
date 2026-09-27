@@ -71,9 +71,12 @@ final class FakeServerProvider implements ServerProvider
         return [];
     }
 
+    /** @var list<array<string, mixed>> */
+    public array $sizes = [];
+
     public function sizes(): array
     {
-        return [];
+        return $this->sizes;
     }
 
     public function images(): array

@@ -22,6 +22,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string $name
  * @property string $slug
+ * @property float|null $monthly_infrastructure_budget in USD; the Infrastructure costs page compares server costs with it
  */
 #[Fillable(['name', 'slug'])]
 #[UseFactory(AccountFactory::class)]
@@ -53,6 +54,12 @@ class Account extends Model
     public function invitations(): HasMany
     {
         return $this->hasMany(AccountInvitation::class);
+    }
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return ['monthly_infrastructure_budget' => 'float'];
     }
 
     public function roleOf(User $user): ?AccountRole

@@ -32,6 +32,10 @@ use Illuminate\Support\Str;
  * @property string|null $identifier the provider's ID for the machine
  * @property string|null $region
  * @property string|null $size
+ * @property float|null $monthly_cost
+ * @property string|null $monthly_cost_currency USD or EUR
+ * @property string|null $monthly_cost_source provider (from its size catalog) or manual (entered for an imported server)
+ * @property CarbonImmutable|null $monthly_cost_checked_at
  * @property string|null $image
  * @property string|null $public_ip
  * @property string|null $private_ip
@@ -195,6 +199,8 @@ class Server extends Model
             'ssh_key_owned' => 'boolean',
             'recipe_snapshot' => 'encrypted:array',
             'provisioned_at' => 'immutable_datetime',
+            'monthly_cost' => 'float',
+            'monthly_cost_checked_at' => 'immutable_datetime',
         ];
     }
 }

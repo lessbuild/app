@@ -64,6 +64,13 @@ Design notes for the Infrastructure service in Phase 4 of [the plan](platform-v2
 - Adding one needs the `deploy.high_availability` plan flag (Business and above, Deployer's `high_availability`). Changing and deleting work on any plan.
 - **Scaling** in Deployer (replica counts, hibernation, scaling schedules) acts on an environment's processes, so it moves to Deploy with environments and processes (D04, D17).
 
+## Costs (part 7)
+
+- Infrastructure → **Costs** lists the account's servers with their monthly list price and how many websites use each server. It also shows which projects use each server: one (direct), several (shared) or none. Each server's CPU over the last hour is shown too. A server is idle with no websites, or under 10% CPU across at least six readings in the last hour.
+- Prices come from each provider's size catalog: DigitalOcean and Vultr in US dollars, Hetzner in euros including VAT for the server's location. `servers:sync-costs` refreshes them daily (05:10), and admins can check prices now. Deployer kept a synced `sizes` table; here the price is stored on the server (`monthly_cost`, currency, source, checked at). Admins can enter a cost for imported servers.
+- Totals are shown per currency. An account **budget** in US dollars is compared with the dollar total. Setting it needs the `deploy.cost_controls` plan flag (Pro and above, Deployer's `cost_controls`).
+- Deployer's costs page also showed preview-environment usage; that returns with Deploy's previews (D08).
+
 ## Public contracts kept
 
 - Server and website provisioning callback URLs and their signed parameters, so anything mid-setup at cutover still reports in.
