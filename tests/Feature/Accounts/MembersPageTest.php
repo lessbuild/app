@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Accounts;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Accounts\Models\Membership;
-use App\Domain\Accounts\Notifications\AccountInvitationNotification;
-use App\Domain\Identity\Models\User;
+use App\Enums\AccountRole;
+use App\Models\Account;
+use App\Models\Membership;
+use App\Models\User;
+use App\Notifications\AccountInvitationNotification;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Notification;

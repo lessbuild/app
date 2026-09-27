@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Billing;
 
-use App\Domain\Billing\Contracts\PaymentProvider;
+use App\Contracts\PaymentProvider;
 use Illuminate\Contracts\Config\Repository;
 use Stripe\StripeClient;
 

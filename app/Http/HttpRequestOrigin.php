@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http;
 
-use App\Domain\Audit\Contracts\RequestOrigin;
+use App\Contracts\RequestOrigin;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Http\Request;
 

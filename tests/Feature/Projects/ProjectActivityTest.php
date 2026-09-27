@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Projects;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Audit\Enums\AuditAction;
-use App\Domain\Audit\Models\AuditEntry;
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Actions\CreateProject;
-use App\Domain\Projects\Actions\DeleteProject;
-use App\Domain\Projects\Actions\EnableService;
-use App\Domain\Projects\Data\ProjectDetails;
+use App\Actions\Projects\CreateProject;
+use App\Actions\Projects\DeleteProject;
+use App\Actions\Projects\EnableService;
+use App\Data\Projects\ProjectDetails;
+use App\Enums\AccountRole;
+use App\Enums\AuditAction;
+use App\Models\Account;
+use App\Models\AuditEntry;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

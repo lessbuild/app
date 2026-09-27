@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Audit;
 
-use App\Domain\Accounts\Actions\ChangeMemberRole;
-use App\Domain\Accounts\Actions\InviteMember;
-use App\Domain\Accounts\Actions\RemoveMember;
-use App\Domain\Accounts\Data\InviteMemberData;
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Audit\Enums\AuditAction;
-use App\Domain\Audit\Models\AuditEntry;
-use App\Domain\Identity\Models\User;
+use App\Actions\Accounts\ChangeMemberRole;
+use App\Actions\Accounts\InviteMember;
+use App\Actions\Accounts\RemoveMember;
+use App\Data\Accounts\InviteMemberData;
+use App\Enums\AccountRole;
+use App\Enums\AuditAction;
+use App\Models\Account;
+use App\Models\AuditEntry;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;

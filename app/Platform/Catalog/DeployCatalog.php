@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Platform\Catalog;
 
-use App\Domain\Billing\Catalog\ServiceBilling;
-use App\Domain\Billing\Catalog\Tier;
-
 /** Deployer's plans, prices and limits, unchanged so nobody's bill moves at cutover. Servers count toward Infrastructure. */
 final class DeployCatalog
 {

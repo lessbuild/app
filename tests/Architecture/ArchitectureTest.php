@@ -12,14 +12,19 @@ use ReflectionClass;
 use ReflectionMethod;
 
 /**
- * Enforces the layering rules in CLAUDE.md by reading source files, so the
+ * Enforces the code rules in AGENTS.md by reading source files, so the
  * rules hold from the first commit without depending on runtime wiring.
  */
 final class ArchitectureTest extends TestCase
 {
-    public function test_domain_code_does_not_depend_on_the_http_layer(): void
+    public function test_business_code_does_not_depend_on_the_http_layer(): void
     {
-        $this->assertNoImports($this->phpFiles('app/Domain'), [
+        $files = [];
+        foreach (['app/Actions', 'app/Queries', 'app/Models', 'app/Data', 'app/Events', 'app/Policies', 'app/Enums'] as $directory) {
+            $files = [...$files, ...$this->phpFiles($directory)];
+        }
+
+        $this->assertNoImports($files, [
             'App\\Http\\',
             'Illuminate\\Http\\Request',
             'Livewire\\',
@@ -76,6 +81,20 @@ final class ArchitectureTest extends TestCase
         $this->assertSame(['handle'], array_map(fn (ReflectionMethod $method): string => $method->name, $public), "{$class} must have exactly one public method, handle().");
     }
 
+    /** @param class-string $class */
+    #[DataProvider('controllerClasses')]
+    public function test_controllers_handle_exactly_one_route(string $class): void
+    {
+        $reflection = new ReflectionClass($class);
+        $public = array_values(array_filter(
+            $reflection->getMethods(ReflectionMethod::IS_PUBLIC),
+            fn (ReflectionMethod $method): bool => $method->class === $class && ! $method->isConstructor(),
+        ));
+
+        $this->assertTrue($reflection->isFinal(), "{$class} must be final.");
+        $this->assertSame(['__invoke'], array_map(fn (ReflectionMethod $method): string => $method->name, $public), "{$class} must be a single-action controller with only __invoke().");
+    }
+
     /** @return iterable<string, array{class-string}> */
     public static function dataClasses(): iterable
     {
@@ -85,16 +104,28 @@ final class ArchitectureTest extends TestCase
     /** @return iterable<string, array{class-string}> */
     public static function actionClasses(): iterable
     {
-        yield from self::classesIn('Actions');
+        // Fortify's adapters implement its contracts (create, update, reset) instead of handle().
+        yield from self::classesIn('Actions', except: 'Actions/Fortify/');
     }
 
     /** @return iterable<string, array{class-string}> */
-    private static function classesIn(string $layer): iterable
+    public static function controllerClasses(): iterable
     {
+        yield from self::classesIn('Http/Controllers');
+    }
+
+    /** @return iterable<string, array{class-string}> */
+    private static function classesIn(string $directory, ?string $except = null): iterable
+    {
+        $root = dirname(__DIR__, 2).'/app/';
         $found = false;
-        foreach (glob(dirname(__DIR__, 2)."/app/Domain/*/{$layer}/*.php") ?: [] as $file) {
-            $class = 'App\\Domain\\'.basename(dirname($file, 2))."\\{$layer}\\".basename($file, '.php');
-            if (class_exists($class)) {
+        foreach (new RecursiveIteratorIterator(new RecursiveDirectoryIterator($root.$directory, RecursiveDirectoryIterator::SKIP_DOTS)) as $file) {
+            $relative = substr($file->getPathname(), strlen($root));
+            if ($file->getExtension() !== 'php' || ($except !== null && str_starts_with($relative, $except))) {
+                continue;
+            }
+            $class = 'App\\'.str_replace('/', '\\', substr($relative, 0, -4));
+            if (class_exists($class) && ! (new ReflectionClass($class))->isAbstract()) {
                 $found = true;
                 yield $class => [$class];
             }

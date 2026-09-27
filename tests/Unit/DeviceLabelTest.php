@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Unit;
 
-use App\Domain\Identity\Support\DeviceLabel;
+use App\Support\DeviceLabel;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
 

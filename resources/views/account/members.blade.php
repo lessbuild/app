@@ -9,7 +9,7 @@
     @endforeach
 
     @if ($overview->canManage)
-        <x-signal.ui.settings-section :title="__('Invite someone')" :description="__('They get an email with a link that works for :days days. Inviting the same address again replaces the earlier invitation.', ['days' => \App\Domain\Accounts\Actions\InviteMember::EXPIRES_AFTER_DAYS])">
+        <x-signal.ui.settings-section :title="__('Invite someone')" :description="__('They get an email with a link that works for :days days. Inviting the same address again replaces the earlier invitation.', ['days' => \App\Actions\Accounts\InviteMember::EXPIRES_AFTER_DAYS])">
             <form method="POST" action="{{ route('account.invitations.store') }}" class="grid gap-5 p-4 sm:grid-cols-[minmax(0,1fr)_14rem] sm:items-end sm:p-6">
                 @csrf
                 <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="off" required />
@@ -86,7 +86,7 @@
                                 :submit-label="__('Remove')"
                             />
                         @else
-                            <x-signal.ui.badge :tone="$member->role === \App\Domain\Accounts\Enums\AccountRole::Owner ? 'accent' : 'neutral'">{{ $member->role->label() }}</x-signal.ui.badge>
+                            <x-signal.ui.badge :tone="$member->role === \App\Enums\AccountRole::Owner ? 'accent' : 'neutral'">{{ $member->role->label() }}</x-signal.ui.badge>
                         @endif
                         @if ($member->isYou)
                             <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="leave-account">{{ __('Leave') }}</x-signal.ui.button>
@@ -135,7 +135,7 @@
 
     <x-signal.ui.settings-section :title="__('What each role can do')" :description="__('Roles apply to the whole account.')">
         <dl class="divide-y divide-line">
-            @foreach (\App\Domain\Accounts\Enums\AccountRole::cases() as $role)
+            @foreach (\App\Enums\AccountRole::cases() as $role)
                 <div class="grid gap-1 p-4 sm:grid-cols-[10rem_minmax(0,1fr)] sm:px-6">
                     <dt class="text-sm font-bold text-ink">{{ $role->label() }}</dt>
                     <dd class="text-sm text-muted">{{ $role->description() }}</dd>

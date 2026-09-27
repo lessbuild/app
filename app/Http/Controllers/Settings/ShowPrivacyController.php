@@ -1,0 +1,18 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Settings;
+
+use App\Models\User;
+use App\Queries\Accounts\DepartureQuery;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Contracts\View\View;
+
+final class ShowPrivacyController
+{
+    public function __invoke(#[CurrentUser] User $user, DepartureQuery $departure): View
+    {
+        return view('settings.privacy', ['user' => $user, 'departure' => $departure->handle($user)]);
+    }
+}

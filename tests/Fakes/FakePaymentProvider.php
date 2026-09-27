@@ -4,12 +4,12 @@ declare(strict_types=1);
 
 namespace Tests\Fakes;
 
-use App\Domain\Billing\Contracts\PaymentProvider;
-use App\Domain\Billing\Data\InvoiceSummary;
-use App\Domain\Billing\Data\LineItem;
-use App\Domain\Billing\Data\SubscriptionState;
-use App\Domain\Billing\Data\WebhookEvent;
-use App\Domain\Billing\Exceptions\InvalidWebhook;
+use App\Contracts\PaymentProvider;
+use App\Data\Billing\InvoiceSummary;
+use App\Data\Billing\LineItem;
+use App\Data\Billing\SubscriptionState;
+use App\Data\Billing\WebhookEvent;
+use App\Exceptions\InvalidWebhook;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 

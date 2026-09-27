@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Projects\Enums\EnvironmentKind;
-use App\Domain\Projects\Models\Environment;
-use App\Domain\Projects\Models\Project;
+use App\Enums\EnvironmentKind;
+use App\Models\Account;
+use App\Models\Environment;
+use App\Models\Project;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

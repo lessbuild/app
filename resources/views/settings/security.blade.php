@@ -1,4 +1,4 @@
-@use('App\Domain\Identity\Enums\TwoFactorState')
+@use('App\Enums\TwoFactorState')
 @php($status = session('status'))
 @php($statusMessages = [
     'password-updated' => __('Password saved. Other browsers that were remembered have been signed out.'),

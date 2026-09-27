@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Domain\Api\Models\ApiToken;
-use App\Domain\Audit\Contracts\RequestOrigin;
-use App\Domain\Audit\Listeners\AuditSubscriber;
-use App\Domain\Billing\Contracts\PaymentProvider;
-use App\Domain\Notifications\Listeners\NotificationSubscriber;
-use App\Domain\Projects\Contracts\DnsResolver;
+use App\Contracts\DnsResolver;
+use App\Contracts\PaymentProvider;
+use App\Contracts\RequestOrigin;
 use App\Http\HttpRequestOrigin;
 use App\Http\View\ShellComposer;
+use App\Listeners\AuditSubscriber;
+use App\Listeners\NotificationSubscriber;
+use App\Models\ApiToken;
 use App\Services\Billing\PaymentProviderFactory;
 use App\Services\Dns\SystemDnsResolver;
 use App\Services\SocialSignIn\SocialiteSignInGateway;

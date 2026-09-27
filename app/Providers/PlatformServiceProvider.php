@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Domain\Api\Enums\ApiScope;
+use App\Enums\ApiScope;
 use App\Platform\Catalog\AnalyticsCatalog;
 use App\Platform\Catalog\DeployCatalog;
 use App\Platform\Catalog\InfrastructureCatalog;

@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Api;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Api\Actions\CreateApiToken;
-use App\Domain\Api\Data\CreateApiTokenData;
-use App\Domain\Api\Enums\ApiScope;
-use App\Domain\Api\Models\ApiToken;
-use App\Domain\Audit\Enums\AuditAction;
-use App\Domain\Audit\Models\AuditEntry;
-use App\Domain\Identity\Models\User;
+use App\Actions\ApiTokens\CreateApiToken;
+use App\Data\ApiTokens\CreateApiTokenData;
+use App\Enums\AccountRole;
+use App\Enums\ApiScope;
+use App\Enums\AuditAction;
+use App\Models\Account;
+use App\Models\ApiToken;
+use App\Models\AuditEntry;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Testing\TestResponse;
 use Tests\TestCase;

@@ -56,7 +56,7 @@
                 @foreach ($overview->environments as $environment)
                     <li class="flex flex-wrap items-center justify-between gap-3 px-5 py-4">
                         <span class="font-bold text-ink">{{ $environment->name }}</span>
-                        <x-signal.ui.badge :tone="$environment->kind === \App\Domain\Projects\Enums\EnvironmentKind::Production ? 'accent' : 'neutral'">{{ $environment->kind->label() }}</x-signal.ui.badge>
+                        <x-signal.ui.badge :tone="$environment->kind === \App\Enums\EnvironmentKind::Production ? 'accent' : 'neutral'">{{ $environment->kind->label() }}</x-signal.ui.badge>
                     </li>
                 @endforeach
             </ul>

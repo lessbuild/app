@@ -2,10 +2,10 @@
 
 declare(strict_types=1);
 
-use App\Domain\Accounts\Exceptions\AccountRuleViolation;
-use App\Domain\Billing\Exceptions\BillingRuleViolation;
-use App\Domain\Identity\Exceptions\IdentityRuleViolation;
-use App\Domain\Projects\Exceptions\ProjectRuleViolation;
+use App\Exceptions\AccountRuleViolation;
+use App\Exceptions\BillingRuleViolation;
+use App\Exceptions\IdentityRuleViolation;
+use App\Exceptions\ProjectRuleViolation;
 use App\Http\Middleware\ProjectContext;
 use App\Http\Middleware\ResolveTokenAccount;
 use Illuminate\Foundation\Application;

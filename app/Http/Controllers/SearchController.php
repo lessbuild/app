@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Domain\Accounts\Queries\SearchMembersQuery;
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Queries\SearchProjectsQuery;
+use App\Models\User;
 use App\Platform\Search\SearchResult;
+use App\Queries\Accounts\SearchMembersQuery;
+use App\Queries\Projects\SearchProjectsQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;

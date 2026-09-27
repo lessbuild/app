@@ -21,7 +21,7 @@
                         <span class="font-bold text-ink">{{ $environment->name }}</span>
                         <x-signal.ui.badge>{{ $environment->kind->label() }}</x-signal.ui.badge>
                     </span>
-                    @if ($environment->kind !== \App\Domain\Projects\Enums\EnvironmentKind::Production)
+                    @if ($environment->kind !== \App\Enums\EnvironmentKind::Production)
                         <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="remove-environment-{{ $environment->id }}">{{ __('Remove') }}</x-signal.ui.button>
                         <x-signal.overlays.delete-confirmation
                             :id="'remove-environment-'.$environment->id"

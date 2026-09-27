@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Controllers\Account;
+
+use App\Actions\Billing\ResumeServiceTier;
+use App\Models\Account;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
+use Illuminate\Http\RedirectResponse;
+
+final class ResumePlanController
+{
+    public function __invoke(#[CurrentUser] User $user, string $service, ResumeServiceTier $resume): RedirectResponse
+    {
+        $resume->handle($user, $this->account($user), $service);
+
+        return to_route('account.billing')->with('status', __('Your plan will carry on as before.'));
+    }
+
+    private function account(User $user): Account
+    {
+        return $user->currentAccount ?? abort(404);
+    }
+}

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
-use App\Domain\Accounts\Actions\SwitchAccount;
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Models\Project;
+use App\Actions\Accounts\SwitchAccount;
+use App\Models\Project;
+use App\Models\User;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;

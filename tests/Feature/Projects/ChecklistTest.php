@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Projects;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Models\Domain;
-use App\Domain\Projects\Models\Project;
+use App\Enums\AccountRole;
+use App\Models\Account;
+use App\Models\Domain;
+use App\Models\Project;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 

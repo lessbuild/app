@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\SocialSignIn;
 
-use App\Domain\Identity\Data\SocialProfile;
-use App\Domain\Identity\Enums\SocialProvider;
+use App\Data\Users\SocialProfile;
+use App\Enums\SocialProvider;
 use Illuminate\Contracts\Config\Repository;
 use Illuminate\Support\Str;
 use Laravel\Socialite\Facades\Socialite;

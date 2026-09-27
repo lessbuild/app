@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Platform;
 
-use App\Domain\Billing\Catalog\ServiceBilling;
-use App\Domain\Billing\Catalog\Tier;
+use App\Platform\Catalog\ServiceBilling;
+use App\Platform\Catalog\Tier;
 use App\Platform\ServiceRegistry;
 use App\Platform\Services\PlaceholderService;
 use InvalidArgumentException;

@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Identity;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Identity\Events\PasswordChanged;
-use App\Domain\Identity\Models\User;
+use App\Enums\AccountRole;
+use App\Events\Users\PasswordChanged;
+use App\Models\Account;
+use App\Models\User;
 use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Account;
 
-use App\Domain\Accounts\Data\InviteMemberData;
-use App\Domain\Accounts\Enums\AccountRole;
+use App\Data\Accounts\InviteMemberData;
+use App\Enums\AccountRole;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

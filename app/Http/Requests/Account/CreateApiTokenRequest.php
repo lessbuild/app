@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Account;
 
-use App\Domain\Api\Data\CreateApiTokenData;
-use App\Domain\Api\Enums\ApiScope;
+use App\Data\ApiTokens\CreateApiTokenData;
+use App\Enums\ApiScope;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 

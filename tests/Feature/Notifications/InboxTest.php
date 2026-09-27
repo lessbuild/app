@@ -4,16 +4,16 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Notifications;
 
-use App\Domain\Accounts\Actions\AcceptInvitation;
-use App\Domain\Accounts\Actions\ChangeMemberRole;
-use App\Domain\Accounts\Actions\RemoveMember;
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Accounts\Models\AccountInvitation;
-use App\Domain\Api\Actions\CreateApiToken;
-use App\Domain\Api\Data\CreateApiTokenData;
-use App\Domain\Api\Enums\ApiScope;
-use App\Domain\Identity\Models\User;
+use App\Actions\Accounts\AcceptInvitation;
+use App\Actions\Accounts\ChangeMemberRole;
+use App\Actions\Accounts\RemoveMember;
+use App\Actions\ApiTokens\CreateApiToken;
+use App\Data\ApiTokens\CreateApiTokenData;
+use App\Enums\AccountRole;
+use App\Enums\ApiScope;
+use App\Models\Account;
+use App\Models\AccountInvitation;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Tests\TestCase;

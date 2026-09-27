@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests\Projects;
 
-use App\Domain\Projects\Data\ProjectDetails;
+use App\Data\Projects\ProjectDetails;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class ProjectRequest extends FormRequest

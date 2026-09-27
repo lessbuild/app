@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Unit\Billing;
 
-use App\Domain\Billing\Data\LineItem;
-use App\Domain\Billing\Exceptions\InvalidWebhook;
+use App\Data\Billing\LineItem;
+use App\Exceptions\InvalidWebhook;
 use App\Services\Billing\StripePaymentProvider;
 use PHPUnit\Framework\TestCase;
 use Stripe\ApiRequestor;

@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Account;
 
-use App\Domain\Accounts\Actions\SwitchAccount;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Identity\Models\User;
+use App\Actions\Accounts\SwitchAccount;
+use App\Models\Account;
+use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 

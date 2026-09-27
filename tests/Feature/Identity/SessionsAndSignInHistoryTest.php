@@ -4,14 +4,14 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Identity;
 
-use App\Domain\Identity\Actions\SignOutBrowsers;
-use App\Domain\Identity\Data\SocialProfile;
-use App\Domain\Identity\Enums\SignInMethod;
-use App\Domain\Identity\Enums\SocialProvider;
-use App\Domain\Identity\Events\BrowsersSignedOut;
-use App\Domain\Identity\Models\SignInEvent;
-use App\Domain\Identity\Models\SocialIdentity;
-use App\Domain\Identity\Models\User;
+use App\Actions\Users\SignOutBrowsers;
+use App\Data\Users\SocialProfile;
+use App\Enums\SignInMethod;
+use App\Enums\SocialProvider;
+use App\Events\Users\BrowsersSignedOut;
+use App\Models\SignInEvent;
+use App\Models\SocialIdentity;
+use App\Models\User;
 use App\Services\SocialSignIn\SocialSignInGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;

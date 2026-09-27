@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Platform\Catalog;
 
-use App\Domain\Billing\Catalog\ServiceBilling;
-use App\Domain\Billing\Catalog\Tier;
-
 /** Servers have always been part of Deployer's plans; Deploy's tier sets the server limit until Infrastructure is priced on its own. */
 final class InfrastructureCatalog
 {

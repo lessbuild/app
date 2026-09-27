@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use App\Auth\Fortify\CreateNewUser;
-use App\Auth\Fortify\ResetUserPassword;
-use App\Auth\Fortify\UpdateUserPassword;
-use App\Auth\Fortify\UpdateUserProfileInformation;
-use App\Auth\Listeners\RecordSignInActivity;
-use App\Domain\Identity\Enums\SocialProvider;
-use App\Domain\Identity\Models\User;
+use App\Actions\Fortify\CreateNewUser;
+use App\Actions\Fortify\ResetUserPassword;
+use App\Actions\Fortify\UpdateUserPassword;
+use App\Actions\Fortify\UpdateUserProfileInformation;
+use App\Enums\SocialProvider;
+use App\Listeners\RecordSignInActivity;
+use App\Models\User;
 use App\Services\SocialSignIn\SocialSignInGateway;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;

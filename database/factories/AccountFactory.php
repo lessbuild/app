@@ -4,10 +4,10 @@ declare(strict_types=1);
 
 namespace Database\Factories;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Accounts\Models\Membership;
-use App\Domain\Identity\Models\User;
+use App\Enums\AccountRole;
+use App\Models\Account;
+use App\Models\Membership;
+use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Str;
 

@@ -10,11 +10,17 @@ One Laravel application that brings Deploy, Infrastructure, Monitoring and Analy
 
 ## Code rules
 
-- Bounded contexts live in `app/Domain/<Context>/{Models,Actions,Data,Enums,Events,Listeners,Jobs,Policies,Queries,Contracts}`.
-- **Actions** have one public `handle()` for one use case. **Queries** return read models. **Data** classes are `final readonly`.
-- Controllers, Form Requests and Livewire components in `app/Http` stay thin: validate, authorise, call an Action or Query, and respond.
-- Contexts talk to each other through Actions, Queries and domain events, never by reaching into another context's models from HTTP code.
-- External systems (Stripe, GitHub, cloud providers, SSH, DNS) sit behind interfaces in `app/Services`. Tests bind fakes.
+A conventional Laravel layout, organised by type (not by domain). Within a type, classes are grouped by feature area (`Accounts`, `ApiTokens`, `Audit`, `Billing`, `Notifications`, `Projects`, `Users`; services add their own in Phase 4).
+
+- `app/Http/Controllers/<Area>/` — **one single-action controller per route** (`__invoke` only), named for what it does: `Projects/StoreProjectController`, `Account/InviteMemberController`. Controllers stay thin: validate (a Form Request in `app/Http/Requests` when it's more than a line), authorise, call an Action or Query, respond.
+- `app/Actions/<Area>/` — one use case each, with a single public `handle()`. All writes go through Actions. (`app/Actions/Fortify` holds Fortify's adapters.)
+- `app/Queries/<Area>/` — read models for pages and APIs; they return `app/Data` objects.
+- `app/Data/<Area>/` — `final readonly` data objects.
+- `app/Models`, `app/Enums`, `app/Events/<Area>`, `app/Listeners`, `app/Notifications`, `app/Policies`, `app/Exceptions`.
+- `app/Services/` — longer-lived services and every external system (Stripe, GitHub, cloud providers, SSH, DNS), external ones behind a contract in `app/Contracts` so tests bind fakes.
+- `app/Platform/` — the `PlatformService` registry and each service's billing catalogue.
+- `app/Support/` — small stateless helpers.
+- Actions, Queries, Models and Data never depend on the HTTP layer.
 - Every mutation is authorised by a Policy. Secrets use encrypted casts. Sensitive columns are never mass-assignable.
 - Architecture tests in `tests/Architecture` enforce these rules. Keep them passing.
 

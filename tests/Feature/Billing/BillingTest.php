@@ -4,21 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Billing;
 
-use App\Domain\Accounts\Actions\InviteMember;
-use App\Domain\Accounts\Data\InviteMemberData;
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Accounts\Exceptions\AccountRuleViolation;
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Audit\Enums\AuditAction;
-use App\Domain\Audit\Models\AuditEntry;
-use App\Domain\Billing\Actions\RecordUsage;
-use App\Domain\Billing\Contracts\PaymentProvider;
-use App\Domain\Billing\Enums\SelectionKind;
-use App\Domain\Billing\Models\BillingAccount;
-use App\Domain\Billing\Models\BillingSelection;
-use App\Domain\Billing\Support\Entitlements;
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Models\Project;
+use App\Actions\Accounts\InviteMember;
+use App\Actions\Billing\RecordUsage;
+use App\Contracts\PaymentProvider;
+use App\Data\Accounts\InviteMemberData;
+use App\Enums\AccountRole;
+use App\Enums\AuditAction;
+use App\Enums\SelectionKind;
+use App\Exceptions\AccountRuleViolation;
+use App\Models\Account;
+use App\Models\AuditEntry;
+use App\Models\BillingAccount;
+use App\Models\BillingSelection;
+use App\Models\Project;
+use App\Models\User;
+use App\Services\Billing\Entitlements;
 use App\Services\Billing\UnavailablePaymentProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
@@ -173,7 +173,7 @@ final class BillingTest extends TestCase
         $record->handle($this->account->id, 'monitoring.events', 1200);
         $record->handle($this->account->id, 'monitoring.events', 300);
 
-        $this->assertSame(1500, (int) \App\Domain\Billing\Models\UsageRecord::query()->sole()->quantity);
+        $this->assertSame(1500, (int) \App\Models\UsageRecord::query()->sole()->quantity);
         $this->actingAs($this->owner)->get('/account/billing')->assertOk()->assertSee('1,500 / 500,000 events');
     }
 

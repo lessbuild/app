@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Http\View;
 
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Accounts\Queries\AccountSwitcherQuery;
-use App\Domain\Identity\Models\User;
-use App\Domain\Notifications\Queries\InboxQuery;
-use App\Domain\Projects\Models\Project;
-use App\Domain\Projects\Queries\ProjectSwitcherQuery;
+use App\Models\Account;
+use App\Models\Project;
+use App\Models\User;
 use App\Platform\ServiceRegistry;
+use App\Queries\Accounts\AccountSwitcherQuery;
+use App\Queries\Notifications\InboxQuery;
+use App\Queries\Projects\ProjectSwitcherQuery;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 

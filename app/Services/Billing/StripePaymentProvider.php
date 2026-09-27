@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Services\Billing;
 
-use App\Domain\Billing\Contracts\PaymentProvider;
-use App\Domain\Billing\Data\InvoiceSummary;
-use App\Domain\Billing\Data\LineItem;
-use App\Domain\Billing\Data\SubscriptionState;
-use App\Domain\Billing\Data\WebhookEvent;
-use App\Domain\Billing\Exceptions\InvalidWebhook;
-use App\Domain\Billing\Exceptions\PaymentProviderUnavailable;
+use App\Contracts\PaymentProvider;
+use App\Data\Billing\InvoiceSummary;
+use App\Data\Billing\LineItem;
+use App\Data\Billing\SubscriptionState;
+use App\Data\Billing\WebhookEvent;
+use App\Exceptions\InvalidWebhook;
+use App\Exceptions\PaymentProviderUnavailable;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Closure;

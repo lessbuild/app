@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Platform\Services;
 
-use App\Domain\Api\Enums\ApiScope;
-use App\Domain\Billing\Catalog\ServiceBilling;
+use App\Enums\ApiScope;
+use App\Platform\Catalog\ServiceBilling;
 use App\Platform\PlatformService;
 use App\Platform\ServiceNavItem;
 

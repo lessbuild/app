@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Platform;
 
-use App\Domain\Api\Enums\ApiScope;
-use App\Domain\Billing\Catalog\ServiceBilling;
+use App\Enums\ApiScope;
+use App\Platform\Catalog\ServiceBilling;
 
 /**
  * A product on the platform (Deploy, Monitoring…). The shell, onboarding and later billing read services

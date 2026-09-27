@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Fakes;
 
-use App\Domain\Projects\Contracts\DnsResolver;
+use App\Contracts\DnsResolver;
 
 final class FakeDnsResolver implements DnsResolver
 {

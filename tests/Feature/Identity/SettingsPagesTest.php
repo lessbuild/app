@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Identity;
 
-use App\Domain\Identity\Models\User;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Fortify\Fortify;
 use PragmaRX\Google2FA\Google2FA;

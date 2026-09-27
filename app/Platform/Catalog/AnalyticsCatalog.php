@@ -4,9 +4,6 @@ declare(strict_types=1);
 
 namespace App\Platform\Catalog;
 
-use App\Domain\Billing\Catalog\ServiceBilling;
-use App\Domain\Billing\Catalog\Tier;
-
 /** Analytics has never been billed. Paid tiers wait for the owner's pricing (see docs/phase-3-billing.md). */
 final class AnalyticsCatalog
 {

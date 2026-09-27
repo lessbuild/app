@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Dns;
 
-use App\Domain\Projects\Contracts\DnsResolver;
+use App\Contracts\DnsResolver;
 
 /** Uses the server's resolver. Fine for ownership checks, which only need to see a record eventually. */
 final class SystemDnsResolver implements DnsResolver

@@ -1,0 +1,32 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Models;
+
+use App\Enums\SelectionKind;
+use Illuminate\Database\Eloquent\Concerns\HasUlids;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Carbon;
+
+/**
+ * @property string $id
+ * @property string $account_id
+ * @property string $service
+ * @property SelectionKind $kind
+ * @property string $item_key
+ * @property int $quantity
+ * @property string|null $stripe_item_id
+ * @property string|null $legacy_price_id
+ * @property Carbon|null $ends_at
+ */
+class BillingSelection extends Model
+{
+    use HasUlids;
+
+    /** @return array<string, string> */
+    protected function casts(): array
+    {
+        return ['kind' => SelectionKind::class, 'quantity' => 'integer', 'ends_at' => 'datetime'];
+    }
+}

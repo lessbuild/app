@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Domain\Identity\Models\User;
+use App\Models\User;
 
 return [
 

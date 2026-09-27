@@ -2,9 +2,9 @@
 
 declare(strict_types=1);
 
-use App\Domain\Billing\Actions\ApplyEndedSelections;
-use App\Domain\Billing\Actions\ReportUsage;
-use App\Domain\Notifications\Actions\WarnAboutExpiringTokens;
+use App\Actions\Billing\ApplyEndedSelections;
+use App\Actions\Billing\ReportUsage;
+use App\Actions\Notifications\WarnAboutExpiringTokens;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;

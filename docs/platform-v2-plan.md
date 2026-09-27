@@ -55,12 +55,10 @@ This supersedes `docs/core-boundary-and-integration-plan-2026-09-26.md` and the 
 ## Code architecture (SOLID, modern Laravel)
 
 - **Stack**: Laravel 13, PHP 8.5, Livewire 4, Tailwind 4, Alpine, Vite, Fortify, Cashier, Sanctum, Horizon (Redis queues), and **PostgreSQL** in production (decided in Phase 0). Local development and the default test run use SQLite; CI also runs every test against PostgreSQL 17, so engine-specific behaviour is caught.
-- **Layout**, one directory per bounded context:
-  `app/Domain/{Accounts,Identity,Projects,Billing,Deploy,Infrastructure,Monitoring,Analytics,Alerts,Incidents,StatusPages,Notifications,Api,Admin}`. Each has `Models`, `Actions` (one public `handle()`, one use case), `Data` (readonly DTOs), `Enums`, `Events`, `Listeners`, `Jobs`, `Policies`, `Queries` (read models), `Contracts`.
-- **Other homes**: `app/Http` holds thin controllers, Form Requests and Livewire components that only call Actions and Queries. `app/Services/*` holds wrappers for external systems (Stripe, GitHub, cloud providers, SSH, DNS), each behind an interface so tests use fakes.
+- **Layout** (changed on the owner's request, 2026-09-27, from per-domain directories): a conventional Laravel layout by type — `app/Http/Controllers/<Area>` (one single-action controller per route), `app/Actions/<Area>` (one public `handle()`, one use case), `app/Queries/<Area>` (read models), `app/Data/<Area>` (readonly DTOs), `app/Models`, `app/Enums`, `app/Events/<Area>`, `app/Listeners`, `app/Notifications`, `app/Policies`, `app/Services` (including wrappers for external systems behind `app/Contracts`, so tests use fakes). See `AGENTS.md`.
 - **Service registry**: each service implements `PlatformService` (key, name, nav items, project panels, catalogue entries, onboarding step, event subscriptions). The shell, billing and onboarding read the registry, so adding a service needs no changes elsewhere.
 - **Rules**, enforced by architecture tests:
-  - Controllers never touch another context's models; contexts talk through Actions, Queries and events.
+  - Controllers have a single `__invoke` and only call Actions and Queries.
   - Policies authorise every action.
   - Nothing mass-assigns sensitive fields.
   - Encrypted casts for secrets.

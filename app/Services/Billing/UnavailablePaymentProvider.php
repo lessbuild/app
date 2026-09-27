@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Services\Billing;
 
-use App\Domain\Billing\Contracts\PaymentProvider;
-use App\Domain\Billing\Data\SubscriptionState;
-use App\Domain\Billing\Data\WebhookEvent;
-use App\Domain\Billing\Exceptions\InvalidWebhook;
-use App\Domain\Billing\Exceptions\PaymentProviderUnavailable;
+use App\Contracts\PaymentProvider;
+use App\Data\Billing\SubscriptionState;
+use App\Data\Billing\WebhookEvent;
+use App\Exceptions\InvalidWebhook;
+use App\Exceptions\PaymentProviderUnavailable;
 use Carbon\CarbonInterface;
 
 /** Used when STRIPE_SECRET isn't set: free tiers work, paid ones can't be bought. */

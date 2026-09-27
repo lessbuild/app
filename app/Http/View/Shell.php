@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\View;
 
-use App\Domain\Accounts\Models\Account;
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Models\Project;
+use App\Models\Account;
+use App\Models\Project;
+use App\Models\User;
 
 /**
  * Everything the Signal two-row topbar shows around a page. Row one: brand, the platform's areas

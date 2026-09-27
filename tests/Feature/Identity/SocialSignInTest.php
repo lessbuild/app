@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Identity;
 
-use App\Domain\Accounts\Enums\AccountRole;
-use App\Domain\Identity\Data\SocialProfile;
-use App\Domain\Identity\Enums\SocialProvider;
-use App\Domain\Identity\Events\SocialIdentityConnected;
-use App\Domain\Identity\Events\SocialIdentityDisconnected;
-use App\Domain\Identity\Models\SocialIdentity;
-use App\Domain\Identity\Models\User;
+use App\Data\Users\SocialProfile;
+use App\Enums\AccountRole;
+use App\Enums\SocialProvider;
+use App\Events\Users\SocialIdentityConnected;
+use App\Events\Users\SocialIdentityDisconnected;
+use App\Models\SocialIdentity;
+use App\Models\User;
 use App\Services\SocialSignIn\SocialSignInGateway;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Event;

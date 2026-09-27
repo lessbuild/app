@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Domain\Identity\Models\User;
-use App\Domain\Projects\Models\Project;
-use App\Domain\Projects\Queries\AccountProjectsQuery;
+use App\Models\Project;
+use App\Models\User;
+use App\Queries\Projects\AccountProjectsQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 
