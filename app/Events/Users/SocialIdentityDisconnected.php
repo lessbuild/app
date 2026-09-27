@@ -12,6 +12,12 @@ final readonly class SocialIdentityDisconnected
 {
     use Dispatchable;
 
+    /**
+     * Someone disconnected a sign-in provider account. Recorded in their personal security log.
+     *
+     * @param  User  $user  The person.
+     * @param  SocialProvider  $provider  The provider they disconnected.
+     */
     public function __construct(
         public User $user,
         public SocialProvider $provider,

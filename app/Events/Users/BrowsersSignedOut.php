@@ -11,6 +11,12 @@ final readonly class BrowsersSignedOut
 {
     use Dispatchable;
 
+    /**
+     * Someone signed out their other browsers. Recorded in their personal security log.
+     *
+     * @param  User  $user  The person.
+     * @param  int  $count  How many sessions ended.
+     */
     public function __construct(
         public User $user,
         public int $count,

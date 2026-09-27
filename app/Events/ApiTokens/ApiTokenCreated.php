@@ -12,6 +12,12 @@ final readonly class ApiTokenCreated
 {
     use Dispatchable;
 
+    /**
+     * An API token was created. Recorded in the audit log (never with its secret).
+     *
+     * @param  ApiToken  $token  The new token.
+     * @param  User  $actor  Who created it.
+     */
     public function __construct(
         public ApiToken $token,
         public User $actor,

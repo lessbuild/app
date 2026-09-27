@@ -12,6 +12,13 @@ final readonly class EnvironmentDeleted
 {
     use Dispatchable;
 
+    /**
+     * An environment was deleted. It's gone when this fires, so the name is carried separately.
+     *
+     * @param  Project  $project  The project it belonged to.
+     * @param  string  $name  The deleted environment's name.
+     * @param  User  $actor  Who deleted it.
+     */
     public function __construct(
         public Project $project,
         public string $name,

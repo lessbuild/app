@@ -11,6 +11,11 @@ final readonly class PasswordChanged
 {
     use Dispatchable;
 
+    /**
+     * Someone changed or set their password. Recorded in their personal security log.
+     *
+     * @param  User  $user  The person.
+     */
     public function __construct(
         public User $user,
     ) {}

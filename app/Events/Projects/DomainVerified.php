@@ -12,6 +12,12 @@ final readonly class DomainVerified
 {
     use Dispatchable;
 
+    /**
+     * A domain's TXT record was found, proving the project controls it. Recorded in the project's activity.
+     *
+     * @param  Domain  $domain  The verified domain.
+     * @param  User  $actor  Who asked for the check.
+     */
     public function __construct(
         public Domain $domain,
         public User $actor,

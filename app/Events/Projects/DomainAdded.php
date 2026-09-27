@@ -12,6 +12,12 @@ final readonly class DomainAdded
 {
     use Dispatchable;
 
+    /**
+     * A domain was added to a project, unverified. Recorded in the project's activity.
+     *
+     * @param  Domain  $domain  The new domain.
+     * @param  User  $actor  Who added it.
+     */
     public function __construct(
         public Domain $domain,
         public User $actor,
