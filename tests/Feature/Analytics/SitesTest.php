@@ -36,7 +36,7 @@ final class SitesTest extends TestCase
         $other = Project::factory()->for($this->project->account)->create();
 
         $this->actingAs($this->owner)->get("/projects/{$other->id}/analytics/sites")->assertRedirect(route('projects.services.show', [$other, 'analytics']));
-        $this->actingAs($this->owner)->get("/projects/{$this->project->id}/analytics")->assertRedirect(route('analytics.sites', $this->project));
+        $this->actingAs($this->owner)->get("/projects/{$this->project->id}/analytics")->assertOk()->assertSee(__('Add the website you want to understand'));
         $this->actingAs($this->owner)->get("/projects/{$this->project->id}/analytics/sites")->assertOk()->assertSee(__('Add your first site'));
     }
 

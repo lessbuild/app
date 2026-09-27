@@ -33,6 +33,7 @@
   --color-danger: var(--ui-danger);
   --color-danger-soft: var(--ui-danger-soft);
   --color-info: var(--ui-info);
+  --color-chart-1: var(--ui-chart-1);
   --color-info-soft: var(--ui-info-soft);
   --color-emphasis: var(--ui-emphasis);
   --color-emphasis-ink: var(--ui-emphasis-ink);
@@ -99,6 +100,8 @@
   --ui-danger: #c2414d;
   --ui-danger-soft: #fff0f1;
   --ui-info: #2865b9;
+  /* Chart series 1 (validated against the light surface with the dataviz palette checks). Not a status colour. */
+  --ui-chart-1: #2a78d6;
   --ui-info-soft: #eaf3ff;
   --ui-emphasis: #111a33;
   --ui-emphasis-ink: #ffffff;
@@ -157,6 +160,7 @@
   --ui-danger-soft: #51272f;
   --ui-on-danger: #2d171b;
   --ui-info: #93c5fd;
+  --ui-chart-1: #3987e5;
   --ui-info-soft: #263e59;
   --ui-emphasis: #383b42;
   --ui-emphasis-ink: #ffffff;

@@ -101,7 +101,7 @@ final class AnalyticsReportQuery
             'devices' => $this->ranking($current, 'device_category'),
             'browsers' => $this->ranking($current, 'browser'),
             'operatingSystems' => $this->ranking($current, 'operating_system'),
-            'campaigns' => $visitCampaigns ?: $this->ranking($current, 'utm_campaign'),
+            'campaigns' => $visitCampaigns ?: $this->ranking($current->whereNotNull('utm_campaign'), 'utm_campaign'),
             'recent' => $this->recent($current),
             'filters' => $filters,
             'goals' => $goals->map(fn (AnalyticsGoal $goal): array => [
