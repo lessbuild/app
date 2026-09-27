@@ -19,6 +19,14 @@ Design notes for the Infrastructure service in Phase 4 of [the plan](platform-v2
 - **Deleting a server** deletes the cloud server and the SSH key it created, then the record.
 - Provisioning passwords (root and MySQL) are shown once after creation and not kept.
 
+## Server operations (part 2)
+
+- **Commands**: account admins run a root shell command on an active server, one at a time (it times out after `SSH_COMMAND_TIMEOUT`). Command and output are encrypted; the history can be filtered, run again, deleted when finished, and exported as CSV (formula cells escaped). `servers:prune-commands` deletes finished commands after 180 days. Deployer only let a server's creator run commands; here any owner or admin can.
+- **Logs**: the last 200 lines of APT, Caddy, MySQL, PHP-FPM and cloud-init logs, fetched on request.
+- **Metrics**: `servers:collect-metrics` (every five minutes) reads load, CPU, memory, disk, network and process counts; 30 days are kept and the server page charts the last 24 hours. Deployer's server metric alert rules come with part 4.
+- **Diagnostics**: a read-only script checks SSH, root access, architecture, PHP, the application path, disk and memory (warn above 90%) and processes. It needs an active server with a pinned host key.
+- Everything over SSH goes through `ServerShell` (tests fake it).
+
 ## Public contracts kept
 
 - Provisioning callback URLs and their signed parameters, so servers mid-provisioning at cutover still report in.

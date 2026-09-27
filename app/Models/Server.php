@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Str;
 
@@ -60,6 +61,7 @@ use Illuminate\Support\Str;
  * @property-read User|null $creator
  * @property-read Provider|null $provider
  * @property-read \Illuminate\Database\Eloquent\Collection<int, ServerLogSnapshot> $logSnapshots
+ * @property-read ServerDiagnosticSnapshot|null $diagnosticSnapshot
  */
 #[Hidden(['password', 'mysql_root_password', 'ssh_private_key', 'ssh_host_key', 'provisioning_token', 'initialization_token', 'recipe_snapshot'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
@@ -120,6 +122,24 @@ class Server extends Model
     public function logSnapshots(): HasMany
     {
         return $this->hasMany(ServerLogSnapshot::class);
+    }
+
+    /** @return HasMany<ServerCommandExecution, $this> */
+    public function commandExecutions(): HasMany
+    {
+        return $this->hasMany(ServerCommandExecution::class);
+    }
+
+    /** @return HasMany<ServerMetric, $this> */
+    public function metrics(): HasMany
+    {
+        return $this->hasMany(ServerMetric::class);
+    }
+
+    /** @return HasOne<ServerDiagnosticSnapshot, $this> */
+    public function diagnosticSnapshot(): HasOne
+    {
+        return $this->hasOne(ServerDiagnosticSnapshot::class);
     }
 
     public function label(): string

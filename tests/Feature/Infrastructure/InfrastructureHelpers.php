@@ -21,6 +21,8 @@ trait InfrastructureHelpers
 
     protected FakeRemoteScriptRunner $scripts;
 
+    protected FakeServerShell $shell;
+
     protected function fakeInfrastructure(): void
     {
         $this->cloud = new FakeServerProvider;
@@ -61,6 +63,8 @@ trait InfrastructureHelpers
                 return ['known_host' => "{$host} ssh-ed25519 AAAAHOST", 'fingerprint' => 'SHA256:fakehost', 'algorithm' => 'ssh-ed25519'];
             }
         });
+        $this->shell = new FakeServerShell;
+        $this->app->instance(\App\Services\Infrastructure\ServerShell::class, $this->shell);
         $this->scripts = new FakeRemoteScriptRunner;
         $this->app->instance(RemoteScriptRunner::class, $this->scripts);
     }

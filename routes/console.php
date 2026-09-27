@@ -9,7 +9,10 @@ use App\Actions\Billing\ReportUsage;
 use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
+use App\Jobs\Infrastructure\CollectServerMetrics;
 use App\Models\Provider;
+use App\Models\Server;
+use App\Models\ServerCommandExecution;
 use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
@@ -190,3 +193,27 @@ Artisan::command('providers:check {--provider=* : Only these provider IDs}', fun
     return 0;
 })->purpose('Check provider credentials that are due, and tell their creators when a connection fails or recovers');
 Schedule::command('providers:check')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
+
+Artisan::command('servers:collect-metrics', function (): void {
+    $count = 0;
+    Server::query()->where('provisioning_status', Server::STATUS_ACTIVE)->orderBy('id')->eachById(function (Server $server) use (&$count): void {
+        CollectServerMetrics::dispatch($server->id);
+        $count++;
+    });
+    $this->info("Queued metrics for {$count} servers.");
+})->purpose('Collect load, CPU, memory, disk and network use from every active server');
+Schedule::command('servers:collect-metrics')->everyFiveMinutes()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('servers:prune-commands {--days= : Keep finished commands for this many days}', function (): int {
+    $days = filter_var($this->option('days') ?? config('infrastructure.server_command_retention_days'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($days === false) {
+        $this->error('Retention days must be a positive integer.');
+
+        return 2;
+    }
+    $deleted = ServerCommandExecution::query()->whereIn('status', ServerCommandExecution::FINISHED)->where('created_at', '<', now()->subDays($days))->delete();
+    $this->info("Pruned {$deleted} server commands older than {$days} days.");
+
+    return 0;
+})->purpose('Delete finished server commands older than the retention period');
+Schedule::command('servers:prune-commands')->dailyAt('03:10')->withoutOverlapping(30)->onOneServer();
