@@ -2,7 +2,7 @@
 @php($secrets = session('secrets'))
 
 <x-signal.layouts.project :overview="$overview" :title="$website->name" :description="$website->url.($website->server ? ' · '.$website->server->label() : '')">
-    @foreach (['retry', 'domain', 'server_id', 'dns_provider_id', 'backup'] as $key)
+    @foreach (['retry', 'domain', 'server_id', 'dns_provider_id', 'backup', 'username', 'target_website_id', 'confirmation'] as $key)
         @error($key)<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
     @endforeach
     @if (is_array($secrets) && isset($secrets['database']))
@@ -11,6 +11,15 @@
             <h2 class="text-lg font-extrabold text-ink">{{ __('Database password') }}</h2>
             <p class="text-sm text-muted">{{ __('Database and user :name on localhost. The password is shown once; it’s also in the server’s MySQL.', ['name' => $secrets['database_name'] ?? '']) }}</p>
             <x-signal.ui.code-block :code="$secrets['database']" class="break-all whitespace-pre-wrap" />
+        </x-signal.ui.panel>
+    @endif
+
+    @if (is_array($secrets) && isset($secrets['database_user']))
+        <x-signal.ui.panel as="section" class="space-y-3 border-warning p-6">
+            <p class="ui-eyebrow">{{ __('Copy it now') }}</p>
+            <h2 class="text-lg font-extrabold text-ink">{{ __('Password for :user', ['user' => $secrets['database_user_name'] ?? '']) }}</h2>
+            <p class="text-sm text-muted">{{ __('It’s shown once. Connect to :database on localhost (through an SSH tunnel from elsewhere).', ['database' => $website->databaseIdentifier()]) }}</p>
+            <x-signal.ui.code-block :code="$secrets['database_user']" class="break-all whitespace-pre-wrap" />
         </x-signal.ui.panel>
     @endif
 
@@ -109,6 +118,108 @@
                         <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Get a temporary domain') }}</x-signal.ui.button>
                     </form>
                 @endif
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="database" :title="__('Database')" :description="__('The MySQL database :database on the website’s server: its size and tables, extra logins, and copying it into another website.', ['database' => $website->databaseIdentifier()])">
+        <div class="grid gap-5 p-4 sm:p-6">
+            @if ($canManage && ! $canManageDatabase)
+                <x-signal.ui.alert tone="info">{{ __('Database tools come with the Pro Deploy plan and above.') }}</x-signal.ui.alert>
+            @endif
+
+            <div class="grid gap-3">
+                <div class="flex flex-wrap items-center justify-between gap-3">
+                    <h3 class="font-bold text-ink">{{ __('Inspection') }}</h3>
+                    @if ($canManageDatabase)
+                        <form method="POST" action="{{ route('infrastructure.websites.database.inspect', [$project, $website->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm" :disabled="$website->provisioning_status !== 'active'">{{ __('Inspect now') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+                @if ($snapshot === null)
+                    <p class="text-sm text-muted">{{ __('Not inspected yet. Live websites are inspected every day.') }}</p>
+                @elseif ($snapshot->status === 'failed')
+                    <p class="text-sm text-danger">{{ $snapshot->error }}</p>
+                @elseif ($snapshot->status !== 'ready')
+                    <p class="text-sm text-muted">{{ __('Inspecting…') }}</p>
+                @else
+                    <dl class="grid gap-4 text-sm sm:grid-cols-4">
+                        <div><dt class="text-xs text-muted">{{ __('Size') }}</dt><dd class="mt-1 font-bold">{{ \Illuminate\Support\Number::fileSize($snapshot->size_bytes ?? 0, maxPrecision: 1) }}</dd></div>
+                        <div><dt class="text-xs text-muted">{{ __('Tables') }}</dt><dd class="mt-1 font-bold">{{ count($snapshot->tables ?? []) }}</dd></div>
+                        <div><dt class="text-xs text-muted">{{ __('Connections') }}</dt><dd class="mt-1 font-bold">{{ $snapshot->active_connections ?? '—' }}</dd></div>
+                        <div><dt class="text-xs text-muted">{{ __('Checked') }}</dt><dd class="mt-1">{{ $snapshot->collected_at?->diffForHumans() }}</dd></div>
+                    </dl>
+                    @if (($snapshot->tables ?? []) !== [])
+                        <x-signal.ui.disclosure :title="__('Tables')">
+                            <p class="font-mono text-xs break-words text-muted">{{ implode(', ', $snapshot->tables ?? []) }}</p>
+                        </x-signal.ui.disclosure>
+                    @endif
+                @endif
+            </div>
+
+            <div class="grid gap-3 border-t border-line pt-5">
+                <h3 class="font-bold text-ink">{{ __('Users') }}</h3>
+                @if ($databaseUsers->isEmpty())
+                    <p class="text-sm text-muted">{{ __('Only the website’s own user, :user.', ['user' => $website->databaseIdentifier()]) }}</p>
+                @else
+                    <ul class="divide-y divide-line text-sm">
+                        @foreach ($databaseUsers as $databaseUser)
+                            <li class="flex flex-wrap items-center justify-between gap-3 py-2">
+                                <div class="min-w-0">
+                                    <p><span class="font-mono font-bold">{{ $databaseUser->username }}</span> <span class="text-muted">· {{ __(\App\Models\DatabaseUser::PRIVILEGES[$databaseUser->privilege] ?? $databaseUser->privilege) }}@if ($databaseUser->expires_at) · {{ __('expires :when', ['when' => $databaseUser->expires_at->diffForHumans()]) }}@endif</span></p>
+                                    @if ($databaseUser->status === 'failed')<p class="text-xs text-danger">{{ $databaseUser->error }}</p>@endif
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <x-signal.ui.badge :tone="match ($databaseUser->status) { 'active' => 'success', 'failed' => 'danger', default => 'neutral' }">{{ match ($databaseUser->status) { 'active' => __('Active'), 'failed' => __('Failed'), 'removing' => __('Removing'), default => __('Adding') } }}</x-signal.ui.badge>
+                                    @if ($canManage && $databaseUser->status !== 'removing')
+                                        <form method="POST" action="{{ route('infrastructure.websites.database.users.destroy', [$project, $website->id, $databaseUser->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                                    @endif
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if ($canManageDatabase)
+                    <form method="POST" action="{{ route('infrastructure.websites.database.users.store', [$project, $website->id]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
+                        @csrf
+                        <x-signal.ui.input-field id="database-username" name="username" :label="__('Username')" placeholder="reporting" maxlength="32" required />
+                        <x-signal.ui.select-field id="database-privilege" name="privilege" :label="__('Access')">
+                            @foreach (\App\Models\DatabaseUser::PRIVILEGES as $key => $label)
+                                <option value="{{ $key }}" @selected(old('privilege') === $key)>{{ __($label) }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.select-field id="database-expiry" name="expires_in_days" :label="__('Expires')">
+                            <option value="">{{ __('Never') }}</option>
+                            @foreach ([1, 7, 30, 90] as $days)
+                                <option value="{{ $days }}" @selected((string) old('expires_in_days') === (string) $days)>{{ trans_choice('In :count day|In :count days', $days) }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add user') }}</x-signal.ui.button></div>
+                    </form>
+                @endif
+            </div>
+
+            @if ($canManageDatabase || $copies->isNotEmpty())
+                <div class="grid gap-3 border-t border-line pt-5">
+                    <h3 class="font-bold text-ink">{{ __('Copy into another website') }}</h3>
+                    @foreach ($copies as $copy)
+                        <p class="text-sm"><span class="text-muted">{{ $copy->created_at?->toDayDateTimeString() }}</span> · {{ $copy->source->name }} → {{ $copy->target->name }} · {{ match ($copy->status) { 'succeeded' => __('Done'), 'failed' => __('Failed'), 'running' => __('Running'), default => __('Queued') } }}@if ($copy->error) · <span class="text-danger">{{ $copy->error }}</span>@endif</p>
+                    @endforeach
+                    @if ($canManageDatabase && $copyTargets->isEmpty())
+                        <p class="text-sm text-muted">{{ __('No other websites on this server.') }}</p>
+                    @elseif ($canManageDatabase)
+                        <form method="POST" action="{{ route('infrastructure.websites.database.copy', [$project, $website->id]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-2">
+                            @csrf
+                            <x-signal.ui.select-field id="copy-target" name="target_website_id" :label="__('Overwrite the database of')">
+                                @foreach ($copyTargets as $target)
+                                    <option value="{{ $target->id }}" @disabled($target->environment?->kind === \App\Enums\EnvironmentKind::Production)>{{ $target->name }}@if ($target->environment?->kind === \App\Enums\EnvironmentKind::Production) ({{ __('production') }})@endif</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.input-field id="copy-confirmation" name="confirmation" :label="__('Type its name to confirm')" autocomplete="off" maxlength="120" required />
+                            <p class="text-xs text-muted sm:col-span-2">{{ __('Every table in the chosen website’s database is replaced with a copy of this one. This can’t be undone.') }}</p>
+                            <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="danger">{{ __('Copy database') }}</x-signal.ui.button></div>
+                        </form>
+                    @endif
+                </div>
             @endif
         </div>
     </x-signal.ui.settings-section>

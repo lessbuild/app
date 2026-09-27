@@ -50,6 +50,18 @@ final class WebsitePolicy
             : Response::deny(__('Managed backups come with the Pro Deploy plan and above.'));
     }
 
+    /** Inspecting the database, adding database users and copying databases needs managed resources on the Deploy plan. */
+    public function manageDatabase(User $user, Website $website): Response
+    {
+        if (! $this->update($user, $website)) {
+            return Response::deny();
+        }
+
+        return app(Entitlements::class)->for($website->account)->has('deploy.resources')
+            ? Response::allow()
+            : Response::deny(__('Database tools come with the Pro Deploy plan and above.'));
+    }
+
     /** Restoring works on any plan, so backups taken before a downgrade can still be used. */
     public function restore(User $user, Website $website): bool
     {

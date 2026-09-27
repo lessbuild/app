@@ -44,6 +44,14 @@ Design notes for the Infrastructure service in Phase 4 of [the plan](platform-v2
 - **Verification** restores a snapshot into a temporary directory and database on the same server, checks the dump, runs `php artisan migrate:status` against it, and removes both; the script's `BP_*` markers record which stage passed. The Backups page shows when a backup, a restore and a verified restore last succeeded.
 - Deployer also blocked backups and restores during a deployment; that check returns with Deploy.
 
+## Databases (part 5)
+
+- Deployer's database tools worked on environment resources (MySQL and PostgreSQL entries in an environment's configuration). Here they work on each website's own MySQL database, the one Infrastructure creates; PostgreSQL and other resources come back with Deploy's environments (D04) and reuse the same commands.
+- **Inspection** records the database's size, open connections and tables (`databases:inspect` daily for live websites, or on request). Snapshots are kept 30 days.
+- **Users**: extra MySQL logins on `localhost` with read-only, read-and-write or full access and an optional expiry (1, 7, 30 or 90 days). The password is generated and shown once. `databases:expire-users` (every 15 minutes) drops expired users. Removing a user works on any plan.
+- **Copying** replaces another website's database with a dump of this one's. Both must be on the same server; websites linked to a production environment can't be overwritten; the person types the target's name and confirms their password.
+- Inspecting, adding users and copying need the `deploy.resources` plan flag (Pro and above, like Deployer's `resources` entitlement). `deploy.cost_controls` was added alongside it for part 7.
+
 ## Public contracts kept
 
 - Server and website provisioning callback URLs and their signed parameters, so anything mid-setup at cutover still reports in.

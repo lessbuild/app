@@ -65,6 +65,8 @@ use Illuminate\Support\Str;
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteLog> $logs
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteBackupSchedule> $backupSchedules
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteBackup> $backups
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, DatabaseSnapshot> $databaseSnapshots
+ * @property-read \Illuminate\Database\Eloquent\Collection<int, DatabaseUser> $databaseUsers
  */
 #[Hidden(['env_file', 'database_password', 'provisioning_token'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
@@ -173,6 +175,18 @@ class Website extends Model
     public function backups(): HasMany
     {
         return $this->hasMany(WebsiteBackup::class);
+    }
+
+    /** @return HasMany<DatabaseSnapshot, $this> */
+    public function databaseSnapshots(): HasMany
+    {
+        return $this->hasMany(DatabaseSnapshot::class);
+    }
+
+    /** @return HasMany<DatabaseUser, $this> */
+    public function databaseUsers(): HasMany
+    {
+        return $this->hasMany(DatabaseUser::class);
     }
 
     public function databaseIdentifier(): string

@@ -7,10 +7,13 @@ use App\Actions\Analytics\PruneAnalyticsData;
 use App\Actions\Billing\ApplyEndedSelections;
 use App\Actions\Billing\ReportUsage;
 use App\Actions\Infrastructure\QueueWebsiteBackup;
+use App\Actions\Infrastructure\RemoveDatabaseUser;
+use App\Actions\Infrastructure\RequestDatabaseInspection;
 use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Jobs\Infrastructure\CollectServerMetrics;
+use App\Models\DatabaseUser;
 use App\Models\Provider;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
@@ -272,3 +275,25 @@ Artisan::command('backups:run', function (QueueWebsiteBackup $queue, Entitlement
     return 0;
 })->purpose('Queue scheduled website backups that are due');
 Schedule::command('backups:run')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
+
+Artisan::command('databases:expire-users', function (RemoveDatabaseUser $remove): int {
+    $expired = DatabaseUser::query()->whereIn('status', ['active', 'failed'])->whereNotNull('expires_at')->where('expires_at', '<=', now())->get();
+    $expired->each(fn (DatabaseUser $user) => $remove->handle($user));
+    $this->info("Removing {$expired->count()} expired database users.");
+
+    return 0;
+})->purpose('Drop database users whose access has expired');
+Schedule::command('databases:expire-users')->everyFifteenMinutes()->withoutOverlapping(10)->onOneServer();
+
+Artisan::command('databases:inspect', function (RequestDatabaseInspection $inspect, Entitlements $entitlements): int {
+    $queued = 0;
+    Website::query()->with('account')->where('provisioning_status', Website::STATUS_ACTIVE)->orderBy('id')->eachById(function (Website $website) use ($inspect, $entitlements, &$queued): void {
+        if ($entitlements->for($website->account)->has('deploy.resources')) {
+            $queued += (int) ($inspect->handle($website) !== null);
+        }
+    });
+    $this->info("Queued {$queued} database inspections.");
+
+    return 0;
+})->purpose('Record the size, connections and tables of every live website database');
+Schedule::command('databases:inspect')->dailyAt('04:20')->withoutOverlapping(60)->onOneServer();

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Infrastructure;
 
 use App\Enums\ProviderType;
 use App\Models\BackupDestination;
+use App\Models\DatabaseClone;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\User;
@@ -35,6 +36,11 @@ final class ShowWebsiteController
             'schedules' => $website->backupSchedules()->with('destination')->get(),
             'backupDestinations' => BackupDestination::query()->where('account_id', $website->account_id)->orderBy('name')->get(),
             'canBackUp' => $user->can('backUp', $website),
+            'canManageDatabase' => $user->can('manageDatabase', $website),
+            'snapshot' => $website->databaseSnapshots()->latest('id')->first(),
+            'databaseUsers' => $website->databaseUsers()->orderBy('username')->get(),
+            'copyTargets' => Website::query()->where('account_id', $website->account_id)->where('server_id', $website->server_id)->whereKeyNot($website->id)->with('environment')->orderBy('name')->get(),
+            'copies' => DatabaseClone::query()->with(['source', 'target'])->where(fn ($query) => $query->where('source_website_id', $website->id)->orWhere('target_website_id', $website->id))->latest('id')->limit(5)->get(),
         ]);
     }
 }
