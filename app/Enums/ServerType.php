@@ -14,6 +14,9 @@ enum ServerType: string
     case Database = 'database';
     case LoadBalancer = 'load-balancer';
 
+    /**
+     * The server type's name as shown on server forms and lists.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -32,7 +35,12 @@ enum ServerType: string
         return $this === self::App;
     }
 
-    /** @return list<string> */
+    /**
+     * The software provisioning installs for this type of server. Also decides which servers can front a load balancer:
+     * those with Caddy.
+     *
+     * @return list<string>
+     */
     public function installs(): array
     {
         return match ($this) {

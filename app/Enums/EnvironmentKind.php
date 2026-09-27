@@ -11,6 +11,9 @@ enum EnvironmentKind: string
     case Development = 'development';
     case Preview = 'preview';
 
+    /**
+     * The kind's name as shown on environment lists and forms.
+     */
     public function label(): string
     {
         return match ($this) {

@@ -12,6 +12,9 @@ enum AccountRole: string
     case Billing = 'billing';
     case Viewer = 'viewer';
 
+    /**
+     * The role's name as shown on the members page.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -23,6 +26,9 @@ enum AccountRole: string
         };
     }
 
+    /**
+     * One line explaining what someone with this role can do, shown when inviting or changing a member.
+     */
     public function description(): string
     {
         return match ($this) {
@@ -34,7 +40,11 @@ enum AccountRole: string
         };
     }
 
-    /** @return list<AccountPermission> */
+    /**
+     * Everything this role may do in the account. Owners hold every permission; the other roles hold fixed subsets.
+     *
+     * @return list<AccountPermission>
+     */
     public function permissions(): array
     {
         return match ($this) {
@@ -50,6 +60,9 @@ enum AccountRole: string
         };
     }
 
+    /**
+     * Whether this role includes a permission. The account policies use this for every check.
+     */
     public function allows(AccountPermission $permission): bool
     {
         return in_array($permission, $this->permissions(), true);

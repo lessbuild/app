@@ -11,6 +11,9 @@ enum IngestSource: string
     case OtlpLogs = 'otlp_logs';
     case OtlpMetrics = 'otlp_metrics';
 
+    /**
+     * How the ingest receipts page names the source.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -21,6 +24,9 @@ enum IngestSource: string
         };
     }
 
+    /**
+     * The OTLP signal the source carries, or null for our own JSON event format.
+     */
     public function signal(): ?string
     {
         return match ($this) {

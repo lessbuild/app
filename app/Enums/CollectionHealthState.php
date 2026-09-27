@@ -11,6 +11,9 @@ enum CollectionHealthState: string
     case Awaiting = 'awaiting';
     case NoToken = 'no_token';
 
+    /**
+     * The state's name as the telemetry setup page shows it.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -21,6 +24,10 @@ enum CollectionHealthState: string
         };
     }
 
+    /**
+     * The badge colour for the state: green while events arrive, amber when they've gone quiet, red when there's no
+     * token to send with.
+     */
     public function tone(): string
     {
         return match ($this) {

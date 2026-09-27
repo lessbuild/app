@@ -80,7 +80,12 @@ enum AuditAction: string
     case StatusUpdatePosted = 'status_update.posted';
     case StatusUpdateChanged = 'status_update.changed';
 
-    /** @param array<string, mixed> $context */
+    /**
+     * A sentence describing the entry for the audit log, filled in from the context recorded with it. Missing values
+     * print as "?" so an old entry with less context still reads.
+     *
+     * @param  array<string, mixed>  $context
+     */
     public function describe(array $context): string
     {
         $value = fn (string $key): string => is_scalar($context[$key] ?? null) ? (string) $context[$key] : '?';

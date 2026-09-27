@@ -12,11 +12,17 @@ enum IngestStatus: string
     case Completed = 'completed';
     case Failed = 'failed';
 
+    /**
+     * The receipt status as shown on the ingest receipts page.
+     */
     public function label(): string
     {
         return __(ucfirst($this->value));
     }
 
+    /**
+     * The badge colour for the status.
+     */
     public function tone(): string
     {
         return match ($this) {

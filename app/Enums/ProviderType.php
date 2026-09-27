@@ -15,6 +15,9 @@ enum ProviderType: string
     case GitLab = 'gitlab';
     case Bitbucket = 'bitbucket';
 
+    /**
+     * The provider's product name.
+     */
     public function label(): string
     {
         return match ($this) {
@@ -38,11 +41,17 @@ enum ProviderType: string
         };
     }
 
+    /**
+     * Whether we can create servers with this provider's API.
+     */
     public function hostsServers(): bool
     {
         return in_array($this, [self::DigitalOcean, self::Hetzner, self::Vultr], true);
     }
 
+    /**
+     * Whether the provider hosts Git repositories we deploy from.
+     */
     public function isSourceControl(): bool
     {
         return in_array($this, [self::GitHub, self::GitLab, self::Bitbucket], true);
@@ -70,7 +79,11 @@ enum ProviderType: string
         };
     }
 
-    /** @return list<self> */
+    /**
+     * The providers that can host servers, for the server creation form.
+     *
+     * @return list<self>
+     */
     public static function serverHosts(): array
     {
         return array_values(array_filter(self::cases(), fn (self $type): bool => $type->hostsServers()));

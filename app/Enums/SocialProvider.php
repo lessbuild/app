@@ -10,6 +10,9 @@ enum SocialProvider: string
     case GitLab = 'gitlab';
     case Bitbucket = 'bitbucket';
 
+    /**
+     * The provider's name for sign-in buttons and connected-account lists.
+     */
     public function label(): string
     {
         return match ($this) {

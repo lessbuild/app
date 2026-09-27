@@ -48,7 +48,7 @@ final class AlertRuleRequest extends FormRequest
             'service' => ['nullable', 'string', 'max:100', 'not_regex:/[\x00-\x1F\x7F]/u'],
             'match_text' => [Rule::excludeIf($metric !== AlertMetric::LogPatternCount), 'required', 'string', 'max:120', 'not_regex:/[\x00-\x1F\x7F]/u'],
             'service_level_objective_id' => [Rule::excludeIf($metric !== AlertMetric::SloBurnRate), 'required', 'integer', Rule::exists('service_level_objectives', 'id')->where(fn (Builder $query): Builder => $query->whereIn('environment_id', $environmentIds)->whereNull('deleted_at'))],
-            'threshold' => ['required', 'numeric', 'decimal:0,3', $thresholdMinimum, 'max:'.($metric?->maximum() ?? 1000000000), ...($metric?->isCount() ? ['integer'] : [])],
+            'threshold' => ['required', 'numeric', 'decimal:0,3', $thresholdMinimum, 'max:'.($metric?->maximum() ?? 1000000000), ...($metric?->hasWholeNumberThreshold() ? ['integer'] : [])],
             'metric_series_id' => [Rule::excludeIf(! in_array($metric, [AlertMetric::NumericMetric, AlertMetric::MetricAnomaly], true)), 'required', 'integer', Rule::exists('metric_series', 'id')->where(fn (Builder $query): Builder => $query->whereIn('environment_id', $environmentIds))],
             'aggregation' => ['exclude_unless:metric,numeric_metric', 'required', Rule::in(['last', 'mean', 'min', 'max', 'rate'])],
             'comparison' => ['exclude_unless:metric,numeric_metric', 'required', Rule::in(['gte', 'lte'])],

@@ -19,6 +19,9 @@ enum ApiScope: string
     case AnalyticsRead = 'analytics:read';
     case AnalyticsWrite = 'analytics:write';
 
+    /**
+     * The part of the platform the scope covers, as shown on the token form.
+     */
     public function group(): string
     {
         return match ($this) {
@@ -31,6 +34,9 @@ enum ApiScope: string
         };
     }
 
+    /**
+     * How the scope reads on the token form and token list, such as "Deploy: read and write".
+     */
     public function label(): string
     {
         return str_ends_with($this->value, ':write') ? __(':group: read and write', ['group' => $this->group()]) : __(':group: read', ['group' => $this->group()]);

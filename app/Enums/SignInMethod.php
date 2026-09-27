@@ -15,11 +15,17 @@ enum SignInMethod: string
     /** Signed back in from a "remember me" cookie. */
     case Remembered = 'remembered';
 
+    /**
+     * The sign-in method for a social provider; their values are the same.
+     */
     public static function fromProvider(SocialProvider $provider): self
     {
         return self::from($provider->value);
     }
 
+    /**
+     * How the method is named in sign-in activity.
+     */
     public function label(): string
     {
         return match ($this) {

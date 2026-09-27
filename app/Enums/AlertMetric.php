@@ -17,22 +17,28 @@ enum AlertMetric: string
     case NumericMetric = 'numeric_metric';
     case MetricAnomaly = 'metric_anomaly';
 
+    /**
+     * The metric's name on the alert rule form, with its unit.
+     */
     public function label(): string
     {
         return match ($this) {
-            self::RequestErrorRate => 'Request error rate (%)',
-            self::RequestDuration => 'Average request duration (ms)',
-            self::ExceptionCount => 'Exception count',
-            self::ErrorLogCount => 'Error / critical log count',
-            self::LogPatternCount => 'Matching log / event count',
-            self::TelemetryVolume => 'Telemetry volume (events)',
-            self::TelemetryFreshness => 'Telemetry freshness (seconds)',
-            self::SloBurnRate => 'SLO error-budget burn rate',
-            self::NumericMetric => 'Resource / custom numeric metric',
-            self::MetricAnomaly => 'Metric anomaly score',
+            self::RequestErrorRate => __('Request error rate (%)'),
+            self::RequestDuration => __('Average request duration (ms)'),
+            self::ExceptionCount => __('Exception count'),
+            self::ErrorLogCount => __('Error / critical log count'),
+            self::LogPatternCount => __('Matching log / event count'),
+            self::TelemetryVolume => __('Telemetry volume (events)'),
+            self::TelemetryFreshness => __('Telemetry freshness (seconds)'),
+            self::SloBurnRate => __('SLO error-budget burn rate'),
+            self::NumericMetric => __('Resource / custom numeric metric'),
+            self::MetricAnomaly => __('Metric anomaly score'),
         };
     }
 
+    /**
+     * The largest threshold the rule form accepts for this metric, in the metric's own unit.
+     */
     public function maximum(): int
     {
         return match ($this) {
@@ -47,21 +53,35 @@ enum AlertMetric: string
         };
     }
 
-    public function isCount(): bool
+    /**
+     * Whether thresholds must be whole numbers: counts of events and freshness in seconds can't be fractional, unlike
+     * rates and durations.
+     */
+    public function hasWholeNumberThreshold(): bool
     {
         return in_array($this, [self::ExceptionCount, self::ErrorLogCount, self::LogPatternCount, self::TelemetryVolume, self::TelemetryFreshness], true);
     }
 
+    /**
+     * Whether the metric watches the telemetry pipeline itself (volume and freshness) rather than the application. These
+     * need the guardrails plan feature.
+     */
     public function isTelemetryGuardrail(): bool
     {
         return in_array($this, [self::TelemetryVolume, self::TelemetryFreshness], true);
     }
 
+    /**
+     * Whether the rule measures how fast an SLO's error budget is burning, which needs the SLO burn-rate plan feature.
+     */
     public function isSloBurnRate(): bool
     {
         return $this === self::SloBurnRate;
     }
 
+    /**
+     * Whether the rule fires on anomaly scores instead of a fixed threshold, which needs the anomaly plan feature.
+     */
     public function isAnomaly(): bool
     {
         return $this === self::MetricAnomaly;

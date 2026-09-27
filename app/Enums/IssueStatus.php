@@ -11,11 +11,17 @@ enum IssueStatus: string
     case Snoozed = 'snoozed';
     case Ignored = 'ignored';
 
+    /**
+     * The status as shown on the issues list and issue page.
+     */
     public function label(): string
     {
         return __(ucfirst($this->value));
     }
 
+    /**
+     * The badge colour for the status.
+     */
     public function tone(): string
     {
         return match ($this) {

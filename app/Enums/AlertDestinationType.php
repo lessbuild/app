@@ -13,11 +13,14 @@ enum AlertDestinationType: string
     case PagerDuty = 'pagerduty';
     case Discord = 'discord';
 
+    /**
+     * The destination type's name on the alert destination form.
+     */
     public function label(): string
     {
         return match ($this) {
-            self::Email => 'Email',
-            self::Webhook => 'Signed webhook',
+            self::Email => __('Email'),
+            self::Webhook => __('Signed webhook'),
             self::Slack => 'Slack',
             self::Teams => 'Microsoft Teams',
             self::PagerDuty => 'PagerDuty',

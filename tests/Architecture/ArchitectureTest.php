@@ -22,7 +22,7 @@ final class ArchitectureTest extends TestCase
      * once the list is empty, this constant goes too.
      */
     private const AREAS_AWAITING_DOCUMENTATION = [
-        'Actions', 'Data', 'Enums', 'Events', 'Http', 'Jobs', 'Listeners', 'Models',
+        'Actions', 'Data', 'Events', 'Http', 'Jobs', 'Listeners', 'Models',
         'Notifications', 'Platform', 'Policies', 'Queries', 'Services',
     ];
 
@@ -131,6 +131,10 @@ final class ArchitectureTest extends TestCase
             $reflection = new ReflectionClass($name);
 
             foreach ($reflection->getProperties() as $property) {
+                // An enum's `name` and `value` are PHP's own; the cases document themselves.
+                if ($reflection->isEnum() && in_array($property->name, ['name', 'value'], true)) {
+                    continue;
+                }
                 if ($property->class === $name && ! $property->isPromoted() && $property->getDeclaringClass()->getFileName() === $file
                     && ! $this->explains($property->getDocComment())) {
                     $missing[] = "{$name}::\${$property->name}";
