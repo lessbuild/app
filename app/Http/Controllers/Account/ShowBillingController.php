@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Account;
 
+use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
 use App\Models\User;
 use App\Queries\Billing\BillingOverviewQuery;
@@ -15,9 +16,8 @@ use Illuminate\Support\Facades\Gate;
 
 final class ShowBillingController
 {
-    public function __invoke(Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices): View
+    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices): View
     {
-        $account = $this->account($user);
         Gate::authorize('viewBilling', $account);
 
         return view('account.billing', [
@@ -27,10 +27,5 @@ final class ShowBillingController
             'canManage' => $user->can('manageBilling', $account),
             'checkout' => $request->query('checkout'),
         ]);
-    }
-
-    private function account(User $user): Account
-    {
-        return $user->currentAccount ?? abort(404);
     }
 }

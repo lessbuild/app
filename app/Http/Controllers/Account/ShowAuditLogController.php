@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Account;
 
+use App\Http\Attributes\CurrentAccount;
+use App\Models\Account;
 use App\Models\AuditEntry;
 use App\Models\User;
 use App\Queries\Audit\AccountAuditLogQuery;
@@ -15,9 +17,8 @@ use Illuminate\Support\Facades\Gate;
 
 final class ShowAuditLogController
 {
-    public function __invoke(Request $request, #[CurrentUser] User $user, AccountAuditLogQuery $query, ProjectSwitcherQuery $projects): View
+    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, AccountAuditLogQuery $query, ProjectSwitcherQuery $projects): View
     {
-        $account = $user->currentAccount ?? abort(404);
         Gate::authorize('viewAuditLog', $account);
         $projectOptions = $projects->handle($account, 500);
         $projectId = $request->string('project')->toString();
