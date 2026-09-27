@@ -11,6 +11,11 @@ use Illuminate\Validation\ValidationException;
 
 final class ReplaceEnvironmentVariables
 {
+    /**
+     * Replaces an environment's variables from pasted `.env` text.
+     *
+     * @param  SaveEnvironmentVariable  $save  Saves each variable, keeping its history.
+     */
     public function __construct(private readonly SaveEnvironmentVariable $save) {}
 
     /** Replace every variable with a pasted `.env` (KEY=value lines; # comments and blank lines skipped). Returns how many were set. */

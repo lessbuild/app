@@ -8,6 +8,11 @@ use App\Models\Build;
 
 final class RecordBuildFailure
 {
+    /**
+     * Records a failure reported by a running deploy script.
+     *
+     * @param  FinishBuild  $finish  Finishes the deploy as failed.
+     */
     public function __construct(private readonly FinishBuild $finish) {}
 
     /** The deployment script failed (signed callback); it has already put the previous release back. */

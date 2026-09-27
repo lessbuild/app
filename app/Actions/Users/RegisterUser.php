@@ -12,6 +12,11 @@ use Illuminate\Support\Str;
 
 final class RegisterUser
 {
+    /**
+     * Registration gives every new person an account of their own.
+     *
+     * @param  CreateAccount  $createAccount  Creates that first account with them as owner.
+     */
     public function __construct(private readonly CreateAccount $createAccount) {}
 
     /** Create the user together with a first account they own, so every signed-in user has somewhere to work. */

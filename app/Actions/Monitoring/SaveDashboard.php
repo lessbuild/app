@@ -16,6 +16,12 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveDashboard
 {
+    /**
+     * Creates or changes a dashboard, within the plan.
+     *
+     * @param  Entitlements  $entitlements  Checks how many dashboards the plan allows.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(private readonly Entitlements $entitlements, private readonly RecordAuditEntry $audit) {}
 
     /**

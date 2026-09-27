@@ -9,7 +9,11 @@ use Illuminate\Validation\Rules\Password;
 
 trait PasswordValidationRules
 {
-    /** @return array<int, Rule|array<mixed>|string|Password> */
+    /**
+     * The rules every new password must pass: the app's default password policy, confirmed.
+     *
+     * @return array<int, Rule|array<mixed>|string|Password>
+     */
     protected function passwordRules(): array
     {
         return ['required', 'string', Password::default(), 'confirmed'];

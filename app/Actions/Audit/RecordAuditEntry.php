@@ -12,9 +12,20 @@ use Illuminate\Support\Str;
 
 final class RecordAuditEntry
 {
+    /**
+     * Writes audit entries.
+     *
+     * @param  RequestOrigin  $origin  Where the current request came from.
+     */
     public function __construct(private readonly RequestOrigin $origin) {}
 
-    /** @param array<string, scalar|null> $context */
+    /**
+     * Stores an entry with the actor's name and email copied in (so it still reads after they leave), the request's IP
+     * and user agent, and the account and project it belongs to. Entries without an account are the person's own
+     * security log.
+     *
+     * @param  array<string, scalar|null>  $context
+     */
     public function handle(AuditAction $action, ?User $actor, ?string $accountId = null, array $context = [], ?string $projectId = null): void
     {
         $userAgent = $this->origin->userAgent();

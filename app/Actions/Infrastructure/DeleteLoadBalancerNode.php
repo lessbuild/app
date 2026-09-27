@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteLoadBalancerNode
 {
+    /**
+     * Removes a server from behind a load balancer.
+     *
+     * @param  LoadBalancerChanges  $changes  Re-applies the load balancer's configuration.
+     */
     public function __construct(private readonly LoadBalancerChanges $changes) {}
 
     /** Stop sending traffic to a server. */

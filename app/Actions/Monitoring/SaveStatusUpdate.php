@@ -18,6 +18,11 @@ use Illuminate\Support\Facades\Notification;
 
 final class SaveStatusUpdate
 {
+    /**
+     * Posts or edits an incident or maintenance update on a status page.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /**

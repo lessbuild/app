@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class CloseServerTerminal
 {
+    /**
+     * Closes a troubleshooting terminal.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Close the terminal; the broker sees it and hangs up the shell. */

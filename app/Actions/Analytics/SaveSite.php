@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class SaveSite
 {
+    /**
+     * Creates or changes an analytics site.
+     *
+     * @param  VerifySite  $verify  Verifies it once its domains are saved.
+     */
     public function __construct(private readonly VerifySite $verify) {}
 
     /** Create a site in the project, or update one. New sites are verified straight away when a domain is already verified in the project. */

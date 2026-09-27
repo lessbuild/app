@@ -28,6 +28,15 @@ use Throwable;
 
 final class CreateServer
 {
+    /**
+     * Creates a server at a cloud provider and starts provisioning it.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan's server limit.
+     * @param  ServerProviderResolver  $providers  Talks to the chosen provider.
+     * @param  ServerProvisioningPlan  $plan  The provisioning steps and scripts for the server's type and recipes.
+     * @param  ProvisioningScriptRenderer  $renderer  Renders the first-boot script.
+     * @param  RecordAuditEntry  $audit  Records the new server.
+     */
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly ServerProviderResolver $providers,
@@ -102,6 +111,11 @@ final class CreateServer
         return $server;
     }
 
+    /**
+     * Deletes what was already created at the provider (the server, and an SSH key we added) after creation failed
+     * part-way, so nothing is left running and billing. Errors here are reported rather than thrown, so the original
+     * failure is what the person sees.
+     */
     private function cleanUp(Server $server, ?ServerProvider $client, int|string|null $identifier): void
     {
         if ($client === null) {

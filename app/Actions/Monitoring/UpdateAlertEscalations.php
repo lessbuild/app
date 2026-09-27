@@ -18,6 +18,13 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateAlertEscalations
 {
+    /**
+     * Changes a rule's escalation steps, within the plan.
+     *
+     * @param  Entitlements  $entitlements  Checks how many steps the plan allows.
+     * @param  MonitorChanges  $changes  Locks the configuration while it changes.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(private readonly Entitlements $entitlements, private readonly MonitorChanges $changes, private readonly RecordAuditEntry $audit) {}
 
     /**

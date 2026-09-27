@@ -18,6 +18,12 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveWebsiteDomain
 {
+    /**
+     * Adds or changes a website's domain.
+     *
+     * @param  SyncWebsiteDomain  $sync  Creates its DNS record at Cloudflare when a DNS provider is chosen.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(private readonly SyncWebsiteDomain $sync, private readonly RecordAuditEntry $audit) {}
 
     /**

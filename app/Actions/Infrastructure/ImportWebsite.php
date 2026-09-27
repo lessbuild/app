@@ -18,6 +18,14 @@ use Illuminate\Validation\ValidationException;
 
 final class ImportWebsite
 {
+    /**
+     * Adopts a website that already runs on a server.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan's website limit.
+     * @param  WebsiteServers  $servers  Checks the server can host websites.
+     * @param  ServerShell  $shell  Checks the existing website's directory is there and readable.
+     * @param  RecordAuditEntry  $audit  Records the import.
+     */
     public function __construct(private readonly Entitlements $entitlements, private readonly WebsiteServers $servers, private readonly ServerShell $shell, private readonly RecordAuditEntry $audit) {}
 
     /**

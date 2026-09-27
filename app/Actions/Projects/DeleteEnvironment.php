@@ -13,6 +13,9 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteEnvironment
 {
+    /**
+     * Deletes an environment. The production environment can't be deleted.
+     */
     public function handle(User $actor, Environment $environment): void
     {
         Gate::forUser($actor)->authorize('update', $environment->project);

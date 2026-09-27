@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class CancelConfigurationOperation
 {
+    /**
+     * Cancels a configuration operation that hasn't finished.
+     *
+     * @param  ConfigurationOperations  $operations  Cancels it and refreshes its application's status.
+     */
     public function __construct(private readonly ConfigurationOperations $operations) {}
 
     /** Cancel a configuration deploy that hasn't started on the server. */

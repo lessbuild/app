@@ -36,6 +36,15 @@ class Membership extends Model
         return ['role' => AccountRole::class, 'service_access' => 'array'];
     }
 
+    /**
+     * Whether the member can be assigned incidents and issues: they work on projects (an owner, admin or member, not
+     * billing or viewer) and may use Monitoring.
+     */
+    public function canTakeMonitoringAssignments(): bool
+    {
+        return in_array($this->role, [AccountRole::Owner, AccountRole::Admin, AccountRole::Member], true) && $this->canUseService('monitoring');
+    }
+
     /** Owners and admins always reach every service; others may be limited to a list. */
     public function canUseService(string $service): bool
     {

@@ -14,9 +14,19 @@ use Illuminate\Support\Facades\Gate;
 
 final class SetServiceAccess
 {
+    /**
+     * Limits which services a member may use.
+     *
+     * @param  ServiceRegistry  $services  The service keys a membership may be limited to.
+     */
     public function __construct(private readonly ServiceRegistry $services) {}
 
-    /** @param list<string>|null $services null gives access to every service, including ones added later */
+    /**
+     * Sets the services a member may use (null for all of them). Owners and admins always have every service, unknown
+     * keys are dropped, and nothing is recorded when the list doesn't change.
+     *
+     * @param  list<string>|null  $services  null gives access to every service, including ones added later
+     */
     public function handle(User $actor, Membership $membership, ?array $services): Membership
     {
         Gate::forUser($actor)->authorize('manageMembers', $membership->account);

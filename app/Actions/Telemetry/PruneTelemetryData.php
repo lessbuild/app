@@ -20,6 +20,11 @@ use Illuminate\Support\Facades\DB;
 
 final class PruneTelemetryData
 {
+    /**
+     * Deletes telemetry older than each account's plan keeps.
+     *
+     * @param  Entitlements  $entitlements  Reads each account's retention.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
@@ -58,6 +63,9 @@ final class PruneTelemetryData
     }
 
     /**
+     * Deletes the account's events older than the cutoff, with their deduplication identities, 500 at a time in
+     * transactions. A dry run only counts them.
+     *
      * @return array{events: int, identities: int}
      */
     private function pruneEvents(Account $account, CarbonImmutable $cutoff, bool $dryRun): array
@@ -85,6 +93,8 @@ final class PruneTelemetryData
     }
 
     /**
+     * Deletes completed ingest receipts older than the cutoff, with any payload still kept, the same way.
+     *
      * @return array{receipts: int, payloads: int}
      */
     private function pruneReceipts(Account $account, CarbonImmutable $cutoff, bool $dryRun): array
@@ -111,6 +121,8 @@ final class PruneTelemetryData
     }
 
     /**
+     * The account's events from before the cutoff.
+     *
      * @return Builder<TelemetryEvent>
      */
     private function eventsFor(Account $account, CarbonImmutable $cutoff): Builder
@@ -124,6 +136,8 @@ final class PruneTelemetryData
     }
 
     /**
+     * The account's completed receipts last touched before the cutoff. Receipts still processing or failed are kept.
+     *
      * @return Builder<IngestReceipt>
      */
     private function completedReceiptsFor(Account $account, CarbonImmutable $cutoff): Builder
@@ -134,6 +148,9 @@ final class PruneTelemetryData
             ->where('last_received_at', '<', $cutoff);
     }
 
+    /**
+     * How many days the account's plan keeps telemetry, at least one; ten years when the plan sets no limit.
+     */
     private function retentionDays(Account $account): int
     {
         return max(1, $this->entitlements->for($account)->limit('monitoring.retention.days') ?? 3650);

@@ -22,7 +22,7 @@ final class ArchitectureTest extends TestCase
      * once the list is empty, this constant goes too.
      */
     private const AREAS_AWAITING_DOCUMENTATION = [
-        'Actions', 'Http', 'Services',
+        'Http', 'Services',
     ];
 
     public function test_business_code_does_not_depend_on_the_http_layer(): void

@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveEnvironmentResource
 {
+    /**
+     * Attaches or changes an environment's resource, within the plan.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan includes managed resources.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**

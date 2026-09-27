@@ -17,6 +17,12 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateAlertRouting
 {
+    /**
+     * Changes which destinations a monitor or rule alerts.
+     *
+     * @param  MonitorChanges  $changes  Locks the account's Monitoring configuration while it changes.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(private readonly MonitorChanges $changes, private readonly RecordAuditEntry $audit) {}
 
     /**

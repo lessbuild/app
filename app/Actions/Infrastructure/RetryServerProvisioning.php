@@ -18,6 +18,11 @@ use Illuminate\Validation\ValidationException;
 
 final class RetryServerProvisioning
 {
+    /**
+     * Starts a failed server's provisioning again from where it stopped.
+     *
+     * @param  ServerProvisioningPlan  $plan  The provisioning steps, to find where to resume.
+     */
     public function __construct(private readonly ServerProvisioningPlan $plan) {}
 
     /**

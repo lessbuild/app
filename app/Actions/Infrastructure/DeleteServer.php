@@ -16,6 +16,12 @@ use RuntimeException;
 
 final class DeleteServer
 {
+    /**
+     * Deletes a server, at the provider too when we created it.
+     *
+     * @param  ServerProviderResolver  $providers  Deletes it at the provider.
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly ServerProviderResolver $providers, private readonly RecordAuditEntry $audit) {}
 
     /**

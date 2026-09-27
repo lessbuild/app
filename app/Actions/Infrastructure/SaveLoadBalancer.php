@@ -15,6 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveLoadBalancer
 {
+    /**
+     * Creates or changes a load balancer.
+     *
+     * @param  LoadBalancerChanges  $changes  Applies its configuration.
+     */
     public function __construct(private readonly LoadBalancerChanges $changes) {}
 
     /**

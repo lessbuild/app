@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class InstallGitHubApp
 {
+    /**
+     * Connects an installation of the GitHub App to the account.
+     *
+     * @param  GitHubApp  $github  Lists the repositories the installation can reach.
+     */
     public function __construct(private readonly GitHubApp $github) {}
 
     /**

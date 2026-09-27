@@ -25,6 +25,14 @@ use Illuminate\Validation\ValidationException;
 
 final class ConfirmServerImport
 {
+    /**
+     * Imports a server that has been inspected.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan's server limit.
+     * @param  ServerProvisioningPlan  $plan  The provisioning steps an imported server skips or runs.
+     * @param  ServerKeys  $keys  Reads the platform's public key to install.
+     * @param  RecordAuditEntry  $audit  Records the import.
+     */
     public function __construct(
         private readonly Entitlements $entitlements,
         private readonly ServerProvisioningPlan $plan,

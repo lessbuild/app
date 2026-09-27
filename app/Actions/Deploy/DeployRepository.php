@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 final class DeployRepository
 {
+    /**
+     * Starts a deploy of a repository by hand or through the API.
+     *
+     * @param  Deployments  $deployments  Queues the deploy, or says why it can't be queued now.
+     */
     public function __construct(private readonly Deployments $deployments) {}
 
     /** Deploy the branch's latest commit, or a given one. */

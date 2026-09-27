@@ -18,6 +18,11 @@ use LogicException;
 
 final class SaveStatusPage
 {
+    /**
+     * Creates or changes a status page.
+     *
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /**
@@ -70,7 +75,12 @@ final class SaveStatusPage
         }, attempts: 3);
     }
 
-    /** @param array<string, mixed> $data */
+    /**
+     * The page's URL slug: the one asked for, the one it already has, or one made from its name with a random suffix,
+     * since slugs are shared by every account.
+     *
+     * @param  array<string, mixed>  $data
+     */
     private function slug(StatusPage $page, array $data): string
     {
         $requested = Str::slug((string) ($data['slug'] ?? ''));

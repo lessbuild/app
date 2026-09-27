@@ -21,6 +21,14 @@ use Illuminate\Validation\ValidationException;
 
 final class CreateWebsite
 {
+    /**
+     * Creates a website on a server and starts provisioning it.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan's website limit.
+     * @param  WebsiteServers  $servers  Checks the server can host websites.
+     * @param  WebsiteHealthChecks  $health  Creates its health monitor when monitoring is on.
+     * @param  RecordAuditEntry  $audit  Records the new website.
+     */
     public function __construct(private readonly Entitlements $entitlements, private readonly WebsiteServers $servers, private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
     /**

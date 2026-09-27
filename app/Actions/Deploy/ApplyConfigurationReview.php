@@ -18,6 +18,13 @@ use Illuminate\Validation\ValidationException;
 
 final class ApplyConfigurationReview
 {
+    /**
+     * Applies an approved configuration review.
+     *
+     * @param  ConfigurationReviews  $reviews  Checks the review still matches the current configuration.
+     * @param  ConfigurationReconciler  $reconciler  Writes the reviewed settings.
+     * @param  ConfigurationOperations  $operations  Starts the deploys and changes the review calls for, and tracks them.
+     */
     public function __construct(private readonly ConfigurationReviews $reviews, private readonly ConfigurationReconciler $reconciler, private readonly ConfigurationOperations $operations) {}
 
     /**

@@ -13,9 +13,20 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordQueueSnapshot
 {
+    /**
+     * Records a queue report sent by a queue monitor's collector.
+     *
+     * @param  MonitorQueue  $queue  Locks the monitor and checks it still accepts reports.
+     * @param  QueueMonitorEvaluator  $evaluation  Re-evaluates the monitor with the new report.
+     */
     public function __construct(private readonly MonitorQueue $queue, private readonly QueueMonitorEvaluator $evaluation) {}
 
-    /** @param array<string, mixed> $data
+    /**
+     * Stores a queue report after checking the monitor's key. Resending a snapshot ID with the same payload returns the
+     * original receipt; reusing it for a different payload, or sending a second snapshot for the same moment, is a
+     * conflict. Reports older than the latest are stored but not applied.
+     *
+     * @param  array<string, mixed>  $data
      * @return array{snapshot_id: string, replayed: bool, applied: bool, received_at: string}
      */
     public function handle(int $monitorId, string $tokenHash, array $data): array
@@ -61,7 +72,12 @@ final class RecordQueueSnapshot
         }, attempts: 3);
     }
 
-    /** @return array{snapshot_id: string, replayed: bool, applied: bool, received_at: string} */
+    /**
+     * What the collector gets back: the snapshot ID, whether it was a replay, whether it was applied, and when it
+     * arrived.
+     *
+     * @return array{snapshot_id: string, replayed: bool, applied: bool, received_at: string}
+     */
     private function receipt(QueueSnapshot $snapshot, bool $replayed): array
     {
         return ['snapshot_id' => $snapshot->snapshot_id, 'replayed' => $replayed,

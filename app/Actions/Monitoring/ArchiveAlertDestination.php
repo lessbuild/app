@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class ArchiveAlertDestination
 {
+    /**
+     * Archives an alert destination.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Turn a destination off and archive it; its delivery history stays. */

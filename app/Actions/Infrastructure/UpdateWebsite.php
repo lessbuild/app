@@ -20,6 +20,13 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateWebsite
 {
+    /**
+     * Changes a website's settings, possibly moving it to another server.
+     *
+     * @param  WebsiteServers  $servers  Checks the new server can host websites.
+     * @param  WebsiteHealthChecks  $health  Creates, updates or removes its health monitor.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(private readonly WebsiteServers $servers, private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
     /**

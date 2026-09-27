@@ -47,6 +47,9 @@ final class SaveMaintenanceWindow
         }, attempts: 3);
     }
 
+    /**
+     * A time from the form's `datetime-local` input, read as UTC, or null when it's empty or malformed.
+     */
     private function parse(mixed $value): ?CarbonImmutable
     {
         if (! is_string($value) || trim($value) === '') {

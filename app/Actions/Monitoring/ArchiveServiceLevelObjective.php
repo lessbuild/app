@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class ArchiveServiceLevelObjective
 {
+    /**
+     * Archives an SLO.
+     *
+     * @param  MonitorChanges  $changes  Locks the configuration while it changes.
+     */
     public function __construct(private readonly MonitorChanges $changes) {}
 
     /** Archive an objective. Burn-rate rules that use it stop finding data until they're changed. */

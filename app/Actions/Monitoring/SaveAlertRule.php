@@ -26,6 +26,14 @@ final class SaveAlertRule
     /** Changing any of these starts the rule over and closes its open incident as "rule changed". */
     public const CONDITIONS = ['metric', 'service', 'match_text', 'threshold', 'window_minutes', 'minimum_samples', 'trigger_checks', 'recovery_checks', 'metric_series_id', 'numeric_threshold', 'aggregation', 'comparison', 'freshness_seconds', 'service_level_objective_id'];
 
+    /**
+     * Creates or changes an alert rule.
+     *
+     * @param  TelemetryRedactor  $redactor  Redacts the name and match text.
+     * @param  IncidentLifecycle  $lifecycle  Closes incidents the change makes meaningless.
+     * @param  MonitorChanges  $changes  Locks the configuration while it changes.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(
         private readonly TelemetryRedactor $redactor,
         private readonly IncidentLifecycle $lifecycle,

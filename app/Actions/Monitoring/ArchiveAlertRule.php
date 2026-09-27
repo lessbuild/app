@@ -17,6 +17,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class ArchiveAlertRule
 {
+    /**
+     * Archives an alert rule.
+     *
+     * @param  IncidentLifecycle  $lifecycle  Closes the rule's open incidents.
+     * @param  MonitorChanges  $changes  Locks the configuration while it changes.
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(
         private readonly IncidentLifecycle $lifecycle,
         private readonly MonitorChanges $changes,

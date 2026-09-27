@@ -17,6 +17,11 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveBackupDestination
 {
+    /**
+     * Creates or changes a backup destination.
+     *
+     * @param  RecordAuditEntry  $audit  Records the change (never the keys).
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /**

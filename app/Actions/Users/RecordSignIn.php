@@ -11,6 +11,9 @@ use Illuminate\Support\Str;
 
 final class RecordSignIn
 {
+    /**
+     * Stores one sign-in attempt for the person's activity list, with the user agent cut to 500 characters.
+     */
     public function handle(User $user, bool $succeeded, ?SignInMethod $method, bool $twoFactor, ?string $ipAddress, ?string $userAgent): void
     {
         $event = new SignInEvent;

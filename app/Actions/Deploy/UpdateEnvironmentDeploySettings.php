@@ -12,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateEnvironmentDeploySettings
 {
+    /**
+     * Changes an environment's deploy settings, within the plan.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan includes scaling before replica settings change.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**

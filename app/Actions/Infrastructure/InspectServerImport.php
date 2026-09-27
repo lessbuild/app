@@ -18,6 +18,12 @@ use Throwable;
 
 final class InspectServerImport
 {
+    /**
+     * Inspects a server someone wants to import.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan's server limit before anything connects.
+     * @param  ServerDiscovery  $discovery  Connects and reports what's installed.
+     */
     public function __construct(private readonly Entitlements $entitlements, private readonly ServerDiscovery $discovery) {}
 
     /**

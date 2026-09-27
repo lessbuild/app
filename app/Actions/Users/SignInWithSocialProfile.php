@@ -17,6 +17,11 @@ use Illuminate\Support\Str;
 
 final class SignInWithSocialProfile
 {
+    /**
+     * Signs in, links or registers someone coming back from a provider.
+     *
+     * @param  RegisterUser  $registerUser  Registers people new to the platform.
+     */
     public function __construct(private readonly RegisterUser $registerUser) {}
 
     /**

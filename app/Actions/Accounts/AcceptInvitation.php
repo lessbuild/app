@@ -15,6 +15,10 @@ use SensitiveParameter;
 
 final class AcceptInvitation
 {
+    /**
+     * Joins the invitation's account as the signed-in person, if the invitation is still pending and was sent to their
+     * email, and makes it their current account. Someone who's already a member keeps their existing role.
+     */
     public function handle(User $user, #[SensitiveParameter] string $token): Membership
     {
         [$invitation, $membership] = DB::transaction(function () use ($user, $token): array {

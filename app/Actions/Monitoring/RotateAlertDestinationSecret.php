@@ -17,6 +17,11 @@ use Illuminate\Support\Str;
 
 final class RotateAlertDestinationSecret
 {
+    /**
+     * Replaces a webhook destination's signing secret.
+     *
+     * @param  RecordAuditEntry  $audit  Records the rotation (never the secret).
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Replace a signed webhook's signing key. Deliveries still queued are cancelled, since they were signed for the old key. */

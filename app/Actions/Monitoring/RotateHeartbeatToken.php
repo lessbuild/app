@@ -15,6 +15,13 @@ use Illuminate\Support\Str;
 
 final class RotateHeartbeatToken
 {
+    /**
+     * Replaces a heartbeat monitor's key.
+     *
+     * @param  MonitorQueue  $queue  Locks the monitor.
+     * @param  MonitorSuspension  $suspension  Pauses the monitor, so pings signed with the old key can't change its
+     *                                         health.
+     */
     public function __construct(private readonly MonitorQueue $queue, private readonly MonitorSuspension $suspension) {}
 
     /** Issue a new heartbeat key (returned once), or revoke the key and pause the monitor. */

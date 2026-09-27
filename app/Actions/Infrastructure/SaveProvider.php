@@ -16,6 +16,11 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveProvider
 {
+    /**
+     * Connects or changes a provider.
+     *
+     * @param  RecordAuditEntry  $audit  Records the change (never the token).
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /**

@@ -11,6 +11,12 @@ use App\Platform\ServiceRegistry;
 
 final class ReportUsage
 {
+    /**
+     * Reports metered usage beyond each account's allowance to the payment provider.
+     *
+     * @param  PaymentProvider  $provider  Receives the usage.
+     * @param  ServiceRegistry  $services  The meters each service bills.
+     */
     public function __construct(private readonly PaymentProvider $provider, private readonly ServiceRegistry $services) {}
 
     /** Send usage not yet reported to Stripe meters (for meters that bill usage). Returns how many buckets were sent. */

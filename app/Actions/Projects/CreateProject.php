@@ -44,6 +44,9 @@ final class CreateProject
         return $project;
     }
 
+    /**
+     * A URL slug from the project's name, numbered when the account already has it.
+     */
     private function uniqueSlug(Account $account, string $name): string
     {
         $base = Str::slug($name) ?: 'project';

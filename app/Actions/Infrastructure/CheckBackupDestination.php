@@ -12,6 +12,11 @@ use Throwable;
 
 final class CheckBackupDestination
 {
+    /**
+     * Checks that a backup destination's bucket can be written.
+     *
+     * @param  S3StorageProbe  $probe  Writes, reads and deletes a small test object.
+     */
     public function __construct(private readonly S3StorageProbe $probe) {}
 
     /** Write, read and delete a test object. Returns the error (with any credentials blanked out), or null when it works. */

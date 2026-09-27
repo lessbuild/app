@@ -20,6 +20,13 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveAlertDestination
 {
+    /**
+     * Creates or changes an alert destination.
+     *
+     * @param  PublicWebhookTarget  $targets  Checks a webhook URL points at a public host.
+     * @param  TelemetryRedactor  $redactor  Redacts the name.
+     * @param  RecordAuditEntry  $audit  Records the change (never the URL or secret).
+     */
     public function __construct(private readonly PublicWebhookTarget $targets, private readonly TelemetryRedactor $redactor, private readonly RecordAuditEntry $audit) {}
 
     /**

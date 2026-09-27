@@ -17,6 +17,12 @@ use Throwable;
 
 final class DeleteWebsiteDomain
 {
+    /**
+     * Removes a domain from a website.
+     *
+     * @param  CloudflareDns  $cloudflare  Deletes its DNS record when Cloudflare manages it.
+     * @param  RecordAuditEntry  $audit  Records the removal.
+     */
     public function __construct(private readonly CloudflareDns $cloudflare, private readonly RecordAuditEntry $audit) {}
 
     /** Remove an alias or redirect (and its Cloudflare record). The primary domain changes with the website's URL instead. */

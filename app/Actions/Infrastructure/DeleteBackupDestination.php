@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 final class DeleteBackupDestination
 {
+    /**
+     * Removes a backup destination that nothing uses.
+     *
+     * @param  RecordAuditEntry  $audit  Records the removal.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Remove a destination nothing uses. Its bucket isn't touched. */

@@ -15,6 +15,12 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveServiceLevelObjective
 {
+    /**
+     * Creates or changes an SLO.
+     *
+     * @param  TelemetryRedactor  $redactor  Redacts its name, service and route.
+     * @param  MonitorChanges  $changes  Locks the configuration while it changes.
+     */
     public function __construct(private readonly TelemetryRedactor $redactor, private readonly MonitorChanges $changes) {}
 
     /**

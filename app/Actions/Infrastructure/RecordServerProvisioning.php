@@ -13,6 +13,11 @@ use Illuminate\Support\Str;
 
 final class RecordServerProvisioning
 {
+    /**
+     * Records progress reported by a server's provisioning script.
+     *
+     * @param  ServerProvisioningPlan  $plan  Knows which stage is last.
+     */
     public function __construct(private readonly ServerProvisioningPlan $plan) {}
 
     /**

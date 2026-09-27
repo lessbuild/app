@@ -18,6 +18,13 @@ use Illuminate\Support\Facades\DB;
 
 final class HandleBillingWebhook
 {
+    /**
+     * Applies payment-provider webhooks to the account's billing.
+     *
+     * @param  PaymentProvider  $provider  Reads the subscription a checkout created.
+     * @param  SubscriptionItems  $items  Stores the provider's IDs for each subscription item.
+     * @param  ServiceRegistry  $services  Finds each service's free tier when selections end.
+     */
     public function __construct(
         private readonly PaymentProvider $provider,
         private readonly SubscriptionItems $items,
@@ -40,7 +47,12 @@ final class HandleBillingWebhook
         };
     }
 
-    /** @param array<string, mixed> $session */
+    /**
+     * Records the subscription a checkout created and turns its items into the account's selections. Returns false when
+     * the event can't be matched to an account.
+     *
+     * @param  array<string, mixed>  $session
+     */
     private function checkoutCompleted(array $session): bool
     {
         $accountId = $session['client_reference_id'] ?? ($session['metadata']['account_id'] ?? null);
@@ -88,7 +100,11 @@ final class HandleBillingWebhook
         return true;
     }
 
-    /** @param array<string, mixed> $subscription */
+    /**
+     * Copies the subscription's status and period end.
+     *
+     * @param  array<string, mixed>  $subscription
+     */
     private function subscriptionUpdated(array $subscription): bool
     {
         $billing = $this->billingFor($subscription);
@@ -103,7 +119,11 @@ final class HandleBillingWebhook
         return true;
     }
 
-    /** @param array<string, mixed> $subscription */
+    /**
+     * Clears the subscription and every selection, putting each service back on its free tier.
+     *
+     * @param  array<string, mixed>  $subscription
+     */
     private function subscriptionDeleted(array $subscription): bool
     {
         $billing = $this->billingFor($subscription);
@@ -129,7 +149,11 @@ final class HandleBillingWebhook
         return true;
     }
 
-    /** @param array<string, mixed> $subscription */
+    /**
+     * The billing record for a subscription in a webhook, or null when it isn't ours.
+     *
+     * @param  array<string, mixed>  $subscription
+     */
     private function billingFor(array $subscription): ?BillingAccount
     {
         $id = $subscription['id'] ?? null;

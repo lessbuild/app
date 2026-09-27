@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class PlanConfiguration
 {
+    /**
+     * Previews what a configuration document would change.
+     *
+     * @param  ConfigurationPlanner  $planner  Compares the document with the current configuration.
+     */
     public function __construct(private readonly ConfigurationPlanner $planner) {}
 
     /**

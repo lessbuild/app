@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class ReadServerTerminalOutput
 {
+    /**
+     * Hands a terminal's new output to the browser.
+     *
+     * @param  TerminalFrames  $frames  Reads output frames after the browser's cursor.
+     */
     public function __construct(private readonly TerminalFrames $frames) {}
 
     /**

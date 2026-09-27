@@ -14,8 +14,16 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteDashboard
 {
+    /**
+     * Deletes a dashboard.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
+    /**
+     * Deletes one of the account's dashboards and records it.
+     */
     public function handle(Account $account, User $actor, Dashboard $dashboard): void
     {
         DB::transaction(function () use ($account, $actor, $dashboard): void {

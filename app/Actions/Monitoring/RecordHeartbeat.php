@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordHeartbeat
 {
+    /**
+     * Records a start, success or failure ping from a job a heartbeat monitor watches.
+     *
+     * @param  MonitorQueue  $queue  Locks the monitor and checks it still accepts pings.
+     * @param  HeartbeatSchedule  $schedules  Works out when the next run is due.
+     * @param  HeartbeatEvaluator  $evaluator  Decides what the ping means for the monitor's health.
+     */
     public function __construct(
         private readonly MonitorQueue $queue,
         private readonly HeartbeatSchedule $schedules,
@@ -84,7 +91,11 @@ final class RecordHeartbeat
         }, attempts: 3);
     }
 
-    /** @return array{run_id: string, signal: string, replayed: bool, received_at: string} */
+    /**
+     * What the job gets back: the run ID, the signal, whether it was a replay, and when it was recorded.
+     *
+     * @return array{run_id: string, signal: string, replayed: bool, received_at: string}
+     */
     private function receipt(HeartbeatRun $run, string $signal, bool $replayed): array
     {
         return ['run_id' => $run->run_id, 'signal' => $signal, 'replayed' => $replayed,

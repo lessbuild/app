@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Gate;
 
 final class RenameAccount
 {
+    /**
+     * Renames the account; an unchanged name records nothing.
+     */
     public function handle(User $actor, Account $account, string $name): Account
     {
         Gate::forUser($actor)->authorize('update', $account);

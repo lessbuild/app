@@ -38,6 +38,10 @@ final class CreateAccount
         return $account;
     }
 
+    /**
+     * A URL slug from the account's name, with a random suffix when it's taken. Slugs are global, so a random suffix
+     * avoids guessable collisions.
+     */
     private function uniqueSlug(string $name): string
     {
         $base = Str::slug($name) ?: 'account';

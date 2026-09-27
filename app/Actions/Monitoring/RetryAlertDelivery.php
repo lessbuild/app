@@ -16,6 +16,12 @@ use Illuminate\Support\Facades\Gate;
 
 final class RetryAlertDelivery
 {
+    /**
+     * Resends a failed or uncertain alert delivery.
+     *
+     * @param  AlertDeliveryQueue  $queue  Locks the delivery.
+     * @param  AlertDeliveryRunner  $runner  Cancels any pending attempt and queues a new one.
+     */
     public function __construct(private readonly AlertDeliveryQueue $queue, private readonly AlertDeliveryRunner $runner) {}
 
     /** Start a failed delivery over, with a fresh set of attempts. */

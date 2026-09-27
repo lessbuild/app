@@ -7,7 +7,6 @@ namespace App\Queries\Analytics;
 use App\Models\AnalyticsDailyAggregate;
 use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsGoal;
-use App\Models\AnalyticsGoalVersion;
 use App\Models\AnalyticsSite;
 use App\Models\AnalyticsVisit;
 use Carbon\CarbonImmutable;
@@ -41,10 +40,7 @@ final class AnalyticsReportQuery
 
         $events = AnalyticsEvent::query()
             ->where('site_id', $site->id)
-            ->where(function ($query): void {
-                $query->whereNull('ingestion_batch_id')
-                    ->orWhereHas('ingestionBatch', fn ($batchQuery) => $batchQuery->where('status', 'processed'));
-            })
+            ->countable()
             ->whereBetween('occurred_at', [$comparisonStart->utc(), $end->utc()])
             ->when($filters['path'] ?? null, fn ($query, string $path) => $query->where('path', $path))
             ->when($filters['source'] ?? null, fn ($query, string $source) => $query->where(function ($query) use ($source): void {
@@ -353,32 +349,7 @@ final class AnalyticsReportQuery
      */
     private function matchingGoals(Collection $events, Collection $goals): Collection
     {
-        return $events->filter(function (AnalyticsEvent $event) use ($goals): bool {
-            return $goals->contains(function (AnalyticsGoal $goal) use ($event): bool {
-                $version = $goal->versions->first(function (AnalyticsGoalVersion $version) use ($event): bool {
-                    $occurredAt = CarbonImmutable::parse($event->occurred_at);
-
-                    return $occurredAt->greaterThanOrEqualTo($version->effective_from)
-                        && ($version->effective_to === null || $occurredAt->lessThan($version->effective_to));
-                });
-
-                if ($goal->versions->isNotEmpty() && $version === null) {
-                    return false;
-                }
-
-                $kind = $version->kind ?? $goal->kind;
-                $matchType = $version->match_type ?? $goal->match_type;
-                $matchValue = $version->match_value ?? $goal->match_value;
-
-                if ($kind === 'event') {
-                    return $event->type === 'event' && data_get($event->properties, 'name') === $matchValue;
-                }
-
-                return $event->type === 'pageview' && ($matchType === 'prefix'
-                    ? str_starts_with($event->path, $matchValue)
-                    : $event->path === $matchValue);
-            });
-        });
+        return $events->filter(fn (AnalyticsEvent $event): bool => $goals->contains(fn (AnalyticsGoal $goal): bool => $goal->isCompletedBy($event)));
     }
 
     /**

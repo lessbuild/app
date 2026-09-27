@@ -11,6 +11,9 @@ use SensitiveParameter;
 
 final class ChangePassword
 {
+    /**
+     * Sets a new password and rotates the remember token, which signs out "remember me" cookies on other devices.
+     */
     public function handle(User $user, #[SensitiveParameter] string $password): void
     {
         // Rotating the remember token signs out "remember me" cookies on other devices.

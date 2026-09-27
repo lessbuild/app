@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -63,5 +65,32 @@ class AnalyticsEvent extends Model
     public function ingestionBatch(): BelongsTo
     {
         return $this->belongsTo(AnalyticsIngestionBatch::class, 'ingestion_batch_id');
+    }
+
+    /**
+     * Limits a query to events that count in reports: those collected before batching existed, those in a processed
+     * batch, and, while it's being processed, the given batch.
+     *
+     * @param  Builder<self>  $query
+     */
+    #[Scope]
+    protected function countable(Builder $query, ?AnalyticsIngestionBatch $batch = null): void
+    {
+        $query->where(function (Builder $query) use ($batch): void {
+            $query->whereNull('ingestion_batch_id')
+                ->orWhereHas('ingestionBatch', fn (Builder $batchQuery) => $batchQuery->where('status', 'processed'));
+            if ($batch !== null) {
+                $query->orWhere('ingestion_batch_id', $batch->id);
+            }
+        });
+    }
+
+    /**
+     * Whose visit the event belongs to: its session, else its daily visitor hash, else the event alone, so events
+     * without either never merge with someone else's.
+     */
+    public function visitorIdentity(): string
+    {
+        return $this->session_id ?: $this->visitor_hash ?: 'anonymous-'.$this->event_id;
     }
 }

@@ -17,6 +17,11 @@ use Illuminate\Support\Str;
 
 final class RunServerDiagnostics
 {
+    /**
+     * Starts a diagnostic run on a server.
+     *
+     * @param  ServerDiagnostics  $diagnostics  Checks the server can be diagnosed at all.
+     */
     public function __construct(private readonly ServerDiagnostics $diagnostics) {}
 
     /**

@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class RetryConfigurationOperation
 {
+    /**
+     * Retries a failed configuration operation.
+     *
+     * @param  ConfigurationOperations  $operations  Starts the retry and refreshes its application's status.
+     */
     public function __construct(private readonly ConfigurationOperations $operations) {}
 
     /** Retry a failed or canceled configuration deploy as it was reviewed. Only the review's requester can. */

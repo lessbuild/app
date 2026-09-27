@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Actions\Analytics;
 
 use App\Models\AnalyticsEvent;
-use App\Models\AnalyticsGoal;
 use App\Models\AnalyticsGoalConversion;
-use App\Models\AnalyticsGoalVersion;
 use App\Models\AnalyticsIngestionBatch;
 use App\Models\AnalyticsSite;
 use App\Models\AnalyticsVisit;
@@ -25,6 +23,10 @@ use Illuminate\Support\Collection;
  */
 final class RebuildGoalConversions
 {
+    /**
+     * Rebuilds the goal conversions for the events a batch touched, or for the whole site when no batch is given (after
+     * a goal changes). Existing conversions in scope are replaced.
+     */
     public function handle(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null): void
     {
         $goals = $site->goals()->with('versions')->get();
@@ -49,9 +51,9 @@ final class RebuildGoalConversions
 
         foreach ($events as $event) {
             foreach ($goals as $goal) {
-                $version = $this->matchingVersion($event, $goal);
+                $version = $goal->versionAt($event->occurred_at);
 
-                if (! $this->matchesGoal($event, $goal)) {
+                if (! $goal->isCompletedBy($event)) {
                     continue;
                 }
 
@@ -74,10 +76,15 @@ final class RebuildGoalConversions
         }
     }
 
-    /** @return Collection<int, AnalyticsEvent> */
+    /**
+     * The events to recount: the whole site's countable events, or, for a batch, every countable event of the visitors
+     * and sessions the batch contains, since a new event can change their earlier visits.
+     *
+     * @return Collection<int, AnalyticsEvent>
+     */
     private function eventsForScope(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch): Collection
     {
-        $query = $this->eligibleEvents($site, $batch)
+        $query = AnalyticsEvent::query()->whereBelongsTo($site, 'site')->countable($batch)
             ->orderBy('occurred_at')
             ->orderBy('id');
 
@@ -92,7 +99,7 @@ final class RebuildGoalConversions
         }
 
         $identities = $batchEvents
-            ->mapWithKeys(fn (AnalyticsEvent $event): array => [$this->identity($event) => true]);
+            ->mapWithKeys(fn (AnalyticsEvent $event): array => [$event->visitorIdentity() => true]);
 
         return $query
             ->where(function (Builder $scope) use ($batchEvents): void {
@@ -112,34 +119,18 @@ final class RebuildGoalConversions
                 }
             })
             ->get()
-            ->filter(fn (AnalyticsEvent $event): bool => isset($identities[$this->identity($event)]))
+            ->filter(fn (AnalyticsEvent $event): bool => isset($identities[$event->visitorIdentity()]))
             ->values();
     }
 
-    /** @return Builder<AnalyticsEvent> */
-    private function eligibleEvents(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch): Builder
-    {
-        return AnalyticsEvent::query()
-            ->whereBelongsTo($site, 'site')
-            ->where(function (Builder $query) use ($batch): void {
-                $query->whereNull('ingestion_batch_id')
-                    ->orWhereHas('ingestionBatch', fn (Builder $batchQuery) => $batchQuery->where('status', 'processed'));
-
-                if ($batch !== null) {
-                    $query->orWhere('ingestion_batch_id', $batch->id);
-                }
-            });
-    }
-
-    private function identity(AnalyticsEvent $event): string
-    {
-        return $event->session_id ?: $event->visitor_hash ?: 'anonymous-'.$event->event_id;
-    }
-
-    /** @param Collection<int, AnalyticsVisit> $visits */
+    /**
+     * The visit an event happened in: same visitor or session, same local day, and within the visit's time span.
+     *
+     * @param  Collection<int, AnalyticsVisit>  $visits
+     */
     private function visitForEvent(AnalyticsEvent $event, Collection $visits, string $timezone): ?AnalyticsVisit
     {
-        $identity = $this->identity($event);
+        $identity = $event->visitorIdentity();
         $occurredAt = CarbonImmutable::parse($event->occurred_at);
 
         return $visits->first(function (AnalyticsVisit $visit) use ($identity, $occurredAt, $timezone): bool {
@@ -150,36 +141,5 @@ final class RebuildGoalConversions
                     === $occurredAt->setTimezone($timezone)->toDateString()
                 && $occurredAt->betweenIncluded($visit->started_at, $visit->last_seen_at);
         });
-    }
-
-    private function matchingVersion(AnalyticsEvent $event, AnalyticsGoal $goal): ?AnalyticsGoalVersion
-    {
-        $occurredAt = CarbonImmutable::parse($event->occurred_at);
-
-        return $goal->versions->first(function (AnalyticsGoalVersion $version) use ($occurredAt): bool {
-            return $occurredAt->greaterThanOrEqualTo($version->effective_from)
-                && ($version->effective_to === null || $occurredAt->lessThan($version->effective_to));
-        });
-    }
-
-    private function matchesGoal(AnalyticsEvent $event, AnalyticsGoal $goal): bool
-    {
-        $version = $this->matchingVersion($event, $goal);
-
-        if ($goal->versions->isNotEmpty() && $version === null) {
-            return false;
-        }
-
-        $kind = $version->kind ?? $goal->kind;
-        $matchType = $version->match_type ?? $goal->match_type;
-        $matchValue = $version->match_value ?? $goal->match_value;
-
-        if ($kind === 'event') {
-            return $event->type === 'event' && data_get($event->properties, 'name') === $matchValue;
-        }
-
-        return $event->type === 'pageview' && ($matchType === 'prefix'
-            ? str_starts_with($event->path, $matchValue)
-            : $event->path === $matchValue);
     }
 }

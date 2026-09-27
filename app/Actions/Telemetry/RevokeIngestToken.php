@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class RevokeIngestToken
 {
+    /**
+     * Revokes an ingest token.
+     *
+     * @param  RecordAuditEntry  $audit  Records the revocation.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Stop accepting a key. Requests that use it are refused from now on. */

@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class SaveGoal
 {
+    /**
+     * Creates or changes a goal.
+     *
+     * @param  RebuildSiteReports  $rebuild  Recounts the site's history against the goal.
+     */
     public function __construct(private readonly RebuildSiteReports $rebuild) {}
 
     /** Create or change a goal, then recount conversions (a changed definition starts a new goal version). */

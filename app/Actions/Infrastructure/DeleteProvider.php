@@ -15,6 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 final class DeleteProvider
 {
+    /**
+     * Disconnects a provider nothing depends on.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Remove a provider that nothing uses any more. Its credential is kept (soft-deleted) for the audit trail but never used again. */

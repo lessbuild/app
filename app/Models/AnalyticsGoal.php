@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -49,7 +50,8 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * Records the goal's first version when it's created, so its definition can be looked up for any point in time.
+     * Records a version of the goal's definition when it's created and each time its kind or match changes (closing
+     * the previous one), so its definition can be looked up for any point in time.
      */
     protected static function booted(): void
     {
@@ -105,5 +107,38 @@ class AnalyticsGoal extends Model
     public function conversions(): HasMany
     {
         return $this->hasMany(AnalyticsGoalConversion::class, 'goal_id');
+    }
+
+    /**
+     * The goal's definition in effect at a moment: the version whose period includes it. Null before the goal existed.
+     * Callers that check many events should eager-load `versions`.
+     */
+    public function versionAt(mixed $at): ?AnalyticsGoalVersion
+    {
+        $at = CarbonImmutable::parse($at);
+
+        return $this->versions->first(fn (AnalyticsGoalVersion $version): bool => $at->greaterThanOrEqualTo($version->effective_from)
+            && ($version->effective_to === null || $at->lessThan($version->effective_to)));
+    }
+
+    /**
+     * Whether the event completes the goal as it was defined when the event happened, so editing a goal doesn't rewrite
+     * history. Event goals match a custom event's name; path goals match a pageview's path exactly or by prefix. Goals
+     * without recorded versions use their current definition.
+     */
+    public function isCompletedBy(AnalyticsEvent $event): bool
+    {
+        $version = $this->versionAt($event->occurred_at);
+        if ($this->versions->isNotEmpty() && $version === null) {
+            return false;
+        }
+        $kind = $version->kind ?? $this->kind;
+        $matchType = $version->match_type ?? $this->match_type;
+        $matchValue = $version->match_value ?? $this->match_value;
+        if ($kind === 'event') {
+            return $event->type === 'event' && data_get($event->properties, 'name') === $matchValue;
+        }
+
+        return $event->type === 'pageview' && ($matchType === 'prefix' ? str_starts_with($event->path, $matchValue) : $event->path === $matchValue);
     }
 }

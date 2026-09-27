@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Gate;
 
 final class DismissChecklist
 {
+    /**
+     * Hides the getting-started checklist for everyone on the project.
+     */
     public function handle(User $actor, Project $project): void
     {
         Gate::forUser($actor)->authorize('update', $project);

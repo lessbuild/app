@@ -13,6 +13,11 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveEnvironmentProcess
 {
+    /**
+     * Adds or changes an environment's long-running process, within the plan.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan includes worker processes.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**

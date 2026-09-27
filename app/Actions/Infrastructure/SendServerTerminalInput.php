@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class SendServerTerminalInput
 {
+    /**
+     * Passes keystrokes from the browser to a terminal.
+     *
+     * @param  TerminalFrames  $frames  Queues the input for the terminal's worker.
+     */
     public function __construct(private readonly TerminalFrames $frames) {}
 
     /** Queue keystrokes for the shell and keep the session from going idle. */
@@ -25,6 +30,9 @@ final class SendServerTerminalInput
         return $this->frames->pushInput($terminal, $input);
     }
 
+    /**
+     * When the terminal closes if nothing more is typed: the idle timeout from now, but never past its time limit.
+     */
     private function idleUntil(ServerTerminalSession $terminal): \Carbon\CarbonImmutable
     {
         $idle = now()->toImmutable()->addMinutes((int) config('infrastructure.terminal.idle_minutes'));

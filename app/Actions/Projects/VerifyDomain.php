@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class VerifyDomain
 {
+    /**
+     * Checks a domain's TXT record.
+     *
+     * @param  DnsResolver  $dns  Looks up TXT records.
+     */
     public function __construct(private readonly DnsResolver $dns) {}
 
     /** Look for the domain's TXT record. Returns whether the domain is verified afterwards. */

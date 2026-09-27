@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\Gate;
 
 final class CancelBuild
 {
+    /**
+     * Cancels a deploy that hasn't finished.
+     *
+     * @param  FinishBuild  $finish  Marks the deploy canceled.
+     * @param  RemoteDeployments  $remote  Stops the script on the server when it's already running.
+     */
     public function __construct(private readonly FinishBuild $finish, private readonly RemoteDeployments $remote) {}
 
     /** Stop a build: a waiting one is simply dropped; a running one's script is killed on the server (keeping its log). */

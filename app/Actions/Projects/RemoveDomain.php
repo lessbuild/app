@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Gate;
 
 final class RemoveDomain
 {
+    /**
+     * Removes a domain from the project.
+     */
     public function handle(User $actor, Domain $domain): void
     {
         Gate::forUser($actor)->authorize('update', $domain->project);

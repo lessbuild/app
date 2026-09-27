@@ -11,6 +11,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class VerifySite
 {
+    /**
+     * Checks that a site's hostnames belong to its project.
+     *
+     * @param  VerifiedHostnamesQuery  $verified  The project's verified domains.
+     */
     public function __construct(private readonly VerifiedHostnamesQuery $verified) {}
 
     /**

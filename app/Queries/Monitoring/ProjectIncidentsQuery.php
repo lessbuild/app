@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Queries\Monitoring;
 
-use App\Enums\AccountRole;
 use App\Models\Incident;
 use App\Models\Membership;
 use App\Models\Project;
@@ -41,10 +40,8 @@ final class ProjectIncidentsQuery
      */
     public function assignees(Project $project): array
     {
-        $memberships = Membership::query()->where('account_id', $project->account_id)
-            ->whereIn('role', [AccountRole::Owner->value, AccountRole::Admin->value, AccountRole::Member->value])
-            ->with('user')->get()
-            ->filter(fn (Membership $membership): bool => $membership->canUseService('monitoring'));
+        $memberships = Membership::query()->where('account_id', $project->account_id)->with('user')->get()
+            ->filter(fn (Membership $membership): bool => $membership->canTakeMonitoringAssignments());
 
         return array_values($memberships->map(fn (Membership $membership): User => $membership->user)
             ->sortBy(fn (User $user): string => mb_strtolower($user->name))->all());

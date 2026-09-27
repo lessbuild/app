@@ -18,6 +18,12 @@ use Illuminate\Support\Facades\Gate;
 
 final class CreateIngestToken
 {
+    /**
+     * Creates an ingest token for an environment.
+     *
+     * @param  IngestTokens  $tokens  Generates the token and stores its hash.
+     * @param  RecordAuditEntry  $audit  Records the new token.
+     */
     public function __construct(private readonly IngestTokens $tokens, private readonly RecordAuditEntry $audit) {}
 
     /** Create an ingest key for one environment. The secret is returned once; only its hash is kept. */

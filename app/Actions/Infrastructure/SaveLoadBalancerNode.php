@@ -14,6 +14,11 @@ use Illuminate\Validation\ValidationException;
 
 final class SaveLoadBalancerNode
 {
+    /**
+     * Adds or changes a server behind a load balancer.
+     *
+     * @param  LoadBalancerChanges  $changes  Re-applies the load balancer's configuration.
+     */
     public function __construct(private readonly LoadBalancerChanges $changes) {}
 
     /**

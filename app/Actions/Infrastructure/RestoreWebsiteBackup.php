@@ -16,6 +16,11 @@ use Illuminate\Validation\ValidationException;
 
 final class RestoreWebsiteBackup
 {
+    /**
+     * Restores a website from a backup.
+     *
+     * @param  RecordAuditEntry  $audit  Records the restore.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Put a completed backup back over the live website, one restore at a time. */

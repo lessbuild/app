@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class RenameServer
 {
+    /**
+     * Changes a server's display name.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Set the name shown in the app. The machine's hostname stays as created. */

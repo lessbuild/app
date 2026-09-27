@@ -14,6 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 final class HandleRepositoryWebhook
 {
+    /**
+     * Turns a verified push into a deploy when it should cause one.
+     *
+     * @param  Deployments  $deployments  Queues the deploy, or says why it can't be queued now.
+     * @param  RepositoryChangeImpactEvaluator  $impact  Decides whether the push touched the paths that trigger deploys.
+     */
     public function __construct(private readonly Deployments $deployments, private readonly RepositoryChangeImpactEvaluator $impact) {}
 
     /**

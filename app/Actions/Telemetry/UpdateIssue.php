@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Telemetry;
 
-use App\Enums\AccountRole;
 use App\Enums\IssueStatus;
 use App\Exceptions\StateConflict;
 use App\Models\Issue;
@@ -19,6 +18,11 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateIssue
 {
+    /**
+     * Resolves, reopens, snoozes, ignores or assigns an issue.
+     *
+     * @param  TelemetryRedactor  $redactor  Redacts notes before they're stored.
+     */
     public function __construct(private readonly TelemetryRedactor $redactor) {}
 
     /**
@@ -39,7 +43,7 @@ final class UpdateIssue
             $before = ['status' => $issue->status->value, 'assignee_id' => $issue->assignee_id, 'snoozed_until' => $issue->snoozed_until?->toISOString()];
             if ($data['action'] === 'assign') {
                 $assigneeId = ($data['assignee_id'] ?? '') === '' ? null : (string) $data['assignee_id'];
-                if ($assigneeId !== null && ! $this->canBeAssigned($project, $assigneeId)) {
+                if ($assigneeId !== null && ! (Membership::query()->where('account_id', $project->account_id)->where('user_id', $assigneeId)->first()?->canTakeMonitoringAssignments() ?? false)) {
                     throw ValidationException::withMessages(['assignee_id' => __('Choose a member who works on Monitoring in this account.')]);
                 }
                 $issue->forceFill(['assignee_id' => $assigneeId]);
@@ -70,14 +74,5 @@ final class UpdateIssue
 
             return $issue;
         }, attempts: 3);
-    }
-
-    private function canBeAssigned(Project $project, string $userId): bool
-    {
-        $membership = Membership::query()->where('account_id', $project->account_id)->where('user_id', $userId)->first();
-
-        return $membership !== null
-            && in_array($membership->role, [AccountRole::Owner, AccountRole::Admin, AccountRole::Member], true)
-            && $membership->canUseService('monitoring');
     }
 }

@@ -33,6 +33,18 @@ final class SaveMonitor
         'heartbeat_schedule', 'heartbeat_interval_minutes', 'heartbeat_cron', 'heartbeat_timezone', 'heartbeat_grace_minutes',
         'queue_name', 'queue_settings'];
 
+    /**
+     * Creates or changes a monitor.
+     *
+     * @param  TelemetryRedactor  $redactor  Redacts the name and queue name.
+     * @param  IncidentLifecycle  $lifecycle  Closes open incidents a change makes meaningless.
+     * @param  PublicHttpTarget  $targets  Checks an HTTP target is a public URL.
+     * @param  DnsRecordSet  $dnsSets  Normalises a DNS monitor's hostname and expected records.
+     * @param  HeartbeatSchedule  $heartbeatSchedule  Restarts a heartbeat monitor's schedule when it changes.
+     * @param  QueueMonitorEvaluator  $queues  Resets a queue monitor's evaluation when its settings change.
+     * @param  MonitorChanges  $changes  Locks the configuration, bumps the monitor's version and cancels checks that would test the old settings.
+     * @param  RecordAuditEntry  $audit  Records the change.
+     */
     public function __construct(
         private readonly TelemetryRedactor $redactor,
         private readonly IncidentLifecycle $lifecycle,

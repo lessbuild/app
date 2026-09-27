@@ -15,6 +15,11 @@ use Illuminate\Validation\ValidationException;
 
 final class PromoteBuild
 {
+    /**
+     * Deploys a build's commit to a higher environment.
+     *
+     * @param  Deployments  $deployments  Queues the promotion, or says why it can't be queued now.
+     */
     public function __construct(private readonly Deployments $deployments) {}
 
     /**

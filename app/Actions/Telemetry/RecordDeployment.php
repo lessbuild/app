@@ -20,6 +20,12 @@ use LogicException;
 
 final class RecordDeployment
 {
+    /**
+     * Records a deployment reported by a pipeline.
+     *
+     * @param  RecordReleases  $releases  Finds or creates the release deployed.
+     * @param  TelemetryRedactor  $redactor  Redacts the reported labels.
+     */
     public function __construct(private readonly RecordReleases $releases, private readonly TelemetryRedactor $redactor) {}
 
     /**
@@ -82,7 +88,11 @@ final class RecordDeployment
         }, attempts: 3);
     }
 
-    /** @param list<mixed> $payload
+    /**
+     * HMACs of the request under the current and previous app keys, so a retried report is recognised even after a key
+     * rotation without storing the request itself.
+     *
+     * @param  list<mixed>  $payload
      * @return list<string>
      */
     private function fingerprints(array $payload): array

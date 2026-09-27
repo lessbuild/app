@@ -16,6 +16,12 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteWebsite
 {
+    /**
+     * Deletes a website and cleans it off its server.
+     *
+     * @param  WebsiteHealthChecks  $health  Removes its health monitor.
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
     /** Delete a website: it disappears at once, and its files, Caddy site and database are removed from its servers in the background. */

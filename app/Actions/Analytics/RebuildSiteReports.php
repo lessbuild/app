@@ -8,6 +8,13 @@ use App\Models\AnalyticsSite;
 
 final class RebuildSiteReports
 {
+    /**
+     * Rebuilds everything derived from a site's events, in dependency order.
+     *
+     * @param  RebuildSiteVisits  $visits  Rebuilds visits first.
+     * @param  RebuildGoalConversions  $conversions  Then conversions, which point at visits.
+     * @param  RebuildReportAggregates  $aggregates  Then daily totals, which count both.
+     */
     public function __construct(
         private readonly RebuildSiteVisits $visits,
         private readonly RebuildGoalConversions $conversions,

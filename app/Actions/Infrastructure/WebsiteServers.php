@@ -12,6 +12,9 @@ use Illuminate\Validation\ValidationException;
 /** Finds an account's server that can host websites: active, an app server, with MySQL set up. */
 final class WebsiteServers
 {
+    /**
+     * The account's server with this ID if it can host websites; otherwise a validation error on `server_id`.
+     */
     public function handle(Account $account, int $serverId): Server
     {
         $server = Server::query()->where('account_id', $account->id)->whereKey($serverId)->where('provisioning_status', Server::STATUS_ACTIVE)

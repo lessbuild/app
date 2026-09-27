@@ -13,6 +13,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class OpenBillingPortal
 {
+    /**
+     * Sends the account to the provider's billing portal.
+     *
+     * @param  PaymentProvider  $provider  Creates the portal link.
+     */
     public function __construct(private readonly PaymentProvider $provider) {}
 
     /** Stripe's portal for payment methods, billing details and receipts. */

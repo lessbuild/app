@@ -13,9 +13,19 @@ final class UpdateUserPassword implements UpdatesUserPasswords
 {
     use PasswordValidationRules;
 
+    /**
+     * Fortify's password-change adapter.
+     *
+     * @param  ChangePassword  $changePassword  Sets the new password.
+     */
     public function __construct(private readonly ChangePassword $changePassword) {}
 
-    /** @param array<string, string> $input */
+    /**
+     * Validates the new password, and the current one when the person has one (people who signed up through a provider
+     * don't), then changes it.
+     *
+     * @param  array<string, string>  $input
+     */
     public function update(User $user, array $input): void
     {
         $rules = ['password' => $this->passwordRules()];

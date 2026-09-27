@@ -12,9 +12,20 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordQueueWorker
 {
+    /**
+     * Records a heartbeat from a worker a queue monitor watches.
+     *
+     * @param  MonitorQueue  $queue  Locks the monitor and checks it still accepts heartbeats.
+     * @param  QueueMonitorEvaluator  $evaluation  Counts live workers and re-evaluates the monitor.
+     */
     public function __construct(private readonly MonitorQueue $queue, private readonly QueueMonitorEvaluator $evaluation) {}
 
-    /** @param array{worker_id: string, sequence: int, status: string, job_id?: ?string} $data
+    /**
+     * Stores a worker's status after checking the monitor's key. Sequences must only go up: a repeat returns the
+     * original receipt, an older one is a conflict. A queue can have at most 100 live workers, and a busy worker keeps
+     * its job's start time while it stays on the same job.
+     *
+     * @param  array{worker_id: string, sequence: int, status: string, job_id?: ?string}  $data
      * @return array{worker_id: string, sequence: int, status: string, replayed: bool, received_at: string}
      */
     public function handle(int $monitorId, string $tokenHash, array $data): array
@@ -58,7 +69,11 @@ final class RecordQueueWorker
         }, attempts: 3);
     }
 
-    /** @return array{worker_id: string, sequence: int, status: string, replayed: bool, received_at: string} */
+    /**
+     * What the worker gets back: its ID, sequence and status, whether it was a replay, and when it was seen.
+     *
+     * @return array{worker_id: string, sequence: int, status: string, replayed: bool, received_at: string}
+     */
     private function receipt(QueueWorker $worker, bool $replayed): array
     {
         return ['worker_id' => $worker->worker_id, 'sequence' => $worker->last_sequence, 'status' => $worker->status,

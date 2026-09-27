@@ -10,6 +10,12 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordBuildStage
 {
+    /**
+     * Records progress reported by a running deploy script.
+     *
+     * @param  RepositoryDeploymentPlan  $plan  Knows which stage switches the release live and which one is last.
+     * @param  FinishBuild  $finish  Finishes the deploy when the last stage is reported.
+     */
     public function __construct(private readonly RepositoryDeploymentPlan $plan, private readonly FinishBuild $finish) {}
 
     /** A stage of the deployment script finished (signed callback). The last one makes the build live. */

@@ -15,6 +15,11 @@ use Illuminate\Support\Str;
 
 final class RetryWebsiteProvisioning
 {
+    /**
+     * Starts a failed website's provisioning again.
+     *
+     * @param  WebsiteServers  $servers  Checks its server can still host websites.
+     */
     public function __construct(private readonly WebsiteServers $servers) {}
 
     /** Set a failed website up again, or retry removing the copy on its previous server. Returns false if neither applies. */

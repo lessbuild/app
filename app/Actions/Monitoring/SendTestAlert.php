@@ -15,8 +15,16 @@ use Illuminate\Support\Facades\Gate;
 
 final class SendTestAlert
 {
+    /**
+     * Sends a test alert to a destination.
+     *
+     * @param  AlertDispatcher  $alerts  Queues the delivery.
+     */
     public function __construct(private readonly AlertDispatcher $alerts) {}
 
+    /**
+     * Queues a clearly-marked test alert to an enabled destination, if it hasn't changed since the page was opened.
+     */
     public function handle(Account $account, User $actor, AlertDestination $destination, int $version): AlertDelivery
     {
         return DB::transaction(function () use ($account, $actor, $destination, $version): AlertDelivery {

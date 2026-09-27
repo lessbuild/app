@@ -12,6 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 final class FinishBuild
 {
+    /**
+     * Ends a deploy and does what follows from how it ended.
+     *
+     * @param  DeploymentMarkers  $markers  Records the deploy on the environment's Monitoring timeline.
+     * @param  Deployments  $deployments  Rolls back automatically when needed and queues pushes that arrived during the deploy.
+     */
     public function __construct(private readonly DeploymentMarkers $markers, private readonly Deployments $deployments) {}
 
     /**
@@ -52,6 +58,10 @@ final class FinishBuild
         return $finished;
     }
 
+    /**
+     * Deploys the push that arrived while this deploy was running, if the repository can deploy now, and clears it so it
+     * isn't deployed twice.
+     */
     private function deployPendingPush(int $repositoryId): void
     {
         $repository = Repository::query()->find($repositoryId);

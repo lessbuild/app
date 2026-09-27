@@ -19,6 +19,11 @@ use Illuminate\Support\Str;
 
 final class InviteMember
 {
+    /**
+     * Invites someone to the account, within the plan's member limit.
+     *
+     * @param  Entitlements  $entitlements  Checks the account's member limit.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     public const EXPIRES_AFTER_DAYS = 7;

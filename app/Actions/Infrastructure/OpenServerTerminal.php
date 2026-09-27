@@ -18,6 +18,11 @@ use Illuminate\Validation\ValidationException;
 
 final class OpenServerTerminal
 {
+    /**
+     * Opens a troubleshooting terminal on a server.
+     *
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /**

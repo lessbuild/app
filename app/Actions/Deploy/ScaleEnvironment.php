@@ -12,6 +12,11 @@ use Illuminate\Validation\ValidationException;
 
 final class ScaleEnvironment
 {
+    /**
+     * Sets how many replicas an environment runs.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan includes scaling.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /** Set how many replicas of each worker run, within the environment's minimum and maximum. Applies with the next deploy. */

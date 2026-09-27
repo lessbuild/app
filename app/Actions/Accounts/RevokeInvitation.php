@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Gate;
 
 final class RevokeInvitation
 {
+    /**
+     * Withdraws a pending invitation; one already accepted, revoked or expired is left alone.
+     */
     public function handle(User $actor, AccountInvitation $invitation): void
     {
         Gate::forUser($actor)->authorize('manageMembers', $invitation->account);

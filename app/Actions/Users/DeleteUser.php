@@ -16,6 +16,14 @@ use Illuminate\Support\Facades\DB;
 
 final class DeleteUser
 {
+    /**
+     * Deleting a person resolves every account they belong to first.
+     *
+     * @param  DepartureQuery  $departure  Works out which accounts are deleted, left or blocking.
+     * @param  DeleteAccount  $deleteAccount  Deletes accounts where they're the only member.
+     * @param  RemoveMember  $removeMember  Removes them from shared accounts.
+     * @param  BrowserSessions  $sessions  Signs them out everywhere.
+     */
     public function __construct(
         private readonly DepartureQuery $departure,
         private readonly DeleteAccount $deleteAccount,

@@ -16,6 +16,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class ArchiveMonitor
 {
+    /**
+     * Archives a monitor.
+     *
+     * @param  IncidentLifecycle  $lifecycle  Closes its open incidents.
+     * @param  MonitorChanges  $changes  Locks the configuration, bumps the monitor's version and cancels its pending checks.
+     * @param  RecordAuditEntry  $audit  Records it.
+     */
     public function __construct(
         private readonly IncidentLifecycle $lifecycle,
         private readonly MonitorChanges $changes,

@@ -18,6 +18,12 @@ use Illuminate\Support\Facades\Gate;
 
 final class RotateIngestToken
 {
+    /**
+     * Replaces an ingest token's secret.
+     *
+     * @param  IngestTokens  $tokens  Issues the replacement.
+     * @param  RecordAuditEntry  $audit  Records the rotation.
+     */
     public function __construct(private readonly IngestTokens $tokens, private readonly RecordAuditEntry $audit) {}
 
     /** Replace an active key with a new one (same name and expiry); the old one stops working at once. */

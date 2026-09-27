@@ -14,6 +14,12 @@ use Illuminate\Validation\ValidationException;
 
 final class RollbackBuild
 {
+    /**
+     * Rolls a website back to an earlier release.
+     *
+     * @param  Entitlements  $entitlements  Checks the plan keeps releases to roll back to.
+     * @param  Deployments  $deployments  Queues the rollback.
+     */
     public function __construct(private readonly Entitlements $entitlements, private readonly Deployments $deployments) {}
 
     /** Make an earlier succeeded release live again without rebuilding (its directory must still be on the server). */

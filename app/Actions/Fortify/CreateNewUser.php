@@ -16,9 +16,18 @@ final class CreateNewUser implements CreatesNewUsers
 {
     use PasswordValidationRules;
 
+    /**
+     * Fortify's registration adapter.
+     *
+     * @param  RegisterUser  $registerUser  Registers the person and creates their account.
+     */
     public function __construct(private readonly RegisterUser $registerUser) {}
 
-    /** @param array<string, string> $input */
+    /**
+     * Validates the registration form and registers the person.
+     *
+     * @param  array<string, string>  $input
+     */
     public function create(array $input): User
     {
         $validated = Validator::make($input, [

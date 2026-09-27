@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Listeners;
 
-use App\Enums\AccountRole;
 use App\Events\Accounts\MemberRemoved;
 use App\Events\Accounts\MemberRoleChanged;
 use App\Events\Accounts\MemberServiceAccessChanged;
@@ -51,17 +50,8 @@ final class IncidentAssigneeSubscriber
     public function accessChanged(MemberRoleChanged|MemberServiceAccessChanged $event): void
     {
         $membership = $event->membership;
-        if (! $this->canBeAssigned($membership)) {
+        if (! $membership->canTakeMonitoringAssignments()) {
             DB::transaction(fn () => $this->incidents->unassignMember($membership->account, $membership->user, $event->actor));
         }
-    }
-
-    /**
-     * Whether a member may hold incidents: an owner, admin or member (not billing or viewer) who can use Monitoring.
-     */
-    private function canBeAssigned(Membership $membership): bool
-    {
-        return in_array($membership->role, [AccountRole::Owner, AccountRole::Admin, AccountRole::Member], true)
-            && $membership->canUseService('monitoring');
     }
 }

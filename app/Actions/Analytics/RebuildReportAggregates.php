@@ -12,11 +12,14 @@ use App\Models\AnalyticsSite;
 use App\Models\AnalyticsVisit;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Collection;
 
 final class RebuildReportAggregates
 {
+    /**
+     * Rebuilds the daily totals that long-range reports read, for the days a batch touched or every day the site has
+     * data. Each day gets an overall row plus rows per page, device, browser, system, source and campaign.
+     */
     public function handle(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null): void
     {
         $batchEvents = $batch?->events()->orderBy('occurred_at')->orderBy('id')->get() ?? collect();
@@ -68,10 +71,14 @@ final class RebuildReportAggregates
         }
     }
 
-    /** @return Collection<int, string> */
+    /**
+     * Every local day with countable events or visits.
+     *
+     * @return Collection<int, string>
+     */
     private function allDates(AnalyticsSite $site): Collection
     {
-        $events = $this->eligibleEvents($site)->get(['occurred_at']);
+        $events = $site->events()->countable()->get(['occurred_at']);
         $visits = $site->visits()->get(['started_at']);
 
         return $events->map(fn (AnalyticsEvent $event): string => $this->localDate($event->occurred_at, $site->timezone))
@@ -81,12 +88,14 @@ final class RebuildReportAggregates
     }
 
     /**
+     * The countable events on the given local days.
+     *
      * @param  Collection<int, string>  $dates
      * @return Collection<int, AnalyticsEvent>
      */
     private function eventsForDates(AnalyticsSite $site, Collection $dates, ?AnalyticsIngestionBatch $batch): Collection
     {
-        return $this->eligibleEvents($site, $batch)
+        return $site->events()->countable($batch)
             ->where(function (Builder $query) use ($dates, $site): void {
                 foreach ($dates as $date) {
                     $start = CarbonImmutable::parse($date, $site->timezone)->startOfDay()->utc();
@@ -100,6 +109,8 @@ final class RebuildReportAggregates
     }
 
     /**
+     * Visits that started on the given local days.
+     *
      * @param  Collection<int, string>  $dates
      * @return Collection<int, AnalyticsVisit>
      */
@@ -114,21 +125,9 @@ final class RebuildReportAggregates
         })->get();
     }
 
-    /** @return HasMany<AnalyticsEvent, AnalyticsSite> */
-    private function eligibleEvents(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null): HasMany
-    {
-        return $site->events()
-            ->where(function (Builder $query) use ($batch): void {
-                $query->whereNull('ingestion_batch_id')
-                    ->orWhereHas('ingestionBatch', fn (Builder $batchQuery) => $batchQuery->where('status', 'processed'));
-
-                if ($batch !== null) {
-                    $query->orWhere('ingestion_batch_id', $batch->id);
-                }
-            });
-    }
-
     /**
+     * Visits grouped by who they belong to, for matching events to visits.
+     *
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @return Collection<string, Collection<int, AnalyticsVisit>> keyed by session or visitor
      */
@@ -138,6 +137,8 @@ final class RebuildReportAggregates
     }
 
     /**
+     * The visits the events happened in.
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
      * @return Collection<int, AnalyticsVisit>
@@ -152,6 +153,8 @@ final class RebuildReportAggregates
     }
 
     /**
+     * The events that happened in the visits.
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
@@ -164,7 +167,11 @@ final class RebuildReportAggregates
         return $events->filter(fn (AnalyticsEvent $event): bool => $keys->contains($this->visitForEvent($event, $visitMap)?->visit_key));
     }
 
-    /** @param Collection<string, Collection<int, AnalyticsVisit>> $visitMap */
+    /**
+     * The visit an event happened in, or null.
+     *
+     * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
+     */
     private function visitForEvent(AnalyticsEvent $event, Collection $visitMap): ?AnalyticsVisit
     {
         $identity = $event->session_id ?: $event->visitor_hash ?: 'anonymous';
@@ -174,6 +181,9 @@ final class RebuildReportAggregates
     }
 
     /**
+     * One aggregate row: pageviews, visits, visitors, goal completions, converted visits, and bounces among visits that
+     * ended at least 30 minutes ago.
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @param  Collection<int, AnalyticsGoal>  $goals
@@ -182,7 +192,7 @@ final class RebuildReportAggregates
     private function row(AnalyticsSite $site, string $date, string $dimension, ?string $value, Collection $events, Collection $visits, Collection $goals, CarbonImmutable $now): array
     {
         $pageviews = $events->where('type', 'pageview')->count();
-        $matching = $events->filter(fn (AnalyticsEvent $event): bool => $goals->contains(fn (AnalyticsGoal $goal): bool => $this->matches($event, $goal)))->count();
+        $matching = $events->filter(fn (AnalyticsEvent $event): bool => $goals->contains(fn (AnalyticsGoal $goal): bool => $goal->isCompletedBy($event)))->count();
         $eligible = $visits->filter(fn (AnalyticsVisit $visit): bool => $visit->pageviews > 0 && CarbonImmutable::parse($visit->last_seen_at)->lte($now->subMinutes(30)));
         $visitorCount = $visits->pluck('visitor_hash')->filter()->unique()->count();
 
@@ -207,41 +217,21 @@ final class RebuildReportAggregates
         ];
     }
 
+    /**
+     * A time's date in the site's timezone.
+     */
     private function localDate(mixed $value, string $timezone): string
     {
         return CarbonImmutable::parse($value)->setTimezone($timezone)->toDateString();
     }
 
+    /**
+     * Where a visit came from, labelled the same way the report labels sources.
+     */
     private function source(AnalyticsVisit $visit): string
     {
         return $visit->entry_utm_source
             ? $visit->entry_utm_source.($visit->entry_utm_medium ? ' / '.$visit->entry_utm_medium : '')
             : ($visit->entry_referrer_host ?: 'Direct / unknown');
-    }
-
-    private function matches(AnalyticsEvent $event, AnalyticsGoal $goal): bool
-    {
-        $version = $goal->versions->first(function ($version) use ($event): bool {
-            $occurredAt = CarbonImmutable::parse($event->occurred_at);
-
-            return $occurredAt->greaterThanOrEqualTo($version->effective_from)
-                && ($version->effective_to === null || $occurredAt->lessThan($version->effective_to));
-        });
-
-        if ($goal->versions->isNotEmpty() && $version === null) {
-            return false;
-        }
-
-        $kind = $version->kind ?? $goal->kind;
-        $matchType = $version->match_type ?? $goal->match_type;
-        $matchValue = $version->match_value ?? $goal->match_value;
-
-        if ($kind === 'event') {
-            return $event->type === 'event' && data_get($event->properties, 'name') === $matchValue;
-        }
-
-        return $event->type === 'pageview' && ($matchType === 'prefix'
-            ? str_starts_with($event->path, $matchValue)
-            : $event->path === $matchValue);
     }
 }

@@ -12,6 +12,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class RefreshServerCosts
 {
+    /**
+     * Updates servers' monthly costs from their providers' price lists.
+     *
+     * @param  ServerPricing  $pricing  Looks up each server's price.
+     */
     public function __construct(private readonly ServerPricing $pricing) {}
 
     /** Ask each cloud provider for its current prices now, rather than waiting for the daily `servers:sync-costs`. */

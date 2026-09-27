@@ -11,6 +11,9 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteServerAlertRule
 {
+    /**
+     * Deletes one of the account's server alert rules.
+     */
     public function handle(Account $account, User $actor, ServerAlertRule $rule): void
     {
         Gate::forUser($actor)->authorize('delete', $rule);

@@ -15,6 +15,12 @@ use Illuminate\Support\Facades\DB;
 
 final class ApplyEndedSelections
 {
+    /**
+     * Ends paid selections whose paid period ran out after a downgrade.
+     *
+     * @param  SubscriptionItems  $items  Syncs the subscription once they're removed.
+     * @param  ServiceRegistry  $services  Finds each service's free tier.
+     */
     public function __construct(private readonly SubscriptionItems $items, private readonly ServiceRegistry $services) {}
 
     /** Remove selections whose paid period has ended and update the subscriptions. Returns how many ended. */

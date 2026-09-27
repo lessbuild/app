@@ -22,6 +22,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class ChangeServiceTier
 {
+    /**
+     * Moves an account to another tier of a service.
+     *
+     * @param  ServiceRegistry  $services  Finds the service's catalogue.
+     * @param  PriceBook  $prices  Says whether the tier is on sale and its price.
+     * @param  PaymentProvider  $provider  Creates the customer and checkout for a first paid tier.
+     * @param  SubscriptionItems  $items  Syncs an existing subscription to the new selection.
+     */
     public function __construct(
         private readonly ServiceRegistry $services,
         private readonly PriceBook $prices,
@@ -77,6 +85,10 @@ final class ChangeServiceTier
         return PlanChange::changed();
     }
 
+    /**
+     * Moves the service to its free tier. With a live paid period, the change is scheduled for its end so nothing
+     * already paid for is lost; otherwise the paid selection is removed now.
+     */
     private function downgradeToFree(User $actor, Account $account, BillingAccount $billingAccount, ?BillingSelection $selection, string $service, string $from, string $to): PlanChange
     {
         if ($selection === null || $from === $to) {

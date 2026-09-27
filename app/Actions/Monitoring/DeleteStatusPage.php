@@ -14,6 +14,11 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteStatusPage
 {
+    /**
+     * Deletes a status page and its subscriptions.
+     *
+     * @param  RecordAuditEntry  $audit  Records the deletion.
+     */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /** Delete a status page with its updates and subscribers. Its public address stops working at once; monitors aren't affected. */

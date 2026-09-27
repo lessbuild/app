@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Actions\Monitoring;
 
-use App\Enums\AccountRole;
 use App\Exceptions\StateConflict;
 use App\Models\Incident;
 use App\Models\Membership;
@@ -18,6 +17,12 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateIncident
 {
+    /**
+     * Acknowledges, assigns, annotates or resolves an incident.
+     *
+     * @param  TelemetryRedactor  $redactor  Redacts notes before they're stored.
+     * @param  IncidentLocks  $locks  Locks the incident with its project.
+     */
     public function __construct(private readonly TelemetryRedactor $redactor, private readonly IncidentLocks $locks) {}
 
     /**
@@ -36,7 +41,7 @@ final class UpdateIncident
 
             if ($data['action'] === 'assign') {
                 $assigneeId = ($data['assignee_id'] ?? '') === '' ? null : (string) $data['assignee_id'];
-                if ($assigneeId !== null && ! $this->canBeAssigned($incident, $assigneeId)) {
+                if ($assigneeId !== null && ! (Membership::query()->where('account_id', $incident->account_id)->where('user_id', $assigneeId)->first()?->canTakeMonitoringAssignments() ?? false)) {
                     throw ValidationException::withMessages(['assignee_id' => __('Choose a member who works on Monitoring in this account.')]);
                 }
                 if ($incident->assignee_id === $assigneeId) {
@@ -62,14 +67,5 @@ final class UpdateIncident
 
             return $incident;
         }, attempts: 3);
-    }
-
-    private function canBeAssigned(Incident $incident, string $userId): bool
-    {
-        $membership = Membership::query()->where('account_id', $incident->account_id)->where('user_id', $userId)->first();
-
-        return $membership !== null
-            && in_array($membership->role, [AccountRole::Owner, AccountRole::Admin, AccountRole::Member], true)
-            && $membership->canUseService('monitoring');
     }
 }

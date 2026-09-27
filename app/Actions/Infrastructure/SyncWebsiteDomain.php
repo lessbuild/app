@@ -11,6 +11,11 @@ use Throwable;
 
 final class SyncWebsiteDomain
 {
+    /**
+     * Points a website domain's DNS at its server.
+     *
+     * @param  CloudflareDns  $cloudflare  Creates or updates the record at Cloudflare.
+     */
     public function __construct(private readonly CloudflareDns $cloudflare) {}
 
     /** Point the domain's Cloudflare record at the website's server. Returns a warning if Cloudflare refused, or null. */
