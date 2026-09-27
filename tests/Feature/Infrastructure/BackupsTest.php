@@ -128,7 +128,7 @@ final class BackupsTest extends TestCase
         $this->assertStringContainsString("--keep-last 14 --tag 'website:{$this->website->id}'", $script);
         $this->assertNotNull($this->reload($destination)->last_verified_at);
         $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}")->assertSee('Done')->assertSee('2 KB')->assertSee('Verify');
-        $this->actingAs($this->owner)->get("{$this->base}/backups")->assertSee('Shop')->assertSee('2 KB')->assertSee('seconds ago');
+        $this->actingAs($this->owner)->get("{$this->base}/backups")->assertSee('Shop')->assertSee('2 KB')->assertSee('Last backup')->assertSee('ago');
 
         // One at a time per website.
         Queue::fake();

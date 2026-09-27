@@ -16,6 +16,7 @@ use App\Models\Incident;
 use App\Models\IngestReceipt;
 use App\Models\IngestToken;
 use App\Models\Issue;
+use App\Models\LoadBalancer;
 use App\Models\MaintenanceWindow;
 use App\Models\MetricSeries;
 use App\Models\Monitor;
@@ -54,6 +55,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'server' => [Server::class, 'account', ['infrastructure.*']],
         'website' => [Website::class, 'account', ['infrastructure.*']],
         'backupDestination' => [BackupDestination::class, 'account', ['infrastructure.*']],
+        'loadBalancer' => [LoadBalancer::class, 'account', ['infrastructure.*']],
         'destination' => [AlertDestination::class, 'account', ['monitoring.*']],
         'window' => [MaintenanceWindow::class, 'account', ['monitoring.*']],
         'page' => [StatusPage::class, 'account', ['monitoring.*']],

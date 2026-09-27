@@ -52,6 +52,13 @@ Design notes for the Infrastructure service in Phase 4 of [the plan](platform-v2
 - **Copying** replaces another website's database with a dump of this one's. Both must be on the same server; websites linked to a production environment can't be overwritten; the person types the target's name and confirms their password.
 - Inspecting, adding users and copying need the `deploy.resources` plan flag (Pro and above, like Deployer's `resources` entitlement). `deploy.cost_controls` was added alongside it for part 7.
 
+## Load balancers and scaling (part 6)
+
+- A **load balancer** belongs to the account and runs on one active server that has Caddy (a Load balancer, Web or App server). Its Caddy site (`/etc/caddy/websites/ha-{id}.conf`, the Deployer path) proxies the hostname to its **nodes** (servers in the account, a port, a weight of 1–10, in or out of rotation) with least-connections balancing and active health checks on the health path; with no usable nodes it serves a 503 page. It can name the website it fronts, which must live on another server.
+- Every change rewrites the site and reloads Caddy (`ApplyLoadBalancer`); a failure is shown and can be retried. Deleting removes the site from the proxy server first; if that fails the load balancer stays, marked, until a retry works.
+- Adding one needs the `deploy.high_availability` plan flag (Business and above, Deployer's `high_availability`). Changing and deleting work on any plan.
+- **Scaling** in Deployer (replica counts, hibernation, scaling schedules) acts on an environment's processes, so it moves to Deploy with environments and processes (D04, D17).
+
 ## Public contracts kept
 
 - Server and website provisioning callback URLs and their signed parameters, so anything mid-setup at cutover still reports in.
