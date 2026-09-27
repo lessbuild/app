@@ -24,6 +24,7 @@ final class WebsiteRequest extends FormRequest
             'server_id' => ['required', 'integer', 'min:1'],
             'url' => ['required', 'string', 'max:255', new Hostname, Rule::unique('websites', 'url')->ignore($websiteId), Rule::unique('website_domains', 'hostname')->ignore($primaryDomain)],
             'description' => ['nullable', 'string', 'max:2000'],
+            'environment_id' => ['nullable', 'string', 'max:26'],
             'env_file' => ['nullable', 'string', 'max:65535'],
             'release_retention' => ['sometimes', 'integer', 'between:2,20'],
             'health_check_enabled' => ['sometimes', 'boolean'],

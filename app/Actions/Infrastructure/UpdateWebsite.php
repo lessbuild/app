@@ -11,6 +11,8 @@ use App\Jobs\Infrastructure\ProvisionWebsite;
 use App\Models\Account;
 use App\Models\User;
 use App\Models\Website;
+use App\Services\Infrastructure\WebsiteHealthChecks;
+use App\Support\Infrastructure\WebsiteEnvironment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -18,7 +20,7 @@ use Illuminate\Validation\ValidationException;
 
 final class UpdateWebsite
 {
-    public function __construct(private readonly WebsiteServers $servers, private readonly RecordAuditEntry $audit) {}
+    public function __construct(private readonly WebsiteServers $servers, private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
     /**
      * Change a website. A new server, URL or .env (or a failed website) sets it up again; moving servers keeps the old copy
@@ -44,7 +46,7 @@ final class UpdateWebsite
                 $attributes += ['health_status' => 'unknown', 'health_failure_count' => 0, 'health_last_checked_at' => null, 'health_last_error' => null];
             }
             $reprovision = $locked->provisioning_status === Website::STATUS_FAILED || $moving || $attributes['url'] !== $locked->url || $attributes['env_file'] !== (string) $locked->env_file;
-            $locked->forceFill([...$attributes, 'server_id' => $server->id]);
+            $locked->forceFill([...$attributes, 'server_id' => $server->id, 'environment_id' => WebsiteEnvironment::resolve($account, $data['environment_id'] ?? null)]);
             if ($reprovision) {
                 $locked->forceFill([
                     'previous_server_id' => $moving ? $website->server_id : $locked->previous_server_id,
@@ -58,6 +60,7 @@ final class UpdateWebsite
                 $locked->logs()->where('type', 'provisioning')->delete();
                 ProvisionWebsite::dispatch($locked->id, (string) $locked->provisioning_token)->afterCommit();
             }
+            $this->health->sync($locked, $actor);
             $this->audit->handle(AuditAction::WebsiteUpdated, $actor, $account->id, ['website' => $locked->name, 'moved' => $moving, 'reprovisioned' => $reprovision]);
 
             return $locked;

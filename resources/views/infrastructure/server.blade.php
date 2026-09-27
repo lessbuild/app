@@ -63,6 +63,47 @@
             @endif
         </x-signal.ui.card>
 
+        <x-signal.ui.settings-section id="alerts" :title="__('Alerts')" :description="__('Owners and admins get an email and an inbox message when a reading stays past a threshold, and when it recovers.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @if ($alertRules->isEmpty())
+                    <p class="text-sm text-muted">{{ __('No alerts yet.') }}</p>
+                @else
+                    <ul class="divide-y divide-line">
+                        @foreach ($alertRules as $rule)
+                            <li class="flex flex-wrap items-center justify-between gap-2 py-2 text-sm">
+                                <span><span class="font-bold text-ink">{{ $rule->name }}</span> <span class="text-muted">{{ __(\App\Models\ServerAlertRule::METRICS[$rule->metric] ?? $rule->metric) }} {{ $rule->operator === 'lte' ? '≤' : '≥' }} {{ rtrim(rtrim(number_format($rule->threshold, 2), '0'), '.') }} · {{ trans_choice(':count reading|:count readings in a row', $rule->consecutive_breaches, ['count' => $rule->consecutive_breaches]) }} · {{ $rule->server_id === null ? __('all servers') : __('this server') }}</span></span>
+                                <span class="flex items-center gap-2">
+                                    @if ($rule->is_alerting)<x-signal.ui.badge tone="danger">{{ __('Alerting') }}</x-signal.ui.badge>@endif
+                                    @if ($canManage)
+                                        <form method="POST" action="{{ route('infrastructure.servers.alerts.destroy', [$project, $server->id, $rule->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                                    @endif
+                                </span>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+                @if ($canManage)
+                    <form method="POST" action="{{ route('infrastructure.servers.alerts.store', [$project, $server->id]) }}" class="grid items-end gap-3 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
+                        @csrf
+                        <x-signal.ui.input-field name="name" :label="__('Name')" placeholder="Disk almost full" maxlength="120" required />
+                        <x-signal.ui.select-field name="metric" :label="__('Metric')">
+                            @foreach (\App\Models\ServerAlertRule::METRICS as $key => $label)
+                                <option value="{{ $key }}">{{ __($label) }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <div class="flex gap-2">
+                            <x-signal.ui.select-field name="operator" :label="__('When')"><option value="gte">≥</option><option value="lte">≤</option></x-signal.ui.select-field>
+                            <x-signal.ui.input-field name="threshold" type="number" step="0.01" :label="__('Threshold')" value="90" required />
+                        </div>
+                        <x-signal.ui.input-field name="consecutive_breaches" type="number" min="1" max="20" :label="__('Readings in a row')" value="3" required />
+                        <x-signal.ui.input-field name="cooldown_minutes" type="number" min="5" max="1440" :label="__('Quiet for (minutes)')" value="60" required />
+                        <x-signal.ui.select-field name="scope" :label="__('Applies to')"><option value="server">{{ __('This server') }}</option><option value="account">{{ __('Every server') }}</option></x-signal.ui.select-field>
+                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Add alert') }}</x-signal.ui.button></div>
+                    </form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+
         <x-signal.ui.settings-section id="diagnostics" :title="__('Diagnostics')" :description="$diagnostics?->finished_at ? __('Last run :time', ['time' => $diagnostics->finished_at->diffForHumans()]) : __('A read-only check of SSH, root access, PHP, storage, disk, memory and processes.')">
             <div class="grid gap-3 p-4 sm:p-6">
                 @if ($diagnostics?->isRunning())

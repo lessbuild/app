@@ -44,6 +44,25 @@
         </x-signal.ui.settings-section>
     @endif
 
+    <x-signal.ui.settings-section :title="__('Health')" :description="__('Health checks run in Monitoring, so failures open incidents and use its alert routing.')">
+        <div class="p-4 text-sm sm:p-6">
+            @if ($website->healthMonitor && $website->environment)
+                @php($health = $website->healthMonitor->healthLabel())
+                <p class="flex flex-wrap items-center gap-2">
+                    <x-signal.ui.badge :tone="match ($health) { 'Up' => 'success', 'Down' => 'danger', 'Paused' => 'neutral', default => 'warning' }">{{ __($health) }}</x-signal.ui.badge>
+                    <a href="{{ route('monitoring.monitors.show', [$website->environment->project_id, $website->healthMonitor->id]) }}" class="font-bold text-primary hover:underline">{{ __('Open the monitor') }}</a>
+                    <span class="text-muted">https://{{ $website->url }}{{ $website->health_check_path }}</span>
+                </p>
+            @elseif (! $website->health_check_enabled)
+                <p class="text-muted">{{ __('Health checks are off.') }}</p>
+            @elseif (! $website->environment)
+                <p class="text-muted">{{ __('Link the website to an environment to check its health.') }}</p>
+            @else
+                <p class="text-muted">{{ __('Turn on Monitoring for :project to check this website’s health.', ['project' => $website->environment->project->name]) }}</p>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Domains')" :description="__('Aliases serve the website too; redirects send visitors elsewhere. The primary domain changes with the website’s domain setting.')">
         <div class="grid gap-4 p-4 sm:p-6">
             <ul class="divide-y divide-line">

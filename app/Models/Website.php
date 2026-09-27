@@ -50,6 +50,7 @@ use Illuminate\Support\Str;
  * @property string $health_status
  * @property CarbonImmutable|null $health_last_checked_at
  * @property string|null $health_last_error
+ * @property int|null $health_monitor_id the Monitoring monitor that checks this website
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -59,6 +60,7 @@ use Illuminate\Support\Str;
  * @property-read Server|null $server
  * @property-read Server|null $previousServer
  * @property-read Environment|null $environment
+ * @property-read Monitor|null $healthMonitor
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteDomain> $domains
  * @property-read \Illuminate\Database\Eloquent\Collection<int, WebsiteLog> $logs
  */
@@ -78,7 +80,8 @@ class Website extends Model
 
     public const STATUS_FAILED = 'failed';
 
-    public const HEALTH_CHECK_INTERVALS = [5, 10, 15, 30, 60];
+    /** The same choices as Monitoring's HTTP monitors, which run the checks. */
+    public const HEALTH_CHECK_INTERVALS = [5, 15, 30, 60];
 
     public const HEALTH_FAILURE_THRESHOLDS = [1, 2, 3, 5, 10];
 
@@ -138,6 +141,12 @@ class Website extends Model
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
+    }
+
+    /** @return BelongsTo<Monitor, $this> */
+    public function healthMonitor(): BelongsTo
+    {
+        return $this->belongsTo(Monitor::class, 'health_monitor_id');
     }
 
     /** @return HasMany<WebsiteDomain, $this> */

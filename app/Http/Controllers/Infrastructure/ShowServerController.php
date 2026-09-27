@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Infrastructure;
 
 use App\Models\Project;
+use App\Models\ServerAlertRule;
 use App\Models\User;
 use App\Queries\Infrastructure\ServersQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -31,6 +32,7 @@ final class ShowServerController
             'log' => $record->logSnapshots()->where('type', $logType)->first(),
             'metrics' => $record->metrics()->where('recorded_at', '>=', CarbonImmutable::now('UTC')->subDay())->orderBy('recorded_at')->get(),
             'diagnostics' => $record->diagnosticSnapshot,
+            'alertRules' => ServerAlertRule::query()->where('account_id', $project->account_id)->where(fn ($query) => $query->whereNull('server_id')->orWhere('server_id', $record->id))->orderBy('name')->get(),
             'canManage' => $user->can('update', $project->account),
         ]);
     }

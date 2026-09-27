@@ -23,6 +23,7 @@ final class CreateWebsiteController
             'overview' => $overview->handle($project, $user),
             'website' => null,
             'hosts' => $websites->hosts($project->account_id),
+            'environments' => $websites->environments($project->account),
             'importing' => $request->query('import') === '1',
         ]);
     }

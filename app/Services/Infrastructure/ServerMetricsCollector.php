@@ -30,7 +30,7 @@ final class ServerMetricsCollector
     printf 'process_count=%s\n' "$(ps -e --no-headers | wc -l)"
     BASH;
 
-    public function __construct(private readonly ServerShell $shell) {}
+    public function __construct(private readonly ServerShell $shell, private readonly ServerAlerts $alerts) {}
 
     public function collect(Server $server): ServerMetric
     {
@@ -59,6 +59,7 @@ final class ServerMetricsCollector
             'process_count' => $count('process_count'), 'uptime_seconds' => $count('uptime_seconds'), 'recorded_at' => CarbonImmutable::now('UTC'),
         ]);
         $server->metrics()->where('recorded_at', '<', CarbonImmutable::now('UTC')->subDays(30))->delete();
+        $this->alerts->evaluate($metric);
 
         return $metric;
     }

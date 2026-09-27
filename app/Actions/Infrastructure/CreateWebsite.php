@@ -12,6 +12,8 @@ use App\Models\Account;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Billing\Entitlements;
+use App\Services\Infrastructure\WebsiteHealthChecks;
+use App\Support\Infrastructure\WebsiteEnvironment;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -19,7 +21,7 @@ use Illuminate\Validation\ValidationException;
 
 final class CreateWebsite
 {
-    public function __construct(private readonly Entitlements $entitlements, private readonly WebsiteServers $servers, private readonly RecordAuditEntry $audit) {}
+    public function __construct(private readonly Entitlements $entitlements, private readonly WebsiteServers $servers, private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
     /**
      * Create a website on an app server and set it up over SSH. Counts against `deploy.websites.max`.
@@ -39,10 +41,11 @@ final class CreateWebsite
             $website = new Website;
             $website->forceFill([
                 ...WebsiteAttributes::from($data),
-                'account_id' => $account->id, 'created_by' => $actor->id, 'server_id' => $server->id,
+                'account_id' => $account->id, 'created_by' => $actor->id, 'server_id' => $server->id, 'environment_id' => WebsiteEnvironment::resolve($account, $data['environment_id'] ?? null),
                 'database_password' => Str::random(32), 'provisioning_status' => Website::STATUS_QUEUED,
             ])->save();
             ProvisionWebsite::dispatch($website->id, (string) $website->provisioning_token)->afterCommit();
+            $this->health->sync($website, $actor);
             $this->audit->handle(AuditAction::WebsiteCreated, $actor, $account->id, ['website' => $website->name, 'server' => $server->label(), 'url' => $website->url]);
 
             return $website;

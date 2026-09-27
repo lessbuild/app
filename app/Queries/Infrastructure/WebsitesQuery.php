@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Queries\Infrastructure;
 
 use App\Enums\ServerType;
+use App\Models\Account;
+use App\Models\Environment;
 use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Database\Eloquent\Collection;
@@ -19,7 +21,13 @@ final class WebsitesQuery
 
     public function find(string $accountId, int|string $id): Website
     {
-        return Website::query()->where('account_id', $accountId)->with(['server', 'domains.dnsProvider'])->findOrFail((int) $id);
+        return Website::query()->where('account_id', $accountId)->with(['server', 'domains.dnsProvider', 'environment.project', 'healthMonitor'])->findOrFail((int) $id);
+    }
+
+    /** @return Collection<int, Environment> */
+    public function environments(Account $account): Collection
+    {
+        return Environment::query()->forAccount($account)->with('project')->orderBy('project_id')->orderBy('name')->get();
     }
 
     /** @return Collection<int, Server> */

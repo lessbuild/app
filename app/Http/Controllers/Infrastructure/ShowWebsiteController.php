@@ -26,6 +26,7 @@ final class ShowWebsiteController
             'finalStage' => WebsiteProvisioner::finalStage(),
             'log' => $record->logs()->where('type', 'provisioning')->value('log'),
             'hosts' => $websites->hosts($project->account_id),
+            'environments' => $websites->environments($project->account),
             'dnsProviders' => Provider::query()->where('account_id', $project->account_id)->where('type', ProviderType::Cloudflare)->orderBy('name')->get(),
             'temporaryDomains' => filled(config('infrastructure.temporary_base_domain')),
             'canManage' => $user->can('update', $project->account),
