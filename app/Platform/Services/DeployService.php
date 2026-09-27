@@ -35,7 +35,10 @@ final class DeployService implements PlatformService
 
     public function navItems(string $projectId): array
     {
-        return [new ServiceNavItem(__('Repositories'), route('deploy.repositories', $projectId), 'deploy.*')];
+        return [
+            new ServiceNavItem(__('Repositories'), route('deploy.repositories', $projectId), 'deploy.repositories*|deploy.builds*'),
+            new ServiceNavItem(__('Environments'), route('deploy.environments', $projectId), 'deploy.environments*'),
+        ];
     }
 
     public function apiScopes(): array

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Deploy;
 
 use App\Jobs\Deploy\PublishBuild;
+use App\Jobs\Deploy\SwitchRelease;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Models\User;
@@ -18,6 +19,36 @@ use Illuminate\Support\Facades\DB;
 class Deployments
 {
     public function __construct(private readonly BuildPayload $payload) {}
+
+    /** Why the repository's environment won't take a deploy now (locked, or outside its window), or null. */
+    public function blockReason(Repository $repository): ?string
+    {
+        return $repository->environment?->deploymentBlockReason();
+    }
+
+    /**
+     * Queue a rollback build that makes a retained release live again. It skips approval: it's putting back a release
+     * that was already approved and live.
+     */
+    public function rollback(Build $source, ?User $requester): ?Build
+    {
+        return DB::transaction(function () use ($source, $requester): ?Build {
+            Website::query()->lockForUpdate()->findOrFail($source->website_id);
+            if (Build::query()->where('website_id', $source->website_id)->whereIn('status', Build::ACTIVE)->exists()) {
+                return null;
+            }
+            $build = new Build;
+            $build->forceFill([
+                'repository_id' => $source->repository_id, 'website_id' => $source->website_id, 'environment_id' => $source->environment_id,
+                'requested_by' => $requester?->id, 'approved_by' => $requester?->id, 'approved_at' => now(), 'status' => Build::STATUS_QUEUED, 'trigger_source' => 'rollback',
+                'revision' => $source->revision, 'commit_message' => $source->commit_message, 'release_name' => $source->release_name,
+                'release_path' => $source->release_path, 'environment_payload' => ['repository_root' => $source->deploymentRoot()], 'rolled_back_from_build_id' => $source->id,
+            ])->save();
+            SwitchRelease::dispatch($build->id)->afterCommit();
+
+            return $build;
+        });
+    }
 
     /**
      * @param  array<string, mixed>  $attributes  trigger_source, revision, commit_message, …
@@ -44,5 +75,19 @@ class Deployments
 
             return $build;
         });
+    }
+
+    /** A deploy that failed after going live (or failed its observation) goes back to the last good release, if the environment asks for that. */
+    public function rollBackAutomatically(Build $failed): void
+    {
+        if ($failed->trigger_source === 'rollback' || $failed->environment?->automatic_rollback !== true) {
+            return;
+        }
+        $source = Build::query()->where('repository_id', $failed->repository_id)->where('status', Build::STATUS_SUCCEEDED)->whereNotNull('release_name')
+            ->whereKeyNot($failed->id)->where('id', '<', $failed->id)->latest('id')->first();
+        $rollback = $source === null ? null : $this->rollback($source, $failed->requester);
+        if ($rollback !== null) {
+            $failed->forceFill(['automatic_rollback_build_id' => $rollback->id])->save();
+        }
     }
 }

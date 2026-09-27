@@ -23,6 +23,10 @@ final class DeployRepository
         if (! $repository->isDeploymentReady()) {
             throw ValidationException::withMessages(['deploy' => __('The website must be live on an active server, and the repository’s provider must host its address.')]);
         }
+        $blocked = $this->deployments->blockReason($repository);
+        if ($blocked !== null) {
+            throw ValidationException::withMessages(['deploy' => $blocked]);
+        }
         $build = $this->deployments->queue($repository, ['trigger_source' => $trigger, 'revision' => $revision === null ? null : strtolower($revision)], $actor);
 
         return $build ?? throw new StateConflict(__('A deploy to this website is already running.'));

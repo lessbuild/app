@@ -49,6 +49,11 @@ use Illuminate\Support\Carbon;
  * @property CarbonImmutable|null $last_heartbeat_at
  * @property CarbonImmutable|null $activated_at
  * @property CarbonImmutable|null $finished_at
+ * @property int|null $automatic_rollback_build_id the rollback started because this one failed after going live
+ * @property int|null $observation_minutes how long the website's health is watched after it goes live
+ * @property string|null $observation_status observing, passed or failed
+ * @property CarbonImmutable|null $observation_deadline_at
+ * @property string|null $observation_error
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -167,7 +172,7 @@ class Build extends Model
             'environment_payload' => 'encrypted:array', 'log' => 'encrypted', 'changed_paths' => 'array', 'setup_stage' => 'integer',
             'remote_process_id' => 'integer', 'approved_at' => 'immutable_datetime', 'rejected_at' => 'immutable_datetime',
             'started_at' => 'immutable_datetime', 'last_heartbeat_at' => 'immutable_datetime', 'activated_at' => 'immutable_datetime',
-            'finished_at' => 'immutable_datetime',
+            'finished_at' => 'immutable_datetime', 'observation_minutes' => 'integer', 'observation_deadline_at' => 'immutable_datetime',
         ];
     }
 }

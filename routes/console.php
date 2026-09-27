@@ -17,6 +17,7 @@ use App\Jobs\Infrastructure\CollectServerMetrics;
 use App\Models\Build;
 use App\Models\DatabaseUser;
 use App\Models\Provider;
+use App\Models\Repository;
 use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\ServerTerminalFrame;
@@ -25,6 +26,8 @@ use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Billing\Entitlements;
+use App\Services\Deploy\DeploymentObserver;
+use App\Services\Deploy\Deployments;
 use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Infrastructure\ServerPricing;
 use App\Services\Monitoring\AlertDeliveryRunner;
@@ -342,3 +345,30 @@ Artisan::command('builds:reap', function (FinishBuild $finish): int {
     return 0;
 })->purpose('Fail deploys whose server stopped reporting progress');
 Schedule::command('builds:reap')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('builds:observe', function (DeploymentObserver $observer): int {
+    $builds = Build::query()->with(['website', 'environment'])->where('observation_status', 'observing')->get();
+    $failed = $builds->filter(fn (Build $build): bool => $observer->check($build) === 'failed')->count();
+    $this->info("Checked {$builds->count()} deploys under observation; {$failed} failed.");
+
+    return 0;
+})->purpose('Check the health of websites deployed recently, rolling back failures where environments ask for it');
+Schedule::command('builds:observe')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('builds:release-pending', function (Deployments $deployments): int {
+    $released = 0;
+    Repository::query()->where('webhook_pending', true)->with(['environment', 'website.server', 'provider'])->each(function (Repository $repository) use ($deployments, &$released): void {
+        if (! $repository->isDeploymentReady() || $deployments->blockReason($repository) !== null) {
+            return;
+        }
+        $build = $deployments->queue($repository, ['trigger_source' => 'webhook', 'revision' => $repository->webhook_pending_revision, 'commit_message' => $repository->webhook_pending_commit_message]);
+        if ($build !== null) {
+            $repository->forceFill(['webhook_pending' => false, 'webhook_pending_revision' => null, 'webhook_pending_commit_message' => null])->save();
+            $released++;
+        }
+    });
+    $this->info("Started {$released} waiting push deploys.");
+
+    return 0;
+})->purpose('Deploy pushes that waited for a deployment window, an unlock or a running deploy');
+Schedule::command('builds:release-pending')->everyMinute()->withoutOverlapping(5)->onOneServer();

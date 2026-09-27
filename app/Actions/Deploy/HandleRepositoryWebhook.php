@@ -45,7 +45,7 @@ final class HandleRepositoryWebhook
 
                 return $status;
             }
-            $build = $this->deployments->queue($locked, ['trigger_source' => 'webhook', 'revision' => $webhook->revision, 'commit_message' => $webhook->commitMessage, 'changed_paths' => $webhook->changedPaths]);
+            $build = $this->deployments->blockReason($locked) !== null ? null : $this->deployments->queue($locked, ['trigger_source' => 'webhook', 'revision' => $webhook->revision, 'commit_message' => $webhook->commitMessage, 'changed_paths' => $webhook->changedPaths]);
             if ($build === null) {
                 $locked->forceFill(['webhook_pending' => true, 'webhook_pending_revision' => $webhook->revision, 'webhook_pending_commit_message' => $webhook->commitMessage])->save();
                 $delivery->forceFill(['status' => 'pending'])->save();

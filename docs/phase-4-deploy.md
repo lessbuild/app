@@ -59,6 +59,22 @@ The parts, in dependency order:
   - Repositories on an App provider get push deploys automatically. The App's webhook `POST /api/github-app/webhook` (public contract) is verified with the App's secret and routed to the repository with that URL and installation.
   - Checking the connection mints an installation token.
 
+## Environments (part 3)
+
+- Deploy → Environments lists the project's environments (created under the project, as before) with their Deploy settings. Members and above with Deploy access change them (`EnvironmentPolicy::configureDeploy`); changes apply to the next deploy, because each build captures them (encrypted) when queued.
+- **Controls:** a lock, with a reason, and a weekly window (ISO weekdays, start and end times, a time zone; an end before the start runs past midnight). Manual deploys are refused while blocked. Pushes wait (`webhook_pending`), and `builds:release-pending` (every minute) deploys them once allowed.
+- **How deploys run:**
+  - approval
+  - strategy: blue-green, canary (the new release is checked on a local port before going live) or rolling (workers restart one at a time)
+  - automatic rollback
+  - post-deploy observation: 5, 10, 15 or 30 minutes of health checks by `builds:observe`; a failure rolls back when automatic rollback is on
+  - runtime: PHP, Node.js, Python or Docker, with version, build and start commands, port, Dockerfile
+  - replicas: more than one needs `deploy.scaling`
+- **Variables** are encrypted and versioned. They're used for runtime (`.env`), build only, or both. Secrets are masked. A pasted `.env` can replace them all.
+- **Processes:** workers, and the scheduler, which always has one replica. They run as systemd units, restarted each deploy, and need `deploy.workers` (Starter and above).
+- **Resources:** managed MySQL (the website's own database), managed Redis or Valkey, or external services described by variables. They need `deploy.resources`.
+- Hibernation and scaling schedules come with automation (part 6).
+
 ## Public contracts kept
 
 - Build callback URLs and their signed parameters.

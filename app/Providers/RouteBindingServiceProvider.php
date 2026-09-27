@@ -68,6 +68,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'site' => [AnalyticsSite::class, 'project', ['analytics.*']],
         'repository' => [Repository::class, 'project', ['deploy.*']],
         'build' => [Build::class, 'repository', ['deploy.*']],
+        'environment' => [Environment::class, 'project', ['deploy.*']],
         'incident' => [Incident::class, 'project', ['monitoring.*']],
         'issue' => [Issue::class, 'project', ['monitoring.*']],
         'release' => [Release::class, 'project', ['monitoring.*']],

@@ -38,6 +38,14 @@ final class FinishBuild
             return true;
         });
         if ($finished) {
+            $finishedBuild = Build::query()->with('environment')->findOrFail($build->id);
+            if ($status === Build::STATUS_SUCCEEDED && $finishedBuild->environment?->post_deployment_observation_minutes !== null && $finishedBuild->trigger_source !== 'rollback') {
+                $minutes = $finishedBuild->environment->post_deployment_observation_minutes;
+                $finishedBuild->forceFill(['observation_minutes' => $minutes, 'observation_status' => 'observing', 'observation_deadline_at' => now()->addMinutes($minutes)])->save();
+            }
+            if ($status === Build::STATUS_FAILED && $finishedBuild->activated_at !== null) {
+                $this->deployments->rollBackAutomatically($finishedBuild);
+            }
             $this->deployPendingPush($build->repository_id);
         }
 
@@ -47,7 +55,7 @@ final class FinishBuild
     private function deployPendingPush(int $repositoryId): void
     {
         $repository = Repository::query()->find($repositoryId);
-        if ($repository === null || ! $repository->webhook_pending || ! $repository->isDeploymentReady()) {
+        if ($repository === null || ! $repository->webhook_pending || ! $repository->isDeploymentReady() || $this->deployments->blockReason($repository) !== null) {
             return;
         }
         $build = $this->deployments->queue($repository, ['trigger_source' => 'webhook', 'revision' => $repository->webhook_pending_revision, 'commit_message' => $repository->webhook_pending_commit_message]);
