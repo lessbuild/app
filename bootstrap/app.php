@@ -2,11 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Exceptions\AccountRuleViolation;
-use App\Exceptions\AnalyticsRuleViolation;
-use App\Exceptions\BillingRuleViolation;
-use App\Exceptions\IdentityRuleViolation;
-use App\Exceptions\ProjectRuleViolation;
+use App\Exceptions\RuleViolation;
 use App\Exceptions\StateConflict;
 use App\Http\Middleware\AuthenticateIngestToken;
 use App\Http\Middleware\AuthorizeCurrentAccount;
@@ -60,25 +56,6 @@ return Application::configure(basePath: dirname(__DIR__))
             fn (Request $request) => $request->is('api/*') || $request->expectsJson(),
         );
         // Domain rule violations are authorised requests that break an invariant: show them like validation errors.
-        $exceptions->map(
-            AccountRuleViolation::class,
-            fn (AccountRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
-        );
+        $exceptions->map(RuleViolation::class, fn (RuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]));
         $exceptions->map(StateConflict::class, fn (StateConflict $conflict): ConflictHttpException => new ConflictHttpException($conflict->getMessage(), $conflict));
-        $exceptions->map(
-            ProjectRuleViolation::class,
-            fn (ProjectRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
-        );
-        $exceptions->map(
-            AnalyticsRuleViolation::class,
-            fn (AnalyticsRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
-        );
-        $exceptions->map(
-            BillingRuleViolation::class,
-            fn (BillingRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
-        );
-        $exceptions->map(
-            IdentityRuleViolation::class,
-            fn (IdentityRuleViolation $violation): ValidationException => ValidationException::withMessages([$violation->field => $violation->getMessage()]),
-        );
     })->create();
