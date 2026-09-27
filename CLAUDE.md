@@ -22,6 +22,8 @@ A conventional Laravel layout, organised by type (not by domain). Within a type,
 - `app/Support/` — small stateless helpers.
 - Actions, Queries, Models and Data never depend on the HTTP layer.
 - Every mutation is authorised by a Policy. Secrets use encrypted casts. Sensitive columns are never mass-assignable.
+- **Document every method and every property** — public or private, including `__invoke`, constructors, enum methods and small private helpers. Each docblock opens with a real explanation: what the member is for, why it exists, and anything a reader can't see from the signature (side effects, units, invariants, failure modes). Promoted constructor properties are described with `@param` lines in the constructor's docblock. Don't restate the name ("Gets the user"); explain it. `ArchitectureTest::test_every_method_and_property_is_documented` enforces this.
+- Existing code isn't a ceiling. When a pattern you meet is weak (unclear names, tangled methods, missing docs), improve it rather than copying it.
 - Architecture tests in `tests/Architecture` enforce these rules. Keep them passing.
 
 ## UI

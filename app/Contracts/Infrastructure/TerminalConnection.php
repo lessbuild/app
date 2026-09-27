@@ -16,5 +16,8 @@ interface TerminalConnection
     /** Whether the shell is still running (false once the person types `exit` or the connection drops). */
     public function isRunning(): bool;
 
+    /**
+     * Ends the shell and the connection under it. Safe to call more than once.
+     */
     public function close(): void;
 }

@@ -13,6 +13,10 @@ use Illuminate\Support\ServiceProvider;
 
 final class PlatformServiceProvider extends ServiceProvider
 {
+    /**
+     * Registers the service registry as a singleton holding Deploy, Infrastructure, Monitoring and Analytics, in the
+     * order the shell and billing pages list them.
+     */
     public function register(): void
     {
         $this->app->singleton(ServiceRegistry::class, function (): ServiceRegistry {

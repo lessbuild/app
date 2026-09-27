@@ -7,7 +7,13 @@ namespace App\Contracts;
 /** Where the current change came from. Both are null for console commands and queued jobs. */
 interface RequestOrigin
 {
+    /**
+     * The client IP of the request that caused the change, recorded on audit entries.
+     */
     public function ipAddress(): ?string;
 
+    /**
+     * The browser or client identifier of that request, recorded alongside the IP.
+     */
     public function userAgent(): ?string;
 }

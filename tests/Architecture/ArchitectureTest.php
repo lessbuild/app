@@ -17,6 +17,15 @@ use ReflectionMethod;
  */
 final class ArchitectureTest extends TestCase
 {
+    /**
+     * Areas of app/ written before every member had to be documented. The backfill removes each one as it lands;
+     * once the list is empty, this constant goes too.
+     */
+    private const AREAS_AWAITING_DOCUMENTATION = [
+        'Actions', 'Data', 'Enums', 'Events', 'Exceptions', 'Http', 'Jobs', 'Listeners', 'Models',
+        'Notifications', 'Platform', 'Policies', 'Queries', 'Services', 'Support',
+    ];
+
     public function test_business_code_does_not_depend_on_the_http_layer(): void
     {
         $files = [];
@@ -101,6 +110,52 @@ final class ArchitectureTest extends TestCase
         $this->assertSame(['__invoke'], array_map(fn (ReflectionMethod $method): string => $method->name, $public), "{$class} must be a single-action controller with only __invoke().");
     }
 
+    /**
+     * Every method and property in one top-level area of app/ carries a docblock that explains it, and
+     * promoted constructor properties are described by `@param` lines on the constructor. A docblock made
+     * only of tags (`@return list<string>`) doesn't count: it types the member without saying what it's for.
+     */
+    #[DataProvider('applicationAreas')]
+    public function test_every_method_and_property_is_documented(string $area): void
+    {
+        if (in_array($area, self::AREAS_AWAITING_DOCUMENTATION, true)) {
+            $this->markTestIncomplete("app/{$area} is still being documented.");
+        }
+
+        $missing = [];
+        foreach ($this->phpFiles('app/'.$area) as $file) {
+            $name = 'App\\'.str_replace('/', '\\', substr($this->relative($file), 4, -4));
+            if (! class_exists($name) && ! interface_exists($name) && ! trait_exists($name)) {
+                continue;
+            }
+            $reflection = new ReflectionClass($name);
+
+            foreach ($reflection->getProperties() as $property) {
+                if ($property->class === $name && ! $property->isPromoted() && $property->getDeclaringClass()->getFileName() === $file
+                    && ! $this->explains($property->getDocComment())) {
+                    $missing[] = "{$name}::\${$property->name}";
+                }
+            }
+
+            foreach ($reflection->getMethods() as $method) {
+                if ($method->class !== $name || $method->getFileName() !== $file) {
+                    continue;
+                }
+                $docblock = $method->getDocComment();
+                if (! $this->explains($docblock)) {
+                    $missing[] = "{$name}::{$method->name}()";
+                }
+                foreach ($method->isConstructor() ? $method->getParameters() : [] as $parameter) {
+                    if ($parameter->isPromoted() && ($docblock === false || preg_match('/@param\s+.*?\$'.$parameter->name.'\s+\S/', $docblock) !== 1)) {
+                        $missing[] = "{$name}::__construct(\${$parameter->name}) (promoted, needs an @param description)";
+                    }
+                }
+            }
+        }
+
+        $this->assertSame([], $missing, "These members in app/{$area} need a docblock that explains them:\n".implode("\n", $missing));
+    }
+
     /** @return iterable<string, array{class-string}> */
     public static function dataClasses(): iterable
     {
@@ -118,6 +173,19 @@ final class ArchitectureTest extends TestCase
     public static function controllerClasses(): iterable
     {
         yield from self::classesIn('Http/Controllers');
+    }
+
+    /**
+     * Each directory directly under app/ (and the loose files at its root, as "."), so a failure names the
+     * area that needs attention instead of one list for the whole application.
+     *
+     * @return iterable<string, array{string}>
+     */
+    public static function applicationAreas(): iterable
+    {
+        foreach (glob(dirname(__DIR__, 2).'/app/*', GLOB_ONLYDIR) ?: [] as $directory) {
+            yield basename($directory) => [basename($directory)];
+        }
     }
 
     /** @return iterable<string, array{class-string}> */
@@ -182,6 +250,24 @@ final class ArchitectureTest extends TestCase
         }
 
         return $files;
+    }
+
+    /**
+     * Whether a docblock says something in prose: at least one line that isn't a tag or blank.
+     */
+    private function explains(string|false $docblock): bool
+    {
+        if ($docblock === false) {
+            return false;
+        }
+        foreach (preg_split('/\R/', $docblock) ?: [] as $line) {
+            $text = trim((string) preg_replace('#^\s*/?\*+/?|\*/\s*$#', '', $line));
+            if ($text !== '' && ! str_starts_with($text, '@')) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function relative(string $file): string

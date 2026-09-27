@@ -27,6 +27,11 @@ use Laravel\Fortify\Fortify;
 
 final class FortifyServiceProvider extends ServiceProvider
 {
+    /**
+     * Wires Fortify to our actions and auth views (offering the configured social providers on sign-in, register and
+     * password confirmation), records sign-in activity, and sets the rate limits for sign-in, two-factor codes and
+     * passkey assertions.
+     */
     public function boot(): void
     {
         Fortify::createUsersUsing(CreateNewUser::class);
@@ -68,7 +73,12 @@ final class FortifyServiceProvider extends ServiceProvider
         });
     }
 
-    /** @return list<SocialProvider> */
+    /**
+     * The social sign-in providers that have credentials in this environment, in their declared order. The sign-in and
+     * register pages only offer these.
+     *
+     * @return list<SocialProvider>
+     */
     private function configuredProviders(): array
     {
         $gateway = $this->app->make(SocialSignInGateway::class);

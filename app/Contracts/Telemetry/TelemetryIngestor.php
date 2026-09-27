@@ -11,6 +11,9 @@ use App\Models\Environment;
 interface TelemetryIngestor
 {
     /**
+     * Stores a batch of already-mapped events for an environment. Validates sizes, fingerprints errors into issues and
+     * writes the rows; `$batchId` identifies the batch in the result so the caller can report what was accepted.
+     *
      * @param  array<int, array<string, mixed>>  $events
      */
     public function ingest(Environment $environment, string $batchId, array $events, ?IngestContext $context = null): IngestResult;

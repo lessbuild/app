@@ -10,6 +10,10 @@ use Illuminate\Contracts\Validation\ValidationRule;
 /** A hostname (or IP address), optionally with a port, and nothing else. */
 final class Hostname implements ValidationRule
 {
+    /**
+     * Accepts a bare host (a DNS name, `localhost` or an IP address) with an optional port, and rejects anything that
+     * would make it a URL: a scheme-less path, query, fragment or credentials.
+     */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {
         $parts = is_string($value) && $value !== '' ? parse_url('http://'.$value) : false;

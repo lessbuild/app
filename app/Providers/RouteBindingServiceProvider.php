@@ -86,6 +86,10 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'receipt' => [IngestReceipt::class, 'environment', ['monitoring.*']],
     ];
 
+    /**
+     * Registers a route binding for every parameter in BINDINGS. The scoped lookup applies only to the routes the entry
+     * names; other routes that happen to use the same parameter name get the raw value.
+     */
     public function boot(): void
     {
         foreach (self::BINDINGS as $parameter => [$model, $scope, $routes]) {
@@ -93,7 +97,13 @@ final class RouteBindingServiceProvider extends ServiceProvider
         }
     }
 
-    /** @param class-string<Model> $model */
+    /**
+     * Finds the record for a URL parameter inside the route's scope (its account, project, environment, server,
+     * repository or review) and 404s when it isn't there, so a guessed ID from another account never resolves.
+     * Soft-deleted records resolve on `*.show` routes only, so their pages stay reachable.
+     *
+     * @param  class-string<Model>  $model
+     */
     private function resolve(string $model, string $scope, string $value, RoutingRoute $route): Model
     {
         $query = $model::query();
@@ -113,6 +123,9 @@ final class RouteBindingServiceProvider extends ServiceProvider
         return $query->whereKey($key)->firstOr(fn () => abort(404));
     }
 
+    /**
+     * The route's project, whether it's already bound to a model or still the raw ID; 404 when it doesn't exist.
+     */
     private function project(RoutingRoute $route): Project
     {
         $project = $route->parameter('project');
@@ -120,6 +133,10 @@ final class RouteBindingServiceProvider extends ServiceProvider
         return $project instanceof Project ? $project : (Project::query()->find(is_string($project) ? $project : '') ?? abort(404));
     }
 
+    /**
+     * The account a route is scoped to: the project's account when the URL names a project, otherwise the signed-in
+     * person's current account. 404 when there is neither.
+     */
     private function accountId(RoutingRoute $route): string
     {
         if ($route->parameter('project') !== null) {
