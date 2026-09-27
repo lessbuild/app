@@ -15,7 +15,11 @@ use Illuminate\Events\Dispatcher;
 /** Tells people about account changes that affect them, but never about their own actions. */
 final class NotificationSubscriber
 {
-    /** @return array<class-string, string> */
+    /**
+     * The account events that can affect someone other than the person acting.
+     *
+     * @return array<class-string, string>
+     */
     public function subscribe(Dispatcher $events): array
     {
         return [
@@ -25,6 +29,9 @@ final class NotificationSubscriber
         ];
     }
 
+    /**
+     * Tells a member their role changed, unless they changed it themselves.
+     */
     public function roleChanged(MemberRoleChanged $event): void
     {
         $member = $event->membership->user;
@@ -34,6 +41,9 @@ final class NotificationSubscriber
         }
     }
 
+    /**
+     * Tells a person they were removed from an account; nothing is sent when they left on their own.
+     */
     public function memberRemoved(MemberRemoved $event): void
     {
         if (! $event->member->is($event->actor)) {
@@ -41,6 +51,9 @@ final class NotificationSubscriber
         }
     }
 
+    /**
+     * Tells whoever sent an invitation that it was accepted, if they're still around and didn't accept it themselves.
+     */
     public function invitationAccepted(InvitationAccepted $event): void
     {
         $inviter = $event->invitation->invitedBy;

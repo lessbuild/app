@@ -22,7 +22,7 @@ final class ArchitectureTest extends TestCase
      * once the list is empty, this constant goes too.
      */
     private const AREAS_AWAITING_DOCUMENTATION = [
-        'Actions', 'Http', 'Jobs', 'Listeners', 'Models',
+        'Actions', 'Http', 'Jobs', 'Models',
         'Notifications', 'Policies', 'Queries', 'Services',
     ];
 

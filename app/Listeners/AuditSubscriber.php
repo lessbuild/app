@@ -46,9 +46,19 @@ use Laravel\Passkeys\Events\PasskeyRegistered;
 /** Writes the audit log from the other contexts' domain events; those contexts don't know it exists. */
 final class AuditSubscriber
 {
+    /**
+     * Turns domain, Fortify and Passkeys events into audit entries.
+     *
+     * @param  RecordAuditEntry  $record  Writes the entries.
+     * @param  ServiceRegistry  $services  Turns service keys into the names people read in the log.
+     */
     public function __construct(private readonly RecordAuditEntry $record, private readonly ServiceRegistry $services) {}
 
-    /** @return array<class-string, string> */
+    /**
+     * Every event that leaves an audit entry, and the method that records it.
+     *
+     * @return array<class-string, string>
+     */
     public function subscribe(Dispatcher $events): array
     {
         return [
@@ -87,16 +97,25 @@ final class AuditSubscriber
         ];
     }
 
+    /**
+     * Records the account's creation, attributed to its first owner.
+     */
     public function accountCreated(AccountCreated $event): void
     {
         $this->record->handle(AuditAction::AccountCreated, $event->owner, $event->account->id, ['name' => $event->account->name]);
     }
 
+    /**
+     * Records a rename with the old and new names.
+     */
     public function accountRenamed(AccountRenamed $event): void
     {
         $this->record->handle(AuditAction::AccountRenamed, $event->actor, $event->account->id, ['from' => $event->from, 'to' => $event->account->name]);
     }
 
+    /**
+     * Records who was invited and with which role.
+     */
     public function memberInvited(MemberInvited $event): void
     {
         $this->record->handle(AuditAction::MemberInvited, $event->actor, $event->invitation->account_id, [
@@ -105,16 +124,25 @@ final class AuditSubscriber
         ]);
     }
 
+    /**
+     * Records which invitation was withdrawn.
+     */
     public function invitationRevoked(InvitationRevoked $event): void
     {
         $this->record->handle(AuditAction::InvitationRevoked, $event->actor, $event->invitation->account_id, ['email' => $event->invitation->email]);
     }
 
+    /**
+     * Records the new member joining, attributed to them.
+     */
     public function invitationAccepted(InvitationAccepted $event): void
     {
         $this->record->handle(AuditAction::InvitationAccepted, $event->membership->user, $event->membership->account_id, ['role' => $event->membership->role->label()]);
     }
 
+    /**
+     * Records a removal, or the member leaving when they removed themselves.
+     */
     public function memberRemoved(MemberRemoved $event): void
     {
         $this->record->handle(AuditAction::MemberRemoved, $event->actor, $event->account->id, [
@@ -124,6 +152,9 @@ final class AuditSubscriber
         ]);
     }
 
+    /**
+     * Records a role change with the old and new roles.
+     */
     public function memberRoleChanged(MemberRoleChanged $event): void
     {
         $this->record->handle(AuditAction::MemberRoleChanged, $event->actor, $event->membership->account_id, [
@@ -133,6 +164,9 @@ final class AuditSubscriber
         ]);
     }
 
+    /**
+     * Records the member's new service list: "all services", "none", or the names.
+     */
     public function memberServiceAccessChanged(MemberServiceAccessChanged $event): void
     {
         $services = $event->membership->service_access;
@@ -142,32 +176,50 @@ final class AuditSubscriber
         ]);
     }
 
+    /**
+     * Records a new project in the account log and the project's activity.
+     */
     public function projectCreated(ProjectCreated $event): void
     {
         $this->record->handle(AuditAction::ProjectCreated, $event->actor, $event->project->account_id, ['project' => $event->project->name], $event->project->id);
     }
 
+    /**
+     * Records a change to a project's details, keeping the previous name for renames.
+     */
     public function projectUpdated(ProjectUpdated $event): void
     {
         $this->record->handle(AuditAction::ProjectUpdated, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'previous_name' => $event->previousName], $event->project->id);
     }
 
+    /**
+     * Records a deleted project in the account log (its own activity went with it).
+     */
     public function projectDeleted(ProjectDeleted $event): void
     {
         $this->record->handle(AuditAction::ProjectDeleted, $event->actor, $event->accountId, ['project' => $event->name]);
     }
 
+    /**
+     * Records a new environment in the project's activity.
+     */
     public function environmentCreated(EnvironmentCreated $event): void
     {
         $project = $event->environment->project;
         $this->record->handle(AuditAction::EnvironmentCreated, $event->actor, $project->account_id, ['project' => $project->name, 'environment' => $event->environment->name], $project->id);
     }
 
+    /**
+     * Records a deleted environment in the project's activity.
+     */
     public function environmentDeleted(EnvironmentDeleted $event): void
     {
         $this->record->handle(AuditAction::EnvironmentDeleted, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'environment' => $event->name], $event->project->id);
     }
 
+    /**
+     * Records a domain being added, verified or removed in the project's activity.
+     */
     public function domainChanged(DomainAdded|DomainVerified|DomainRemoved $event): void
     {
         $action = match (true) {
@@ -179,16 +231,25 @@ final class AuditSubscriber
         $this->record->handle($action, $event->actor, $project->account_id, ['project' => $project->name, 'domain' => $event->domain->displayName()], $project->id);
     }
 
+    /**
+     * Records a service being turned on in a project.
+     */
     public function serviceEnabled(ServiceEnabled $event): void
     {
         $this->record->handle(AuditAction::ServiceEnabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)], $event->project->id);
     }
 
+    /**
+     * Records a service being turned off in a project.
+     */
     public function serviceDisabled(ServiceDisabled $event): void
     {
         $this->record->handle(AuditAction::ServiceDisabled, $event->actor, $event->project->account_id, ['project' => $event->project->name, 'service' => $this->serviceName($event->service)], $event->project->id);
     }
 
+    /**
+     * Records a tier change with the tier names, and when it takes effect for scheduled downgrades.
+     */
     public function planChanged(ServiceTierChanged $event): void
     {
         $billing = $this->services->find($event->service)?->billing();
@@ -200,57 +261,90 @@ final class AuditSubscriber
         ]);
     }
 
+    /**
+     * Records a profile change in the person's own security log.
+     */
     public function profileUpdated(ProfileUpdated $event): void
     {
         $this->record->handle(AuditAction::ProfileUpdated, $event->user);
     }
 
+    /**
+     * Records a password change in the person's own security log.
+     */
     public function passwordChanged(PasswordChanged $event): void
     {
         $this->record->handle(AuditAction::PasswordChanged, $event->user);
     }
 
+    /**
+     * Records two-factor authentication being confirmed.
+     */
     public function twoFactorEnabled(TwoFactorAuthenticationConfirmed $event): void
     {
         $this->personal(AuditAction::TwoFactorEnabled, $event->user);
     }
 
+    /**
+     * Records two-factor authentication being turned off.
+     */
     public function twoFactorDisabled(TwoFactorAuthenticationDisabled $event): void
     {
         $this->personal(AuditAction::TwoFactorDisabled, $event->user);
     }
 
+    /**
+     * Records recovery codes being regenerated.
+     */
     public function recoveryCodesGenerated(RecoveryCodesGenerated $event): void
     {
         // Fortify also fires this while setting up two-factor; only a deliberate regeneration is worth logging.
         $this->personal(AuditAction::RecoveryCodesRegenerated, $event->user, when: fn (User $user): bool => $user->hasEnabledTwoFactorAuthentication());
     }
 
+    /**
+     * Records a passkey being registered, by name.
+     */
     public function passkeyAdded(PasskeyRegistered $event): void
     {
         $this->personal(AuditAction::PasskeyAdded, $event->user, ['name' => (string) $event->passkey->name]);
     }
 
+    /**
+     * Records a passkey being deleted, by name.
+     */
     public function passkeyRemoved(PasskeyDeleted $event): void
     {
         $this->personal(AuditAction::PasskeyRemoved, $event->user, ['name' => (string) $event->passkey->name]);
     }
 
+    /**
+     * Records a sign-in provider being connected.
+     */
     public function socialConnected(SocialIdentityConnected $event): void
     {
         $this->record->handle(AuditAction::SocialConnected, $event->user, context: ['provider' => $event->provider->label()]);
     }
 
+    /**
+     * Records a sign-in provider being disconnected.
+     */
     public function socialDisconnected(SocialIdentityDisconnected $event): void
     {
         $this->record->handle(AuditAction::SocialDisconnected, $event->user, context: ['provider' => $event->provider->label()]);
     }
 
+    /**
+     * Records other browsers being signed out, with how many.
+     */
     public function browsersSignedOut(BrowsersSignedOut $event): void
     {
         $this->record->handle(AuditAction::BrowsersSignedOut, $event->user, context: ['count' => $event->count]);
     }
 
+    /**
+     * Records a new API token with its scopes (never its secret).
+     */
     public function apiTokenCreated(ApiTokenCreated $event): void
     {
         $this->record->handle(AuditAction::ApiTokenCreated, $event->actor, $event->token->account_id, [
@@ -259,6 +353,9 @@ final class AuditSubscriber
         ]);
     }
 
+    /**
+     * Records a revoked API token.
+     */
     public function apiTokenRevoked(ApiTokenRevoked $event): void
     {
         $this->record->handle(AuditAction::ApiTokenRevoked, $event->actor, $event->token->account_id, ['name' => $event->token->name]);
@@ -283,11 +380,17 @@ final class AuditSubscriber
         }
     }
 
+    /**
+     * The service's display name, or the key itself for a service that no longer exists.
+     */
     private function serviceName(string $key): string
     {
         return $this->services->find($key)?->name() ?? $key;
     }
 
+    /**
+     * A member as "Name <email>", so the entry still identifies them after they leave or rename themselves.
+     */
     private function person(User $user): string
     {
         return "{$user->name} <{$user->email}>";

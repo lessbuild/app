@@ -19,8 +19,18 @@ final class RecordSignInActivity
     /** Session key naming the first factor while a two-factor challenge is pending (set for provider sign-ins). */
     public const PENDING_METHOD = 'login.method';
 
+    /**
+     * Records successful and failed sign-ins for the person's sign-in activity list.
+     *
+     * @param  Request  $request  The request the sign-in happened in, which says how it happened and where from.
+     * @param  RecordSignIn  $record  Stores the sign-in.
+     */
     public function __construct(private readonly Request $request, private readonly RecordSignIn $record) {}
 
+    /**
+     * Records a successful sign-in and how it was done, worked out from the route that finished it. After a two-factor
+     * challenge, the first factor comes from the session.
+     */
     public function login(Login $event): void
     {
         if (! $event->user instanceof User) {
@@ -44,6 +54,10 @@ final class RecordSignInActivity
         $this->record->handle($event->user, true, $method, $twoFactor, $this->request->ip(), $this->request->userAgent());
     }
 
+    /**
+     * Records a wrong password for a known account. Unknown emails aren't recorded, since there's nobody to show them
+     * to.
+     */
     public function failed(Failed $event): void
     {
         if ($event->user instanceof User) {
@@ -51,11 +65,18 @@ final class RecordSignInActivity
         }
     }
 
+    /**
+     * Records a wrong two-factor code, with the first factor the person had already passed.
+     */
     public function twoFactorFailed(TwoFactorAuthenticationFailed $event): void
     {
         $this->record->handle($event->user, false, $this->pendingMethod(), true, $this->request->ip(), $this->request->userAgent());
     }
 
+    /**
+     * The first factor of a sign-in waiting on its two-factor code. Provider sign-ins store theirs in the session;
+     * otherwise it was a password.
+     */
     private function pendingMethod(): SignInMethod
     {
         $pending = $this->request->hasSession() ? $this->request->session()->get(self::PENDING_METHOD) : null;
@@ -63,6 +84,9 @@ final class RecordSignInActivity
         return (is_string($pending) ? SignInMethod::tryFrom($pending) : null) ?? SignInMethod::Password;
     }
 
+    /**
+     * The sign-in method for the provider named in the callback URL, or null for an unknown provider.
+     */
     private function providerMethod(): ?SignInMethod
     {
         $provider = $this->request->route('provider');

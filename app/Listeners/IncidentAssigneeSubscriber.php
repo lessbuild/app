@@ -16,9 +16,18 @@ use Illuminate\Support\Facades\DB;
 /** Unassigns incidents from people who left the account or can no longer work on Monitoring. */
 final class IncidentAssigneeSubscriber
 {
+    /**
+     * Keeps incident assignments pointing at people who can still act on them.
+     *
+     * @param  IncidentLifecycle  $incidents  Unassigns people and records it on the incidents.
+     */
     public function __construct(private readonly IncidentLifecycle $incidents) {}
 
-    /** @return array<class-string, string> */
+    /**
+     * The membership changes that can take away someone's access to incidents.
+     *
+     * @return array<class-string, string>
+     */
     public function subscribe(Dispatcher $events): array
     {
         return [
@@ -28,11 +37,17 @@ final class IncidentAssigneeSubscriber
         ];
     }
 
+    /**
+     * Unassigns every incident in the account from a member who left or was removed.
+     */
     public function memberRemoved(MemberRemoved $event): void
     {
         DB::transaction(fn () => $this->incidents->unassignMember($event->account, $event->member, $event->actor));
     }
 
+    /**
+     * Unassigns a member whose new role or service list means they can no longer be assigned incidents.
+     */
     public function accessChanged(MemberRoleChanged|MemberServiceAccessChanged $event): void
     {
         $membership = $event->membership;
@@ -41,6 +56,9 @@ final class IncidentAssigneeSubscriber
         }
     }
 
+    /**
+     * Whether a member may hold incidents: an owner, admin or member (not billing or viewer) who can use Monitoring.
+     */
     private function canBeAssigned(Membership $membership): bool
     {
         return in_array($membership->role, [AccountRole::Owner, AccountRole::Admin, AccountRole::Member], true)
