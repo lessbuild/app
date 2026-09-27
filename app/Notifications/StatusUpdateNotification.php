@@ -17,17 +17,32 @@ final class StatusUpdateNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
+    /**
+     * Emails a confirmed subscriber about an incident or maintenance update on a status page. Sent after the transaction
+     * commits.
+     *
+     * @param  StatusUpdate  $update  The update being published.
+     * @param  StatusSubscription  $subscription  The subscriber, for the personal unsubscribe link.
+     */
     public function __construct(public readonly StatusUpdate $update, public readonly StatusSubscription $subscription)
     {
         $this->afterCommit();
     }
 
-    /** @return list<string> */
+    /**
+     * Email only: subscribers are addresses, not users.
+     *
+     * @return list<string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
+    /**
+     * The update with its status and any root cause, remediation and follow-up, a link to the page, and one-click
+     * unsubscribe headers so mail clients can offer it.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         $page = $this->update->statusPage;

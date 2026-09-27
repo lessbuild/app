@@ -10,24 +10,43 @@ use Illuminate\Notifications\Messages\MailMessage;
 /** A deploy (or promotion) to an environment that needs approval is waiting. Sent to the people who can approve it. */
 final class BuildAwaitingApproval extends InboxNotification
 {
+    /**
+     * A deploy to an environment that requires approval is waiting for someone to approve or reject it. Sent to the
+     * members who may approve it.
+     *
+     * @param  Build  $build  The waiting deploy.
+     */
     public function __construct(private readonly Build $build) {}
 
-    /** @return list<string> */
+    /**
+     * By email, since a deploy may be waiting on it, and in the inbox.
+     *
+     * @return list<string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
     }
 
+    /**
+     * The title and body, with a link to review the deploy.
+     */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject($this->title())->line($this->body())->action(__('Review the deploy'), $this->url());
+        return $this->mailWithAction(__('Review the deploy'));
     }
 
+    /**
+     * Names the deploy and the environment it's for.
+     */
     protected function title(): string
     {
         return __('Deploy #:id to :environment needs approval', ['id' => $this->build->id, 'environment' => $this->build->environment->name ?? $this->build->website->name]);
     }
 
+    /**
+     * Who asked for it and what: a promotion from another environment, or a deploy of a repository.
+     */
     protected function body(): string
     {
         $from = $this->build->promotedFrom?->environment?->name;
@@ -37,11 +56,17 @@ final class BuildAwaitingApproval extends InboxNotification
             : __(':who started a deploy of :repository that waits for approval.', ['who' => $this->build->requester->name ?? __('A push'), 'repository' => $this->build->repository->name]);
     }
 
+    /**
+     * The deploy's page, where it can be approved or rejected.
+     */
     protected function url(): string
     {
         return route('deploy.builds.show', [$this->build->repository->project_id, $this->build->id]);
     }
 
+    /**
+     * The account of the website being deployed to.
+     */
     protected function accountId(): string
     {
         return $this->build->website->account_id;

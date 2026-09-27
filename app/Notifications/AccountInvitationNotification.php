@@ -15,17 +15,31 @@ final class AccountInvitationNotification extends Notification implements Should
 {
     use Queueable;
 
+    /**
+     * The email inviting someone to join an account. Queued, since sending mail shouldn't hold up the invite form.
+     *
+     * @param  AccountInvitation  $invitation  The invitation being sent.
+     * @param  string  $token  The plain invitation token for the link. Only its hash is stored, so this email is the one
+     *                         place it exists.
+     */
     public function __construct(
         public readonly AccountInvitation $invitation,
         #[SensitiveParameter] public readonly string $token,
     ) {}
 
-    /** @return list<string> */
+    /**
+     * Invitations go by email only: the invitee may not have a user here yet.
+     *
+     * @return list<string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
+    /**
+     * Says who invited them, to which account and role, links to the invitation page and says when it expires.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         $account = $this->invitation->account;

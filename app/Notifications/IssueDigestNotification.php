@@ -11,15 +11,27 @@ use Illuminate\Notifications\Notification;
 /** The daily issue digest email. Sent synchronously by the digest command, which records the outcome. */
 final class IssueDigestNotification extends Notification
 {
-    /** @param array{account: string, from: CarbonImmutable, until: CarbonImmutable, open: int, critical: int, snoozed: int, new: list<array{title: string, location: string|null, project: string, severity: string, occurrences: int, at: string, url: string}>, resolved: list<array{title: string, location: string|null, project: string, severity: string, occurrences: int, at: string, url: string}>, active: bool} $digest */
+    /**
+     * The daily email summarising an account's issues for someone who asked for it.
+     *
+     * @param  array{account: string, from: CarbonImmutable, until: CarbonImmutable, open: int, critical: int, snoozed: int, new: list<array{title: string, location: string|null, project: string, severity: string, occurrences: int, at: string, url: string}>, resolved: list<array{title: string, location: string|null, project: string, severity: string, occurrences: int, at: string, url: string}>, active: bool}  $digest  The account's issue report for the period, built by IssueDigest with already-redacted titles.
+     */
     public function __construct(public readonly array $digest) {}
 
-    /** @return list<string> */
+    /**
+     * Digests are email only; the issues pages already show the same information in the app.
+     *
+     * @return list<string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
+    /**
+     * The open, critical and snoozed counts, then each new and resolved issue with a link, the period covered, and where
+     * to turn the digest off.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         $message = (new MailMessage)

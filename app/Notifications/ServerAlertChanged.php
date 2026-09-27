@@ -11,19 +11,37 @@ use Illuminate\Notifications\Messages\MailMessage;
 /** A server alert rule tripped, or the metric is back within its threshold. Sent by email and to the inbox. */
 final class ServerAlertChanged extends InboxNotification
 {
+    /**
+     * A server alert rule tripped or recovered. Sent to the account's owners and admins.
+     *
+     * @param  ServerAlertRule  $rule  The rule that changed state.
+     * @param  Server  $server  The server it watches.
+     * @param  float  $value  The metric's value when it was evaluated.
+     * @param  bool  $tripped  True when the rule crossed its threshold; false when the server recovered.
+     */
     public function __construct(private readonly ServerAlertRule $rule, private readonly Server $server, private readonly float $value, private readonly bool $tripped) {}
 
-    /** @return list<string> */
+    /**
+     * By email so someone hears about it away from the app, and in the inbox.
+     *
+     * @return list<string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
     }
 
+    /**
+     * The title and body, with a link to the server.
+     */
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)->subject($this->title())->line($this->body())->action(__('Open the server'), $this->url());
+        return $this->mailWithAction(__('Open the server'));
     }
 
+    /**
+     * Names the rule and server, and says "recovered" when it's back.
+     */
     protected function title(): string
     {
         return $this->tripped
@@ -31,6 +49,9 @@ final class ServerAlertChanged extends InboxNotification
             : __(':rule on :server recovered', ['rule' => $this->rule->name, 'server' => $this->server->label()]);
     }
 
+    /**
+     * The metric's value against the threshold, or the value it's back to.
+     */
     protected function body(): string
     {
         $metric = __(ServerAlertRule::METRICS[$this->rule->metric] ?? $this->rule->metric);
@@ -49,6 +70,9 @@ final class ServerAlertChanged extends InboxNotification
         return $project !== null ? route('infrastructure.servers.show', [$project, $this->server->id]) : route('dashboard');
     }
 
+    /**
+     * The server's account, so the inbox shows it in the right account.
+     */
     protected function accountId(): string
     {
         return $this->server->account_id;

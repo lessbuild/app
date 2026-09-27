@@ -16,6 +16,13 @@ final class StatusSubscriptionConfirmation extends Notification implements Shoul
 {
     use Queueable;
 
+    /**
+     * Asks someone who subscribed to a status page to confirm their address, so nobody can subscribe someone else. Sent
+     * after the transaction commits.
+     *
+     * @param  StatusSubscription  $subscription  The unconfirmed subscription.
+     * @param  string  $token  The plain confirmation token for the link; only its hash is stored.
+     */
     public function __construct(
         public readonly StatusSubscription $subscription,
         #[SensitiveParameter] public readonly string $token,
@@ -23,12 +30,19 @@ final class StatusSubscriptionConfirmation extends Notification implements Shoul
         $this->afterCommit();
     }
 
-    /** @return list<string> */
+    /**
+     * Email only: subscribers are addresses, not users.
+     *
+     * @return list<string>
+     */
     public function via(object $notifiable): array
     {
         return ['mail'];
     }
 
+    /**
+     * Explains what they'll get and links to the confirmation, telling them to ignore it if they didn't ask.
+     */
     public function toMail(object $notifiable): MailMessage
     {
         return (new MailMessage)

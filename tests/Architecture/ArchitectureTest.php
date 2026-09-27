@@ -23,7 +23,7 @@ final class ArchitectureTest extends TestCase
      */
     private const AREAS_AWAITING_DOCUMENTATION = [
         'Actions', 'Http', 'Jobs', 'Models',
-        'Notifications', 'Policies', 'Queries', 'Services',
+        'Policies', 'Queries', 'Services',
     ];
 
     public function test_business_code_does_not_depend_on_the_http_layer(): void
