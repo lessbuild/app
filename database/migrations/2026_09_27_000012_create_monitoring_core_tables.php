@@ -92,7 +92,7 @@ return new class extends Migration
             $table->timestamp('finished_at', 6)->nullable();
             $table->timestamp('lease_until', 6)->nullable();
             $table->uuid('processing_token')->nullable();
-            $table->uuid('queue_job_uuid')->nullable();
+            $table->string('queue_job_uuid', 36)->nullable(); // compared with jobs.job_uuid, a string
             $table->timestamps(6);
             $table->unique(['monitor_id', 'config_revision', 'scheduled_at', 'scheduled_slot'], 'monitor_checks_slot_unique');
             $table->index(['monitor_id', 'scheduled_at', 'id'], 'monitor_checks_history_index');
@@ -232,7 +232,7 @@ return new class extends Migration
             $table->unsignedInteger('generation')->default(0);
             $table->unsignedInteger('attempt_count')->default(0);
             $table->unsignedTinyInteger('cycle_attempts')->default(0);
-            $table->uuid('queue_job_uuid')->nullable();
+            $table->string('queue_job_uuid', 36)->nullable(); // compared with jobs.job_uuid, a string
             $table->uuid('processing_token')->nullable();
             $table->timestamp('next_attempt_at', 6)->nullable();
             $table->timestamp('accepted_at', 6)->nullable();
