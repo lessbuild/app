@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateBackupDestinationController
 {
+    /**
+     * Saves a backup destination.
+     */
     public function __invoke(BackupDestinationRequest $request, #[CurrentUser] User $user, Project $project, BackupDestination $backupDestination, SaveBackupDestination $save): RedirectResponse
     {
         $save->handle($project->account, $user, $request->destination(), $backupDestination);

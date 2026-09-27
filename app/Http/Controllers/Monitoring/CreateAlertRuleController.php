@@ -18,6 +18,9 @@ use Illuminate\Http\Request;
 
 final class CreateAlertRuleController
 {
+    /**
+     * The new alert rule form, with the project's SLOs and metric series to choose from and the plan's features.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
     {
 

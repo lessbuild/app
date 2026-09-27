@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateMaintenanceWindowController
 {
+    /**
+     * Saves a maintenance window.
+     */
     public function __invoke(MaintenanceWindowRequest $request, #[CurrentUser] User $user, Project $project, MaintenanceWindow $window, SaveMaintenanceWindow $save): RedirectResponse
     {
         $save->handle($project->account, $user, $request->validated(), $window);

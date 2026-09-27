@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateStatusUpdateController
 {
+    /**
+     * Edits a posted update.
+     */
     public function __invoke(StatusUpdateRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, string $update, SaveStatusUpdate $save): RedirectResponse
     {
         $save->handle($page, $user, $request->validated(), $page->updates()->findOrFail((int) $update));

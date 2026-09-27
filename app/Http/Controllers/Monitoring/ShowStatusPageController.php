@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** A status page as the team sees it: what's public right now, and the updates they've posted. */
 final class ShowStatusPageController
 {
+    /**
+     * A status page's team view: its report, posted updates and confirmed subscriber count.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, StatusPage $page, ProjectOverviewQuery $overview, StatusPageReportQuery $report): View
     {
 

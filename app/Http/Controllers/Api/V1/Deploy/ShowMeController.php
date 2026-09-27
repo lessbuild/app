@@ -14,6 +14,9 @@ use Illuminate\Http\JsonResponse;
 /** `GET /api/v1/me` (Deployer API v1): the token's person and account, with the account's Deploy plan. */
 final class ShowMeController
 {
+    /**
+     * Returns the token's person and account.
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, DeployApiQuery $query): JsonResponse
     {
         return response()->json(['data' => $query->account($user, $account)]);

@@ -16,6 +16,10 @@ use Illuminate\Support\Str;
 /** Gives a website a random hostname under TEMPORARY_APP_DOMAIN, via one of the account's Cloudflare providers. */
 final class IssueTemporaryDomainController
 {
+    /**
+     * Adds a random temporary hostname to the website, through the chosen Cloudflare provider. 404 when no temporary
+     * base domain is configured.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, SaveWebsiteDomain $save): RedirectResponse
     {
         $base = strtolower(trim((string) config('infrastructure.temporary_base_domain')));

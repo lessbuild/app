@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateAlertDestinationController
 {
+    /**
+     * Saves a destination.
+     */
     public function __invoke(AlertDestinationRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertDestination $save): RedirectResponse
     {
         $destination = $save->handle($project->account, $user, $request->validated(), $request->destination());

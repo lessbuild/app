@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 
 final class AddDomainController
 {
+    /**
+     * Adds a domain to the project and shows the TXT record to publish.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AddDomain $add): RedirectResponse
     {
         $validated = $request->validate([

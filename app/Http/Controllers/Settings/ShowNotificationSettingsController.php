@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 /** Which emails you get from the current account. */
 final class ShowNotificationSettingsController
 {
+    /**
+     * The email settings page, offering the issue digest to members who use Monitoring on a plan that includes it.
+     */
     public function __invoke(#[CurrentUser] User $user, IssueDigest $digest, Entitlements $entitlements): View
     {
         $account = $user->currentAccount;

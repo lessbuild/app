@@ -12,6 +12,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowDeployEnvironmentsController
 {
+    /**
+     * The project's environments with how many variables, workers and resources each has.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
         return view('deploy.environments', [

@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowConfigurationApplicationController
 {
+    /**
+     * An applied configuration's progress. Only the person who asked for the review may retry its operations.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationApplication $application, ProjectOverviewQuery $overview, ConfigurationQuery $configuration): View
     {
         return view('deploy.configuration-application', [

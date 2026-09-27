@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteServerCommandController
 {
+    /**
+     * Deletes a finished command from the history; queued or running ones stay.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $execution, DeleteServerCommand $delete): RedirectResponse
     {
         $deleted = $delete->handle($project->account, $user, $server->commandExecutions()->findOrFail((int) $execution));

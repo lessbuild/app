@@ -11,6 +11,9 @@ use Illuminate\Http\JsonResponse;
 /** POST /api/v1/heartbeats/{heartbeat}: public contract from the old Monitor app. */
 final class RecordHeartbeatController
 {
+    /**
+     * Records the ping for the monitor the middleware authenticated and returns its receipt, never cached.
+     */
     public function __invoke(StoreHeartbeatRequest $request, RecordHeartbeat $heartbeats): JsonResponse
     {
         $receipt = $heartbeats->handle(

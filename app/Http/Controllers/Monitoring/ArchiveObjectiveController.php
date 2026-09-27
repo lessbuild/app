@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class ArchiveObjectiveController
 {
+    /**
+     * Archives an SLO.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ArchiveServiceLevelObjective $archive): RedirectResponse
     {
         $archive->handle($objective, $user);

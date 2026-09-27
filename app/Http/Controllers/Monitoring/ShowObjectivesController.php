@@ -16,6 +16,9 @@ use Illuminate\Contracts\View\View;
 /** Service level objectives: availability and latency targets, with their remaining error budget. */
 final class ShowObjectivesController
 {
+    /**
+     * The project's SLOs with each one's current report.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, ServiceObjectiveReport $reports): View
     {
         $objectives = $rules->objectives($project);

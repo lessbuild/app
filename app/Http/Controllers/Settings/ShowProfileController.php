@@ -10,6 +10,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowProfileController
 {
+    /**
+     * The profile page.
+     */
     public function __invoke(#[CurrentUser] User $user): View
     {
         return view('settings.profile', ['user' => $user]);

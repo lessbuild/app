@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 /** The account home: its projects. */
 final class DashboardController
 {
+    /**
+     * The dashboard: the current account's projects, and whether the person may create one.
+     */
     public function __invoke(#[CurrentUser] User $user, AccountProjectsQuery $projects): View
     {
         $account = $user->currentAccount;

@@ -15,6 +15,9 @@ use Illuminate\Http\JsonResponse;
 /** POST /api/v1/ingest: public contract from the old Monitor app. 200 when stored, 202 when queued for processing. */
 final class IngestEventsController
 {
+    /**
+     * Stores (or queues) a batch of JSON events for the environment the key belongs to, and returns what was accepted.
+     */
     public function __invoke(StoreTelemetryRequest $request, TelemetryIngestor $ingestor): JsonResponse
     {
         $environment = $request->attributes->get('ingest_environment');

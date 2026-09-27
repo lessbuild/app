@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 final class ReadServerTerminalOutputController
 {
+    /**
+     * Returns the terminal's output after the browser's cursor, never cached.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, ReadServerTerminalOutput $read): JsonResponse
     {
         $request->validate(['after' => ['nullable', 'integer', 'min:0']]);

@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreStatusUpdateController
 {
+    /**
+     * Posts an update; subscribers are emailed when the page is published.
+     */
     public function __invoke(StatusUpdateRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, SaveStatusUpdate $save): RedirectResponse
     {
         $save->handle($page, $user, $request->validated());

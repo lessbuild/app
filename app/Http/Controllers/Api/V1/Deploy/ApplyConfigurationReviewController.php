@@ -16,6 +16,9 @@ use Illuminate\Http\JsonResponse;
 /** `POST /api/v1/projects/{project}/configuration/reviews/{review}/apply`: apply it (again returns the same receipt). */
 final class ApplyConfigurationReviewController
 {
+    /**
+     * Applies the review and returns the application's receipt.
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, string $review, DeployApiQuery $query, ConfigurationQuery $configuration, ApplyConfigurationReview $apply): JsonResponse
     {
         $record = $query->project($user, $account, $project)->configurationReviews()->findOrFail((int) $review);

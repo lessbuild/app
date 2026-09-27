@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateMonitorController
 {
+    /**
+     * Saves a monitor.
+     */
     public function __invoke(MonitorRequest $request, #[CurrentUser] User $user, Project $project, SaveMonitor $save): RedirectResponse
     {
         $monitor = $save->handle($project, $user, $request->validated(), $request->monitor());

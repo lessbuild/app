@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreEnvironmentProcessController
 {
+    /**
+     * Adds or changes a worker or scheduler process on an environment.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentProcess $save): RedirectResponse
     {
         $data = $request->validate([

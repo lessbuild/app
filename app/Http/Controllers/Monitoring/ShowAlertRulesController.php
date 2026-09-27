@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** Alert rules on the project's telemetry: error rates, latency, exceptions, log patterns, metrics and SLO burn. */
 final class ShowAlertRulesController
 {
+    /**
+     * The project's alert rules.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules): View
     {
         return view('monitoring.rules', [

@@ -26,6 +26,15 @@ use Laravel\Fortify\Features;
  */
 final class HandleProviderCallbackController
 {
+    /**
+     * Finishes provider sign-ins, connections and confirmations.
+     *
+     * @param  SocialSignInGateway  $gateway  Reads the person's profile from the provider.
+     * @param  ProviderIntents  $intents  Remembers which flow this browser started.
+     * @param  SignInWithSocialProfile  $signIn  Signs in or registers guests.
+     * @param  ConnectSocialIdentity  $connect  Connects the provider to a signed-in person.
+     * @param  OwnsSocialIdentity  $owns  Checks a confirming person used their own connected account.
+     */
     public function __construct(
         private readonly SocialSignInGateway $gateway,
         private readonly ProviderIntents $intents,
@@ -34,6 +43,9 @@ final class HandleProviderCallbackController
         private readonly OwnsSocialIdentity $owns,
     ) {}
 
+    /**
+     * Handles the provider's redirect back: signs guests in or up, or finishes what a signed-in person started.
+     */
     public function __invoke(Request $request, SocialProvider $provider): RedirectResponse
     {
         $user = $request->user();
@@ -41,6 +53,10 @@ final class HandleProviderCallbackController
         return $user instanceof User ? $this->completeIntent($request, $user, $provider) : $this->signInGuest($request, $provider);
     }
 
+    /**
+     * Signs a guest in (or up) from the provider's profile. People with two-factor authentication are handed to
+     * Fortify's challenge, exactly like a password sign-in; failures go back to the sign-in page with the reason.
+     */
     private function signInGuest(Request $request, SocialProvider $provider): RedirectResponse
     {
         $failed = fn (string $message): RedirectResponse => to_route('login')->withErrors(['social' => $message]);
@@ -75,6 +91,10 @@ final class HandleProviderCallbackController
         return redirect()->intended(route('dashboard'));
     }
 
+    /**
+     * Finishes the flow this browser started for a signed-in person: confirming identity (only with the provider account
+     * they connected) or connecting a provider. Expired or foreign flows are refused.
+     */
     private function completeIntent(Request $request, User $user, SocialProvider $provider): RedirectResponse
     {
         $intent = $this->intents->pull($request, $user, $provider);

@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RetryLoadBalancerController
 {
+    /**
+     * Tries a failed load-balancer change again.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, RetryLoadBalancer $retry): RedirectResponse
     {
         $retry->handle($user, $loadBalancer);

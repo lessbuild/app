@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowAlertRuleController
 {
+    /**
+     * An alert rule's page: its recent incidents, routing and escalation steps.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, AlertRule $rule, ProjectOverviewQuery $overview, Entitlements $entitlements): View
     {
 

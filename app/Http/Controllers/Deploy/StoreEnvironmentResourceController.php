@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreEnvironmentResourceController
 {
+    /**
+     * Adds or changes a resource (database, cache or object storage) on an environment.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentResource $save): RedirectResponse
     {
         $data = $request->validate([

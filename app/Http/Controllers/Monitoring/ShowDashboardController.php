@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowDashboardController
 {
+    /**
+     * A dashboard with its widgets filled in.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Dashboard $dashboard, ProjectOverviewQuery $overview, DashboardReportQuery $report): View
     {
 

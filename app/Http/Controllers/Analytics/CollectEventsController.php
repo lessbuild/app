@@ -16,6 +16,11 @@ use Illuminate\Support\Str;
 /** POST /api/v1/collect/{publicId}: the tracker's endpoint (a public contract; keep its behaviour unchanged). */
 final class CollectEventsController
 {
+    /**
+     * Accepts pageviews and custom events from the tracker. Unknown or paused sites get a 404, bots are accepted and
+     * dropped, other origins are refused, excluded paths are skipped, and everything else is cleaned and queued for
+     * processing.
+     */
     public function __invoke(CollectEventsRequest $request, string $publicId, AcceptEventBatch $acceptEventBatch): JsonResponse
     {
         $site = AnalyticsSite::query()->where('public_id', $publicId)->first();

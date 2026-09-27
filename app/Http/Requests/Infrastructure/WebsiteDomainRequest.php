@@ -5,12 +5,18 @@ declare(strict_types=1);
 namespace App\Http\Requests\Infrastructure;
 
 use App\Rules\Hostname;
+use App\Support\Hostname as HostnameInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 final class WebsiteDomainRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A domain for a website: a hostname no website or domain uses yet, alias or redirect (with its target), and an
+     * optional DNS provider.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -21,7 +27,11 @@ final class WebsiteDomainRequest extends FormRequest
         ];
     }
 
-    /** @return array{hostname: string, type: string, redirect_url: string|null, dns_provider_id: int|null} */
+    /**
+     * The validated domain with the DNS provider as an integer or null.
+     *
+     * @return array{hostname: string, type: string, redirect_url: string|null, dns_provider_id: int|null}
+     */
     public function domain(): array
     {
         /** @var array{hostname: string, type: string, redirect_url?: string|null, dns_provider_id?: int|string|null} $data */
@@ -30,8 +40,11 @@ final class WebsiteDomainRequest extends FormRequest
         return ['hostname' => $data['hostname'], 'type' => $data['type'], 'redirect_url' => $data['redirect_url'] ?? null, 'dns_provider_id' => isset($data['dns_provider_id']) ? (int) $data['dns_provider_id'] : null];
     }
 
+    /**
+     * Cleans the typed hostname before validation.
+     */
     protected function prepareForValidation(): void
     {
-        $this->merge(['hostname' => strtolower(rtrim(preg_replace('#^https?://#i', '', trim((string) $this->input('hostname'))) ?? '', '/'))]);
+        $this->merge(['hostname' => HostnameInput::fromInput($this->input('hostname'))]);
     }
 }

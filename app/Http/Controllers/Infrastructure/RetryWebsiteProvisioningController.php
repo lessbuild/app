@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RetryWebsiteProvisioningController
 {
+    /**
+     * Tries a failed website setup again.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, RetryWebsiteProvisioning $retry): RedirectResponse
     {
         $retried = $retry->handle($project->account, $user, $website);

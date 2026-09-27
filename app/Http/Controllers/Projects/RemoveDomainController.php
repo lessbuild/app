@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RemoveDomainController
 {
+    /**
+     * Removes a domain from the project.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $domain, RemoveDomain $remove): RedirectResponse
     {
         $target = $project->domains()->findOrFail($domain);

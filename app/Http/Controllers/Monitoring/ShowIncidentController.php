@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowIncidentController
 {
+    /**
+     * An incident's page: its timeline and who it can be assigned to.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Incident $incident, ProjectOverviewQuery $overview, ProjectIncidentsQuery $incidents): View
     {
 

@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** One trace's spans and events on a timeline. */
 final class ShowTraceController
 {
+    /**
+     * A trace's waterfall, up to 500 events. Unknown traces are a 404.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $trace, ProjectOverviewQuery $overview, TraceTimeline $timeline): View
     {
         abort_unless(strlen($trace) <= 64, 404);

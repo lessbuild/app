@@ -15,6 +15,9 @@ use Illuminate\Validation\ValidationException;
 
 final class DeleteAccountController
 {
+    /**
+     * Deletes the account once the person has typed its name exactly, after a recent password confirmation.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, DeleteAccount $delete): RedirectResponse
     {
         $request->validate(['confirm_name' => ['required', 'string']]);

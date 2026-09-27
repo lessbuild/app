@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** `GET /api/v1/projects`: projects with Deploy the token can use, each with its environments. */
 final class ListProjectsController
 {
+    /**
+     * Returns the projects the token can deploy, oldest first.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, DeployApiQuery $query): JsonResponse
     {
         $page = $query->page($query->projects($user, $account), $request->query('limit'), $request->query('cursor'), 'asc', 500);

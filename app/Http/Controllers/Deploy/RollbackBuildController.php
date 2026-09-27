@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RollbackBuildController
 {
+    /**
+     * Rolls back to a deploy's release and shows the rollback.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, RollbackBuild $rollback): RedirectResponse
     {
         return to_route('deploy.builds.show', [$project, $rollback->handle($user, $build)->id]);

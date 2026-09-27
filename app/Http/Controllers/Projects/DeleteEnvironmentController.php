@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteEnvironmentController
 {
+    /**
+     * Deletes one of the project's environments.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $environment, DeleteEnvironment $delete): RedirectResponse
     {
         $target = $project->environments()->findOrFail($environment);

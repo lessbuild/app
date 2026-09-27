@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowLoadBalancersController
 {
+    /**
+     * The load balancers page, offering servers with Caddy as proxies.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
         $servers = Server::query()->where('account_id', $project->account_id)->orderBy('name')->get();

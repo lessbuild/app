@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateAlertRuleController
 {
+    /**
+     * Saves an alert rule.
+     */
     public function __invoke(AlertRuleRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertRule $save): RedirectResponse
     {
         $rule = $save->handle($project, $user, $request->validated(), $request->rule());

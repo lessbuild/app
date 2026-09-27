@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RefreshServerCostsController
 {
+    /**
+     * Looks up current prices for the account's servers.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, RefreshServerCosts $refresh): RedirectResponse
     {
         $priced = $refresh->handle($user, $project->account);

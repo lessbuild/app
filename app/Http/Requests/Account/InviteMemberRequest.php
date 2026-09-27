@@ -11,7 +11,11 @@ use Illuminate\Validation\Rule;
 
 final class InviteMemberRequest extends FormRequest
 {
-    /** @return array<string, mixed> */
+    /**
+     * The invitee's email and a role.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -20,6 +24,9 @@ final class InviteMemberRequest extends FormRequest
         ];
     }
 
+    /**
+     * The invitation to send.
+     */
     public function toData(): InviteMemberData
     {
         return new InviteMemberData($this->string('email')->toString(), $this->enum('role', AccountRole::class) ?? AccountRole::Member);

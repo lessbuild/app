@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowApiTokensController
 {
+    /**
+     * The API tokens page: the account's tokens and the form for new ones.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, AccountApiTokensQuery $query): View
     {
 

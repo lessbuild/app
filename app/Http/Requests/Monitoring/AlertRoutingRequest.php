@@ -8,7 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class AlertRoutingRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * Up to five destinations, whether to alert on opening and on recovery, and the rule's version.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -19,7 +23,11 @@ final class AlertRoutingRequest extends FormRequest
         ];
     }
 
-    /** @return array{version: int, destinations: list<int>, opened: bool, recovered: bool} */
+    /**
+     * The routing with IDs as integers and flags as booleans.
+     *
+     * @return array{version: int, destinations: list<int>, opened: bool, recovered: bool}
+     */
     public function routing(): array
     {
         $data = $this->validated();

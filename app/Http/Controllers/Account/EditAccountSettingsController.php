@@ -12,6 +12,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditAccountSettingsController
 {
+    /**
+     * The account settings page, with the danger zone only for people who may delete the account.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user): View
     {
 

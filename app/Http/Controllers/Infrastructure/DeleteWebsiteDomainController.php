@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteWebsiteDomainController
 {
+    /**
+     * Removes a domain from a website.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $domain, DeleteWebsiteDomain $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, $website->domains()->findOrFail((int) $domain));

@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateDashboardController
 {
+    /**
+     * Saves a dashboard.
+     */
     public function __invoke(DashboardRequest $request, #[CurrentUser] User $user, Project $project, Dashboard $dashboard, SaveDashboard $save): RedirectResponse
     {
         $record = $save->handle($project->account, $user, $request->validated(), $dashboard);

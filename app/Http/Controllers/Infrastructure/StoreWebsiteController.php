@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreWebsiteController
 {
+    /**
+     * Creates a website and shows its database name and password once.
+     */
     public function __invoke(WebsiteRequest $request, #[CurrentUser] User $user, Project $project, CreateWebsite $create): RedirectResponse
     {
         $website = $create->handle($project->account, $user, $request->validated());

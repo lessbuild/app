@@ -12,6 +12,9 @@ use Illuminate\Http\Response;
 
 final class StripeWebhookController
 {
+    /**
+     * Receives a Stripe webhook. Unsigned or tampered requests get a 400 and change nothing.
+     */
     public function __invoke(Request $request, PaymentProvider $provider, HandleBillingWebhook $handle): Response
     {
         try {

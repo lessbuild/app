@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class SubscribeToStatusPageController
 {
+    /**
+     * Subscribes an email address and sends the confirmation email.
+     */
     public function __invoke(SubscribeToStatusPageRequest $request, string $slug, SubscribeToStatusPage $subscribe): RedirectResponse
     {
         $page = StatusPage::query()->where('slug', $slug)->where('published', true)->firstOrFail();

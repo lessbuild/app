@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RevokeApiTokenController
 {
+    /**
+     * Revokes one of the account's API tokens; requests using it fail from now on.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, int $token, RevokeApiToken $revoke): RedirectResponse
     {
         $revoke->handle($user, ApiToken::query()->where('account_id', $account->id)->findOrFail($token));

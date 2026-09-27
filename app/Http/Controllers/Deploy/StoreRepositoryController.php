@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreRepositoryController
 {
+    /**
+     * Connects a repository to the project.
+     */
     public function __invoke(RepositoryRequest $request, #[CurrentUser] User $user, Project $project, SaveRepository $save): RedirectResponse
     {
         $repository = $save->handle($user, $project, $request->repository());

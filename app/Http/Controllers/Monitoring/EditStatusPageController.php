@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditStatusPageController
 {
+    /**
+     * The status page form, filled in.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, StatusPage $page, ProjectOverviewQuery $overview, StatusPagesQuery $pages): View
     {
 

@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class UpdateEnvironmentDeploySettingsController
 {
+    /**
+     * Saves how an environment's deploys run: strategy, observation, runtime, commands and scaling.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, UpdateEnvironmentDeploySettings $update): RedirectResponse
     {
         $data = $request->validate([

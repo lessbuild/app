@@ -18,6 +18,9 @@ use Illuminate\Contracts\View\View;
 /** Errors grouped by fingerprint, newest activity first. */
 final class ShowIssuesController
 {
+    /**
+     * The issues list, 20 to a page, with titles redacted.
+     */
     public function __invoke(SearchIssuesRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, IssuesQuery $search, TelemetryRedactor $redactor): View
     {
         $filters = $request->filters();

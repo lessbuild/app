@@ -16,6 +16,9 @@ use Illuminate\Contracts\View\View;
 /** An environment's recent ingest deliveries and their processing status. */
 final class ShowIngestReceiptsController
 {
+    /**
+     * An environment's recent deliveries, optionally by status.
+     */
     public function __invoke(SearchIngestReceiptsRequest $request, #[CurrentUser] User $user, Project $project, string $environment, ProjectOverviewQuery $overview): View
     {
         $target = $project->environments()->findOrFail($environment);

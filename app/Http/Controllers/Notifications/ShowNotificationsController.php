@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 
 final class ShowNotificationsController
 {
+    /**
+     * The inbox, all or unread only.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, InboxQuery $inbox): View
     {
         $unreadOnly = $request->query('filter') === 'unread';

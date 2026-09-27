@@ -13,6 +13,9 @@ use Illuminate\Http\Request;
 
 final class UpdateInfrastructureBudgetController
 {
+    /**
+     * Sets or clears the account's monthly infrastructure budget.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, SetInfrastructureBudget $set): RedirectResponse
     {
         $request->validate(['monthly_infrastructure_budget' => ['nullable', 'numeric', 'between:0,99999999']]);

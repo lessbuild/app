@@ -17,6 +17,9 @@ use Illuminate\Contracts\View\View;
 /** Error rate and latency before and after a deployment. */
 final class ShowDeploymentController
 {
+    /**
+     * A deployment's page comparing equal windows before and after it.
+     */
     public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, Deployment $deployment, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics, TelemetryRedactor $redactor): View
     {
         $filters = $request->filters();

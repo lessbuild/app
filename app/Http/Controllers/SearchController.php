@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 /** Search behind the command palette: {groups: [{label, results: [{title, url, subtitle, type}]}]}, within the current account. */
 final class SearchController
 {
+    /**
+     * The command palette's search: projects, domains and members of the current account matching at least two typed
+     * characters, grouped, with empty groups left out.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, SearchProjectsQuery $projects, SearchMembersQuery $members): JsonResponse
     {
         $term = mb_substr(trim($request->string('q')->toString()), 0, 100);

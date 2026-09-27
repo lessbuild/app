@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateProjectController
 {
+    /**
+     * Saves the project's name and description.
+     */
     public function __invoke(ProjectRequest $request, #[CurrentUser] User $user, Project $project, UpdateProject $update): RedirectResponse
     {
         $update->handle($user, $project, $request->toDetails());

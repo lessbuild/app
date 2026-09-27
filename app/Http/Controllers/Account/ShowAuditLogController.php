@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 
 final class ShowAuditLogController
 {
+    /**
+     * The account's audit log, optionally narrowed to one project.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, AccountAuditLogQuery $query, ProjectSwitcherQuery $projects): View
     {
         $projectOptions = $projects->handle($account, 500);

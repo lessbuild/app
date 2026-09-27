@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RedeployBuildController
 {
+    /**
+     * Deploys a finished deploy's commit again and shows the new deploy.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, RedeployBuild $redeploy): RedirectResponse
     {
         return to_route('deploy.builds.show', [$project, $redeploy->handle($user, $build)->id]);

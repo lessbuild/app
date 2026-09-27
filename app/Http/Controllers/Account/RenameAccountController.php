@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class RenameAccountController
 {
+    /**
+     * Renames the account.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, RenameAccount $rename): RedirectResponse
     {
         $validated = $request->validate(['name' => ['required', 'string', 'max:100']]);

@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteBackupDestinationController
 {
+    /**
+     * Removes a backup destination.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, BackupDestination $backupDestination, DeleteBackupDestination $delete): RedirectResponse
     {
         $delete->handle($user, $backupDestination);

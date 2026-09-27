@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class CheckProviderConnectionController
 {
+    /**
+     * Checks the provider's stored credential now and shows the result.
+     */
     public function __invoke(#[CurrentUser] User $user, Provider $provider, ProviderHealthMonitor $monitor): RedirectResponse
     {
         $result = $monitor->check($provider);

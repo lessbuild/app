@@ -14,6 +14,9 @@ use Illuminate\Http\JsonResponse;
 /** `/status/{slug}/report.json`: Deployer's public JSON snapshot, same shape, plus the detailed state. */
 final class ShowStatusPageReportController
 {
+    /**
+     * The published page's report as JSON: overall state, components and the latest updates.
+     */
     public function __invoke(string $slug, StatusPageReportQuery $query): JsonResponse
     {
         $page = StatusPage::query()->where('slug', $slug)->where('published', true)->firstOrFail();

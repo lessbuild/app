@@ -9,7 +9,11 @@ use Illuminate\Foundation\Http\FormRequest;
 /** Times are UTC (datetime-local inputs). Authorisation happens in SaveMaintenanceWindow. */
 final class MaintenanceWindowRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A window's name, reason, and start and end times, the end after the start.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [

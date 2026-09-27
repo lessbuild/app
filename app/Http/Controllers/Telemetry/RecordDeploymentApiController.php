@@ -13,6 +13,9 @@ use Illuminate\Http\JsonResponse;
 /** POST /api/v1/deployments: public contract from the old Monitor app. 201 when new, 200 when replayed. */
 final class RecordDeploymentApiController
 {
+    /**
+     * Records a deployment reported by a pipeline with the environment's key.
+     */
     public function __invoke(StoreDeploymentApiRequest $request, RecordDeployment $record): JsonResponse
     {
         $environment = $request->attributes->get('ingest_environment');

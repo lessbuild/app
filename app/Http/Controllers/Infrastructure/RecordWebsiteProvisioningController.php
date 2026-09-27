@@ -12,6 +12,9 @@ use Illuminate\Http\Response;
 /** What a website's setup script reports (Deployer's signed callback URLs). */
 final class RecordWebsiteProvisioningController
 {
+    /**
+     * Records a website setup script's report.
+     */
     public function __invoke(Request $request, string $websiteId, string $event, RecordWebsiteProvisioning $record): Response
     {
         $target = Website::query()->findOrFail((int) $websiteId);

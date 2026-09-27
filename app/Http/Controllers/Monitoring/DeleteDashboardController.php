@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteDashboardController
 {
+    /**
+     * Deletes a dashboard.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Dashboard $dashboard, DeleteDashboard $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, $dashboard);

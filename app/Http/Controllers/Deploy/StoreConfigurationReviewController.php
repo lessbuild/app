@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreConfigurationReviewController
 {
+    /**
+     * Opens a review of the posted configuration document.
+     */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, Project $project, CreateConfigurationReview $create): RedirectResponse
     {
         $review = $create->handle($user, $project, $request->document(), $request->bindings());

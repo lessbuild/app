@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** The account's alert destinations. They are shared by every project's monitors. */
 final class ShowAlertDestinationsController
 {
+    /**
+     * The destinations page.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, AlertDestinationsQuery $destinations): View
     {
         return view('monitoring.destinations', [

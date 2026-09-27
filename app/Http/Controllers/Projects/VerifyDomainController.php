@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class VerifyDomainController
 {
+    /**
+     * Looks for the domain's TXT record now and says whether it was found.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $domain, VerifyDomain $verify): RedirectResponse
     {
         $target = $project->domains()->findOrFail($domain);

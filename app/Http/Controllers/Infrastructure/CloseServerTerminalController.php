@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 final class CloseServerTerminalController
 {
+    /**
+     * Closes the terminal and forgets its browser token.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, CloseServerTerminal $close): RedirectResponse
     {
         $close->handle($user, $terminal);

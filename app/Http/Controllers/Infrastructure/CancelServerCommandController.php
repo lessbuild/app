@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class CancelServerCommandController
 {
+    /**
+     * Cancels a queued command; one that already started can't be.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $execution, CancelServerCommand $cancel): RedirectResponse
     {
         $canceled = $cancel->handle($project->account, $user, $server->commandExecutions()->findOrFail((int) $execution));

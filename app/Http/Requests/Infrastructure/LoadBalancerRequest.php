@@ -5,11 +5,16 @@ declare(strict_types=1);
 namespace App\Http\Requests\Infrastructure;
 
 use App\Rules\Hostname;
+use App\Support\Hostname as HostnameInput;
 use Illuminate\Foundation\Http\FormRequest;
 
 final class LoadBalancerRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A load balancer's hostname, health check path, proxy server (only when creating) and website.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -20,15 +25,22 @@ final class LoadBalancerRequest extends FormRequest
         ];
     }
 
-    /** @return array{hostname: string, health_path: string, server_id?: int|string, website_id?: int|string|null} */
+    /**
+     * The validated load balancer.
+     *
+     * @return array{hostname: string, health_path: string, server_id?: int|string, website_id?: int|string|null}
+     */
     public function loadBalancer(): array
     {
         /** @var array{hostname: string, health_path: string, server_id?: int|string, website_id?: int|string|null} */
         return $this->validated();
     }
 
+    /**
+     * Cleans the typed hostname before validation.
+     */
     protected function prepareForValidation(): void
     {
-        $this->merge(['hostname' => strtolower(rtrim(preg_replace('#^https?://#i', '', trim((string) $this->input('hostname'))) ?? '', '/'))]);
+        $this->merge(['hostname' => HostnameInput::fromInput($this->input('hostname'))]);
     }
 }

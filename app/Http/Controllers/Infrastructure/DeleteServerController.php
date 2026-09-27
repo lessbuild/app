@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteServerController
 {
+    /**
+     * Deletes a server.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, DeleteServer $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, $server);

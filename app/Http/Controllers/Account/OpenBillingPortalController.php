@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class OpenBillingPortalController
 {
+    /**
+     * Sends the person to the payment provider's billing portal, or back with the reason when it's unavailable.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, OpenBillingPortal $portal): RedirectResponse
     {
         try {

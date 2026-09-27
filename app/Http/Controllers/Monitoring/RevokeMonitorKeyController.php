@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** Revoke a heartbeat or queue key and pause the monitor. */
 final class RevokeMonitorKeyController
 {
+    /**
+     * Revokes the monitor's key and pauses it.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, RotateHeartbeatToken $heartbeats, RotateQueueToken $queues): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];

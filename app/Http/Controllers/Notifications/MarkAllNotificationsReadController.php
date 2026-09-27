@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class MarkAllNotificationsReadController
 {
+    /**
+     * Marks the whole inbox read.
+     */
     public function __invoke(#[CurrentUser] User $user, MarkAllNotificationsRead $markAll): RedirectResponse
     {
         $markAll->handle($user);

@@ -16,11 +16,19 @@ use App\Models\User;
 final readonly class Shell
 {
     /**
+     * Everything the signed-in layout's navigation needs.
+     *
+     * @param  User  $user  The signed-in person.
+     * @param  ?Account  $account  Their current account, if any.
      * @param  list<array{id: string, name: string}>  $accounts
+     * @param  ?Project  $project  The project the page is in, if any.
      * @param  list<array{id: string, name: string}>  $projects  projects in the current account, for the switcher
      * @param  list<NavLink>  $primaryNav  row one: Projects and the services
+     * @param  string  $sectionLabel  The accessible name of the section navigation.
      * @param  list<NavLink>  $sectionNav  row two: sections of the current area (may be empty)
      * @param  list<NavLink>  $accountLinks  account pages for the user menu
+     * @param  bool  $canCreateProject  Whether to offer "New project".
+     * @param  int  $unreadNotifications  The inbox badge count.
      */
     public function __construct(
         public User $user,

@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** `GET /api/v1/deployments`: builds, newest first (the latest 100, or cursor pages with `limit`). */
 final class ListDeploymentsController
 {
+    /**
+     * Returns the deploys the token can see, newest first.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, DeployApiQuery $query): JsonResponse
     {
         $page = $query->page($query->builds($user, $account), $request->query('limit'), $request->query('cursor'), 'desc', 100);

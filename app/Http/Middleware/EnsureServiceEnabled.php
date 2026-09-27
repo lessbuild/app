@@ -13,6 +13,10 @@ use Symfony\Component\HttpFoundation\Response;
 /** `service:analytics` on a project's service routes: 403 without access, the enable page when the service is off. */
 final class EnsureServiceEnabled
 {
+    /**
+     * Lets the request through when the person may use the service and it's on in the project; sends them to its enable
+     * page when it's off, and refuses them otherwise.
+     */
     public function handle(Request $request, Closure $next, string $service): Response
     {
         $project = $request->route('project');

@@ -19,6 +19,10 @@ use Illuminate\Support\Facades\Crypt;
 /** Connect an app: ingest keys per environment, collection health and code for each stack. */
 final class ShowTelemetrySetupController
 {
+    /**
+     * The setup page: keys per environment, collection health and code for the chosen stack, plus a just-issued key
+     * shown once.
+     */
     public function __invoke(IntegrationSetupRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, CollectionHealthQuery $health, IntegrationSetupGuide $guide): View
     {
         $stack = $request->stack();

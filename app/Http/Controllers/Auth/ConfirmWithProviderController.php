@@ -15,6 +15,9 @@ use Symfony\Component\HttpFoundation\Response;
 /** Confirm identity for sudo mode by signing in again with a connected provider. */
 final class ConfirmWithProviderController
 {
+    /**
+     * Starts a provider sign-in to confirm identity instead of typing a password.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, SocialProvider $provider, SocialSignInGateway $gateway, ProviderIntents $intents): Response
     {
         if (! $gateway->configured($provider)) {

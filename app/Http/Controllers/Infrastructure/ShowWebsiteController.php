@@ -22,6 +22,9 @@ use Illuminate\Http\Request;
 
 final class ShowWebsiteController
 {
+    /**
+     * A website's page, in tabs: overview, domains, database, backups, and settings for people who may change it.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, ProjectOverviewQuery $overview, WebsitesQuery $websites, BackupsQuery $backups): View
     {
         $tabs = array_filter([

@@ -13,6 +13,10 @@ use Illuminate\Http\RedirectResponse;
 
 final class RetryIngestReceiptController
 {
+    /**
+     * Queues a failed delivery again from its kept payload (409 when there's nothing to retry). Usage already counted
+     * isn't counted twice.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, IngestReceipt $receipt, TelemetryQueue $queue): RedirectResponse
     {
         abort_unless($queue->retry($receipt->id), 409, __('Only failed deliveries with a kept payload can be retried.'));

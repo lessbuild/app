@@ -9,7 +9,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class GoalRequest extends FormRequest
 {
-    /** @return array<string, mixed> */
+    /**
+     * A goal's name, kind (path or event), match type and value, and whether it's active.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -21,6 +25,9 @@ final class GoalRequest extends FormRequest
         ];
     }
 
+    /**
+     * The goal's settings.
+     */
     public function toDetails(): GoalDetails
     {
         return new GoalDetails(

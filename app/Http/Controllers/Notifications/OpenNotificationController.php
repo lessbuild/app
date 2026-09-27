@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class OpenNotificationController
 {
+    /**
+     * Marks a notification read and goes where it points.
+     */
     public function __invoke(#[CurrentUser] User $user, string $notification, OpenNotification $open): RedirectResponse
     {
         return redirect($open->handle($user, $notification));

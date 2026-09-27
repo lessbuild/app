@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** `POST /api/v1/deployments/{build}/promote` with `target_environment_id` and an optional `promotion_note`. */
 final class PromoteDeploymentController
 {
+    /**
+     * Queues the promotion (202).
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $build, DeployApiQuery $query, PromoteBuild $promote): JsonResponse
     {
         $request->validate(['target_environment_id' => ['required', 'string', 'max:26'], 'promotion_note' => ['nullable', 'string', 'max:2000']]);

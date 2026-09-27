@@ -17,6 +17,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowIssueController
 {
+    /**
+     * An issue's page: its latest occurrences and timeline, redacted, and who it can be assigned to.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Issue $issue, ProjectOverviewQuery $overview, TelemetryRedactor $redactor, ProjectIncidentsQuery $members): View
     {
         $events = TelemetryEvent::query()->where('issue_id', $issue->id)->summary()->with('environment')

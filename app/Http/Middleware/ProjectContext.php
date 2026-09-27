@@ -17,8 +17,16 @@ use Symfony\Component\HttpFoundation\Response;
  */
 final class ProjectContext
 {
+    /**
+     * Scopes project routes to the people who may see them.
+     *
+     * @param  SwitchAccount  $switchAccount  Switches to the project's account when it isn't the current one.
+     */
     public function __construct(private readonly SwitchAccount $switchAccount) {}
 
+    /**
+     * 404s people who may not see the project, and makes its account current when it isn't.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $project = $request->route('project');

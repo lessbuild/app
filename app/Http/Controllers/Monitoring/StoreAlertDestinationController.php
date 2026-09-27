@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreAlertDestinationController
 {
+    /**
+     * Adds a destination, showing a webhook's signing secret once.
+     */
     public function __invoke(AlertDestinationRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertDestination $save): RedirectResponse
     {
         $destination = $save->handle($project->account, $user, $request->validated());

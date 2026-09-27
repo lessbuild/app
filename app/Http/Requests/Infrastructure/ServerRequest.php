@@ -11,7 +11,11 @@ use Illuminate\Validation\Rule;
 /** Authorisation and the provider's account happen in CreateServer. */
 final class ServerRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A new server's provider, type, name (a valid hostname label) and the provider's region, size and image.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -24,7 +28,11 @@ final class ServerRequest extends FormRequest
         ];
     }
 
-    /** @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string} */
+    /**
+     * The validated details with the provider ID as an integer.
+     *
+     * @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string}
+     */
     public function serverDetails(): array
     {
         /** @var array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string} $data */

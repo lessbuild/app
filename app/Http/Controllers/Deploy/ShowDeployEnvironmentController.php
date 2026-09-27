@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 final class ShowDeployEnvironmentController
 {
+    /**
+     * An environment's deploy settings, in tabs: controls, how deploys run, variables, workers and resources.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, ProjectOverviewQuery $overview): View
     {
         $tabs = array_filter(['controls' => __('Controls'), 'settings' => __('How deploys run'), 'variables' => __('Variables'), 'processes' => __('Workers'), 'resources' => __('Resources')]);

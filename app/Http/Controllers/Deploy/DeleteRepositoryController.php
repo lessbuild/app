@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteRepositoryController
 {
+    /**
+     * Disconnects a repository. Its website keeps the release it's running.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Repository $repository, DeleteRepository $delete): RedirectResponse
     {
         $delete->handle($user, $repository);

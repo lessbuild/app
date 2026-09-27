@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteBackupScheduleController
 {
+    /**
+     * Removes one of a website's backup schedules.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $schedule, DeleteBackupSchedule $delete): RedirectResponse
     {
         $delete->handle($user, $website->backupSchedules()->findOrFail((int) $schedule));

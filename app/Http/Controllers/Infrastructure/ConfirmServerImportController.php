@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class ConfirmServerImportController
 {
+    /**
+     * Imports the inspected server, using the confirmation token this browser was given when it inspected it.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $assessment, ConfirmServerImport $confirm): RedirectResponse
     {
         $record = ServerImportAssessment::query()->where('account_id', $project->account_id)->findOrFail((int) $assessment);

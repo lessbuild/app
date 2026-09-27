@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteGoalController
 {
+    /**
+     * Deletes a goal and removes it from the site's history.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, string $goal, DeleteGoal $delete): RedirectResponse
     {
         $delete->handle($user, $site->goals()->findOrFail($goal));

@@ -7,13 +7,19 @@ namespace App\Http\Requests\Infrastructure;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
 use App\Rules\Hostname;
+use App\Support\Hostname as HostnameInput;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
 /** Authorisation and the server's account happen in CreateWebsite and UpdateWebsite. */
 final class WebsiteRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A website's settings. Its hostname must not be used by another website or domain (its own primary domain
+     * excepted), and the health check path must be an absolute path.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         $website = $this->route('website');
@@ -36,10 +42,12 @@ final class WebsiteRequest extends FormRequest
         ];
     }
 
+    /**
+     * Cleans the typed hostname and makes the health check path start with `/`.
+     */
     protected function prepareForValidation(): void
     {
-        $url = preg_replace('#^https?://#i', '', trim((string) $this->input('url'))) ?? '';
         $path = trim((string) $this->input('health_check_path', '/'));
-        $this->merge(['url' => strtolower(rtrim($url, '/')), 'health_check_path' => str_starts_with($path, '/') ? $path : '/'.$path]);
+        $this->merge(['url' => HostnameInput::fromInput($this->input('url')), 'health_check_path' => str_starts_with($path, '/') ? $path : '/'.$path]);
     }
 }

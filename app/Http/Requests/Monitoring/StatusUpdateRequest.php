@@ -12,7 +12,11 @@ use Illuminate\Validation\Rule;
 /** Times are UTC (datetime-local inputs). Authorisation happens in SaveStatusUpdate. */
 final class StatusUpdateRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * An update's kind, status, severity, text and times.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -29,6 +33,9 @@ final class StatusUpdateRequest extends FormRequest
         ];
     }
 
+    /**
+     * Adds a check that the status belongs to the kind of update (maintenance and incidents have different statuses).
+     */
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

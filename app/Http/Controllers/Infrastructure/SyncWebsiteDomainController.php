@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class SyncWebsiteDomainController
 {
+    /**
+     * Points a managed domain's DNS record at the website's server again.
+     */
     public function __invoke(Project $project, Website $website, string $domain, SyncWebsiteDomain $sync): RedirectResponse
     {
         $warning = $sync->handle($website->domains()->whereNotNull('dns_provider_id')->findOrFail((int) $domain));

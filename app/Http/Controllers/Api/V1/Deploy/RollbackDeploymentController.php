@@ -15,6 +15,9 @@ use Illuminate\Http\JsonResponse;
 /** `POST /api/v1/deployments/{build}/rollback`: make that build's retained release live again. */
 final class RollbackDeploymentController
 {
+    /**
+     * Queues the rollback (202).
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $build, DeployApiQuery $query, RollbackBuild $rollback): JsonResponse
     {
         $rolledBack = $rollback->handle($user, $query->build($user, $account, $build));

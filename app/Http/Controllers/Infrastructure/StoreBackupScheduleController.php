@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreBackupScheduleController
 {
+    /**
+     * Adds a daily or weekly backup schedule to a website.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, SaveBackupSchedule $save): RedirectResponse
     {
         /** @var array{backup_destination_id: string, frequency: string, weekday?: string|null, run_at: string, retention_count: string} $data */

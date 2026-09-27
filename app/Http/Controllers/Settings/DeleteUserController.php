@@ -16,6 +16,10 @@ use Illuminate\Validation\ValidationException;
 
 final class DeleteUserController
 {
+    /**
+     * Deletes the person once they've typed their email exactly, then signs them out. Accounts they'd leave without an
+     * owner block the deletion.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, DeleteUser $delete): RedirectResponse
     {
         $request->validate(['confirm_email' => ['required', 'string']]);

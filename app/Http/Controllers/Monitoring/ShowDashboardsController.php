@@ -16,6 +16,9 @@ use Illuminate\Contracts\View\View;
 /** The account's saved dashboards. */
 final class ShowDashboardsController
 {
+    /**
+     * The dashboards page and the plan's dashboard limit.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, DashboardsQuery $dashboards, Entitlements $entitlements): View
     {
         return view('monitoring.dashboards', [

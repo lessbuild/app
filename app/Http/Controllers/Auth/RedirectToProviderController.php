@@ -11,6 +11,9 @@ use Symfony\Component\HttpFoundation\Response;
 /** Sign in (or sign up) with GitHub, GitLab or Bitbucket. */
 final class RedirectToProviderController
 {
+    /**
+     * Sends a guest to the provider's sign-in page.
+     */
     public function __invoke(SocialProvider $provider, SocialSignInGateway $gateway): Response
     {
         if (! $gateway->configured($provider)) {

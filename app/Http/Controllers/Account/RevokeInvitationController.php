@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RevokeInvitationController
 {
+    /**
+     * Withdraws a pending invitation.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $invitation, RevokeInvitation $revoke): RedirectResponse
     {
         $revoke->handle($user, $account->invitations()->findOrFail($invitation));

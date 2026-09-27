@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class ShowIncidentsController
 {
+    /**
+     * The project's open incidents, or resolved ones with `?status=resolved`.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectIncidentsQuery $incidents): View
     {
         $status = in_array($request->query('status'), ['open', 'resolved'], true) ? (string) $request->query('status') : 'open';

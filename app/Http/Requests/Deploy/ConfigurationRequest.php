@@ -13,18 +13,30 @@ use Illuminate\Validation\ValidationException;
  */
 final class ConfigurationRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * The document text (at most 50,000 characters) and bindings, which must be present even if empty.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return ['document' => ['required', 'string', 'max:50000'], 'bindings' => ['present']];
     }
 
+    /**
+     * The configuration document as posted.
+     */
     public function document(): string
     {
         return $this->string('document')->toString();
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The bindings as an array, decoded from JSON text when the page sent them that way. Anything but a JSON object
+     * (including a non-empty list) is a validation error.
+     *
+     * @return array<string, mixed>
+     */
     public function bindings(): array
     {
         $bindings = $this->input('bindings');

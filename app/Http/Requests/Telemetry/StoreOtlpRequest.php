@@ -11,12 +11,19 @@ use Illuminate\Validation\Validator;
 
 final class StoreOtlpRequest extends FormRequest
 {
+    /**
+     * Always allowed: the ingest key was checked by middleware.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The decoded JSON body.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->json()->all();
@@ -28,7 +35,13 @@ final class StoreOtlpRequest extends FormRequest
         $validator->excludeUnvalidatedArrayKeys = false;
     }
 
-    /** @return array<string, array<int, mixed>> */
+    /**
+     * The structure of an OTLP/JSON export for the signal in the URL: resources, scopes and records as lists, IDs as hex
+     * of the right length, attribute lists capped per record, and every value a valid OTLP value. Spans must have start
+     * and end times; metrics are checked per data-point family.
+     *
+     * @return array<string, array<int, mixed>>
+     */
     public function rules(): array
     {
         [$resource, $scope, $records] = $this->paths();
@@ -74,7 +87,12 @@ final class StoreOtlpRequest extends FormRequest
         return $rules;
     }
 
-    /** @return array<int, callable> */
+    /**
+     * Checks what rules can't express: the optional batch header, timestamps as unsigned 64-bit nanoseconds, spans that
+     * don't end before they start, integer enum fields, log severity numbers, and at most one data family per metric.
+     *
+     * @return array<int, callable>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {
@@ -101,13 +119,22 @@ final class StoreOtlpRequest extends FormRequest
         }];
     }
 
-    /** @return array<int, string> */
+    /**
+     * Rules for a trace or span ID: hex of exactly `$length` characters and not all zeros, required for spans.
+     *
+     * @return array<int, string>
+     */
     private function identifierRules(int $length, bool $required = false): array
     {
         return [...($required ? ['required'] : ['sometimes', 'nullable']), 'string', "regex:/\A(?!0{{$length}}\z)[a-f0-9]{{$length}}\z/iD"];
     }
 
-    /** @param array<string, mixed> $record */
+    /**
+     * Checks one record's timestamps and enum fields for its signal; metric data points are checked recursively as
+     * "points".
+     *
+     * @param  array<string, mixed>  $record
+     */
     private function validateRecord(Validator $validator, array $record, string $path, string $signal): void
     {
         if ($signal === 'metrics') {
@@ -168,7 +195,11 @@ final class StoreOtlpRequest extends FormRequest
         }
     }
 
-    /** @return array{string, string, string} */
+    /**
+     * The JSON keys for resources, scopes and records of the signal in the URL; unknown signals are a 404.
+     *
+     * @return array{string, string, string}
+     */
     private function paths(): array
     {
         return match ($this->route('signal')) {
@@ -179,7 +210,12 @@ final class StoreOtlpRequest extends FormRequest
         };
     }
 
-    /** @return array<string, array<int, mixed>> */
+    /**
+     * Rules for an attribute list: at most the configured number of attributes, each with a key of at most 256
+     * characters and a valid OTLP value.
+     *
+     * @return array<string, array<int, mixed>>
+     */
     private function attributeRules(string $path): array
     {
         return [
@@ -190,6 +226,9 @@ final class StoreOtlpRequest extends FormRequest
         ];
     }
 
+    /**
+     * A validation rule that fails for anything that isn't a valid OTLP `AnyValue`.
+     */
     private function valueRule(): Closure
     {
         return function (string $attribute, mixed $value, Closure $fail): void {
@@ -199,6 +238,10 @@ final class StoreOtlpRequest extends FormRequest
         };
     }
 
+    /**
+     * Whether a value is a valid OTLP `AnyValue`: null, or an object with at most one typed field whose content fits the
+     * type. Arrays and key-value lists are checked recursively, and key-value lists share the attribute limit.
+     */
     private function validValue(mixed $value): bool
     {
         if ($value === null) {

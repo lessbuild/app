@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowCostsController
 {
+    /**
+     * The costs page, with the budget for people allowed to set it.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, InfrastructureCostsQuery $costs): View
     {
         return view('infrastructure.costs', [

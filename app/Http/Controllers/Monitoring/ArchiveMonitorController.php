@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class ArchiveMonitorController
 {
+    /**
+     * Archives a monitor, keeping its history, if it hasn't changed since the page was opened.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, ArchiveMonitor $archive): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];

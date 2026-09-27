@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreDashboardController
 {
+    /**
+     * Creates a dashboard.
+     */
     public function __invoke(DashboardRequest $request, #[CurrentUser] User $user, Project $project, SaveDashboard $save): RedirectResponse
     {
         $dashboard = $save->handle($project->account, $user, $request->validated());

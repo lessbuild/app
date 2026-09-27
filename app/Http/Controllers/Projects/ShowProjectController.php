@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowProjectController
 {
+    /**
+     * The project overview: services, environments, the getting-started checklist and recent activity.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query, ProjectChecklistQuery $checklist, ProjectActivityQuery $activity): View
     {
         return view('projects.show', [

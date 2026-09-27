@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateAlertEscalationsController
 {
+    /**
+     * Saves a rule's escalation steps.
+     */
     public function __invoke(AlertEscalationsRequest $request, #[CurrentUser] User $user, Project $project, AlertRule $rule, UpdateAlertEscalations $update): RedirectResponse
     {
         $update->handle($rule, $user, $request->steps());

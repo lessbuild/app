@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class CheckBackupDestinationController
 {
+    /**
+     * Checks the destination's bucket can be written and shows the result.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, BackupDestination $backupDestination, CheckBackupDestination $check): RedirectResponse
     {
         $error = $check->handle($user, $backupDestination);

@@ -11,13 +11,22 @@ use Illuminate\Foundation\Http\FormRequest;
 
 class StoreDeploymentRequest extends FormRequest
 {
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body for API calls, the form fields otherwise.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->isJson() ? $this->json()->all() : $this->request->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * A deployment report: a UUID to deduplicate retries, release labels that are safe to store, an optional commit and
+     * note, and an ISO 8601 time between 2000 and five minutes from now.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         $label = function (string $attribute, mixed $value, Closure $fail): void {
@@ -50,7 +59,11 @@ class StoreDeploymentRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, string> */
+    /**
+     * Messages that say how to fix each field, since pipelines read them.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return [
@@ -63,7 +76,11 @@ class StoreDeploymentRequest extends FormRequest
         ];
     }
 
-    /** @return array{deployment_id: string, version: string, service?: string|null, service_namespace?: string|null, commit_sha?: string|null, note?: string|null, deployed_at?: string|null} */
+    /**
+     * The validated report with every optional field as a string or null.
+     *
+     * @return array{deployment_id: string, version: string, service?: string|null, service_namespace?: string|null, commit_sha?: string|null, note?: string|null, deployed_at?: string|null}
+     */
     public function deployment(): array
     {
         $data = $this->validated();

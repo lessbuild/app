@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreBuildController
 {
+    /**
+     * Starts a deploy, of a given commit or the branch's latest.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Repository $repository, DeployRepository $deploy): RedirectResponse
     {
         $request->validate(['revision' => ['nullable', 'string', 'regex:/\A[0-9a-fA-F]{40,64}\z/']]);

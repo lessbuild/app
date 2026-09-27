@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class CreateWebsiteController
 {
+    /**
+     * The new website form, or the import form with `?import=1`.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, WebsitesQuery $websites): View
     {
 

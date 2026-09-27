@@ -8,7 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class AlertEscalationsRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * Up to ten steps, each a destination and a delay in minutes (up to a week), and the rule's version.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -20,7 +24,11 @@ final class AlertEscalationsRequest extends FormRequest
         ];
     }
 
-    /** @return array{version: int, escalations: list<array{destination_id: int|null, delay_minutes: int|null}>} */
+    /**
+     * The steps with IDs and delays as integers; blank fields become null.
+     *
+     * @return array{version: int, escalations: list<array{destination_id: int|null, delay_minutes: int|null}>}
+     */
     public function steps(): array
     {
         $data = $this->validated();

@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteLoadBalancerNodeController
 {
+    /**
+     * Takes a server out from behind a load balancer.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, string $node, DeleteLoadBalancerNode $delete): RedirectResponse
     {
         $delete->handle($user, $loadBalancer->nodes()->findOrFail((int) $node));

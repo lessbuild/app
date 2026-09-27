@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** Which services call which, from trace spans. */
 final class ShowDependencyMapController
 {
+    /**
+     * The dependency map for a range, optionally for one of the project's environments.
+     */
     public function __invoke(SearchDependencyMapRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, DependencyMapQuery $dependencies): View
     {
         $filters = $request->filters();

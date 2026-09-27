@@ -50,4 +50,13 @@ final class Hostname
 
         return $unicode !== false ? $unicode : $ascii;
     }
+
+    /**
+     * What someone typed into a hostname field, without a leading `http://` or `https://` or trailing slashes, and
+     * lowercased. Forms run this before validation; the Hostname rule then checks what's left.
+     */
+    public static function fromInput(mixed $value): string
+    {
+        return strtolower(rtrim(preg_replace('#^https?://#i', '', trim(is_string($value) ? $value : '')) ?? '', '/'));
+    }
 }

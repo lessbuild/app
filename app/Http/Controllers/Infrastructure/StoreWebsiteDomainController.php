@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreWebsiteDomainController
 {
+    /**
+     * Adds a domain to a website, with a notice when its DNS couldn't be set up.
+     */
     public function __invoke(WebsiteDomainRequest $request, #[CurrentUser] User $user, Project $project, Website $website, SaveWebsiteDomain $save): RedirectResponse
     {
         [$domain, $warning] = $save->handle($project->account, $user, $website, $request->domain());

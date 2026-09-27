@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class RenameServerController
 {
+    /**
+     * Sets or clears the server's display name.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, RenameServer $rename): RedirectResponse
     {
         $validated = $request->validate(['display_name' => ['nullable', 'string', 'max:80', 'not_regex:/[\x00-\x1F\x7F]/u']]);

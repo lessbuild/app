@@ -18,6 +18,9 @@ use Illuminate\Http\JsonResponse;
 /** `POST …/configuration/applications/{application}/operations/{operation}/{cancel|retry}`. */
 final class UpdateConfigurationOperationController
 {
+    /**
+     * Cancels or retries the operation and returns the refreshed receipt (with the new operation's ID for retries).
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, string $application, string $operation, string $action, DeployApiQuery $query, ConfigurationQuery $configuration, RetryConfigurationOperation $retry, CancelConfigurationOperation $cancel): JsonResponse
     {
         $reviews = $query->project($user, $account, $project)->configurationReviews()->select('id');

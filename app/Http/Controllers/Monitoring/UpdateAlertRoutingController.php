@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateAlertRoutingController
 {
+    /**
+     * Saves where a rule sends alerts.
+     */
     public function __invoke(AlertRoutingRequest $request, #[CurrentUser] User $user, Project $project, AlertRule $rule, UpdateAlertRouting $update): RedirectResponse
     {
         $update->handle($rule, $user, $request->routing());

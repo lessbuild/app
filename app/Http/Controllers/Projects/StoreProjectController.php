@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreProjectController
 {
+    /**
+     * Creates a project and suggests turning services on.
+     */
     public function __invoke(#[CurrentAccount] Account $account, ProjectRequest $request, #[CurrentUser] User $user, CreateProject $create): RedirectResponse
     {
         $project = $create->handle($user, $account, $request->toDetails());

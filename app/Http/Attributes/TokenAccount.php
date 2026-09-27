@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 #[Attribute(Attribute::TARGET_PARAMETER)]
 final class TokenAccount implements ContextualAttribute
 {
+    /**
+     * The account the `token.account` middleware put on the request; 403 without one.
+     */
     public static function resolve(self $attribute, Container $container): Account
     {
         $account = $container->make(Request::class)->attributes->get('account');

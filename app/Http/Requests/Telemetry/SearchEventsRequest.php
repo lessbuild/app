@@ -29,7 +29,11 @@ final class SearchEventsRequest extends FormRequest
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The query string.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->query->all();
@@ -61,7 +65,11 @@ final class SearchEventsRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The validated filters with empty ones dropped, over defaults of the last day, newest first.
+     *
+     * @return array<string, mixed>
+     */
     public function filters(): array
     {
         return array_replace(['range' => '24h', 'sort' => 'newest'], array_filter(

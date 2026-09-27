@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreServerCommandController
 {
+    /**
+     * Queues a command and shows its output as it runs.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, RunServerCommand $run): RedirectResponse
     {
         $validated = $request->validate(['command' => ['required', 'string', 'max:4096']]);

@@ -11,6 +11,9 @@ use Illuminate\Http\JsonResponse;
 /** POST /api/v1/queues/{queue}/snapshots: public contract from the old Monitor app. */
 final class RecordQueueSnapshotController
 {
+    /**
+     * Records the report for the monitor the middleware authenticated and returns its receipt, never cached.
+     */
     public function __invoke(StoreQueueSnapshotRequest $request, RecordQueueSnapshot $snapshots): JsonResponse
     {
         $receipt = $snapshots->handle((int) $request->attributes->get('queue_monitor_id'),

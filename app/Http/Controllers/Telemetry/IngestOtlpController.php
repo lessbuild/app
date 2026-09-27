@@ -16,6 +16,10 @@ use Illuminate\Http\JsonResponse;
 /** POST /api/v1/otlp/v1/{traces|logs|metrics}: OTLP/HTTP JSON, public contract from the old Monitor app. */
 final class IngestOtlpController
 {
+    /**
+     * Converts an OTLP export into events and stores them. Without an `X-Beacon-Batch` header, identical content is what
+     * makes a resend a duplicate.
+     */
     public function __invoke(StoreOtlpRequest $request, string $signal, TelemetryPayloadMapper $mapper, TelemetryIngestor $ingestor): JsonResponse
     {
         $environment = $request->attributes->get('ingest_environment');

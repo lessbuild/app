@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateGoalController
 {
+    /**
+     * Changes a goal; the new definition counts from now on.
+     */
     public function __invoke(GoalRequest $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, string $goal, SaveGoal $save): RedirectResponse
     {
         $save->handle($user, $site, $request->toDetails(), $site->goals()->findOrFail($goal));

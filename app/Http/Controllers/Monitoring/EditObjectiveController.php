@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditObjectiveController
 {
+    /**
+     * The SLO form, filled in.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ProjectOverviewQuery $overview): View
     {
 

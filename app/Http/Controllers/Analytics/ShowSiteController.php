@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** A site's setup: the tracking snippet, verification and settings. */
 final class ShowSiteController
 {
+    /**
+     * A site's setup page.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, ProjectOverviewQuery $overview): View
     {
         return view('analytics.site', [

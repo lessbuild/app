@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreBackupDestinationController
 {
+    /**
+     * Adds a backup destination and suggests checking it.
+     */
     public function __invoke(BackupDestinationRequest $request, #[CurrentUser] User $user, Project $project, SaveBackupDestination $save): RedirectResponse
     {
         $save->handle($project->account, $user, $request->destination());

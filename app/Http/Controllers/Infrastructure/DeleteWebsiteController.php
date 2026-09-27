@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteWebsiteController
 {
+    /**
+     * Deletes a website; it's removed from its server in the background.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, DeleteWebsite $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, $website);

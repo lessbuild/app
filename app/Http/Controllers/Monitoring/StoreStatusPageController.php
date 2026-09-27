@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreStatusPageController
 {
+    /**
+     * Creates a status page.
+     */
     public function __invoke(StatusPageRequest $request, #[CurrentUser] User $user, Project $project, SaveStatusPage $save): RedirectResponse
     {
         $page = $save->handle($project->account, $user, $request->validated());

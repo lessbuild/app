@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class VerifyWebsiteBackupController
 {
+    /**
+     * Starts checking that a backup can be restored, without touching the live website.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $backup, VerifyWebsiteBackup $verify): RedirectResponse
     {
         $verify->handle($user, $website->backups()->findOrFail((int) $backup));

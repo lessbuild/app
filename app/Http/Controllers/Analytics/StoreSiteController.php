@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreSiteController
 {
+    /**
+     * Adds an analytics site and shows its tracking snippet.
+     */
     public function __invoke(SiteRequest $request, #[CurrentUser] User $user, Project $project, SaveSite $save): RedirectResponse
     {
         $site = $save->handle($user, $project, $request->toDetails());

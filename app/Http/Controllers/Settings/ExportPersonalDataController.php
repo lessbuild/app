@@ -11,6 +11,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class ExportPersonalDataController
 {
+    /**
+     * Downloads everything stored about the person as JSON, never cached.
+     */
     public function __invoke(#[CurrentUser] User $user, PersonalDataExportQuery $query): StreamedResponse
     {
         $json = json_encode($query->handle($user), JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);

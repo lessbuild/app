@@ -16,6 +16,9 @@ use Illuminate\Http\JsonResponse;
 /** `POST /api/v1/projects/{project}/configuration/reviews`: freeze the plan for 15 minutes. */
 final class CreateConfigurationReviewController
 {
+    /**
+     * Creates the review and returns its plan and expiry (201).
+     */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, DeployApiQuery $query, CreateConfigurationReview $create): JsonResponse
     {
         $review = $create->handle($user, $query->project($user, $account, $project), $request->document(), $request->bindings());

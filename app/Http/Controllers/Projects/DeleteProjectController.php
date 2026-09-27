@@ -14,6 +14,9 @@ use Illuminate\Validation\ValidationException;
 
 final class DeleteProjectController
 {
+    /**
+     * Deletes the project once the person has typed its name exactly, after a recent password confirmation.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, DeleteProject $delete): RedirectResponse
     {
         $request->validate(['confirm_name' => ['required', 'string']]);

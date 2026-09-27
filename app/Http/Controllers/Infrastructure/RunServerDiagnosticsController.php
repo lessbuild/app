@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RunServerDiagnosticsController
 {
+    /**
+     * Starts a diagnostic run and opens the diagnostics tab.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, RunServerDiagnostics $diagnose): RedirectResponse
     {
         $diagnose->handle($project->account, $user, $server);

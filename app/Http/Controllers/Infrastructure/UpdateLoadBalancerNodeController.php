@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateLoadBalancerNodeController
 {
+    /**
+     * Saves a node's port, weight and whether it receives traffic.
+     */
     public function __invoke(LoadBalancerNodeRequest $request, #[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, string $node, SaveLoadBalancerNode $save): RedirectResponse
     {
         $save->handle($user, $loadBalancer, $request->node(), $loadBalancer->nodes()->findOrFail((int) $node));

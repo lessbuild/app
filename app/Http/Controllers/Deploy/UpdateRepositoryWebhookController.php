@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class UpdateRepositoryWebhookController
 {
+    /**
+     * Turns push deploys on (showing the new webhook secret once) or off.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Repository $repository, SetRepositoryWebhook $set): RedirectResponse
     {
         $secret = $set->handle($user, $repository, $request->isMethod('POST'));

@@ -14,9 +14,20 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 final class DecodeTelemetryPayload
 {
+    /**
+     * Reads telemetry bodies safely before the framework parses them.
+     *
+     * @param  TelemetryPayloadGuard  $guard  Checks JSON complexity, numbers and record counts.
+     */
     public function __construct(private readonly TelemetryPayloadGuard $guard) {}
 
-    /** @param Closure(Request): Response $next */
+    /**
+     * For telemetry POSTs, insists on JSON, reads at most the wire-size limit, gunzips within the decoded-size limit,
+     * checks nesting, complexity and record counts, and hands the decoded object to the request. Each limit has its own
+     * status and message, so clients can tell what to fix.
+     *
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->isMethod('POST') || ! $request->is('api/v1/ingest', 'api/v1/otlp/v1/*', 'api/v1/deployments')) {
@@ -63,6 +74,10 @@ final class DecodeTelemetryPayload
         return $next($request);
     }
 
+    /**
+     * Gunzips in 1 KiB steps, stopping as soon as the output passes the limit, so a small compressed bomb can't expand
+     * in memory. Concatenated gzip members are accepted; truncated or invalid data is a 400.
+     */
     private function decompress(string $body, int $maxBytes): string
     {
         $context = inflate_init(ZLIB_ENCODING_GZIP);

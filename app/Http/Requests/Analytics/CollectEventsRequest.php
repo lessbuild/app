@@ -8,17 +8,28 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class CollectEventsRequest extends FormRequest
 {
+    /**
+     * Refuses bodies over 32 KiB before anything is parsed.
+     */
     protected function prepareForValidation(): void
     {
         abort_if(strlen($this->getContent()) > 32768, 413, 'Analytics payload is too large.');
     }
 
+    /**
+     * Always allowed: the collection endpoint is public, and the site and origin are checked by the controller.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * One to twenty events with their IDs, types, paths and optional attribution, device and session fields, each cut to
+     * its column's length. The client's timestamp is accepted but ignored.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [

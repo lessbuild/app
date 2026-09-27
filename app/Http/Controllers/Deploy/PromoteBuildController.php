@@ -14,6 +14,10 @@ use Illuminate\Http\Request;
 
 final class PromoteBuildController
 {
+    /**
+     * Promotes a deploy's commit to another of the project's environments, saying whether it's running or waiting for
+     * approval.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Build $build, PromoteBuild $promote): RedirectResponse
     {
         $request->validate(['environment_id' => ['required', 'string', 'max:26'], 'note' => ['nullable', 'string', 'max:2000']]);

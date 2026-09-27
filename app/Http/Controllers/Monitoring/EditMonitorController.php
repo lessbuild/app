@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditMonitorController
 {
+    /**
+     * The monitor form, filled in, with its current alert routing.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Monitor $monitor, ProjectOverviewQuery $overview): View
     {
 

@@ -12,7 +12,12 @@ use Illuminate\Validation\Rule;
 /** Authorisation happens in SaveStatusPage (account settings access). */
 final class StatusPageRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A page's name, public slug (unique, and not the reserved `subscriptions`), description, whether it's published,
+     * and up to 25 monitors to show.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         $page = $this->route('page');
@@ -28,12 +33,19 @@ final class StatusPageRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, string> */
+    /**
+     * Messages for the slug's format, uniqueness and reserved names.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return ['slug.regex' => __('Use lowercase letters, numbers and single dashes.'), 'slug.unique' => __('That public address is already taken.'), 'slug.not_in' => __('That public address is reserved.')];
     }
 
+    /**
+     * Slugifies what was typed as the slug, treating an empty result as none.
+     */
     protected function prepareForValidation(): void
     {
         if (is_string($this->input('slug'))) {

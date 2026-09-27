@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreWebsiteImportController
 {
+    /**
+     * Adopts an existing website without changing anything on the server.
+     */
     public function __invoke(ImportWebsiteRequest $request, #[CurrentUser] User $user, Project $project, ImportWebsite $import): RedirectResponse
     {
         $website = $import->handle($project->account, $user, $request->website());

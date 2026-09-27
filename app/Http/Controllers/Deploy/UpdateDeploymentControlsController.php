@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class UpdateDeploymentControlsController
 {
+    /**
+     * Locks or unlocks deploys to an environment and sets the window deploys may run in.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, UpdateDeploymentControls $update): RedirectResponse
     {
         $data = $request->validate([

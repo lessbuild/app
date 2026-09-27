@@ -22,13 +22,22 @@ final class AlertRuleRequest extends FormRequest
 {
     public const WINDOWS = [1 => '1 minute', 5 => '5 minutes', 15 => '15 minutes', 30 => '30 minutes', 60 => '1 hour'];
 
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body for API calls, the form fields otherwise.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->isJson() ? $this->json()->all() : $this->request->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * An alert rule's settings. Which fields are required, and the threshold's range, depend on the metric; SLOs and
+     * series must belong to the project's environments.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         $environmentIds = Environment::query()->where('project_id', $this->project()->id)->select('id');
@@ -62,7 +71,13 @@ final class AlertRuleRequest extends FormRequest
         ];
     }
 
-    /** @return array<callable(Validator): void> */
+    /**
+     * Checks the plan includes the metric chosen, that an SLO or series fits the rule (enabled, same environment, the
+     * right kind of series for the calculation), that an existing rule's environment isn't changed, and that labels and
+     * patterns contain no secrets.
+     *
+     * @return array<callable(Validator): void>
+     */
     public function after(TelemetryRedactor $redactor, Entitlements $entitlements): array
     {
         return [function (Validator $validator) use ($redactor, $entitlements): void {
@@ -112,6 +127,9 @@ final class AlertRuleRequest extends FormRequest
         }];
     }
 
+    /**
+     * The project in the URL.
+     */
     public function project(): Project
     {
         $project = $this->route('project');

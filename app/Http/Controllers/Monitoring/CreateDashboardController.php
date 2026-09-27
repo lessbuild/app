@@ -12,6 +12,9 @@ use Illuminate\Contracts\View\View;
 
 final class CreateDashboardController
 {
+    /**
+     * The new dashboard form.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
 

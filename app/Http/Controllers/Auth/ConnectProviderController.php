@@ -15,6 +15,9 @@ use Symfony\Component\HttpFoundation\Response;
 /** Connect a provider to the signed-in user (from Security settings). */
 final class ConnectProviderController
 {
+    /**
+     * Starts connecting a provider account to the signed-in person.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, SocialProvider $provider, SocialSignInGateway $gateway, ProviderIntents $intents): Response
     {
         if (! $gateway->configured($provider)) {

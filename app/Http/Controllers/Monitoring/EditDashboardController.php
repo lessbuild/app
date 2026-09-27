@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditDashboardController
 {
+    /**
+     * The dashboard form, filled in.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Dashboard $dashboard, ProjectOverviewQuery $overview): View
     {
 

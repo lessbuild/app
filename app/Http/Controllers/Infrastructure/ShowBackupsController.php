@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowBackupsController
 {
+    /**
+     * The backups page: destinations, recent backups and when backups, restores and verifications last succeeded.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, BackupsQuery $backups): View
     {
         return view('infrastructure.backups', [

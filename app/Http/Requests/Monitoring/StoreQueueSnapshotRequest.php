@@ -11,18 +11,29 @@ use Illuminate\Validation\Validator;
 
 final class StoreQueueSnapshotRequest extends FormRequest
 {
+    /**
+     * Allowed once the queue key middleware has identified the monitor.
+     */
     public function authorize(): bool
     {
         return $this->attributes->has('queue_monitor_id');
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body, which the middleware decoded.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->json()->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * A snapshot UUID, a UTC sample time, and the queue metrics as strict integers (only `pending` is required).
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         $rules = ['snapshot_id' => ['required', 'string', 'uuid'],
@@ -34,7 +45,12 @@ final class StoreQueueSnapshotRequest extends FormRequest
         return $rules;
     }
 
-    /** @return array<callable(Validator): void> */
+    /**
+     * Refuses fields beyond the documented ones (so job payloads and credentials are never stored), sample times before
+     * 2000 or more than 30 seconds ahead, and a positive oldest wait on an empty queue.
+     *
+     * @return array<callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {

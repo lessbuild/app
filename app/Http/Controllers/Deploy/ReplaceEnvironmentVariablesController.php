@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class ReplaceEnvironmentVariablesController
 {
+    /**
+     * Replaces an environment's variables with the pasted `.env` text.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, ReplaceEnvironmentVariables $replace): RedirectResponse
     {
         $request->validate(['variables' => ['present', 'nullable', 'string', 'max:200000']]);

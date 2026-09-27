@@ -10,7 +10,11 @@ use Illuminate\Validation\Rule;
 /** Authorisation and the assignee check happen in UpdateIncident. */
 final class IncidentRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * What to do to the incident (acknowledge, note or assign), its version, and the assignee or note the action needs.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -21,7 +25,11 @@ final class IncidentRequest extends FormRequest
         ];
     }
 
-    /** @return array{action: string, version: int, assignee_id?: string|null, note?: string|null} */
+    /**
+     * The validated action with an assignee only when one was sent (null unassigns).
+     *
+     * @return array{action: string, version: int, assignee_id?: string|null, note?: string|null}
+     */
     public function details(): array
     {
         $data = $this->validated();

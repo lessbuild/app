@@ -26,13 +26,22 @@ final class MonitorRequest extends FormRequest
 
     public const INTERVALS = [1 => 'Every minute', 5 => 'Every 5 minutes', 15 => 'Every 15 minutes', 30 => 'Every 30 minutes', 60 => 'Every hour'];
 
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body for API calls, the form fields otherwise.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->isJson() ? $this->json()->all() : $this->request->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * Every field a monitor of the chosen type needs; fields for other types are excluded. Stored secrets may be left
+     * blank when editing, to keep them.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         $environments = Environment::query()->where('project_id', $this->project()->id)->select('id');
@@ -93,7 +102,13 @@ final class MonitorRequest extends FormRequest
         return $rules;
     }
 
-    /** @return array<callable(Validator): void> */
+    /**
+     * Checks what rules can't: the environment and type of an existing monitor don't change, cron schedules have a
+     * future occurrence, hostnames and URLs are public (bearer tokens need HTTPS), DNS expectations parse, HEAD checks
+     * don't look for body text, and a secret isn't both replaced and cleared.
+     *
+     * @return array<callable(Validator): void>
+     */
     public function after(PublicHttpTarget $targets, DnsRecordSet $sets, HeartbeatSchedule $schedules): array
     {
         return [function (Validator $validator) use ($targets, $sets, $schedules): void {
@@ -165,11 +180,17 @@ final class MonitorRequest extends FormRequest
         }];
     }
 
+    /**
+     * The monitor type: from the form, else the monitor being edited, else HTTP.
+     */
     private function checkType(): mixed
     {
         return $this->validationData()['check_type'] ?? $this->monitor()->type ?? 'http';
     }
 
+    /**
+     * The project in the URL.
+     */
     public function project(): Project
     {
         $project = $this->route('project');

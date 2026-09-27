@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteLoadBalancerController
 {
+    /**
+     * Starts removing a load balancer.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, DeleteLoadBalancer $delete): RedirectResponse
     {
         $delete->handle($user, $loadBalancer);

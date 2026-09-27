@@ -19,6 +19,10 @@ use Throwable;
 /** Pick a provider, then its region, size and Ubuntu image (read live from the provider). */
 final class CreateServerController
 {
+    /**
+     * The new server form. The chosen provider's regions, sizes and images are read live; if that fails, the form says
+     * so instead of breaking.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProvidersQuery $providers, ServerProviderResolver $resolver, ServerCatalog $catalogs): View
     {
         $choices = $providers->serverHosts($project->account_id);

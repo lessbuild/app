@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateRepositoryController
 {
+    /**
+     * Saves a repository's settings; the next deploy uses them.
+     */
     public function __invoke(RepositoryRequest $request, #[CurrentUser] User $user, Project $project, Repository $repository, SaveRepository $save): RedirectResponse
     {
         $save->handle($user, $project, $request->repository(), $repository);

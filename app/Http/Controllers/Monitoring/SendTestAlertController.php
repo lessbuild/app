@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class SendTestAlertController
 {
+    /**
+     * Queues a test alert; its outcome appears in the delivery history.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDestination $destination, SendTestAlert $send): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];

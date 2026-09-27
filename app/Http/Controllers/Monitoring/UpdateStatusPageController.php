@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateStatusPageController
 {
+    /**
+     * Saves a status page.
+     */
     public function __invoke(StatusPageRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, SaveStatusPage $save): RedirectResponse
     {
         $statusPage = $save->handle($project->account, $user, $request->validated(), $page);

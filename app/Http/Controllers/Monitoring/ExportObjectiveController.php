@@ -16,6 +16,9 @@ use Illuminate\Http\Response;
 /** The objective's current report as CSV. */
 final class ExportObjectiveController
 {
+    /**
+     * Downloads the report, never cached.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ServiceObjectiveReport $reports, ServiceObjectiveReportExporter $exporter, Entitlements $entitlements): Response
     {
         $report = $reports->forObjective($objective);

@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** The Analytics report for one site: ?site, ?days and the path/source/campaign/device filters. */
 final class ShowOverviewController
 {
+    /**
+     * The report page. Unknown day ranges fall back to 30 days, and filters are cut to their column lengths.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report): View
     {
         $site = $sites->selected($project, $request->query('site'));

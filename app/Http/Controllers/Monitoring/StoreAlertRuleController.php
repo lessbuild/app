@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreAlertRuleController
 {
+    /**
+     * Creates an alert rule; it starts checking within a minute.
+     */
     public function __invoke(AlertRuleRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertRule $save): RedirectResponse
     {
         $rule = $save->handle($project, $user, $request->validated());

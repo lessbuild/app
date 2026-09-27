@@ -18,6 +18,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditAlertRuleController
 {
+    /**
+     * The alert rule form, filled in.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, AlertRule $rule, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
     {
 

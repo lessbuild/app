@@ -14,9 +14,20 @@ use Symfony\Component\HttpFoundation\Response;
 /** Checks a queue monitor's own bearer key (public contract from the old Monitor app), then applies its per-monitor limit. */
 final class AuthenticateQueueToken
 {
+    /**
+     * Authenticates queue collectors and workers.
+     *
+     * @param  MonitorQueue  $queue  Checks the monitor still accepts signals.
+     * @param  ThrottleRequests  $throttle  Applies the per-monitor rate limit once the key is known.
+     */
     public function __construct(private readonly MonitorQueue $queue, private readonly ThrottleRequests $throttle) {}
 
-    /** @param Closure(Request): Response $next */
+    /**
+     * Finds the queue monitor in the URL and checks the bearer key against its hash, then passes the monitor and key
+     * hash on as request attributes. Wrong keys and unavailable monitors get the same 401.
+     *
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $secret = $request->bearerToken();

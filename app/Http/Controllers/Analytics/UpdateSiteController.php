@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateSiteController
 {
+    /**
+     * Saves a site's settings.
+     */
     public function __invoke(SiteRequest $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, SaveSite $save): RedirectResponse
     {
         $save->handle($user, $project, $request->toDetails(), $site);

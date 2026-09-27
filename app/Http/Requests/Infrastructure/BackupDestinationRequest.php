@@ -10,7 +10,12 @@ use Illuminate\Validation\Rule;
 
 final class BackupDestinationRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A destination's storage provider, HTTPS endpoint, bucket, region, keys and path prefix. The bucket and prefix are
+     * limited to characters that are safe in the backup commands.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -25,7 +30,11 @@ final class BackupDestinationRequest extends FormRequest
         ];
     }
 
-    /** @return array{name: string, storage_provider: string, endpoint: string|null, bucket: string, region: string, access_key: string|null, secret_key: string|null, path_prefix: string} */
+    /**
+     * The validated destination with optional fields as null.
+     *
+     * @return array{name: string, storage_provider: string, endpoint: string|null, bucket: string, region: string, access_key: string|null, secret_key: string|null, path_prefix: string}
+     */
     public function destination(): array
     {
         /** @var array{name: string, storage_provider: string, endpoint?: string|null, bucket: string, region: string, access_key?: string|null, secret_key?: string|null, path_prefix: string} $data */

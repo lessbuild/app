@@ -14,6 +14,10 @@ use Illuminate\Contracts\View\View;
 
 final class ShowBuildController
 {
+    /**
+     * A deploy's page: its stages and log, how it relates to other deploys, and what the viewer may do next (deploy
+     * again, approve, promote).
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, ProjectOverviewQuery $overview, RepositoryDeploymentPlan $plan): View
     {
         return view('deploy.build', [

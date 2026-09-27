@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteServerAlertRuleController
 {
+    /**
+     * Removes a server alert rule.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $rule, DeleteServerAlertRule $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, ServerAlertRule::query()->where('account_id', $project->account_id)->findOrFail((int) $rule));

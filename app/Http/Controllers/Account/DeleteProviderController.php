@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteProviderController
 {
+    /**
+     * Disconnects a provider from the account.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, Provider $provider, DeleteProvider $delete): RedirectResponse
     {
         $delete->handle($account, $user, $provider);

@@ -14,8 +14,16 @@ use Illuminate\Http\RedirectResponse;
 
 final class EnableProjectServiceController
 {
+    /**
+     * Turns services on in projects.
+     *
+     * @param  ServiceRegistry  $services  Looks up the service in the URL.
+     */
     public function __construct(private readonly ServiceRegistry $services) {}
 
+    /**
+     * Turns a service on in the project and opens it.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $service, EnableService $enable): RedirectResponse
     {
         $definition = $this->service($service);
@@ -24,6 +32,9 @@ final class EnableProjectServiceController
         return to_route('projects.services.show', [$project, $service])->with('status', __(':service is on for this project.', ['service' => $definition->name()]));
     }
 
+    /**
+     * The service named in the URL; unknown keys are a 404.
+     */
     private function service(string $key): PlatformService
     {
         return $this->services->find($key) ?? abort(404);

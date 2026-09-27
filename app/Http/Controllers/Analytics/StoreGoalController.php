@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreGoalController
 {
+    /**
+     * Creates a goal on a site.
+     */
     public function __invoke(GoalRequest $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, SaveGoal $save): RedirectResponse
     {
         $save->handle($user, $site, $request->toDetails());

@@ -15,6 +15,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class CreateApiTokenController
 {
+    /**
+     * Creates an API token and flashes its secret for exactly one page view; only the hash is kept.
+     */
     public function __invoke(#[CurrentAccount] Account $account, CreateApiTokenRequest $request, #[CurrentUser] User $user, CreateApiToken $create): RedirectResponse
     {
         $new = $create->handle($user, $account, $request->toData());

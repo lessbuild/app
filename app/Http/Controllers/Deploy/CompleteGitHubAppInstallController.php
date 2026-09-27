@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 /** GitHub's "Setup URL" after installing the App (`/github-app/callback`, as Deployer registered it). */
 final class CompleteGitHubAppInstallController
 {
+    /**
+     * Connects the installation GitHub sent the person back with, if the one-time state matches the one this browser
+     * started with, and lists its repositories.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[CurrentAccount] Account $account, InstallGitHubApp $install): RedirectResponse
     {
         $data = $request->validate(['installation_id' => ['required', 'integer', 'min:1'], 'setup_action' => ['nullable', 'in:install,update'], 'state' => ['required', 'string', 'size:64']]);

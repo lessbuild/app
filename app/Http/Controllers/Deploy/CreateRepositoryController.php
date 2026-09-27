@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class CreateRepositoryController
 {
+    /**
+     * The form for connecting a repository to the project.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, RepositoryFormQuery $form): View
     {
         return view('deploy.repository-form', ['overview' => $overview->handle($project, $user), 'repository' => null, ...$form->handle($project)]);

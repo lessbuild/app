@@ -12,7 +12,11 @@ use Illuminate\Validation\Rule;
 /** Authorisation happens in SaveDashboard (account settings access). */
 final class DashboardRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A dashboard's name, description, range and at least one widget, each at most once.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -24,7 +28,11 @@ final class DashboardRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, string> */
+    /**
+     * A clearer message when no widget is chosen.
+     *
+     * @return array<string, string>
+     */
     public function messages(): array
     {
         return ['widgets.required' => __('Choose at least one widget.')];

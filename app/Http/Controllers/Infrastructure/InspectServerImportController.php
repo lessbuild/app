@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 /** Runs the read-only inspection; the confirmation token rides in the session to the review page. */
 final class InspectServerImportController
 {
+    /**
+     * Inspects the server and shows what was found.
+     */
     public function __invoke(ServerImportRequest $request, #[CurrentUser] User $user, Project $project, InspectServerImport $inspect): RedirectResponse
     {
         [$assessment, $token] = $inspect->handle($project->account, $user, $request->import());

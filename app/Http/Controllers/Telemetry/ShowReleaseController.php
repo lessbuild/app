@@ -16,6 +16,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowReleaseController
 {
+    /**
+     * A release's metrics over a range, optionally in one of the project's environments.
+     */
     public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, Release $release, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics): View
     {
         $filters = $request->filters();

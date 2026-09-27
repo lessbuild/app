@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteSiteController
 {
+    /**
+     * Deletes an analytics site and everything it collected.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, DeleteSite $delete): RedirectResponse
     {
         $delete->handle($user, $site);

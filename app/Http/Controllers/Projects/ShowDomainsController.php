@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowDomainsController
 {
+    /**
+     * The project's domains page.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectDomainsQuery $domains): View
     {
         return view('projects.domains', [

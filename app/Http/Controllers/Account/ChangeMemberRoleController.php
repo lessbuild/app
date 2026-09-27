@@ -16,6 +16,9 @@ use Illuminate\Validation\Rule;
 
 final class ChangeMemberRoleController
 {
+    /**
+     * Changes a member's role from the members page.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, string $membership, ChangeMemberRole $change): RedirectResponse
     {
         $validated = $request->validate(['role' => ['required', Rule::enum(AccountRole::class)]]);

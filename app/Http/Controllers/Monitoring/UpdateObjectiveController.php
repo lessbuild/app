@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateObjectiveController
 {
+    /**
+     * Saves an SLO.
+     */
     public function __invoke(ServiceLevelObjectiveRequest $request, #[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, SaveServiceLevelObjective $save): RedirectResponse
     {
         $target = $save->handle($project, $user, $request->validated(), $objective);

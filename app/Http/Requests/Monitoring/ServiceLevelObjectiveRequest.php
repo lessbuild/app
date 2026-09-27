@@ -15,7 +15,12 @@ use Illuminate\Validation\Validator;
 /** Authorisation happens in SaveServiceLevelObjective. */
 final class ServiceLevelObjectiveRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>|string> */
+    /**
+     * An SLO's settings. Latency SLOs need a threshold and availability SLOs a status range; the environment must be the
+     * project's.
+     *
+     * @return array<string, array<mixed>|string>
+     */
     public function rules(): array
     {
         $project = $this->route('project');
@@ -38,7 +43,11 @@ final class ServiceLevelObjectiveRequest extends FormRequest
         ];
     }
 
-    /** @return array<callable(Validator): void> */
+    /**
+     * Refuses changing an existing SLO's environment.
+     *
+     * @return array<callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {

@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreProviderController
 {
+    /**
+     * Connects a new provider and suggests checking its connection.
+     */
     public function __invoke(#[CurrentAccount] Account $account, ProviderRequest $request, #[CurrentUser] User $user, SaveProvider $save): RedirectResponse
     {
         $provider = $save->handle($account, $user, $request->validated());

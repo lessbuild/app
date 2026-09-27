@@ -15,6 +15,9 @@ use Illuminate\Http\RedirectResponse;
 /** Retry or cancel one of a configuration's deploys (`{action}` is retry or cancel). */
 final class UpdateConfigurationOperationController
 {
+    /**
+     * Retries or cancels one of an applied configuration's operations.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationApplication $application, string $operation, string $action, RetryConfigurationOperation $retry, CancelConfigurationOperation $cancel): RedirectResponse
     {
         $record = $application->relatedOperations()->findOrFail((int) $operation);

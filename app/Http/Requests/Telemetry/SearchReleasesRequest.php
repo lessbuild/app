@@ -13,13 +13,21 @@ final class SearchReleasesRequest extends FormRequest
 
     public const WINDOWS = [15 => '15 minutes', 60 => '1 hour', 360 => '6 hours', 1440 => '24 hours'];
 
-    /** @return array<string, mixed> */
+    /**
+     * The query string.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->query->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * The release pages' search, environment, baseline, range, comparison window and the page numbers of each list.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -35,7 +43,11 @@ final class SearchReleasesRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The validated filters with empty ones dropped, over defaults of the last day and a 60-minute window.
+     *
+     * @return array<string, mixed>
+     */
     public function filters(): array
     {
         return array_replace(['range' => '24h', 'window' => 60], array_filter($this->validated(), fn (mixed $value): bool => $value !== null && $value !== ''));

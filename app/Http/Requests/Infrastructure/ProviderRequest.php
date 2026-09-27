@@ -12,7 +12,12 @@ use Illuminate\Validation\Rule;
 /** Authorisation happens in SaveProvider (account settings access). */
 final class ProviderRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A provider's name, description, type, credential (required when connecting, optional when editing) and
+     * connection-check settings.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [

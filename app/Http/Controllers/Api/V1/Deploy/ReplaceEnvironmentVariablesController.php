@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** `PUT /api/v1/environments/{environment}/variables` with `variables` (KEY=value lines): replace them all. */
 final class ReplaceEnvironmentVariablesController
 {
+    /**
+     * Replaces the variables and returns how many there are now.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $environment, DeployApiQuery $query, ReplaceEnvironmentVariables $replace): JsonResponse
     {
         $request->validate(['variables' => ['required', 'string', 'max:50000']]);

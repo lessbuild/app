@@ -9,7 +9,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class SiteRequest extends FormRequest
 {
-    /** @return array<string, mixed> */
+    /**
+     * A site's name, domains and excluded paths (one per line or comma-separated), timezone and environment.
+     *
+     * @return array<string, mixed>
+     */
     public function rules(): array
     {
         return [
@@ -21,6 +25,9 @@ final class SiteRequest extends FormRequest
         ];
     }
 
+    /**
+     * The site's settings with domains and excluded paths as lists.
+     */
     public function toDetails(): SiteDetails
     {
         return new SiteDetails(
@@ -32,7 +39,11 @@ final class SiteRequest extends FormRequest
         );
     }
 
-    /** @return list<string> one per line or comma */
+    /**
+     * Splits text on new lines and commas, dropping blanks.
+     *
+     * @return list<string> one per line or comma
+     */
     private static function lines(string $value): array
     {
         return array_values(array_filter(array_map(trim(...), preg_split('/[\r\n,]+/', $value) ?: [])));

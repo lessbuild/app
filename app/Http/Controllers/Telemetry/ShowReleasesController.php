@@ -17,6 +17,9 @@ use Illuminate\Support\Str;
 /** Versions seen in telemetry, and the latest deployments. */
 final class ShowReleasesController
 {
+    /**
+     * The project's releases, searchable by version or service, and its latest deployments.
+     */
     public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
         $filters = $request->filters();

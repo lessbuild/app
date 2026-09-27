@@ -10,7 +10,11 @@ use Illuminate\Validation\Rule;
 
 final class SearchIssuesRequest extends FormRequest
 {
-    /** @return array<string, mixed> */
+    /**
+     * The query string.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->query->all();
@@ -34,7 +38,11 @@ final class SearchIssuesRequest extends FormRequest
         ];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The validated filters with empty ones dropped, over defaults of open issues assigned to anyone.
+     *
+     * @return array<string, mixed>
+     */
     public function filters(): array
     {
         return array_replace(['status' => 'open', 'ownership' => 'any'], array_filter($this->validated(), fn (mixed $value): bool => $value !== null && $value !== ''));

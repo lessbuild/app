@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class CreateStatusPageController
 {
+    /**
+     * The new status page form, with the account's monitors to show.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, StatusPagesQuery $pages): View
     {
 

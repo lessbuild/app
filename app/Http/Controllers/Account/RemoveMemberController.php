@@ -13,6 +13,10 @@ use Illuminate\Http\RedirectResponse;
 
 final class RemoveMemberController
 {
+    /**
+     * Removes a member, or lets someone leave. People who left are taken to their dashboard, since the account's pages
+     * are closed to them now.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $membership, RemoveMember $remove): RedirectResponse
     {
         $target = $account->memberships()->with('user')->findOrFail($membership);

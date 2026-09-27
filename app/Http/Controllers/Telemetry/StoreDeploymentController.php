@@ -15,6 +15,9 @@ use Illuminate\Validation\ValidationException;
 /** Record a deployment by hand (pipelines use POST /api/v1/deployments). */
 final class StoreDeploymentController
 {
+    /**
+     * Records a deployment by hand for one of the project's environments.
+     */
     public function __invoke(StoreDeploymentRequest $request, #[CurrentUser] User $user, Project $project, RecordDeployment $record): RedirectResponse
     {
         $environment = $project->environments()->find($request->string('environment_id')->toString());

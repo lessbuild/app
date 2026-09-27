@@ -10,7 +10,11 @@ use Illuminate\Validation\Rule;
 
 final class IntegrationSetupRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * An optional stack, one of those the setup guide knows.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -18,6 +22,9 @@ final class IntegrationSetupRequest extends FormRequest
         ];
     }
 
+    /**
+     * The chosen stack, or the stack-neutral default.
+     */
     public function stack(): string
     {
         return $this->validated('stack') ?? IntegrationSetupGuide::DEFAULT_STACK;

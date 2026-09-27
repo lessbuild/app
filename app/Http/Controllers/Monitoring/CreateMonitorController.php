@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 final class CreateMonitorController
 {
+    /**
+     * The new monitor form for the chosen check type (HTTP by default), with the account's destinations.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
         $type = $request->string('check_type')->toString();

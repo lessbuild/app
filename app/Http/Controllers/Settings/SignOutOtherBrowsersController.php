@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 
 final class SignOutOtherBrowsersController
 {
+    /**
+     * Signs out every browser except this one.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, SignOutBrowsers $signOut): RedirectResponse
     {
         $signOut->handle($user, $request->session()->getId());

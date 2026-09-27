@@ -17,7 +17,12 @@ use Illuminate\Validation\Rule;
 /** Authorisation happens in SaveAlertDestination (account admins). */
 final class AlertDestinationRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A destination's settings for its type: a verified member for email, a public HTTPS endpoint on port 443 for
+     * webhooks and chat tools, and a routing key for PagerDuty. An existing destination's type can't change.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(PublicWebhookTarget $targets): array
     {
         $destination = $this->destination();
@@ -46,6 +51,9 @@ final class AlertDestinationRequest extends FormRequest
         ];
     }
 
+    /**
+     * The project in the URL.
+     */
     public function project(): Project
     {
         $project = $this->route('project');
@@ -54,6 +62,9 @@ final class AlertDestinationRequest extends FormRequest
         return $project;
     }
 
+    /**
+     * The destination being edited, or null when creating one.
+     */
     public function destination(): ?AlertDestination
     {
         $destination = $this->route('destination');

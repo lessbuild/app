@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 
 final class SignOutBrowserController
 {
+    /**
+     * Signs out one of the person's other browsers.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, SignOutBrowsers $signOut, string $session): RedirectResponse
     {
         $count = $signOut->handle($user, $request->session()->getId(), $session);

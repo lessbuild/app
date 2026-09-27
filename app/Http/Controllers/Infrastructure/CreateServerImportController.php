@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class CreateServerImportController
 {
+    /**
+     * The form for importing an existing server.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
 

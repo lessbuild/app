@@ -11,6 +11,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowPrivacyController
 {
+    /**
+     * The privacy page: data export, and what deleting the person would do to their accounts.
+     */
     public function __invoke(#[CurrentUser] User $user, DepartureQuery $departure): View
     {
         return view('settings.privacy', ['user' => $user, 'departure' => $departure->handle($user)]);

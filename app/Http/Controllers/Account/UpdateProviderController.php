@@ -15,6 +15,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateProviderController
 {
+    /**
+     * Changes a provider's name, credential or check settings.
+     */
     public function __invoke(#[CurrentAccount] Account $account, ProviderRequest $request, #[CurrentUser] User $user, Provider $provider, SaveProvider $save): RedirectResponse
     {
         $record = $save->handle($account, $user, $request->validated(), $provider);

@@ -17,6 +17,15 @@ use Illuminate\Http\Request;
 /** Builds the Shell for the signed-in layout from the current user and route, so pages don't pass navigation in. */
 final class ShellComposer
 {
+    /**
+     * Builds the navigation shell around signed-in pages.
+     *
+     * @param  Request  $request  The route decides which section and link are current.
+     * @param  AccountSwitcherQuery  $accounts  The account switcher's list.
+     * @param  ProjectSwitcherQuery  $projects  The project switcher's list.
+     * @param  ServiceRegistry  $services  The services for the primary navigation.
+     * @param  InboxQuery  $inbox  The unread count for the inbox badge.
+     */
     public function __construct(
         private readonly Request $request,
         private readonly AccountSwitcherQuery $accounts,
@@ -25,6 +34,10 @@ final class ShellComposer
         private readonly InboxQuery $inbox,
     ) {}
 
+    /**
+     * Gives the layout its shell: switchers, primary and section navigation, account links and the unread count. Guests
+     * get nothing.
+     */
     public function compose(View $view): void
     {
         $user = $this->request->user();
@@ -52,7 +65,12 @@ final class ShellComposer
         ));
     }
 
-    /** @return list<NavLink> */
+    /**
+     * Row one: Projects and each service the person may use. Inside a project a service opens that project's service;
+     * elsewhere, the service across the account.
+     *
+     * @return list<NavLink>
+     */
     private function primaryNav(User $user, Account $account, ?Project $project): array
     {
         $service = $this->currentService();
@@ -72,7 +90,12 @@ final class ShellComposer
         return $links;
     }
 
-    /** @return array{0: string, 1: list<NavLink>} */
+    /**
+     * Row two: the current service's pages inside a project, the project's own pages, account pages, or personal
+     * settings, depending on where the person is.
+     *
+     * @return array{0: string, 1: list<NavLink>}
+     */
     private function sections(User $user, ?Account $account, ?Project $project): array
     {
         $service = $this->currentService();
@@ -130,7 +153,11 @@ final class ShellComposer
         return null;
     }
 
-    /** @return list<NavLink> */
+    /**
+     * The account pages the person may open, for the user menu and the account section.
+     *
+     * @return list<NavLink>
+     */
     private function accountLinks(User $user, Account $account): array
     {
         $links = [new NavLink(__('Members'), route('account.members'), $this->request->routeIs('account.members'), 'user')];

@@ -16,6 +16,9 @@ use Illuminate\Http\JsonResponse;
 /** `GET /api/v1/projects/{project}/configuration/applications/{application}`: the receipt, with its deploys' progress. */
 final class ShowConfigurationApplicationController
 {
+    /**
+     * Returns the application's receipt.
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, string $application, DeployApiQuery $query, ConfigurationQuery $configuration): JsonResponse
     {
         $reviews = $query->project($user, $account, $project)->configurationReviews()->select('id');

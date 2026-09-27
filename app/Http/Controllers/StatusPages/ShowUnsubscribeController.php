@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
  */
 final class ShowUnsubscribeController
 {
+    /**
+     * The unsubscribe confirmation page, when the token matches.
+     */
     public function __invoke(string $subscription, string $token): View
     {
         $record = StatusSubscription::query()->with('statusPage')->findOrFail((int) $subscription);

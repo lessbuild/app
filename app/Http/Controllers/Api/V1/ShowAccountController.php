@@ -10,6 +10,9 @@ use Illuminate\Http\Request;
 
 final class ShowAccountController
 {
+    /**
+     * `GET /api/v1/account`: the account the token acts in.
+     */
     public function __invoke(Request $request): JsonResponse
     {
         $account = $request->attributes->get('account');

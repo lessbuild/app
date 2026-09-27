@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowMonitorsController
 {
+    /**
+     * The project's monitors.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectMonitorsQuery $monitors): View
     {
         return view('monitoring.monitors', [

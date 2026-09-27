@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class EditProjectSettingsController
 {
+    /**
+     * The project settings page, offering every environment kind except production.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query): View
     {
 

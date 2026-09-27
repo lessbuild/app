@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreDatabaseUserController
 {
+    /**
+     * Adds an extra database user and shows its password once.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, CreateDatabaseUser $create): RedirectResponse
     {
         /** @var array{username: string, privilege: string, expires_in_days?: string|null} $data */

@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateLoadBalancerController
 {
+    /**
+     * Saves a load balancer.
+     */
     public function __invoke(LoadBalancerRequest $request, #[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, SaveLoadBalancer $save): RedirectResponse
     {
         $save->handle($project->account, $user, $request->loadBalancer(), $loadBalancer);

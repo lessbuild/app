@@ -18,7 +18,11 @@ final class StoreTelemetryRequest extends FormRequest
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body, which the middleware decoded.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->json()->all();

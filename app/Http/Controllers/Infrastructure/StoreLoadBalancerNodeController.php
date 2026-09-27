@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreLoadBalancerNodeController
 {
+    /**
+     * Puts a server behind a load balancer.
+     */
     public function __invoke(LoadBalancerNodeRequest $request, #[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, SaveLoadBalancerNode $save): RedirectResponse
     {
         $save->handle($user, $loadBalancer, $request->node());

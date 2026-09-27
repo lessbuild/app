@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RevokeIngestTokenController
 {
+    /**
+     * Revokes an ingest key.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, IngestToken $token, RevokeIngestToken $revoke): RedirectResponse
     {
         $revoke->handle($user, $token);

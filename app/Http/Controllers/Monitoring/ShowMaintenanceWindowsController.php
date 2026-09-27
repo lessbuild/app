@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 /** The account's maintenance windows: while one is active, no project in the account opens incidents from monitors. */
 final class ShowMaintenanceWindowsController
 {
+    /**
+     * Maintenance windows that ended in the last 30 days or haven't ended yet.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
         $windows = MaintenanceWindow::query()->where('account_id', $project->account_id)

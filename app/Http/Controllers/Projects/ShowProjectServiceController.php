@@ -15,8 +15,17 @@ use Illuminate\Http\RedirectResponse;
 
 final class ShowProjectServiceController
 {
+    /**
+     * Shows a service inside a project.
+     *
+     * @param  ServiceRegistry  $services  Looks up the service in the URL.
+     */
     public function __construct(private readonly ServiceRegistry $services) {}
 
+    /**
+     * A service inside the project. Once the service is on and has its own pages, this forwards to them; otherwise it's
+     * the enable page.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $service, ProjectOverviewQuery $query): View|RedirectResponse
     {
         $definition = $this->service($service);
@@ -35,6 +44,9 @@ final class ShowProjectServiceController
         ]);
     }
 
+    /**
+     * The service named in the URL; unknown keys are a 404.
+     */
     private function service(string $key): PlatformService
     {
         return $this->services->find($key) ?? abort(404);

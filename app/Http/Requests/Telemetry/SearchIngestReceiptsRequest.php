@@ -10,18 +10,29 @@ use Illuminate\Validation\Rule;
 
 final class SearchIngestReceiptsRequest extends FormRequest
 {
+    /**
+     * Always allowed: the route's middleware already checked access to the project.
+     */
     public function authorize(): bool
     {
         return true;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The query string.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->query->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * An optional status and page number.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [

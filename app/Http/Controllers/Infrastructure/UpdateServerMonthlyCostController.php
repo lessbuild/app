@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class UpdateServerMonthlyCostController
 {
+    /**
+     * Sets a server's monthly cost by hand, for servers whose provider doesn't report one.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, SetServerMonthlyCost $set): RedirectResponse
     {
         $request->validate(['monthly_cost' => ['nullable', 'numeric', 'between:0,9999999'], 'monthly_cost_currency' => ['required', 'in:USD,EUR']]);

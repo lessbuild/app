@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowProviderController
 {
+    /**
+     * One provider's page: its recent connection checks, its servers, and its settings.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, Provider $provider): View
     {
 

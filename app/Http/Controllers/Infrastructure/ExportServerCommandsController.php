@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 /** The server's command history as CSV (without output). Cells that a spreadsheet would treat as formulas are escaped. */
 final class ExportServerCommandsController
 {
+    /**
+     * Streams the command history as a UTF-8 CSV, newest first.
+     */
     public function __invoke(Project $project, Server $server): StreamedResponse
     {
 
@@ -33,6 +36,10 @@ final class ExportServerCommandsController
         }, "server-{$server->id}-commands-".now('UTC')->format('Ymd-His').'.csv', ['Content-Type' => 'text/csv; charset=UTF-8', 'Cache-Control' => 'no-store, private']);
     }
 
+    /**
+     * Prefixes a value with `'` when a spreadsheet would read it as a formula, so a command like `=HYPERLINK(…)` stays
+     * text.
+     */
     private function cell(string $value): string
     {
         return preg_match('/\A[=+\-@\t\r]/', $value) === 1 ? "'".$value : $value;

@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class ArchiveAlertDestinationController
 {
+    /**
+     * Archives a destination, if it hasn't changed since the page was opened.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDestination $destination, ArchiveAlertDestination $archive): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];

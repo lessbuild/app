@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreLoadBalancerController
 {
+    /**
+     * Adds a load balancer.
+     */
     public function __invoke(LoadBalancerRequest $request, #[CurrentUser] User $user, Project $project, SaveLoadBalancer $save): RedirectResponse
     {
         $save->handle($project->account, $user, $request->loadBalancer());

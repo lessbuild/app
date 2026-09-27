@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 /** OPTIONS /api/v1/collect/{publicId}: CORS preflight for the tracker. */
 final class PreflightCollectController
 {
+    /**
+     * Answers the browser's CORS preflight for the collection endpoint, allowing only the site's own origins.
+     */
     public function __invoke(Request $request, string $publicId): JsonResponse
     {
         $site = AnalyticsSite::query()->where('public_id', $publicId)->first();

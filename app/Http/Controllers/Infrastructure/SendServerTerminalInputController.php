@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 final class SendServerTerminalInputController
 {
+    /**
+     * Queues keystrokes for the terminal and returns their sequence number (202).
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, SendServerTerminalInput $send): JsonResponse
     {
         $request->validate(['input' => ['present', 'string', 'max:'.(int) config('infrastructure.terminal.max_input_bytes')]]);

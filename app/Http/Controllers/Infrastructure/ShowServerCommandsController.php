@@ -17,6 +17,9 @@ use Illuminate\Validation\Rule;
 /** Run a root command on a server, and the history of what ran. */
 final class ShowServerCommandsController
 {
+    /**
+     * The server's command runner and history, optionally filtered by status, with one command's output open.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ProjectOverviewQuery $overview): View
     {
         $filters = $request->validate(['status' => ['nullable', Rule::in([...ServerCommandExecution::ACTIVE, ...ServerCommandExecution::FINISHED])], 'output' => ['nullable', 'integer']]);

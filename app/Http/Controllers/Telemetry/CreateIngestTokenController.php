@@ -14,6 +14,9 @@ use Illuminate\Support\Facades\Crypt;
 
 final class CreateIngestTokenController
 {
+    /**
+     * Creates an ingest key for one of the project's environments, optionally expiring, and shows it once.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $environment, CreateIngestToken $create): RedirectResponse
     {
         $target = $project->environments()->findOrFail($environment);

@@ -10,24 +10,39 @@ use Illuminate\Validation\Validator;
 
 final class StoreHeartbeatRequest extends FormRequest
 {
+    /**
+     * Allowed once the heartbeat key middleware has identified the monitor.
+     */
     public function authorize(): bool
     {
         return $this->attributes->has('heartbeat_monitor_id');
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body, which the middleware decoded.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->json()->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * A run UUID and the signal: start, success or failure.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return ['run_id' => ['required', 'string', 'uuid'], 'signal' => ['required', 'string', Rule::in(['start', 'success', 'failure'])]];
     }
 
-    /** @return array<callable(Validator): void> */
+    /**
+     * Refuses any other field; times are assigned on receipt.
+     *
+     * @return array<callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {

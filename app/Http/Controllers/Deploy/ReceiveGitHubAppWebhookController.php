@@ -14,6 +14,10 @@ use Illuminate\Http\Request;
 /** The GitHub App's webhook (`POST /api/github-app/webhook`, Deployer's public contract): routed to the matching repository. */
 final class ReceiveGitHubAppWebhookController
 {
+    /**
+     * Verifies a GitHub App webhook, answers pings, and hands pushes to the repository connected through that
+     * installation.
+     */
     public function __invoke(Request $request, GitHubAppWebhookVerifier $app, RepositoryPushReceiver $receive): JsonResponse
     {
         $webhook = $app->verify($request->getContent(), $request->header('X-Hub-Signature-256'), $request->header('X-GitHub-Event'));

@@ -16,6 +16,10 @@ use Illuminate\Http\Request;
 
 final class ShowRepositoryController
 {
+    /**
+     * A repository's page, in tabs: recent deploys, push deploys (with the latest webhook deliveries), and settings for
+     * people who may change them.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Repository $repository, ProjectOverviewQuery $overview, RepositoryFormQuery $form): View
     {
         $tabs = array_filter(['deploys' => __('Deploys'), 'webhook' => __('Push deploys'), 'settings' => $user->can('update', $repository) ? __('Settings') : null]);

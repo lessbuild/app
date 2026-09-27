@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 /** The link in the confirmation email. The URL shape is Deployer's, so links already sent keep working after import. */
 final class ConfirmStatusSubscriptionController
 {
+    /**
+     * Confirms the subscription when the token matches; anything else is a 404.
+     */
     public function __invoke(string $subscription, string $token, ConfirmStatusSubscription $confirm): RedirectResponse
     {
         $record = StatusSubscription::query()->with('statusPage')->findOrFail((int) $subscription);

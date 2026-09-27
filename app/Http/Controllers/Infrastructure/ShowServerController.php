@@ -19,6 +19,10 @@ use Illuminate\Http\Request;
 
 final class ShowServerController
 {
+    /**
+     * A server's page, in tabs: overview, alerts and diagnostics (once it's active), logs, and settings for people who
+     * may change it.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ProjectOverviewQuery $overview, ServerProvisioningPlan $plan): View
     {
         $logType = is_string($request->query('log')) && array_key_exists($request->query('log'), ServerLogs::TYPES) ? $request->query('log') : 'provisioning';

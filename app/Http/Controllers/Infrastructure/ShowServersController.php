@@ -16,6 +16,9 @@ use Illuminate\Contracts\View\View;
 /** The account's servers. They're shared, so every project shows the same list. */
 final class ShowServersController
 {
+    /**
+     * The account's servers and the plan's server limit.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ServersQuery $servers, Entitlements $entitlements): View
     {
         return view('infrastructure.servers', [

@@ -14,6 +14,10 @@ use Illuminate\Http\Request;
 
 final class CopyWebsiteDatabaseController
 {
+    /**
+     * Copies this website's database over another website's on the same server, once the person has typed the
+     * confirmation.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, CopyWebsiteDatabase $copy): RedirectResponse
     {
         $request->validate(['target_website_id' => ['required', 'integer'], 'confirmation' => ['required', 'string', 'max:120']]);

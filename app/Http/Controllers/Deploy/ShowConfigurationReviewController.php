@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowConfigurationReviewController
 {
+    /**
+     * A configuration review. Only the person who asked for it may apply it.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationReview $review, ProjectOverviewQuery $overview): View
     {
         return view('deploy.configuration-review', ['overview' => $overview->handle($project, $user), 'review' => $review->load(['requester', 'application']), 'canApply' => $review->requested_by === $user->id]);

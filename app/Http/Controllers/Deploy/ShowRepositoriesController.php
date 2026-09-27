@@ -14,6 +14,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowRepositoriesController
 {
+    /**
+     * The project's repositories with each one's latest deploy.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
         $repositories = Repository::query()->where('project_id', $project->id)->with(['website', 'environment'])->orderBy('name')->get();

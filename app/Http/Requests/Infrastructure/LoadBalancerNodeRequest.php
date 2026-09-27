@@ -8,7 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class LoadBalancerNodeRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A node's server (only when adding one), upstream port, weight and whether it receives traffic.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -19,7 +23,11 @@ final class LoadBalancerNodeRequest extends FormRequest
         ];
     }
 
-    /** @return array{server_id?: int|string, upstream_port: int|string, weight: int|string, is_enabled?: bool|string|null} */
+    /**
+     * The validated node.
+     *
+     * @return array{server_id?: int|string, upstream_port: int|string, weight: int|string, is_enabled?: bool|string|null}
+     */
     public function node(): array
     {
         /** @var array{server_id?: int|string, upstream_port: int|string, weight: int|string, is_enabled?: bool|string|null} */

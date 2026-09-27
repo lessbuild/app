@@ -14,6 +14,9 @@ use Illuminate\Http\JsonResponse;
 /** `GET /api/v1/deployments/{build}/log`: the tail of its deployment log. */
 final class ShowDeploymentLogController
 {
+    /**
+     * Returns the deploy's log, never cached.
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $build, DeployApiQuery $query): JsonResponse
     {
         $record = $query->build($user, $account, $build);

@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateWebsiteController
 {
+    /**
+     * Saves a website, saying when the change means it's being set up again.
+     */
     public function __invoke(WebsiteRequest $request, #[CurrentUser] User $user, Project $project, Website $website, UpdateWebsite $update): RedirectResponse
     {
         $record = $update->handle($project->account, $user, $website, $request->validated());

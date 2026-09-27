@@ -16,6 +16,9 @@ use Illuminate\Contracts\View\View;
 /** The account's websites (shared across projects, like servers). */
 final class ShowWebsitesController
 {
+    /**
+     * The account's websites and the plan's website limit.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, WebsitesQuery $websites, Entitlements $entitlements): View
     {
         return view('infrastructure.websites', [

@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class SwitchAccountController
 {
+    /**
+     * Switches the person's current account. Accounts they don't belong to look like they don't exist.
+     */
     public function __invoke(#[CurrentUser] User $user, Account $account, SwitchAccount $switch): RedirectResponse
     {
         abort_unless($user->can('view', $account), 404);

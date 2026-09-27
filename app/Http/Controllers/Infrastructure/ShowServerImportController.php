@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowServerImportController
 {
+    /**
+     * The import review page, for the person who ran the inspection.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $assessment, ProjectOverviewQuery $overview): View
     {
         $record = ServerImportAssessment::query()->where('account_id', $project->account_id)->where('user_id', $user->id)->findOrFail((int) $assessment);

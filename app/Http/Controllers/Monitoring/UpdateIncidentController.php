@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateIncidentController
 {
+    /**
+     * Acknowledges, assigns, annotates or resolves an incident.
+     */
     public function __invoke(IncidentRequest $request, #[CurrentUser] User $user, Project $project, Incident $incident, UpdateIncident $update): RedirectResponse
     {
         $update->handle($incident, $user, $request->details());

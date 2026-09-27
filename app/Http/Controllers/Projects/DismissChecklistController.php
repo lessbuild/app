@@ -12,6 +12,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DismissChecklistController
 {
+    /**
+     * Hides the getting-started checklist.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, DismissChecklist $dismiss): RedirectResponse
     {
         $dismiss->handle($user, $project);

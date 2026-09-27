@@ -12,6 +12,9 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 final class DownloadExportController
 {
+    /**
+     * Downloads a finished export by its secret token. Expired or unfinished exports are gone (410).
+     */
     public function __invoke(Project $project, string $token): StreamedResponse
     {
         $export = AnalyticsExport::query()->where('token_hash', hash('sha256', $token))->whereHas('site', fn ($query) => $query->where('project_id', $project->id))->firstOrFail();

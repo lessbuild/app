@@ -12,7 +12,13 @@ use Symfony\Component\HttpFoundation\Response;
 
 final class AuthenticateIngestToken
 {
-    /** @param Closure(Request): Response $next */
+    /**
+     * Authenticates telemetry with an ingest key from the bearer token or `X-Beacon-Token`. The key must be active and
+     * its project must have Monitoring on. `last_used_at` is written at most once a minute, so busy keys don't cause a
+     * write per request.
+     *
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $secret = $request->bearerToken() ?? $request->header('X-Beacon-Token');

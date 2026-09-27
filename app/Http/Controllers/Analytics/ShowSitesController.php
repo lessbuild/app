@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 
 final class ShowSitesController
 {
+    /**
+     * The project's analytics sites.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites): View
     {
         return view('analytics.sites', [

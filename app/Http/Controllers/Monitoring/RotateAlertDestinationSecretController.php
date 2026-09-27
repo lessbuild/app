@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class RotateAlertDestinationSecretController
 {
+    /**
+     * Issues a new signing secret and shows it once.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDestination $destination, RotateAlertDestinationSecret $rotate): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];

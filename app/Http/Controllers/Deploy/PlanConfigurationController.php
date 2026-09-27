@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class PlanConfigurationController
 {
+    /**
+     * Plans the posted configuration document and shows the plan on the configuration page, keeping what was typed.
+     */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, Project $project, PlanConfiguration $plan): RedirectResponse
     {
         return to_route('deploy.configuration', $project)->withInput()->with('plan', $plan->handle($user, $project, $request->document(), $request->bindings()));

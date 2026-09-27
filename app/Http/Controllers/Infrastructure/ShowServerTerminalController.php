@@ -15,6 +15,9 @@ use Illuminate\Http\Request;
 
 final class ShowServerTerminalController
 {
+    /**
+     * The terminal page. Only the browser that opened the terminal can type into it; others see it read-only.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, ProjectOverviewQuery $overview): View
     {
         return view('infrastructure.server-terminal', [

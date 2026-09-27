@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class CancelBuildController
 {
+    /**
+     * Cancels a deploy that hasn't finished.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, CancelBuild $cancel): RedirectResponse
     {
         $cancel->handle($user, $build);

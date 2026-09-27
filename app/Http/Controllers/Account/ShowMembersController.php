@@ -14,8 +14,16 @@ use Illuminate\Contracts\View\View;
 
 final class ShowMembersController
 {
+    /**
+     * Shows the members page.
+     *
+     * @param  ServiceRegistry  $services  The services a member's access can be limited to.
+     */
     public function __construct(private readonly ServiceRegistry $services) {}
 
+    /**
+     * The members page.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, MembersOverviewQuery $query): View
     {
 

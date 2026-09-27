@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class StoreEnvironmentVariableController
 {
+    /**
+     * Adds or changes one variable on an environment.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentVariable $save): RedirectResponse
     {
         $data = $request->validate([

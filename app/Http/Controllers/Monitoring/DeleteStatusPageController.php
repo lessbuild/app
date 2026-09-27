@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteStatusPageController
 {
+    /**
+     * Deletes a status page.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, StatusPage $page, DeleteStatusPage $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, $page);

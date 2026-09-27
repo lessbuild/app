@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RerunServerCommandController
 {
+    /**
+     * Queues a past command again and shows its output as it runs.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $execution, RunServerCommand $run): RedirectResponse
     {
         $rerun = $run->handle($project->account, $user, $server, null, $server->commandExecutions()->findOrFail((int) $execution));

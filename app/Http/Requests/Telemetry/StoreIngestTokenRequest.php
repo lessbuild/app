@@ -8,7 +8,11 @@ use Illuminate\Foundation\Http\FormRequest;
 
 final class StoreIngestTokenRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * A key's name and optional lifetime of up to a year.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [

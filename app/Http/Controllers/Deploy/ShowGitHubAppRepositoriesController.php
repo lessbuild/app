@@ -13,6 +13,9 @@ use Illuminate\Contracts\View\View;
 /** The repositories a GitHub App installation can reach, with a link to connect each in a project. */
 final class ShowGitHubAppRepositoriesController
 {
+    /**
+     * The repositories an installation of the GitHub App can reach. Other providers are a 404.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Provider $provider, GitHubApp $github): View
     {
         abort_unless($provider->isGitHubApp(), 404);

@@ -15,6 +15,10 @@ use Illuminate\Http\Response;
 /** What a deployment script reports (Deployer's signed `/builds/{build}/deployment/callback/{event}` URLs). */
 final class RecordBuildCallbackController
 {
+    /**
+     * Records a deploy script's report (a stage reached, a failure, a log chunk or the deployed revision). The URL's
+     * signature, checked by middleware, proves it came from the script.
+     */
     public function __invoke(Request $request, string $build, string $event): Response
     {
         $target = Build::query()->with(['website', 'repository'])->findOrFail((int) $build);

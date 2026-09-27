@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class UpdateNotificationSettingsController
 {
+    /**
+     * Turns the issue digest on or off.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, SaveIssueDigestPreference $save): RedirectResponse
     {
         $validated = $request->validate(['issue_digest' => ['required', 'boolean']]);

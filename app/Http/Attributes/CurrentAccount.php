@@ -14,6 +14,9 @@ use Illuminate\Contracts\Container\ContextualAttribute;
 #[Attribute(Attribute::TARGET_PARAMETER)]
 final class CurrentAccount implements ContextualAttribute
 {
+    /**
+     * The signed-in person's current account; 404 without one.
+     */
     public static function resolve(self $attribute, Container $container): Account
     {
         $user = $container->make('auth')->user();

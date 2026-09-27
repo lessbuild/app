@@ -17,6 +17,10 @@ use Illuminate\Validation\ValidationException;
 
 final class StoreEnvironmentController
 {
+    /**
+     * Adds an environment to the project. Rule violations are shown on the environment form rather than the project's
+     * own fields.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, CreateEnvironment $create): RedirectResponse
     {
         $validated = $request->validateWithBag('environment', [

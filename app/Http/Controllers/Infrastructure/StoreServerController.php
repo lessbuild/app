@@ -14,6 +14,10 @@ use Illuminate\Http\RedirectResponse;
 
 final class StoreServerController
 {
+    /**
+     * Creates a server, showing its root password once, or explaining that the provider failed and nothing was left
+     * running.
+     */
     public function __invoke(ServerRequest $request, #[CurrentUser] User $user, Project $project, CreateServer $create): RedirectResponse
     {
         $server = $create->handle($project->account, $user, $request->serverDetails());

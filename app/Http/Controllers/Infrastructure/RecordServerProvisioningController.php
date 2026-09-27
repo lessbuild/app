@@ -15,6 +15,9 @@ use Illuminate\Http\Response;
  */
 final class RecordServerProvisioningController
 {
+    /**
+     * Records a provisioning script's report for the attempt named in the URL.
+     */
     public function __invoke(Request $request, string $serverId, string $event, RecordServerProvisioning $record): Response
     {
         $target = Server::query()->findOrFail((int) $serverId);

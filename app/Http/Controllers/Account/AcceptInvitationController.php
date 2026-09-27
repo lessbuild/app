@@ -11,6 +11,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class AcceptInvitationController
 {
+    /**
+     * Joins the invitation's account as the signed-in person and takes them to its dashboard.
+     */
     public function __invoke(#[CurrentUser] User $user, string $token, AcceptInvitation $acceptInvitation): RedirectResponse
     {
         $membership = $acceptInvitation->handle($user, $token);

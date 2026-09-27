@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RetryServerInitializationController
 {
+    /**
+     * Tries a failed server initialisation again.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, RetryServerInitialization $retry): RedirectResponse
     {
         $queued = $retry->handle($project->account, $user, $server);

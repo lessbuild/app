@@ -15,6 +15,9 @@ use Laravel\Fortify\Fortify;
 
 final class ShowSecurityController
 {
+    /**
+     * The security page. Recovery codes are shown only right after they're created.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, SecuritySettingsQuery $query, SocialSignInGateway $gateway): View
     {
         // Fortify flashes these statuses right after codes are created; that is the only time they are shown.

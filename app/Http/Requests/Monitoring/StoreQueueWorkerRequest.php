@@ -10,18 +10,29 @@ use Illuminate\Validation\Validator;
 
 final class StoreQueueWorkerRequest extends FormRequest
 {
+    /**
+     * Allowed once the queue key middleware has identified the monitor.
+     */
     public function authorize(): bool
     {
         return $this->attributes->has('queue_monitor_id');
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The JSON body, which the middleware decoded.
+     *
+     * @return array<string, mixed>
+     */
     public function validationData(): array
     {
         return $this->json()->all();
     }
 
-    /** @return array<string, array<mixed>> */
+    /**
+     * A worker UUID, an increasing sequence number, its status, and a job UUID exactly when it's busy.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return ['worker_id' => ['required', 'string', 'uuid'], 'sequence' => ['required', 'integer:strict', 'between:1,2147483647'],
@@ -29,7 +40,11 @@ final class StoreQueueWorkerRequest extends FormRequest
             'job_id' => ['required_if:status,busy', 'prohibited_unless:status,busy', 'nullable', 'string', 'uuid']];
     }
 
-    /** @return array<callable(Validator): void> */
+    /**
+     * Refuses any other field; times are assigned on receipt.
+     *
+     * @return array<callable(Validator): void>
+     */
     public function after(): array
     {
         return [function (Validator $validator): void {
@@ -39,7 +54,11 @@ final class StoreQueueWorkerRequest extends FormRequest
         }];
     }
 
-    /** @return array{worker_id: string, sequence: int, status: string, job_id?: ?string} */
+    /**
+     * The validated heartbeat with the job ID only when there is one.
+     *
+     * @return array{worker_id: string, sequence: int, status: string, job_id?: ?string}
+     */
     public function details(): array
     {
         $data = $this->validated();

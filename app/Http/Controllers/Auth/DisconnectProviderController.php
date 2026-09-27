@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DisconnectProviderController
 {
+    /**
+     * Disconnects a provider account, unless it's the person's only way to sign in.
+     */
     public function __invoke(#[CurrentUser] User $user, SocialProvider $provider, DisconnectSocialIdentity $disconnect): RedirectResponse
     {
         try {

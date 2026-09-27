@@ -12,6 +12,9 @@ use Illuminate\Http\Request;
 /** GET /api/v1/ingest/receipts/{receipt}: a delivery's processing status, for the environment of the key used. */
 final class ShowIngestReceiptController
 {
+    /**
+     * Returns a delivery's processing status, for deliveries to the key's own environment.
+     */
     public function __invoke(Request $request, string $receipt): JsonResponse
     {
         $environment = $request->attributes->get('ingest_environment');

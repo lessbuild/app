@@ -18,7 +18,12 @@ final class ReceiveMonitorSignal
 {
     public const MAX_BYTES = 2048;
 
-    /** @param Closure(Request): Response $next */
+    /**
+     * For heartbeat and queue signals, insists on uncompressed JSON of at most 2 KiB and three levels deep, and hands
+     * the decoded object to the request.
+     *
+     * @param  Closure(Request): Response  $next
+     */
     public function handle(Request $request, Closure $next): Response
     {
         if (! $request->isMethod('POST') || ! $request->is('api/v1/heartbeats/*', 'api/v1/queues/*')) {

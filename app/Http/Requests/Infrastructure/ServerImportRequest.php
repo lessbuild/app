@@ -13,7 +13,11 @@ use Illuminate\Validation\Rule;
 /** Authorisation happens in InspectServerImport. */
 final class ServerImportRequest extends FormRequest
 {
-    /** @return array<string, array<mixed>> */
+    /**
+     * An existing server to inspect: its name, type, address, SSH port and an unencrypted private key.
+     *
+     * @return array<string, array<mixed>>
+     */
     public function rules(): array
     {
         return [
@@ -29,7 +33,11 @@ final class ServerImportRequest extends FormRequest
         ];
     }
 
-    /** @return array{name: string, type: string, public_ip: string, ssh_port: int, ssh_private_key: string} */
+    /**
+     * The validated details with the port as an integer.
+     *
+     * @return array{name: string, type: string, public_ip: string, ssh_port: int, ssh_private_key: string}
+     */
     public function import(): array
     {
         /** @var array{name: string, type: string, public_ip: string, ssh_port: int|string, ssh_private_key: string} $data */

@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class InspectDatabaseController
 {
+    /**
+     * Starts a database inspection, unless one is already running.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, RequestDatabaseInspection $inspect): RedirectResponse
     {
         $snapshot = $inspect->handle($website, $user);

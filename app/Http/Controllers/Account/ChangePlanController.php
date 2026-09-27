@@ -15,6 +15,10 @@ use Illuminate\Http\Request;
 
 final class ChangePlanController
 {
+    /**
+     * Moves one service to another tier. Depending on what changed, the person is sent to checkout, told the change
+     * happens at the end of the paid period, or told it's done; when payments are unavailable they're told why.
+     */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, string $service, ChangeServiceTier $change): RedirectResponse
     {
         $validated = $request->validate(['tier' => ['required', 'string', 'max:40']]);

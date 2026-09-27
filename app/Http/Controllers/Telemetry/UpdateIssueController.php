@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateIssueController
 {
+    /**
+     * Resolves, reopens, snoozes, ignores, assigns or annotates an issue.
+     */
     public function __invoke(UpdateIssueRequest $request, #[CurrentUser] User $user, Project $project, Issue $issue, UpdateIssue $update): RedirectResponse
     {
         $data = $request->validated();

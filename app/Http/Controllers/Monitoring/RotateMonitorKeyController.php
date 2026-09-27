@@ -16,6 +16,9 @@ use Illuminate\Http\Request;
 /** Issue a new heartbeat or queue key; the old one stops working at once. */
 final class RotateMonitorKeyController
 {
+    /**
+     * Issues a new key and shows it once.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, RotateHeartbeatToken $heartbeats, RotateQueueToken $queues): RedirectResponse
     {
         $version = (int) $request->validate(['version' => ['required', 'integer', 'min:0']])['version'];

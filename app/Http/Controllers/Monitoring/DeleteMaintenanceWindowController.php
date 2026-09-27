@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteMaintenanceWindowController
 {
+    /**
+     * Deletes a maintenance window.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, MaintenanceWindow $window, DeleteMaintenanceWindow $delete): RedirectResponse
     {
         $delete->handle($project->account, $user, $window);

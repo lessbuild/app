@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** The account's public status pages. */
 final class ShowStatusPagesController
 {
+    /**
+     * The account's status pages.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, StatusPagesQuery $pages): View
     {
         return view('monitoring.status-pages', [

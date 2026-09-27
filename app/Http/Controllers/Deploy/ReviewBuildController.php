@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class ReviewBuildController
 {
+    /**
+     * Approves or rejects a deploy waiting for approval.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Build $build, ReviewBuild $review): RedirectResponse
     {
         $data = $request->validate(['decision' => ['required', 'in:approve,reject'], 'note' => ['nullable', 'string', 'max:1000']]);

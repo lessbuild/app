@@ -17,6 +17,9 @@ use Illuminate\Contracts\View\View;
 /** Search every request, query, job, log, exception and metric the project's environments sent. */
 final class ShowEventsController
 {
+    /**
+     * The event browser, 50 events to a page, with the filters kept in the page links.
+     */
     public function __invoke(SearchEventsRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, EventsQuery $search): View
     {
         $filters = $request->filters();

@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class ResumePlanController
 {
+    /**
+     * Cancels a scheduled downgrade, so the paid tier carries on.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $service, ResumeServiceTier $resume): RedirectResponse
     {
         $resume->handle($user, $account, $service);

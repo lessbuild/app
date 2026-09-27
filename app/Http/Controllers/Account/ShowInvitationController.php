@@ -10,6 +10,10 @@ use Illuminate\Http\Request;
 
 final class ShowInvitationController
 {
+    /**
+     * The invitation page. Guests are remembered here so they come back after signing in or registering; invitations
+     * that can't be accepted show as unavailable.
+     */
     public function __invoke(Request $request, string $token): View
     {
         $invitation = AccountInvitation::query()->where('token_hash', AccountInvitation::hashToken($token))->first();

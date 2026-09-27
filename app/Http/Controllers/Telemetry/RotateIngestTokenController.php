@@ -14,6 +14,10 @@ use Illuminate\Support\Facades\Crypt;
 
 final class RotateIngestTokenController
 {
+    /**
+     * Replaces an ingest key. The new secret rides to the setup page encrypted in the flash, so it's shown once and
+     * never stored in plain text in the session.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, IngestToken $token, RotateIngestToken $rotate): RedirectResponse
     {
         $issued = $rotate->handle($user, $token);

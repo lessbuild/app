@@ -16,6 +16,9 @@ use Illuminate\Validation\Rule;
 
 final class StoreServerAlertRuleController
 {
+    /**
+     * Adds an alert rule for this server or every server.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, SaveServerAlertRule $save): RedirectResponse
     {
         /** @var array{name: string, metric: string, operator: string, threshold: string, consecutive_breaches: string, cooldown_minutes: string, scope: string} $data */

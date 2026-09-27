@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class DeleteDatabaseUserController
 {
+    /**
+     * Starts removing an extra database user.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $databaseUser, RemoveDatabaseUser $remove): RedirectResponse
     {
         $remove->handle($website->databaseUsers()->findOrFail((int) $databaseUser), $user);

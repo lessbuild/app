@@ -15,6 +15,9 @@ use Illuminate\Contracts\View\View;
 /** A service across the account: which projects use it. Each service adds its own account-wide views in Phase 4. */
 final class ShowServiceController
 {
+    /**
+     * A service's account-wide page: which projects use it.
+     */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $service, ServiceRegistry $services, ServiceProjectsQuery $query): View
     {
         $definition = $services->find($service) ?? abort(404);

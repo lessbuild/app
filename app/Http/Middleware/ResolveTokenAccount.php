@@ -14,8 +14,17 @@ use Symfony\Component\HttpFoundation\Response;
 /** Runs after auth:sanctum; puts the token's account on the request as the `account` attribute. */
 final class ResolveTokenAccount
 {
+    /**
+     * Connects an API token to the account it acts in.
+     *
+     * @param  TokenAccountQuery  $query  Checks the token's creator still may use API tokens there.
+     */
     public function __construct(private readonly TokenAccountQuery $query) {}
 
+    /**
+     * Puts the token's account on the request, or refuses with 403 once the creator has left or lost the right to use
+     * tokens.
+     */
     public function handle(Request $request, Closure $next): Response
     {
         $user = $request->user();

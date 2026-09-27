@@ -18,6 +18,9 @@ use Illuminate\Contracts\View\View;
 /** Every metric series the project's environments sent, and collector setups for common stacks. */
 final class ShowMetricsController
 {
+    /**
+     * The metric series list (redacted) and the collector profiles.
+     */
     public function __invoke(SearchMetricsRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, MetricSeriesQuery $query, TelemetryRedactor $redactor, MetricCollectorProfiles $profiles): View
     {
         $filters = $request->filters();

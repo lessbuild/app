@@ -14,6 +14,9 @@ use Illuminate\Http\Request;
 
 final class RetryAlertDeliveryController
 {
+    /**
+     * Resends a delivery once the person confirms they understand it may arrive twice.
+     */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDelivery $delivery, RetryAlertDelivery $retry): RedirectResponse
     {
         $generation = (int) $request->validate(

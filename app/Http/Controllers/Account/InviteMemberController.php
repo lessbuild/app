@@ -14,6 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class InviteMemberController
 {
+    /**
+     * Sends an invitation to join the account.
+     */
     public function __invoke(#[CurrentAccount] Account $account, InviteMemberRequest $request, #[CurrentUser] User $user, InviteMember $invite): RedirectResponse
     {
         $invitation = $invite->handle($user, $account, $request->toData());

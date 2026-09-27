@@ -13,6 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class ApplyConfigurationReviewController
 {
+    /**
+     * Applies a configuration review and shows the application's progress.
+     */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationReview $review, ApplyConfigurationReview $apply): RedirectResponse
     {
         $application = $apply->handle($user, $review);

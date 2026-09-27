@@ -14,6 +14,9 @@ use Illuminate\Http\JsonResponse;
 /** `GET /api/v1/projects/{project}`. */
 final class ShowProjectController
 {
+    /**
+     * Returns one project with its environments.
+     */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, DeployApiQuery $query): JsonResponse
     {
         return response()->json(['data' => $query->projectData($query->project($user, $account, $project))]);
