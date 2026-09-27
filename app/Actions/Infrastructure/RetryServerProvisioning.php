@@ -26,7 +26,7 @@ final class RetryServerProvisioning
      */
     public function handle(Account $account, User $actor, Server $server): string|false|null
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('update', $server);
 
         return DB::transaction(function () use ($account, $server): string|false|null {
             $locked = Server::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($server->id);

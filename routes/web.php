@@ -218,10 +218,10 @@ Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)-
 Route::post('/status/{slug}/subscribe', SubscribeToStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe');
 
 // Provisioning scripts report here (Deployer's URLs); signed, expiring, and CSRF-exempt.
-Route::post('/servers/{server}/provisioning/callback/{event}', RecordServerProvisioningController::class)->whereNumber('server')->whereIn('event', ['status', 'failed', 'log'])
+Route::post('/servers/{serverId}/provisioning/callback/{event}', RecordServerProvisioningController::class)->whereNumber('serverId')->whereIn('event', ['status', 'failed', 'log'])
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.server');
 
-Route::post('/websites/{website}/provisioning/callback/{event}', RecordWebsiteProvisioningController::class)->whereNumber('website')->whereIn('event', ['status', 'failed', 'log'])
+Route::post('/websites/{websiteId}/provisioning/callback/{event}', RecordWebsiteProvisioningController::class)->whereNumber('websiteId')->whereIn('event', ['status', 'failed', 'log'])
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.website');
 
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
@@ -263,39 +263,39 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
         Route::prefix('/infrastructure')->middleware('service:infrastructure')->name('infrastructure.')->group(function (): void {
             Route::get('/servers', ShowServersController::class)->name('servers');
-            Route::get('/servers/create', CreateServerController::class)->name('servers.create');
-            Route::post('/servers', StoreServerController::class)->middleware('throttle:10,1')->name('servers.store');
-            Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->name('servers.show');
-            Route::put('/servers/{server}', RenameServerController::class)->whereNumber('server')->middleware('throttle:30,1')->name('servers.update');
-            Route::delete('/servers/{server}', DeleteServerController::class)->whereNumber('server')->middleware(['password.confirm', 'throttle:10,1'])->name('servers.destroy');
-            Route::post('/servers/{server}/initialization/retry', RetryServerInitializationController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.initialization.retry');
-            Route::post('/servers/{server}/provisioning/retry', RetryServerProvisioningController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.provisioning.retry');
-            Route::get('/servers/{server}/commands', ShowServerCommandsController::class)->whereNumber('server')->name('servers.commands');
-            Route::post('/servers/{server}/commands', StoreServerCommandController::class)->whereNumber('server')->middleware('throttle:20,1')->name('servers.commands.store');
-            Route::get('/servers/{server}/commands/export', ExportServerCommandsController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.commands.export');
-            Route::post('/servers/{server}/commands/{execution}/rerun', RerunServerCommandController::class)->whereNumber(['server', 'execution'])->middleware('throttle:20,1')->name('servers.commands.rerun');
-            Route::post('/servers/{server}/commands/{execution}/cancel', CancelServerCommandController::class)->whereNumber(['server', 'execution'])->name('servers.commands.cancel');
-            Route::delete('/servers/{server}/commands/{execution}', DeleteServerCommandController::class)->whereNumber(['server', 'execution'])->name('servers.commands.destroy');
-            Route::post('/servers/{server}/logs/{type}', RefreshServerLogController::class)->whereNumber('server')->middleware('throttle:20,1')->name('servers.logs.refresh');
-            Route::post('/servers/{server}/alerts', StoreServerAlertRuleController::class)->whereNumber('server')->middleware('throttle:20,1')->name('servers.alerts.store');
-            Route::delete('/servers/{server}/alerts/{rule}', DeleteServerAlertRuleController::class)->whereNumber(['server', 'rule'])->name('servers.alerts.destroy');
-            Route::post('/servers/{server}/diagnostics', RunServerDiagnosticsController::class)->whereNumber('server')->middleware('throttle:10,1')->name('servers.diagnostics');
+            Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
+            Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
+            Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');
+            Route::put('/servers/{server}', RenameServerController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:30,1'])->name('servers.update');
+            Route::delete('/servers/{server}', DeleteServerController::class)->whereNumber('server')->middleware(['can:delete,server', 'password.confirm', 'throttle:10,1'])->name('servers.destroy');
+            Route::post('/servers/{server}/initialization/retry', RetryServerInitializationController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.initialization.retry');
+            Route::post('/servers/{server}/provisioning/retry', RetryServerProvisioningController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.provisioning.retry');
+            Route::get('/servers/{server}/commands', ShowServerCommandsController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.commands');
+            Route::post('/servers/{server}/commands', StoreServerCommandController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:20,1'])->name('servers.commands.store');
+            Route::get('/servers/{server}/commands/export', ExportServerCommandsController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:10,1'])->name('servers.commands.export');
+            Route::post('/servers/{server}/commands/{execution}/rerun', RerunServerCommandController::class)->whereNumber(['server', 'execution'])->middleware(['can:runCommands,server', 'throttle:20,1'])->name('servers.commands.rerun');
+            Route::post('/servers/{server}/commands/{execution}/cancel', CancelServerCommandController::class)->whereNumber(['server', 'execution'])->middleware('can:runCommands,server')->name('servers.commands.cancel');
+            Route::delete('/servers/{server}/commands/{execution}', DeleteServerCommandController::class)->whereNumber(['server', 'execution'])->middleware('can:runCommands,server')->name('servers.commands.destroy');
+            Route::post('/servers/{server}/logs/{type}', RefreshServerLogController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:20,1'])->name('servers.logs.refresh');
+            Route::post('/servers/{server}/alerts', StoreServerAlertRuleController::class)->whereNumber('server')->middleware(['can:create,App\\Models\\ServerAlertRule,project', 'throttle:20,1'])->name('servers.alerts.store');
+            Route::delete('/servers/{server}/alerts/{rule}', DeleteServerAlertRuleController::class)->whereNumber(['server', 'rule'])->middleware('can:update,server')->name('servers.alerts.destroy');
+            Route::post('/servers/{server}/diagnostics', RunServerDiagnosticsController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:10,1'])->name('servers.diagnostics');
             Route::get('/websites', ShowWebsitesController::class)->name('websites');
-            Route::get('/websites/create', CreateWebsiteController::class)->name('websites.create');
-            Route::post('/websites', StoreWebsiteController::class)->middleware('throttle:20,1')->name('websites.store');
-            Route::post('/websites/import', StoreWebsiteImportController::class)->middleware('throttle:10,1')->name('websites.import');
-            Route::get('/websites/{website}', ShowWebsiteController::class)->whereNumber('website')->name('websites.show');
-            Route::put('/websites/{website}', UpdateWebsiteController::class)->whereNumber('website')->middleware('throttle:20,1')->name('websites.update');
-            Route::delete('/websites/{website}', DeleteWebsiteController::class)->whereNumber('website')->middleware(['password.confirm', 'throttle:10,1'])->name('websites.destroy');
-            Route::post('/websites/{website}/retry', RetryWebsiteProvisioningController::class)->whereNumber('website')->middleware('throttle:10,1')->name('websites.retry');
-            Route::post('/websites/{website}/domains', StoreWebsiteDomainController::class)->whereNumber('website')->middleware('throttle:20,1')->name('websites.domains.store');
-            Route::post('/websites/{website}/domains/temporary', IssueTemporaryDomainController::class)->whereNumber('website')->middleware('throttle:10,1')->name('websites.domains.temporary');
-            Route::post('/websites/{website}/domains/{domain}/sync', SyncWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware('throttle:20,1')->name('websites.domains.sync');
-            Route::delete('/websites/{website}/domains/{domain}', DeleteWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware('throttle:20,1')->name('websites.domains.destroy');
-            Route::get('/imports/create', CreateServerImportController::class)->name('imports.create');
-            Route::post('/imports', InspectServerImportController::class)->middleware('throttle:10,1')->name('imports.store');
-            Route::get('/imports/{assessment}', ShowServerImportController::class)->whereNumber('assessment')->name('imports.show');
-            Route::post('/imports/{assessment}/confirm', ConfirmServerImportController::class)->whereNumber('assessment')->middleware('throttle:6,1')->name('imports.confirm');
+            Route::get('/websites/create', CreateWebsiteController::class)->middleware('can:create,App\\Models\\Website,project')->name('websites.create');
+            Route::post('/websites', StoreWebsiteController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:20,1'])->name('websites.store');
+            Route::post('/websites/import', StoreWebsiteImportController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:10,1'])->name('websites.import');
+            Route::get('/websites/{website}', ShowWebsiteController::class)->whereNumber('website')->middleware('can:view,website')->name('websites.show');
+            Route::put('/websites/{website}', UpdateWebsiteController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:20,1'])->name('websites.update');
+            Route::delete('/websites/{website}', DeleteWebsiteController::class)->whereNumber('website')->middleware(['can:delete,website', 'password.confirm', 'throttle:10,1'])->name('websites.destroy');
+            Route::post('/websites/{website}/retry', RetryWebsiteProvisioningController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.retry');
+            Route::post('/websites/{website}/domains', StoreWebsiteDomainController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.store');
+            Route::post('/websites/{website}/domains/temporary', IssueTemporaryDomainController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.domains.temporary');
+            Route::post('/websites/{website}/domains/{domain}/sync', SyncWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.sync');
+            Route::delete('/websites/{website}/domains/{domain}', DeleteWebsiteDomainController::class)->whereNumber(['website', 'domain'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.domains.destroy');
+            Route::get('/imports/create', CreateServerImportController::class)->middleware('can:create,App\\Models\\Server,project')->name('imports.create');
+            Route::post('/imports', InspectServerImportController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('imports.store');
+            Route::get('/imports/{assessment}', ShowServerImportController::class)->whereNumber('assessment')->middleware('can:create,App\\Models\\Server,project')->name('imports.show');
+            Route::post('/imports/{assessment}/confirm', ConfirmServerImportController::class)->whereNumber('assessment')->middleware(['can:create,App\\Models\\Server,project', 'throttle:6,1'])->name('imports.confirm');
         });
 
         Route::prefix('/monitoring')->middleware('service:monitoring')->name('monitoring.')->group(function (): void {
@@ -413,12 +413,12 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
     Route::get('/account/audit-log', ShowAuditLogController::class)->name('account.audit-log');
-    Route::get('/account/providers', ShowProvidersController::class)->name('account.providers');
-    Route::post('/account/providers', StoreProviderController::class)->middleware('throttle:20,1')->name('account.providers.store');
-    Route::get('/account/providers/{provider}', ShowProviderController::class)->whereNumber('provider')->name('account.providers.show');
-    Route::put('/account/providers/{provider}', UpdateProviderController::class)->whereNumber('provider')->middleware('throttle:20,1')->name('account.providers.update');
-    Route::delete('/account/providers/{provider}', DeleteProviderController::class)->whereNumber('provider')->middleware('password.confirm')->name('account.providers.destroy');
-    Route::post('/account/providers/{provider}/check', CheckProviderConnectionController::class)->whereNumber('provider')->middleware('throttle:10,1')->name('account.providers.check');
+    Route::get('/account/providers', ShowProvidersController::class)->middleware('can:viewAny,App\\Models\\Provider')->name('account.providers');
+    Route::post('/account/providers', StoreProviderController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:20,1'])->name('account.providers.store');
+    Route::get('/account/providers/{provider}', ShowProviderController::class)->whereNumber('provider')->middleware('can:view,provider')->name('account.providers.show');
+    Route::put('/account/providers/{provider}', UpdateProviderController::class)->whereNumber('provider')->middleware(['can:update,provider', 'throttle:20,1'])->name('account.providers.update');
+    Route::delete('/account/providers/{provider}', DeleteProviderController::class)->whereNumber('provider')->middleware(['can:delete,provider', 'password.confirm'])->name('account.providers.destroy');
+    Route::post('/account/providers/{provider}/check', CheckProviderConnectionController::class)->whereNumber('provider')->middleware(['can:update,provider', 'throttle:10,1'])->name('account.providers.check');
     Route::get('/account/settings', EditAccountSettingsController::class)->name('account.settings');
     Route::put('/account/settings', RenameAccountController::class)->name('account.settings.update');
     Route::delete('/account/settings', DeleteAccountController::class)->middleware('password.confirm')->name('account.settings.destroy');

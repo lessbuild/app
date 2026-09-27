@@ -16,7 +16,8 @@ final class WebsiteRequest extends FormRequest
     /** @return array<string, array<mixed>> */
     public function rules(): array
     {
-        $websiteId = is_scalar($this->route('website')) ? (int) $this->route('website') : null;
+        $website = $this->route('website');
+        $websiteId = $website instanceof Website ? $website->id : null;
         $primaryDomain = $websiteId !== null ? WebsiteDomain::query()->where('website_id', $websiteId)->where('type', 'primary')->value('id') : null;
 
         return [

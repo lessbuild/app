@@ -21,7 +21,7 @@ final class DeleteProvider
     public function handle(Account $account, User $actor, Provider $provider): void
     {
         DB::transaction(function () use ($account, $actor, $provider): void {
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('delete', $provider);
             $provider = Provider::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($provider->id);
             if ($provider->hasAttachedResources()) {
                 throw ValidationException::withMessages(['provider' => __('Delete this provider’s servers first.')]);

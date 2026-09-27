@@ -18,7 +18,7 @@ final class RenameServer
     /** Set the name shown in the app. The machine's hostname stays as created. */
     public function handle(Account $account, User $actor, Server $server, ?string $displayName): void
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('update', $server);
         $server = Server::query()->where('account_id', $account->id)->findOrFail($server->id);
         $previous = $server->label();
         $server->forceFill(['display_name' => $displayName !== null && trim($displayName) !== '' ? trim($displayName) : null])->save();

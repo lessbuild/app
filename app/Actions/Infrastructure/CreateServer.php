@@ -47,7 +47,7 @@ final class CreateServer
     {
         $server = DB::transaction(function () use ($account, $actor, $data): Server {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('create', [Server::class, $account]);
             $decision = $this->entitlements->for($account)->allows('infrastructure.servers.max', Server::query()->where('account_id', $account->id)->count() + 1);
             if (! $decision->allowed) {
                 throw ValidationException::withMessages(['plan' => $decision->reason]);

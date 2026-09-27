@@ -10,13 +10,11 @@ use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Gate;
 
 final class ShowServerImportController
 {
     public function __invoke(#[CurrentUser] User $user, Project $project, string $assessment, ProjectOverviewQuery $overview): View
     {
-        Gate::authorize('update', $project->account);
         $record = ServerImportAssessment::query()->where('account_id', $project->account_id)->where('user_id', $user->id)->findOrFail((int) $assessment);
 
         return view('infrastructure.server-import-review', [

@@ -46,7 +46,7 @@ final class ProvisioningCallbackUrl
         return URL::temporarySignedRoute(
             'callbacks.website',
             now()->addMinutes(max(1, (int) config('infrastructure.website_callback_ttl_minutes'))),
-            ['website' => $website->id, 'event' => $event, 'attempt' => $website->provisioning_token],
+            ['websiteId' => $website->id, 'event' => $event, 'attempt' => $website->provisioning_token],
         );
     }
 
@@ -55,7 +55,7 @@ final class ProvisioningCallbackUrl
         return URL::temporarySignedRoute(
             'callbacks.server',
             now()->addMinutes(max(1, (int) config('infrastructure.server_callback_ttl_minutes'))),
-            ['server' => $server->id, 'event' => $event, 'attempt' => $server->provisioning_token],
+            ['serverId' => $server->id, 'event' => $event, 'attempt' => $server->provisioning_token],
         );
     }
 }

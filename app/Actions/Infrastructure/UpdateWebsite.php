@@ -31,7 +31,7 @@ final class UpdateWebsite
     public function handle(Account $account, User $actor, Website $website, array $data): Website
     {
         return DB::transaction(function () use ($account, $actor, $website, $data): Website {
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('update', $website);
             $locked = Website::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($website->id);
             if ($locked->isProvisioning()) {
                 throw ValidationException::withMessages(['server_id' => __('Wait for the current setup to finish.')]);

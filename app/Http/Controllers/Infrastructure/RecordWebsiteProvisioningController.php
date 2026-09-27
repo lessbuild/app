@@ -12,9 +12,9 @@ use Illuminate\Http\Response;
 /** What a website's setup script reports (Deployer's signed callback URLs). */
 final class RecordWebsiteProvisioningController
 {
-    public function __invoke(Request $request, string $website, string $event, RecordWebsiteProvisioning $record): Response
+    public function __invoke(Request $request, string $websiteId, string $event, RecordWebsiteProvisioning $record): Response
     {
-        $target = Website::query()->findOrFail((int) $website);
+        $target = Website::query()->findOrFail((int) $websiteId);
         $report = match ($event) {
             'status' => ['event' => 'status', 'stage' => (int) $request->validate(['status' => ['required', 'integer', 'min:0', 'max:100']])['status']],
             'failed' => (function () use ($request): array {

@@ -38,7 +38,7 @@ final class ConfirmServerImport
      */
     public function handle(Account $account, User $actor, ServerImportAssessment $assessment, string $token): Server
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('create', [Server::class, $account]);
 
         return DB::transaction(function () use ($account, $actor, $assessment, $token): Server {
             $account = Account::query()->lockForUpdate()->findOrFail($account->id);

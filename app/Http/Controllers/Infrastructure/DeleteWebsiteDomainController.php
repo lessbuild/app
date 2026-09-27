@@ -7,17 +7,16 @@ namespace App\Http\Controllers\Infrastructure;
 use App\Actions\Infrastructure\DeleteWebsiteDomain;
 use App\Models\Project;
 use App\Models\User;
-use App\Queries\Infrastructure\WebsitesQuery;
+use App\Models\Website;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 
 final class DeleteWebsiteDomainController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $website, string $domain, WebsitesQuery $websites, DeleteWebsiteDomain $delete): RedirectResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $domain, DeleteWebsiteDomain $delete): RedirectResponse
     {
-        $record = $websites->find($project->account_id, $website);
-        $delete->handle($project->account, $user, $record->domains()->findOrFail((int) $domain));
+        $delete->handle($project->account, $user, $website->domains()->findOrFail((int) $domain));
 
-        return to_route('infrastructure.websites.show', [$project, $record->id])->with('status', __('Domain removed.'));
+        return to_route('infrastructure.websites.show', [$project, $website->id])->with('status', __('Domain removed.'));
     }
 }

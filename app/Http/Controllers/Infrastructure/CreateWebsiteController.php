@@ -11,13 +11,11 @@ use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 final class CreateWebsiteController
 {
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, WebsitesQuery $websites): View
     {
-        Gate::authorize('update', $project->account);
 
         return view('infrastructure.website-form', [
             'overview' => $overview->handle($project, $user),

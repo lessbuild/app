@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Infrastructure;
 
 use App\Models\Project;
 use App\Models\User;
+use App\Models\Website;
 use App\Queries\Infrastructure\WebsitesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Billing\Entitlements;
@@ -21,7 +22,7 @@ final class ShowWebsitesController
             'overview' => $overview->handle($project, $user),
             'websites' => $websites->handle($project->account_id),
             'limit' => $entitlements->for($project->account)->limit('deploy.websites.max'),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('create', [Website::class, $project]),
         ]);
     }
 }

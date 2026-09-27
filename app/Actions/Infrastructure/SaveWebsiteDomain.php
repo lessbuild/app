@@ -29,7 +29,7 @@ final class SaveWebsiteDomain
      */
     public function handle(Account $account, User $actor, Website $website, array $data): array
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('update', $website);
         $website = Website::query()->where('account_id', $account->id)->findOrFail($website->id);
         $providerId = isset($data['dns_provider_id']) && $data['dns_provider_id'] !== '' ? (int) $data['dns_provider_id'] : null;
         if ($providerId !== null && ! Provider::query()->where('account_id', $account->id)->whereKey($providerId)->where('type', ProviderType::Cloudflare)->exists()) {

@@ -15,9 +15,9 @@ use Illuminate\Http\Response;
  */
 final class RecordServerProvisioningController
 {
-    public function __invoke(Request $request, string $server, string $event, RecordServerProvisioning $record): Response
+    public function __invoke(Request $request, string $serverId, string $event, RecordServerProvisioning $record): Response
     {
-        $target = Server::query()->findOrFail((int) $server);
+        $target = Server::query()->findOrFail((int) $serverId);
         $attempt = (string) $request->query('attempt', '');
         $report = match ($event) {
             'status' => ['event' => 'status', 'stage' => (int) $request->validate(['status' => ['required', 'integer', 'min:0', 'max:1000']])['status']],

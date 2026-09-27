@@ -24,7 +24,7 @@ final class DeleteServer
      */
     public function handle(Account $account, User $actor, Server $server): void
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('delete', $server);
         $server = Server::query()->where('account_id', $account->id)->findOrFail($server->id);
         $ownsKey = $server->ssh_fingerprint !== null && $server->ssh_key_owned;
         if ($server->provider !== null && ($server->identifier !== null || $ownsKey)) {

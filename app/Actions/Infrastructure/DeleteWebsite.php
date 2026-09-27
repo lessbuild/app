@@ -22,7 +22,7 @@ final class DeleteWebsite
     public function handle(Account $account, User $actor, Website $website): void
     {
         DB::transaction(function () use ($account, $actor, $website): void {
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize('delete', $website);
             $locked = Website::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($website->id);
             $locked->delete();
             $this->health->sync($locked, $actor);

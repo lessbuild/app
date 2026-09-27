@@ -25,7 +25,7 @@ final class RunServerDiagnostics
      */
     public function handle(Account $account, User $actor, Server $server): ServerDiagnosticSnapshot
     {
-        Gate::forUser($actor)->authorize('useService', [$account, 'infrastructure']);
+        Gate::forUser($actor)->authorize('view', $server);
 
         return DB::transaction(function () use ($account, $server): ServerDiagnosticSnapshot {
             $locked = Server::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($server->id);

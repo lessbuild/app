@@ -13,7 +13,7 @@ final class DeleteServerAlertRule
 {
     public function handle(Account $account, User $actor, ServerAlertRule $rule): void
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('delete', $rule);
         ServerAlertRule::query()->where('account_id', $account->id)->whereKey($rule->id)->delete();
     }
 }

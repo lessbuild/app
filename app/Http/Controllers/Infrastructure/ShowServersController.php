@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Infrastructure;
 
 use App\Models\Project;
+use App\Models\Server;
 use App\Models\User;
 use App\Queries\Infrastructure\ServersQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -21,7 +22,7 @@ final class ShowServersController
             'overview' => $overview->handle($project, $user),
             'servers' => $servers->handle($project->account_id),
             'limit' => $entitlements->for($project->account)->limit('infrastructure.servers.max'),
-            'canManage' => $user->can('update', $project->account),
+            'canManage' => $user->can('create', [Server::class, $project]),
         ]);
     }
 }

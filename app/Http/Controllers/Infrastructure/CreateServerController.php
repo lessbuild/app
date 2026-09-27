@@ -14,7 +14,6 @@ use App\Services\Infrastructure\ServerProviderResolver;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 use Throwable;
 
 /** Pick a provider, then its region, size and Ubuntu image (read live from the provider). */
@@ -22,7 +21,6 @@ final class CreateServerController
 {
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProvidersQuery $providers, ServerProviderResolver $resolver, ServerCatalog $catalogs): View
     {
-        Gate::authorize('update', $project->account);
         $choices = $providers->serverHosts($project->account_id);
         $selected = $choices->firstWhere('id', (int) $request->query('provider', (string) ($choices->first()->id ?? 0)));
         $catalog = null;

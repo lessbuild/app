@@ -21,7 +21,7 @@ final class RunServerCommand
      */
     public function handle(Account $account, User $actor, Server $server, ?string $command, ?ServerCommandExecution $rerunOf = null): ServerCommandExecution
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('runCommands', $server);
 
         return DB::transaction(function () use ($account, $actor, $server, $command, $rerunOf): ServerCommandExecution {
             $locked = Server::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($server->id);

@@ -22,7 +22,7 @@ final class DeleteWebsiteDomain
     /** Remove an alias or redirect (and its Cloudflare record). The primary domain changes with the website's URL instead. */
     public function handle(Account $account, User $actor, WebsiteDomain $domain): void
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('update', $domain->website);
         if ($domain->type === 'primary') {
             throw ValidationException::withMessages(['domain' => __('Change the primary domain in the website’s settings.')]);
         }

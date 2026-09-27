@@ -27,7 +27,7 @@ final class ImportWebsite
      */
     public function handle(Account $account, User $actor, array $data): Website
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('create', [Website::class, $account]);
         if (! $this->entitlements->for($account)->allows('deploy.websites.max', Website::query()->where('account_id', $account->id)->count() + 1)->allowed) {
             throw ValidationException::withMessages(['plan' => __('Your plan’s website limit has been reached.')]);
         }

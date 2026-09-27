@@ -29,7 +29,7 @@ final class InspectServerImport
      */
     public function handle(Account $account, User $actor, array $data): array
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('create', [Server::class, $account]);
         if (! $this->entitlements->for($account)->allows('infrastructure.servers.max', Server::query()->where('account_id', $account->id)->count() + 1)->allowed) {
             throw ValidationException::withMessages(['plan' => __('Your plan’s server limit has been reached.')]);
         }

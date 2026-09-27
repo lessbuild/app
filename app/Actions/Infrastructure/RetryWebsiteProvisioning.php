@@ -20,7 +20,7 @@ final class RetryWebsiteProvisioning
     /** Set a failed website up again, or retry removing the copy on its previous server. Returns false if neither applies. */
     public function handle(Account $account, User $actor, Website $website): bool
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('update', $website);
 
         return DB::transaction(function () use ($account, $website): bool {
             $locked = Website::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($website->id);

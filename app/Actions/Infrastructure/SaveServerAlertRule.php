@@ -19,7 +19,7 @@ final class SaveServerAlertRule
      */
     public function handle(Account $account, User $actor, ?Server $server, array $data): ServerAlertRule
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('create', [ServerAlertRule::class, $account]);
         if ($server !== null) {
             $server = Server::query()->where('account_id', $account->id)->findOrFail($server->id);
         }

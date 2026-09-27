@@ -17,7 +17,7 @@ final class RefreshServerLog
     /** Fetch a fresh copy of one of an active server's logs. Returns false for an unknown log or a server that isn't active. */
     public function handle(Account $account, User $actor, Server $server, string $type): bool
     {
-        Gate::forUser($actor)->authorize('useService', [$account, 'infrastructure']);
+        Gate::forUser($actor)->authorize('view', $server);
         $server = Server::query()->where('account_id', $account->id)->findOrFail($server->id);
         if (! array_key_exists($type, ServerLogs::TYPES) || $server->provisioning_status !== Server::STATUS_ACTIVE) {
             return false;

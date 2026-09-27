@@ -18,7 +18,7 @@ final class RetryServerInitialization
     /** Try again to fetch the IP and host key of a cloud server whose initialisation failed. Returns false if it wasn't in that state. */
     public function handle(Account $account, User $actor, Server $server): bool
     {
-        Gate::forUser($actor)->authorize('update', $account);
+        Gate::forUser($actor)->authorize('update', $server);
 
         return DB::transaction(function () use ($account, $server): bool {
             $locked = Server::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($server->id);

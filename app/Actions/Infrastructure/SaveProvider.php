@@ -26,7 +26,7 @@ final class SaveProvider
     public function handle(Account $account, User $actor, array $data, ?Provider $provider = null): Provider
     {
         return DB::transaction(function () use ($account, $actor, $data, $provider): Provider {
-            Gate::forUser($actor)->authorize('update', $account);
+            Gate::forUser($actor)->authorize($provider === null ? 'create' : 'update', $provider ?? Provider::class);
             $isNew = $provider === null;
             $provider = $isNew ? new Provider : Provider::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($provider->id);
             $type = ProviderType::from((string) $data['type']);
