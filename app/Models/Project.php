@@ -65,6 +65,12 @@ class Project extends Model
         return $this->hasMany(AnalyticsSite::class);
     }
 
+    /** @return HasMany<Release, $this> */
+    public function releases(): HasMany
+    {
+        return $this->hasMany(Release::class);
+    }
+
     /** @return HasMany<EnabledService, $this> */
     public function enabledServices(): HasMany
     {

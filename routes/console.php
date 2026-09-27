@@ -7,8 +7,11 @@ use App\Actions\Analytics\PruneAnalyticsData;
 use App\Actions\Billing\ApplyEndedSelections;
 use App\Actions\Billing\ReportUsage;
 use App\Actions\Notifications\WarnAboutExpiringTokens;
+use App\Actions\Telemetry\PruneTelemetryData;
+use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\MonitorScheduler;
+use App\Services\Telemetry\TelemetryQueue;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Schedule;
@@ -69,3 +72,35 @@ Artisan::command('alerts:recover {--limit=100 : Maximum due deliveries to recove
 })->purpose('Recover alert deliveries whose queued jobs are missing');
 Schedule::command('monitors:check')->everyMinute()->withoutOverlapping(5)->onOneServer();
 Schedule::command('alerts:recover')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('telemetry:recover {--limit=100 : Maximum missing jobs to recover (1-1000)}', function (TelemetryQueue $queue): int {
+    $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
+    if ($limit === false) {
+        $this->error('The limit must be an integer between 1 and 1000.');
+
+        return 2;
+    }
+    $this->info('Recovered '.$queue->recover($limit).' ingestion deliveries.');
+
+    return 0;
+})->purpose('Requeue accepted telemetry deliveries whose jobs went missing');
+Artisan::command('telemetry:prune {--dry-run : Report what would be deleted} {--account= : Only this account}', function (PruneTelemetryData $prune): void {
+    $account = $this->option('account');
+    $summary = $prune->handle((bool) $this->option('dry-run'), accountId: is_string($account) ? $account : null);
+    $this->info(sprintf('Retention: %s %d account(s), %d event(s), %d identity record(s), %d receipt(s) and %d payload(s).',
+        $summary['dry_run'] ? 'would prune' : 'pruned', $summary['accounts'], $summary['events'], $summary['identities'], $summary['receipts'], $summary['payloads']));
+})->purpose('Delete telemetry past each account\'s Monitoring retention');
+Artisan::command('issues:wake {--limit=100 : Maximum snoozed issues to reopen (1-1000)}', function (WakeSnoozedIssues $wake): int {
+    $limit = filter_var($this->option('limit'), FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => 1000]]);
+    if ($limit === false) {
+        $this->error('The limit must be an integer between 1 and 1000.');
+
+        return 2;
+    }
+    $this->info('Reopened '.$wake->handle($limit).' snoozed issues.');
+
+    return 0;
+})->purpose('Reopen issues whose snooze has ended');
+Schedule::command('telemetry:recover')->everyMinute()->withoutOverlapping(5)->onOneServer();
+Schedule::command('telemetry:prune')->dailyAt('02:30')->withoutOverlapping(30)->onOneServer();
+Schedule::command('issues:wake')->everyMinute()->withoutOverlapping(5)->onOneServer();

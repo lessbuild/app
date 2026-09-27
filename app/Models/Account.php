@@ -31,6 +31,12 @@ class Account extends Model
     /** @use HasFactory<AccountFactory> */
     use HasFactory, HasUlids;
 
+    /** @return HasMany<Project, $this> */
+    public function projects(): HasMany
+    {
+        return $this->hasMany(Project::class);
+    }
+
     /** @return HasMany<Membership, $this> */
     public function memberships(): HasMany
     {

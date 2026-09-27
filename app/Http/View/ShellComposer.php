@@ -80,7 +80,7 @@ final class ShellComposer
 
         if ($project !== null && $definition !== null) {
             return [__(':service sections', ['service' => $definition->name()]), array_map(
-                fn ($item): NavLink => new NavLink($item->label, $item->url, $this->request->routeIs($item->activePattern)),
+                fn ($item): NavLink => new NavLink($item->label, $item->url, $this->request->routeIs(...explode('|', $item->activePattern))),
                 $definition->navItems($project->id),
             )];
         }

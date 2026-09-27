@@ -96,6 +96,23 @@ use App\Http\Controllers\Settings\ShowSecurityController;
 use App\Http\Controllers\Settings\ShowSessionsController;
 use App\Http\Controllers\Settings\SignOutBrowserController;
 use App\Http\Controllers\Settings\SignOutOtherBrowsersController;
+use App\Http\Controllers\Telemetry\CreateIngestTokenController;
+use App\Http\Controllers\Telemetry\RetryIngestReceiptController;
+use App\Http\Controllers\Telemetry\RevokeIngestTokenController;
+use App\Http\Controllers\Telemetry\RotateIngestTokenController;
+use App\Http\Controllers\Telemetry\ShowDependencyMapController;
+use App\Http\Controllers\Telemetry\ShowDeploymentController;
+use App\Http\Controllers\Telemetry\ShowEventController;
+use App\Http\Controllers\Telemetry\ShowEventsController;
+use App\Http\Controllers\Telemetry\ShowIngestReceiptsController;
+use App\Http\Controllers\Telemetry\ShowIssueController;
+use App\Http\Controllers\Telemetry\ShowIssuesController;
+use App\Http\Controllers\Telemetry\ShowReleaseController;
+use App\Http\Controllers\Telemetry\ShowReleasesController;
+use App\Http\Controllers\Telemetry\ShowTelemetrySetupController;
+use App\Http\Controllers\Telemetry\ShowTraceController;
+use App\Http\Controllers\Telemetry\StoreDeploymentController;
+use App\Http\Controllers\Telemetry\UpdateIssueController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -167,6 +184,24 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::post('/maintenance', StoreMaintenanceWindowController::class)->middleware('throttle:30,1')->name('maintenance.store');
             Route::put('/maintenance/{window}', UpdateMaintenanceWindowController::class)->whereNumber('window')->middleware('throttle:30,1')->name('maintenance.update');
             Route::delete('/maintenance/{window}', DeleteMaintenanceWindowController::class)->whereNumber('window')->middleware('throttle:30,1')->name('maintenance.destroy');
+
+            Route::get('/issues', ShowIssuesController::class)->name('issues');
+            Route::get('/issues/{issue}', ShowIssueController::class)->whereNumber('issue')->name('issues.show');
+            Route::patch('/issues/{issue}', UpdateIssueController::class)->whereNumber('issue')->middleware('throttle:60,1')->name('issues.update');
+            Route::get('/events', ShowEventsController::class)->name('events');
+            Route::get('/events/{event}', ShowEventController::class)->whereNumber('event')->name('events.show');
+            Route::get('/traces/{trace}', ShowTraceController::class)->where('trace', '[A-Za-z0-9._:-]{1,64}')->name('traces.show');
+            Route::get('/dependencies', ShowDependencyMapController::class)->name('dependencies');
+            Route::get('/releases', ShowReleasesController::class)->name('releases');
+            Route::get('/releases/{release}', ShowReleaseController::class)->whereNumber('release')->name('releases.show');
+            Route::post('/deployments', StoreDeploymentController::class)->middleware('throttle:60,1')->name('deployments.store');
+            Route::get('/deployments/{deployment}', ShowDeploymentController::class)->whereNumber('deployment')->name('deployments.show');
+            Route::get('/setup', ShowTelemetrySetupController::class)->name('setup');
+            Route::post('/environments/{environment}/keys', CreateIngestTokenController::class)->middleware('throttle:30,1')->name('keys.store');
+            Route::post('/keys/{token}/rotate', RotateIngestTokenController::class)->whereNumber('token')->middleware('throttle:30,1')->name('keys.rotate');
+            Route::delete('/keys/{token}', RevokeIngestTokenController::class)->whereNumber('token')->middleware('throttle:30,1')->name('keys.revoke');
+            Route::get('/environments/{environment}/deliveries', ShowIngestReceiptsController::class)->name('ingest.deliveries');
+            Route::post('/ingest-deliveries/{receipt}/retry', RetryIngestReceiptController::class)->whereUlid('receipt')->middleware('throttle:30,1')->name('ingest.retry');
         });
 
         Route::get('/', ShowProjectController::class)->name('projects.show');

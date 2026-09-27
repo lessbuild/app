@@ -44,6 +44,9 @@ enum AuditAction: string
     case AlertDestinationUpdated = 'alert_destination.updated';
     case AlertDestinationRotated = 'alert_destination.rotated';
     case AlertDestinationArchived = 'alert_destination.archived';
+    case IngestTokenCreated = 'ingest_token.created';
+    case IngestTokenRotated = 'ingest_token.rotated';
+    case IngestTokenRevoked = 'ingest_token.revoked';
 
     /** @param array<string, mixed> $context */
     public function describe(array $context): string
@@ -92,6 +95,9 @@ enum AuditAction: string
             self::AlertDestinationUpdated => __('Changed the alert destination “:destination”', ['destination' => $value('destination')]),
             self::AlertDestinationRotated => __('Replaced the signing key of “:destination”', ['destination' => $value('destination')]),
             self::AlertDestinationArchived => __('Archived the alert destination “:destination”', ['destination' => $value('destination')]),
+            self::IngestTokenCreated => __('Created the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
+            self::IngestTokenRotated => __('Replaced the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
+            self::IngestTokenRevoked => __('Revoked the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::BrowsersSignedOut => trans_choice('Signed out :count other browser|Signed out :count other browsers', (int) $value('count'), ['count' => $value('count')]),
         };
     }

@@ -8,6 +8,10 @@ use App\Http\Controllers\Api\V1\ShowAccountController;
 use App\Http\Controllers\Monitoring\RecordHeartbeatController;
 use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
 use App\Http\Controllers\Monitoring\RecordQueueWorkerController;
+use App\Http\Controllers\Telemetry\IngestEventsController;
+use App\Http\Controllers\Telemetry\IngestOtlpController;
+use App\Http\Controllers\Telemetry\RecordDeploymentApiController;
+use App\Http\Controllers\Telemetry\ShowIngestReceiptController;
 use App\Http\Middleware\AuthenticateHeartbeatToken;
 use App\Http\Middleware\AuthenticateQueueToken;
 use Illuminate\Support\Facades\Route;
@@ -30,3 +34,11 @@ Route::post('/v1/heartbeats/{heartbeat}', RecordHeartbeatController::class)
     ->whereNumber('heartbeat')
     ->middleware(['throttle:heartbeat-ingress', AuthenticateHeartbeatToken::class])
     ->name('api.heartbeats.store');
+
+// Telemetry ingest (public contracts from the old Monitor app), authenticated with an environment's ingest key.
+Route::middleware(['throttle:ingest', 'ingest.token'])->group(function (): void {
+    Route::post('/v1/ingest', IngestEventsController::class)->name('api.ingest');
+    Route::get('/v1/ingest/receipts/{receipt}', ShowIngestReceiptController::class)->whereUlid('receipt')->name('api.ingest.receipts.show');
+    Route::post('/v1/otlp/v1/{signal}', IngestOtlpController::class)->whereIn('signal', ['traces', 'logs', 'metrics'])->name('api.otlp');
+    Route::post('/v1/deployments', RecordDeploymentApiController::class)->middleware('throttle:deployments')->name('api.deployments.store');
+});

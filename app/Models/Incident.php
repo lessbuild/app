@@ -39,6 +39,7 @@ use Illuminate\Support\Carbon;
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
+ * @property-read Account $account
  * @property-read Project|null $project
  * @property-read Monitor|null $monitor
  * @property-read User|null $acknowledgedBy
@@ -57,6 +58,12 @@ class Incident extends Model
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->where('account_id', $account->id);
+    }
+
+    /** @return BelongsTo<Account, $this> */
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 
     /** @return BelongsTo<Project, $this> */

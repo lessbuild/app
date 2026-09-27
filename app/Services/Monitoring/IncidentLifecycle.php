@@ -6,6 +6,8 @@ namespace App\Services\Monitoring;
 
 use App\Models\Account;
 use App\Models\Incident;
+use App\Models\Issue;
+use App\Models\Project;
 use App\Models\User;
 use Carbon\CarbonImmutable;
 
@@ -29,9 +31,19 @@ final class IncidentLifecycle
         }
     }
 
-    /** Unassign someone who left the account or lost access to Monitoring. */
+    /** Unassign someone who left the account or lost access to Monitoring from its incidents and issues. */
     public function unassignMember(Account $account, User $member, ?User $actor): void
     {
+        Issue::query()->whereIn('project_id', Project::query()->where('account_id', $account->id)->select('id'))
+            ->where('assignee_id', $member->id)->orderBy('id')->lockForUpdate()
+            ->eachById(function (Issue $issue) use ($member, $actor): void {
+                $issue->forceFill(['assignee_id' => null, 'state_version' => $issue->state_version + 1])->save();
+                $issue->activities()->create([
+                    'actor_id' => $actor?->id, 'action' => 'assignee_unavailable',
+                    'metadata' => ['before' => ['assignee_id' => $member->id], 'assignee_id' => null],
+                ]);
+            }, 100);
+
         Incident::query()->where('account_id', $account->id)->where('assignee_id', $member->id)
             ->orderBy('id')->lockForUpdate()
             ->eachById(function (Incident $incident) use ($actor, $member): void {

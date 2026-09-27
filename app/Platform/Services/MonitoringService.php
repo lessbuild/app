@@ -38,8 +38,12 @@ final class MonitoringService implements PlatformService
         return [
             new ServiceNavItem(__('Monitors'), route('monitoring.monitors', $projectId), 'monitoring.monitors*'),
             new ServiceNavItem(__('Incidents'), route('monitoring.incidents', $projectId), 'monitoring.incidents*'),
-            new ServiceNavItem(__('Alert destinations'), route('monitoring.destinations', $projectId), 'monitoring.destinations*'),
+            new ServiceNavItem(__('Issues'), route('monitoring.issues', $projectId), 'monitoring.issues*'),
+            new ServiceNavItem(__('Events'), route('monitoring.events', $projectId), 'monitoring.events*|monitoring.traces*|monitoring.dependencies'),
+            new ServiceNavItem(__('Releases'), route('monitoring.releases', $projectId), 'monitoring.releases*|monitoring.deployments*'),
+            new ServiceNavItem(__('Alerts'), route('monitoring.destinations', $projectId), 'monitoring.destinations*'),
             new ServiceNavItem(__('Maintenance'), route('monitoring.maintenance', $projectId), 'monitoring.maintenance*'),
+            new ServiceNavItem(__('Setup'), route('monitoring.setup', $projectId), 'monitoring.setup|monitoring.ingest*'),
         ];
     }
 

@@ -48,6 +48,15 @@ return [
 
         // Monitor checks and alert deliveries run on their own queues in the
         // primary database, so a check or delivery row and its job commit together.
+        'telemetry' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'telemetry',
+            'retry_after' => 180,
+            'after_commit' => false,
+        ],
+
         'checks' => [
             'driver' => 'database',
             'connection' => null,

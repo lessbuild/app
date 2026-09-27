@@ -1,0 +1,29 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Enums;
+
+enum IngestStatus: string
+{
+    case Queued = 'queued';
+    case Processing = 'processing';
+    case Retrying = 'retrying';
+    case Completed = 'completed';
+    case Failed = 'failed';
+
+    public function label(): string
+    {
+        return __(ucfirst($this->value));
+    }
+
+    public function tone(): string
+    {
+        return match ($this) {
+            self::Completed => 'success',
+            self::Failed => 'danger',
+            self::Retrying => 'warning',
+            default => 'neutral',
+        };
+    }
+}
