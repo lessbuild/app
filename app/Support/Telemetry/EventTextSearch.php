@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\DB;
 /** Case-sensitive "contains" search over an event's labels and the text inside its stored payload. */
 final class EventTextSearch
 {
-    /** @param Builder<TelemetryEvent> $query */
+    /**
+     * Narrows a telemetry query to events whose name, route, service, trace or span ID, or message text contains
+     * `$text`. It reads the message fields out of the JSON payload with each database's own operators, and escapes LIKE
+     * wildcards so a search for `100%` means the literal text.
+     *
+     * @param  Builder<TelemetryEvent>  $query
+     */
     public static function apply(Builder $query, string $text): void
     {
         $pattern = '%'.str_replace(['!', '%', '_'], ['!!', '!%', '!_'], $text).'%';

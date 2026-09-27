@@ -11,6 +11,10 @@ use Illuminate\Validation\ValidationException;
 /** The environment a website serves, which must belong to one of the account's projects (or none). */
 final class WebsiteEnvironment
 {
+    /**
+     * Checks that a website is being linked to an environment in the same account and returns its ID, or null when none
+     * was chosen. A foreign environment is a validation error on `environment_id`.
+     */
     public static function resolve(Account $account, mixed $environmentId): ?string
     {
         if (! is_string($environmentId) || $environmentId === '') {

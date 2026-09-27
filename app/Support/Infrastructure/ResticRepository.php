@@ -11,6 +11,10 @@ use RuntimeException;
 /** The restic repository for a website (one per website in the destination's bucket) as shell environment assignments. */
 final class ResticRepository
 {
+    /**
+     * The restic repository URL for one website's backups inside a destination bucket. It refuses endpoints that aren't
+     * HTTPS and bucket names or prefixes with characters that could escape the shell command they're used in.
+     */
     public static function repository(BackupDestination $destination, Website $website): string
     {
         $endpoint = rtrim($destination->endpoint, '/');

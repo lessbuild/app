@@ -7,7 +7,13 @@ namespace App\Support;
 /** Turns what people type ("https://Shop.Example.com/path", "bücher.example") into a comparable hostname. */
 final class Hostname
 {
-    /** @return string|null the ASCII hostname, or null if it isn't a public hostname we can verify */
+    /**
+     * Turns what someone typed (possibly a URL, mixed case, a trailing dot or an internationalised name) into the
+     * lowercase ASCII hostname we store and verify. Returns null for anything that isn't a public DNS name: IPs, ports,
+     * `localhost`, single-label names and malformed labels.
+     *
+     * @return string|null the ASCII hostname, or null if it isn't a public hostname we can verify
+     */
     public static function normalize(string $input): ?string
     {
         $host = trim($input);

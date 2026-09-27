@@ -6,7 +6,7 @@ namespace App\Support\Deploy;
 
 use InvalidArgumentException;
 
-class RepositoryPath
+final class RepositoryPath
 {
     public const MAX_PATTERN_BYTES = 255;
 

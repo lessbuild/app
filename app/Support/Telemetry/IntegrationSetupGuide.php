@@ -24,6 +24,8 @@ final class IntegrationSetupGuide
     ];
 
     /**
+     * The languages and frameworks the setup page offers, keyed by the value used in `?stack=`.
+     *
      * @return array<string, string>
      */
     public function stacks(): array
@@ -31,6 +33,10 @@ final class IntegrationSetupGuide
         return self::STACKS;
     }
 
+    /**
+     * The environment variables that point any OpenTelemetry SDK at our OTLP/HTTP endpoints, with a placeholder where
+     * the environment's token goes.
+     */
     public function openTelemetryConfiguration(string $tracesEndpoint, string $logsEndpoint, string $metricsEndpoint): string
     {
         return implode("\n", [
@@ -44,6 +50,10 @@ final class IntegrationSetupGuide
     }
 
     /**
+     * The setup instructions for one stack: how to install, where to keep the token, a connection-test snippet already
+     * pointed at the ingest endpoint, and how to confirm the event arrived. Unknown stacks throw, since the request
+     * validates the choice first.
+     *
      * @return array{key: string, label: string, install: string, token: string, code: string, verification: string, receipt_endpoint: string}
      */
     public function for(string $stack, string $ingestEndpoint, string $receiptEndpoint): array
@@ -76,6 +86,8 @@ final class IntegrationSetupGuide
     }
 
     /**
+     * The stack-neutral instructions: a cURL request that sends one log event.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function httpProfile(): array
@@ -106,6 +118,8 @@ BASH,
     }
 
     /**
+     * Sends the test event with Laravel's HTTP client, reading the token from config.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function laravelProfile(): array
@@ -137,6 +151,8 @@ PHP,
     }
 
     /**
+     * Sends the test event with the `fetch` built into Node.js 18 and later.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function nodeProfile(): array
@@ -175,6 +191,8 @@ JAVASCRIPT,
     }
 
     /**
+     * Sends the test event with `requests`.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function pythonProfile(): array
@@ -214,6 +232,8 @@ PYTHON,
     }
 
     /**
+     * Sends the test event with `net/http` from Go's standard library.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function goProfile(): array
@@ -254,6 +274,8 @@ GO,
     }
 
     /**
+     * Sends the test event with the `HttpClient` in Java 17 and later.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function javaProfile(): array
@@ -286,6 +308,8 @@ JAVA,
     }
 
     /**
+     * Sends the test event with `HttpClient` and `System.Net.Http.Json`.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function dotnetProfile(): array
@@ -327,6 +351,8 @@ CSHARP,
     }
 
     /**
+     * Sends the test event with `Net::HTTP` from Ruby's standard library.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function rubyProfile(): array
@@ -367,6 +393,8 @@ RUBY,
     }
 
     /**
+     * Sends the test event with the cURL extension, for PHP apps that don't use a framework.
+     *
      * @return array{install: string, token: string, code: string}
      */
     private function phpProfile(): array

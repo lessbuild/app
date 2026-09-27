@@ -7,7 +7,12 @@ namespace App\Support\Infrastructure;
 /** The S3-compatible services backups can go to, with hints for the form and the endpoints we can fill in from a region. */
 final class BackupDestinationPresets
 {
-    /** @return array<string, array{name: string, description: string, endpoint: string, region: string}> */
+    /**
+     * The storage providers the backup-destination form offers, with the hint, endpoint pattern and region example it
+     * shows for each.
+     *
+     * @return array<string, array{name: string, description: string, endpoint: string, region: string}>
+     */
     public static function all(): array
     {
         return [

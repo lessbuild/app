@@ -25,6 +25,10 @@ final class DeviceLabel
         'Linux' => 'Linux',
     ];
 
+    /**
+     * A short description of a browser session ("Firefox on macOS") for the sessions and sign-in activity lists. It only
+     * needs to be recognisable, so it checks a few well-known markers instead of parsing the user agent fully.
+     */
     public static function from(?string $userAgent): string
     {
         if ($userAgent === null || trim($userAgent) === '') {
@@ -40,7 +44,12 @@ final class DeviceLabel
         };
     }
 
-    /** @param array<string, string> $needles */
+    /**
+     * The label of the first needle found in the haystack. Order matters: Edge and Opera also claim to be Chrome and
+     * Safari, so they're listed first.
+     *
+     * @param  array<string, string>  $needles
+     */
     private static function first(array $needles, string $haystack): ?string
     {
         foreach ($needles as $needle => $label) {

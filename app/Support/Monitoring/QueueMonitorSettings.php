@@ -29,7 +29,11 @@ final class QueueMonitorSettings
         'max_oldest_wait_seconds' => 'Maximum oldest ready-job wait (seconds)', 'max_runtime_seconds' => 'Maximum busy-job duration (seconds)',
     ];
 
-    /** @param array<string, mixed> $settings
+    /**
+     * Keeps only the known queue-monitor settings, as integers, with missing ones as null (meaning "no limit"). Range
+     * checks happen in the form request against LIMITS.
+     *
+     * @param  array<string, mixed>  $settings
      * @return array<string, int|null>
      */
     public static function normalize(array $settings): array

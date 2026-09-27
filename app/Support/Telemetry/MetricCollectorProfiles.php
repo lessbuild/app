@@ -9,7 +9,14 @@ use Illuminate\Support\Str;
 /** Ready-made OpenTelemetry Collector configurations that send metrics from common hosts, databases, brokers and clouds. */
 final class MetricCollectorProfiles
 {
-    /** @return array<string, array{label: string, receiver: string, stability: string, requirements: string, yaml: string}> */
+    /**
+     * Ready-to-paste OpenTelemetry Collector configurations, one per system people commonly monitor (hosts, containers,
+     * databases, brokers, web servers, AWS services), each exporting metrics to this project's endpoint with the ingest
+     * token read from `BEACON_INGEST_TOKEN`. The requirements text states the permissions and caveats a person needs
+     * before running it.
+     *
+     * @return array<string, array{label: string, receiver: string, stability: string, requirements: string, yaml: string}>
+     */
     public function all(string $metricsEndpoint): array
     {
         $token = '${env:BEACON_INGEST_TOKEN}';
@@ -527,6 +534,10 @@ YAML, $exporter, 'redis'),
         ];
     }
 
+    /**
+     * Joins a receiver block with the shared exporter and a metrics pipeline wiring one to the other, so each profile
+     * only has to describe its receiver.
+     */
     private function configuration(string $receiver, string $exporter, string $receiverName): string
     {
         return Str::of($receiver."\n".$exporter."\n".<<<'YAML'

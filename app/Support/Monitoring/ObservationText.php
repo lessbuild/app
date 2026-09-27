@@ -60,6 +60,9 @@ final class ObservationText
         };
     }
 
+    /**
+     * Prints a scalar snapshot value, or the placeholder when the value is missing or isn't printable.
+     */
     private static function text(mixed $value, string $default = '—'): string
     {
         return is_scalar($value) ? (string) $value : $default;
