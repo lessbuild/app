@@ -6,7 +6,7 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 2. **Telemetry**: ingest (`/api/v1/ingest`, OTLP, deployments), events, issues, traces, releases and the service map.
 3. **Alert rules** on telemetry, escalations and service level objectives.
 4. **Status pages** (`/status/{slug}`), merging Monitor's and Deployer's.
-5. Metrics, dashboards, SLOs and usage metering.
+5. **Metrics explorer, dashboards**, usage alerts and the issue digest.
 
 ## Model
 
@@ -43,6 +43,11 @@ Design notes for the Monitoring service in Phase 4 of [the plan](platform-v2-pla
 - Managing pages and posting updates needs account settings access (owners and admins), like destinations and maintenance windows; anyone who can use Monitoring sees them.
 - Public URLs kept: `/status/{slug}` (both apps), `/status/{slug}/report.json` (Deployer's shape plus `state` and per-component `state`/`open_incidents`), `POST /status/{slug}/subscribe`, `/status/subscriptions/{id}/confirm/{token}` and `/unsubscribe/{token}`. The unified app's `/status/{deployer|monitor}/{slug}` redirects permanently.
 - **For the importer (Phase 7):** Monitor and Deployer pages share one slug namespace, so colliding slugs need a decision per page. Subscriptions must keep their IDs (they're in emailed links). Deployer pages listed websites; they become monitors once Infrastructure is ported.
+
+## Metrics and dashboards (part 5)
+
+- **Metrics explorer** (Monitoring → Metrics): the project's metric series, searchable by name, unit or resource, each with a chart (value, or rate per second for cumulative counters), the latest samples linked to their events, and the series' resource identity. On Pro and above unusual shifts are marked (`monitoring.anomalies`). Collector setups for 19 common stacks are listed under the table (`Support/Telemetry/MetricCollectorProfiles`).
+- **Dashboards** belong to the account (like Monitor's workspace dashboards) and cover every project: telemetry summary with a trend, event mix, open incidents, monitor health, SLO health and projects, over 24 hours, 7 or 30 days. The number is limited by `monitoring.dashboards.max` (1 on Free, 5 Pro, 15 Team, unlimited Scale). Account admins manage them; anyone who can use Monitoring reads them. The telemetry numbers come from `Queries/Telemetry/TelemetrySummaryQuery`.
 
 ## Access
 

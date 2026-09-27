@@ -48,7 +48,7 @@
                 <x-signal.ui.select-field name="metric_series_id" :label="__('Metric (numeric and anomaly rules)')">
                     <option value="">{{ __('Choose a metric') }}</option>
                     @foreach ($series as $option)
-                        <option value="{{ $option->id }}" @selected((int) old('metric_series_id', $rule?->metric_series_id) === $option->id)>{{ $option->name }} · {{ $option->resource_label }}</option>
+                        <option value="{{ $option->id }}" @selected((int) old('metric_series_id', $rule?->metric_series_id ?? request('series')) === $option->id)>{{ $option->name }} · {{ $option->resource_label }}</option>
                     @endforeach
                 </x-signal.ui.select-field>
                 <div class="grid gap-4 sm:grid-cols-3">

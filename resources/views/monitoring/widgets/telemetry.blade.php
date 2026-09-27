@@ -1,0 +1,9 @@
+@php($change = fn (?float $value, string $suffix = '%'): string => $value === null ? '' : ($value > 0 ? '+' : '').number_format($value, 1).$suffix)
+<dl class="mt-4 grid gap-3 sm:grid-cols-4">
+    <div class="rounded-control bg-surface-muted p-4"><dt class="text-xs text-muted">{{ __('Events') }}</dt><dd class="mt-1 text-2xl font-extrabold text-ink">{{ number_format($summary['eventCount']) }}</dd><dd class="text-xs text-muted">{{ $change($summary['changes']['events']) }}</dd></div>
+    <div class="rounded-control bg-surface-muted p-4"><dt class="text-xs text-muted">{{ __('Requests') }}</dt><dd class="mt-1 text-2xl font-extrabold text-ink">{{ number_format($summary['requestCount']) }}</dd></div>
+    <div class="rounded-control bg-surface-muted p-4"><dt class="text-xs text-muted">{{ __('Average duration') }}</dt><dd class="mt-1 text-2xl font-extrabold text-ink">{{ $summary['averageDuration'] === null ? '—' : number_format($summary['averageDuration'], $summary['averageDuration'] < 10 ? 2 : 0).' ms' }}</dd><dd class="text-xs text-muted">{{ $change($summary['changes']['duration']) }}</dd></div>
+    <div class="rounded-control bg-surface-muted p-4"><dt class="text-xs text-muted">{{ __('Failed requests') }}</dt><dd class="mt-1 text-2xl font-extrabold text-ink">{{ $summary['requestErrorRate'] === null ? '—' : number_format($summary['requestErrorRate'], 2).'%' }}</dd><dd class="text-xs text-muted">{{ $summary['changes']['errorRate'] === null ? '' : $change($summary['changes']['errorRate'], ' pts') }}</dd></div>
+</dl>
+<x-signal.ui.bar-chart :label="__('Requests per period')" :points="array_map(fn (array $point): array => ['label' => $point['label'].' UTC', 'value' => $point['requestCount']], $summary['trend'])" :unit="__('requests')" />
+<p class="mt-1 text-xs text-muted">{{ __('Changes compare with the period before. Failed means a 5xx status or an error severity.') }}</p>

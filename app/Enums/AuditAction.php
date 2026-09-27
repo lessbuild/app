@@ -52,6 +52,9 @@ enum AuditAction: string
     case IngestTokenCreated = 'ingest_token.created';
     case IngestTokenRotated = 'ingest_token.rotated';
     case IngestTokenRevoked = 'ingest_token.revoked';
+    case DashboardCreated = 'dashboard.created';
+    case DashboardUpdated = 'dashboard.updated';
+    case DashboardDeleted = 'dashboard.deleted';
     case StatusPageCreated = 'status_page.created';
     case StatusPageUpdated = 'status_page.updated';
     case StatusPageDeleted = 'status_page.deleted';
@@ -113,6 +116,9 @@ enum AuditAction: string
             self::IngestTokenCreated => __('Created the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRotated => __('Replaced the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
             self::IngestTokenRevoked => __('Revoked the ingest key “:name” for :project (:environment)', ['name' => $value('name'), 'project' => $value('project'), 'environment' => $value('environment')]),
+            self::DashboardCreated => __('Created the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
+            self::DashboardUpdated => __('Changed the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
+            self::DashboardDeleted => __('Deleted the dashboard “:dashboard”', ['dashboard' => $value('dashboard')]),
             self::StatusPageCreated => __('Created the status page “:page”', ['page' => $value('page')]),
             self::StatusPageUpdated => __('Changed the status page “:page”', ['page' => $value('page')]),
             self::StatusPageDeleted => __('Deleted the status page “:page”', ['page' => $value('page')]),
