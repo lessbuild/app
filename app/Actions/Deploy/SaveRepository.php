@@ -39,12 +39,17 @@ final class SaveRepository
             throw ValidationException::withMessages(['environment_id' => __('Choose one of this project’s environments.')]);
         }
         $repository ??= new Repository;
+        // An App installation's pushes arrive signed with the App's secret; a switch away from the App turns that off.
+        $webhook = $provider->isGitHubApp()
+            ? ['webhook_enabled' => true, 'webhook_secret' => (string) config('github-app.webhook_secret')]
+            : ($repository->provider?->isGitHubApp() === true ? ['webhook_enabled' => false, 'webhook_secret' => null] : []);
         $repository->forceFill([
             'project_id' => $project->id, 'created_by' => $repository->created_by ?? $actor->id, 'provider_id' => $provider->id,
             'website_id' => $website->id, 'environment_id' => $environment?->id, 'name' => trim($data['name']), 'url' => $data['url'],
             'branch' => $data['branch'], 'deployment_root' => $data['deployment_root'] ?? null,
             'build_commands' => $data['build_commands'] ?? null, 'post_deployment_commands' => $data['post_deployment_commands'] ?? null,
             'auto_deploy_include_paths' => ($data['auto_deploy_include_paths'] ?? []) ?: null, 'auto_deploy_exclude_paths' => ($data['auto_deploy_exclude_paths'] ?? []) ?: null,
+            ...$webhook,
         ])->save();
 
         return $repository;

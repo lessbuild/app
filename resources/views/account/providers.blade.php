@@ -21,6 +21,12 @@
         </x-signal.ui.card>
     @endif
 
+    @if ($githubApp)
+        <x-signal.ui.settings-section :title="__('GitHub App')" :description="__('Install our GitHub App on your organisation or account to deploy its repositories without a personal token. Pushes deploy automatically.')">
+            <div class="p-4 sm:p-6"><x-signal.ui.button :href="route('github-app.connect')" variant="secondary">{{ __('Install the GitHub App') }}</x-signal.ui.button></div>
+        </x-signal.ui.settings-section>
+    @endif
+
     <x-signal.ui.settings-section :title="__('Connect a provider')" :description="__('Use an API token scoped to what we need. We check it straight away and then on a schedule.')">
         <form method="POST" action="{{ route('account.providers.store') }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
             @csrf

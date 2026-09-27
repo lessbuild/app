@@ -37,7 +37,7 @@ class CloneRepositoryScript extends BuildProvisioningScript
         $setupPath = escapeshellarg($setup);
         $setupParent = escapeshellarg(dirname($setup));
         $credentialDirectory = escapeshellarg("/tmp/lessbuild-build-{$build->id}");
-        $token = $provider->token;
+        $token = $provider->isGitHubApp() ? app(\App\Services\Deploy\GitHubApp::class)->installationToken((string) $provider->external_id) : $provider->token;
         $credentialPayload = escapeshellarg(base64_encode(
             "machine {$host}\nlogin {$username}\npassword {$token}\n",
         ));

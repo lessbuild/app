@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Analytics\CollectEventsController;
 use App\Http\Controllers\Analytics\PreflightCollectController;
 use App\Http\Controllers\Api\V1\ShowAccountController;
+use App\Http\Controllers\Deploy\ReceiveGitHubAppWebhookController;
 use App\Http\Controllers\Deploy\ReceiveRepositoryWebhookController;
 use App\Http\Controllers\Monitoring\RecordHeartbeatController;
 use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
@@ -46,3 +47,4 @@ Route::middleware(['throttle:ingest', 'ingest.token'])->group(function (): void 
 
 // Git push webhooks for a repository (Deployer's public contract), verified with the repository's secret.
 Route::post('/repositories/{repository}/webhook', ReceiveRepositoryWebhookController::class)->whereNumber('repository')->middleware('throttle:120,1')->name('webhooks.repositories.receive');
+Route::post('/github-app/webhook', ReceiveGitHubAppWebhookController::class)->middleware('throttle:600,1')->name('github-app.webhook');

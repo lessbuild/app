@@ -47,6 +47,18 @@ The parts, in dependency order:
   - Members with Deploy access deploy, redeploy, roll back and cancel.
 - Plan limits: `deploy.releases` gates release history and rollback, as in Deployer. Deploy minutes aren't metered, as in Deployer.
 
+## GitHub App (part 2)
+
+- The platform's GitHub App is configured by environment (`GITHUB_APP_ID`, `GITHUB_APP_SLUG`, `GITHUB_APP_WEBHOOK_SECRET`, and `GITHUB_APP_PRIVATE_KEY` or `GITHUB_APP_PRIVATE_KEY_PATH`). Deployer's local-only page for uploading the private key isn't ported; operators set the key in the environment.
+- **Installing:** Account → Providers offers "Install the GitHub App" when it's configured (owners and admins).
+  - `/github-app/connect` sends the person to GitHub with a one-time state kept (hashed) in their session.
+  - GitHub returns to `/github-app/callback`, the App's Setup URL, unchanged. It records the installation as a GitHub provider with `credential_type = app` and the installation ID, named after the GitHub owner.
+  - `/github-app/providers/{provider}/repositories` lists what the installation can reach, with links to connect each repository in a project.
+- **Clones and webhooks:**
+  - Clones mint a short-lived installation token (a JWT signed with the App's key).
+  - Repositories on an App provider get push deploys automatically. The App's webhook `POST /api/github-app/webhook` (public contract) is verified with the App's secret and routed to the repository with that URL and installation.
+  - Checking the connection mints an installation token.
+
 ## Public contracts kept
 
 - Build callback URLs and their signed parameters.

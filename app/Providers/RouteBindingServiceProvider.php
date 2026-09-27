@@ -54,7 +54,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
      * @var array<string, array{class-string<Model>, 'account'|'project'|'environment'|'server'|'repository', list<string>}>
      */
     private const BINDINGS = [
-        'provider' => [Provider::class, 'account', ['account.providers*']],
+        'provider' => [Provider::class, 'account', ['account.providers*', 'github-app.*']],
         'server' => [Server::class, 'account', ['infrastructure.*']],
         'website' => [Website::class, 'account', ['infrastructure.*']],
         'backupDestination' => [BackupDestination::class, 'account', ['infrastructure.*']],

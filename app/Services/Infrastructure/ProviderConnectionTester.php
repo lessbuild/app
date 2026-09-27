@@ -22,6 +22,16 @@ final class ProviderConnectionTester
             return ['successful' => false, 'message' => __('Connection failed. This provider has no credential.'), 'http_status' => null];
         }
 
+        if ($provider->isGitHubApp()) {
+            try {
+                app(\App\Services\Deploy\GitHubApp::class)->installationToken((string) $provider->external_id);
+            } catch (Throwable) {
+                return ['successful' => false, 'message' => __('Connection failed. GitHub didn’t issue a token for this App installation; it may have been uninstalled.'), 'http_status' => null];
+            }
+
+            return ['successful' => true, 'message' => __('Connection successful. The GitHub App installation is active.'), 'http_status' => 201];
+        }
+
         try {
             $response = $this->request($provider);
         } catch (Throwable) {

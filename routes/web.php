@@ -50,6 +50,8 @@ use App\Http\Controllers\Auth\RedirectToProviderController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Deploy\CancelBuildController;
+use App\Http\Controllers\Deploy\CompleteGitHubAppInstallController;
+use App\Http\Controllers\Deploy\ConnectGitHubAppController;
 use App\Http\Controllers\Deploy\CreateRepositoryController;
 use App\Http\Controllers\Deploy\DeleteRepositoryController;
 use App\Http\Controllers\Deploy\RecordBuildCallbackController;
@@ -57,6 +59,7 @@ use App\Http\Controllers\Deploy\RedeployBuildController;
 use App\Http\Controllers\Deploy\ReviewBuildController;
 use App\Http\Controllers\Deploy\RollbackBuildController;
 use App\Http\Controllers\Deploy\ShowBuildController;
+use App\Http\Controllers\Deploy\ShowGitHubAppRepositoriesController;
 use App\Http\Controllers\Deploy\ShowRepositoriesController;
 use App\Http\Controllers\Deploy\ShowRepositoryController;
 use App\Http\Controllers\Deploy\StoreBuildController;
@@ -512,6 +515,10 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
     Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
+    // GitHub App installs (Deployer's paths: the App's Setup URL points at /github-app/callback).
+    Route::get('/github-app/connect', ConnectGitHubAppController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.connect');
+    Route::get('/github-app/callback', CompleteGitHubAppInstallController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.callback');
+    Route::get('/github-app/providers/{provider}/repositories', ShowGitHubAppRepositoriesController::class)->whereNumber('provider')->middleware(['can:view,provider', 'throttle:20,1'])->name('github-app.repositories');
     Route::get('/account/providers', ShowProvidersController::class)->middleware('can:viewAny,App\\Models\\Provider')->name('account.providers');
     Route::post('/account/providers', StoreProviderController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:20,1'])->name('account.providers.store');
     Route::get('/account/providers/{provider}', ShowProviderController::class)->whereNumber('provider')->middleware('can:view,provider')->name('account.providers.show');

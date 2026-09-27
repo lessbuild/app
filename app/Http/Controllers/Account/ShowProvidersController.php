@@ -9,15 +9,15 @@ use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
 use App\Models\User;
 use App\Queries\Infrastructure\ProvidersQuery;
+use App\Services\Deploy\GitHubApp;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 
 /** The account's provider credentials: clouds for servers, Cloudflare for DNS, Git hosts for Deploy. */
 final class ShowProvidersController
 {
-    public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, ProvidersQuery $providers): View
+    public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, ProvidersQuery $providers, GitHubApp $github): View
     {
-
-        return view('account.providers', ['account' => $account, 'providers' => $providers->handle($account->id), 'types' => ProviderType::cases()]);
+        return view('account.providers', ['account' => $account, 'providers' => $providers->handle($account->id), 'types' => ProviderType::cases(), 'githubApp' => $github->configured()]);
     }
 }

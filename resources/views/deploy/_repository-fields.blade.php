@@ -2,11 +2,11 @@
 <x-signal.ui.input-field name="name" :label="__('Name')" :value="old('name', $repository?->name)" maxlength="120" required />
 <x-signal.ui.select-field name="provider_id" :label="__('Git provider')" :description="$providers->isEmpty() ? __('Add a GitHub, GitLab or Bitbucket token under Account → Providers first.') : null">
     @foreach ($providers as $provider)
-        <option value="{{ $provider->id }}" @selected((int) old('provider_id', $repository?->provider_id) === $provider->id)>{{ $provider->name }} ({{ $provider->type->label() }})</option>
+        <option value="{{ $provider->id }}" @selected((int) old('provider_id', $repository?->provider_id ?? request()->integer('provider_id')) === $provider->id)>{{ $provider->name }} ({{ $provider->isGitHubApp() ? __('GitHub App') : $provider->type->label() }})</option>
     @endforeach
 </x-signal.ui.select-field>
-<x-signal.ui.input-field name="url" :label="__('Repository')" :value="old('url', $repository?->url)" placeholder="github.com/acme/shop" maxlength="255" required />
-<x-signal.ui.input-field name="branch" :label="__('Branch')" :value="old('branch', $repository?->branch ?? 'main')" maxlength="255" required />
+<x-signal.ui.input-field name="url" :label="__('Repository')" :value="old('url', $repository?->url ?? request()->string('url')->toString())" placeholder="github.com/acme/shop" maxlength="255" required />
+<x-signal.ui.input-field name="branch" :label="__('Branch')" :value="old('branch', $repository?->branch ?? (request()->string('branch')->toString() ?: 'main'))" maxlength="255" required />
 <x-signal.ui.select-field name="website_id" :label="__('Deploys to website')">
     @foreach ($websites as $website)
         <option value="{{ $website->id }}" @selected((int) old('website_id', $repository?->website_id) === $website->id)>{{ $website->name }} ({{ $website->url }})</option>
