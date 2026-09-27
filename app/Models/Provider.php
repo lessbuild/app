@@ -81,7 +81,21 @@ class Provider extends Model
 
     public function hasAttachedResources(): bool
     {
-        return $this->servers()->exists();
+        return $this->servers()->exists() || $this->repositories()->exists();
+    }
+
+    /** @return HasMany<Repository, $this> */
+    public function repositories(): HasMany
+    {
+        return $this->hasMany(Repository::class);
+    }
+
+    /** Whether a repository URL (`host/owner/name`) is on this provider's Git host. */
+    public function supportsRepositoryUrl(string $url): bool
+    {
+        $host = $this->type->repositoryHost();
+
+        return $host !== null && str_starts_with(strtolower($url), $host.'/');
     }
 
     /** @return array<string, string> */

@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property EnvironmentKind $kind
  * @property int $telemetry_event_count events Monitoring has received for this environment
  * @property \Carbon\CarbonImmutable|null $telemetry_last_received_at
+ * @property bool $requires_deployment_approval Deploy: builds wait for someone else to approve them
  * @property-read Project $project
  */
 #[UseFactory(EnvironmentFactory::class)]
@@ -34,7 +35,7 @@ class Environment extends Model
     /** @return array<string, string> */
     protected function casts(): array
     {
-        return ['kind' => EnvironmentKind::class, 'telemetry_event_count' => 'integer', 'telemetry_last_received_at' => 'immutable_datetime'];
+        return ['kind' => EnvironmentKind::class, 'telemetry_event_count' => 'integer', 'telemetry_last_received_at' => 'immutable_datetime', 'requires_deployment_approval' => 'boolean'];
     }
 
     /** @param Builder<Environment> $query */

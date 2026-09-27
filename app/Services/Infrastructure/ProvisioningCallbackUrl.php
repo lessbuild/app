@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Infrastructure;
 
+use App\Models\Build;
 use App\Models\Server;
 use App\Models\Website;
 use Illuminate\Support\Facades\URL;
@@ -39,6 +40,32 @@ final class ProvisioningCallbackUrl
     public static function websiteLog(Website $website): string
     {
         return self::website('log', $website);
+    }
+
+    /** Deployment callbacks keep Deployer's URLs (`/builds/{build}/deployment/callback/{event}`), a public contract. */
+    public static function buildStatus(Build $build): string
+    {
+        return self::build('callbacks.build.status', $build);
+    }
+
+    public static function buildFailure(Build $build): string
+    {
+        return self::build('callbacks.build.failed', $build);
+    }
+
+    public static function buildLog(Build $build): string
+    {
+        return self::build('callbacks.build.log', $build);
+    }
+
+    public static function buildRevision(Build $build): string
+    {
+        return self::build('callbacks.build.revision', $build);
+    }
+
+    private static function build(string $route, Build $build): string
+    {
+        return URL::temporarySignedRoute($route, now()->addMinutes(max(1, (int) config('deploy.callback_ttl_minutes'))), ['build' => $build->id]);
     }
 
     private static function website(string $event, Website $website): string

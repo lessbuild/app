@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Http\Controllers\Analytics\CollectEventsController;
 use App\Http\Controllers\Analytics\PreflightCollectController;
 use App\Http\Controllers\Api\V1\ShowAccountController;
+use App\Http\Controllers\Deploy\ReceiveRepositoryWebhookController;
 use App\Http\Controllers\Monitoring\RecordHeartbeatController;
 use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
 use App\Http\Controllers\Monitoring\RecordQueueWorkerController;
@@ -42,3 +43,6 @@ Route::middleware(['throttle:ingest', 'ingest.token'])->group(function (): void 
     Route::post('/v1/otlp/v1/{signal}', IngestOtlpController::class)->whereIn('signal', ['traces', 'logs', 'metrics'])->name('api.otlp');
     Route::post('/v1/deployments', RecordDeploymentApiController::class)->middleware('throttle:deployments')->name('api.deployments.store');
 });
+
+// Git push webhooks for a repository (Deployer's public contract), verified with the repository's secret.
+Route::post('/repositories/{repository}/webhook', ReceiveRepositoryWebhookController::class)->whereNumber('repository')->middleware('throttle:120,1')->name('webhooks.repositories.receive');

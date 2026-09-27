@@ -6,6 +6,7 @@ use App\Actions\Analytics\DispatchPendingBatches;
 use App\Actions\Analytics\PruneAnalyticsData;
 use App\Actions\Billing\ApplyEndedSelections;
 use App\Actions\Billing\ReportUsage;
+use App\Actions\Deploy\FinishBuild;
 use App\Actions\Infrastructure\QueueWebsiteBackup;
 use App\Actions\Infrastructure\RemoveDatabaseUser;
 use App\Actions\Infrastructure\RequestDatabaseInspection;
@@ -13,6 +14,7 @@ use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Jobs\Infrastructure\CollectServerMetrics;
+use App\Models\Build;
 use App\Models\DatabaseUser;
 use App\Models\Provider;
 use App\Models\Server;
@@ -330,3 +332,13 @@ Artisan::command('servers:sync-costs', function (ServerPricing $pricing): int {
     return 0;
 })->purpose('Record what each cloud server costs a month from its provider’s current size catalog');
 Schedule::command('servers:sync-costs')->dailyAt('05:10')->withoutOverlapping(60)->onOneServer();
+
+Artisan::command('builds:reap', function (FinishBuild $finish): int {
+    $stale = Build::query()->whereIn('status', [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
+        ->where('last_heartbeat_at', '<', now()->subMinutes(max(1, (int) config('deploy.deployment_stale_minutes'))))->get();
+    $stale->each(fn (Build $build) => $finish->handle($build, Build::STATUS_FAILED, 'The deployment stopped reporting from the server.'));
+    $this->info("Failed {$stale->count()} stalled deploys.");
+
+    return 0;
+})->purpose('Fail deploys whose server stopped reporting progress');
+Schedule::command('builds:reap')->everyMinute()->withoutOverlapping(5)->onOneServer();

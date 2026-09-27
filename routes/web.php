@@ -49,6 +49,20 @@ use App\Http\Controllers\Auth\HandleProviderCallbackController;
 use App\Http\Controllers\Auth\RedirectToProviderController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\Deploy\CancelBuildController;
+use App\Http\Controllers\Deploy\CreateRepositoryController;
+use App\Http\Controllers\Deploy\DeleteRepositoryController;
+use App\Http\Controllers\Deploy\RecordBuildCallbackController;
+use App\Http\Controllers\Deploy\RedeployBuildController;
+use App\Http\Controllers\Deploy\ReviewBuildController;
+use App\Http\Controllers\Deploy\RollbackBuildController;
+use App\Http\Controllers\Deploy\ShowBuildController;
+use App\Http\Controllers\Deploy\ShowRepositoriesController;
+use App\Http\Controllers\Deploy\ShowRepositoryController;
+use App\Http\Controllers\Deploy\StoreBuildController;
+use App\Http\Controllers\Deploy\StoreRepositoryController;
+use App\Http\Controllers\Deploy\UpdateRepositoryController;
+use App\Http\Controllers\Deploy\UpdateRepositoryWebhookController;
 use App\Http\Controllers\Infrastructure\CancelServerCommandController;
 use App\Http\Controllers\Infrastructure\CheckBackupDestinationController;
 use App\Http\Controllers\Infrastructure\CloseServerTerminalController;
@@ -255,6 +269,12 @@ Route::post('/servers/{serverId}/provisioning/callback/{event}', RecordServerPro
 Route::post('/websites/{websiteId}/provisioning/callback/{event}', RecordWebsiteProvisioningController::class)->whereNumber('websiteId')->whereIn('event', ['status', 'failed', 'log'])
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.website');
 
+// Deployment scripts report here (Deployer's URLs, a public contract); signed, expiring, and CSRF-exempt.
+foreach (['status', 'failed', 'log', 'revision'] as $event) {
+    Route::post("/builds/{build}/deployment/callback/{$event}", RecordBuildCallbackController::class)->whereNumber('build')->defaults('event', $event)
+        ->middleware(['signed', 'throttle:1200,1'])->name("callbacks.build.{$event}");
+}
+
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::get('/auth/{provider}/redirect', RedirectToProviderController::class)->middleware(['guest', 'throttle:20,1'])->name('social.redirect');
@@ -290,6 +310,23 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::post('/sites/{site}/exports', RequestExportController::class)->whereNumber('site')->middleware(['can:export,site', 'throttle:10,1'])->name('exports.store');
             Route::get('/exports/{token}', ShowExportController::class)->name('exports.show');
             Route::get('/exports/{token}/download', DownloadExportController::class)->name('exports.download');
+        });
+
+        Route::prefix('/deploy')->middleware('service:deploy')->name('deploy.')->group(function (): void {
+            Route::get('/', ShowRepositoriesController::class)->name('repositories');
+            Route::get('/repositories/create', CreateRepositoryController::class)->middleware('can:create,App\\Models\\Repository,project')->name('repositories.create');
+            Route::post('/repositories', StoreRepositoryController::class)->middleware(['can:create,App\\Models\\Repository,project', 'throttle:20,1'])->name('repositories.store');
+            Route::get('/repositories/{repository}', ShowRepositoryController::class)->whereNumber('repository')->middleware('can:view,repository')->name('repositories.show');
+            Route::put('/repositories/{repository}', UpdateRepositoryController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.update');
+            Route::delete('/repositories/{repository}', DeleteRepositoryController::class)->whereNumber('repository')->middleware(['can:delete,repository', 'throttle:10,1'])->name('repositories.destroy');
+            Route::post('/repositories/{repository}/webhook', UpdateRepositoryWebhookController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:10,1'])->name('repositories.webhook.store');
+            Route::delete('/repositories/{repository}/webhook', UpdateRepositoryWebhookController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:10,1'])->name('repositories.webhook.destroy');
+            Route::post('/repositories/{repository}/builds', StoreBuildController::class)->whereNumber('repository')->middleware(['can:deploy,repository', 'throttle:20,1'])->name('repositories.deploy');
+            Route::get('/builds/{build}', ShowBuildController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.show');
+            Route::post('/builds/{build}/redeploy', RedeployBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.redeploy');
+            Route::post('/builds/{build}/rollback', RollbackBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.rollback');
+            Route::post('/builds/{build}/cancel', CancelBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.cancel');
+            Route::post('/builds/{build}/review', ReviewBuildController::class)->whereNumber('build')->middleware(['can:approve,build', 'throttle:20,1'])->name('builds.review');
         });
 
         Route::prefix('/infrastructure')->middleware('service:infrastructure')->name('infrastructure.')->group(function (): void {

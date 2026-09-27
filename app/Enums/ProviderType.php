@@ -48,6 +48,28 @@ enum ProviderType: string
         return in_array($this, [self::GitHub, self::GitLab, self::Bitbucket], true);
     }
 
+    /** The Git host repositories are cloned from, for source-control providers. */
+    public function repositoryHost(): ?string
+    {
+        return match ($this) {
+            self::GitHub => 'github.com',
+            self::GitLab => 'gitlab.com',
+            self::Bitbucket => 'bitbucket.org',
+            default => null,
+        };
+    }
+
+    /** The username that goes with the token for Git over HTTPS. */
+    public function repositoryCredentialUsername(): ?string
+    {
+        return match ($this) {
+            self::GitHub => 'x-access-token',
+            self::GitLab => 'oauth2',
+            self::Bitbucket => 'x-token-auth',
+            default => null,
+        };
+    }
+
     /** @return list<self> */
     public static function serverHosts(): array
     {

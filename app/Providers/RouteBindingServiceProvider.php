@@ -9,6 +9,7 @@ use App\Models\AlertDestination;
 use App\Models\AlertRule;
 use App\Models\AnalyticsSite;
 use App\Models\BackupDestination;
+use App\Models\Build;
 use App\Models\Dashboard;
 use App\Models\Deployment;
 use App\Models\Environment;
@@ -23,6 +24,7 @@ use App\Models\Monitor;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Release;
+use App\Models\Repository;
 use App\Models\Server;
 use App\Models\ServerTerminalSession;
 use App\Models\ServiceLevelObjective;
@@ -47,9 +49,9 @@ final class RouteBindingServiceProvider extends ServiceProvider
 {
     /**
      * Parameter => [model, scope, route names]. Scope is 'account', 'project' (a project_id column), 'environment'
-     * (an environment_id in the project) or 'server' (a server_id matching the route's already-bound `{server}`). The route filter matters: other routes reuse names like `{provider}`.
+     * (an environment_id in the project), 'repository' (a repository_id in the project) or 'server' (a server_id matching the route's already-bound `{server}`). The route filter matters: other routes reuse names like `{provider}`.
      *
-     * @var array<string, array{class-string<Model>, 'account'|'project'|'environment'|'server', list<string>}>
+     * @var array<string, array{class-string<Model>, 'account'|'project'|'environment'|'server'|'repository', list<string>}>
      */
     private const BINDINGS = [
         'provider' => [Provider::class, 'account', ['account.providers*']],
@@ -64,6 +66,8 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'dashboard' => [Dashboard::class, 'account', ['monitoring.*']],
         'delivery' => [AlertDelivery::class, 'account', ['monitoring.*']],
         'site' => [AnalyticsSite::class, 'project', ['analytics.*']],
+        'repository' => [Repository::class, 'project', ['deploy.*']],
+        'build' => [Build::class, 'repository', ['deploy.*']],
         'incident' => [Incident::class, 'project', ['monitoring.*']],
         'issue' => [Issue::class, 'project', ['monitoring.*']],
         'release' => [Release::class, 'project', ['monitoring.*']],
@@ -94,6 +98,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         match ($scope) {
             'account' => $query->where('account_id', $this->accountId($route)),
             'project' => $query->where('project_id', $this->project($route)->id),
+            'repository' => $query->whereIn('repository_id', Repository::withTrashed()->where('project_id', $this->project($route)->id)->select('id')),
             'server' => $query->where('server_id', $route->parameter('server') instanceof Server ? $route->parameter('server')->id : 0),
             default => $query->whereIn('environment_id', Environment::query()->where('project_id', $this->project($route)->id)->select('id')),
         };
