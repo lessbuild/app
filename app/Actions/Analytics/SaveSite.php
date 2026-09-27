@@ -19,7 +19,7 @@ final class SaveSite
     /** Create a site in the project, or update one. New sites are verified straight away when a domain is already verified in the project. */
     public function handle(User $actor, Project $project, SiteDetails $details, ?AnalyticsSite $site = null): AnalyticsSite
     {
-        Gate::forUser($actor)->authorize('manageService', [$project, 'analytics']);
+        Gate::forUser($actor)->authorize($site === null ? 'create' : 'update', $site ?? [AnalyticsSite::class, $project]);
 
         $domains = [];
         foreach ($details->domains as $domain) {

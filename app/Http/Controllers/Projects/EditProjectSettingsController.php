@@ -10,13 +10,11 @@ use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Gate;
 
 final class EditProjectSettingsController
 {
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query): View
     {
-        Gate::authorize('update', $project);
 
         return view('projects.settings', [
             'overview' => $query->handle($project, $user),

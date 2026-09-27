@@ -12,7 +12,6 @@ use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Support\Facades\Gate;
 
 final class ShowProjectServiceController
 {
@@ -21,7 +20,6 @@ final class ShowProjectServiceController
     public function __invoke(#[CurrentUser] User $user, Project $project, string $service, ProjectOverviewQuery $query): View|RedirectResponse
     {
         $definition = $this->service($service);
-        Gate::authorize('useService', [$project, $service]);
 
         // A service with its own pages opens them once it's on; this page is then only its enable page.
         $landing = $definition->navItems($project->id)[0]->url ?? null;

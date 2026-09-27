@@ -31,6 +31,12 @@ final class ArchitectureTest extends TestCase
         ]);
     }
 
+    /** Authorisation lives in policies: routes declare abilities (`can`, `account.can`) and actions check the record's policy. */
+    public function test_controllers_leave_authorisation_to_policies(): void
+    {
+        $this->assertNoImports($this->phpFiles('app/Http/Controllers'), ['Illuminate\\Support\\Facades\\Gate']);
+    }
+
     public function test_the_application_uses_a_single_database_connection(): void
     {
         foreach ($this->phpFiles('app') as $file) {

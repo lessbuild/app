@@ -15,7 +15,7 @@ final class DeleteGoal
     public function handle(User $actor, AnalyticsGoal $goal): void
     {
         $site = $goal->site;
-        Gate::forUser($actor)->authorize('manageService', [$site->project, 'analytics']);
+        Gate::forUser($actor)->authorize('update', $site);
 
         $goal->delete();
         $this->rebuild->handle($site);

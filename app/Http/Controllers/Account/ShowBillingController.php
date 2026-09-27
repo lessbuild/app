@@ -12,13 +12,11 @@ use App\Queries\Billing\InvoicesQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Gate;
 
 final class ShowBillingController
 {
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices): View
     {
-        Gate::authorize('viewBilling', $account);
 
         return view('account.billing', [
             'account' => $account,

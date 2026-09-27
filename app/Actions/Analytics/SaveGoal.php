@@ -17,7 +17,7 @@ final class SaveGoal
     /** Create or change a goal, then recount conversions (a changed definition starts a new goal version). */
     public function handle(User $actor, AnalyticsSite $site, GoalDetails $details, ?AnalyticsGoal $goal = null): AnalyticsGoal
     {
-        Gate::forUser($actor)->authorize('manageService', [$site->project, 'analytics']);
+        Gate::forUser($actor)->authorize('update', $site);
 
         $goal ??= new AnalyticsGoal(['site_id' => $site->id]);
         $goal->fill([

@@ -7,6 +7,7 @@ namespace App\Providers;
 use App\Models\AlertDelivery;
 use App\Models\AlertDestination;
 use App\Models\AlertRule;
+use App\Models\AnalyticsSite;
 use App\Models\Dashboard;
 use App\Models\Deployment;
 use App\Models\Environment;
@@ -56,6 +57,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'page' => [StatusPage::class, 'account', ['monitoring.*']],
         'dashboard' => [Dashboard::class, 'account', ['monitoring.*']],
         'delivery' => [AlertDelivery::class, 'account', ['monitoring.*']],
+        'site' => [AnalyticsSite::class, 'project', ['analytics.*']],
         'incident' => [Incident::class, 'project', ['monitoring.*']],
         'issue' => [Issue::class, 'project', ['monitoring.*']],
         'release' => [Release::class, 'project', ['monitoring.*']],

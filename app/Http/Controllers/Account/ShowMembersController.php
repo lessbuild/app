@@ -11,7 +11,6 @@ use App\Platform\ServiceRegistry;
 use App\Queries\Accounts\MembersOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Gate;
 
 final class ShowMembersController
 {
@@ -19,7 +18,6 @@ final class ShowMembersController
 
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, MembersOverviewQuery $query): View
     {
-        Gate::authorize('view', $account);
 
         return view('account.members', ['account' => $account, 'overview' => $query->handle($account, $user), 'services' => $this->services->all()]);
     }

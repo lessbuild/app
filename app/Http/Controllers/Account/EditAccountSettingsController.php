@@ -9,14 +9,12 @@ use App\Models\Account;
 use App\Models\User;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Gate;
 
 final class EditAccountSettingsController
 {
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user): View
     {
-        Gate::authorize('update', $account);
 
-        return view('account.settings', ['account' => $account, 'canDelete' => Gate::allows('delete', $account)]);
+        return view('account.settings', ['account' => $account, 'canDelete' => $user->can('delete', $account)]);
     }
 }

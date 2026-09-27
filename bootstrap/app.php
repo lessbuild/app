@@ -9,6 +9,7 @@ use App\Exceptions\IdentityRuleViolation;
 use App\Exceptions\ProjectRuleViolation;
 use App\Exceptions\StateConflict;
 use App\Http\Middleware\AuthenticateIngestToken;
+use App\Http\Middleware\AuthorizeCurrentAccount;
 use App\Http\Middleware\DecodeTelemetryPayload;
 use App\Http\Middleware\EnsureServiceEnabled;
 use App\Http\Middleware\ProjectContext;
@@ -40,6 +41,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->trimStrings(except: [$signal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret', 'env_file', 'ssh_private_key', 'token']);
         $middleware->convertEmptyStringsToNull(except: [$signal]);
         $middleware->alias([
+            'account.can' => AuthorizeCurrentAccount::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'token.account' => ResolveTokenAccount::class,

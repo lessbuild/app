@@ -20,7 +20,7 @@ final class RequestExport
      */
     public function handle(User $actor, AnalyticsSite $site, array $filters): string
     {
-        Gate::forUser($actor)->authorize('useService', [$site->project, 'analytics']);
+        Gate::forUser($actor)->authorize('export', $site);
 
         $token = Str::random(64);
         $export = new AnalyticsExport;

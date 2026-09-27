@@ -12,13 +12,11 @@ use App\Models\User;
 use App\Queries\ApiTokens\AccountApiTokensQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Support\Facades\Gate;
 
 final class ShowApiTokensController
 {
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, AccountApiTokensQuery $query): View
     {
-        Gate::authorize('manageApiTokens', $account);
 
         return view('account.api-tokens', [
             'account' => $account,

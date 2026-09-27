@@ -19,7 +19,7 @@ final class VerifySite
      */
     public function handle(User $actor, AnalyticsSite $site): bool
     {
-        Gate::forUser($actor)->authorize('manageService', [$site->project, 'analytics']);
+        Gate::forUser($actor)->authorize('update', $site);
         if ($site->isVerified()) {
             return true;
         }

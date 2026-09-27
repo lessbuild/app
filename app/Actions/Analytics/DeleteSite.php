@@ -13,7 +13,7 @@ final class DeleteSite
     /** Delete a site with all its events, visits, goals and reports. The tracker stops being accepted immediately. */
     public function handle(User $actor, AnalyticsSite $site): void
     {
-        Gate::forUser($actor)->authorize('manageService', [$site->project, 'analytics']);
+        Gate::forUser($actor)->authorize('delete', $site);
 
         $site->delete();
     }

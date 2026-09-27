@@ -240,23 +240,23 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/notifications/read', MarkAllNotificationsReadController::class)->name('notifications.read-all');
     Route::get('/notifications/{notification}', OpenNotificationController::class)->name('notifications.open');
 
-    Route::get('/services/{service}', ShowServiceController::class)->name('services.show');
-    Route::get('/projects/create', CreateProjectController::class)->name('projects.create');
+    Route::get('/services/{service}', ShowServiceController::class)->middleware('account.can:useService,service')->name('services.show');
+    Route::get('/projects/create', CreateProjectController::class)->middleware('account.can:create,App\\Models\\Project')->name('projects.create');
     Route::post('/projects', StoreProjectController::class)->middleware('throttle:30,1')->name('projects.store');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
         Route::prefix('/analytics')->middleware('service:analytics')->name('analytics.')->group(function (): void {
             Route::get('/', ShowOverviewController::class)->name('overview');
             Route::get('/sites', ShowSitesController::class)->name('sites');
-            Route::post('/sites', StoreSiteController::class)->middleware('throttle:30,1')->name('sites.store');
-            Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->name('sites.show');
-            Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->name('sites.update');
-            Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware('throttle:20,1')->name('sites.verify');
-            Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware('password.confirm')->name('sites.destroy');
+            Route::post('/sites', StoreSiteController::class)->middleware(['can:create,App\\Models\\AnalyticsSite,project', 'throttle:30,1'])->name('sites.store');
+            Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->middleware('can:view,site')->name('sites.show');
+            Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->middleware('can:update,site')->name('sites.update');
+            Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.verify');
+            Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware(['can:delete,site', 'password.confirm'])->name('sites.destroy');
             Route::get('/goals', ShowGoalsController::class)->name('goals');
-            Route::post('/sites/{site}/goals', StoreGoalController::class)->whereNumber('site')->name('goals.store');
-            Route::put('/sites/{site}/goals/{goal}', UpdateGoalController::class)->whereNumber(['site', 'goal'])->name('goals.update');
-            Route::delete('/sites/{site}/goals/{goal}', DeleteGoalController::class)->whereNumber(['site', 'goal'])->name('goals.destroy');
-            Route::post('/sites/{site}/exports', RequestExportController::class)->whereNumber('site')->middleware('throttle:10,1')->name('exports.store');
+            Route::post('/sites/{site}/goals', StoreGoalController::class)->whereNumber('site')->middleware('can:update,site')->name('goals.store');
+            Route::put('/sites/{site}/goals/{goal}', UpdateGoalController::class)->whereNumber(['site', 'goal'])->middleware('can:update,site')->name('goals.update');
+            Route::delete('/sites/{site}/goals/{goal}', DeleteGoalController::class)->whereNumber(['site', 'goal'])->middleware('can:update,site')->name('goals.destroy');
+            Route::post('/sites/{site}/exports', RequestExportController::class)->whereNumber('site')->middleware(['can:export,site', 'throttle:10,1'])->name('exports.store');
             Route::get('/exports/{token}', ShowExportController::class)->name('exports.show');
             Route::get('/exports/{token}/download', DownloadExportController::class)->name('exports.download');
         });
@@ -383,7 +383,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
         Route::get('/', ShowProjectController::class)->name('projects.show');
         Route::delete('/checklist', DismissChecklistController::class)->name('projects.checklist.dismiss');
-        Route::get('/settings', EditProjectSettingsController::class)->name('projects.settings');
+        Route::get('/settings', EditProjectSettingsController::class)->middleware('can:update,project')->name('projects.settings');
         Route::put('/settings', UpdateProjectController::class)->name('projects.update');
         Route::delete('/', DeleteProjectController::class)->middleware('password.confirm')->name('projects.destroy');
         Route::post('/environments', StoreEnvironmentController::class)->name('projects.environments.store');
@@ -392,34 +392,34 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::post('/domains', AddDomainController::class)->middleware('throttle:30,1')->name('projects.domains.store');
         Route::post('/domains/{domain}/verify', VerifyDomainController::class)->middleware('throttle:20,1')->name('projects.domains.verify');
         Route::delete('/domains/{domain}', RemoveDomainController::class)->name('projects.domains.destroy');
-        Route::get('/services/{service}', ShowProjectServiceController::class)->name('projects.services.show');
+        Route::get('/services/{service}', ShowProjectServiceController::class)->middleware('can:useService,project,service')->name('projects.services.show');
         Route::post('/services/{service}', EnableProjectServiceController::class)->name('projects.services.store');
         Route::delete('/services/{service}', DisableProjectServiceController::class)->name('projects.services.destroy');
     });
 
     Route::post('/accounts/{account}/switch', SwitchAccountController::class)->name('accounts.switch');
     Route::redirect('/account', '/account/members')->name('account');
-    Route::get('/account/members', ShowMembersController::class)->name('account.members');
+    Route::get('/account/members', ShowMembersController::class)->middleware('account.can:view')->name('account.members');
     Route::post('/account/invitations', InviteMemberController::class)->middleware('throttle:20,1')->name('account.invitations.store');
     Route::delete('/account/invitations/{invitation}', RevokeInvitationController::class)->name('account.invitations.destroy');
     Route::put('/account/members/{membership}', ChangeMemberRoleController::class)->name('account.members.update');
     Route::delete('/account/members/{membership}', RemoveMemberController::class)->name('account.members.destroy');
     Route::put('/account/members/{membership}/services', UpdateMemberServicesController::class)->name('account.members.services');
-    Route::get('/account/api-tokens', ShowApiTokensController::class)->name('account.api-tokens');
+    Route::get('/account/api-tokens', ShowApiTokensController::class)->middleware('account.can:manageApiTokens')->name('account.api-tokens');
     Route::post('/account/api-tokens', CreateApiTokenController::class)->middleware(['password.confirm', 'throttle:20,1'])->name('account.api-tokens.store');
     Route::delete('/account/api-tokens/{token}', RevokeApiTokenController::class)->whereNumber('token')->name('account.api-tokens.destroy');
-    Route::get('/account/billing', ShowBillingController::class)->name('account.billing');
+    Route::get('/account/billing', ShowBillingController::class)->middleware('account.can:viewBilling')->name('account.billing');
     Route::post('/account/billing/portal', OpenBillingPortalController::class)->name('account.billing.portal');
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
-    Route::get('/account/audit-log', ShowAuditLogController::class)->name('account.audit-log');
+    Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
     Route::get('/account/providers', ShowProvidersController::class)->middleware('can:viewAny,App\\Models\\Provider')->name('account.providers');
     Route::post('/account/providers', StoreProviderController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:20,1'])->name('account.providers.store');
     Route::get('/account/providers/{provider}', ShowProviderController::class)->whereNumber('provider')->middleware('can:view,provider')->name('account.providers.show');
     Route::put('/account/providers/{provider}', UpdateProviderController::class)->whereNumber('provider')->middleware(['can:update,provider', 'throttle:20,1'])->name('account.providers.update');
     Route::delete('/account/providers/{provider}', DeleteProviderController::class)->whereNumber('provider')->middleware(['can:delete,provider', 'password.confirm'])->name('account.providers.destroy');
     Route::post('/account/providers/{provider}/check', CheckProviderConnectionController::class)->whereNumber('provider')->middleware(['can:update,provider', 'throttle:10,1'])->name('account.providers.check');
-    Route::get('/account/settings', EditAccountSettingsController::class)->name('account.settings');
+    Route::get('/account/settings', EditAccountSettingsController::class)->middleware('account.can:update')->name('account.settings');
     Route::put('/account/settings', RenameAccountController::class)->name('account.settings.update');
     Route::delete('/account/settings', DeleteAccountController::class)->middleware('password.confirm')->name('account.settings.destroy');
 
