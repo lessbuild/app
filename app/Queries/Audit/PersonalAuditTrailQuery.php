@@ -9,7 +9,11 @@ use App\Models\User;
 
 final class PersonalAuditTrailQuery
 {
-    /** @return list<array{at: string, action: string, description: string, account_id: string|null, ip_address: string|null}> */
+    /**
+     * Everything the person did, oldest first, for their personal data export.
+     *
+     * @return list<array{at: string, action: string, description: string, account_id: string|null, ip_address: string|null}>
+     */
     public function handle(User $user): array
     {
         return array_values(AuditEntry::query()

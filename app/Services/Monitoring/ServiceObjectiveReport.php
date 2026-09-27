@@ -6,6 +6,7 @@ namespace App\Services\Monitoring;
 
 use App\Models\ServiceLevelObjective;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -59,8 +60,8 @@ final class ServiceObjectiveReport
         $query = TelemetryEvent::query()
             ->where('environment_id', $objective->environment_id)
             ->where('type', 'request')
-            ->where('occurred_at', '>=', $this->boundary($from))
-            ->where('occurred_at', '<', $this->boundary($until))
+            ->where('occurred_at', '>=', EventTime::boundary($from))
+            ->where('occurred_at', '<', EventTime::boundary($until))
             ->when(filled($objective->service), fn (Builder $query): Builder => $query->where('service', $objective->service))
             ->when(filled($objective->route), fn (Builder $query): Builder => $query->where('route', $objective->route));
         $total = (int) (clone $query)->count();
@@ -105,10 +106,5 @@ final class ServiceObjectiveReport
     private function timestamp(mixed $value): ?CarbonImmutable
     {
         return $value === null ? null : CarbonImmutable::parse($value, 'UTC');
-    }
-
-    private function boundary(CarbonImmutable $time): string
-    {
-        return $time->format($time->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u');
     }
 }

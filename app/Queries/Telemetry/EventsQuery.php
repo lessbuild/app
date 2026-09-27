@@ -7,12 +7,17 @@ namespace App\Queries\Telemetry;
 use App\Models\Project;
 use App\Models\TelemetryEvent;
 use App\Support\Telemetry\EventTextSearch;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 final class EventsQuery
 {
     /**
+     * The project's events matching the event browser's filters (environment, release, type, severity, service, trace,
+     * status, duration and text) inside the time window. A custom window's end is exclusive, since its minutes come from
+     * a form.
+     *
      * @param  array<string, mixed>  $filters
      * @param  array{CarbonImmutable|null, CarbonImmutable|null}  $window
      * @return Builder<TelemetryEvent>
@@ -44,7 +49,7 @@ final class EventsQuery
 
         [$from, $to] = $window;
         if ($from !== null) {
-            $query->where('occurred_at', '>=', $from->format($from->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u'));
+            $query->where('occurred_at', '>=', EventTime::boundary($from));
         }
         if ($to !== null) {
             $query->where('occurred_at', $filters['range'] === 'custom' ? '<' : '<=', $to->format($filters['range'] === 'custom' ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u'));
@@ -54,6 +59,9 @@ final class EventsQuery
     }
 
     /**
+     * Orders events newest first, oldest first, or slowest first (events without a duration last), with ties broken by
+     * the precise timestamp and ID.
+     *
      * @param  Builder<TelemetryEvent>  $query
      * @return Builder<TelemetryEvent>
      */
@@ -68,6 +76,9 @@ final class EventsQuery
     }
 
     /**
+     * The time window for a range: all time, a custom range entered in UTC, or the last 15 minutes, hour, day, 7 or 30
+     * days.
+     *
      * @param  array<string, mixed>  $filters
      * @return array{CarbonImmutable|null, CarbonImmutable|null}
      */

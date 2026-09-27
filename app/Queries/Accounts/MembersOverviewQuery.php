@@ -17,6 +17,10 @@ use Illuminate\Support\Facades\Gate;
 
 final class MembersOverviewQuery
 {
+    /**
+     * The members page for this viewer: members ordered by role then name, which of them the viewer may change, the
+     * roles they may hand out, and pending invitations (only for people who manage members).
+     */
     public function handle(Account $account, User $viewer): MembersOverview
     {
         $viewerRole = $account->roleOf($viewer);

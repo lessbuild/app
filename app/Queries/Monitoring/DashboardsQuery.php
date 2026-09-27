@@ -9,12 +9,19 @@ use Illuminate\Database\Eloquent\Collection;
 
 final class DashboardsQuery
 {
-    /** @return Collection<int, Dashboard> */
+    /**
+     * The account's dashboards with their widget count and creator.
+     *
+     * @return Collection<int, Dashboard>
+     */
     public function handle(string $accountId): Collection
     {
         return Dashboard::query()->where('account_id', $accountId)->withCount('widgets')->with('creator')->orderBy('name')->orderBy('id')->get();
     }
 
+    /**
+     * One of the account's dashboards with its widgets; 404 otherwise.
+     */
     public function find(string $accountId, int|string $id): Dashboard
     {
         return Dashboard::query()->where('account_id', $accountId)->with('widgets')->findOrFail((int) $id);

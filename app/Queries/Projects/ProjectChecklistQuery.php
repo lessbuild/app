@@ -11,7 +11,12 @@ use App\Models\User;
 /** The getting-started steps on a new project's overview (journey 1 in docs/phase-2-projects-and-shell.md). */
 final class ProjectChecklistQuery
 {
-    /** @return list<ChecklistStep> empty once it's dismissed, complete, or the viewer can't act on it */
+    /**
+     * The getting-started steps for a new project: create it, turn on a service, add a domain, and invite a teammate
+     * (for people who can).
+     *
+     * @return list<ChecklistStep> empty once it's dismissed, complete, or the viewer can't act on it
+     */
     public function handle(Project $project, User $viewer): array
     {
         if ($project->checklist_dismissed_at !== null || ! $viewer->can('update', $project)) {

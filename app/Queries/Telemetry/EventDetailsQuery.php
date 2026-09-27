@@ -12,9 +12,17 @@ use stdClass;
 
 final class EventDetailsQuery
 {
+    /**
+     * Prepares one telemetry event for its detail page.
+     *
+     * @param  TelemetryRedactor  $redactor  Removes secrets from the event before it's shown.
+     */
     public function __construct(private readonly TelemetryRedactor $redactor) {}
 
     /**
+     * The event redacted, as a trace record, with its attributes and payload as pretty JSON, and the release it belongs
+     * to.
+     *
      * @return array{record: TraceRecord, attributesJson: string, payloadJson: string, release: Release|null}
      */
     public function handle(TelemetryEvent $event): array

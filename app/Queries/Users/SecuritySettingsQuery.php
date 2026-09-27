@@ -16,6 +16,10 @@ use Laravel\Passkeys\Passkey;
 
 final class SecuritySettingsQuery
 {
+    /**
+     * The security page's state: password, two-factor (with the setup secret and QR code while pending, and recovery
+     * codes only right after they're shown on purpose), passkeys and connected providers.
+     */
     public function handle(User $user, bool $revealRecoveryCodes = false): SecuritySettings
     {
         $state = match (true) {

@@ -12,9 +12,19 @@ use App\Models\BillingAccount;
 
 final class InvoicesQuery
 {
+    /**
+     * Reads the account's invoices from the payment provider.
+     *
+     * @param  PaymentProvider  $provider  The payment provider.
+     */
     public function __construct(private readonly PaymentProvider $provider) {}
 
-    /** @return list<InvoiceSummary>|null null when invoices can't be loaded right now */
+    /**
+     * The account's recent invoices, or an empty list before it has a customer. When the provider can't be reached,
+     * null, so the page can say so instead of showing none.
+     *
+     * @return list<InvoiceSummary>|null null when invoices can't be loaded right now
+     */
     public function handle(Account $account): ?array
     {
         $customer = BillingAccount::query()->whereKey($account->id)->value('stripe_customer_id');

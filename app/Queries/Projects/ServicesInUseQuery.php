@@ -10,7 +10,11 @@ use App\Models\Project;
 
 final class ServicesInUseQuery
 {
-    /** @return list<string> service keys enabled on at least one of the account's projects */
+    /**
+     * The services turned on in at least one of the account's projects, for billing.
+     *
+     * @return list<string> service keys enabled on at least one of the account's projects
+     */
     public function handle(Account $account): array
     {
         return array_values(EnabledService::query()

@@ -13,9 +13,18 @@ use Laravel\Passkeys\Passkey;
 /** Everything held about a person (not their accounts' project data), as plain arrays. Never includes secrets. */
 final class PersonalDataExportQuery
 {
+    /**
+     * Collects everything stored about a person for their data export.
+     *
+     * @param  PersonalAuditTrailQuery  $auditTrail  Their own activity.
+     */
     public function __construct(private readonly PersonalAuditTrailQuery $auditTrail) {}
 
-    /** @return array<string, mixed> */
+    /**
+     * Their profile, memberships, connected providers, passkeys, API tokens (never secrets), sign-ins and activity.
+     *
+     * @return array<string, mixed>
+     */
     public function handle(User $user): array
     {
         return [

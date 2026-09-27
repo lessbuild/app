@@ -21,13 +21,24 @@ use App\Services\Monitoring\TelemetryRedactor;
  */
 final class DashboardReportQuery
 {
+    /**
+     * Fills in a metrics dashboard's widgets.
+     *
+     * @param  TelemetrySummaryQuery  $summaries  Telemetry totals for the telemetry and event-mix widgets.
+     * @param  ServiceObjectiveReport  $objectives  SLO reports for the objectives widget.
+     * @param  TelemetryRedactor  $redactor  Redacts incident titles, which can contain data from telemetry.
+     */
     public function __construct(
         private readonly TelemetrySummaryQuery $summaries,
         private readonly ServiceObjectiveReport $objectives,
         private readonly TelemetryRedactor $redactor,
     ) {}
 
-    /** @return list<array{type: string, label: string, data: array<string, mixed>}> */
+    /**
+     * Each widget with the data it shows. The telemetry summary is computed once and shared by the widgets that need it.
+     *
+     * @return list<array{type: string, label: string, data: array<string, mixed>}>
+     */
     public function handle(Dashboard $dashboard): array
     {
         $dashboard->loadMissing(['widgets', 'account']);

@@ -13,6 +13,8 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class MetricSeriesQuery
 {
     /**
+     * The project's metric series matching the filters, most recently received first, 25 to a page.
+     *
      * @param  array{q?: string, environment?: string, kind?: string, page?: int}  $filters
      * @return LengthAwarePaginator<int, MetricSeries>
      */
@@ -34,6 +36,9 @@ final class MetricSeriesQuery
             ->paginate(25, ['id', 'environment_id', 'name', 'resource_label', 'unit', 'kind', 'descriptor', 'last_received_at'], 'page', $filters['page'] ?? 1);
     }
 
+    /**
+     * One of the project's metric series; 404 otherwise.
+     */
     public function find(Project $project, int|string $id): MetricSeries
     {
         return MetricSeries::query()->whereIn('environment_id', $project->environments()->select('id'))->with('environment')->findOrFail((int) $id);

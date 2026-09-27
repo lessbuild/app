@@ -13,7 +13,11 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
 
 final class AccountAuditLogQuery
 {
-    /** @return CursorPaginator<int, AuditEntryView> */
+    /**
+     * The account's audit log, newest first and cursor-paginated, optionally narrowed to one project.
+     *
+     * @return CursorPaginator<int, AuditEntryView>
+     */
     public function handle(Account $account, ?string $projectId = null, int $perPage = 50): CursorPaginator
     {
         return AuditEntry::query()

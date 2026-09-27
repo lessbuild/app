@@ -12,9 +12,19 @@ use Carbon\CarbonImmutable;
 
 final class BrowserSessionsQuery
 {
+    /**
+     * Lists someone's signed-in browsers.
+     *
+     * @param  BrowserSessions  $sessions  Reads sessions from the session store.
+     */
     public function __construct(private readonly BrowserSessions $sessions) {}
 
-    /** @return list<BrowserSession>|null null when the session store can't list sessions */
+    /**
+     * The person's 50 most recent sessions with a readable device and whether each is the current one; null when the
+     * session driver can't list sessions.
+     *
+     * @return list<BrowserSession>|null null when the session store can't list sessions
+     */
     public function handle(User $user, string $currentSessionId): ?array
     {
         if (! $this->sessions->available()) {

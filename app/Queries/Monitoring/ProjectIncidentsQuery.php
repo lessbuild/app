@@ -12,7 +12,11 @@ use App\Models\User;
 
 final class ProjectIncidentsQuery
 {
-    /** @return list<Incident> open (or acknowledged) incidents first by default; resolved ones on request */
+    /**
+     * The project's incidents, newest first: open and acknowledged ones by default, or resolved ones when asked.
+     *
+     * @return list<Incident> open (or acknowledged) incidents first by default; resolved ones on request
+     */
     public function handle(Project $project, string $status = 'open'): array
     {
         $query = Incident::query()->where('project_id', $project->id)->with(['monitor' => fn ($monitor) => $monitor->withTrashed(), 'assignee']);
@@ -30,7 +34,11 @@ final class ProjectIncidentsQuery
         return $incident;
     }
 
-    /** @return list<User> members who can be assigned incidents: they work on projects and may use Monitoring */
+    /**
+     * Members an incident can be assigned to: owners, admins and members who may use Monitoring, by name.
+     *
+     * @return list<User> members who can be assigned incidents: they work on projects and may use Monitoring
+     */
     public function assignees(Project $project): array
     {
         $memberships = Membership::query()->where('account_id', $project->account_id)

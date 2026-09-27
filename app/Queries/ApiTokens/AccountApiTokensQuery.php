@@ -14,7 +14,12 @@ use Illuminate\Support\Carbon;
 
 final class AccountApiTokensQuery
 {
-    /** @return list<ApiTokenRow> */
+    /**
+     * The account's API tokens, newest first, with their owners' names ("Former member" once the owner is gone) and
+     * scopes.
+     *
+     * @return list<ApiTokenRow>
+     */
     public function handle(Account $account, User $viewer): array
     {
         $tokens = ApiToken::query()->where('account_id', $account->id)->latest()->latest('id')->get();

@@ -12,6 +12,9 @@ use Illuminate\Database\Eloquent\Builder;
 final class IssuesQuery
 {
     /**
+     * The project's issues matching the issues page's status, severity and ownership filters and text search over title
+     * and location.
+     *
      * @param  array<string, mixed>  $filters
      * @return Builder<Issue>
      */

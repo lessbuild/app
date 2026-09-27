@@ -12,7 +12,11 @@ use Carbon\CarbonImmutable;
 
 final class RecentSignInsQuery
 {
-    /** @return list<SignInSummary> */
+    /**
+     * The person's latest sign-in attempts, newest first, with a readable device.
+     *
+     * @return list<SignInSummary>
+     */
     public function handle(User $user, int $limit = 25): array
     {
         return array_values(SignInEvent::query()

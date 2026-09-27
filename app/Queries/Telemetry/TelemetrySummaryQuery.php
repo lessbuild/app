@@ -7,6 +7,7 @@ namespace App\Queries\Telemetry;
 use App\Models\Account;
 use App\Models\Environment;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -26,7 +27,12 @@ final class TelemetrySummaryQuery
 
     public const TYPES = ['request', 'query', 'job', 'exception', 'log', 'metric', 'other'];
 
-    /** @return Summary */
+    /**
+     * The account's telemetry for a range compared with the range before: totals, request duration and error rate, a
+     * breakdown by event type, and a trend split into buckets. Everything is counted in one grouped query.
+     *
+     * @return Summary
+     */
     public function handle(Account $account, string $range, ?CarbonImmutable $now = null): array
     {
         [$minutes, $bucketMinutes] = match ($range) {
@@ -43,7 +49,7 @@ final class TelemetrySummaryQuery
             : 'CAST((julianday(occurred_at) - julianday(?)) * 1440 / ? AS INTEGER)';
 
         $rows = $this->events($account, $from->subMinutes($minutes), $until)->toBase()
-            ->selectRaw('CASE WHEN occurred_at < ? THEN -1 ELSE '.$offset.' END AS time_bucket', [$this->boundary($from), $this->boundary($from), $bucketMinutes])
+            ->selectRaw('CASE WHEN occurred_at < ? THEN -1 ELSE '.$offset.' END AS time_bucket', [EventTime::boundary($from), EventTime::boundary($from), $bucketMinutes])
             ->selectRaw("CASE WHEN type IN ('request', 'query', 'job', 'exception', 'log', 'metric') THEN type ELSE 'other' END AS event_type")
             ->selectRaw('COUNT(*) AS event_count')
             ->selectRaw("COUNT(CASE WHEN type = 'request' THEN 1 END) AS request_count")
@@ -87,16 +93,22 @@ final class TelemetrySummaryQuery
         ];
     }
 
-    /** @return Builder<TelemetryEvent> */
+    /**
+     * The account's events inside a window.
+     *
+     * @return Builder<TelemetryEvent>
+     */
     public function events(Account $account, CarbonImmutable $from, CarbonImmutable $until): Builder
     {
         return TelemetryEvent::query()
             ->whereIn('environment_id', Environment::query()->whereIn('project_id', $account->projects()->select('id'))->select('id'))
-            ->where('occurred_at', '>=', $this->boundary($from))
+            ->where('occurred_at', '>=', EventTime::boundary($from))
             ->where('occurred_at', '<=', $until->format('Y-m-d H:i:s.u'));
     }
 
     /**
+     * Adds up grouped rows into event and request counts, average request duration and error rate.
+     *
      * @param  Collection<int, stdClass>  $rows
      * @return Totals
      */
@@ -116,14 +128,12 @@ final class TelemetrySummaryQuery
         ];
     }
 
+    /**
+     * The change from the previous range as a percentage, or null when either side is missing or the previous one is
+     * zero.
+     */
     private function change(int|float|null $current, int|float|null $previous): ?float
     {
         return $current !== null && $previous !== null && $previous > 0 ? round(($current - $previous) / $previous * 100, 1) : null;
-    }
-
-    /** Second-only timestamps (from older imports) stay on the right side of each boundary. */
-    private function boundary(CarbonImmutable $time): string
-    {
-        return $time->format($time->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u');
     }
 }

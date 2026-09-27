@@ -53,6 +53,10 @@ final class CollectionHealthQuery
         ];
     }
 
+    /**
+     * Whether an environment is receiving telemetry: no usable ingest key, nothing received yet, nothing within the
+     * stale window, or receiving.
+     */
     private function state(Environment $environment, CarbonImmutable $now, int $staleAfterMinutes): CollectionHealthState
     {
         if ((int) $environment->getAttribute('active_token_count') === 0) {
@@ -68,6 +72,9 @@ final class CollectionHealthQuery
             : CollectionHealthState::Receiving;
     }
 
+    /**
+     * One line explaining the state, with when the last event arrived.
+     */
     private function description(Environment $environment, CollectionHealthState $state, CarbonImmutable $now, int $staleAfterMinutes): string
     {
         return match ($state) {

@@ -27,9 +27,19 @@ final class StatusPageReportQuery
 {
     public const HISTORY_DAYS = 30;
 
+    /**
+     * Builds what a public status page shows.
+     *
+     * @param  UptimeHistory  $history  Daily uptime for each component's monitor.
+     */
     public function __construct(private readonly UptimeHistory $history) {}
 
-    /** @return Report */
+    /**
+     * The page's overall state, each component's state and 30-day history, open and recent incidents, and its posted
+     * updates split into active, upcoming maintenance and past. Archived monitors are left off.
+     *
+     * @return Report
+     */
     public function handle(StatusPage $page, ?CarbonImmutable $now = null): array
     {
         $now ??= CarbonImmutable::now('UTC');
@@ -77,6 +87,9 @@ final class StatusPageReportQuery
         ];
     }
 
+    /**
+     * The words shown for a state.
+     */
     public function label(string $state): string
     {
         return match ($state) {
@@ -106,6 +119,9 @@ final class StatusPageReportQuery
     }
 
     /**
+     * The page's headline state: a major outage when a component is down or a critical incident is posted, degraded for
+     * any other trouble, maintenance while maintenance is in progress, operational otherwise.
+     *
      * @param  list<array{state: string}>  $components
      * @param  \Illuminate\Support\Collection<int, StatusUpdate>  $activeUpdates
      */

@@ -12,7 +12,11 @@ use Illuminate\Database\Eloquent\Collection;
 /** An account's status pages, and the monitors a page can show. */
 final class StatusPagesQuery
 {
-    /** @return Collection<int, StatusPage> */
+    /**
+     * The account's status pages with their component and confirmed-subscriber counts.
+     *
+     * @return Collection<int, StatusPage>
+     */
     public function handle(string $accountId): Collection
     {
         return StatusPage::query()->where('account_id', $accountId)
@@ -20,12 +24,19 @@ final class StatusPagesQuery
             ->orderBy('name')->orderBy('id')->get();
     }
 
+    /**
+     * One of the account's status pages with its components; 404 otherwise.
+     */
     public function find(string $accountId, int|string $id): StatusPage
     {
         return StatusPage::query()->where('account_id', $accountId)->with('components.monitor.environment.project')->findOrFail((int) $id);
     }
 
-    /** @return Collection<int, Monitor> */
+    /**
+     * The account's monitors, which can be shown as components.
+     *
+     * @return Collection<int, Monitor>
+     */
     public function monitors(Account $account): Collection
     {
         return Monitor::query()->forAccount($account)->with('environment.project')->orderBy('name')->orderBy('id')->get();

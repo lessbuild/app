@@ -11,7 +11,12 @@ use Carbon\CarbonImmutable;
 /** Recent changes inside one project, for its overview. Leaves out IP addresses and devices (those stay in the audit log). */
 final class ProjectActivityQuery
 {
-    /** @return list<AuditEntryView> */
+    /**
+     * The latest entries of a project's activity for its overview page. Addresses and devices are left out; the full
+     * audit log shows them to people allowed to see it.
+     *
+     * @return list<AuditEntryView>
+     */
     public function handle(string $projectId, int $limit = 8): array
     {
         return array_values(AuditEntry::query()

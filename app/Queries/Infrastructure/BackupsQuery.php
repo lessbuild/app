@@ -15,7 +15,12 @@ use Illuminate\Database\Eloquent\Collection;
 /** Recent backups across the account's websites, and when recovery was last shown to work. */
 final class BackupsQuery
 {
-    /** @return Collection<int, WebsiteBackup> */
+    /**
+     * The latest backups of the account's websites (or of one website) with their destination, restores and
+     * verifications.
+     *
+     * @return Collection<int, WebsiteBackup>
+     */
     public function recent(string $accountId, ?Website $website = null, int $limit = 50): Collection
     {
         return $this->backups($accountId)->when($website !== null, fn (Builder $query) => $query->where('website_id', $website?->id))
@@ -23,7 +28,12 @@ final class BackupsQuery
             ->latest('id')->limit($limit)->get();
     }
 
-    /** @return array{backup: CarbonImmutable|null, restore: CarbonImmutable|null, restore_seconds: int|null, verification: CarbonImmutable|null} */
+    /**
+     * When the account last had a successful backup, restore and verification, and how long that restore took, for the
+     * backups page's headline.
+     *
+     * @return array{backup: CarbonImmutable|null, restore: CarbonImmutable|null, restore_seconds: int|null, verification: CarbonImmutable|null}
+     */
     public function summary(string $accountId): array
     {
         $backup = $this->backups($accountId)->where('status', WebsiteBackup::STATUS_SUCCEEDED)->latest('completed_at')->first();
@@ -38,7 +48,11 @@ final class BackupsQuery
         ];
     }
 
-    /** @return Builder<WebsiteBackup> */
+    /**
+     * The account's backups, including those of deleted websites.
+     *
+     * @return Builder<WebsiteBackup>
+     */
     private function backups(string $accountId): Builder
     {
         return WebsiteBackup::query()->whereIn('website_id', Website::withTrashed()->where('account_id', $accountId)->select('id'));

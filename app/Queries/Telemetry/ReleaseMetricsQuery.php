@@ -9,12 +9,17 @@ use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Release;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 final class ReleaseMetricsQuery
 {
-    /** @return array{CarbonImmutable, CarbonImmutable} */
+    /**
+     * The time window for a release page's range: the last day, 7 days or 30 days.
+     *
+     * @return array{CarbonImmutable, CarbonImmutable}
+     */
     public function window(string $range): array
     {
         $until = CarbonImmutable::now('UTC');
@@ -24,17 +29,25 @@ final class ReleaseMetricsQuery
         }), $until];
     }
 
-    /** @return Builder<TelemetryEvent> */
+    /**
+     * The events of one release in the project, optionally in one environment, inside the window.
+     *
+     * @return Builder<TelemetryEvent>
+     */
     public function events(Project $project, Release $release, ?string $environmentId, CarbonImmutable $from, CarbonImmutable $until): Builder
     {
         return TelemetryEvent::query()->where('release_id', $release->id)
             ->whereIn('environment_id', Environment::query()->where('project_id', $project->id)->select('id'))
             ->when($environmentId !== null, fn (Builder $query): Builder => $query->where('environment_id', $environmentId))
-            ->where('occurred_at', '>=', $this->boundary($from))
+            ->where('occurred_at', '>=', EventTime::boundary($from))
             ->where('occurred_at', '<=', $until->format('Y-m-d H:i:s.u'));
     }
 
-    /** @param Builder<TelemetryEvent> $query
+    /**
+     * Totals for a set of events: requests, how many were timed and failed, their average duration and error rate,
+     * exceptions and distinct issues.
+     *
+     * @param  Builder<TelemetryEvent>  $query
      * @return array{events: int, requests: int, timed: int, failed: int, averageDuration: float|null, errorRate: float|null, exceptions: int, issues: int}
      */
     public function summarize(Builder $query): array
@@ -74,15 +87,9 @@ final class ReleaseMetricsQuery
             ->whereIn('release_id', Release::query()->whereBelongsTo($project)
                 ->where('project_id', $deployment->release->project_id)
                 ->where('service_hash', $deployment->release->service_hash)->select('id'));
-        $before = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', $this->boundary($from))->where('occurred_at', '<', $this->boundary($at))) : null;
-        $after = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', $this->boundary($at))->where('occurred_at', '<', $this->boundary($until))) : null;
+        $before = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', EventTime::boundary($from))->where('occurred_at', '<', EventTime::boundary($at))) : null;
+        $after = $seconds > 0 ? $this->summarize((clone $query)->where('occurred_at', '>=', EventTime::boundary($at))->where('occurred_at', '<', EventTime::boundary($until))) : null;
 
         return ['before' => $before, 'after' => $after, 'from' => $from, 'deployedAt' => $at, 'until' => $until, 'seconds' => $seconds, 'requestedMinutes' => $minutes];
-    }
-
-    /** Legacy second-only timestamps must be compared on the same boundary. */
-    private function boundary(CarbonImmutable $time): string
-    {
-        return $time->format($time->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u');
     }
 }

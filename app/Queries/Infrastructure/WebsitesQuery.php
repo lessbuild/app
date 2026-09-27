@@ -13,24 +13,39 @@ use Illuminate\Database\Eloquent\Collection;
 
 final class WebsitesQuery
 {
-    /** @return Collection<int, Website> */
+    /**
+     * The account's websites by name, with their server.
+     *
+     * @return Collection<int, Website>
+     */
     public function handle(string $accountId): Collection
     {
         return Website::query()->where('account_id', $accountId)->with('server')->orderBy('name')->orderBy('id')->get();
     }
 
+    /**
+     * One of the account's websites with its server, domains, environment and health monitor; 404 otherwise.
+     */
     public function find(string $accountId, int|string $id): Website
     {
         return Website::query()->where('account_id', $accountId)->with(['server', 'domains.dnsProvider', 'environment.project', 'healthMonitor'])->findOrFail((int) $id);
     }
 
-    /** @return Collection<int, Environment> */
+    /**
+     * The account's environments grouped by project, for linking a website to one.
+     *
+     * @return Collection<int, Environment>
+     */
     public function environments(Account $account): Collection
     {
         return Environment::query()->forAccount($account)->with('project')->orderBy('project_id')->orderBy('name')->get();
     }
 
-    /** @return Collection<int, Server> */
+    /**
+     * Servers a website can be created on: active app servers with a MySQL root password to create its database with.
+     *
+     * @return Collection<int, Server>
+     */
     public function hosts(string $accountId): Collection
     {
         return Server::query()->where('account_id', $accountId)->where('provisioning_status', Server::STATUS_ACTIVE)->where('type', ServerType::App)

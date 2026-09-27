@@ -13,7 +13,12 @@ use Illuminate\Support\Collection;
 /** The account's servers with their monthly cost, the last hour's CPU, and the projects using them, plus totals by currency. */
 final class InfrastructureCostsQuery
 {
-    /** @return array{rows: Collection<int, ServerCost>, totals: array<string, float>, unknown: int, idle: int} */
+    /**
+     * The costs page: each server's monthly cost, CPU over the last hour, website count, idle flag and the projects it
+     * serves, plus totals per currency and how many servers have no known cost or look idle.
+     *
+     * @return array{rows: Collection<int, ServerCost>, totals: array<string, float>, unknown: int, idle: int}
+     */
     public function handle(string $accountId): array
     {
         $servers = Server::query()->where('account_id', $accountId)->with('provider')->withCount('websites')->orderBy('name')->get();

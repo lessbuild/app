@@ -23,6 +23,15 @@ use Carbon\CarbonImmutable;
 
 final class BillingOverviewQuery
 {
+    /**
+     * Assembles the billing page.
+     *
+     * @param  ServiceRegistry  $services  The services, with their catalogues.
+     * @param  Entitlements  $entitlements  The account's effective limits, including add-ons.
+     * @param  PriceBook  $prices  Which tiers are on sale and in which currency.
+     * @param  ServicesInUseQuery  $inUse  Which services the account's projects use.
+     * @param  PaymentProvider  $provider  Whether payments are available.
+     */
     public function __construct(
         private readonly ServiceRegistry $services,
         private readonly Entitlements $entitlements,
@@ -31,6 +40,10 @@ final class BillingOverviewQuery
         private readonly PaymentProvider $provider,
     ) {}
 
+    /**
+     * Each service's current tier, the tiers it can move to, this month's metered usage against allowances, the monthly
+     * total of tiers and add-ons, and the subscription's state.
+     */
     public function handle(Account $account): BillingOverview
     {
         $entitlements = $this->entitlements->for($account);

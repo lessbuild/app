@@ -8,7 +8,11 @@ use App\Models\Project;
 
 final class VerifiedHostnamesQuery
 {
-    /** @return list<string> the project's verified hostnames (ASCII) */
+    /**
+     * The project's verified hostnames, in ASCII.
+     *
+     * @return list<string> the project's verified hostnames (ASCII)
+     */
     public function handle(Project $project): array
     {
         return array_values($project->domains()->whereNotNull('verified_at')->pluck('hostname')->map(fn ($hostname): string => (string) $hostname)->all());

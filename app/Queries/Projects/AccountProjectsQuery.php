@@ -11,9 +11,18 @@ use App\Platform\ServiceRegistry;
 
 final class AccountProjectsQuery
 {
+    /**
+     * Lists the account's projects.
+     *
+     * @param  ServiceRegistry  $services  Orders and names each project's enabled services.
+     */
     public function __construct(private readonly ServiceRegistry $services) {}
 
-    /** @return list<ProjectCard> */
+    /**
+     * The account's projects by name, with their enabled services in registry order and environment count.
+     *
+     * @return list<ProjectCard>
+     */
     public function handle(Account $account): array
     {
         $order = array_flip($this->services->keys());

@@ -12,7 +12,11 @@ use Illuminate\Notifications\DatabaseNotification;
 
 final class InboxQuery
 {
-    /** @return CursorPaginator<int, InboxItem> newest first */
+    /**
+     * The person's notifications, newest first and cursor-paginated, optionally only unread ones.
+     *
+     * @return CursorPaginator<int, InboxItem> newest first
+     */
     public function handle(User $user, bool $unreadOnly = false, int $perPage = 30): CursorPaginator
     {
         return $user->notifications()
@@ -30,6 +34,9 @@ final class InboxQuery
             ));
     }
 
+    /**
+     * How many are unread, for the badge in the shell.
+     */
     public function unreadCount(User $user): int
     {
         return $user->unreadNotifications()->count();

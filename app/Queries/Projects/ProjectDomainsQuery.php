@@ -11,7 +11,11 @@ use Carbon\CarbonImmutable;
 
 final class ProjectDomainsQuery
 {
-    /** @return list<DomainRow> unverified first, then alphabetical */
+    /**
+     * The project's domains with the TXT record that verifies each.
+     *
+     * @return list<DomainRow> unverified first, then alphabetical
+     */
     public function handle(Project $project): array
     {
         return array_values($project->domains()->with('environment')->get()

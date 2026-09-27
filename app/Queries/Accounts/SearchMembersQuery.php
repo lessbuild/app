@@ -11,7 +11,11 @@ use App\Platform\Search\SearchResult;
 
 final class SearchMembersQuery
 {
-    /** @return list<SearchResult> members whose name or email matches */
+    /**
+     * Members whose name or email contains the term, for the command palette.
+     *
+     * @return list<SearchResult> members whose name or email matches
+     */
     public function handle(Account $account, string $term, int $limit = 6): array
     {
         $pattern = Like::contains($term);

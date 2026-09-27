@@ -13,7 +13,11 @@ use Illuminate\Database\Eloquent\Collection;
 /** The choices on the repository form: the account's Git providers and websites, and the project's environments. */
 final class RepositoryFormQuery
 {
-    /** @return array{providers: Collection<int, Provider>, websites: Collection<int, Website>, environments: Collection<int, \App\Models\Environment>} */
+    /**
+     * The choices on the repository form: the account's Git providers, its websites, and the project's environments.
+     *
+     * @return array{providers: Collection<int, Provider>, websites: Collection<int, Website>, environments: Collection<int, \App\Models\Environment>}
+     */
     public function handle(Project $project): array
     {
         return [

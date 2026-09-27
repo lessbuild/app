@@ -11,7 +11,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class ProjectMonitorsQuery
 {
-    /** @return list<Monitor> the project's current monitors, with their environment */
+    /**
+     * The project's monitors by name, with their environment.
+     *
+     * @return list<Monitor> the project's current monitors, with their environment
+     */
     public function handle(Project $project): array
     {
         return array_values($this->scope($project)->with('environment')->orderBy('name')->orderBy('id')->get()->all());
@@ -30,7 +34,11 @@ final class ProjectMonitorsQuery
         return $monitor;
     }
 
-    /** @return Builder<Monitor> */
+    /**
+     * Monitors of the project's environments.
+     *
+     * @return Builder<Monitor>
+     */
     private function scope(Project $project): Builder
     {
         return Monitor::query()->whereIn('environment_id', Environment::query()->where('project_id', $project->id)->select('id'));

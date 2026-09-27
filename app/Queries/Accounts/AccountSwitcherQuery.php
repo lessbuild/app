@@ -8,7 +8,11 @@ use App\Models\User;
 
 final class AccountSwitcherQuery
 {
-    /** @return list<array{id: string, name: string}> */
+    /**
+     * The accounts the person belongs to, by name, for the account switcher in the shell.
+     *
+     * @return list<array{id: string, name: string}>
+     */
     public function handle(User $user): array
     {
         return array_values($user->accounts()->orderBy('name')->get(['accounts.id', 'accounts.name'])

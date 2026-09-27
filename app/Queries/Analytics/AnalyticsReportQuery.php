@@ -16,6 +16,11 @@ use Illuminate\Support\Collection;
 final class AnalyticsReportQuery
 {
     /**
+     * An analytics site's report for the last `$days` days (clamped to 7–395) compared with the period before:
+     * headline metrics, a daily pageview series, top pages, entry and exit pages, sources, devices, browsers, systems,
+     * campaigns, recent activity and goal counts. Unfiltered reports longer than 90 days read the daily aggregates
+     * instead of raw events; only events whose batch has been processed are counted.
+     *
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>
      */
@@ -114,6 +119,10 @@ final class AnalyticsReportQuery
         ];
     }
 
+    /**
+     * The change from the previous period as a signed percentage, "New" when there was nothing before, or null when
+     * there's nothing either time.
+     */
     private function change(int $current, int $previous): ?string
     {
         if ($previous === 0) {
@@ -123,7 +132,11 @@ final class AnalyticsReportQuery
         return sprintf('%+.1f%%', (($current - $previous) / $previous) * 100);
     }
 
-    /** @param Collection<int, AnalyticsEvent> $events */
+    /**
+     * Unique visitors per day, averaged over the period. Visitor hashes rotate daily, so each day is counted on its own.
+     *
+     * @param  Collection<int, AnalyticsEvent>  $events
+     */
     private function averageDailyVisitors(Collection $events, string $timezone, int $days): int
     {
         $dailyTotal = $events->groupBy(fn (AnalyticsEvent $event): string => $event->occurred_at->setTimezone($timezone)->toDateString())
@@ -132,7 +145,12 @@ final class AnalyticsReportQuery
         return $dailyTotal > 0 ? max(1, (int) round($dailyTotal / $days)) : 0;
     }
 
-    /** @param Collection<int, AnalyticsEvent> $events */
+    /**
+     * Counts visits from pageviews when there are no stored visits yet: a new visit starts after 30 minutes without a
+     * pageview from the same session or visitor.
+     *
+     * @param  Collection<int, AnalyticsEvent>  $events
+     */
     private function estimateVisits(Collection $events): int
     {
         $visits = 0;
@@ -153,6 +171,8 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * Pageviews per day in the site's timezone, with empty days as zero.
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @return array<int, array{date: string, value: int}>
      */
@@ -174,6 +194,8 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The five most common values of an event field, with missing values as "Unknown".
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @return array<int, array{label: string, value: int}>
      */
@@ -185,6 +207,8 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The five most common values of a visit field, such as landing or exit page.
+     *
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @return array<int, array{label: string, value: int}>
      */
@@ -196,6 +220,8 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The last few events from the past five minutes and how many visitors sent them, for the "right now" panel.
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @return array{visitorCount: int, events: array<int, array<string, mixed>>}
      */
@@ -217,6 +243,9 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * Where pageviews came from: the campaign source (and medium) when tagged, else the referring site, else "Direct /
+     * unknown".
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @return array<int, array{label: string, value: int}>
      */
@@ -233,6 +262,8 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The same breakdown per visit, using where each visit started.
+     *
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @return array<int, array{label: string, value: int}>
      */
@@ -251,6 +282,8 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The five campaigns that started the most visits.
+     *
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @return array<int, array{label: string, value: int}>
      */
@@ -263,6 +296,9 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * Applies the report's filters to visits. Source and campaign filters match where the visit started; path and device
+     * filters keep visits that contain a matching event.
+     *
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  array<string, string|null>  $filters
@@ -293,7 +329,12 @@ final class AnalyticsReportQuery
         return $filtered;
     }
 
-    /** @param Collection<string, Collection<int, AnalyticsVisit>> $visitMap */
+    /**
+     * The key of the visit an event belongs to: the visit of the same session or visitor whose time span includes the
+     * event.
+     *
+     * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
+     */
     private function visitForEvent(AnalyticsEvent $event, Collection $visitMap): ?string
     {
         $identity = $event->session_id ?: $event->visitor_hash ?: 'anonymous';
@@ -303,6 +344,9 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The events that complete any of the goals, judged by the goal's definition at the time of each event, so editing a
+     * goal doesn't rewrite history.
+     *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<int, AnalyticsGoal>  $goals
      * @return Collection<int, AnalyticsEvent>
@@ -338,6 +382,9 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * The report built from daily aggregates, or null when none exist yet. Entry and exit pages, recent activity and
+     * goals aren't aggregated, so they're left empty.
+     *
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>|null
      */
@@ -396,19 +443,29 @@ final class AnalyticsReportQuery
         ];
     }
 
-    /** @param Collection<int, AnalyticsDailyAggregate> $rows */
+    /**
+     * The total of one column across aggregate rows.
+     *
+     * @param  Collection<int, AnalyticsDailyAggregate>  $rows
+     */
     private function aggregateSum(Collection $rows, string $column): int
     {
         return (int) $rows->sum(fn (AnalyticsDailyAggregate $row): int => (int) $row->{$column});
     }
 
-    /** @param Collection<int, AnalyticsDailyAggregate> $rows */
+    /**
+     * Daily visitors from aggregates, averaged over the period.
+     *
+     * @param  Collection<int, AnalyticsDailyAggregate>  $rows
+     */
     private function aggregateAverageVisitors(Collection $rows, int $days): int
     {
         return $rows->isEmpty() ? 0 : max(1, (int) round($this->aggregateSum($rows, 'visitors') / $days));
     }
 
     /**
+     * Pageviews per day from aggregates, with missing days as zero.
+     *
      * @param  Collection<int, AnalyticsDailyAggregate>  $rows
      * @return list<array{date: string, value: int}>
      */
@@ -425,7 +482,11 @@ final class AnalyticsReportQuery
         return $series;
     }
 
-    /** @return array<int, array{label: string, value: int}> */
+    /**
+     * The five largest values of one aggregated dimension over the period.
+     *
+     * @return array<int, array{label: string, value: int}>
+     */
     private function aggregateRanking(AnalyticsSite $site, string $dimension, CarbonImmutable $start, CarbonImmutable $end, string $column): array
     {
         return AnalyticsDailyAggregate::query()

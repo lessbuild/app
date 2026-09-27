@@ -12,7 +12,11 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class ProjectAlertRulesQuery
 {
-    /** @return list<AlertRule> the project's current rules, with their environment */
+    /**
+     * The project's alert rules, enabled first.
+     *
+     * @return list<AlertRule> the project's current rules, with their environment
+     */
     public function handle(Project $project): array
     {
         return array_values(AlertRule::query()->whereIn('environment_id', $this->environments($project))
@@ -41,14 +45,22 @@ final class ProjectAlertRulesQuery
         return $objective;
     }
 
-    /** @return list<ServiceLevelObjective> */
+    /**
+     * The project's SLOs, enabled first.
+     *
+     * @return list<ServiceLevelObjective>
+     */
     public function objectives(Project $project): array
     {
         return array_values(ServiceLevelObjective::query()->whereIn('environment_id', $this->environments($project))
             ->with('environment')->orderByDesc('enabled')->orderBy('name')->orderBy('id')->get()->all());
     }
 
-    /** @return Builder<Environment> */
+    /**
+     * The IDs of the project's environments, as a subquery.
+     *
+     * @return Builder<Environment>
+     */
     private function environments(Project $project): Builder
     {
         return Environment::query()->where('project_id', $project->id)->select('id');

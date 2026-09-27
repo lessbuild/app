@@ -7,6 +7,7 @@ namespace App\Queries\Telemetry;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -53,8 +54,8 @@ final class DependencyMapQuery
             ->whereIn('environment_id', $environmentIds)
             ->whereNotNull('trace_id')
             ->whereNotNull('span_id')
-            ->where('occurred_at', '>=', $this->boundary($from))
-            ->where('occurred_at', '<=', $this->boundary($until))
+            ->where('occurred_at', '>=', EventTime::boundary($from))
+            ->where('occurred_at', '<=', EventTime::boundary($until))
             ->where(function (Builder $query): void {
                 $query->where('payload->signal', 'traces')
                     ->orWhereIn('type', ['request', 'query', 'job']);
@@ -167,43 +168,69 @@ final class DependencyMapQuery
         ];
     }
 
-    /** @return array{name: string, span_count: int, error_count: int, duration_total: float, duration_count: int, last_seen: CarbonImmutable|null} */
+    /**
+     * A service's counters before any spans are added.
+     *
+     * @return array{name: string, span_count: int, error_count: int, duration_total: float, duration_count: int, last_seen: CarbonImmutable|null}
+     */
     private function emptyService(string $name): array
     {
         return ['name' => $name, 'span_count' => 0, 'error_count' => 0, 'duration_total' => 0.0, 'duration_count' => 0, 'last_seen' => null];
     }
 
-    /** @return array{source: string, target: string, calls: int, error_count: int, duration_total: float, duration_count: int, max_duration: float|null, trace_ids: array<string, bool>, last_seen: CarbonImmutable|null} */
+    /**
+     * A caller-to-callee edge's counters before any calls are added.
+     *
+     * @return array{source: string, target: string, calls: int, error_count: int, duration_total: float, duration_count: int, max_duration: float|null, trace_ids: array<string, bool>, last_seen: CarbonImmutable|null}
+     */
     private function emptyEdge(string $source, string $target): array
     {
         return ['source' => $source, 'target' => $target, 'calls' => 0, 'error_count' => 0, 'duration_total' => 0.0, 'duration_count' => 0, 'max_duration' => null, 'trace_ids' => [], 'last_seen' => null];
     }
 
+    /**
+     * The span's service, or "Unspecified service" so unnamed spans still group together.
+     */
     private function serviceName(?string $service): string
     {
         return filled($service) ? $service : 'Unspecified service';
     }
 
+    /**
+     * A key identifying a span within its trace, or null when either ID is missing.
+     */
     private function spanKey(?string $traceId, ?string $spanId): ?string
     {
         return filled($traceId) && filled($spanId) ? $traceId.'|'.$spanId : null;
     }
 
+    /**
+     * Whether a span failed: error or critical severity, or a 5xx status.
+     */
     private function isError(TelemetryEvent $event): bool
     {
         return in_array($event->severity, ['error', 'critical'], true) || ($event->status_code !== null && $event->status_code >= 500);
     }
 
+    /**
+     * The span's duration when it's a finite, non-negative number; otherwise null so it doesn't skew averages.
+     */
     private function validDuration(mixed $duration): ?float
     {
         return is_numeric($duration) && is_finite((float) $duration) && (float) $duration >= 0 ? (float) $duration : null;
     }
 
+    /**
+     * A share as a percentage with two decimals; 0 when there's nothing to divide by.
+     */
     private function percentage(int $part, int $whole): float
     {
         return $whole > 0 ? round($part / $whole * 100, 2) : 0.0;
     }
 
+    /**
+     * The later of two times, accepting the stored value as a string or Carbon.
+     */
     private function latest(?CarbonImmutable $current, mixed $candidate): ?CarbonImmutable
     {
         if ($candidate === null) {
@@ -213,10 +240,5 @@ final class DependencyMapQuery
         $candidate = $candidate instanceof CarbonImmutable ? $candidate : CarbonImmutable::parse($candidate, 'UTC');
 
         return $current === null || $candidate->gt($current) ? $candidate : $current;
-    }
-
-    private function boundary(CarbonImmutable $time): string
-    {
-        return $time->format($time->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u');
     }
 }

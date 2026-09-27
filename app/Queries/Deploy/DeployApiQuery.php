@@ -23,9 +23,18 @@ use Illuminate\Validation\ValidationException;
  */
 final class DeployApiQuery
 {
+    /**
+     * Reads for the Deployer API v1, scoped to the token's account and to what its person may use.
+     *
+     * @param  Entitlements  $entitlements  Reads the account's Deploy tier for `/me`.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
-    /** @return Builder<Project> */
+    /**
+     * The account's projects whose Deploy the person may use, with their environments.
+     *
+     * @return Builder<Project>
+     */
     public function projects(User $user, Account $account): Builder
     {
         return Project::query()->where('account_id', $account->id)
@@ -33,6 +42,9 @@ final class DeployApiQuery
             ->with('environments');
     }
 
+    /**
+     * One such project; 404 outside the account, 403 when the person may not use its Deploy.
+     */
     public function project(User $user, Account $account, string $id): Project
     {
         $project = Project::query()->where('account_id', $account->id)->with('environments')->findOrFail($id);
@@ -41,12 +53,19 @@ final class DeployApiQuery
         return $project;
     }
 
-    /** @return Builder<Build> */
+    /**
+     * Deploys of repositories in the projects the person may use, including repositories disconnected since.
+     *
+     * @return Builder<Build>
+     */
     public function builds(User $user, Account $account): Builder
     {
         return Build::query()->whereIn('repository_id', \App\Models\Repository::withTrashed()->whereIn('project_id', $this->projects($user, $account)->select('id'))->select('id'));
     }
 
+    /**
+     * One such deploy with its repository, website and environment; 404 when it's outside them.
+     */
     public function build(User $user, Account $account, string $id): Build
     {
         $build = $this->builds($user, $account)->with(['repository', 'website', 'environment'])->findOrFail((int) $id);
@@ -55,6 +74,9 @@ final class DeployApiQuery
         return $build;
     }
 
+    /**
+     * An environment of the account, checked the same way as its project.
+     */
     public function environment(User $user, Account $account, string $id): Environment
     {
         $environment = Environment::query()->whereIn('project_id', Project::query()->where('account_id', $account->id)->select('id'))->with('project')->findOrFail($id);
@@ -88,7 +110,11 @@ final class DeployApiQuery
         return ['items' => $page->items(), 'meta' => ['limit' => $size, 'next_cursor' => $page->nextCursor()?->encode()]];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The `/me` payload: the person and the account ("organization" in Deployer's API) with its Deploy plan.
+     *
+     * @return array<string, mixed>
+     */
     public function account(User $user, Account $account): array
     {
         $tier = $this->entitlements->tierFor($account, 'deploy') ?? DeployCatalog::billing()->defaultTier();
@@ -96,7 +122,11 @@ final class DeployApiQuery
         return ['id' => $user->id, 'name' => $user->name, 'email' => $user->email, 'organization' => ['id' => $account->id, 'name' => $account->name, 'plan' => $tier->key]];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * A project as the API returns it, with its environments. `state` is always "running" until hibernation exists.
+     *
+     * @return array<string, mixed>
+     */
     public function projectData(Project $project): array
     {
         return ['id' => $project->id, 'name' => $project->name, 'slug' => $project->slug, 'environments' => $project->environments->map(fn (Environment $environment): array => [
@@ -105,7 +135,11 @@ final class DeployApiQuery
         ])->values()->all()];
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * A deploy as the API returns it.
+     *
+     * @return array<string, mixed>
+     */
     public function buildData(Build $build): array
     {
         return [

@@ -9,7 +9,11 @@ use App\Models\Project;
 
 final class ProjectSwitcherQuery
 {
-    /** @return list<array{id: string, name: string}> */
+    /**
+     * The account's projects by name, for the project switcher.
+     *
+     * @return list<array{id: string, name: string}>
+     */
     public function handle(Account $account, int $limit = 50): array
     {
         return array_values(Project::query()->where('account_id', $account->id)->orderBy('name')->limit($limit)->get(['id', 'name'])

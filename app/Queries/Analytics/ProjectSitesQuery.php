@@ -9,7 +9,11 @@ use App\Models\Project;
 
 final class ProjectSitesQuery
 {
-    /** @return list<AnalyticsSite> */
+    /**
+     * The project's analytics sites by name.
+     *
+     * @return list<AnalyticsSite>
+     */
     public function handle(Project $project): array
     {
         return array_values(AnalyticsSite::query()->where('project_id', $project->id)->orderBy('name')->get()->all());

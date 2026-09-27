@@ -7,6 +7,7 @@ namespace App\Services\Monitoring;
 use App\Models\AlertRule;
 use App\Models\TelemetryEvent;
 use App\Support\Telemetry\EventTextSearch;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
@@ -21,8 +22,8 @@ final class LogPatternAlertObservation
 
         $query = TelemetryEvent::query()->where('environment_id', $rule->environment_id)
             ->when($rule->service !== null, fn (Builder $events): Builder => $events->where('service', $rule->service))
-            ->where('occurred_at', '>=', $from->format($from->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u'))
-            ->where('occurred_at', '<', $until->format($until->micro === 0 ? 'Y-m-d H:i:s' : 'Y-m-d H:i:s.u'));
+            ->where('occurred_at', '>=', EventTime::boundary($from))
+            ->where('occurred_at', '<', EventTime::boundary($until));
         EventTextSearch::apply($query, $rule->match_text);
         $count = (int) $query->count();
         $threshold = $rule->thresholdValue() ?? 1;

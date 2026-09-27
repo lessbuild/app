@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\Gate;
 /** A service's account-level page: which projects use it. Projects using it come first. */
 final class ServiceProjectsQuery
 {
-    /** @return list<ServiceProjectRow> */
+    /**
+     * The account's projects for a service's enable page, those with the service on first, with whether the viewer may
+     * turn it on or off in each.
+     *
+     * @return list<ServiceProjectRow>
+     */
     public function handle(Account $account, string $service, User $viewer): array
     {
         $gate = Gate::forUser($viewer);

@@ -13,7 +13,11 @@ use App\Support\Hostname;
 
 final class SearchProjectsQuery
 {
-    /** @return list<SearchResult> projects whose name or slug matches */
+    /**
+     * Projects whose name or slug contains the term, for the command palette.
+     *
+     * @return list<SearchResult> projects whose name or slug matches
+     */
     public function projects(Account $account, string $term, int $limit = 6): array
     {
         $pattern = Like::contains($term);
@@ -28,7 +32,12 @@ final class SearchProjectsQuery
             ->all());
     }
 
-    /** @return list<SearchResult> domains whose hostname matches, in the account's projects */
+    /**
+     * Domains whose hostname contains the term. Internationalised terms are converted to their ASCII form first, which
+     * is how hostnames are stored.
+     *
+     * @return list<SearchResult> domains whose hostname matches, in the account's projects
+     */
     public function domains(Account $account, string $term, int $limit = 6): array
     {
         $ascii = Hostname::normalize($term) ?? mb_strtolower(trim($term));

@@ -9,6 +9,10 @@ use App\Models\Monitor;
 
 final class MonitorHistoryQuery
 {
+    /**
+     * A monitor's recent checks and incidents, plus its runs for heartbeat monitors, or its latest report and live
+     * workers for queue monitors.
+     */
     public function handle(Monitor $monitor): MonitorHistory
     {
         return new MonitorHistory(
