@@ -14,7 +14,6 @@ use App\Models\BillingSelection;
 use App\Platform\ServiceRegistry;
 use App\Services\Billing\SubscriptionItems;
 use Carbon\CarbonImmutable;
-use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 
 final class HandleBillingWebhook
@@ -28,9 +27,8 @@ final class HandleBillingWebhook
     /** Apply a verified Stripe event once. Returns false for duplicates and events we don't use. */
     public function handle(WebhookEvent $event): bool
     {
-        try {
-            DB::table('billing_webhook_events')->insert(['id' => $event->id, 'type' => $event->type, 'processed_at' => now()]);
-        } catch (UniqueConstraintViolationException) {
+        // ON CONFLICT DO NOTHING: a retried delivery is skipped without an error that would abort a PostgreSQL transaction.
+        if (DB::table('billing_webhook_events')->insertOrIgnore(['id' => $event->id, 'type' => $event->type, 'processed_at' => now()]) === 0) {
             return false;
         }
 
