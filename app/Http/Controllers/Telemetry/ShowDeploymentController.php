@@ -17,18 +17,16 @@ use Illuminate\Contracts\View\View;
 /** Error rate and latency before and after a deployment. */
 final class ShowDeploymentController
 {
-    public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, string $deployment, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics, TelemetryRedactor $redactor): View
+    public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, Deployment $deployment, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics, TelemetryRedactor $redactor): View
     {
-        $record = Deployment::query()->whereIn('environment_id', $project->environments()->select('id'))
-            ->with(['release', 'environment', 'actor'])->findOrFail((int) $deployment);
         $filters = $request->filters();
 
         return view('telemetry.deployment', [
             'overview' => $overview->handle($project, $user),
-            'deployment' => $record,
+            'deployment' => $deployment,
             'filters' => $filters,
-            'comparison' => $metrics->aroundDeployment($project, $record, (int) $filters['window']),
-            'note' => $redactor->redact(['note' => $record->note])['note'],
+            'comparison' => $metrics->aroundDeployment($project, $deployment, (int) $filters['window']),
+            'note' => $redactor->redact(['note' => $deployment->note])['note'],
             'windowOptions' => SearchReleasesRequest::WINDOWS,
         ]);
     }

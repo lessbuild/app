@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Enums\AlertMetric;
 use App\Http\Requests\Monitoring\AlertRuleRequest;
+use App\Models\AlertRule;
 use App\Models\MetricSeries;
 use App\Models\Project;
 use App\Models\User;
@@ -18,13 +19,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class EditAlertRuleController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $rule, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
+    public function __invoke(#[CurrentUser] User $user, Project $project, AlertRule $rule, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
     {
         Gate::authorize('manageService', [$project, 'monitoring']);
 
         return view('monitoring.rule-form', [
             'overview' => $overview->handle($project, $user),
-            'rule' => $rules->find($project, $rule),
+            'rule' => $rule,
             'metrics' => AlertMetric::cases(),
             'windows' => AlertRuleRequest::WINDOWS,
             'objectives' => $rules->objectives($project),

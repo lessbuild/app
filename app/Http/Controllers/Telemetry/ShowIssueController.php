@@ -17,18 +17,17 @@ use Illuminate\Contracts\View\View;
 
 final class ShowIssueController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $issue, ProjectOverviewQuery $overview, TelemetryRedactor $redactor, ProjectIncidentsQuery $members): View
+    public function __invoke(#[CurrentUser] User $user, Project $project, Issue $issue, ProjectOverviewQuery $overview, TelemetryRedactor $redactor, ProjectIncidentsQuery $members): View
     {
-        $record = Issue::query()->whereBelongsTo($project)->with(['environment', 'assignee'])->findOrFail((int) $issue);
-        $events = TelemetryEvent::query()->where('issue_id', $record->id)->summary()->with('environment')
+        $events = TelemetryEvent::query()->where('issue_id', $issue->id)->summary()->with('environment')
             ->orderByDesc('occurred_at')->orderByDesc('id')->limit(20)->get();
         $events->each(fn (TelemetryEvent $event): TelemetryEvent => $event->forceFill($redactor->redact($event->only(['name', 'route']))));
-        $activities = $record->activities()->with('actor')->latest('id')->limit(50)->get();
-        $record->forceFill($redactor->redact($record->only(['title', 'location', 'details', 'fingerprint'])));
+        $activities = $issue->activities()->with('actor')->latest('id')->limit(50)->get();
+        $issue->forceFill($redactor->redact($issue->only(['title', 'location', 'details', 'fingerprint'])));
 
         return view('telemetry.issue', [
             'overview' => $overview->handle($project, $user),
-            'issue' => $record,
+            'issue' => $issue,
             'events' => $events,
             'activities' => $activities,
             'assignees' => $members->assignees($project),

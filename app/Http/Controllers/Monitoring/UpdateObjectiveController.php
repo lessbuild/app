@@ -7,16 +7,16 @@ namespace App\Http\Controllers\Monitoring;
 use App\Actions\Monitoring\SaveServiceLevelObjective;
 use App\Http\Requests\Monitoring\ServiceLevelObjectiveRequest;
 use App\Models\Project;
+use App\Models\ServiceLevelObjective;
 use App\Models\User;
-use App\Queries\Monitoring\ProjectAlertRulesQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 
 final class UpdateObjectiveController
 {
-    public function __invoke(ServiceLevelObjectiveRequest $request, #[CurrentUser] User $user, Project $project, string $objective, ProjectAlertRulesQuery $rules, SaveServiceLevelObjective $save): RedirectResponse
+    public function __invoke(ServiceLevelObjectiveRequest $request, #[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, SaveServiceLevelObjective $save): RedirectResponse
     {
-        $target = $save->handle($project, $user, $request->validated(), $rules->objective($project, $objective));
+        $target = $save->handle($project, $user, $request->validated(), $objective);
 
         return to_route('monitoring.objectives.show', [$project, $target->id])->with('status', __('Objective saved.'));
     }

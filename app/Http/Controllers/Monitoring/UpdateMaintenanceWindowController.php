@@ -14,10 +14,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class UpdateMaintenanceWindowController
 {
-    public function __invoke(MaintenanceWindowRequest $request, #[CurrentUser] User $user, Project $project, string $window, SaveMaintenanceWindow $save): RedirectResponse
+    public function __invoke(MaintenanceWindowRequest $request, #[CurrentUser] User $user, Project $project, MaintenanceWindow $window, SaveMaintenanceWindow $save): RedirectResponse
     {
-        $target = MaintenanceWindow::query()->where('account_id', $project->account_id)->findOrFail((int) $window);
-        $save->handle($project->account, $user, $request->validated(), $target);
+        $save->handle($project->account, $user, $request->validated(), $window);
 
         return to_route('monitoring.maintenance', $project)->with('status', __('Maintenance window saved.'));
     }

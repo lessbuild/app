@@ -14,15 +14,14 @@ use Illuminate\Http\Request;
 
 final class RetryAlertDeliveryController
 {
-    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $delivery, RetryAlertDelivery $retry): RedirectResponse
+    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDelivery $delivery, RetryAlertDelivery $retry): RedirectResponse
     {
         $generation = (int) $request->validate(
             ['generation' => ['required', 'integer', 'min:0'], 'confirm' => ['accepted']],
             ['confirm.accepted' => __('Confirm that you checked the previous attempt and understand a retry may send a duplicate.')],
         )['generation'];
-        $target = AlertDelivery::query()->where('account_id', $project->account_id)->findOrFail($delivery);
-        $retry->handle($project->account, $user, $target, $generation);
+        $retry->handle($project->account, $user, $delivery, $generation);
 
-        return to_route('monitoring.destinations.show', [$project, $target->alert_destination_id])->with('status', __('Delivery queued again.'));
+        return to_route('monitoring.destinations.show', [$project, $delivery->alert_destination_id])->with('status', __('Delivery queued again.'));
     }
 }

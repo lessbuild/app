@@ -14,13 +14,12 @@ use Illuminate\Support\Facades\Gate;
 
 final class RetryIngestReceiptController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $receipt, TelemetryQueue $queue): RedirectResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, IngestReceipt $receipt, TelemetryQueue $queue): RedirectResponse
     {
         Gate::authorize('manageService', [$project, 'monitoring']);
-        $record = IngestReceipt::query()->whereIn('environment_id', $project->environments()->select('id'))->findOrFail($receipt);
-        abort_unless($queue->retry($record->id), 409, __('Only failed deliveries with a kept payload can be retried.'));
+        abort_unless($queue->retry($receipt->id), 409, __('Only failed deliveries with a kept payload can be retried.'));
 
-        return to_route('monitoring.ingest.deliveries', [$project, $record->environment_id])
+        return to_route('monitoring.ingest.deliveries', [$project, $receipt->environment_id])
             ->with('status', __('Delivery queued again. Usage already counted isn’t counted twice.'));
     }
 }

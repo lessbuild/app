@@ -13,10 +13,9 @@ use Illuminate\Http\RedirectResponse;
 
 final class RevokeIngestTokenController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $token, RevokeIngestToken $revoke): RedirectResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, IngestToken $token, RevokeIngestToken $revoke): RedirectResponse
     {
-        $record = IngestToken::query()->whereIn('environment_id', $project->environments()->select('id'))->findOrFail((int) $token);
-        $revoke->handle($user, $record);
+        $revoke->handle($user, $token);
 
         return to_route('monitoring.setup', $project)->with('status', __('Key revoked. Requests that use it are refused.'));
     }

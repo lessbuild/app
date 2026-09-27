@@ -6,18 +6,17 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Actions\Monitoring\ArchiveServiceLevelObjective;
 use App\Models\Project;
+use App\Models\ServiceLevelObjective;
 use App\Models\User;
-use App\Queries\Monitoring\ProjectAlertRulesQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 
 final class ArchiveObjectiveController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $objective, ProjectAlertRulesQuery $rules, ArchiveServiceLevelObjective $archive): RedirectResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ArchiveServiceLevelObjective $archive): RedirectResponse
     {
-        $target = $rules->objective($project, $objective);
-        $archive->handle($target, $user);
+        $archive->handle($objective, $user);
 
-        return to_route('monitoring.objectives', $project)->with('status', __(':objective was archived.', ['objective' => $target->name]));
+        return to_route('monitoring.objectives', $project)->with('status', __(':objective was archived.', ['objective' => $objective->name]));
     }
 }

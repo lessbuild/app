@@ -123,8 +123,8 @@ final class AlertRuleRequest extends FormRequest
     /** The rule being changed, or null when creating one. */
     public function rule(): ?AlertRule
     {
-        $id = $this->route('rule');
+        $rule = $this->route('rule');
 
-        return is_string($id) ? AlertRule::query()->whereIn('environment_id', Environment::query()->where('project_id', $this->project()->id)->select('id'))->findOrFail((int) $id) : null;
+        return $rule instanceof AlertRule ? $rule : null;
     }
 }

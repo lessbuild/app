@@ -56,8 +56,8 @@ final class AlertDestinationRequest extends FormRequest
 
     public function destination(): ?AlertDestination
     {
-        $id = $this->route('destination');
+        $destination = $this->route('destination');
 
-        return is_string($id) ? AlertDestination::query()->where('account_id', $this->project()->account_id)->findOrFail((int) $id) : null;
+        return $destination instanceof AlertDestination ? $destination : null;
     }
 }

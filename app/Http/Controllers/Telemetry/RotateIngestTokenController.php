@@ -14,12 +14,11 @@ use Illuminate\Support\Facades\Crypt;
 
 final class RotateIngestTokenController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $token, RotateIngestToken $rotate): RedirectResponse
+    public function __invoke(#[CurrentUser] User $user, Project $project, IngestToken $token, RotateIngestToken $rotate): RedirectResponse
     {
-        $record = IngestToken::query()->whereIn('environment_id', $project->environments()->select('id'))->findOrFail((int) $token);
-        $issued = $rotate->handle($user, $record);
+        $issued = $rotate->handle($user, $token);
 
         return to_route('monitoring.setup', $project)->with('status', __('Key replaced. The old key no longer works; update your collector now.'))
-            ->with('issued_ingest_key', ['environment_id' => $record->environment_id, 'secret' => Crypt::encryptString($issued->secret)]);
+            ->with('issued_ingest_key', ['environment_id' => $token->environment_id, 'secret' => Crypt::encryptString($issued->secret)]);
     }
 }

@@ -16,25 +16,24 @@ use Illuminate\Contracts\View\View;
 
 final class ShowReleaseController
 {
-    public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, string $release, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics): View
+    public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, Release $release, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics): View
     {
-        $record = Release::query()->whereBelongsTo($project)->findOrFail((int) $release);
         $filters = $request->filters();
         $environment = isset($filters['environment']) ? (string) $filters['environment'] : null;
         abort_if($environment !== null && ! $project->environments()->whereKey($environment)->exists(), 404);
         [$from, $until] = $metrics->window((string) $filters['range']);
-        $events = $metrics->events($project, $record, $environment, $from, $until);
+        $events = $metrics->events($project, $release, $environment, $from, $until);
 
         return view('telemetry.release', [
             'overview' => $overview->handle($project, $user),
-            'release' => $record,
+            'release' => $release,
             'filters' => $filters,
             'from' => $from,
             'until' => $until,
             'metrics' => $metrics->summarize($events),
             'issues' => Issue::query()->whereBelongsTo($project)->whereIn('id', (clone $events)->where('type', 'exception')->select('issue_id'))
                 ->latest('id')->limit(20)->get(),
-            'deployments' => $record->deployments()->with(['environment', 'actor'])
+            'deployments' => $release->deployments()->with(['environment', 'actor'])
                 ->when($environment !== null, fn ($query) => $query->where('environment_id', $environment))
                 ->latest('deployed_at')->latest('id')->limit(20)->get(),
             'rangeOptions' => SearchReleasesRequest::RANGES,

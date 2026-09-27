@@ -14,15 +14,13 @@ use Illuminate\Contracts\View\View;
 
 final class ShowEventController
 {
-    public function __invoke(#[CurrentUser] User $user, Project $project, string $event, ProjectOverviewQuery $overview, EventDetailsQuery $details): View
+    public function __invoke(#[CurrentUser] User $user, Project $project, TelemetryEvent $event, ProjectOverviewQuery $overview, EventDetailsQuery $details): View
     {
-        $record = TelemetryEvent::query()->whereIn('environment_id', $project->environments()->select('id'))
-            ->with('environment')->whereKey((int) $event)->firstOrFail();
 
         return view('telemetry.event', [
             'overview' => $overview->handle($project, $user),
-            'event' => $record,
-            ...$details->handle($record),
+            'event' => $event,
+            ...$details->handle($event),
         ]);
     }
 }

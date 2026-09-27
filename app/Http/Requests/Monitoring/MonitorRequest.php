@@ -7,7 +7,6 @@ namespace App\Http\Requests\Monitoring;
 use App\Models\Environment;
 use App\Models\Monitor;
 use App\Models\Project;
-use App\Queries\Monitoring\ProjectMonitorsQuery;
 use App\Services\Monitoring\DnsRecordSet;
 use App\Services\Monitoring\HeartbeatSchedule;
 use App\Services\Monitoring\PublicHttpTarget;
@@ -182,8 +181,8 @@ final class MonitorRequest extends FormRequest
     /** The monitor being changed, or null when creating one. */
     public function monitor(): ?Monitor
     {
-        $id = $this->route('monitor');
+        $monitor = $this->route('monitor');
 
-        return is_string($id) ? app(ProjectMonitorsQuery::class)->find($this->project(), $id) : null;
+        return $monitor instanceof Monitor ? $monitor : null;
     }
 }

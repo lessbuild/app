@@ -42,9 +42,8 @@ final class ServiceLevelObjectiveRequest extends FormRequest
     public function after(): array
     {
         return [function (Validator $validator): void {
-            $id = $this->route('objective');
-            $objective = is_string($id) ? ServiceLevelObjective::query()->find((int) $id) : null;
-            if ($objective !== null && ! $validator->errors()->has('environment_id')
+            $objective = $this->route('objective');
+            if ($objective instanceof ServiceLevelObjective && ! $validator->errors()->has('environment_id')
                 && (string) $this->input('environment_id') !== $objective->environment_id) {
                 $validator->errors()->add('environment_id', __('The environment can’t be changed. Create a separate objective.'));
             }

@@ -7,18 +7,17 @@ namespace App\Http\Controllers\Monitoring;
 use App\Actions\Monitoring\SaveStatusUpdate;
 use App\Http\Requests\Monitoring\StatusUpdateRequest;
 use App\Models\Project;
+use App\Models\StatusPage;
 use App\Models\User;
-use App\Queries\Monitoring\StatusPagesQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 
 final class UpdateStatusUpdateController
 {
-    public function __invoke(StatusUpdateRequest $request, #[CurrentUser] User $user, Project $project, string $page, string $update, StatusPagesQuery $pages, SaveStatusUpdate $save): RedirectResponse
+    public function __invoke(StatusUpdateRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, string $update, SaveStatusUpdate $save): RedirectResponse
     {
-        $statusPage = $pages->find($project->account_id, $page);
-        $save->handle($statusPage, $user, $request->validated(), $statusPage->updates()->findOrFail((int) $update));
+        $save->handle($page, $user, $request->validated(), $page->updates()->findOrFail((int) $update));
 
-        return to_route('monitoring.status-pages.show', [$project, $statusPage->id])->with('status', __('Update saved.'));
+        return to_route('monitoring.status-pages.show', [$project, $page->id])->with('status', __('Update saved.'));
     }
 }
