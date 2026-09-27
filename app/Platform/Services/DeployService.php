@@ -38,6 +38,7 @@ final class DeployService implements PlatformService
         return [
             new ServiceNavItem(__('Repositories'), route('deploy.repositories', $projectId), 'deploy.repositories*|deploy.builds*'),
             new ServiceNavItem(__('Environments'), route('deploy.environments', $projectId), 'deploy.environments*'),
+            new ServiceNavItem(__('Configuration'), route('deploy.configuration', $projectId), 'deploy.configuration*'),
         ];
     }
 

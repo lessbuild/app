@@ -47,6 +47,12 @@ class Project extends Model
         return $this->belongsTo(Account::class);
     }
 
+    /** @return HasMany<ConfigurationReview, $this> */
+    public function configurationReviews(): HasMany
+    {
+        return $this->hasMany(ConfigurationReview::class);
+    }
+
     /** @return HasMany<Environment, $this> */
     public function environments(): HasMany
     {

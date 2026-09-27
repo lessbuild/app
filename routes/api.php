@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 use App\Http\Controllers\Analytics\CollectEventsController;
 use App\Http\Controllers\Analytics\PreflightCollectController;
+use App\Http\Controllers\Api\V1\Deploy\ApplyConfigurationReviewController;
+use App\Http\Controllers\Api\V1\Deploy\CreateConfigurationReviewController;
 use App\Http\Controllers\Api\V1\Deploy\DeployEnvironmentController;
 use App\Http\Controllers\Api\V1\Deploy\ListDeploymentsController;
 use App\Http\Controllers\Api\V1\Deploy\ListProjectsController;
+use App\Http\Controllers\Api\V1\Deploy\PlanConfigurationController;
 use App\Http\Controllers\Api\V1\Deploy\PromoteDeploymentController;
 use App\Http\Controllers\Api\V1\Deploy\ReplaceEnvironmentVariablesController;
 use App\Http\Controllers\Api\V1\Deploy\RollbackDeploymentController;
 use App\Http\Controllers\Api\V1\Deploy\ScaleEnvironmentController;
+use App\Http\Controllers\Api\V1\Deploy\ShowConfigurationApplicationController;
 use App\Http\Controllers\Api\V1\Deploy\ShowDeploymentController;
 use App\Http\Controllers\Api\V1\Deploy\ShowDeploymentLogController;
 use App\Http\Controllers\Api\V1\Deploy\ShowMeController;
 use App\Http\Controllers\Api\V1\Deploy\ShowProjectController;
+use App\Http\Controllers\Api\V1\Deploy\UpdateConfigurationOperationController;
 use App\Http\Controllers\Api\V1\ShowAccountController;
 use App\Http\Controllers\Deploy\ReceiveGitHubAppWebhookController;
 use App\Http\Controllers\Deploy\ReceiveRepositoryWebhookController;
@@ -41,6 +46,7 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'
         Route::get('/deployments', ListDeploymentsController::class)->name('api.v1.deployments');
         Route::get('/deployments/{build}', ShowDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.show');
         Route::get('/deployments/{build}/log', ShowDeploymentLogController::class)->whereNumber('build')->name('api.v1.deployments.log');
+        Route::get('/projects/{project}/configuration/applications/{application}', ShowConfigurationApplicationController::class)->whereNumber('application')->name('api.v1.configuration.applications.show');
     });
     Route::middleware('abilities:deploy:write')->group(function (): void {
         Route::post('/deployments/{build}/rollback', RollbackDeploymentController::class)->whereNumber('build')->name('api.v1.deployments.rollback');
@@ -48,6 +54,11 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'
         Route::post('/environments/{environment}/deploy', DeployEnvironmentController::class)->name('api.v1.environments.deploy');
         Route::patch('/environments/{environment}/scale', ScaleEnvironmentController::class)->name('api.v1.environments.scale');
         Route::put('/environments/{environment}/variables', ReplaceEnvironmentVariablesController::class)->name('api.v1.environments.variables');
+        Route::post('/projects/{project}/configuration/plan', PlanConfigurationController::class)->name('api.v1.configuration.plan');
+        Route::post('/projects/{project}/configuration/reviews', CreateConfigurationReviewController::class)->name('api.v1.configuration.reviews');
+        Route::post('/projects/{project}/configuration/reviews/{review}/apply', ApplyConfigurationReviewController::class)->whereNumber('review')->name('api.v1.configuration.apply');
+        Route::post('/projects/{project}/configuration/applications/{application}/operations/{operation}/{action}', UpdateConfigurationOperationController::class)
+            ->whereNumber(['application', 'operation'])->whereIn('action', ['cancel', 'retry'])->name('api.v1.configuration.operations');
     });
 });
 

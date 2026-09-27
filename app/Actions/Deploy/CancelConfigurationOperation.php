@@ -1,0 +1,26 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Actions\Deploy;
+
+use App\Models\ConfigurationApplication;
+use App\Models\ConfigurationOperation;
+use App\Models\User;
+use App\Services\Deploy\Configuration\ConfigurationOperations;
+use Illuminate\Support\Facades\Gate;
+
+final class CancelConfigurationOperation
+{
+    public function __construct(private readonly ConfigurationOperations $operations) {}
+
+    /** Cancel a configuration deploy that hasn't started on the server. */
+    public function handle(User $actor, ConfigurationApplication $application, ConfigurationOperation $operation): ConfigurationOperation
+    {
+        Gate::forUser($actor)->authorize('manageDeploy', $application->review->project);
+        $canceled = $this->operations->cancel($operation);
+        $this->operations->refresh($application);
+
+        return $canceled;
+    }
+}

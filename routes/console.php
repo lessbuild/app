@@ -15,6 +15,8 @@ use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Jobs\Infrastructure\CollectServerMetrics;
 use App\Models\Build;
+use App\Models\ConfigurationApplication;
+use App\Models\ConfigurationOperation;
 use App\Models\DatabaseUser;
 use App\Models\Provider;
 use App\Models\Repository;
@@ -26,6 +28,7 @@ use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Billing\Entitlements;
+use App\Services\Deploy\Configuration\ConfigurationOperations;
 use App\Services\Deploy\DeploymentObserver;
 use App\Services\Deploy\Deployments;
 use App\Services\Infrastructure\ProviderHealthMonitor;
@@ -372,3 +375,15 @@ Artisan::command('builds:release-pending', function (Deployments $deployments): 
     return 0;
 })->purpose('Deploy pushes that waited for a deployment window, an unlock or a running deploy');
 Schedule::command('builds:release-pending')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('configuration:dispatch', function (ConfigurationOperations $operations): int {
+    $delivered = 0;
+    ConfigurationOperation::query()->whereIn('status', ['pending', 'blocked'])->orderBy('id')->each(function (ConfigurationOperation $operation) use ($operations, &$delivered): void {
+        $delivered += (int) ($operations->deliver($operation)->status !== 'blocked');
+    });
+    ConfigurationApplication::query()->whereNotIn('status', ['succeeded', 'remote_failed', 'locally_applied'])->orderBy('id')->each(fn (ConfigurationApplication $application) => $operations->refresh($application));
+    $this->info("Started {$delivered} configuration deploys.");
+
+    return 0;
+})->purpose('Start configuration deploys whose gates have cleared, and bring configuration results up to date');
+Schedule::command('configuration:dispatch')->everyMinute()->withoutOverlapping(5)->onOneServer();

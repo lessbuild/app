@@ -48,6 +48,12 @@ final class ProjectPolicy
         return $this->permits($membership, AccountPermission::ManageProjects) && ($membership?->canUseService($service) ?? false);
     }
 
+    /** Deploy configuration of the project (documents, reviews and their deploys). */
+    public function manageDeploy(User $user, Project $project): bool
+    {
+        return $this->manageService($user, $project, 'deploy');
+    }
+
     private function membership(User $user, string $accountId): ?Membership
     {
         return Membership::query()->where('account_id', $accountId)->where('user_id', $user->id)->first();

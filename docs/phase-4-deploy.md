@@ -87,6 +87,27 @@ The parts, in dependency order:
   - Old tokens' workspace and project claims become v2 account tokens.
   - `runtime` (hibernate/wake) and `workflow` arrive with automation (part 6); the configuration routes arrive with part 4b.
 
+## Configuration (part 4b)
+
+- **Documents:** Deploy → Configuration takes a version 2 YAML document (Deployer's format) and bindings (JSON).
+  - A document declares environments: type, placement, runtime, processes, resources, variables, adoption, removals and a deploy.
+  - Bindings map its names to records: placements to websites, repositories to the project's repositories on that website, and secret refs to secret variables.
+  - Parsing refuses aliases, deep nesting and oversized documents, and never echoes the document in errors.
+- **Plan:** lists every change without writing anything.
+  - Owned objects are updated. Existing ones that configuration doesn't own need `adopt: true`.
+  - Only owned objects can be removed, and objects the document omits are left alone.
+  - The production environment can't be added, removed or retyped.
+- **Review:** freezes the plan for 15 minutes behind a keyed fingerprint of everything it read. Only its requester can apply it, and only if planning again gives the same fingerprint.
+- **Apply:** runs under a project lock and records ownership. The deploy repository is linked to its environment. Each deploy becomes an operation, unless the environment's last deploy had exactly the same intent.
+- **Operations** become builds once their gates pass: access, the repository unchanged, locks and windows, and no other deploy running. Otherwise they're `blocked`, and `configuration:dispatch` (every minute) retries them.
+  - Results follow the builds.
+  - Failed deploys can be retried as reviewed, by the requester only.
+  - Deploys that haven't started can be canceled.
+- **API:** the Deployer API's configuration routes keep their paths: `POST /api/v1/projects/{project}/configuration/plan`, `…/reviews` (201), `…/reviews/{review}/apply`, `GET …/applications/{application}`, `POST …/applications/{application}/operations/{operation}/{cancel|retry}`.
+- **Differences from Deployer:**
+  - v2 environments don't store a placement. It's used to check the deploy repository and to fill managed database variables.
+  - Anyone with Deploy access (members and above) can manage configuration; Deployer allowed workspace managers.
+
 ## Public contracts kept
 
 - Build callback URLs and their signed parameters.
