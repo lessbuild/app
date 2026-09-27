@@ -51,40 +51,67 @@ class AlertDelivery extends Model
     /** @use HasFactory<AlertDeliveryFactory> */
     use HasFactory, HasUlids;
 
+    /**
+     * The payload and queue bookkeeping never leave the server in serialised form.
+     */
     protected $hidden = ['payload', 'processing_token', 'queue_job_uuid'];
 
-    /** @param Builder<AlertDelivery> $query */
+    /**
+     * Limits a query to the account's deliveries.
+     *
+     * @param  Builder<AlertDelivery>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereBelongsTo($account);
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the delivery belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<AlertDestination, $this> */
+    /**
+     * Where the alert is going, including archived destinations so history still reads.
+     *
+     * @return BelongsTo<AlertDestination, $this>
+     */
     public function destination(): BelongsTo
     {
         return $this->belongsTo(AlertDestination::class, 'alert_destination_id')->withTrashed();
     }
 
-    /** @return BelongsTo<Incident, $this> */
+    /**
+     * The incident the alert is about.
+     *
+     * @return BelongsTo<Incident, $this>
+     */
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
     }
 
-    /** @return HasMany<AlertDeliveryAttempt, $this> */
+    /**
+     * Each try at sending.
+     *
+     * @return HasMany<AlertDeliveryAttempt, $this>
+     */
     public function attempts(): HasMany
     {
         return $this->hasMany(AlertDeliveryAttempt::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `payload` (it can contain incident details) and reads `status` as an AlertDeliveryStatus.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

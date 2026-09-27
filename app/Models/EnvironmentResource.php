@@ -30,13 +30,21 @@ class EnvironmentResource extends Model
 {
     public const TYPES = ['mysql' => 'MySQL', 'postgresql' => 'PostgreSQL', 'redis' => 'Redis', 'valkey' => 'Valkey', 'object_storage' => 'Object storage'];
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the resource is attached to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `configuration`, which can hold credentials.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['is_managed' => 'boolean', 'configuration' => 'encrypted:array'];

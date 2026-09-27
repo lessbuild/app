@@ -34,19 +34,31 @@ class StatusPageComponent extends Model
     /** @use HasFactory<StatusPageComponentFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<StatusPage, $this> */
+    /**
+     * The page the component is on.
+     *
+     * @return BelongsTo<StatusPage, $this>
+     */
     public function statusPage(): BelongsTo
     {
         return $this->belongsTo(StatusPage::class);
     }
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The monitor it shows, including archived ones (which are then left off the page).
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['position' => 'integer'];

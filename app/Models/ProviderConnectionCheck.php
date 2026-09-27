@@ -29,15 +29,26 @@ class ProviderConnectionCheck extends Model
 {
     public const KEEP = 100;
 
+    /**
+     * Each check records its own `checked_at`; rows are never updated.
+     */
     public $timestamps = false;
 
-    /** @return BelongsTo<Provider, $this> */
+    /**
+     * The provider that was checked.
+     *
+     * @return BelongsTo<Provider, $this>
+     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['successful' => 'boolean', 'http_status' => 'integer', 'duration_ms' => 'integer', 'checked_at' => 'immutable_datetime'];

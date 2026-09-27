@@ -29,32 +29,52 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class ConfigurationApplication extends Model
 {
-    /** @return BelongsTo<ConfigurationReview, $this> */
+    /**
+     * The review that was applied.
+     *
+     * @return BelongsTo<ConfigurationReview, $this>
+     */
     public function review(): BelongsTo
     {
         return $this->belongsTo(ConfigurationReview::class, 'configuration_review_id');
     }
 
-    /** @return HasMany<ConfigurationOperation, $this> */
+    /**
+     * The deploys and changes this application started.
+     *
+     * @return HasMany<ConfigurationOperation, $this>
+     */
     public function operations(): HasMany
     {
         return $this->hasMany(ConfigurationOperation::class);
     }
 
-    /** @return BelongsToMany<ConfigurationOperation, $this> */
+    /**
+     * Operations from earlier applications that this one waits on or retries.
+     *
+     * @return BelongsToMany<ConfigurationOperation, $this>
+     */
     public function referencedOperations(): BelongsToMany
     {
         return $this->belongsToMany(ConfigurationOperation::class, 'configuration_operation_receipts');
     }
 
-    /** @return Builder<ConfigurationOperation> Its own operations and the earlier ones it refers to. */
+    /**
+     * Everything that decides this application's status: its own operations and the ones it references.
+     *
+     * @return Builder<ConfigurationOperation> Its own operations and the earlier ones it refers to.
+     */
     public function relatedOperations(): Builder
     {
         return ConfigurationOperation::query()->where(fn (Builder $query) => $query->where('configuration_application_id', $this->id)
             ->orWhereIn('id', $this->referencedOperations()->select('configuration_operations.id')));
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['locally_applied_at' => 'immutable_datetime'];

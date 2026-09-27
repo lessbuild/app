@@ -32,25 +32,41 @@ final class TelemetryUsageEntry extends Model
     /** @use HasFactory<TelemetryUsageEntryFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the usage counts against.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment that sent the events.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<IngestReceipt, $this> */
+    /**
+     * The batch counted.
+     *
+     * @return BelongsTo<IngestReceipt, $this>
+     */
     public function ingestReceipt(): BelongsTo
     {
         return $this->belongsTo(IngestReceipt::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `source` as an IngestSource.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

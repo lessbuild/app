@@ -33,18 +33,29 @@ final class IssueActivity extends Model
     /** @use HasFactory<IssueActivityFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Issue, $this> */
+    /**
+     * The issue the activity is on.
+     *
+     * @return BelongsTo<Issue, $this>
+     */
     public function issue(): BelongsTo
     {
         return $this->belongsTo(Issue::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who did it (`actor_id`); null for automatic entries.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
 
+    /**
+     * The activity as a line on the timeline.
+     */
     public function label(): string
     {
         return match ($this->action) {
@@ -61,7 +72,11 @@ final class IssueActivity extends Model
         };
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `metadata` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['metadata' => 'array'];

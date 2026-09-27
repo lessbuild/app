@@ -40,19 +40,31 @@ final class IngestToken extends Model
     /** @use HasFactory<IngestTokenFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the token sends to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who created it (`created_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** @param Builder<IngestToken> $query */
+    /**
+     * Limits a query to tokens that aren't revoked or expired.
+     *
+     * @param  Builder<IngestToken>  $query
+     */
     #[Scope]
     protected function active(Builder $query): void
     {
@@ -60,6 +72,9 @@ final class IngestToken extends Model
             ->where(fn (Builder $expiry) => $expiry->whereNull('expires_at')->orWhere('expires_at', '>', now()));
     }
 
+    /**
+     * `active`, `expired` or `revoked`.
+     */
     public function status(): string
     {
         if ($this->revoked_at !== null) {
@@ -69,6 +84,9 @@ final class IngestToken extends Model
         return $this->expires_at !== null && ! $this->expires_at->isFuture() ? 'expired' : 'active';
     }
 
+    /**
+     * Plain columns; dates come back as Carbon.
+     */
     protected function casts(): array
     {
         return [

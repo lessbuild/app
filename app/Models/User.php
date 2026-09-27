@@ -43,7 +43,11 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     /** @use HasFactory<UserFactory> */
     use HasFactory, HasUlids, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
-    /** @return array<string, string> */
+    /**
+     * Hashes `password` when it's set.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -53,30 +57,49 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
         ];
     }
 
-    /** @return HasMany<Membership, $this> */
+    /**
+     * The person's memberships.
+     *
+     * @return HasMany<Membership, $this>
+     */
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class);
     }
 
-    /** @return BelongsToMany<Account, $this> */
+    /**
+     * The accounts they belong to.
+     *
+     * @return BelongsToMany<Account, $this>
+     */
     public function accounts(): BelongsToMany
     {
         return $this->belongsToMany(Account::class, 'memberships')->withTimestamps();
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account they're working in (`current_account_id`).
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function currentAccount(): BelongsTo
     {
         return $this->belongsTo(Account::class, 'current_account_id');
     }
 
-    /** @return HasMany<SocialIdentity, $this> */
+    /**
+     * Provider accounts connected to them.
+     *
+     * @return HasMany<SocialIdentity, $this>
+     */
     public function socialIdentities(): HasMany
     {
         return $this->hasMany(SocialIdentity::class);
     }
 
+    /**
+     * Their membership in an account, or null.
+     */
     public function membershipIn(Account $account): ?Membership
     {
         return $this->memberships()->whereBelongsTo($account)->first();

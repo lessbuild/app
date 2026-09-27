@@ -22,7 +22,11 @@ class UsageRecord extends Model
 {
     use HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['period_start' => 'datetime', 'quantity' => 'integer', 'reported_quantity' => 'integer'];

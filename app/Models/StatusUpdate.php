@@ -52,29 +52,47 @@ class StatusUpdate extends Model
 
     public const SEVERITIES = ['minor', 'major', 'critical'];
 
-    /** @return BelongsTo<StatusPage, $this> */
+    /**
+     * The page the update is posted on.
+     *
+     * @return BelongsTo<StatusPage, $this>
+     */
     public function statusPage(): BelongsTo
     {
         return $this->belongsTo(StatusPage::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who posted it (`created_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /**
+     * Whether the incident is resolved or the maintenance completed.
+     */
     public function isClosed(): bool
     {
         return in_array($this->status, ['resolved', 'completed'], true);
     }
 
+    /**
+     * The status as people read it.
+     */
     public function statusLabel(): string
     {
         return __(str_replace('_', ' ', ucfirst($this->status)));
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['starts_at' => 'immutable_datetime', 'ends_at' => 'immutable_datetime', 'resolved_at' => 'immutable_datetime'];

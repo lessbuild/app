@@ -98,60 +98,99 @@ class Build extends Model
 
     public const FINISHED = [self::STATUS_REJECTED, self::STATUS_SUCCEEDED, self::STATUS_FAILED, self::STATUS_CANCELED];
 
-    /** @return BelongsTo<Repository, $this> */
+    /**
+     * The repository deployed, including disconnected ones so old deploys still read.
+     *
+     * @return BelongsTo<Repository, $this>
+     */
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class)->withTrashed();
     }
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website deployed to, including deleted ones.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class)->withTrashed();
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the deploy was for.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who asked for the deploy (`requested_by`); null for pushes and automation.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who approved it, for environments that require approval (`approved_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
     }
 
-    /** @return BelongsTo<Build, $this> */
+    /**
+     * The deploy this one rolled back (`rolled_back_from_build_id`).
+     *
+     * @return BelongsTo<Build, $this>
+     */
     public function rolledBackFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'rolled_back_from_build_id');
     }
 
-    /** @return BelongsTo<Build, $this> */
+    /**
+     * The deploy this one repeated (`redeployed_from_build_id`).
+     *
+     * @return BelongsTo<Build, $this>
+     */
     public function redeployedFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'redeployed_from_build_id');
     }
 
-    /** @return BelongsTo<Build, $this> */
+    /**
+     * The deploy in a lower environment this one promoted (`promoted_from_build_id`).
+     *
+     * @return BelongsTo<Build, $this>
+     */
     public function promotedFrom(): BelongsTo
     {
         return $this->belongsTo(self::class, 'promoted_from_build_id');
     }
 
-    /** @return \Illuminate\Database\Eloquent\Relations\HasMany<Build, $this> */
+    /**
+     * Deploys that promoted this one to higher environments.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasMany<Build, $this>
+     */
     public function promotions(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(self::class, 'promoted_from_build_id');
     }
 
+    /**
+     * Whether the deploy is still queued, waiting for approval or running.
+     */
     public function isActive(): bool
     {
         return in_array($this->status, self::ACTIVE, true);
@@ -171,17 +210,27 @@ class Build extends Model
         return RepositoryPath::withRoot("/var/www/{$this->website->deployment_slug}/{$phase}", $this->deploymentRoot());
     }
 
+    /**
+     * The release directory name: the one recorded when it started, else one made from its creation time and ID.
+     */
     public function releaseIdentifier(): string
     {
         return $this->release_name ?? sprintf('%s-build-%d', ($this->created_at ?? now())->utc()->format('YmdHis'), $this->id);
     }
 
+    /**
+     * The first 12 characters of the commit, for display.
+     */
     public function shortRevision(): ?string
     {
         return $this->revision === null ? null : substr($this->revision, 0, 12);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the environment payload (it holds variables and secrets) and the log, and reads `changed_paths` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

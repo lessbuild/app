@@ -34,13 +34,21 @@ class HeartbeatRun extends Model
     /** @use HasFactory<HeartbeatRunFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The heartbeat monitor the run reported to, including archived monitors.
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['config_revision' => 'integer', 'started_at' => 'immutable_datetime',

@@ -23,9 +23,16 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class WebsiteLog extends Model
 {
+    /**
+     * Only the key is guarded: logs are written by jobs, never from request input.
+     */
     protected $guarded = ['id'];
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website the log is about.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);

@@ -24,7 +24,11 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class EnvironmentVariableVersion extends Model
 {
-    /** @return array<string, string> */
+    /**
+     * Encrypts `value`.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['value' => 'encrypted', 'version' => 'integer'];

@@ -59,37 +59,61 @@ class Repository extends Model
     /** @use HasFactory<RepositoryFactory> */
     use HasFactory, SoftDeletes;
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the repository belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return BelongsTo<Provider, $this> */
+    /**
+     * The Git provider it's cloned through.
+     *
+     * @return BelongsTo<Provider, $this>
+     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class);
     }
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website it deploys to, including deleted ones.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class)->withTrashed();
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment its deploys are for, if any.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return HasMany<Build, $this> */
+    /**
+     * Its deploys.
+     *
+     * @return HasMany<Build, $this>
+     */
     public function builds(): HasMany
     {
         return $this->hasMany(Build::class);
     }
 
-    /** @return HasMany<RepositoryWebhookDelivery, $this> */
+    /**
+     * Pushes and pull-request events received for it.
+     *
+     * @return HasMany<RepositoryWebhookDelivery, $this>
+     */
     public function webhookDeliveries(): HasMany
     {
         return $this->hasMany(RepositoryWebhookDelivery::class);
@@ -118,12 +142,19 @@ class Repository extends Model
         return "https://{$path}/".($this->provider?->type === \App\Enums\ProviderType::Bitbucket ? 'commits' : 'commit')."/{$revision}";
     }
 
+    /**
+     * The subdirectory to deploy, as a safe relative path (`.` for the repository root).
+     */
     public function deploymentRoot(): string
     {
         return RepositoryPath::normalizeRoot($this->deployment_root);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `webhook_secret` and reads the automatic-deploy path filters as JSON lists.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

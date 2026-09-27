@@ -21,24 +21,43 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsIngestionBatch extends Model
 {
+    /**
+     * Stored in `analytics_ingestion_batches`.
+     */
     protected $table = 'analytics_ingestion_batches';
 
-    /** @var list<string> */
+    /**
+     * Written by collection and the batch processor.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['site_id', 'batch_id', 'event_count', 'status', 'accepted_at', 'processed_at', 'failure_message'];
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['accepted_at' => 'datetime', 'processed_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<AnalyticsSite, $this> */
+    /**
+     * The site that sent the batch.
+     *
+     * @return BelongsTo<AnalyticsSite, $this>
+     */
     public function site(): BelongsTo
     {
         return $this->belongsTo(AnalyticsSite::class, 'site_id');
     }
 
-    /** @return HasMany<AnalyticsEvent, $this> */
+    /**
+     * The events in the batch.
+     *
+     * @return HasMany<AnalyticsEvent, $this>
+     */
     public function events(): HasMany
     {
         return $this->hasMany(AnalyticsEvent::class, 'ingestion_batch_id');

@@ -27,13 +27,21 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class BackupRestore extends Model
 {
-    /** @return BelongsTo<WebsiteBackup, $this> */
+    /**
+     * The backup being restored.
+     *
+     * @return BelongsTo<WebsiteBackup, $this>
+     */
     public function backup(): BelongsTo
     {
         return $this->belongsTo(WebsiteBackup::class, 'website_backup_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['started_at' => 'immutable_datetime', 'completed_at' => 'immutable_datetime'];

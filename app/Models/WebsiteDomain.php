@@ -40,19 +40,31 @@ class WebsiteDomain extends Model
 {
     public const TYPES = ['primary', 'alias', 'redirect'];
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website the domain serves.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
-    /** @return BelongsTo<Provider, $this> */
+    /**
+     * The DNS provider its records are managed through (`dns_provider_id`), if any.
+     *
+     * @return BelongsTo<Provider, $this>
+     */
     public function dnsProvider(): BelongsTo
     {
         return $this->belongsTo(Provider::class, 'dns_provider_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['is_temporary' => 'boolean', 'certificate_expires_at' => 'immutable_datetime', 'last_checked_at' => 'immutable_datetime'];

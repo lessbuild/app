@@ -48,15 +48,26 @@ class MonitorCheck extends Model
     /** @use HasFactory<MonitorCheckFactory> */
     use HasFactory, HasUlids;
 
+    /**
+     * Queue bookkeeping and the private evidence never leave the server in serialised form.
+     */
     protected $hidden = ['processing_token', 'queue_job_uuid', 'evidence', 'scheduled_slot'];
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The monitor that ran the check, including archived ones.
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `evidence` (record values seen during the check) and reads `details` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

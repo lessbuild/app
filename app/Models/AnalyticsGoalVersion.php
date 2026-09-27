@@ -19,18 +19,33 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsGoalVersion extends Model
 {
+    /**
+     * Stored in `analytics_goal_versions`.
+     */
     protected $table = 'analytics_goal_versions';
 
-    /** @var list<string> */
+    /**
+     * Written when a goal is created or changed.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['goal_id', 'kind', 'match_type', 'match_value', 'effective_from', 'effective_to'];
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['effective_from' => 'datetime', 'effective_to' => 'datetime'];
     }
 
-    /** @return BelongsTo<AnalyticsGoal, $this> */
+    /**
+     * The goal this is a definition of.
+     *
+     * @return BelongsTo<AnalyticsGoal, $this>
+     */
     public function goal(): BelongsTo
     {
         return $this->belongsTo(AnalyticsGoal::class, 'goal_id');

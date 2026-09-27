@@ -70,7 +70,11 @@ final class Issue extends Model
     /** @use HasFactory<IssueFactory> */
     use HasFactory;
 
-    /** @param Builder<Issue> $query */
+    /**
+     * Limits a query to issues in the account's projects.
+     *
+     * @param  Builder<Issue>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
@@ -78,6 +82,8 @@ final class Issue extends Model
     }
 
     /**
+     * The project the issue was seen in.
+     *
      * @return BelongsTo<Project, $this>
      */
     public function project(): BelongsTo
@@ -86,6 +92,8 @@ final class Issue extends Model
     }
 
     /**
+     * The environment it was first seen in.
+     *
      * @return BelongsTo<Environment, $this>
      */
     public function environment(): BelongsTo
@@ -93,25 +101,39 @@ final class Issue extends Model
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who is working on it (`assignee_id`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_id');
     }
 
-    /** @return HasMany<IssueActivity, $this> */
+    /**
+     * Its timeline: detection, resolution, reopening, snoozes and assignments.
+     *
+     * @return HasMany<IssueActivity, $this>
+     */
     public function activities(): HasMany
     {
         return $this->hasMany(IssueActivity::class);
     }
 
-    /** @return HasMany<TelemetryEvent, $this> */
+    /**
+     * The exception events grouped into it.
+     *
+     * @return HasMany<TelemetryEvent, $this>
+     */
     public function telemetryEvents(): HasMany
     {
         return $this->hasMany(TelemetryEvent::class);
     }
 
     /**
+     * Reads `status` as an IssueStatus and `metadata` as JSON.
+     *
      * @return array<string, string>
      */
     protected function casts(): array

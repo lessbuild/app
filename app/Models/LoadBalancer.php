@@ -35,30 +35,49 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class LoadBalancer extends Model
 {
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server running the proxy.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website it balances.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
-    /** @return HasMany<LoadBalancerNode, $this> */
+    /**
+     * The servers traffic is spread across.
+     *
+     * @return HasMany<LoadBalancerNode, $this>
+     */
     public function nodes(): HasMany
     {
         return $this->hasMany(LoadBalancerNode::class);
     }
 
+    /**
+     * Whether removal has started or failed, when the load balancer can't be changed.
+     */
     public function isRemoving(): bool
     {
         return in_array($this->status, ['removing', 'removal_failed'], true);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['applied_at' => 'immutable_datetime'];

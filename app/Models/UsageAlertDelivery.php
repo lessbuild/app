@@ -30,7 +30,11 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class UsageAlertDelivery extends Model
 {
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['period_start' => 'immutable_datetime', 'sending_started_at' => 'immutable_datetime', 'sent_at' => 'immutable_datetime'];

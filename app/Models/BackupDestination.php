@@ -44,19 +44,31 @@ class BackupDestination extends Model
     /** @use HasFactory<BackupDestinationFactory> */
     use HasFactory;
 
-    /** @return HasMany<WebsiteBackupSchedule, $this> */
+    /**
+     * Backup schedules that write here.
+     *
+     * @return HasMany<WebsiteBackupSchedule, $this>
+     */
     public function schedules(): HasMany
     {
         return $this->hasMany(WebsiteBackupSchedule::class);
     }
 
-    /** @return HasMany<WebsiteBackup, $this> */
+    /**
+     * Backups stored here.
+     *
+     * @return HasMany<WebsiteBackup, $this>
+     */
     public function backups(): HasMany
     {
         return $this->hasMany(WebsiteBackup::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the access key, secret key and restic repository password.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['access_key' => 'encrypted', 'secret_key' => 'encrypted', 'repository_password' => 'encrypted', 'last_verified_at' => 'immutable_datetime'];

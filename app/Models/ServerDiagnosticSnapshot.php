@@ -33,18 +33,30 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class ServerDiagnosticSnapshot extends Model
 {
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server that was diagnosed.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
+    /**
+     * Whether a run is under way and its lease hasn't lapsed; a lapsed lease means the worker died and a new run may
+     * start.
+     */
     public function isRunning(): bool
     {
         return in_array($this->status, ['queued', 'running'], true) && ($this->lease_expires_at === null || $this->lease_expires_at->isFuture());
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `checks` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['checks' => 'array', 'attempt' => 'integer', 'lease_expires_at' => 'immutable_datetime', 'started_at' => 'immutable_datetime', 'finished_at' => 'immutable_datetime'];

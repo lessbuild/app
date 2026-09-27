@@ -35,54 +35,89 @@ class Project extends Model
     /** @use HasFactory<ProjectFactory> */
     use HasFactory, HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['checklist_dismissed_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the project belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return HasMany<ConfigurationReview, $this> */
+    /**
+     * Configuration documents reviewed for the project.
+     *
+     * @return HasMany<ConfigurationReview, $this>
+     */
     public function configurationReviews(): HasMany
     {
         return $this->hasMany(ConfigurationReview::class);
     }
 
-    /** @return HasMany<Environment, $this> */
+    /**
+     * The project's environments.
+     *
+     * @return HasMany<Environment, $this>
+     */
     public function environments(): HasMany
     {
         return $this->hasMany(Environment::class);
     }
 
-    /** @return HasMany<Domain, $this> */
+    /**
+     * The project's domains.
+     *
+     * @return HasMany<Domain, $this>
+     */
     public function domains(): HasMany
     {
         return $this->hasMany(Domain::class);
     }
 
-    /** @return HasMany<AnalyticsSite, $this> */
+    /**
+     * Analytics sites in the project.
+     *
+     * @return HasMany<AnalyticsSite, $this>
+     */
     public function analyticsSites(): HasMany
     {
         return $this->hasMany(AnalyticsSite::class);
     }
 
-    /** @return HasMany<Release, $this> */
+    /**
+     * Releases seen in the project's telemetry.
+     *
+     * @return HasMany<Release, $this>
+     */
     public function releases(): HasMany
     {
         return $this->hasMany(Release::class);
     }
 
-    /** @return HasMany<EnabledService, $this> */
+    /**
+     * The services turned on in the project.
+     *
+     * @return HasMany<EnabledService, $this>
+     */
     public function enabledServices(): HasMany
     {
         return $this->hasMany(EnabledService::class);
     }
 
+    /**
+     * Whether a service is turned on in the project.
+     */
     public function hasService(string $service): bool
     {
         return $this->enabledServices()->where('service', $service)->exists();

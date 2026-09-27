@@ -46,19 +46,31 @@ class Dashboard extends Model
         'projects' => 'Projects',
     ];
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the dashboard belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who created it (`created_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** @return HasMany<DashboardWidget, $this> */
+    /**
+     * The widgets on it, in display order.
+     *
+     * @return HasMany<DashboardWidget, $this>
+     */
     public function widgets(): HasMany
     {
         return $this->hasMany(DashboardWidget::class)->orderBy('position')->orderBy('id');

@@ -24,7 +24,11 @@ class BillingSelection extends Model
 {
     use HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Reads `kind` as a SelectionKind (tier or add-on).
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['kind' => SelectionKind::class, 'quantity' => 'integer', 'ends_at' => 'datetime'];

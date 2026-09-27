@@ -54,33 +54,53 @@ class Incident extends Model
     /** @use HasFactory<IncidentFactory> */
     use HasFactory;
 
-    /** @param Builder<Incident> $query */
+    /**
+     * Limits a query to the account's incidents.
+     *
+     * @param  Builder<Incident>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->where('account_id', $account->id);
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the incident belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project it happened in.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The monitor that opened it, including archived ones.
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
     /** What opened the incident. Telemetry alert rules join monitors as sources with Monitoring part 3. */
-    /** @return BelongsTo<AlertRule, $this> */
+    /**
+     * The alert rule that opened it, including archived ones.
+     *
+     * @return BelongsTo<AlertRule, $this>
+     */
     public function alertRule(): BelongsTo
     {
         return $this->belongsTo(AlertRule::class)->withTrashed();
@@ -92,24 +112,39 @@ class Incident extends Model
         return $this->monitor_id !== null ? $this->monitor : $this->alertRule;
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who acknowledged it (`acknowledged_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function acknowledgedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'acknowledged_by');
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who is working on it (`assignee_id`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function assignee(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assignee_id');
     }
 
-    /** @return HasMany<IncidentActivity, $this> */
+    /**
+     * Its timeline: opening, acknowledgements, notes, assignments and closure.
+     *
+     * @return HasMany<IncidentActivity, $this>
+     */
     public function activities(): HasMany
     {
         return $this->hasMany(IncidentActivity::class);
     }
 
+    /**
+     * The status as people read it, with why a resolved incident closed (recovered, rule changed, monitor archived…).
+     */
     public function statusLabel(): string
     {
         return match ($this->status) {
@@ -126,7 +161,11 @@ class Incident extends Model
         };
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads the rule snapshot and the opening and latest observations as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

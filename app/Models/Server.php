@@ -96,6 +96,10 @@ class Server extends Model
     /** The root password for this provisioning run; shown once, never stored except while a retry needs it. */
     private ?string $provisioningRootPassword = null;
 
+    /**
+     * Gives each new server provisioning and initialisation tokens, so a job from an earlier attempt can tell it's
+     * stale.
+     */
     protected static function booted(): void
     {
         static::creating(function (Server $server): void {
@@ -104,87 +108,144 @@ class Server extends Model
         });
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the server belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who created or imported it (`created_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** @return BelongsTo<Provider, $this> */
+    /**
+     * The cloud provider it runs on, including disconnected ones.
+     *
+     * @return BelongsTo<Provider, $this>
+     */
     public function provider(): BelongsTo
     {
         return $this->belongsTo(Provider::class)->withTrashed();
     }
 
-    /** @return HasMany<ServerLogSnapshot, $this> */
+    /**
+     * Its latest copy of each log.
+     *
+     * @return HasMany<ServerLogSnapshot, $this>
+     */
     public function logSnapshots(): HasMany
     {
         return $this->hasMany(ServerLogSnapshot::class);
     }
 
-    /** @return HasMany<Website, $this> */
+    /**
+     * Websites on the server.
+     *
+     * @return HasMany<Website, $this>
+     */
     public function websites(): HasMany
     {
         return $this->hasMany(Website::class);
     }
 
-    /** @return HasMany<ServerTerminalSession, $this> */
+    /**
+     * Troubleshooting terminals opened on it.
+     *
+     * @return HasMany<ServerTerminalSession, $this>
+     */
     public function terminalSessions(): HasMany
     {
         return $this->hasMany(ServerTerminalSession::class);
     }
 
-    /** @return HasMany<ServerCommandExecution, $this> */
+    /**
+     * Commands run on it from the server page.
+     *
+     * @return HasMany<ServerCommandExecution, $this>
+     */
     public function commandExecutions(): HasMany
     {
         return $this->hasMany(ServerCommandExecution::class);
     }
 
-    /** @return HasMany<ServerMetric, $this> */
+    /**
+     * Its resource samples.
+     *
+     * @return HasMany<ServerMetric, $this>
+     */
     public function metrics(): HasMany
     {
         return $this->hasMany(ServerMetric::class);
     }
 
-    /** @return HasOne<ServerDiagnosticSnapshot, $this> */
+    /**
+     * Its latest diagnostic run.
+     *
+     * @return HasOne<ServerDiagnosticSnapshot, $this>
+     */
     public function diagnosticSnapshot(): HasOne
     {
         return $this->hasOne(ServerDiagnosticSnapshot::class);
     }
 
+    /**
+     * The name to show: the display name when set, else the provider's name.
+     */
     public function label(): string
     {
         return $this->display_name ?? $this->name;
     }
 
+    /**
+     * Whether the server is still being set up.
+     */
     public function isProvisioning(): bool
     {
         return in_array($this->provisioning_status, self::PROVISIONING_STATUSES, true);
     }
 
-    /** @return list<array{name: string, description: string|null, script: string}> */
+    /**
+     * The recipes chosen when the server was created, which provisioning installs.
+     *
+     * @return list<array{name: string, description: string|null, script: string}>
+     */
     public function provisioningRecipes(): array
     {
         return $this->recipe_snapshot ?? [];
     }
 
+    /**
+     * The root password handed to the provisioning script in this request only; it's never stored in this form.
+     */
     public function provisioningRootPassword(): ?string
     {
         return $this->provisioningRootPassword;
     }
 
+    /**
+     * Hands the root password to the provisioning script for this request only.
+     */
     public function setProvisioningRootPassword(string $password): void
     {
         $this->provisioningRootPassword = $password;
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the root and MySQL passwords, SSH keys, pinned host key and recipe snapshot, and reads `type` as a
+     * ServerType.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

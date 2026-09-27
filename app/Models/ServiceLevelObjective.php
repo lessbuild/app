@@ -43,41 +43,65 @@ final class ServiceLevelObjective extends Model
     /** @use HasFactory<ServiceLevelObjectiveFactory> */
     use HasFactory, SoftDeletes;
 
-    /** @param Builder<ServiceLevelObjective> $query */
+    /**
+     * Limits a query to SLOs in the account's environments.
+     *
+     * @param  Builder<ServiceLevelObjective>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereIn('environment_id', Environment::forAccount($account)->select('id'));
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the SLO measures.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /**
+     * "Latency" or "Availability".
+     */
     public function indicatorLabel(): string
     {
         return $this->indicator === 'latency' ? 'Latency' : 'Availability';
     }
 
+    /**
+     * Which traffic the SLO covers: its service and route, or all request traffic.
+     */
     public function scopeLabel(): string
     {
         return collect([$this->service, $this->route])->filter(fn (?string $value): bool => filled($value))->implode(' · ')
             ?: 'All request traffic';
     }
 
+    /**
+     * The rolling window, such as "30-day rolling window".
+     */
     public function windowLabel(): string
     {
         return $this->window_days.'-day rolling window';
     }
 
+    /**
+     * Whether the SLO measures latency rather than availability.
+     */
     public function isLatency(): bool
     {
         return $this->indicator === 'latency';
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

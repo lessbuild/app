@@ -28,19 +28,31 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class RepositoryWebhookDelivery extends Model
 {
-    /** @return BelongsTo<Repository, $this> */
+    /**
+     * The repository the delivery was for.
+     *
+     * @return BelongsTo<Repository, $this>
+     */
     public function repository(): BelongsTo
     {
         return $this->belongsTo(Repository::class);
     }
 
-    /** @return BelongsTo<Build, $this> */
+    /**
+     * The deploy it started, if any.
+     *
+     * @return BelongsTo<Build, $this>
+     */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `changed_paths` as a JSON list.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['changed_paths' => 'array'];

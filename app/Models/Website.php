@@ -89,6 +89,10 @@ class Website extends Model
 
     public const HEALTH_FAILURE_THRESHOLDS = [1, 2, 3, 5, 10];
 
+    /**
+     * Gives each new website a provisioning token and a directory slug made from its name (at most 32 characters,
+     * unique in the account), and adds its URL as its primary domain once it's created.
+     */
     protected static function booted(): void
     {
         static::creating(function (Website $website): void {
@@ -117,78 +121,129 @@ class Website extends Model
         });
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the website belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who created it (`created_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server it runs on.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server it moved from, until its files there are cleaned up (`previous_server_id`).
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function previousServer(): BelongsTo
     {
         return $this->belongsTo(Server::class, 'previous_server_id');
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The project environment it serves, if any.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The monitor that checks its health URL (`health_monitor_id`).
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function healthMonitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class, 'health_monitor_id');
     }
 
-    /** @return HasMany<WebsiteDomain, $this> */
+    /**
+     * Its domains.
+     *
+     * @return HasMany<WebsiteDomain, $this>
+     */
     public function domains(): HasMany
     {
         return $this->hasMany(WebsiteDomain::class);
     }
 
-    /** @return HasMany<WebsiteLog, $this> */
+    /**
+     * Its provisioning and deploy logs.
+     *
+     * @return HasMany<WebsiteLog, $this>
+     */
     public function logs(): HasMany
     {
         return $this->hasMany(WebsiteLog::class);
     }
 
-    /** @return HasMany<WebsiteBackupSchedule, $this> */
+    /**
+     * When it's backed up, and where to.
+     *
+     * @return HasMany<WebsiteBackupSchedule, $this>
+     */
     public function backupSchedules(): HasMany
     {
         return $this->hasMany(WebsiteBackupSchedule::class);
     }
 
-    /** @return HasMany<WebsiteBackup, $this> */
+    /**
+     * Its backups.
+     *
+     * @return HasMany<WebsiteBackup, $this>
+     */
     public function backups(): HasMany
     {
         return $this->hasMany(WebsiteBackup::class);
     }
 
-    /** @return HasMany<DatabaseSnapshot, $this> */
+    /**
+     * Inspections of its database.
+     *
+     * @return HasMany<DatabaseSnapshot, $this>
+     */
     public function databaseSnapshots(): HasMany
     {
         return $this->hasMany(DatabaseSnapshot::class);
     }
 
-    /** @return HasMany<DatabaseUser, $this> */
+    /**
+     * Extra users on its database.
+     *
+     * @return HasMany<DatabaseUser, $this>
+     */
     public function databaseUsers(): HasMany
     {
         return $this->hasMany(DatabaseUser::class);
     }
 
+    /**
+     * The MySQL database and user name: the directory slug with hyphens as underscores.
+     */
     public function databaseIdentifier(): string
     {
         return str_replace('-', '_', $this->deployment_slug);
@@ -200,12 +255,19 @@ class Website extends Model
         return "/var/www/{$this->deployment_slug}/{$phase}";
     }
 
+    /**
+     * Whether the website is still being set up.
+     */
     public function isProvisioning(): bool
     {
         return in_array($this->provisioning_status, [self::STATUS_QUEUED, self::STATUS_PROVISIONING], true);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the `.env` file and the database password.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

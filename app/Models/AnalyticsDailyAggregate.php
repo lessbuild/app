@@ -17,18 +17,33 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsDailyAggregate extends Model
 {
+    /**
+     * Stored in `analytics_daily_aggregates`.
+     */
     protected $table = 'analytics_daily_aggregates';
 
-    /** @var list<string> */
+    /**
+     * Written only by the aggregate rebuild.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['site_id', 'local_date', 'dimension', 'dimension_value', 'pageviews', 'visits', 'visitors', 'conversions', 'converted_visits', 'bounce_eligible', 'bounces'];
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['local_date' => 'date'];
     }
 
-    /** @return BelongsTo<AnalyticsSite, $this> */
+    /**
+     * The site the totals belong to.
+     *
+     * @return BelongsTo<AnalyticsSite, $this>
+     */
     public function site(): BelongsTo
     {
         return $this->belongsTo(AnalyticsSite::class, 'site_id');

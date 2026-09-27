@@ -35,15 +35,26 @@ class ServerLogSnapshot extends Model
 
     public const STATUS_FAILED = 'failed';
 
+    /**
+     * Only the key is guarded: snapshots are written by the log job, never from request input.
+     */
     protected $guarded = ['id'];
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server the log is from.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['refreshed_at' => 'immutable_datetime'];

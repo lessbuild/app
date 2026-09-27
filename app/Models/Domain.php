@@ -29,34 +29,55 @@ class Domain extends Model
 
     public const RECORD_PREFIX = '_buildpusher';
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['verified_at' => 'datetime', 'last_checked_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the domain belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment it points at, if any.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
+    /**
+     * The name of the TXT record that proves ownership, under a fixed prefix of the hostname.
+     */
     public function recordName(): string
     {
         return self::RECORD_PREFIX.'.'.$this->hostname;
     }
 
+    /**
+     * The value that TXT record must have.
+     */
     public function recordValue(): string
     {
         return 'buildpusher-verification='.$this->verification_token;
     }
 
+    /**
+     * The hostname as people read it (Unicode rather than punycode).
+     */
     public function displayName(): string
     {
         return Hostname::display($this->hostname);

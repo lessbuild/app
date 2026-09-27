@@ -86,57 +86,96 @@ class Monitor extends Model
     /** @use HasFactory<MonitorFactory> */
     use HasFactory, SoftDeletes;
 
+    /**
+     * Targets, credentials and job token hashes never leave the server in serialised form.
+     */
     protected $hidden = ['request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_token_hash', 'queue_token_hash'];
 
-    /** @param Builder<Monitor> $query */
+    /**
+     * Limits a query to monitors in the account's environments.
+     *
+     * @param  Builder<Monitor>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereIn('environment_id', Environment::forAccount($account)->select('id'));
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the monitor belongs to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return HasMany<MonitorCheck, $this> */
+    /**
+     * Its scheduled and finished checks.
+     *
+     * @return HasMany<MonitorCheck, $this>
+     */
     public function checks(): HasMany
     {
         return $this->hasMany(MonitorCheck::class);
     }
 
-    /** @return HasMany<HeartbeatRun, $this> */
+    /**
+     * Pings from the job a heartbeat monitor watches.
+     *
+     * @return HasMany<HeartbeatRun, $this>
+     */
     public function heartbeatRuns(): HasMany
     {
         return $this->hasMany(HeartbeatRun::class);
     }
 
-    /** @return HasMany<QueueSnapshot, $this> */
+    /**
+     * Reports from the queue a queue monitor watches.
+     *
+     * @return HasMany<QueueSnapshot, $this>
+     */
     public function queueSnapshots(): HasMany
     {
         return $this->hasMany(QueueSnapshot::class);
     }
 
-    /** @return HasMany<QueueWorker, $this> */
+    /**
+     * Workers seen by a queue monitor.
+     *
+     * @return HasMany<QueueWorker, $this>
+     */
     public function queueWorkers(): HasMany
     {
         return $this->hasMany(QueueWorker::class);
     }
 
-    /** @return HasMany<Incident, $this> */
+    /**
+     * Incidents the monitor has opened.
+     *
+     * @return HasMany<Incident, $this>
+     */
     public function incidents(): HasMany
     {
         return $this->hasMany(Incident::class);
     }
 
-    /** @return BelongsToMany<AlertDestination, $this> */
+    /**
+     * Where the monitor sends alerts.
+     *
+     * @return BelongsToMany<AlertDestination, $this>
+     */
     public function destinations(): BelongsToMany
     {
         return $this->belongsToMany(AlertDestination::class)->withPivot(['opened', 'recovered']);
     }
 
+    /**
+     * What the monitor watches, safe to show: the queue, the heartbeat schedule, the host and port, or a URL cut down to
+     * its scheme, host and port, since paths and queries can hold tokens.
+     */
     public function targetLabel(): string
     {
         if ($this->type === 'queue') {
@@ -182,6 +221,9 @@ class Monitor extends Model
         ];
     }
 
+    /**
+     * The monitor type as people read it.
+     */
     public function typeLabel(): string
     {
         return match ($this->type) {
@@ -194,6 +236,10 @@ class Monitor extends Model
         };
     }
 
+    /**
+     * The monitor's state for lists and status pages: archived, paused, unknown when its latest result is missing or
+     * overdue, or up or down from that result.
+     */
     public function healthLabel(): string
     {
         if ($this->trashed()) {
@@ -216,7 +262,12 @@ class Monitor extends Model
         return ucfirst($this->health);
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The monitor's settings as they were when an incident opened, stored on the incident. Only the fields that matter
+     * for the monitor's type are kept, and never its secrets.
+     *
+     * @return array<string, mixed>
+     */
     public function snapshot(): array
     {
         if ($this->type === 'queue') {
@@ -237,7 +288,12 @@ class Monitor extends Model
             'body_assertion' => $this->body_contains !== null, 'authenticated' => $this->bearer_token !== null];
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the target and credentials (URL, bearer token, expected body text, hostname, expected DNS answers) and
+     * reads the queue settings and latest observation as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

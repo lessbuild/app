@@ -33,18 +33,29 @@ class IncidentActivity extends Model
     /** @use HasFactory<IncidentActivityFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Incident, $this> */
+    /**
+     * The incident the activity is on.
+     *
+     * @return BelongsTo<Incident, $this>
+     */
     public function incident(): BelongsTo
     {
         return $this->belongsTo(Incident::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who did it (`actor_id`); null for automatic entries.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
 
+    /**
+     * The activity as a line on the timeline.
+     */
     public function label(): string
     {
         return match ($this->action) {
@@ -66,7 +77,11 @@ class IncidentActivity extends Model
         };
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `metadata` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['metadata' => 'array'];

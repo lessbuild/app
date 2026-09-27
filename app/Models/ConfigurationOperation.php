@@ -43,25 +43,41 @@ class ConfigurationOperation extends Model
 {
     public const FINISHED = ['succeeded', 'failed', 'canceled'];
 
-    /** @return BelongsTo<ConfigurationApplication, $this> */
+    /**
+     * The application that started the operation.
+     *
+     * @return BelongsTo<ConfigurationApplication, $this>
+     */
     public function application(): BelongsTo
     {
         return $this->belongsTo(ConfigurationApplication::class, 'configuration_application_id');
     }
 
-    /** @return BelongsTo<Build, $this> */
+    /**
+     * The deploy it started, if any.
+     *
+     * @return BelongsTo<Build, $this>
+     */
     public function build(): BelongsTo
     {
         return $this->belongsTo(Build::class);
     }
 
-    /** @return HasOne<ConfigurationOperation, $this> */
+    /**
+     * The operation this one retries (`retry_of_operation_id`).
+     *
+     * @return HasOne<ConfigurationOperation, $this>
+     */
     public function retry(): HasOne
     {
         return $this->hasOne(self::class, 'retry_of_operation_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `payload`, which can carry variable values.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['payload' => 'encrypted:array', 'attempts' => 'integer', 'retry_sequence' => 'integer', 'started_at' => 'immutable_datetime', 'completed_at' => 'immutable_datetime'];

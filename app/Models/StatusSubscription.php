@@ -36,18 +36,29 @@ class StatusSubscription extends Model
     /** @use HasFactory<StatusSubscriptionFactory> */
     use HasFactory;
 
+    /**
+     * A lookup key for an email address, so a subscriber can be found without decrypting every row.
+     */
     public static function hashEmail(string $email): string
     {
         return hash('sha256', mb_strtolower(trim($email)));
     }
 
-    /** @return BelongsTo<StatusPage, $this> */
+    /**
+     * The page subscribed to.
+     *
+     * @return BelongsTo<StatusPage, $this>
+     */
     public function statusPage(): BelongsTo
     {
         return $this->belongsTo(StatusPage::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the email address and the unsubscribe token.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['email' => 'encrypted', 'unsubscribe_token' => 'encrypted', 'verified_at' => 'immutable_datetime'];

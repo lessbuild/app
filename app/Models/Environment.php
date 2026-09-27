@@ -55,7 +55,11 @@ class Environment extends Model
     /** @use HasFactory<EnvironmentFactory> */
     use HasFactory, HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Reads `kind` as an EnvironmentKind and the deployment window days as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -66,50 +70,82 @@ class Environment extends Model
         ];
     }
 
-    /** @param Builder<Environment> $query */
+    /**
+     * Limits a query to environments of the account's projects.
+     *
+     * @param  Builder<Environment>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereIn('project_id', Project::query()->where('account_id', $account->id)->select('id'));
     }
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the environment belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return HasMany<IngestToken, $this> */
+    /**
+     * Keys that send telemetry to the environment.
+     *
+     * @return HasMany<IngestToken, $this>
+     */
     public function ingestTokens(): HasMany
     {
         return $this->hasMany(IngestToken::class);
     }
 
-    /** @return HasMany<Deployment, $this> */
+    /**
+     * Releases reported as deployed here.
+     *
+     * @return HasMany<Deployment, $this>
+     */
     public function deployments(): HasMany
     {
         return $this->hasMany(Deployment::class);
     }
 
-    /** @return HasMany<Repository, $this> */
+    /**
+     * Repositories that deploy to this environment.
+     *
+     * @return HasMany<Repository, $this>
+     */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
     }
 
-    /** @return HasMany<EnvironmentVariable, $this> */
+    /**
+     * Its deploy environment variables.
+     *
+     * @return HasMany<EnvironmentVariable, $this>
+     */
     public function variables(): HasMany
     {
         return $this->hasMany(EnvironmentVariable::class);
     }
 
-    /** @return HasMany<EnvironmentProcess, $this> */
+    /**
+     * Its long-running processes (workers, schedulers).
+     *
+     * @return HasMany<EnvironmentProcess, $this>
+     */
     public function processes(): HasMany
     {
         return $this->hasMany(EnvironmentProcess::class);
     }
 
-    /** @return HasMany<EnvironmentResource, $this> */
+    /**
+     * Its attached resources (databases, caches).
+     *
+     * @return HasMany<EnvironmentResource, $this>
+     */
     public function resources(): HasMany
     {
         return $this->hasMany(EnvironmentResource::class);

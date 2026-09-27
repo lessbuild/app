@@ -46,35 +46,57 @@ class ServerTerminalSession extends Model
 
     public const ACTIVE = ['connecting', 'connected'];
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server the terminal is on.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who opened it; nobody else may use it.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    /** @return HasMany<ServerTerminalFrame, $this> */
+    /**
+     * Keystrokes and output waiting to be relayed.
+     *
+     * @return HasMany<ServerTerminalFrame, $this>
+     */
     public function frames(): HasMany
     {
         return $this->hasMany(ServerTerminalFrame::class);
     }
 
+    /**
+     * Whether the terminal is connecting or connected.
+     */
     public function isActive(): bool
     {
         return in_array($this->status, self::ACTIVE, true);
     }
 
+    /**
+     * Whether it has run past its time limit or sat idle too long.
+     */
     public function hasExpired(): bool
     {
         return $this->expires_at->isPast() || $this->idle_expires_at->isPast();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

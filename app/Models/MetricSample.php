@@ -41,19 +41,31 @@ final class MetricSample extends Model
     /** @use HasFactory<MetricSampleFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<MetricSeries, $this> */
+    /**
+     * The series the sample is a point of.
+     *
+     * @return BelongsTo<MetricSeries, $this>
+     */
     public function metricSeries(): BelongsTo
     {
         return $this->belongsTo(MetricSeries::class);
     }
 
-    /** @return BelongsTo<TelemetryEvent, $this> */
+    /**
+     * The ingested event the sample came from.
+     *
+     * @return BelongsTo<TelemetryEvent, $this>
+     */
     public function telemetryEvent(): BelongsTo
     {
         return $this->belongsTo(TelemetryEvent::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['value' => 'float', 'occurred_at' => 'immutable_datetime', 'received_at' => 'immutable_datetime'];

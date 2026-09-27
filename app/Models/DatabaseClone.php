@@ -29,19 +29,31 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class DatabaseClone extends Model
 {
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website whose database is copied, including deleted ones so history reads.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function source(): BelongsTo
     {
         return $this->belongsTo(Website::class, 'source_website_id')->withTrashed();
     }
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website whose database is overwritten.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function target(): BelongsTo
     {
         return $this->belongsTo(Website::class, 'target_website_id')->withTrashed();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['started_at' => 'immutable_datetime', 'finished_at' => 'immutable_datetime'];

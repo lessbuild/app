@@ -35,25 +35,41 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class ConfigurationReview extends Model
 {
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the configuration belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who asked for the review (`requested_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');
     }
 
-    /** @return HasOne<ConfigurationApplication, $this> */
+    /**
+     * The application created when the review was applied.
+     *
+     * @return HasOne<ConfigurationApplication, $this>
+     */
     public function application(): HasOne
     {
         return $this->hasOne(ConfigurationApplication::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the document and its bindings (they can contain secrets); reads `summary` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['document' => 'encrypted', 'bindings' => 'encrypted:array', 'summary' => 'array', 'expires_at' => 'immutable_datetime', 'applied_at' => 'immutable_datetime'];

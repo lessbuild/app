@@ -27,13 +27,21 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class EnvironmentProcess extends Model
 {
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the process runs in.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['replicas' => 'integer', 'restart_delay_seconds' => 'integer', 'is_enabled' => 'boolean'];

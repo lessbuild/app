@@ -35,13 +35,21 @@ class DatabaseUser extends Model
 {
     public const PRIVILEGES = ['read' => 'Read only', 'write' => 'Read and write', 'admin' => 'Full access'];
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website whose database the user can reach.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `password`.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['password' => 'encrypted', 'expires_at' => 'immutable_datetime', 'applied_at' => 'immutable_datetime'];

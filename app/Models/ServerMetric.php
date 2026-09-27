@@ -32,17 +32,31 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class ServerMetric extends Model
 {
+    /**
+     * Each sample records its own `recorded_at`; rows are never updated.
+     */
     public $timestamps = false;
 
+    /**
+     * Only the key is guarded: samples are written by the collector, never from request input.
+     */
     protected $guarded = ['id'];
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server that was sampled.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

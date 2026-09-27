@@ -37,26 +37,42 @@ class MaintenanceWindow extends Model
     /** @use HasFactory<MaintenanceWindowFactory> */
     use HasFactory;
 
-    /** @param Builder<MaintenanceWindow> $query */
+    /**
+     * Limits a query to the account's windows in effect at a moment.
+     *
+     * @param  Builder<MaintenanceWindow>  $query
+     */
     #[Scope]
     protected function activeAt(Builder $query, Account $account, CarbonImmutable $at): void
     {
         $query->whereBelongsTo($account)->where('starts_at', '<=', $at)->where('ends_at', '>', $at);
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the window belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who scheduled it (`created_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['starts_at' => 'immutable_datetime', 'ends_at' => 'immutable_datetime'];

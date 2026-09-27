@@ -28,13 +28,21 @@ class ServerTerminalFrame extends Model
 {
     public const UPDATED_AT = null;
 
-    /** @return BelongsTo<ServerTerminalSession, $this> */
+    /**
+     * The terminal the frame belongs to.
+     *
+     * @return BelongsTo<ServerTerminalSession, $this>
+     */
     public function session(): BelongsTo
     {
         return $this->belongsTo(ServerTerminalSession::class, 'server_terminal_session_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `payload`, the keystrokes or output it carries.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['payload' => 'encrypted', 'sequence' => 'integer', 'bytes' => 'integer'];

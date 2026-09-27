@@ -38,13 +38,21 @@ class ServerAlertRule extends Model
 {
     public const METRICS = ['cpu_percent' => 'CPU (%)', 'memory_percent' => 'Memory (%)', 'disk_percent' => 'Disk (%)', 'load_1m' => 'Load (1 min)', 'process_count' => 'Processes'];
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server the rule watches; null for rules that watch every server.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

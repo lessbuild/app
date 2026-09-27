@@ -34,13 +34,21 @@ class QueueWorker extends Model
     /** @use HasFactory<QueueWorkerFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The queue monitor the worker reports to, including archived ones.
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['config_revision' => 'integer', 'last_sequence' => 'integer',

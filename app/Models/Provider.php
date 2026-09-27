@@ -55,36 +55,59 @@ class Provider extends Model
 
     public const FAILURE_THRESHOLDS = [1, 2, 3, 5];
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the provider is connected to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who connected it (`created_by`), who is told when the connection breaks.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
-    /** @return HasMany<Server, $this> */
+    /**
+     * Servers created or imported through it.
+     *
+     * @return HasMany<Server, $this>
+     */
     public function servers(): HasMany
     {
         return $this->hasMany(Server::class);
     }
 
-    /** @return HasMany<ProviderConnectionCheck, $this> */
+    /**
+     * Its credential checks.
+     *
+     * @return HasMany<ProviderConnectionCheck, $this>
+     */
     public function connectionChecks(): HasMany
     {
         return $this->hasMany(ProviderConnectionCheck::class);
     }
 
+    /**
+     * Whether anything still depends on the provider (servers or repositories), which blocks disconnecting it.
+     */
     public function hasAttachedResources(): bool
     {
         return $this->servers()->exists() || $this->repositories()->exists();
     }
 
-    /** @return HasMany<Repository, $this> */
+    /**
+     * Repositories cloned through it.
+     *
+     * @return HasMany<Repository, $this>
+     */
     public function repositories(): HasMany
     {
         return $this->hasMany(Repository::class);
@@ -104,7 +127,11 @@ class Provider extends Model
         return $host !== null && str_starts_with(strtolower($url), $host.'/');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `token` and reads `type` as a ProviderType.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

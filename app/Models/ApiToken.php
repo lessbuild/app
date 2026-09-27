@@ -23,12 +23,23 @@ use Laravel\Sanctum\PersonalAccessToken;
  */
 class ApiToken extends PersonalAccessToken
 {
+    /**
+     * Sanctum's table, `personal_access_tokens`.
+     */
     protected $table = 'personal_access_tokens';
 
-    /** @var list<string> */
+    /**
+     * Nothing: tokens are created by the action with forceFill, so request input can't set scopes or accounts.
+     *
+     * @var list<string>
+     */
     protected $fillable = [];
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the token acts in.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);

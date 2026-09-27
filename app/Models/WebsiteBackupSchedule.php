@@ -40,19 +40,31 @@ class WebsiteBackupSchedule extends Model
         return $this->frequency === 'daily' || $now->dayOfWeek === $this->weekday;
     }
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website backed up.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
-    /** @return BelongsTo<BackupDestination, $this> */
+    /**
+     * Where the backups go.
+     *
+     * @return BelongsTo<BackupDestination, $this>
+     */
     public function destination(): BelongsTo
     {
         return $this->belongsTo(BackupDestination::class, 'backup_destination_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['weekday' => 'integer', 'retention_count' => 'integer', 'last_queued_at' => 'immutable_datetime'];

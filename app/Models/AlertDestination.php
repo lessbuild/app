@@ -45,51 +45,86 @@ class AlertDestination extends Model
     /** @use HasFactory<AlertDestinationFactory> */
     use HasFactory, SoftDeletes;
 
+    /**
+     * The endpoint and signing secret never leave the server in serialised form.
+     */
     protected $hidden = ['endpoint_url', 'signing_secret'];
 
-    /** @param Builder<AlertDestination> $query */
+    /**
+     * Limits a query to the account's destinations.
+     *
+     * @param  Builder<AlertDestination>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereBelongsTo($account);
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the destination belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * The member an email destination sends to (`recipient_user_id`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function recipient(): BelongsTo
     {
         return $this->belongsTo(User::class, 'recipient_user_id');
     }
 
-    /** @return BelongsToMany<Monitor, $this> */
+    /**
+     * Monitors that alert this destination.
+     *
+     * @return BelongsToMany<Monitor, $this>
+     */
     public function monitors(): BelongsToMany
     {
         return $this->belongsToMany(Monitor::class)->withPivot(['opened', 'recovered']);
     }
 
-    /** @return BelongsToMany<AlertRule, $this> */
+    /**
+     * Alert rules that alert this destination.
+     *
+     * @return BelongsToMany<AlertRule, $this>
+     */
     public function alertRules(): BelongsToMany
     {
         return $this->belongsToMany(AlertRule::class)->withPivot(['opened', 'recovered']);
     }
 
-    /** @return HasMany<AlertEscalation, $this> */
+    /**
+     * Escalation steps that notify this destination.
+     *
+     * @return HasMany<AlertEscalation, $this>
+     */
     public function escalations(): HasMany
     {
         return $this->hasMany(AlertEscalation::class);
     }
 
-    /** @return HasMany<AlertDelivery, $this> */
+    /**
+     * Alerts sent to this destination.
+     *
+     * @return HasMany<AlertDelivery, $this>
+     */
     public function deliveries(): HasMany
     {
         return $this->hasMany(AlertDelivery::class);
     }
 
+    /**
+     * Where alerts go, safe to show: the recipient's name for email, or only the host of a webhook URL (the full URL may
+     * contain a token).
+     */
     public function targetLabel(): string
     {
         return $this->type === AlertDestinationType::Email
@@ -97,7 +132,11 @@ class AlertDestination extends Model
             : (parse_url($this->endpoint_url ?? '', PHP_URL_HOST) ?: 'Endpoint unavailable');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `endpoint_url` and `signing_secret`, and reads `type` as an AlertDestinationType.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

@@ -36,13 +36,21 @@ class BackupVerification extends Model
 {
     public const STAGES = ['preflight', 'restore', 'integrity', 'smoke', 'cleanup'];
 
-    /** @return BelongsTo<WebsiteBackup, $this> */
+    /**
+     * The backup being checked.
+     *
+     * @return BelongsTo<WebsiteBackup, $this>
+     */
     public function backup(): BelongsTo
     {
         return $this->belongsTo(WebsiteBackup::class, 'website_backup_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['duration_seconds' => 'integer', 'started_at' => 'immutable_datetime', 'completed_at' => 'immutable_datetime'];

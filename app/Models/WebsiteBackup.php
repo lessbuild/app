@@ -51,37 +51,61 @@ class WebsiteBackup extends Model
         return $this->status === self::STATUS_SUCCEEDED && preg_match('/\A[a-f0-9]{8,64}\z/D', (string) $this->snapshot_id) === 1;
     }
 
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website backed up, including deleted ones.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class)->withTrashed();
     }
 
-    /** @return BelongsTo<BackupDestination, $this> */
+    /**
+     * Where the backup is stored.
+     *
+     * @return BelongsTo<BackupDestination, $this>
+     */
     public function destination(): BelongsTo
     {
         return $this->belongsTo(BackupDestination::class, 'backup_destination_id');
     }
 
-    /** @return BelongsTo<WebsiteBackupSchedule, $this> */
+    /**
+     * The schedule that made it, if any.
+     *
+     * @return BelongsTo<WebsiteBackupSchedule, $this>
+     */
     public function schedule(): BelongsTo
     {
         return $this->belongsTo(WebsiteBackupSchedule::class, 'website_backup_schedule_id');
     }
 
-    /** @return HasMany<BackupRestore, $this> */
+    /**
+     * Restores from this backup.
+     *
+     * @return HasMany<BackupRestore, $this>
+     */
     public function restores(): HasMany
     {
         return $this->hasMany(BackupRestore::class);
     }
 
-    /** @return HasMany<BackupVerification, $this> */
+    /**
+     * Checks that it can be restored.
+     *
+     * @return HasMany<BackupVerification, $this>
+     */
     public function verifications(): HasMany
     {
         return $this->hasMany(BackupVerification::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['size_bytes' => 'integer', 'https_verified_at' => 'immutable_datetime', 'started_at' => 'immutable_datetime', 'completed_at' => 'immutable_datetime'];

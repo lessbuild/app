@@ -32,41 +32,67 @@ class Account extends Model
     /** @use HasFactory<AccountFactory> */
     use HasFactory, HasUlids;
 
-    /** @return HasMany<Project, $this> */
+    /**
+     * The account's projects.
+     *
+     * @return HasMany<Project, $this>
+     */
     public function projects(): HasMany
     {
         return $this->hasMany(Project::class);
     }
 
-    /** @return HasMany<Membership, $this> */
+    /**
+     * Who belongs to the account and with which role.
+     *
+     * @return HasMany<Membership, $this>
+     */
     public function memberships(): HasMany
     {
         return $this->hasMany(Membership::class);
     }
 
-    /** @return BelongsToMany<User, $this> */
+    /**
+     * The people who belong to the account, through their memberships.
+     *
+     * @return BelongsToMany<User, $this>
+     */
     public function members(): BelongsToMany
     {
         return $this->belongsToMany(User::class, 'memberships')->withPivot('role')->withTimestamps();
     }
 
-    /** @return HasMany<AccountInvitation, $this> */
+    /**
+     * Invitations sent from the account, pending or not.
+     *
+     * @return HasMany<AccountInvitation, $this>
+     */
     public function invitations(): HasMany
     {
         return $this->hasMany(AccountInvitation::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['monthly_infrastructure_budget' => 'float'];
     }
 
+    /**
+     * The person's role in the account, or null when they aren't a member.
+     */
     public function roleOf(User $user): ?AccountRole
     {
         return $this->memberships()->whereBelongsTo($user)->first()?->role;
     }
 
+    /**
+     * How many owners the account has, which must never drop to zero.
+     */
     public function ownerCount(): int
     {
         return $this->memberships()->where('role', AccountRole::Owner)->count();

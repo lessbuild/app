@@ -26,17 +26,31 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsGoal extends Model
 {
+    /**
+     * Stored in `analytics_goals`.
+     */
     protected $table = 'analytics_goals';
 
-    /** @var list<string> */
+    /**
+     * The goal's settings from its form.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['site_id', 'name', 'kind', 'match_type', 'match_value', 'active'];
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['active' => 'boolean'];
     }
 
+    /**
+     * Records the goal's first version when it's created, so its definition can be looked up for any point in time.
+     */
     protected static function booted(): void
     {
         static::created(function (self $goal): void {
@@ -63,19 +77,31 @@ class AnalyticsGoal extends Model
         });
     }
 
-    /** @return BelongsTo<AnalyticsSite, $this> */
+    /**
+     * The site the goal is measured on.
+     *
+     * @return BelongsTo<AnalyticsSite, $this>
+     */
     public function site(): BelongsTo
     {
         return $this->belongsTo(AnalyticsSite::class, 'site_id');
     }
 
-    /** @return HasMany<AnalyticsGoalVersion, $this> */
+    /**
+     * The goal's definitions over time.
+     *
+     * @return HasMany<AnalyticsGoalVersion, $this>
+     */
     public function versions(): HasMany
     {
         return $this->hasMany(AnalyticsGoalVersion::class, 'goal_id');
     }
 
-    /** @return HasMany<AnalyticsGoalConversion, $this> */
+    /**
+     * Visits that completed the goal.
+     *
+     * @return HasMany<AnalyticsGoalConversion, $this>
+     */
     public function conversions(): HasMany
     {
         return $this->hasMany(AnalyticsGoalConversion::class, 'goal_id');

@@ -29,13 +29,21 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class DatabaseSnapshot extends Model
 {
-    /** @return BelongsTo<Website, $this> */
+    /**
+     * The website whose database was inspected.
+     *
+     * @return BelongsTo<Website, $this>
+     */
     public function website(): BelongsTo
     {
         return $this->belongsTo(Website::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `tables` as a JSON list.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['size_bytes' => 'integer', 'active_connections' => 'integer', 'tables' => 'array', 'collected_at' => 'immutable_datetime'];

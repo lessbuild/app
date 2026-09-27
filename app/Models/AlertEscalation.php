@@ -33,19 +33,31 @@ final class AlertEscalation extends Model
     /** @use HasFactory<AlertEscalationFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<AlertRule, $this> */
+    /**
+     * The rule whose incidents escalate.
+     *
+     * @return BelongsTo<AlertRule, $this>
+     */
     public function alertRule(): BelongsTo
     {
         return $this->belongsTo(AlertRule::class);
     }
 
-    /** @return BelongsTo<AlertDestination, $this> */
+    /**
+     * Who is notified at this step.
+     *
+     * @return BelongsTo<AlertDestination, $this>
+     */
     public function destination(): BelongsTo
     {
         return $this->belongsTo(AlertDestination::class, 'alert_destination_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['delay_minutes' => 'integer', 'position' => 'integer', 'enabled' => 'boolean'];

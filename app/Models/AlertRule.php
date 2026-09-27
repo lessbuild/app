@@ -67,61 +67,102 @@ final class AlertRule extends Model
     /** @use HasFactory<AlertRuleFactory> */
     use HasFactory, SoftDeletes;
 
-    /** @param Builder<AlertRule> $query */
+    /**
+     * Limits a query to rules in the account's environments.
+     *
+     * @param  Builder<AlertRule>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereIn('environment_id', Environment::forAccount($account)->select('id'));
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment whose telemetry the rule watches.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<ServiceLevelObjective, $this> */
+    /**
+     * The SLO a burn-rate rule watches.
+     *
+     * @return BelongsTo<ServiceLevelObjective, $this>
+     */
     public function serviceLevelObjective(): BelongsTo
     {
         return $this->belongsTo(ServiceLevelObjective::class);
     }
 
-    /** @return BelongsTo<MetricSeries, $this> */
+    /**
+     * The metric series a numeric or anomaly rule watches.
+     *
+     * @return BelongsTo<MetricSeries, $this>
+     */
     public function metricSeries(): BelongsTo
     {
         return $this->belongsTo(MetricSeries::class);
     }
 
+    /**
+     * The threshold to compare against. Numeric-metric rules keep theirs in `numeric_threshold`, a double, since
+     * resource metrics can be far larger or smaller than the other metrics' thresholds.
+     */
     public function thresholdValue(): ?float
     {
         return $this->metric === AlertMetric::NumericMetric ? $this->numeric_threshold : $this->threshold;
     }
 
+    /**
+     * "≤" for rules that fire when a value drops (telemetry volume, or numeric rules set to less-than), "≥"
+     * otherwise.
+     */
     public function comparisonLabel(): string
     {
         return in_array($this->metric, [AlertMetric::TelemetryVolume], true)
             || ($this->metric === AlertMetric::NumericMetric && $this->comparison === 'lte') ? '≤' : '≥';
     }
 
-    /** @return HasMany<Incident, $this> */
+    /**
+     * Incidents the rule has opened.
+     *
+     * @return HasMany<Incident, $this>
+     */
     public function incidents(): HasMany
     {
         return $this->hasMany(Incident::class);
     }
 
-    /** @return BelongsToMany<AlertDestination, $this> */
+    /**
+     * Where the rule sends alerts.
+     *
+     * @return BelongsToMany<AlertDestination, $this>
+     */
     public function destinations(): BelongsToMany
     {
         return $this->belongsToMany(AlertDestination::class)->withPivot(['opened', 'recovered']);
     }
 
-    /** @return HasMany<AlertEscalation, $this> */
+    /**
+     * Who is notified, and when, while an incident stays open.
+     *
+     * @return HasMany<AlertEscalation, $this>
+     */
     public function escalations(): HasMany
     {
         return $this->hasMany(AlertEscalation::class)->orderBy('position')->orderBy('id');
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The rule's settings as they were when an incident opened, stored on the incident so later edits don't change what
+     * the incident says it was checking.
+     *
+     * @return array<string, mixed>
+     */
     public function snapshot(): array
     {
         $snapshot = $this->only(['name', 'metric', 'service', 'match_text', 'threshold', 'window_minutes', 'minimum_samples', 'trigger_checks', 'recovery_checks']);
@@ -142,7 +183,11 @@ final class AlertRule extends Model
         return $snapshot;
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `metric` as an AlertMetric and `observation` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

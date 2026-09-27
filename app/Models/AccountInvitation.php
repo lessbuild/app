@@ -29,7 +29,11 @@ class AccountInvitation extends Model
 {
     use HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Reads `role` as an AccountRole.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -40,30 +44,48 @@ class AccountInvitation extends Model
         ];
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the invitation is to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who sent the invitation (`invited_by_id`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function invitedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'invited_by_id');
     }
 
+    /**
+     * Whether the invitation can still be accepted: not accepted, not revoked and not expired.
+     */
     public function isPending(): bool
     {
         return $this->accepted_at === null && $this->revoked_at === null && $this->expires_at->isFuture();
     }
 
-    /** @param Builder<self> $query */
+    /**
+     * Limits a query to invitations that can still be accepted.
+     *
+     * @param  Builder<self>  $query
+     */
     #[Scope]
     protected function pending(Builder $query): void
     {
         $query->whereNull('accepted_at')->whereNull('revoked_at')->where('expires_at', '>', now());
     }
 
+    /**
+     * The stored form of an invitation token. Only the hash is kept, so a database leak doesn't expose working links.
+     */
     public static function hashToken(string $token): string
     {
         return hash('sha256', $token);

@@ -46,31 +46,50 @@ final class MetricSeries extends Model
     /** @use HasFactory<MetricSeriesFactory> */
     use HasFactory;
 
-    /** @param Builder<MetricSeries> $query */
+    /**
+     * Limits a query to series in the account's environments.
+     *
+     * @param  Builder<MetricSeries>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereIn('environment_id', Environment::forAccount($account)->select('id'));
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment that reports the series.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return HasMany<MetricSample, $this> */
+    /**
+     * Its data points.
+     *
+     * @return HasMany<MetricSample, $this>
+     */
     public function samples(): HasMany
     {
         return $this->hasMany(MetricSample::class);
     }
 
+    /**
+     * Whether a per-second rate makes sense: only monotonic sums (counters) with a known temporality.
+     */
     public function supportsRate(): bool
     {
         return $this->kind === 'sum' && $this->monotonic && in_array($this->temporality, ['cumulative', 'delta'], true);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `descriptor` (the OTLP metric's attributes and unit) as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['descriptor' => 'array', 'monotonic' => 'boolean', 'first_received_at' => 'immutable_datetime', 'last_received_at' => 'immutable_datetime'];

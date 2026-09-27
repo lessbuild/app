@@ -16,42 +16,73 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsGoalConversion extends Model
 {
+    /**
+     * Stored in `analytics_goal_conversions`.
+     */
     protected $table = 'analytics_goal_conversions';
 
-    /** @var list<string> */
+    /**
+     * Written only by the conversion rebuild.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['site_id', 'goal_id', 'goal_version_id', 'analytics_event_id', 'visit_id', 'converted_at'];
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['converted_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<AnalyticsSite, $this> */
+    /**
+     * The site the conversion happened on.
+     *
+     * @return BelongsTo<AnalyticsSite, $this>
+     */
     public function site(): BelongsTo
     {
         return $this->belongsTo(AnalyticsSite::class, 'site_id');
     }
 
-    /** @return BelongsTo<AnalyticsGoal, $this> */
+    /**
+     * The goal that was completed.
+     *
+     * @return BelongsTo<AnalyticsGoal, $this>
+     */
     public function goal(): BelongsTo
     {
         return $this->belongsTo(AnalyticsGoal::class, 'goal_id');
     }
 
-    /** @return BelongsTo<AnalyticsGoalVersion, $this> */
+    /**
+     * The goal's definition that matched.
+     *
+     * @return BelongsTo<AnalyticsGoalVersion, $this>
+     */
     public function version(): BelongsTo
     {
         return $this->belongsTo(AnalyticsGoalVersion::class, 'goal_version_id');
     }
 
-    /** @return BelongsTo<AnalyticsEvent, $this> */
+    /**
+     * The event that completed it.
+     *
+     * @return BelongsTo<AnalyticsEvent, $this>
+     */
     public function event(): BelongsTo
     {
         return $this->belongsTo(AnalyticsEvent::class, 'analytics_event_id');
     }
 
-    /** @return BelongsTo<AnalyticsVisit, $this> */
+    /**
+     * The visit it happened in.
+     *
+     * @return BelongsTo<AnalyticsVisit, $this>
+     */
     public function visit(): BelongsTo
     {
         return $this->belongsTo(AnalyticsVisit::class, 'visit_id');

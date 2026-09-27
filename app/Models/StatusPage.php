@@ -38,31 +38,51 @@ class StatusPage extends Model
     /** @use HasFactory<StatusPageFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the page belongs to.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return HasMany<StatusPageComponent, $this> */
+    /**
+     * The monitors it shows, in order.
+     *
+     * @return HasMany<StatusPageComponent, $this>
+     */
     public function components(): HasMany
     {
         return $this->hasMany(StatusPageComponent::class)->orderBy('position')->orderBy('id');
     }
 
-    /** @return HasMany<StatusUpdate, $this> */
+    /**
+     * Incident and maintenance updates posted to it.
+     *
+     * @return HasMany<StatusUpdate, $this>
+     */
     public function updates(): HasMany
     {
         return $this->hasMany(StatusUpdate::class);
     }
 
-    /** @return HasMany<StatusSubscription, $this> */
+    /**
+     * People subscribed to its updates.
+     *
+     * @return HasMany<StatusSubscription, $this>
+     */
     public function subscriptions(): HasMany
     {
         return $this->hasMany(StatusSubscription::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['published' => 'boolean'];

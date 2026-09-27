@@ -36,19 +36,31 @@ class EnvironmentVariable extends Model
 {
     public const SCOPES = ['runtime' => 'Runtime (.env)', 'build' => 'Build only', 'all' => 'Build and runtime'];
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the variable belongs to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return HasMany<EnvironmentVariableVersion, $this> */
+    /**
+     * The variable's earlier values, so a change can be traced or undone.
+     *
+     * @return HasMany<EnvironmentVariableVersion, $this>
+     */
     public function versions(): HasMany
     {
         return $this->hasMany(EnvironmentVariableVersion::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `value`.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['value' => 'encrypted', 'is_secret' => 'boolean', 'current_version' => 'integer', 'rotated_at' => 'immutable_datetime', 'rotation_due_at' => 'immutable_datetime'];

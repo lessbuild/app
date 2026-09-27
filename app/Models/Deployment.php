@@ -45,7 +45,11 @@ final class Deployment extends Model
     /** @use HasFactory<DeploymentFactory> */
     use HasFactory;
 
-    /** @param Builder<Deployment> $query */
+    /**
+     * Limits a query to deployments in the account's environments whose release also belongs to the account.
+     *
+     * @param  Builder<Deployment>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
@@ -53,31 +57,51 @@ final class Deployment extends Model
             ->whereHas('release', fn (Builder $release) => $release->forAccount($account));
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment deployed to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<Release, $this> */
+    /**
+     * The release deployed.
+     *
+     * @return BelongsTo<Release, $this>
+     */
     public function release(): BelongsTo
     {
         return $this->belongsTo(Release::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who reported the deployment (`actor_id`), when a person did.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function actor(): BelongsTo
     {
         return $this->belongsTo(User::class, 'actor_id');
     }
 
-    /** @return BelongsTo<IngestToken, $this> */
+    /**
+     * The ingest token that reported it, when a pipeline did.
+     *
+     * @return BelongsTo<IngestToken, $this>
+     */
     public function ingestToken(): BelongsTo
     {
         return $this->belongsTo(IngestToken::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['deployed_at' => 'immutable_datetime'];

@@ -24,13 +24,21 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class DashboardWidget extends Model
 {
-    /** @return BelongsTo<Dashboard, $this> */
+    /**
+     * The dashboard the widget is on.
+     *
+     * @return BelongsTo<Dashboard, $this>
+     */
     public function dashboard(): BelongsTo
     {
         return $this->belongsTo(Dashboard::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `configuration` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['position' => 'integer', 'configuration' => 'array'];

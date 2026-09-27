@@ -34,7 +34,11 @@ class AuditEntry extends Model
 
     public const UPDATED_AT = null;
 
-    /** @return array<string, string> */
+    /**
+     * Reads `action` as an AuditAction and `context` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -43,7 +47,11 @@ class AuditEntry extends Model
         ];
     }
 
-    /** @return Builder<static> */
+    /**
+     * Entries older than the retention period, which the model pruner deletes.
+     *
+     * @return Builder<static>
+     */
     public function prunable(): Builder
     {
         return static::query()->where('created_at', '<', now()->subDays(self::RETENTION_DAYS));

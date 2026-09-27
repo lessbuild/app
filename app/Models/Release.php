@@ -44,31 +44,50 @@ final class Release extends Model
     /** @use HasFactory<ReleaseFactory> */
     use HasFactory;
 
-    /** @param Builder<Release> $query */
+    /**
+     * Limits a query to releases of the account's projects.
+     *
+     * @param  Builder<Release>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereIn('project_id', $account->projects()->select('id'));
     }
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the release belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return HasMany<TelemetryEvent, $this> */
+    /**
+     * Events reported by this release.
+     *
+     * @return HasMany<TelemetryEvent, $this>
+     */
     public function telemetryEvents(): HasMany
     {
         return $this->hasMany(TelemetryEvent::class);
     }
 
-    /** @return HasMany<Deployment, $this> */
+    /**
+     * When and where the release was deployed.
+     *
+     * @return HasMany<Deployment, $this>
+     */
     public function deployments(): HasMany
     {
         return $this->hasMany(Deployment::class);
     }
 
+    /**
+     * The release's service as people read it: "namespace / service", or "Unspecified service".
+     */
     public function serviceLabel(): string
     {
         $name = $this->service ?? 'Unspecified service';
@@ -76,7 +95,11 @@ final class Release extends Model
         return $this->service_namespace === null ? $name : $this->service_namespace.' / '.$name;
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['first_seen_at' => 'immutable_datetime', 'last_seen_at' => 'immutable_datetime'];

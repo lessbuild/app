@@ -62,24 +62,39 @@ final class IngestReceipt extends Model
     /** @use HasFactory<IngestReceiptFactory> */
     use HasFactory, HasUlids;
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment the batch was sent to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account whose event allowance it counts against.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return HasOne<IngestPayload, $this> */
+    /**
+     * The raw batch, kept while it waits to be processed.
+     *
+     * @return HasOne<IngestPayload, $this>
+     */
     public function ingestPayload(): HasOne
     {
         return $this->hasOne(IngestPayload::class);
     }
 
+    /**
+     * A sentence explaining the last processing error code, for the receipts page.
+     */
     public function processingError(): ?string
     {
         return match ($this->last_error_code) {
@@ -93,7 +108,11 @@ final class IngestReceipt extends Model
         };
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `source` as an IngestSource and `status` as an IngestStatus.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

@@ -22,24 +22,43 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsExport extends Model
 {
+    /**
+     * Stored in `analytics_exports`.
+     */
     protected $table = 'analytics_exports';
 
-    /** @var list<string> */
+    /**
+     * Written by the export request and the job that builds the file.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['site_id', 'requested_by', 'token_hash', 'status', 'filters', 'file_path', 'expires_at', 'completed_at', 'failure_message'];
 
-    /** @return array<string, string> */
+    /**
+     * Reads `filters` as JSON.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['filters' => 'array', 'expires_at' => 'datetime', 'completed_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<AnalyticsSite, $this> */
+    /**
+     * The site being exported.
+     *
+     * @return BelongsTo<AnalyticsSite, $this>
+     */
     public function site(): BelongsTo
     {
         return $this->belongsTo(AnalyticsSite::class, 'site_id');
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who asked for the export (`requested_by`).
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function requester(): BelongsTo
     {
         return $this->belongsTo(User::class, 'requested_by');

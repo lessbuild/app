@@ -37,25 +37,41 @@ final class TelemetryEventIdentity extends Model
     /** @use HasFactory<TelemetryEventIdentityFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<TelemetryEvent, $this> */
+    /**
+     * The stored event this identity points to.
+     *
+     * @return BelongsTo<TelemetryEvent, $this>
+     */
     public function telemetryEvent(): BelongsTo
     {
         return $this->belongsTo(TelemetryEvent::class);
     }
 
-    /** @return BelongsTo<IngestReceipt, $this> */
+    /**
+     * The batch it arrived in.
+     *
+     * @return BelongsTo<IngestReceipt, $this>
+     */
     public function ingestReceipt(): BelongsTo
     {
         return $this->belongsTo(IngestReceipt::class);
     }
 
-    /** @return BelongsTo<Environment, $this> */
+    /**
+     * The environment it was sent to.
+     *
+     * @return BelongsTo<Environment, $this>
+     */
     public function environment(): BelongsTo
     {
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['version' => 'integer'];

@@ -28,13 +28,21 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class ServerImportAssessment extends Model
 {
+    /**
+     * Whether this person may use the assessment to import the server: they made it for this account, it hasn't been
+     * used or expired, and the token matches.
+     */
     public function isUsableBy(User $user, string $accountId, string $token): bool
     {
         return $this->user_id === $user->id && $this->account_id === $accountId && $this->consumed_at === null
             && $this->expires_at->isFuture() && hash_equals($this->token_hash, hash('sha256', $token));
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the connection details and the assessment report.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['configuration' => 'encrypted:array', 'report' => 'encrypted:array', 'expires_at' => 'immutable_datetime', 'consumed_at' => 'immutable_datetime'];

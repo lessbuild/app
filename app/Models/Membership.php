@@ -26,7 +26,11 @@ class Membership extends Model
 {
     use HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Reads `role` as an AccountRole and `service_access` as a JSON list (null means every service).
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['role' => AccountRole::class, 'service_access' => 'array'];
@@ -40,18 +44,29 @@ class Membership extends Model
             || in_array($service, $this->service_access, true);
     }
 
-    /** @return BelongsTo<Account, $this> */
+    /**
+     * The account the membership is in.
+     *
+     * @return BelongsTo<Account, $this>
+     */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * The member.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Whether the member's role grants the permission.
+     */
     public function allows(AccountPermission $permission): bool
     {
         return $this->role->allows($permission);

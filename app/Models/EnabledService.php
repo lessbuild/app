@@ -22,9 +22,16 @@ class EnabledService extends Model
 {
     use HasUlids;
 
+    /**
+     * Stored in `project_services`.
+     */
     protected $table = 'project_services';
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the service is on in.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);

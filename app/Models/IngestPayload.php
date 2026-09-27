@@ -30,13 +30,21 @@ final class IngestPayload extends Model
     /** @use HasFactory<IngestPayloadFactory> */
     use HasFactory;
 
-    /** @return BelongsTo<IngestReceipt, $this> */
+    /**
+     * The receipt the payload was kept for.
+     *
+     * @return BelongsTo<IngestReceipt, $this>
+     */
     public function ingestReceipt(): BelongsTo
     {
         return $this->belongsTo(IngestReceipt::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts `payload`, the raw telemetry kept until it's processed.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['payload' => 'encrypted:array'];

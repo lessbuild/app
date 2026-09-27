@@ -16,13 +16,26 @@ use Illuminate\Support\Carbon;
  */
 class BillingAccount extends Model
 {
+    /**
+     * One billing record per account, keyed by the account's ID.
+     */
     protected $primaryKey = 'account_id';
 
+    /**
+     * The key is the account's ULID, not a sequence.
+     */
     public $incrementing = false;
 
+    /**
+     * ULIDs are strings.
+     */
     protected $keyType = 'string';
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['current_period_end' => 'datetime'];
@@ -40,6 +53,9 @@ class BillingAccount extends Model
         return $billing;
     }
 
+    /**
+     * Whether there's a subscription still billing (active, trialing or past due) that changes must be synced to.
+     */
     public function hasLiveSubscription(): bool
     {
         return $this->stripe_subscription_id !== null && in_array($this->status, ['active', 'trialing', 'past_due'], true);

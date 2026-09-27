@@ -39,15 +39,26 @@ class QueueSnapshot extends Model
     /** @use HasFactory<QueueSnapshotFactory> */
     use HasFactory;
 
+    /**
+     * The payload hash, used to spot repeated reports, isn't serialised.
+     */
     protected $hidden = ['payload_hash'];
 
-    /** @return BelongsTo<Monitor, $this> */
+    /**
+     * The queue monitor the report was sent to, including archived ones.
+     *
+     * @return BelongsTo<Monitor, $this>
+     */
     public function monitor(): BelongsTo
     {
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['config_revision' => 'integer', 'applied' => 'boolean',

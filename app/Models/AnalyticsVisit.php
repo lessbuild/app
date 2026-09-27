@@ -19,18 +19,33 @@ use Illuminate\Support\Carbon;
  */
 class AnalyticsVisit extends Model
 {
+    /**
+     * Stored in `analytics_visits`.
+     */
     protected $table = 'analytics_visits';
 
-    /** @var list<string> */
+    /**
+     * Written only by the visit rebuild.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['site_id', 'visit_key', 'visitor_hash', 'session_id', 'started_at', 'last_seen_at', 'landing_path', 'exit_path', 'entry_referrer_host', 'entry_utm_source', 'entry_utm_medium', 'entry_utm_campaign', 'pageviews', 'conversion_count'];
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['started_at' => 'datetime', 'last_seen_at' => 'datetime'];
     }
 
-    /** @return BelongsTo<AnalyticsSite, $this> */
+    /**
+     * The site the visit was on.
+     *
+     * @return BelongsTo<AnalyticsSite, $this>
+     */
     public function site(): BelongsTo
     {
         return $this->belongsTo(AnalyticsSite::class, 'site_id');

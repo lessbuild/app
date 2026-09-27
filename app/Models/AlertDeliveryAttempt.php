@@ -29,17 +29,31 @@ class AlertDeliveryAttempt extends Model
     /** @use HasFactory<AlertDeliveryAttemptFactory> */
     use HasFactory;
 
+    /**
+     * Attempts are written once with their own `started_at` and `finished_at`, so the usual timestamps aren't kept.
+     */
     public $timestamps = false;
 
+    /**
+     * Microsecond precision, so attempts made in the same second still order correctly.
+     */
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
-    /** @return BelongsTo<AlertDelivery, $this> */
+    /**
+     * The delivery this was a try at sending.
+     *
+     * @return BelongsTo<AlertDelivery, $this>
+     */
     public function delivery(): BelongsTo
     {
         return $this->belongsTo(AlertDelivery::class, 'alert_delivery_id');
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `status` as an AlertDeliveryStatus.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [

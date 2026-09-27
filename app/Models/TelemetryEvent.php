@@ -70,14 +70,23 @@ final class TelemetryEvent extends Model
     /** @use HasFactory<TelemetryEventFactory> */
     use HasFactory;
 
-    /** @param Builder<TelemetryEvent> $query */
+    /**
+     * Limits a query to events in the account's environments.
+     *
+     * @param  Builder<TelemetryEvent>  $query
+     */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
     {
         $query->whereHas('environment.project', fn (Builder $project) => $project->whereBelongsTo($account));
     }
 
-    /** @param Builder<TelemetryEvent> $query */
+    /**
+     * Selects only the columns lists and waterfalls need, plus the OTLP signal read out of the payload, so the payload
+     * itself isn't loaded.
+     *
+     * @param  Builder<TelemetryEvent>  $query
+     */
     #[Scope]
     protected function summary(Builder $query): void
     {
@@ -90,6 +99,8 @@ final class TelemetryEvent extends Model
     }
 
     /**
+     * The environment that sent the event.
+     *
      * @return BelongsTo<Environment, $this>
      */
     public function environment(): BelongsTo
@@ -97,19 +108,29 @@ final class TelemetryEvent extends Model
         return $this->belongsTo(Environment::class);
     }
 
-    /** @return BelongsTo<Issue, $this> */
+    /**
+     * The issue an exception event was grouped into.
+     *
+     * @return BelongsTo<Issue, $this>
+     */
     public function issue(): BelongsTo
     {
         return $this->belongsTo(Issue::class);
     }
 
-    /** @return BelongsTo<Release, $this> */
+    /**
+     * The release that sent it.
+     *
+     * @return BelongsTo<Release, $this>
+     */
     public function release(): BelongsTo
     {
         return $this->belongsTo(Release::class);
     }
 
     /**
+     * Reads `attributes` and `payload` as JSON.
+     *
      * @return array<string, string>
      */
     protected function casts(): array

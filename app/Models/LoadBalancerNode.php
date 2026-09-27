@@ -26,19 +26,31 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class LoadBalancerNode extends Model
 {
-    /** @return BelongsTo<LoadBalancer, $this> */
+    /**
+     * The load balancer the node belongs to.
+     *
+     * @return BelongsTo<LoadBalancer, $this>
+     */
     public function loadBalancer(): BelongsTo
     {
         return $this->belongsTo(LoadBalancer::class);
     }
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server that receives traffic.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['upstream_port' => 'integer', 'weight' => 'integer', 'is_enabled' => 'boolean'];

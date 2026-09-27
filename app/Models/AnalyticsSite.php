@@ -37,11 +37,21 @@ class AnalyticsSite extends Model
     /** @use HasFactory<AnalyticsSiteFactory> */
     use HasFactory;
 
+    /**
+     * Stored in `analytics_sites`.
+     */
     protected $table = 'analytics_sites';
 
-    /** @var list<string> */
+    /**
+     * The site's settings and collection state.
+     *
+     * @var list<string>
+     */
     protected $fillable = ['name', 'domains', 'excluded_paths', 'timezone', 'collection_enabled', 'collection_paused_at', 'last_event_at', 'last_processed_at'];
 
+    /**
+     * Gives each new site a random public ID for its tracker snippet, so the internal ID isn't exposed.
+     */
     protected static function booted(): void
     {
         static::creating(function (self $site): void {
@@ -49,7 +59,11 @@ class AnalyticsSite extends Model
         });
     }
 
-    /** @return array<string, string> */
+    /**
+     * Reads `domains` and `excluded_paths` as JSON lists.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -63,52 +77,86 @@ class AnalyticsSite extends Model
         ];
     }
 
-    /** @return BelongsTo<Project, $this> */
+    /**
+     * The project the site belongs to.
+     *
+     * @return BelongsTo<Project, $this>
+     */
     public function project(): BelongsTo
     {
         return $this->belongsTo(Project::class);
     }
 
-    /** @return HasMany<AnalyticsEvent, $this> */
+    /**
+     * Everything the site has sent.
+     *
+     * @return HasMany<AnalyticsEvent, $this>
+     */
     public function events(): HasMany
     {
         return $this->hasMany(AnalyticsEvent::class, 'site_id');
     }
 
-    /** @return HasMany<AnalyticsGoal, $this> */
+    /**
+     * The site's goals.
+     *
+     * @return HasMany<AnalyticsGoal, $this>
+     */
     public function goals(): HasMany
     {
         return $this->hasMany(AnalyticsGoal::class, 'site_id');
     }
 
-    /** @return HasMany<AnalyticsGoalConversion, $this> */
+    /**
+     * Goal completions on the site.
+     *
+     * @return HasMany<AnalyticsGoalConversion, $this>
+     */
     public function goalConversions(): HasMany
     {
         return $this->hasMany(AnalyticsGoalConversion::class, 'site_id');
     }
 
-    /** @return HasMany<AnalyticsIngestionBatch, $this> */
+    /**
+     * Batches the site has sent.
+     *
+     * @return HasMany<AnalyticsIngestionBatch, $this>
+     */
     public function ingestionBatches(): HasMany
     {
         return $this->hasMany(AnalyticsIngestionBatch::class, 'site_id');
     }
 
-    /** @return HasMany<AnalyticsVisit, $this> */
+    /**
+     * Visits reconstructed from the site's events.
+     *
+     * @return HasMany<AnalyticsVisit, $this>
+     */
     public function visits(): HasMany
     {
         return $this->hasMany(AnalyticsVisit::class, 'site_id');
     }
 
+    /**
+     * Whether one of the site's hostnames was matched to a verified domain of its project, proving the project controls
+     * the website.
+     */
     public function isVerified(): bool
     {
         return $this->verified_at !== null;
     }
 
+    /**
+     * Whether events are accepted: collection is on, not paused, and the site is verified.
+     */
     public function isCollectionAvailable(): bool
     {
         return $this->collection_enabled && $this->collection_paused_at === null && $this->isVerified();
     }
 
+    /**
+     * Whether a page path matches one of the site's excluded patterns (such as `/admin/*`) and shouldn't be recorded.
+     */
     public function excludesPath(string $path): bool
     {
         return collect($this->excluded_paths ?? [])->contains(

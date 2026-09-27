@@ -25,7 +25,11 @@ class SocialIdentity extends Model
 {
     use HasUlids;
 
-    /** @return array<string, string> */
+    /**
+     * Reads `provider` as a SocialProvider.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return [
@@ -34,7 +38,11 @@ class SocialIdentity extends Model
         ];
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * The person the provider account is connected to.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

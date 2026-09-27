@@ -37,29 +37,47 @@ class ServerCommandExecution extends Model
 
     public const FINISHED = ['succeeded', 'failed', 'canceled'];
 
-    /** @return BelongsTo<Server, $this> */
+    /**
+     * The server the command ran on.
+     *
+     * @return BelongsTo<Server, $this>
+     */
     public function server(): BelongsTo
     {
         return $this->belongsTo(Server::class);
     }
 
-    /** @return BelongsTo<User, $this> */
+    /**
+     * Who ran it.
+     *
+     * @return BelongsTo<User, $this>
+     */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /**
+     * Whether the command has finished, successfully or not.
+     */
     public function isFinished(): bool
     {
         return in_array($this->status, self::FINISHED, true);
     }
 
+    /**
+     * How long it ran; null until it has started and finished.
+     */
     public function durationSeconds(): ?int
     {
         return $this->started_at !== null && $this->finished_at !== null ? (int) $this->started_at->diffInSeconds($this->finished_at) : null;
     }
 
-    /** @return array<string, string> */
+    /**
+     * Encrypts the command and its output.
+     *
+     * @return array<string, string>
+     */
     protected function casts(): array
     {
         return ['command' => 'encrypted', 'output' => 'encrypted', 'exit_code' => 'integer', 'started_at' => 'immutable_datetime', 'finished_at' => 'immutable_datetime'];
