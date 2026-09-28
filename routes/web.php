@@ -32,6 +32,7 @@ use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Admin\DeleteFeatureFlagController;
 use App\Http\Controllers\Admin\ForgetFailedJobController;
+use App\Http\Controllers\Admin\ResolveFeedbackController;
 use App\Http\Controllers\Admin\RetryFailedJobController;
 use App\Http\Controllers\Admin\ShowAccessRequestsController;
 use App\Http\Controllers\Admin\ShowAdminHomeController;
@@ -40,6 +41,7 @@ use App\Http\Controllers\Admin\ShowCustomerAccountController;
 use App\Http\Controllers\Admin\ShowCustomersController;
 use App\Http\Controllers\Admin\ShowCustomerUserController;
 use App\Http\Controllers\Admin\ShowFeatureFlagsController;
+use App\Http\Controllers\Admin\ShowFeedbackController;
 use App\Http\Controllers\Admin\ShowHealthController;
 use App\Http\Controllers\Admin\ShowHealthReportController;
 use App\Http\Controllers\Admin\ShowQueuesController;
@@ -120,6 +122,7 @@ use App\Http\Controllers\Deploy\UpdateRepositoryController;
 use App\Http\Controllers\Deploy\UpdateRepositoryPreviewsController;
 use App\Http\Controllers\Deploy\UpdateRepositoryWebhookController;
 use App\Http\Controllers\Docs\ShowApiReferenceController;
+use App\Http\Controllers\Feedback\StoreFeedbackController;
 use App\Http\Controllers\Help\ShowHelpController;
 use App\Http\Controllers\Help\ShowHelpGuideController;
 use App\Http\Controllers\Infrastructure\CancelServerCommandController;
@@ -653,6 +656,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/github-app/connect', ConnectGitHubAppController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.connect');
     Route::get('/github-app/callback', CompleteGitHubAppInstallController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.callback');
     Route::get('/github-app/providers/{provider}/repositories', ShowGitHubAppRepositoriesController::class)->whereNumber('provider')->middleware(['can:view,provider', 'throttle:20,1'])->name('github-app.repositories');
+    Route::post('/feedback', StoreFeedbackController::class)->middleware('throttle:10,1')->name('feedback.store');
     // Platform operators only: a 404 for anyone else, a second factor, and a confirmation in the last 15 minutes.
     Route::prefix('/admin')->name('admin.')->middleware(['platform.admin', 'password.confirm:password.confirm,'.config('platform.admin_confirmation_seconds')])->group(function (): void {
         Route::get('/', ShowAdminHomeController::class)->name('home');
@@ -662,6 +666,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::get('/analytics', ShowBusinessAnalyticsController::class)->name('analytics');
         Route::get('/access-requests', ShowAccessRequestsController::class)->name('access-requests');
         Route::put('/access-requests/{accessRequest}', UpdateAccessRequestController::class)->whereNumber('accessRequest')->middleware('throttle:60,1')->name('access-requests.update');
+        Route::get('/feedback', ShowFeedbackController::class)->name('feedback');
+        Route::put('/feedback/{feedback}', ResolveFeedbackController::class)->whereNumber('feedback')->middleware('throttle:60,1')->name('feedback.update');
         Route::get('/flags', ShowFeatureFlagsController::class)->name('flags');
         Route::post('/flags', StoreFeatureFlagController::class)->middleware('throttle:30,1')->name('flags.store');
         Route::put('/flags/{flag}', UpdateFeatureFlagController::class)->whereNumber('flag')->middleware('throttle:60,1')->name('flags.update');

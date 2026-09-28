@@ -68,6 +68,7 @@
                                 <div class="mt-1 grid gap-1 border-t border-line pt-1">
                                     <a href="{{ route('settings.profile') }}" class="topbar-nav-link w-full" @if (request()->routeIs('settings.*')) aria-current="page" @endif>{{ __('Your settings') }}</a>
                                     <a href="{{ route('help') }}" class="topbar-nav-link w-full">{{ __('Help centre') }}</a>
+                                    <button type="button" class="topbar-nav-link w-full" data-modal-trigger="feedback-modal">{{ __('Send feedback') }}</button>
                                     @if ($shell->user->is_platform_admin)
                                         <a href="{{ route('admin.home') }}" class="topbar-nav-link w-full" @if (request()->routeIs('admin.*')) aria-current="page" @endif>{{ __('Platform admin') }}</a>
                                     @endif
@@ -103,11 +104,30 @@
     </header>
 
     <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto w-full max-w-content space-y-6 py-7 sm:py-9">
+        @if (session('feedback'))
+            <x-signal.ui.alert tone="success" role="status">{{ session('feedback') }}</x-signal.ui.alert>
+        @endif
         {{ $slot }}
     </main>
 
     @isset($shell)
         <x-signal.layouts.command-palette :shell="$shell" />
+        {{-- Feedback, from the account menu; reopens with its errors if sending failed. --}}
+        <x-signal.overlays.modal id="feedback-modal" :title="__('Send feedback')" :description="__('Tell us what would make :app better, or what’s getting in your way. We read everything.', ['app' => config('app.name')])" :open="$errors->hasAny(['feedback_kind', 'feedback_message'])">
+            <form method="POST" action="{{ route('feedback.store') }}" class="grid gap-4">
+                @csrf
+                <input type="hidden" name="feedback_page" value="{{ url()->current() }}">
+                <x-signal.ui.select-field id="feedback-kind" name="feedback_kind" :label="__('What’s it about?')" required>
+                    @foreach (\App\Models\Feedback::KINDS as $value => $label)
+                        <option value="{{ $value }}" @selected(old('feedback_kind', 'idea') === $value)>{{ __($label) }}</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.textarea-field id="feedback-message" name="feedback_message" :label="__('Your feedback')" rows="5" maxlength="5000" required />
+                <div class="flex justify-end gap-2">
+                    <x-signal.ui.button type="submit" variant="primary">{{ __('Send feedback') }}</x-signal.ui.button>
+                </div>
+            </form>
+        </x-signal.overlays.modal>
         <x-signal.layouts.mobile-sidebar id="app-navigation-drawer" :title="__('Navigation')" :brand-url="route('dashboard')" desktop-navigation="#app-primary-navigation" :breakpoint="1280">
             <div class="grid gap-5">
                 <x-signal.layouts.account-switcher :shell="$shell" variant="mobile" />
