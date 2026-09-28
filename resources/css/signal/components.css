@@ -270,12 +270,15 @@
   .product-accent-deploy { color: var(--product-deploy); }
   .product-accent-monitor { color: var(--product-monitor); }
   .product-accent-analytics { color: var(--product-analytics); }
+  .product-accent-infrastructure { color: var(--product-infrastructure); }
   .product-icon-deploy { background: var(--product-deploy-soft); color: var(--product-deploy); }
   .product-icon-monitor { background: var(--product-monitor-soft); color: var(--product-monitor); }
   .product-icon-analytics { background: var(--product-analytics-soft); color: var(--product-analytics); }
+  .product-icon-infrastructure { background: var(--product-infrastructure-soft); color: var(--product-infrastructure); }
   .product-preview-deploy { --product-preview-accent: var(--product-deploy); }
   .product-preview-monitor { --product-preview-accent: var(--product-monitor); }
   .product-preview-analytics { --product-preview-accent: var(--product-analytics); }
+  .product-preview-infrastructure { --product-preview-accent: var(--product-infrastructure); }
   .product-explorer-tabs { gap: 0.25rem; }
   .product-explorer-tab { display: inline-flex; min-width: 0; min-height: 2.8rem; align-items: center; justify-content: center; gap: 0.45rem; border: 1px solid transparent; border-radius: calc(var(--radius-control-value) * 0.8); color: var(--ui-muted); padding: 0.45rem 0.35rem; font-size: 0.7rem; font-weight: 800; }
   .product-explorer-tab[aria-selected="true"] { border-color: var(--ui-line); background: var(--ui-surface); color: var(--ui-ink); box-shadow: var(--shadow-soft-value); }
@@ -291,6 +294,8 @@
   .product-event-dot { display: block; width: 0.45rem; height: 0.45rem; flex: 0 0 auto; border-radius: 999px; background: var(--product-monitor); }
   .product-event-warning { background: #e3a018; }
   .product-detail-preview { box-shadow: var(--shadow-panel-value); }
+  .product-detail-preview .ui-progress { background: var(--ui-surface); }
+  .product-detail-preview .ui-progress > span { background: var(--product-preview-accent); }
   .product-detail-preview > .product-sparkline { border-radius: 0.5rem; background: var(--ui-surface); }
   .product-site [aria-current="page"] { color: var(--ui-primary); }
   @media (max-width: 420px) { .product-explorer-tab { flex-direction: column; gap: 0.18rem; min-height: 3.2rem; font-size: 0.61rem; } .product-connection-app { flex-direction: column; min-height: 3rem; font-size: 0.58rem; } }

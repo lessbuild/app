@@ -49,6 +49,7 @@ use App\Services\Telemetry\IssueDigest;
 use App\Services\Telemetry\TelemetryQueue;
 use App\Services\Telemetry\UsageAlerts;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Events\Verified;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
@@ -512,3 +513,24 @@ Artisan::command('notifications:prune', function (): int {
     return 0;
 })->purpose('Delete notifications read long ago');
 Schedule::command('notifications:prune')->dailyAt('03:50')->withoutOverlapping(30)->onOneServer();
+
+// For when an address can't receive our email (or mail isn't set up yet): an operator vouches for it instead.
+Artisan::command('users:verify {email : The person\'s email}', function (): int {
+    $email = strtolower(trim(is_string($this->argument('email')) ? $this->argument('email') : ''));
+    $user = User::query()->where('email', $email)->first();
+    if ($user === null) {
+        $this->error("No user with {$email}.");
+
+        return 1;
+    }
+    if ($user->hasVerifiedEmail()) {
+        $this->line("{$email} is already verified.");
+
+        return 0;
+    }
+    $user->markEmailAsVerified();
+    event(new Verified($user));
+    $this->info("Verified {$email}.");
+
+    return 0;
+})->purpose('Mark a person\'s email address as verified');

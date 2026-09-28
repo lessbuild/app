@@ -10,7 +10,7 @@ use Illuminate\Http\Response;
 final class ShowFeaturesController
 {
     /**
-     * Show a service's public page: what it does and common questions, cached publicly for five minutes.
+     * Show a service's public page (what it does, how it works with the others, and common questions), cached publicly for five minutes.
      *
      * @param  string  $service
      * @param  ServiceRegistry  $services
@@ -22,6 +22,6 @@ final class ShowFeaturesController
         $copy = config('marketing.services.'.$service);
         abort_if($definition === null || ! is_array($copy), 404);
 
-        return response()->view('site.features', ['service' => $definition, 'copy' => $copy])->header('Cache-Control', 'public, max-age=300');
+        return response()->view('site.features', ['service' => $definition, 'copy' => $copy, 'services' => $services->all()])->header('Cache-Control', 'public, max-age=300');
     }
 }

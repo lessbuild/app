@@ -18,7 +18,7 @@ final class PublicSiteTest extends TestCase
     public function test_guests_get_the_home_page_and_signed_in_people_their_dashboard(): void
     {
         $home = $this->get('/')->assertOk()->assertHeader('Cache-Control', 'max-age=300, public');
-        $home->assertSee('Ship with confidence.')->assertSee('Know what happens next.')->assertSee('Four focused services. One account.')->assertSee('Better together')->assertSee('index, follow', false);
+        $home->assertSee('Ship with confidence.')->assertSee('Know what happens next.')->assertSee('Choose the tool for the work in front of you.')->assertSee('A clear view for every kind of work.')->assertSee('Better together')->assertSee('index, follow', false);
         foreach (app(ServiceRegistry::class)->all() as $service) {
             $home->assertSee($service->name())->assertSee(route('features', $service->key()));
         }
@@ -34,7 +34,7 @@ final class PublicSiteTest extends TestCase
             $this->get("/features/{$service->key()}")->assertOk()->assertSee($service->name())->assertSee(config('marketing.services.'.$service->key().'.headline'));
         }
         $this->get('/features/nonsense')->assertNotFound();
-        $this->get('/features/deploy')->assertSee('A stack per pull request')->assertSee('Do my old scripts keep working?');
+        $this->get('/features/deploy')->assertSee('A stack per pull request')->assertSee('Do my old scripts keep working?')->assertSee('Keep production actions accountable.')->assertSee(route('features', 'infrastructure'));
     }
 
     public function test_pricing_comes_from_the_catalogue(): void
