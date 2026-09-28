@@ -21,8 +21,10 @@ fail() { printf 'ERROR: %s\n' "$*" >&2; exit 1; }
 step "Checking prerequisites"
 [ "$(id -u)" = 0 ] || fail "run as root"
 [ -x "$PHP" ] || fail "$PHP not found"
+# Read the module list once: piping php -m into grep -q under pipefail fails whenever grep exits before PHP finishes writing.
+MODULES=$("$PHP" -m)
 for extension in pdo_sqlite mbstring intl bcmath; do
-    "$PHP" -m | grep -qi "^$extension$" || fail "PHP extension $extension is missing"
+    grep -qix "$extension" <<< "$MODULES" || fail "PHP extension $extension is missing"
 done
 command -v composer >/dev/null || fail "composer not found"
 command -v npm >/dev/null || fail "npm not found"
