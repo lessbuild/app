@@ -39,6 +39,22 @@ final class TelemetryPagesTest extends TestCase
         $this->production = $this->project->environments()->where('slug', 'production')->firstOrFail();
     }
 
+    public function test_saved_views_keep_monitoring_filters_for_the_project(): void
+    {
+        $this->owner->forceFill(['current_account_id' => $this->project->account_id])->save();
+        $base = "/projects/{$this->project->id}/monitoring";
+        $this->actingAs($this->owner)->get("{$base}/events?type=exception&range=24h")->assertOk()->assertSee('data-modal-trigger="save-view-monitoring-events"', false);
+
+        $this->actingAs($this->owner)->post('/saved-views', ['saved_view_page' => 'monitoring.events', 'saved_view_name' => 'Exceptions today', 'parameters' => ['project' => $this->project->id], 'query' => ['type' => 'exception', 'range' => '24h']])
+            ->assertRedirect(route('monitoring.events', ['project' => $this->project->id, 'range' => '24h', 'type' => 'exception']));
+        $this->actingAs($this->owner)->get("{$base}/events")->assertSee('Exceptions today');
+        $this->actingAs($this->owner)->get("{$base}/issues")->assertDontSee('Exceptions today');
+
+        // Another project's page doesn't list it.
+        $other = Project::factory()->for(Account::query()->findOrFail($this->project->account_id))->withServices(['monitoring'])->create();
+        $this->actingAs($this->owner)->get("/projects/{$other->id}/monitoring/events")->assertOk()->assertDontSee('Exceptions today');
+    }
+
     public function test_ingested_events_show_up_as_issues_events_traces_and_releases(): void
     {
         IngestToken::factory()->for($this->production)->withSecret('pages-key')->create();

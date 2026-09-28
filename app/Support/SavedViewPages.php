@@ -20,9 +20,9 @@ final class SavedViewPages
     public const PAGES = [
         'audit-log' => ['route' => 'account.audit-log', 'parameters' => [], 'keys' => ['project', 'person', 'category', 'from', 'to']],
         'notifications' => ['route' => 'notifications.index', 'parameters' => [], 'keys' => ['filter', 'type', 'q']],
-        'monitoring.events' => ['route' => 'monitoring.events', 'parameters' => ['project'], 'keys' => ['environment', 'level', 'type', 'q', 'range', 'from', 'to']],
-        'monitoring.issues' => ['route' => 'monitoring.issues', 'parameters' => ['project'], 'keys' => ['environment', 'status', 'level', 'assignee', 'release', 'q', 'sort']],
-        'monitoring.traces' => ['route' => 'monitoring.traces', 'parameters' => ['project'], 'keys' => ['environment', 'service', 'status', 'q', 'range', 'min_duration']],
+        'monitoring.events' => ['route' => 'monitoring.events', 'parameters' => ['project'], 'keys' => ['environment', 'q', 'range', 'severity', 'sort', 'trace', 'type']],
+        'monitoring.issues' => ['route' => 'monitoring.issues', 'parameters' => ['project'], 'keys' => ['environment', 'ownership', 'q', 'status']],
+        'monitoring.metrics' => ['route' => 'monitoring.metrics', 'parameters' => ['project'], 'keys' => ['environment', 'kind', 'q']],
     ];
 
     /**

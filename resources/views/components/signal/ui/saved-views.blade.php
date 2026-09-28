@@ -9,7 +9,7 @@
     $views = $user === null ? collect() : \App\Models\SavedView::query()->where('user_id', $user->id)->where('page', $page)
         ->where('account_id', $user->current_account_id)->orderBy('name')->get()
         ->filter(fn (\App\Models\SavedView $view): bool => $view->parameters === $parameters);
-    $modalId = 'save-view-'.\Illuminate\Support\Str::slug($page);
+    $modalId = 'save-view-'.str_replace('.', '-', $page);
 @endphp
 
 @if ($user !== null)

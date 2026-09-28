@@ -22,6 +22,8 @@
             <x-signal.ui.button :href="route('monitoring.metrics', $project)" variant="quiet">{{ __('Reset') }}</x-signal.ui.button>
         </div>
     </form>
+    @error('saved_view_name')<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+    <x-signal.ui.saved-views page="monitoring.metrics" :parameters="['project' => $project->id]" />
 
     <x-signal.ui.table :caption="__('Metric series')">
         <x-slot:head><tr><th scope="col">{{ __('Metric') }}</th><th scope="col">{{ __('Resource') }}</th><th scope="col">{{ __('Type / unit') }}</th><th scope="col">{{ __('Last received (UTC)') }}</th>@if ($canManage)<th scope="col"><span class="sr-only">{{ __('Alert') }}</span></th>@endif</tr></x-slot:head>

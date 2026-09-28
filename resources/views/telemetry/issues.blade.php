@@ -16,6 +16,8 @@
         </x-signal.ui.select-field>
         <x-signal.ui.button type="submit" variant="secondary">{{ __('Filter') }}</x-signal.ui.button>
     </form>
+    @error('saved_view_name')<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+    <x-signal.ui.saved-views page="monitoring.issues" :parameters="['project' => $project->id]" />
 
     @if ($issues->isEmpty())
         <x-signal.ui.empty-state icon="check-circle" :title="__('No issues here')" :description="__('Exceptions your apps send become issues. Connect an app on the Setup page to start collecting them.')" />

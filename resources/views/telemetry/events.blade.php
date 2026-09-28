@@ -38,6 +38,8 @@
             <x-signal.ui.button :href="route('monitoring.dependencies', $project)" variant="quiet">{{ __('Service map') }}</x-signal.ui.button>
         </div>
     </form>
+    @error('saved_view_name')<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+    <x-signal.ui.saved-views page="monitoring.events" :parameters="['project' => $project->id]" />
 
     <x-signal.ui.table :caption="__('Events')">
         <x-slot:head><tr><th scope="col">{{ __('When (UTC)') }}</th><th scope="col">{{ __('Event') }}</th><th scope="col">{{ __('Service') }}</th><th scope="col">{{ __('Duration') }}</th><th scope="col">{{ __('Trace') }}</th></tr></x-slot:head>

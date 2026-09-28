@@ -8,6 +8,7 @@ use App\Enums\AccountRole;
 use App\Policies\AccountPolicy;
 use Database\Factories\AccountFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
 use Illuminate\Database\Eloquent\Attributes\UsePolicy;
 use Illuminate\Database\Eloquent\Concerns\HasUlids;
@@ -23,8 +24,17 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $name
  * @property string $slug
  * @property float|null $monthly_infrastructure_budget in USD; the Infrastructure costs page compares server costs with it
+ * @property bool $require_two_factor members must turn on two-factor authentication to use the account
+ * @property list<string>|null $allowed_email_domains only people with these email domains can be invited or sign in with SSO
+ * @property list<string>|null $allowed_ip_ranges the account can only be used from these IP addresses or CIDR ranges
+ * @property int|null $session_idle_minutes sign people out after this long without a request
+ * @property string|null $sso_issuer the OIDC identity provider's issuer URL
+ * @property string|null $sso_client_id
+ * @property string|null $sso_client_secret encrypted
+ * @property bool $sso_enforced members must sign in through the identity provider to use the account
  */
 #[Fillable(['name', 'slug'])]
+#[Hidden(['sso_client_secret'])]
 #[UseFactory(AccountFactory::class)]
 #[UsePolicy(AccountPolicy::class)]
 class Account extends Model
@@ -75,13 +85,39 @@ class Account extends Model
     /**
      * Get the attributes that should be cast.
      *
-     * Plain columns; dates come back as Carbon.
+     * Reads the security rules as booleans and JSON lists, and encrypts the SSO client secret.
      *
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['monthly_infrastructure_budget' => 'float'];
+        return [
+            'monthly_infrastructure_budget' => 'float', 'require_two_factor' => 'boolean', 'allowed_email_domains' => 'array', 'allowed_ip_ranges' => 'array',
+            'session_idle_minutes' => 'integer', 'sso_client_secret' => 'encrypted', 'sso_enforced' => 'boolean',
+        ];
+    }
+
+    /**
+     * Determine whether single sign-on has an issuer, client ID and secret.
+     *
+     * @return bool
+     */
+    public function hasSso(): bool
+    {
+        return filled($this->sso_issuer) && filled($this->sso_client_id) && filled($this->sso_client_secret);
+    }
+
+    /**
+     * Determine whether an email address's domain is allowed (always, when no domains are set).
+     *
+     * @param  string  $email
+     * @return bool
+     */
+    public function allowsEmail(string $email): bool
+    {
+        $domains = $this->allowed_email_domains ?? [];
+
+        return $domains === [] || in_array(mb_strtolower(\Illuminate\Support\Str::afterLast($email, '@')), $domains, true);
     }
 
     /**

@@ -6,7 +6,7 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-/** Named filters people save on list pages (the audit log, notifications, Monitoring's events, issues and traces). */
+/** Named filters people save on list pages (the audit log, notifications, Monitoring's events, issues and metrics). */
 return new class extends Migration
 {
     /**
