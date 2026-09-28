@@ -90,8 +90,11 @@
                 </ul>
             @endif
             @if ($canManage)
-                <form method="POST" action="{{ route('deploy.environments.variables.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-2">
+                <div><x-signal.ui.button :href="route('deploy.environments.show', [$project, $environment, 'tab' => 'variables', 'dialog' => 'add-variable'])" variant="secondary" data-modal-trigger="add-variable">{{ __('Add a variable') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-variable" :title="__('Add a variable to :environment', ['environment' => $environment->name])" :description="__('Saving a key that exists makes a new version of it. Secrets are encrypted and never shown again.')">
+                <form method="POST" action="{{ route('deploy.environments.variables.store', [$project, $environment]) }}" class="grid items-start gap-4 sm:grid-cols-2">
                     @csrf
+                    <input type="hidden" name="_modal" value="add-variable">
                     <x-signal.ui.input-field name="key" :label="__('Key')" placeholder="STRIPE_SECRET" maxlength="255" required />
                     <x-signal.ui.input-field name="value" :label="__('Value')" autocomplete="off" :restore="false" />
                     <x-signal.ui.select-field name="scope" :label="__('Used for')">
@@ -101,8 +104,9 @@
                     </x-signal.ui.select-field>
                     <x-signal.ui.input-field name="rotation_due_at" type="date" :label="__('Rotate by (optional)')" />
                     <div class="sm:col-span-2"><x-signal.ui.checkbox name="is_secret" value="1" :checked="true">{{ __('Secret (hide the value)') }}</x-signal.ui.checkbox></div>
-                    <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save variable') }}</x-signal.ui.button></div>
+                    <div class="flex justify-end sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save variable') }}</x-signal.ui.button></div>
                 </form>
+                </x-signal.overlays.modal>
                 <x-signal.ui.disclosure :title="__('Replace all from a .env file')">
                     <form method="POST" action="{{ route('deploy.environments.variables.replace', [$project, $environment]) }}" class="grid gap-3">
                         @csrf

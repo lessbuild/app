@@ -112,6 +112,18 @@
 
     @isset($shell)
         <x-signal.layouts.command-palette :shell="$shell" />
+        @if ($shell->canCreateProject)
+            {{-- New project, from the dashboard, the project switcher and search; /projects/create is the fallback. --}}
+            <x-signal.overlays.modal id="new-project" :title="__('New project')" :description="__('One project per app or site. It starts with a Production environment; you can add staging and others later.')">
+                <form method="POST" action="{{ route('projects.store') }}" class="grid gap-5">
+                    @csrf
+                    <input type="hidden" name="_modal" value="new-project">
+                    <x-signal.ui.input-field id="new-project-name" name="name" :label="__('Project name')" maxlength="100" autocomplete="off" required />
+                    <x-signal.ui.textarea-field id="new-project-description" name="description" :label="__('Description')" :description="__('Optional. What this project is, for your teammates.')" maxlength="500" rows="3" />
+                    <div class="flex justify-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Create project') }}</x-signal.ui.button></div>
+                </form>
+            </x-signal.overlays.modal>
+        @endif
         {{-- Feedback, from the account menu; reopens with its errors if sending failed. --}}
         <x-signal.overlays.modal id="feedback-modal" :title="__('Send feedback')" :description="__('Tell us what would make :app better, or what’s getting in your way. We read everything.', ['app' => config('app.name')])" :open="$errors->hasAny(['feedback_kind', 'feedback_message'])">
             <form method="POST" action="{{ route('feedback.store') }}" class="grid gap-4">

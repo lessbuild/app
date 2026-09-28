@@ -2,7 +2,7 @@
     <x-signal.ui.page-header :eyebrow="$account?->name" :title="__('Projects')" :description="__('Each project groups the environments, domains and services of one app or site.')">
         @if ($canCreate && $projects !== [])
             <x-slot:actions>
-                <x-signal.ui.button :href="route('projects.create')" variant="primary">{{ __('New project') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('projects.create')" variant="primary" data-modal-trigger="new-project" :data-modal-history-url="request()->fullUrlWithQuery(['dialog' => 'new-project'])">{{ __('New project') }}</x-signal.ui.button>
             </x-slot:actions>
         @endif
     </x-signal.ui.page-header>
@@ -17,7 +17,7 @@
         <x-signal.ui.empty-state :title="__('Create your first project')" :description="$canCreate ? __('A project is one app or site. You’ll add domains and turn on Deploy, Monitoring, Analytics or Infrastructure next.') : __('No projects yet. Someone who manages projects in :account can create one.', ['account' => $account->name])">
             @if ($canCreate)
                 <x-slot:action>
-                    <x-signal.ui.button :href="route('projects.create')" variant="primary">{{ __('Create a project') }}</x-signal.ui.button>
+                    <x-signal.ui.button :href="route('projects.create')" variant="primary" data-modal-trigger="new-project" :data-modal-history-url="request()->fullUrlWithQuery(['dialog' => 'new-project'])">{{ __('Create a project') }}</x-signal.ui.button>
                 </x-slot:action>
             @endif
         </x-signal.ui.empty-state>

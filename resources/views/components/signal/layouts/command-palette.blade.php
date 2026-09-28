@@ -5,13 +5,13 @@
     $sections = [];
     $quick = [];
     if ($shell->canCreateProject) {
-        $quick[] = ['label' => __('New project'), 'url' => route('projects.create'), 'keywords' => 'create add'];
+        $quick[] = ['label' => __('New project'), 'url' => request()->fullUrlWithQuery(['dialog' => 'new-project']), 'keywords' => 'create add'];
     }
     if ($shell->account !== null && $shell->user->can('manageMembers', $shell->account)) {
-        $quick[] = ['label' => __('Invite someone'), 'url' => route('account.members'), 'keywords' => 'member teammate invitation'];
+        $quick[] = ['label' => __('Invite someone'), 'url' => route('account.members', ['dialog' => 'invite-member']), 'keywords' => 'member teammate invitation'];
     }
     if ($shell->account !== null && $shell->user->can('manageApiTokens', $shell->account)) {
-        $quick[] = ['label' => __('Create an API token'), 'url' => route('account.api-tokens'), 'keywords' => 'key token api ci'];
+        $quick[] = ['label' => __('Create an API token'), 'url' => route('account.api-tokens', ['dialog' => 'create-api-token']), 'keywords' => 'key token api ci'];
     }
     $quick[] = ['label' => __('Notifications'), 'url' => route('notifications.index'), 'keywords' => 'inbox alerts'];
     $quick[] = ['label' => __('Your settings'), 'url' => route('settings.profile'), 'keywords' => 'profile password security passkey two-factor sessions privacy'];

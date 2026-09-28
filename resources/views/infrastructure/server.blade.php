@@ -62,7 +62,10 @@
             <div class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="font-extrabold text-ink">{{ __('Resources') }}</h2>
                 <div class="flex flex-wrap gap-2">
-                    <x-signal.ui.button :href="route('infrastructure.servers.commands', [$project, $server->id])" variant="secondary" size="sm">{{ __('Commands') }}</x-signal.ui.button>
+                    @can('runCommands', $server)
+                        <x-signal.ui.button :href="route('infrastructure.servers.commands', [$project, $server->id])" variant="secondary" size="sm" data-modal-trigger="run-command">{{ __('Run a command') }}</x-signal.ui.button>
+                    @endcan
+                    <x-signal.ui.button :href="route('infrastructure.servers.commands', [$project, $server->id])" variant="quiet" size="sm">{{ __('Command history') }}</x-signal.ui.button>
                     @if ($canOpenTerminal && $server->ssh_host_key)
                         <form method="POST" action="{{ route('infrastructure.servers.terminal.store', [$project, $server->id]) }}" data-terminal-open>
                             @csrf
@@ -74,6 +77,16 @@
                 </div>
             </div>
             @error('terminal')<p class="text-sm text-danger">{{ $message }}</p>@enderror
+            @can('runCommands', $server)
+                <x-signal.overlays.modal id="run-command" :title="__('Run a command on :server', ['server' => $server->label()])" :description="__('Runs as root over SSH. You’ll see its output on the commands page as soon as it finishes.')">
+                    <form method="POST" action="{{ route('infrastructure.servers.commands.store', [$project, $server->id]) }}" class="grid gap-4">
+                        @csrf
+                        <input type="hidden" name="_modal" value="run-command">
+                        <x-signal.ui.textarea-field id="run-command-text" name="command" :label="__('Command')" rows="3" maxlength="4096" class="font-mono" placeholder="systemctl status caddy --no-pager" required />
+                        <div class="flex justify-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Run as root') }}</x-signal.ui.button></div>
+                    </form>
+                </x-signal.overlays.modal>
+            @endcan
             @if ($latest === null)
                 <p class="text-sm text-muted">{{ __('Metrics are collected every five minutes. The first reading appears shortly.') }}</p>
             @else

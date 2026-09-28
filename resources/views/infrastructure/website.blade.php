@@ -98,8 +98,11 @@
                 @endforeach
             </ul>
             @if ($canManage)
-                <form method="POST" action="{{ route('infrastructure.websites.domains.store', [$project, $website->id]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-2">
+                <div><x-signal.ui.button :href="route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'domains', 'dialog' => 'add-domain'])" variant="secondary" data-modal-trigger="add-domain">{{ __('Add a domain') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-domain" :title="__('Add a domain to :website', ['website' => $website->name])" :description="__('An alias serves the website; a redirect sends visitors elsewhere. A certificate is issued once DNS points here.')">
+                <form method="POST" action="{{ route('infrastructure.websites.domains.store', [$project, $website->id]) }}" class="grid items-start gap-4 sm:grid-cols-2">
                     @csrf
+                    <input type="hidden" name="_modal" value="add-domain">
                     <x-signal.ui.input-field name="hostname" :label="__('Hostname')" placeholder="www.example.com" maxlength="255" required />
                     <x-signal.ui.select-field name="type" :label="__('Type')">
                         <option value="alias">{{ __('Alias') }}</option>
@@ -112,10 +115,11 @@
                             <option value="{{ $dns->id }}" @selected((int) old('dns_provider_id') === $dns->id)>{{ $dns->name }}</option>
                         @endforeach
                     </x-signal.ui.select-field>
-                    <div class="flex flex-wrap gap-3 sm:col-span-2">
-                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Add domain') }}</x-signal.ui.button>
+                    <div class="flex justify-end sm:col-span-2">
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Add domain') }}</x-signal.ui.button>
                     </div>
                 </form>
+                </x-signal.overlays.modal>
                 @if ($temporaryDomains && $dnsProviders->isNotEmpty())
                     <form method="POST" action="{{ route('infrastructure.websites.domains.temporary', [$project, $website->id]) }}" class="flex flex-wrap items-end gap-3">
                         @csrf

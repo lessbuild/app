@@ -6,6 +6,9 @@
     'bodyClass' => 'px-5 py-5 sm:px-6',
 ])
 
+{{-- Opens on load when the address asks for it (?dialog=id, so modals can be linked to) or when a form inside it
+     failed validation (it posts a hidden _modal field with the modal's id). --}}
+@php($open = $open || request()->query('dialog') === $id || ($errors->any() && old('_modal') === $id))
 @php($titleId = $id.'-title')
 @php($descriptionId = $id.'-description')
 

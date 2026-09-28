@@ -17,9 +17,13 @@
         </x-signal.ui.panel>
     @endif
 
-    <x-signal.ui.settings-section :title="__('Create a token')" :description="__('Give each script its own token with only the scopes it needs. A token stops working if you leave the account or lose the right to manage tokens.')">
-        <form method="POST" action="{{ route('account.api-tokens.store') }}" class="grid gap-5 p-4 sm:p-6">
+    <x-slot:actions>
+        <x-signal.ui.button :href="route('account.api-tokens', ['dialog' => 'create-api-token'])" variant="primary" data-modal-trigger="create-api-token">{{ __('Create a token') }}</x-signal.ui.button>
+    </x-slot:actions>
+    <x-signal.overlays.modal id="create-api-token" :title="__('Create a token')" :description="__('Give each script its own token with only the scopes it needs. A token stops working if you leave the account or lose the right to manage tokens.')">
+        <form method="POST" action="{{ route('account.api-tokens.store') }}" class="grid gap-5">
             @csrf
+            <input type="hidden" name="_modal" value="create-api-token">
             <x-signal.ui.input-field name="name" :label="__('Token name')" :description="__('What uses it, such as “GitHub Actions deploy”.')" maxlength="100" autocomplete="off" required />
 
             <fieldset class="grid gap-3">
@@ -46,9 +50,9 @@
                 @endforeach
             </x-signal.ui.select-field>
 
-            <div><x-signal.ui.button type="submit" variant="primary">{{ __('Create token') }}</x-signal.ui.button></div>
+            <div class="flex justify-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Create token') }}</x-signal.ui.button></div>
         </form>
-    </x-signal.ui.settings-section>
+    </x-signal.overlays.modal>
 
     <x-signal.ui.settings-section :title="__('Tokens in this account')" :description="__('Everyone’s tokens for :account. Revoke any you don’t recognise.', ['account' => $account->name])">
         @if ($tokens === [])

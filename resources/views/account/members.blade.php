@@ -9,20 +9,22 @@
     @endforeach
 
     @if ($overview->canManage)
-        <x-signal.ui.settings-section :title="__('Invite someone')" :description="__('They get an email with a link that works for :days days. Inviting the same address again replaces the earlier invitation.', ['days' => \App\Actions\Accounts\InviteMember::EXPIRES_AFTER_DAYS])">
-            <form method="POST" action="{{ route('account.invitations.store') }}" class="grid gap-5 p-4 sm:grid-cols-[minmax(0,1fr)_14rem] sm:items-end sm:p-6">
+        <x-slot:actions>
+            <x-signal.ui.button :href="route('account.members', ['dialog' => 'invite-member'])" variant="primary" data-modal-trigger="invite-member">{{ __('Invite someone') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.modal id="invite-member" :title="__('Invite someone')" :description="__('They get an email with a link that works for :days days. Inviting the same address again replaces the earlier invitation.', ['days' => \App\Actions\Accounts\InviteMember::EXPIRES_AFTER_DAYS])">
+            <form method="POST" action="{{ route('account.invitations.store') }}" class="grid gap-5">
                 @csrf
-                <x-signal.ui.input-field name="email" :label="__('Email address')" type="email" autocomplete="off" required />
-                <x-signal.ui.select-field name="role" :label="__('Role')" required>
+                <input type="hidden" name="_modal" value="invite-member">
+                <x-signal.ui.input-field id="invite-email" name="email" :label="__('Email address')" type="email" autocomplete="off" required />
+                <x-signal.ui.select-field id="invite-role" name="role" :label="__('Role')" required>
                     @foreach ($overview->assignableRoles as $role)
                         <option value="{{ $role->value }}" @selected(old('role', 'member') === $role->value)>{{ $role->label() }}</option>
                     @endforeach
                 </x-signal.ui.select-field>
-                <div class="sm:col-span-2">
-                    <x-signal.ui.button type="submit" variant="primary">{{ __('Send invitation') }}</x-signal.ui.button>
-                </div>
+                <div class="flex justify-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Send invitation') }}</x-signal.ui.button></div>
             </form>
-        </x-signal.ui.settings-section>
+        </x-signal.overlays.modal>
     @endif
 
     <x-signal.ui.settings-section :title="__('People')" :description="trans_choice(':count person has access.|:count people have access.', count($overview->members), ['count' => count($overview->members)])">

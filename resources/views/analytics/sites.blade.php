@@ -1,6 +1,10 @@
 <x-signal.layouts.project :overview="$overview" :title="__('Analytics sites')" :description="__('Each site is a website whose visits this project records.')">
     @if ($sites === [])
-        <x-signal.ui.empty-state icon="view-grid" :title="__('Add your first site')" :description="__('You’ll get a one-line snippet to paste into your pages. No cookies, no personal data.')" />
+        <x-signal.ui.empty-state icon="view-grid" :title="__('Add your first site')" :description="__('You’ll get a one-line snippet to paste into your pages. No cookies, no personal data.')">
+            @if ($canManage)
+                <x-slot:action><x-signal.ui.button :href="route('analytics.sites', [$overview->project, 'dialog' => 'add-site'])" variant="primary" data-modal-trigger="add-site">{{ __('Add a site') }}</x-signal.ui.button></x-slot:action>
+            @endif
+        </x-signal.ui.empty-state>
     @else
         <x-signal.ui.card class="overflow-hidden">
             <ul class="divide-y divide-line" aria-label="{{ __('Sites') }}">
@@ -18,12 +22,16 @@
     @endif
 
     @if ($canManage)
-        <x-signal.ui.settings-section :title="__('Add a site')" :description="__('A hostname must be a verified domain of this project (or a subdomain of one) before the site collects.')">
-            <form method="POST" action="{{ route('analytics.sites.store', $overview->project) }}" class="grid gap-5 p-4 sm:p-6">
+        <x-slot:actions>
+            <x-signal.ui.button :href="route('analytics.sites', [$overview->project, 'dialog' => 'add-site'])" variant="primary" data-modal-trigger="add-site">{{ __('Add a site') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.modal id="add-site" :title="__('Add a site')" :description="__('A hostname must be a verified domain of this project (or a subdomain of one) before the site collects.')">
+            <form method="POST" action="{{ route('analytics.sites.store', $overview->project) }}" class="grid gap-5">
                 @csrf
+                <input type="hidden" name="_modal" value="add-site">
                 @include('analytics._site-fields', ['site' => null, 'timezones' => \DateTimeZone::listIdentifiers()])
-                <div><x-signal.ui.button type="submit" variant="primary">{{ __('Add site') }}</x-signal.ui.button></div>
+                <div class="flex justify-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Add site') }}</x-signal.ui.button></div>
             </form>
-        </x-signal.ui.settings-section>
+        </x-signal.overlays.modal>
     @endif
 </x-signal.layouts.project>

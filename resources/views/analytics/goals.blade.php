@@ -39,13 +39,17 @@
         </x-signal.ui.card>
 
         @if ($canManage)
-            <x-signal.ui.settings-section :title="__('Add a goal')" :description="__('Custom events are sent with window.buildpusher.track(\'name\').')">
-                <form method="POST" action="{{ route('analytics.goals.store', [$project, $site->id]) }}" class="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
+            <x-slot:actions>
+                <x-signal.ui.button :href="route('analytics.goals', [$project, 'site' => $site->id, 'dialog' => 'add-goal'])" variant="primary" data-modal-trigger="add-goal">{{ __('Add a goal') }}</x-signal.ui.button>
+            </x-slot:actions>
+            <x-signal.overlays.modal id="add-goal" :title="__('Add a goal to :site', ['site' => $site->name])" :description="__('Custom events are sent with window.buildpusher.track(\'name\').')">
+                <form method="POST" action="{{ route('analytics.goals.store', [$project, $site->id]) }}" class="grid gap-4 sm:grid-cols-2">
                     @csrf
+                    <input type="hidden" name="_modal" value="add-goal">
                     @include('analytics._goal-fields', ['goal' => null])
-                    <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Add goal') }}</x-signal.ui.button></div>
+                    <div class="flex justify-end sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Add goal') }}</x-signal.ui.button></div>
                 </form>
-            </x-signal.ui.settings-section>
+            </x-signal.overlays.modal>
         @endif
     @endif
 </x-signal.layouts.project>
