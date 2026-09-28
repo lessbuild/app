@@ -31,6 +31,7 @@ use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Admin\PlatformAdmins;
+use App\Services\Admin\SystemHealth;
 use App\Services\Billing\Entitlements;
 use App\Services\Deploy\Automation;
 use App\Services\Deploy\Configuration\ConfigurationOperations;
@@ -49,6 +50,7 @@ use App\Services\Telemetry\UsageAlerts;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Validation\ValidationException;
 
@@ -484,3 +486,10 @@ Artisan::command('platform:admin {email? : The person\'s email} {--grant} {--rev
 
     return 0;
 })->purpose('Grant, revoke or list platform administrators (admins also need an authenticator app or passkey)');
+
+Artisan::command('platform:heartbeat', function (): int {
+    Cache::forever(SystemHealth::HEARTBEAT_KEY, now()->getTimestamp());
+
+    return 0;
+})->purpose('Record that the scheduler is running, for the admin health page');
+Schedule::command('platform:heartbeat')->everyMinute();

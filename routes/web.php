@@ -28,7 +28,12 @@ use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
+use App\Http\Controllers\Admin\ForgetFailedJobController;
+use App\Http\Controllers\Admin\RetryFailedJobController;
 use App\Http\Controllers\Admin\ShowAdminHomeController;
+use App\Http\Controllers\Admin\ShowHealthController;
+use App\Http\Controllers\Admin\ShowHealthReportController;
+use App\Http\Controllers\Admin\ShowQueuesController;
 use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DownloadExportController;
@@ -604,6 +609,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     // Platform operators only: a 404 for anyone else, a second factor, and a confirmation in the last 15 minutes.
     Route::prefix('/admin')->name('admin.')->middleware(['platform.admin', 'password.confirm:password.confirm,'.config('platform.admin_confirmation_seconds')])->group(function (): void {
         Route::get('/', ShowAdminHomeController::class)->name('home');
+        Route::get('/health', ShowHealthController::class)->name('health');
+        Route::get('/health/report.json', ShowHealthReportController::class)->name('health.report');
+        Route::get('/queues', ShowQueuesController::class)->name('queues');
+        Route::post('/queues/failed/{job}/retry', RetryFailedJobController::class)->where('job', 'all|[0-9a-f-]{36}')->middleware('throttle:30,1')->name('queues.retry');
+        Route::delete('/queues/failed/{job}', ForgetFailedJobController::class)->where('job', 'all|[0-9a-f-]{36}')->middleware('throttle:30,1')->name('queues.forget');
     });
 
     Route::middleware('can:viewAny,App\\Models\\Recipe')->group(function (): void {

@@ -9,4 +9,11 @@ return [
 
     // Minutes an admin's confirmation (password, passkey or social sign-in) lasts in the admin panel.
     'admin_confirmation_seconds' => 900,
+
+    // A queue is unhealthy with more pending jobs than this, or when its oldest is older than this many minutes.
+    'queue_backlog_limit' => (int) env('PLATFORM_QUEUE_BACKLOG_LIMIT', 500),
+    'queue_oldest_minutes' => (int) env('PLATFORM_QUEUE_OLDEST_MINUTES', 15),
+
+    // The queues the admin panel always lists, even when empty.
+    'queues' => ['default', 'checks', 'alerts', 'telemetry', 'terminals'],
 ];
