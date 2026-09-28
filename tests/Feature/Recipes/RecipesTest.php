@@ -51,7 +51,7 @@ final class RecipesTest extends TestCase
     {
         $this->actingAs($this->owner)->post('/account/recipes', $this->recipe(['script' => "apt-get install -y htop\r\necho done\r\n"]))->assertRedirect();
         $recipe = Recipe::query()->sole();
-        $this->assertSame("apt-get install -y htop\necho done", $recipe->script);
+        $this->assertSame("apt-get install -y htop\necho done\n", $recipe->script);
         $this->assertSame(['created'], $recipe->revisions()->pluck('change')->all());
 
         $this->actingAs($this->owner)->put("/account/recipes/{$recipe->id}", $this->recipe(['script' => 'apt-get install -y btop']))->assertRedirect();

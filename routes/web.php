@@ -28,6 +28,7 @@ use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
+use App\Http\Controllers\Admin\ShowAdminHomeController;
 use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DownloadExportController;
@@ -600,6 +601,11 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::get('/github-app/connect', ConnectGitHubAppController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.connect');
     Route::get('/github-app/callback', CompleteGitHubAppInstallController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.callback');
     Route::get('/github-app/providers/{provider}/repositories', ShowGitHubAppRepositoriesController::class)->whereNumber('provider')->middleware(['can:view,provider', 'throttle:20,1'])->name('github-app.repositories');
+    // Platform operators only: a 404 for anyone else, a second factor, and a confirmation in the last 15 minutes.
+    Route::prefix('/admin')->name('admin.')->middleware(['platform.admin', 'password.confirm:password.confirm,'.config('platform.admin_confirmation_seconds')])->group(function (): void {
+        Route::get('/', ShowAdminHomeController::class)->name('home');
+    });
+
     Route::middleware('can:viewAny,App\\Models\\Recipe')->group(function (): void {
         Route::get('/account/recipes', ShowRecipesController::class)->name('account.recipes');
         Route::post('/account/recipes', StoreRecipeController::class)->middleware('throttle:30,1')->name('account.recipes.store');

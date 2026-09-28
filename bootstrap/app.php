@@ -7,6 +7,7 @@ use App\Exceptions\StateConflict;
 use App\Http\Middleware\AuthenticateIngestToken;
 use App\Http\Middleware\AuthorizeCurrentAccount;
 use App\Http\Middleware\DecodeTelemetryPayload;
+use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureServiceEnabled;
 use App\Http\Middleware\ProjectContext;
 use App\Http\Middleware\ReceiveMonitorSignal;
@@ -36,7 +37,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $signal = fn (Request $request): bool => $request->is('api/v1/heartbeats/*', 'api/v1/queues/*', 'api/v1/ingest', 'api/v1/otlp/v1/*', 'api/v1/deployments', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*', 'builds/*/deployment/callback/*', 'api/repositories/*/webhook', 'api/github-app/webhook');
         // Terminal keystrokes (Enter, spaces, control characters) must reach the shell untouched.
         $terminal = fn (Request $request): bool => $request->is('projects/*/infrastructure/servers/*/terminal/*/input');
-        $middleware->trimStrings(except: [$signal, $terminal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret', 'env_file', 'ssh_private_key', 'token']);
+        $middleware->trimStrings(except: [$signal, $terminal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret', 'env_file', 'ssh_private_key', 'token', 'script']);
         $middleware->convertEmptyStringsToNull(except: [$signal, $terminal]);
         $middleware->alias([
             'account.can' => AuthorizeCurrentAccount::class,
@@ -46,6 +47,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'project.context' => ProjectContext::class,
             'service' => EnsureServiceEnabled::class,
             'ingest.token' => AuthenticateIngestToken::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

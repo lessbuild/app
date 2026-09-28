@@ -31,6 +31,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property \Illuminate\Support\Carbon|null $two_factor_confirmed_at
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $created_at
+ * @property bool $is_platform_admin operates the platform: opens /admin (granted with `platform:admin`)
+ * @property \Illuminate\Support\Carbon|null $platform_admin_granted_at
  */
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
@@ -56,7 +58,19 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'is_platform_admin' => 'boolean',
+            'platform_admin_granted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Determine whether the person has a second factor: a confirmed authenticator app or a passkey.
+     *
+     * @return bool
+     */
+    public function hasSecondFactor(): bool
+    {
+        return ($this->two_factor_secret !== null && $this->two_factor_confirmed_at !== null) || $this->passkeys()->exists();
     }
 
     /**

@@ -26,9 +26,11 @@ use App\Models\Server;
 use App\Models\ServerCommandExecution;
 use App\Models\ServerTerminalFrame;
 use App\Models\ServerTerminalSession;
+use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
+use App\Services\Admin\PlatformAdmins;
 use App\Services\Billing\Entitlements;
 use App\Services\Deploy\Automation;
 use App\Services\Deploy\Configuration\ConfigurationOperations;
@@ -440,3 +442,45 @@ Artisan::command('environments:wake', function (Hibernation $hibernation): int {
     return 0;
 })->purpose('Wake hibernated environments whose websites have had a request');
 Schedule::command('environments:wake')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('platform:admin {email? : The person\'s email} {--grant} {--revoke} {--allow-last : Allow revoking the last admin} {--list} {--import-allowlist : Grant everyone in PLATFORM_ADMIN_EMAILS}', function (PlatformAdmins $admins): int {
+    if ($this->option('list')) {
+        $this->table(['Email', 'Granted', 'Second factor'], User::query()->where('is_platform_admin', true)->orderBy('email')->get()
+            ->map(fn (User $user): array => [$user->email, (string) $user->platform_admin_granted_at, $user->hasSecondFactor() ? 'yes' : 'no'])->all());
+
+        return 0;
+    }
+    if ($this->option('import-allowlist')) {
+        foreach ((array) config('platform.admin_emails') as $email) {
+            $user = User::query()->where('email', strtolower(trim((string) $email)))->first();
+            $user === null ? $this->warn("No user with {$email}; skipped.") : $this->line(($admins->grant($user, null, 'cli') ? 'Granted ' : 'Already an admin: ').$email);
+        }
+
+        return 0;
+    }
+    $email = strtolower(trim(is_string($this->argument('email')) ? $this->argument('email') : ''));
+    if ($email === '' || $this->option('grant') === $this->option('revoke')) {
+        $this->error('Give an email with exactly one of --grant or --revoke, or use --list or --import-allowlist.');
+
+        return 2;
+    }
+    $user = User::query()->where('email', $email)->first();
+    if ($user === null) {
+        $this->error("No user with {$email}.");
+
+        return 1;
+    }
+    try {
+        $changed = $this->option('grant') ? $admins->grant($user, null, 'cli') : $admins->revoke($user, null, 'cli', (bool) $this->option('allow-last'));
+    } catch (RuntimeException $exception) {
+        $this->error($exception->getMessage().' Use --allow-last to override.');
+
+        return 1;
+    }
+    $this->info($changed ? "Updated {$email}." : "No change for {$email}.");
+    if ($this->option('grant') && ! $user->hasSecondFactor()) {
+        $this->warn('They have no authenticator app or passkey yet; /admin stays closed until they add one.');
+    }
+
+    return 0;
+})->purpose('Grant, revoke or list platform administrators (admins also need an authenticator app or passkey)');
