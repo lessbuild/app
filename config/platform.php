@@ -14,6 +14,16 @@ return [
     'queue_backlog_limit' => (int) env('PLATFORM_QUEUE_BACKLOG_LIMIT', 500),
     'queue_oldest_minutes' => (int) env('PLATFORM_QUEUE_OLDEST_MINUTES', 15),
 
+    // Whether anyone can sign up. When false, people need an access invitation or an account invitation (the first
+    // person can always sign up), and /request-access takes requests.
+    'registration' => [
+        'open' => (bool) env('REGISTRATION_OPEN', true),
+        'invitation_days' => max(1, (int) env('REGISTRATION_INVITATION_DAYS', 7)),
+    ],
+
+    // Days before declined and accepted access requests are deleted.
+    'access_request_retention_days' => 180,
+
     // The queues the admin panel always lists, even when empty.
     'queues' => ['default', 'checks', 'alerts', 'telemetry', 'terminals'],
 ];

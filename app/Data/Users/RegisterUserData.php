@@ -16,10 +16,12 @@ final readonly class RegisterUserData
      * @param  string  $name  Their name.
      * @param  string  $email  Their email, which becomes their sign-in.
      * @param  ?string  $password  Their chosen password; null when they register through a provider.
+     * @param  ?string  $accessInvite  The access invitation token they came with, while registration is closed.
      */
     public function __construct(
         public string $name,
         public string $email,
         #[SensitiveParameter] public ?string $password,
+        #[SensitiveParameter] public ?string $accessInvite = null,
     ) {}
 }

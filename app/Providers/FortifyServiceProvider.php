@@ -12,6 +12,7 @@ use App\Enums\SocialProvider;
 use App\Listeners\RecordSignInActivity;
 use App\Models\User;
 use App\Services\SocialSignIn\SocialSignInGateway;
+use App\Services\Users\Registration;
 use Illuminate\Auth\Events\Failed;
 use Illuminate\Auth\Events\Login;
 use Illuminate\Cache\RateLimiting\Limit;
@@ -43,7 +44,21 @@ final class FortifyServiceProvider extends ServiceProvider
         Fortify::redirectUserForTwoFactorAuthenticationUsing(RedirectIfTwoFactorAuthenticatable::class);
 
         Fortify::loginView(fn (): View => view('auth.login', ['socialProviders' => $this->configuredProviders()]));
-        Fortify::registerView(fn (): View => view('auth.register', ['socialProviders' => $this->configuredProviders()]));
+        // While registration is closed, an access invitation link (?invite=) is kept in the session for social sign-up too.
+        Fortify::registerView(function (Request $request): View {
+            $invite = $request->query('invite');
+            if (is_string($invite)) {
+                $request->session()->put('registration.invite', $invite);
+            }
+            $invite = $request->session()->get('registration.invite');
+            $registration = app(Registration::class);
+            $invitation = $registration->invitation(is_string($invite) ? $invite : null);
+
+            return view('auth.register', [
+                'socialProviders' => $this->configuredProviders(), 'open' => $registration->isOpen(),
+                'invite' => $invitation === null ? null : $invite, 'invitedEmail' => $invitation?->email,
+            ]);
+        });
         Fortify::requestPasswordResetLinkView(fn (): View => view('auth.forgot-password'));
         Fortify::resetPasswordView(fn (Request $request): View => view('auth.reset-password', ['request' => $request]));
         Fortify::verifyEmailView(fn (): View => view('auth.verify-email'));

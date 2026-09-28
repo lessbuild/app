@@ -42,7 +42,7 @@ final class ShellComposer
      *
      * @var list<array{string, string}>
      */
-    private const ADMIN_SECTIONS = [['Overview', 'admin.home'], ['Health', 'admin.health'], ['Queues', 'admin.queues'], ['Business', 'admin.analytics'], ['Customers', 'admin.customers']];
+    private const ADMIN_SECTIONS = [['Overview', 'admin.home'], ['Health', 'admin.health'], ['Queues', 'admin.queues'], ['Business', 'admin.analytics'], ['Customers', 'admin.customers'], ['Access requests', 'admin.access-requests']];
 
     /**
      * Give the layout its shell: switchers, primary and section navigation, account links and the unread count. Guests

@@ -26,7 +26,7 @@ final class CreateNewUser implements CreatesNewUsers
     public function __construct(private readonly RegisterUser $registerUser) {}
 
     /**
-     * Validate the registration form and registers the person.
+     * Validate the registration form and register the person, with the access invitation the form carried, if any.
      *
      * @param  array<string, string>  $input
      * @return User
@@ -39,6 +39,6 @@ final class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return $this->registerUser->handle(new RegisterUserData($validated['name'], $validated['email'], $validated['password']));
+        return $this->registerUser->handle(new RegisterUserData($validated['name'], $validated['email'], $validated['password'], is_string($input['invite'] ?? null) ? $input['invite'] : null));
     }
 }

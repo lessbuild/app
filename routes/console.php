@@ -14,6 +14,7 @@ use App\Actions\Notifications\WarnAboutExpiringTokens;
 use App\Actions\Telemetry\PruneTelemetryData;
 use App\Actions\Telemetry\WakeSnoozedIssues;
 use App\Jobs\Infrastructure\CollectServerMetrics;
+use App\Models\AccessRequest;
 use App\Models\Build;
 use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
@@ -493,3 +494,12 @@ Artisan::command('platform:heartbeat', function (): int {
     return 0;
 })->purpose('Record that the scheduler is running, for the admin health page');
 Schedule::command('platform:heartbeat')->everyMinute();
+
+Artisan::command('access-requests:prune', function (): int {
+    $deleted = AccessRequest::query()->whereIn('status', ['accepted', 'declined'])
+        ->where('updated_at', '<', now()->subDays((int) config('platform.access_request_retention_days')))->delete();
+    $this->info("Deleted {$deleted} closed access requests.");
+
+    return 0;
+})->purpose('Delete access requests that were accepted or declined long ago');
+Schedule::command('access-requests:prune')->dailyAt('03:40')->withoutOverlapping(30)->onOneServer();

@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Http\Controllers\AccessRequests\CreateAccessRequestController;
+use App\Http\Controllers\AccessRequests\StoreAccessRequestController;
 use App\Http\Controllers\Account\AcceptInvitationController;
 use App\Http\Controllers\Account\ChangeMemberRoleController;
 use App\Http\Controllers\Account\ChangePlanController;
@@ -30,6 +32,7 @@ use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Admin\ForgetFailedJobController;
 use App\Http\Controllers\Admin\RetryFailedJobController;
+use App\Http\Controllers\Admin\ShowAccessRequestsController;
 use App\Http\Controllers\Admin\ShowAdminHomeController;
 use App\Http\Controllers\Admin\ShowBusinessAnalyticsController;
 use App\Http\Controllers\Admin\ShowCustomerAccountController;
@@ -38,6 +41,7 @@ use App\Http\Controllers\Admin\ShowCustomerUserController;
 use App\Http\Controllers\Admin\ShowHealthController;
 use App\Http\Controllers\Admin\ShowHealthReportController;
 use App\Http\Controllers\Admin\ShowQueuesController;
+use App\Http\Controllers\Admin\UpdateAccessRequestController;
 use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DownloadExportController;
@@ -314,6 +318,10 @@ Route::get('/_gallery', ComponentGalleryController::class)->name('gallery');
 Route::get('/invitations/{token}', ShowInvitationController::class)->name('invitations.show');
 
 // Public status pages (the old apps' URLs).
+Route::middleware('guest')->group(function (): void {
+    Route::get('/request-access', CreateAccessRequestController::class)->name('access-requests.create');
+    Route::post('/request-access', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
+});
 Route::get('/status/subscriptions/{subscription}/confirm/{token}', ConfirmStatusSubscriptionController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.confirm');
 Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', ShowUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
 Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe.store');
@@ -617,6 +625,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
         Route::get('/health/report.json', ShowHealthReportController::class)->name('health.report');
         Route::get('/queues', ShowQueuesController::class)->name('queues');
         Route::get('/analytics', ShowBusinessAnalyticsController::class)->name('analytics');
+        Route::get('/access-requests', ShowAccessRequestsController::class)->name('access-requests');
+        Route::put('/access-requests/{accessRequest}', UpdateAccessRequestController::class)->whereNumber('accessRequest')->middleware('throttle:60,1')->name('access-requests.update');
         Route::get('/customers', ShowCustomersController::class)->middleware('throttle:60,1')->name('customers');
         Route::get('/customers/accounts/{account}', ShowCustomerAccountController::class)->whereUlid('account')->name('customers.accounts');
         Route::get('/customers/users/{person}', ShowCustomerUserController::class)->whereUlid('person')->name('customers.users');

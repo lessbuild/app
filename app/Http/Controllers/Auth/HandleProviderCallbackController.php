@@ -79,7 +79,8 @@ final class HandleProviderCallbackController
             return $failed(__('We couldn’t sign you in with :provider. Please try again.', ['provider' => $provider->label()]));
         }
 
-        $result = $this->signIn->handle($provider, $profile, Features::enabled(Features::registration()));
+        $invite = $request->session()->get('registration.invite');
+        $result = $this->signIn->handle($provider, $profile, Features::enabled(Features::registration()), is_string($invite) ? $invite : null);
         if ($result->user === null) {
             return $failed(match ($result->outcome) {
                 SocialSignInOutcome::EmailInUse => __('An account already uses this email address. Sign in another way, then connect :provider from Settings → Security.', ['provider' => $provider->label()]),

@@ -12,6 +12,7 @@ use App\Enums\SocialSignInOutcome;
 use App\Events\Users\SocialIdentityConnected;
 use App\Models\SocialIdentity;
 use App\Models\User;
+use App\Services\Users\Registration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -23,8 +24,9 @@ final class SignInWithSocialProfile
      * Signs in, links or registers someone coming back from a provider.
      *
      * @param  RegisterUser  $registerUser  Registers people new to the platform.
+     * @param  Registration  $registration  Decides whether they may sign up while registration is closed.
      */
-    public function __construct(private readonly RegisterUser $registerUser) {}
+    public function __construct(private readonly RegisterUser $registerUser, private readonly Registration $registration) {}
 
     /**
      * Find the user behind a provider identity, or register a new one. An existing account is never
@@ -32,10 +34,11 @@ final class SignInWithSocialProfile
      *
      * @param  SocialProvider  $provider
      * @param  SocialProfile  $profile
-     * @param  bool  $registrationOpen
+     * @param  bool  $registrationOpen  whether sign-up is offered at all
+     * @param  string|null  $accessInvite  an access invitation token from the sign-up page, while registration is closed
      * @return SocialSignInResult
      */
-    public function handle(SocialProvider $provider, SocialProfile $profile, bool $registrationOpen): SocialSignInResult
+    public function handle(SocialProvider $provider, SocialProfile $profile, bool $registrationOpen, ?string $accessInvite = null): SocialSignInResult
     {
         $identity = SocialIdentity::query()
             ->where('provider', $provider)
@@ -55,12 +58,12 @@ final class SignInWithSocialProfile
         if (User::query()->where('email', $email)->exists()) {
             return new SocialSignInResult(SocialSignInOutcome::EmailInUse);
         }
-        if (! $registrationOpen) {
+        if (! $registrationOpen || ! $this->registration->allows($email, $accessInvite)) {
             return new SocialSignInResult(SocialSignInOutcome::RegistrationClosed);
         }
 
-        $user = DB::transaction(function () use ($provider, $profile, $email): User {
-            $user = $this->registerUser->handle(new RegisterUserData($profile->name, $email, null));
+        $user = DB::transaction(function () use ($provider, $profile, $email, $accessInvite): User {
+            $user = $this->registerUser->handle(new RegisterUserData($profile->name, $email, null, $accessInvite));
             // The provider has verified this address, so there is nothing more to confirm.
             $user->forceFill(['email_verified_at' => now()])->save();
 
