@@ -2,7 +2,7 @@
 @php($days = [1 => __('Mon'), 2 => __('Tue'), 3 => __('Wed'), 4 => __('Thu'), 5 => __('Fri'), 6 => __('Sat'), 7 => __('Sun')])
 
 <x-signal.layouts.project :overview="$overview" :title="$environment->name" :description="__('Deploy settings for this environment. Changes apply to the next deploy.')">
-    @foreach (['process', 'resource', 'type', 'variables', 'maximum_replicas', 'minimum_replicas', 'start_command'] as $key)
+    @foreach (['process', 'resource', 'type', 'variables', 'maximum_replicas', 'minimum_replicas', 'start_command', 'schedule', 'task', 'cron_expression', 'replicas', 'website_id', 'name', 'hibernate_after_minutes', 'state'] as $key)
         @error($key)<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
     @endforeach
     @if ($blockReason)
@@ -167,6 +167,141 @@
                     <div class="sm:col-span-2"><x-signal.ui.textarea-field id="resource-variables" name="variables" :label="__('Variables for an external service')" rows="3" :description="__('KEY=value lines, e.g. AWS_BUCKET=assets.')" /></div>
                     <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save resource') }}</x-signal.ui.button></div>
                 </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+    </x-signal.ui.page-tab-panel>
+
+    <x-signal.ui.page-tab-panel name="automation" :current="$tab">
+    <x-signal.ui.settings-section id="hibernation" :title="__('Hibernation')" :description="__('After a while without requests, Laravel apps go into maintenance mode and workers stop; the next request wakes them within a minute. Deploys and scaling wake them too.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            <p class="text-sm">
+                @if ($environment->hibernated_at)
+                    <x-signal.ui.badge tone="info">{{ __('Hibernating') }}</x-signal.ui.badge> <span class="text-muted">{{ __('since :when', ['when' => $environment->hibernated_at->diffForHumans()]) }}</span>
+                @else
+                    <x-signal.ui.badge tone="success">{{ __('Running') }}</x-signal.ui.badge> <span class="text-muted">{{ trans_choice(':count replica|:count replicas', $environment->desired_replicas) }}@if ($environment->last_activity_at) · {{ __('last activity :when', ['when' => $environment->last_activity_at->diffForHumans()]) }}@endif</span>
+                @endif
+            </p>
+            @if ($canManage)
+                <form method="POST" action="{{ route('deploy.environments.hibernation', [$project, $environment]) }}" class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    @method('PUT')
+                    <x-signal.ui.select-field name="hibernate_after_minutes" :label="__('Hibernate after')" :disabled="! $plan['hibernation']" :description="$plan['hibernation'] ? null : __('Hibernation comes with the Starter Deploy plan and above.')">
+                        <option value="">{{ __('Never') }}</option>
+                        @foreach (\App\Actions\Deploy\UpdateEnvironmentHibernation::MINUTES as $minutes)
+                            <option value="{{ $minutes }}" @selected($environment->hibernate_after_minutes === $minutes)>{{ $minutes >= 60 ? trans_choice(':count hour without requests|:count hours without requests', intdiv($minutes, 60)) : trans_choice(':count minute without requests|:count minutes without requests', $minutes) }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.button type="submit" variant="secondary" :disabled="! $plan['hibernation']">{{ __('Save') }}</x-signal.ui.button>
+                </form>
+                <form method="POST" action="{{ route('deploy.environments.runtime', [$project, $environment]) }}">
+                    @csrf
+                    <input type="hidden" name="state" value="{{ $environment->hibernated_at ? 'running' : 'hibernated' }}">
+                    <x-signal.ui.button type="submit" variant="quiet" size="sm" :disabled="! $environment->hibernated_at && ! $plan['hibernation']">{{ $environment->hibernated_at ? __('Wake now') : __('Hibernate now') }}</x-signal.ui.button>
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="deploy-schedules" :title="__('Scheduled deploys')" :description="__('Deploy this environment’s repositories on a schedule, through its approval, lock and window.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @foreach ($deploySchedules as $schedule)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><span class="font-bold">{{ $schedule->name }}</span> <span class="font-mono text-xs text-muted">{{ $schedule->cron_expression }} · {{ $schedule->timezone }}</span>
+                        <span class="block text-xs text-muted">@if ($schedule->nextRunAt()){{ __('Next :when', ['when' => $schedule->nextRunAt()?->diffForHumans()]) }}@endif @if ($schedule->last_result) · {{ __('Last: :result', ['result' => $schedule->last_result]) }}@endif</span></span>
+                    @if ($canManage)
+                        <form method="POST" action="{{ route('deploy.environments.settings.destroy', [$project, $environment, 'deployment-schedules', $schedule->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+            @endforeach
+            @if ($canManage && $plan['scheduled'])
+                <form method="POST" action="{{ route('deploy.environments.deployment-schedules.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
+                    @csrf
+                    <x-signal.ui.input-field id="deploy-schedule-name" name="name" :label="__('Name')" placeholder="Nightly" maxlength="100" required />
+                    <x-signal.ui.input-field id="deploy-schedule-cron" name="cron_expression" :label="__('Cron')" placeholder="0 3 * * *" maxlength="100" required />
+                    <x-signal.ui.input-field id="deploy-schedule-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
+                    <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add scheduled deploy') }}</x-signal.ui.button></div>
+                </form>
+            @elseif (! $plan['scheduled'])
+                <p class="text-sm text-muted">{{ __('Scheduled deploys and tasks come with the Pro Deploy plan and above.') }}</p>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="scaling-schedules" :title="__('Scaling schedules')" :description="__('Run more or fewer worker replicas at set times, between :min and :max.', ['min' => $environment->minimum_replicas, 'max' => $environment->maximum_replicas])">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @foreach ($scalingSchedules as $schedule)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><span class="font-bold">{{ $schedule->name }}</span> <span class="text-xs text-muted">×{{ $schedule->replicas }}</span> <span class="font-mono text-xs text-muted">{{ $schedule->cron_expression }} · {{ $schedule->timezone }}</span>
+                        @if ($schedule->nextRunAt())<span class="block text-xs text-muted">{{ __('Next :when', ['when' => $schedule->nextRunAt()?->diffForHumans()]) }}</span>@endif</span>
+                    @if ($canManage)
+                        <form method="POST" action="{{ route('deploy.environments.settings.destroy', [$project, $environment, 'scaling-schedules', $schedule->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+            @endforeach
+            @if ($canManage && $plan['scaling'])
+                <form method="POST" action="{{ route('deploy.environments.scaling-schedules.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-4">
+                    @csrf
+                    <x-signal.ui.input-field id="scaling-schedule-name" name="name" :label="__('Name')" placeholder="Weekday mornings" maxlength="100" required />
+                    <x-signal.ui.input-field id="scaling-schedule-replicas" name="replicas" type="number" :min="$environment->minimum_replicas" :max="$environment->maximum_replicas" :label="__('Replicas')" :value="$environment->maximum_replicas" required />
+                    <x-signal.ui.input-field id="scaling-schedule-cron" name="cron_expression" :label="__('Cron')" placeholder="0 8 * * 1-5" maxlength="100" required />
+                    <x-signal.ui.input-field id="scaling-schedule-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
+                    <div class="sm:col-span-4"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add scaling schedule') }}</x-signal.ui.button></div>
+                </form>
+            @elseif (! $plan['scaling'])
+                <p class="text-sm text-muted">{{ __('Scaling comes with the Business Deploy plan and above.') }}</p>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="tasks" :title="__('Scheduled tasks')" :description="__('Commands run in a website’s current release, as www-data with its .env, under a timeout.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @foreach ($tasks as $task)
+                <div class="space-y-2 border-b border-line pb-4 text-sm last:border-0 last:pb-0">
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <span><span class="font-bold">{{ $task->name }}</span>
+                            @if ($task->last_status)<x-signal.ui.badge :tone="$task->last_status === 'succeeded' ? 'success' : 'danger'">{{ $task->last_status === 'succeeded' ? __('Succeeded') : __('Failed') }}</x-signal.ui.badge>@endif
+                            <span class="block font-mono text-xs text-muted">{{ $task->cron_expression }} · {{ $task->timezone }} · {{ $task->website->name }} · {{ trans_choice(':count second timeout|:count seconds timeout', $task->timeout_seconds) }}</span></span>
+                        @if ($canManage)
+                            <div class="flex gap-2">
+                                <form method="POST" action="{{ route('deploy.environments.tasks.run', [$project, $environment, $task->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Run now') }}</x-signal.ui.button></form>
+                                <form method="POST" action="{{ route('deploy.environments.settings.destroy', [$project, $environment, 'tasks', $task->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                            </div>
+                        @endif
+                    </div>
+                    @if ($task->runs->isNotEmpty())
+                        <ul class="text-xs text-muted">
+                            @foreach ($task->runs as $run)
+                                <li>{{ $run->created_at?->diffForHumans() }} · {{ __($run->status) }}@if ($run->duration_ms !== null) · {{ number_format($run->duration_ms / 1000, 1) }} s @endif @if ($run->requester) · {{ __('by :name', ['name' => $run->requester->name]) }}@endif
+                                    @if ($canManage && ! $run->isActive()) · <a href="{{ route('deploy.environments.tasks.runs.show', [$project, $environment, $task->id, $run->id]) }}" class="text-primary hover:underline" target="_blank" rel="noopener">{{ __('Output') }}</a>@endif</li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endforeach
+            @if ($canManage && $plan['scheduled'])
+                @if ($taskWebsites->isEmpty())
+                    <p class="text-sm text-muted">{{ __('Connect a repository that deploys this environment to a website before adding tasks.') }}</p>
+                @else
+                    <form method="POST" action="{{ route('deploy.environments.tasks.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
+                        @csrf
+                        <x-signal.ui.input-field id="task-name" name="name" :label="__('Name')" placeholder="Prune reports" maxlength="100" required />
+                        <x-signal.ui.select-field id="task-website" name="website_id" :label="__('Runs in')">
+                            @foreach ($taskWebsites as $website)
+                                <option value="{{ $website->id }}">{{ $website->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.input-field id="task-timeout" name="timeout_seconds" type="number" min="10" max="3600" :label="__('Timeout (seconds)')" value="300" required />
+                        <div class="sm:col-span-3"><x-signal.ui.input-field id="task-command" name="command" :label="__('Command')" placeholder="php artisan reports:prune" maxlength="2000" required /></div>
+                        <x-signal.ui.input-field id="task-cron" name="cron_expression" :label="__('Cron')" placeholder="*/15 * * * *" maxlength="100" required />
+                        <x-signal.ui.input-field id="task-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
+                        <div class="grid gap-2 self-end">
+                            <x-signal.ui.checkbox id="task-overlap" name="without_overlapping" value="1" :checked="true">{{ __('Skip while the last run is going') }}</x-signal.ui.checkbox>
+                            <x-signal.ui.checkbox id="task-alert" name="alert_on_failure" value="1" :checked="true">{{ __('Tell us when it fails') }}</x-signal.ui.checkbox>
+                        </div>
+                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add task') }}</x-signal.ui.button></div>
+                    </form>
+                @endif
             @endif
         </div>
     </x-signal.ui.settings-section>

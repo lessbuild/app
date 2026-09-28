@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $description
  * @property Carbon|null $checklist_dismissed_at
+ * @property string|null $workflow_document the last Deploy workflow (version 1 YAML) applied
  * @property Carbon|null $created_at
  * @property-read Account $account
  */

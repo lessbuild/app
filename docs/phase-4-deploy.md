@@ -85,7 +85,7 @@ The parts, in dependency order:
 - **Differences from Deployer:**
   - Project and environment IDs are v2 ULIDs. Phase 6 maps old numeric IDs for existing tokens and scripts.
   - Old tokens' workspace and project claims become v2 account tokens.
-  - `runtime` (hibernate/wake) and `workflow` arrive with automation (part 6); the configuration routes arrive with part 4b.
+  - `runtime` (hibernate/wake) and `workflow` arrived with automation (part 6); the configuration routes with part 4b.
 
 ## Configuration (part 4b)
 
@@ -130,6 +130,29 @@ The parts, in dependency order:
   - A failed cleanup shows its error and can be retried.
   - Deleting any website now also stops its `buildpusher-{slug}-*` units, which were left running before.
 - Deploy → Previews lists the project's previews, open ones first, with expiry, cleanup state and secret approval. Preview repositories and environments are hidden from the Repositories and Environments lists.
+
+## Automation (part 6)
+
+- Each environment page has an **Automation** tab; members and above with Deploy access manage it (`configureDeploy`).
+- **Cron semantics:** schedules use five-field cron in an IANA time zone. `automation:dispatch` runs every minute and claims each due schedule once per minute (`last_run_at`), so overlapping schedulers can't double-run one.
+- **Scheduled deploys** (`deploy.scheduled`) deploy every repository connected to the environment, except previews'. They follow its approval, lock and window. A skipped run records why (`last_result`): locked, outside the window, already deploying or not ready.
+- **Scaling schedules** (`deploy.scaling`) set the running replicas, within the environment's minimum and maximum, and apply them at once. Applying wakes a hibernated environment.
+- **Replicas apply at once:** starting and stopping installed worker units, from the manifest the deploy writes. This also covers the page and `PATCH /api/v1/environments/{environment}/scale`, which used to wait for the next deploy. Raising the maximum still needs a deploy to install more units.
+- **Scheduled tasks** (`deploy.scheduled`) run a command in one of the environment's websites' current release, as `www-data` with its `.env`, under a timeout (10–3600 s).
+  - They can skip a run while the previous one is running.
+  - "Run now" queues one by hand.
+  - The last 50 runs keep their output (the last 64 KB, encrypted).
+  - A task that starts failing, or recovers, tells the members with Deploy access (email and inbox) when its alerts are on.
+- **Hibernation** (`deploy.hibernation`, Starter and above, as Deployer's "idle hibernation"). An environment can hibernate after 5, 15, 30, 60, 120 or 1440 minutes without requests. Its websites' Caddy access logs are checked every five minutes; deploys count as activity.
+  - Hibernating puts Laravel apps in maintenance mode (`artisan down`) and stops worker units.
+  - The first request after that wakes the environment within a minute, as does a deploy or scaling.
+  - Hibernate and wake by hand on the page, or with `PATCH /api/v1/environments/{environment}/runtime` (`state`: `running` or `hibernated`, answered with 202).
+- **Workflow (Deployer's version 1 YAML):** `PUT /api/v1/projects/{project}/workflow` (`workflow`), or the form on the Configuration page, applies these per-environment settings in one transaction:
+  - a scheduled deploy (`deployment`);
+  - scaling and hibernation (`scale`);
+  - scaling schedules (`scaling_schedules`, which replace earlier workflow ones);
+  - processes (`processes`).
+  The last document applied is kept on the project. It needs Deploy management rights and the plan features each section uses.
 
 ## Public contracts kept
 

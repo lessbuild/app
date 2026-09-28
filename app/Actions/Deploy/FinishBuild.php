@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Deploy;
 
+use App\Jobs\Deploy\ApplyEnvironmentRuntime;
 use App\Models\Build;
 use App\Models\Repository;
 use App\Services\Deploy\DeploymentMarkers;
@@ -26,7 +27,7 @@ final class FinishBuild
 
     /**
      * Mark an active build succeeded, failed or canceled. A live build becomes a Monitoring deployment marker; then a push
-     * that arrived while it ran is deployed, and a preview's deploy moves the preview on. Returns false when the build had
+     * that arrived while it ran is deployed, a hibernated environment wakes, and a preview's deploy moves the preview on. Returns false when the build had
      * already finished.
      *
      * @param  Build  $build
@@ -59,6 +60,13 @@ final class FinishBuild
             if ($status === Build::STATUS_SUCCEEDED && $finishedBuild->environment?->post_deployment_observation_minutes !== null && $finishedBuild->trigger_source !== 'rollback') {
                 $minutes = $finishedBuild->environment->post_deployment_observation_minutes;
                 $finishedBuild->forceFill(['observation_minutes' => $minutes, 'observation_status' => 'observing', 'observation_deadline_at' => now()->addMinutes($minutes)])->save();
+            }
+            if ($status === Build::STATUS_SUCCEEDED && $finishedBuild->environment !== null) {
+                // A deploy is activity; one to a hibernated environment wakes it, since maintenance mode would outlive it.
+                $finishedBuild->environment->forceFill(['last_activity_at' => now()])->save();
+                if ($finishedBuild->environment->hibernated_at !== null) {
+                    ApplyEnvironmentRuntime::dispatch($finishedBuild->environment->id, false);
+                }
             }
             if ($status === Build::STATUS_FAILED && $finishedBuild->activated_at !== null) {
                 $this->deployments->rollBackAutomatically($finishedBuild);

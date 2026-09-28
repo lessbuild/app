@@ -45,6 +45,9 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $minimum_replicas
  * @property int $maximum_replicas
  * @property int $desired_replicas
+ * @property int|null $hibernate_after_minutes hibernate after this long without requests
+ * @property \Carbon\CarbonImmutable|null $last_activity_at the last request or deploy seen, for hibernation
+ * @property \Carbon\CarbonImmutable|null $hibernated_at when it went to sleep; null while running
  * @property-read Project $project
  * @property-read \Illuminate\Database\Eloquent\Collection<int, EnvironmentVariable> $variables
  * @property-read \Illuminate\Database\Eloquent\Collection<int, EnvironmentProcess> $processes
@@ -70,6 +73,7 @@ class Environment extends Model
             'requires_deployment_approval' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
             'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer',
             'container_port' => 'integer', 'minimum_replicas' => 'integer', 'maximum_replicas' => 'integer', 'desired_replicas' => 'integer',
+            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime',
         ];
     }
 
@@ -154,6 +158,47 @@ class Environment extends Model
     public function resources(): HasMany
     {
         return $this->hasMany(EnvironmentResource::class);
+    }
+
+    /**
+     * Get the environment's scheduled deploys.
+     *
+     * @return HasMany<DeploymentSchedule, $this>
+     */
+    public function deploymentSchedules(): HasMany
+    {
+        return $this->hasMany(DeploymentSchedule::class);
+    }
+
+    /**
+     * Get the environment's scaling schedules.
+     *
+     * @return HasMany<ScalingSchedule, $this>
+     */
+    public function scalingSchedules(): HasMany
+    {
+        return $this->hasMany(ScalingSchedule::class);
+    }
+
+    /**
+     * Get the environment's scheduled tasks.
+     *
+     * @return HasMany<ScheduledTask, $this>
+     */
+    public function scheduledTasks(): HasMany
+    {
+        return $this->hasMany(ScheduledTask::class);
+    }
+
+    /**
+     * Get the live websites the environment's repositories deploy to (not previews' repositories), where its
+     * processes run and its tasks can.
+     *
+     * @return \Illuminate\Database\Eloquent\Collection<int, Website>
+     */
+    public function deployedWebsites(): \Illuminate\Database\Eloquent\Collection
+    {
+        return Website::query()->whereIn('id', $this->repositories()->select('website_id'))->with('server')->orderBy('name')->get();
     }
 
     /**

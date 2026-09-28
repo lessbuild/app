@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Deploy;
 
+use App\Jobs\Deploy\ApplyEnvironmentRuntime;
 use App\Models\Environment;
 use App\Models\User;
 use App\Services\Billing\Entitlements;
@@ -22,7 +23,8 @@ final class ScaleEnvironment
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * Set how many replicas of each worker run, within the environment's minimum and maximum. Applies with the next deploy.
+     * Set how many replicas of each worker run, within the environment's minimum and maximum, and apply it now to the
+     * workers the last deploy installed (a hibernated environment picks it up when it wakes).
      *
      * @param  User  $actor
      * @param  Environment  $environment
@@ -39,5 +41,8 @@ final class ScaleEnvironment
             throw ValidationException::withMessages(['replicas' => __('Choose between :min and :max replicas.', ['min' => $environment->minimum_replicas, 'max' => $environment->maximum_replicas])]);
         }
         $environment->forceFill(['desired_replicas' => $replicas])->save();
+        if ($environment->hibernated_at === null) {
+            ApplyEnvironmentRuntime::dispatch($environment->id, false);
+        }
     }
 }

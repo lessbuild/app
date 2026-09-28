@@ -18,6 +18,7 @@ use App\Models\Build;
 use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
 use App\Models\DatabaseUser;
+use App\Models\Environment;
 use App\Models\Preview;
 use App\Models\Provider;
 use App\Models\Repository;
@@ -29,9 +30,11 @@ use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Billing\Entitlements;
+use App\Services\Deploy\Automation;
 use App\Services\Deploy\Configuration\ConfigurationOperations;
 use App\Services\Deploy\DeploymentObserver;
 use App\Services\Deploy\Deployments;
+use App\Services\Deploy\Hibernation;
 use App\Services\Deploy\Previews;
 use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Infrastructure\ServerPricing;
@@ -406,3 +409,34 @@ Artisan::command('previews:expire', function (Previews $previews): int {
     return 0;
 })->purpose('Close previews past their lifetime, and fail preview cleanups that stopped');
 Schedule::command('previews:expire')->hourly()->withoutOverlapping(30)->onOneServer();
+
+Artisan::command('automation:dispatch', function (Automation $automation): int {
+    $ran = $automation->runDue(now());
+    $this->info("Ran {$ran['deploys']} scheduled deploys, {$ran['scaling']} scaling schedules and {$ran['tasks']} scheduled tasks.");
+
+    return 0;
+})->purpose('Run the scheduled deploys, scaling schedules and scheduled tasks due this minute');
+Schedule::command('automation:dispatch')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('environments:hibernate', function (Hibernation $hibernation): int {
+    $hibernating = 0;
+    Environment::query()->with('project.account')->whereNotNull('hibernate_after_minutes')->whereNull('hibernated_at')->orderBy('id')
+        ->each(function (Environment $environment) use ($hibernation, &$hibernating): void {
+            $hibernating += (int) ($hibernation->evaluate($environment) === 'hibernating');
+        });
+    $this->info("Hibernating {$hibernating} idle environments.");
+
+    return 0;
+})->purpose('Hibernate environments that have had no requests or deploys for their idle time');
+Schedule::command('environments:hibernate')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
+
+Artisan::command('environments:wake', function (Hibernation $hibernation): int {
+    $waking = 0;
+    Environment::query()->whereNotNull('hibernated_at')->orderBy('id')->each(function (Environment $environment) use ($hibernation, &$waking): void {
+        $waking += (int) $hibernation->wakeIfRequested($environment);
+    });
+    $this->info("Waking {$waking} hibernated environments.");
+
+    return 0;
+})->purpose('Wake hibernated environments whose websites have had a request');
+Schedule::command('environments:wake')->everyMinute()->withoutOverlapping(5)->onOneServer();

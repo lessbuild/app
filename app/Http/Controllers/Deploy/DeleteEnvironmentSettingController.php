@@ -14,7 +14,8 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteEnvironmentSettingController
 {
     /**
-     * Remove one variable, process or resource from an environment; the server changes with the next deploy.
+     * Remove one variable, process or resource from an environment (the server changes with the next deploy), or one
+     * of its schedules or tasks.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -27,12 +28,17 @@ final class DeleteEnvironmentSettingController
     public function __invoke(#[CurrentUser] User $user, Project $project, Environment $environment, string $kind, string $setting, DeleteEnvironmentSetting $delete): RedirectResponse
     {
         $record = match ($kind) {
-            'variables' => $environment->variables(),
-            'processes' => $environment->processes(),
-            default => $environment->resources(),
+            'variables' => $environment->variables()->findOrFail((int) $setting),
+            'processes' => $environment->processes()->findOrFail((int) $setting),
+            'resources' => $environment->resources()->findOrFail((int) $setting),
+            'deployment-schedules' => $environment->deploymentSchedules()->findOrFail((int) $setting),
+            'scaling-schedules' => $environment->scalingSchedules()->findOrFail((int) $setting),
+            default => $environment->scheduledTasks()->findOrFail((int) $setting),
         };
-        $delete->handle($user, $record->findOrFail((int) $setting));
+        $delete->handle($user, $record);
+        $automation = in_array($kind, ['deployment-schedules', 'scaling-schedules', 'tasks'], true);
 
-        return to_route('deploy.environments.show', [$project, $environment, 'tab' => $kind])->with('status', __('Removed. The server changes with the next deploy.'));
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => $automation ? 'automation' : $kind])
+            ->with('status', $automation ? __('Removed.') : __('Removed. The server changes with the next deploy.'));
     }
 }

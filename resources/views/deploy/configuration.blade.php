@@ -60,4 +60,14 @@
             </ul>
         @endif
     </x-signal.ui.settings-section>
+
+    @can('manageDeploy', $project)
+    <x-signal.ui.settings-section id="workflow" :title="__('Workflow (version 1)')" :description="__('Deployer’s workflow format: scheduled deploys, scaling, scaling schedules and processes per environment, applied all at once. Also at PUT /api/v1/projects/{project}/workflow.')">
+        <form method="POST" action="{{ route('deploy.configuration.workflow', $project) }}" class="grid gap-3 p-4 sm:p-6">
+            @csrf
+            <x-signal.ui.textarea-field name="workflow" :label="__('Workflow YAML')" rows="10" class="font-mono" :value="old('workflow', $project->workflow_document ?? '')" placeholder="version: 1&#10;environments:&#10;  production:&#10;    deployment: { cron: '0 3 * * *', timezone: UTC }" />
+            <div><x-signal.ui.button type="submit" variant="secondary">{{ __('Apply workflow') }}</x-signal.ui.button></div>
+        </form>
+    </x-signal.ui.settings-section>
+    @endcan
 </x-signal.layouts.project>
