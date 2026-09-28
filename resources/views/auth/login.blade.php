@@ -28,6 +28,7 @@
             >{{ __('Sign in with a passkey') }}</x-signal.ui.button>
             <p data-passkey-status role="status" aria-live="polite" class="min-h-5 text-sm text-muted"></p>
         </div>
+        <x-signal.ui.button :href="route('sso.login')" variant="quiet" class="w-full justify-center">{{ __('Sign in with single sign-on') }}</x-signal.ui.button>
     </form>
     @include('auth.partials.social-sign-in')
 

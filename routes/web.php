@@ -20,6 +20,7 @@ use App\Http\Controllers\Account\RenameAccountController;
 use App\Http\Controllers\Account\ResumePlanController;
 use App\Http\Controllers\Account\RevokeApiTokenController;
 use App\Http\Controllers\Account\RevokeInvitationController;
+use App\Http\Controllers\Account\ShowAccountSecurityController;
 use App\Http\Controllers\Account\ShowApiTokensController;
 use App\Http\Controllers\Account\ShowAuditLogController;
 use App\Http\Controllers\Account\ShowBillingController;
@@ -29,6 +30,7 @@ use App\Http\Controllers\Account\ShowProviderController;
 use App\Http\Controllers\Account\ShowProvidersController;
 use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\SwitchAccountController;
+use App\Http\Controllers\Account\UpdateAccountSecurityController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Admin\DeleteFeatureFlagController;
@@ -70,6 +72,10 @@ use App\Http\Controllers\Auth\ConnectProviderController;
 use App\Http\Controllers\Auth\DisconnectProviderController;
 use App\Http\Controllers\Auth\HandleProviderCallbackController;
 use App\Http\Controllers\Auth\RedirectToProviderController;
+use App\Http\Controllers\Auth\ShowSsoLoginController;
+use App\Http\Controllers\Auth\SsoCallbackController;
+use App\Http\Controllers\Auth\StartSsoLoginController;
+use App\Http\Controllers\Auth\StartSsoVerificationController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Deploy\ApplyConfigurationReviewController;
@@ -354,6 +360,8 @@ Route::get('/invitations/{token}', ShowInvitationController::class)->name('invit
 
 // Public status pages (the old apps' URLs).
 Route::middleware('guest')->group(function (): void {
+    Route::get('/login/sso', ShowSsoLoginController::class)->name('sso.login');
+    Route::post('/login/sso', StartSsoLoginController::class)->middleware('throttle:10,1')->name('sso.login.store');
     Route::get('/request-access', CreateAccessRequestController::class)->name('access-requests.create');
     Route::post('/request-access', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 });
@@ -389,8 +397,12 @@ Route::get('/auth/{provider}/redirect', RedirectToProviderController::class)->mi
 Route::get('/auth/{provider}/callback', HandleProviderCallbackController::class)->middleware('throttle:20,1')->name('social.callback');
 Route::post('/user/confirm-password/{provider}', ConfirmWithProviderController::class)->middleware(['auth', 'throttle:10,1'])->name('social.confirm');
 
-Route::middleware(['auth', 'verified'])->group(function (): void {
+// Single sign-on comes back here, whether it was signing someone in or confirming who a signed-in person is.
+Route::get('/sso/callback', SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
+
+Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::get('/sso/verify', StartSsoVerificationController::class)->middleware('throttle:10,1')->name('sso.verify');
     Route::post('/invitations/{token}', AcceptInvitationController::class)->middleware('throttle:10,1')->name('invitations.accept');
 
     Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
@@ -660,6 +672,8 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/account/billing/portal', OpenBillingPortalController::class)->name('account.billing.portal');
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
+    Route::get('/account/security', ShowAccountSecurityController::class)->middleware('account.can:update')->name('account.security');
+    Route::put('/account/security', UpdateAccountSecurityController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.update');
     Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
     Route::get('/account/audit-log/export', ExportAuditLogController::class)->middleware(['account.can:viewAuditLog', 'throttle:10,1'])->name('account.audit-log.export');
     // GitHub App installs (Deployer's paths: the App's Setup URL points at /github-app/callback).

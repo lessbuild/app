@@ -8,6 +8,8 @@ enum AuditAction: string
 {
     case AccountCreated = 'account.created';
     case AccountRenamed = 'account.renamed';
+    case SecurityRulesChanged = 'security_rules.changed';
+    case SsoSignedIn = 'sso.signed_in';
     case MemberInvited = 'member.invited';
     case InvitationRevoked = 'invitation.revoked';
     case InvitationAccepted = 'invitation.accepted';
@@ -95,7 +97,7 @@ enum AuditAction: string
     public function category(): string
     {
         return match (explode('.', $this->value)[0]) {
-            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token' => 'security',
+            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso' => 'security',
             'billing' => 'billing',
             'server', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
             'environment' => 'deploy',
@@ -129,6 +131,8 @@ enum AuditAction: string
         return match ($this) {
             self::AccountCreated => __('Created the account :name', ['name' => $value('name')]),
             self::AccountRenamed => __('Renamed the account from :from to :to', ['from' => $value('from'), 'to' => $value('to')]),
+            self::SecurityRulesChanged => __('Changed the account’s security rules: :changes', ['changes' => $value('changes')]),
+            self::SsoSignedIn => __('Signed in with single sign-on'),
             self::MemberInvited => __('Invited :email as :role', ['email' => $value('email'), 'role' => $value('role')]),
             self::InvitationRevoked => __('Revoked the invitation for :email', ['email' => $value('email')]),
             self::InvitationAccepted => __('Joined as :role', ['role' => $value('role')]),

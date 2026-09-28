@@ -48,6 +48,9 @@ final class InviteMember
         if ($account->members()->whereRaw('lower(email) = ?', [$email])->exists()) {
             throw AccountRuleViolation::alreadyMember();
         }
+        if (! $account->allowsEmail($email)) {
+            throw new AccountRuleViolation('email', __(':account only allows addresses at :domains.', ['account' => $account->name, 'domains' => implode(', ', $account->allowed_email_domains ?? [])]));
+        }
         // Pending invitations hold a seat; re-inviting the same address replaces its invitation.
         $seats = $account->memberships()->count() + $account->invitations()->pending()->where('email', '!=', $email)->count() + 1;
         $decision = $this->entitlements->for($account)->allows('account.members.max', $seats);

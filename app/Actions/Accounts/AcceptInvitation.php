@@ -36,6 +36,10 @@ final class AcceptInvitation
             if (! hash_equals($invitation->email, Str::lower($user->email))) {
                 throw AccountRuleViolation::invitationForSomeoneElse();
             }
+            // The account may have limited its email domains since the invitation was sent.
+            if (! $invitation->account->allowsEmail($invitation->email)) {
+                throw new AccountRuleViolation('invitation', __(':account no longer allows addresses at your domain.', ['account' => $invitation->account->name]));
+            }
 
             $membership = Membership::query()->whereBelongsTo($invitation->account)->whereBelongsTo($user)->first();
             if ($membership === null) {

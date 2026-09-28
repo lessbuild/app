@@ -13,6 +13,7 @@
 ])
 
 <x-signal.layouts.settings :title="__('Security')" :description="__('How you sign in to :app.', ['app' => config('app.name')])">
+    @if (session('warning'))<x-signal.ui.alert tone="warning" role="alert">{{ session('warning') }}</x-signal.ui.alert>@endif
     @if (is_string($status) && isset($statusMessages[$status]))
         <x-signal.ui.alert tone="success" role="status">{{ $statusMessages[$status] }}</x-signal.ui.alert>
     @endif

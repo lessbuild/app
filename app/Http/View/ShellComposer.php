@@ -208,6 +208,7 @@ final class ShellComposer
         }
         if ($user->can('update', $account)) {
             $links[] = new NavLink(__('Providers'), route('account.providers'), $this->request->routeIs('account.providers*'), 'server');
+            $links[] = new NavLink(__('Security'), route('account.security'), $this->request->routeIs('account.security'), 'finger-print');
             $links[] = new NavLink(__('Settings'), route('account.settings'), $this->request->routeIs('account.settings'), 'cog');
         }
 

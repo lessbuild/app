@@ -7,6 +7,7 @@ use App\Exceptions\StateConflict;
 use App\Http\Middleware\AuthenticateIngestToken;
 use App\Http\Middleware\AuthorizeCurrentAccount;
 use App\Http\Middleware\DecodeTelemetryPayload;
+use App\Http\Middleware\EnforceAccountSecurity;
 use App\Http\Middleware\EnsurePlatformAdmin;
 use App\Http\Middleware\EnsureServiceEnabled;
 use App\Http\Middleware\ProjectContext;
@@ -41,6 +42,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->convertEmptyStringsToNull(except: [$signal, $terminal]);
         $middleware->alias([
             'account.can' => AuthorizeCurrentAccount::class,
+            'account.security' => EnforceAccountSecurity::class,
             'abilities' => CheckAbilities::class,
             'ability' => CheckForAnyAbility::class,
             'token.account' => ResolveTokenAccount::class,

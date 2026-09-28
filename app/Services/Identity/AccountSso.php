@@ -71,7 +71,7 @@ final class AccountSso
         if (! is_array($attempt) || ! is_string($attempt['state'] ?? null) || ! hash_equals($attempt['state'], hash('sha256', $state))) {
             throw new RuntimeException(__('That sign-in link has expired. Please try again.'));
         }
-        $account = Account::query()->find($attempt['account'] ?? null) ?? throw new RuntimeException(__('That account no longer exists.'));
+        $account = Account::query()->whereKey((string) ($attempt['account'] ?? ''))->first() ?? throw new RuntimeException(__('That account no longer exists.'));
         $metadata = $this->metadata($account);
         $token = Http::asForm()->acceptJson()->timeout(15)->post($metadata['token_endpoint'], [
             'grant_type' => 'authorization_code', 'code' => $code, 'redirect_uri' => route('sso.callback'),
