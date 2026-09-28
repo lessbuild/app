@@ -33,7 +33,7 @@ A conventional Laravel layout, organised by type (not by domain). Within a type,
    */
   ```
 
-  Properties get a summary line and `@var`. Promoted constructor properties are described on their `@param` lines. The summary explains what the member is for; don't just restate its name. `pint.json` turns off `no_superfluous_phpdoc_tags` so Pint keeps these tags, and `ArchitectureTest::test_every_method_and_property_is_documented` enforces the rule.
+  Properties get a summary line and `@var`. Promoted constructor properties are described on their `@param` lines. Write a method's summary as an instruction ("Get the monitor's checks.", "Determine whether the person may…"); it explains what the member is for, not just its name. `pint.json` turns off `no_superfluous_phpdoc_tags` so Pint keeps these tags, and `ArchitectureTest::test_every_method_and_property_is_documented` enforces the rule.
 - Existing code isn't a ceiling. When a pattern you meet is weak (unclear names, tangled methods, missing docs), improve it rather than copying it.
 - Architecture tests in `tests/Architecture` enforce these rules. Keep them passing.
 
