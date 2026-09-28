@@ -2,7 +2,7 @@
 @php($days = [1 => __('Mon'), 2 => __('Tue'), 3 => __('Wed'), 4 => __('Thu'), 5 => __('Fri'), 6 => __('Sat'), 7 => __('Sun')])
 
 <x-signal.layouts.project :overview="$overview" :title="$environment->name" :description="__('Deploy settings for this environment. Changes apply to the next deploy.')">
-    @foreach (['process', 'resource', 'type', 'variables', 'maximum_replicas', 'minimum_replicas', 'start_command', 'schedule', 'task', 'cron_expression', 'replicas', 'website_id', 'name', 'hibernate_after_minutes', 'state'] as $key)
+    @foreach (['process', 'resource', 'type', 'variables', 'maximum_replicas', 'minimum_replicas', 'start_command', 'schedule', 'task', 'cron_expression', 'replicas', 'website_id', 'name', 'hibernate_after_minutes', 'state', 'recipes', 'recipe_id'] as $key)
         @error($key)<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
     @endforeach
     @if ($blockReason)
@@ -301,6 +301,53 @@
                         </div>
                         <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add task') }}</x-signal.ui.button></div>
                     </form>
+                @endif
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+    </x-signal.ui.page-tab-panel>
+
+    <x-signal.ui.page-tab-panel name="recipes" :current="$tab">
+    <x-signal.ui.settings-section id="recipes" :title="__('Recipes')" :description="__('Scripts from your recipe library that run in this order, as root, on the servers this environment’s websites are on. Each run is in the server’s command history.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @forelse ($environmentRecipes as $entry)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><span class="font-mono text-xs text-muted">{{ $loop->iteration }}.</span> <span class="font-bold">{{ $entry->name }}</span>
+                        @if ($entry->recipe === null)<span class="text-xs text-muted">· {{ __('library recipe deleted') }}</span>@elseif ($entry->isBehind())<x-signal.ui.badge tone="warning">{{ __('Library has changes') }}</x-signal.ui.badge>@endif</span>
+                    @if ($canManage)
+                        <div class="flex flex-wrap gap-2">
+                            @unless ($loop->first)<form method="POST" action="{{ route('deploy.environments.recipes.move', [$project, $environment, $entry->id]) }}">@csrf<input type="hidden" name="direction" value="up"><x-signal.ui.button type="submit" variant="quiet" size="sm" :aria-label="__('Move :name up', ['name' => $entry->name])">↑</x-signal.ui.button></form>@endunless
+                            @unless ($loop->last)<form method="POST" action="{{ route('deploy.environments.recipes.move', [$project, $environment, $entry->id]) }}">@csrf<input type="hidden" name="direction" value="down"><x-signal.ui.button type="submit" variant="quiet" size="sm" :aria-label="__('Move :name down', ['name' => $entry->name])">↓</x-signal.ui.button></form>@endunless
+                            @if ($entry->isBehind())<form method="POST" action="{{ route('deploy.environments.recipes.refresh', [$project, $environment, $entry->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Update') }}</x-signal.ui.button></form>@endif
+                            <form method="POST" action="{{ route('deploy.environments.settings.destroy', [$project, $environment, 'recipes', $entry->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                        </div>
+                    @endif
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('No recipes on this environment yet.') }}</p>
+            @endforelse
+            @if ($canManage)
+                @if ($libraryRecipes->isEmpty())
+                    <p class="text-sm text-muted">{{ __('Write a recipe under Account → Recipes, or install one from the gallery, then add it here.') }} <a href="{{ route('account.recipes') }}" class="font-bold text-primary underline">{{ __('Recipes') }}</a></p>
+                @else
+                    <form method="POST" action="{{ route('deploy.environments.recipes.store', [$project, $environment]) }}" class="flex flex-wrap items-end gap-3 rounded-panel border border-line bg-surface-muted p-4">
+                        @csrf
+                        <x-signal.ui.select-field name="recipe_id" :label="__('Add a recipe')">
+                            @foreach ($libraryRecipes as $recipe)
+                                <option value="{{ $recipe->id }}">{{ $recipe->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Add') }}</x-signal.ui.button>
+                    </form>
+                @endif
+                <form method="POST" action="{{ route('deploy.environments.recipes.settings', [$project, $environment]) }}" class="flex flex-wrap items-center gap-3">
+                    @csrf
+                    @method('PUT')
+                    <x-signal.ui.checkbox name="run_on_new_websites" value="1" :checked="$environment->recipes_run_on_new_websites">{{ __('Run them when a new website for this environment finishes setting up') }}</x-signal.ui.checkbox>
+                    <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Save') }}</x-signal.ui.button>
+                </form>
+                @if ($environmentRecipes->isNotEmpty())
+                    <form method="POST" action="{{ route('deploy.environments.recipes.run', [$project, $environment]) }}"><x-signal.ui.button type="submit" variant="primary">{{ __('Run on servers now') }}</x-signal.ui.button>@csrf</form>
                 @endif
             @endif
         </div>

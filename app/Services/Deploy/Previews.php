@@ -348,7 +348,8 @@ final class Previews
 
     /**
      * Create the preview's environment (`pr-{number}`, with a suffix if taken) from the source environment's runtime
-     * and, as the plan allows, its enabled processes and managed Redis/Valkey. External resources are left out: their
+     * and its recipes (with their run-on-new-websites setting), plus, as the plan allows, its enabled processes and
+     * managed Redis/Valkey. External resources are left out: their
      * variables point at the source's own services.
      *
      * @param  Project  $project
@@ -373,6 +374,13 @@ final class Previews
         ])->save();
         if ($source === null) {
             return $environment;
+        }
+        foreach ($source->recipes()->get() as $recipe) {
+            $copy = $recipe->replicate(['environment_id']);
+            $copy->forceFill(['environment_id' => $environment->id])->save();
+        }
+        if ($environment->recipes()->exists()) {
+            $environment->forceFill(['recipes_run_on_new_websites' => $source->recipes_run_on_new_websites])->save();
         }
         if ($entitlements->has('deploy.workers')) {
             foreach ($source->processes()->where('is_enabled', true)->get() as $process) {

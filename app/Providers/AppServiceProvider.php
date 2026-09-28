@@ -16,6 +16,7 @@ use App\Contracts\Telemetry\TelemetryPayloadMapper;
 use App\Http\HttpRequestOrigin;
 use App\Http\View\ShellComposer;
 use App\Listeners\AuditSubscriber;
+use App\Listeners\EnvironmentRecipeSubscriber;
 use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
 use App\Listeners\PreviewWebsiteSubscriber;
@@ -74,6 +75,7 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(NotificationSubscriber::class);
         Event::subscribe(IncidentAssigneeSubscriber::class);
         Event::subscribe(PreviewWebsiteSubscriber::class);
+        Event::subscribe(EnvironmentRecipeSubscriber::class);
         View::composer('components.signal.layouts.app', ShellComposer::class);
 
         Sanctum::usePersonalAccessTokenModel(ApiToken::class);

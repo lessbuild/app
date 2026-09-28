@@ -47,6 +47,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $desired_replicas
  * @property int|null $hibernate_after_minutes hibernate after this long without requests
  * @property \Carbon\CarbonImmutable|null $last_activity_at the last request or deploy seen, for hibernation
+ * @property bool $recipes_run_on_new_websites run the environment's recipes on a website's server when it finishes setting up
  * @property \Carbon\CarbonImmutable|null $hibernated_at when it went to sleep; null while running
  * @property int|null $legacy_id Deployer's numeric ID, which the Deployer API v1 still accepts
  * @property-read Project $project
@@ -74,7 +75,7 @@ class Environment extends Model
             'requires_deployment_approval' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
             'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer',
             'container_port' => 'integer', 'minimum_replicas' => 'integer', 'maximum_replicas' => 'integer', 'desired_replicas' => 'integer',
-            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime',
+            'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean',
         ];
     }
 
@@ -179,6 +180,16 @@ class Environment extends Model
     public function scalingSchedules(): HasMany
     {
         return $this->hasMany(ScalingSchedule::class);
+    }
+
+    /**
+     * Get the environment's recipes, in the order they run.
+     *
+     * @return HasMany<EnvironmentRecipe, $this>
+     */
+    public function recipes(): HasMany
+    {
+        return $this->hasMany(EnvironmentRecipe::class)->orderBy('position');
     }
 
     /**

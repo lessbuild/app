@@ -10,6 +10,7 @@ use App\Enums\ProviderType;
 use App\Models\Build;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
+use App\Models\EnvironmentRecipe;
 use App\Models\EnvironmentResource;
 use App\Models\EnvironmentVariable;
 use App\Models\Preview;
@@ -84,6 +85,9 @@ final class PreviewsTest extends TestCase
             $resource->forceFill(['environment_id' => $this->production->id, 'name' => $name, 'type' => $type, 'is_managed' => $type === 'valkey', 'status' => 'ready', 'configuration' => ['variables' => ['S3_KEY' => 'production']]])->save();
         }
 
+        $recipe = new EnvironmentRecipe;
+        $recipe->forceFill(['environment_id' => $this->production->id, 'position' => 1, 'name' => 'Tools', 'script' => 'echo tools'])->save();
+
         $this->pullRequest('d-1')->assertStatus(202)->assertJson(['status' => 'provisioning']);
         $this->pullRequest('d-1')->assertOk()->assertJson(['status' => 'duplicate']);
 
@@ -110,6 +114,7 @@ final class PreviewsTest extends TestCase
 
         // Processes and managed caches are copied; external resources aren't.
         $this->assertSame(['queue', 1], [$environment->processes()->sole()->name, $environment->processes()->sole()->replicas]);
+        $this->assertSame(['Tools', 'echo tools'], [$environment->recipes()->sole()->name, $environment->recipes()->sole()->script]);
         $cache = $environment->resources()->sole();
         $this->assertSame('buildpusher-valkey-'.strtolower($environment->id).'-cache', $cache->configuration['container_name'] ?? null);
 

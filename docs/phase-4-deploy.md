@@ -175,7 +175,15 @@ The parts, in dependency order:
   - Removing abusive recipes platform-wide belongs to the Phase 5 admin panel.
 - **Not ported:**
   - Deployer's CSV recipe inventory export.
-  - The experimental per-environment "blueprint recipe" install/archive (I11): configuration documents (part 4b) and server-creation recipes cover its uses.
+
+### Environment recipes (added 2026-09-28, owner request)
+
+Deployer's experimental "blueprint recipes" (I11) prepared a recipe for an environment but never ran it. In v2 they run.
+
+- **An environment's Recipes tab** keeps an ordered list of recipes taken from the account's library. Each is a snapshot (name and script, encrypted), so later library edits don't change it until someone refreshes it; the tab shows which snapshots are behind their library recipe. Members and above with Deploy access (`configureDeploy`) add, refresh, reorder and remove them; deleting the library recipe leaves the snapshot.
+- **Run on servers** runs the whole list, in order, on every server the environment's websites are on. Each server gets one command in its command history (Infrastructure → server → Commands), as root, stopping at the first recipe that fails. It needs permission to run commands on those servers.
+- **Run on new websites** (a setting, off by default): when a website one of the environment's repositories deploys to finishes setting up, the list runs on its server by itself, recorded in the same history with no person attached. If the server is busy with another command, it tries again every minute for ten minutes.
+- Preview environments copy their source environment's recipes when they're made.
 
 ## Public contracts kept
 
