@@ -28,6 +28,8 @@ final class ReportingWorkflowTest extends TestCase
 
     public function test_visit_rebuild_uses_identity_and_inactivity_windows(): void
     {
+        // Midday, so the 90 minutes of events never cross the midnight that also starts a new visit.
+        $this->travelTo(CarbonImmutable::parse('2026-01-02 13:30:00', 'UTC'));
         [$user, $site] = $this->site();
         $base = now()->subMinutes(90);
         foreach ([0, 10, 45, 50] as $index => $minutes) {
