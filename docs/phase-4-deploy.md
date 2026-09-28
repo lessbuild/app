@@ -154,6 +154,29 @@ The parts, in dependency order:
   - processes (`processes`).
   The last document applied is kept on the project. It needs Deploy management rights and the plan features each section uses.
 
+## Recipes (part 7)
+
+- **Recipes are account-level Bash scripts** (encrypted) that run as root at the end of a new server's provisioning. They're at Account → Recipes.
+  - Members with Infrastructure access see them; members and above create, edit, duplicate and delete them.
+  - Each save keeps a revision (name, description, script, who, and why: created, edited, installed or refreshed). The last 50 are kept.
+- **Server creation** takes an ordered choice of the account's recipes. The server keeps a snapshot, so later edits don't change what a server ran (as in Deployer).
+- **Gallery (every account):**
+  - Owners and admins can publish a recipe (it's shared with everyone) and unpublish it. Changing a published recipe's script is a new gallery revision.
+  - People browse published recipes by category, search, popularity, rating or newest, read the script, and install it.
+  - Installing makes an unpublished copy in their account, once per account (installing again opens the copy). It counts one install.
+  - A copy knows its source revision. "Refresh from gallery" takes the latest, with the difference shown first.
+- **Favourites and ratings:**
+  - People keep favourites.
+  - Ratings (1–5) come from people whose account installed the recipe and who aren't in the publishing account. The gallery shows the average and count.
+- **Reports:**
+  - Anyone outside the publishing account can report a published recipe (malicious, broken, spam or other, with details), change the report or withdraw it.
+  - The publisher's owners and admins are told, see the reports on their recipes, and resolve them with a note or reopen them.
+  - Reporters see their reports' status and are told when one is resolved.
+  - Removing abusive recipes platform-wide belongs to the Phase 5 admin panel.
+- **Not ported:**
+  - Deployer's CSV recipe inventory export.
+  - The experimental per-environment "blueprint recipe" install/archive (I11): configuration documents (part 4b) and server-creation recipes cover its uses.
+
 ## Public contracts kept
 
 - Build callback URLs and their signed parameters.

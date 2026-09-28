@@ -12,8 +12,8 @@ use Illuminate\Validation\Rule;
 final class ServerRequest extends FormRequest
 {
     /**
-     * Get the validation rules: a new server's provider, type, name (a valid hostname label) and the provider's
-     * region, size and image.
+     * Get the validation rules: a new server's provider, type, name (a valid hostname label), the provider's region,
+     * size and image, and up to 20 recipes to run.
      *
      * @return array<string, array<mixed>>
      */
@@ -26,19 +26,21 @@ final class ServerRequest extends FormRequest
             'region' => ['required', 'string', 'max:100'],
             'size' => ['required', 'string', 'max:100'],
             'image' => ['required', 'string', 'max:100'],
+            'recipe_ids' => ['sometimes', 'array', 'max:20'],
+            'recipe_ids.*' => ['integer', 'distinct'],
         ];
     }
 
     /**
-     * Get the validated details with the provider ID as an integer.
+     * Get the validated details with the provider ID as an integer and the recipes, in the order chosen.
      *
-     * @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string}
+     * @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string, recipe_ids: list<int>}
      */
     public function serverDetails(): array
     {
         /** @var array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string} $data */
-        $data = $this->validated();
+        $data = $this->safe()->except('recipe_ids');
 
-        return [...$data, 'provider_id' => (int) $data['provider_id']];
+        return [...$data, 'provider_id' => (int) $data['provider_id'], 'recipe_ids' => array_values(array_map('intval', (array) $this->validated('recipe_ids', [])))];
     }
 }

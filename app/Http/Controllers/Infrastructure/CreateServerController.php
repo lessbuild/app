@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Infrastructure;
 
 use App\Enums\ServerType;
 use App\Models\Project;
+use App\Models\Recipe;
 use App\Models\User;
 use App\Queries\Infrastructure\ProvidersQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -20,8 +21,8 @@ use Throwable;
 final class CreateServerController
 {
     /**
-     * Show the new server form. The chosen provider's regions, sizes and images are read live; if that fails, the form
-     * says so instead of breaking.
+     * Show the new server form, with the account's recipes to run. The chosen provider's regions, sizes and images are
+     * read live; if that fails, the form says so instead of breaking.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -54,6 +55,7 @@ final class CreateServerController
             'catalog' => $catalog,
             'catalogError' => $catalogError,
             'types' => ServerType::cases(),
+            'recipes' => Recipe::query()->where('account_id', $project->account_id)->orderBy('name')->get(['id', 'name', 'description', 'category']),
         ]);
     }
 }

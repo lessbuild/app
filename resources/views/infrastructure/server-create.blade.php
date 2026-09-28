@@ -37,6 +37,15 @@
                             @endforeach
                         </x-signal.ui.select-field>
                     @endforeach
+                    @if ($recipes->isNotEmpty())
+                        <fieldset class="grid gap-2 sm:col-span-2">
+                            <legend class="mb-1 text-sm font-bold text-ink">{{ __('Recipes') }}</legend>
+                            <p class="text-xs text-muted">{{ __('Scripts that run as root at the end of provisioning, in this order. The server keeps the version it ran.') }}</p>
+                            @foreach ($recipes as $recipe)
+                                <x-signal.ui.checkbox :id="'recipe-'.$recipe->id" name="recipe_ids[]" :value="$recipe->id" :checked="in_array((string) $recipe->id, (array) old('recipe_ids', []), true)" :restore="false">{{ $recipe->name }}@if ($recipe->description) <span class="text-xs text-muted">· {{ \Illuminate\Support\Str::limit($recipe->description, 80) }}</span>@endif</x-signal.ui.checkbox>
+                            @endforeach
+                        </fieldset>
+                    @endif
                     <p class="text-sm text-muted sm:col-span-2">{{ __('The provider bills you for the server. A new SSH key is made for it; the root and MySQL passwords are shown once, after creation.') }}</p>
                     <div class="flex flex-wrap gap-3 sm:col-span-2">
                         <x-signal.ui.button type="submit" variant="primary">{{ __('Create server') }}</x-signal.ui.button>

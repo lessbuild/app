@@ -11,6 +11,7 @@ use App\Enums\ServerType;
 use App\Jobs\Infrastructure\InitialiseServer;
 use App\Models\Account;
 use App\Models\Provider;
+use App\Models\Recipe;
 use App\Models\Server;
 use App\Models\User;
 use App\Services\Billing\Entitlements;
@@ -49,12 +50,12 @@ final class CreateServer
 
     /**
      * Create a cloud server that provisions itself: a new SSH key is registered with the provider, and the provisioning script
-     * goes in as user data. If the provider refuses, whatever was created is removed and the server is marked failed.
+     * goes in as user data, ending with the chosen recipes (snapshotted in order). If the provider refuses, whatever was created is removed and the server is marked failed.
      * The one-time root password is on the returned model (`provisioningRootPassword()`).
      *
      * @param  Account  $account
      * @param  User  $actor
-     * @param  array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string}  $data
+     * @param  array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string, recipe_ids?: list<int>}  $data
      * @return Server
      */
     public function handle(Account $account, User $actor, array $data): Server
@@ -70,6 +71,13 @@ final class CreateServer
             if (! $provider->type->hostsServers()) {
                 throw ValidationException::withMessages(['provider_id' => __('Choose a provider that hosts servers.')]);
             }
+            // A snapshot in the chosen order, so editing a recipe later doesn't change what this server ran.
+            $recipes = Recipe::query()->where('account_id', $account->id)->whereKey($data['recipe_ids'] ?? [])->get()->keyBy('id');
+            $snapshot = [];
+            foreach ($data['recipe_ids'] ?? [] as $id) {
+                $recipe = $recipes->get($id) ?? throw ValidationException::withMessages(['recipe_ids' => __('Choose recipes from this account.')]);
+                $snapshot[] = ['name' => $recipe->name, 'description' => $recipe->description, 'script' => $recipe->script];
+            }
             $keys = app(SshKeyPair::class);
             $type = ServerType::from($data['type']);
             $server = new Server;
@@ -83,6 +91,7 @@ final class CreateServer
                 'ssh_public_key' => $keys->publicKey(),
                 'ssh_private_key' => $keys->privateKey(),
                 'mysql_root_password' => in_array(InstallMysqlScript::class, $this->plan->steps($type), true) ? Str::random(40) : null,
+                'recipe_snapshot' => $snapshot,
             ])->save();
             $this->audit->handle(AuditAction::ServerCreated, $actor, $account->id, ['server' => $server->name, 'provider' => $provider->name, 'type' => $type->value]);
 

@@ -26,6 +26,7 @@ use App\Models\Monitor;
 use App\Models\Preview;
 use App\Models\Project;
 use App\Models\Provider;
+use App\Models\Recipe;
 use App\Models\Release;
 use App\Models\Repository;
 use App\Models\Server;
@@ -58,6 +59,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
      */
     private const BINDINGS = [
         'provider' => [Provider::class, 'account', ['account.providers*', 'github-app.*']],
+        'recipe' => [Recipe::class, 'account', ['account.recipes*']],
         'server' => [Server::class, 'account', ['infrastructure.*']],
         'website' => [Website::class, 'account', ['infrastructure.*']],
         'backupDestination' => [BackupDestination::class, 'account', ['infrastructure.*']],

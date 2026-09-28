@@ -6,6 +6,7 @@ namespace App\Http\View;
 
 use App\Models\Account;
 use App\Models\Project;
+use App\Models\Recipe;
 use App\Models\User;
 use App\Platform\ServiceRegistry;
 use App\Queries\Accounts\AccountSwitcherQuery;
@@ -187,6 +188,9 @@ final class ShellComposer
         }
         if ($user->can('viewAuditLog', $account)) {
             $links[] = new NavLink(__('Audit log'), route('account.audit-log'), $this->request->routeIs('account.audit-log'), 'clock');
+        }
+        if ($user->can('viewAny', Recipe::class)) {
+            $links[] = new NavLink(__('Recipes'), route('account.recipes'), $this->request->routeIs('account.recipes*', 'recipes.gallery*'), 'code');
         }
         if ($user->can('update', $account)) {
             $links[] = new NavLink(__('Providers'), route('account.providers'), $this->request->routeIs('account.providers*'), 'server');
