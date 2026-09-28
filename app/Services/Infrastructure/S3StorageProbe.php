@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Services\Infrastructure;
 
 use App\Models\BackupDestination;
-use Illuminate\Http\Client\Factory;
+use App\Services\Storage\S3Client;
+use App\Services\Storage\S3Location;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -19,9 +20,9 @@ class S3StorageProbe
      *
      * Tests backup destinations.
      *
-     * @param  Factory  $http  Makes the signed requests.
+     * @param  S3Client  $s3  Makes the signed requests.
      */
-    public function __construct(private readonly Factory $http) {}
+    public function __construct(private readonly S3Client $s3) {}
 
     /**
      * Write a small test object, reads it back and compares it, then deletes it (a failed delete is reported but
@@ -67,93 +68,7 @@ class S3StorageProbe
      */
     private function request(BackupDestination $destination, string $method, string $key, string $body = ''): Response
     {
-        [$base, $host, $basePath] = $this->endpoint($destination->endpoint);
-        if (preg_match('/\A[a-z0-9][a-z0-9.-]{1,61}[a-z0-9]\z/iD', $destination->bucket) !== 1) {
-            throw new RuntimeException('The backup bucket name is invalid.');
-        }
-        $uri = $this->path($basePath, $destination->bucket, $key);
-        $request = $this->http->connectTimeout(5)->timeout(15)
-            ->withHeaders($this->signedHeaders($method, $uri, $host, trim($destination->region), $destination->access_key, $destination->secret_key, $body));
-        if ($method === 'PUT') {
-            $request->withBody($body, 'application/octet-stream');
-        }
-
-        return $request->send($method, $base.$uri);
-    }
-
-    /**
-     * Split an HTTPS endpoint without credentials, query or fragment into its base URL, host and path.
-     *
-     * @param  string  $endpoint
-     * @return array{string, string, string} base URL, host header and base path
-     */
-    private function endpoint(string $endpoint): array
-    {
-        $parts = parse_url(rtrim(trim($endpoint), '/'));
-        $host = strtolower((string) ($parts['host'] ?? ''));
-        if (! is_array($parts) || strtolower((string) ($parts['scheme'] ?? '')) !== 'https' || $host === ''
-            || isset($parts['user']) || isset($parts['pass']) || isset($parts['query']) || isset($parts['fragment'])) {
-            throw new RuntimeException('Backup destinations must use a valid HTTPS endpoint.');
-        }
-        $authority = isset($parts['port']) && $parts['port'] !== 443 ? "{$host}:{$parts['port']}" : $host;
-
-        return ["https://{$authority}", $authority, trim((string) ($parts['path'] ?? ''), '/')];
-    }
-
-    /**
-     * Build a request path from its parts, with each segment URL-encoded exactly once.
-     *
-     * @param  string  ...$parts
-     * @return string
-     */
-    private function path(string ...$parts): string
-    {
-        $segments = [];
-        foreach ($parts as $part) {
-            foreach (explode('/', trim($part, '/')) as $segment) {
-                if ($segment !== '') {
-                    $segments[] = rawurlencode(rawurldecode($segment));
-                }
-            }
-        }
-
-        return '/'.implode('/', $segments);
-    }
-
-    /**
-     * Build the headers for an AWS Signature Version 4 request, including the signed Authorization header.
-     *
-     * @param  string  $method
-     * @param  string  $uri
-     * @param  string  $host
-     * @param  string  $region
-     * @param  string  $accessKey
-     * @param  string  $secretKey
-     * @param  string  $body
-     * @return array<string, string>
-     */
-    private function signedHeaders(string $method, string $uri, string $host, string $region, string $accessKey, string $secretKey, string $body): array
-    {
-        if ($accessKey === '' || $secretKey === '' || $region === '') {
-            throw new RuntimeException('The backup destination’s credentials are incomplete.');
-        }
-        $amzDate = gmdate('Ymd\THis\Z');
-        $date = substr($amzDate, 0, 8);
-        $payloadHash = hash('sha256', $body);
-        $headers = ['host' => $host, 'x-amz-content-sha256' => $payloadHash, 'x-amz-date' => $amzDate];
-        $canonicalHeaders = '';
-        foreach ($headers as $name => $value) {
-            $canonicalHeaders .= "{$name}:{$value}\n";
-        }
-        $signed = implode(';', array_keys($headers));
-        $scope = "{$date}/{$region}/s3/aws4_request";
-        $stringToSign = "AWS4-HMAC-SHA256\n{$amzDate}\n{$scope}\n".hash('sha256', "{$method}\n{$uri}\n\n{$canonicalHeaders}\n{$signed}\n{$payloadHash}");
-        $key = 'AWS4'.$secretKey;
-        foreach ([$date, $region, 's3', 'aws4_request'] as $part) {
-            $key = hash_hmac('sha256', $part, $key, true);
-        }
-
-        return [...$headers, 'Authorization' => "AWS4-HMAC-SHA256 Credential={$accessKey}/{$scope}, SignedHeaders={$signed}, Signature=".hash_hmac('sha256', $stringToSign, $key)];
+        return $this->s3->request(new S3Location($destination->endpoint, $destination->region, $destination->bucket, $destination->access_key, $destination->secret_key), $method, $key, $body);
     }
 
     /**
@@ -165,11 +80,6 @@ class S3StorageProbe
      */
     private function assertSuccessful(string $operation, Response $response): void
     {
-        if ($response->successful()) {
-            return;
-        }
-        $code = preg_match('/<Code>\s*([A-Za-z][A-Za-z0-9_-]{0,99})\s*<\/Code>/i', $response->body(), $match) === 1 ? ", {$match[1]}" : '';
-
-        throw new RuntimeException("The {$operation} request failed (HTTP {$response->status()}{$code}).");
+        $this->s3->assertSuccessful($operation, $response);
     }
 }

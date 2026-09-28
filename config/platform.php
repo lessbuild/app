@@ -14,6 +14,23 @@ return [
     'queue_backlog_limit' => (int) env('PLATFORM_QUEUE_BACKLOG_LIMIT', 500),
     'queue_oldest_minutes' => (int) env('PLATFORM_QUEUE_OLDEST_MINUTES', 15),
 
+    // Backups of the platform's own database (`php artisan platform:backup`, nightly). Copies are kept locally and, when
+    // the PLATFORM_BACKUP_S3_* settings are filled in, in S3-compatible storage somewhere else, which is what protects
+    // against losing the server.
+    'backups' => [
+        'path' => env('PLATFORM_BACKUP_PATH', storage_path('app/platform-backups')),
+        'keep_local' => (int) env('PLATFORM_BACKUP_KEEP_LOCAL', 7),
+        'keep_remote_days' => (int) env('PLATFORM_BACKUP_KEEP_REMOTE_DAYS', 30),
+        's3' => [
+            'endpoint' => env('PLATFORM_BACKUP_S3_ENDPOINT'),
+            'region' => env('PLATFORM_BACKUP_S3_REGION', 'auto'),
+            'bucket' => env('PLATFORM_BACKUP_S3_BUCKET'),
+            'key' => env('PLATFORM_BACKUP_S3_KEY'),
+            'secret' => env('PLATFORM_BACKUP_S3_SECRET'),
+            'prefix' => env('PLATFORM_BACKUP_S3_PREFIX', 'buildpusher-platform'),
+        ],
+    ],
+
     // Whether anyone can sign up. When false, people need an access invitation or an account invitation (the first
     // person can always sign up), and /request-access takes requests.
     'registration' => [

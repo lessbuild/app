@@ -31,7 +31,11 @@ return new class extends Migration
     public function down(): void
     {
         foreach (['projects', 'environments'] as $name) {
-            Schema::table($name, fn (Blueprint $table) => $table->dropColumn('legacy_id'));
+            // The unique index goes first: SQLite can't drop a column an index still uses.
+            Schema::table($name, function (Blueprint $table) use ($name): void {
+                $table->dropUnique("{$name}_legacy_id_unique");
+                $table->dropColumn('legacy_id');
+            });
         }
     }
 };

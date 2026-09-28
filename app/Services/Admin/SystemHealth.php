@@ -35,8 +35,9 @@ final class SystemHealth
      * Runs the platform's health checks.
      *
      * @param  Migrator  $migrator  Knows which migrations have run.
+     * @param  PlatformBackups  $backups  Knows when the database was last backed up, and whether off-site.
      */
-    public function __construct(private readonly Migrator $migrator) {}
+    public function __construct(private readonly Migrator $migrator, private readonly PlatformBackups $backups) {}
 
     /**
      * Run every check.
@@ -66,8 +67,29 @@ final class SystemHealth
             new HealthCheck('Scheduler', 'processes', $heartbeatAge !== null && $heartbeatAge <= 180, $heartbeatAge === null ? 'No heartbeat yet: is `schedule:run` running every minute?' : trans_choice('Last ran :count second ago|Last ran :count seconds ago', $heartbeatAge)),
             new HealthCheck('Failed jobs', 'processes', $failed === 0, $failed === null ? 'Unavailable' : trans_choice(':count failed job|:count failed jobs', $failed)),
             new HealthCheck('Mail', 'connectivity', ! $production || ! in_array($mailer, ['log', 'array'], true), $production && in_array($mailer, ['log', 'array'], true) ? "The {$mailer} mailer sends nothing" : $mailer),
+            $this->backups(),
             new HealthCheck('Stripe', 'connectivity', ! $production || (filled(config('services.stripe.secret')) && filled(config('services.stripe.webhook_secret'))), filled(config('services.stripe.secret')) ? 'Keys set' : 'Keys missing: paid plans can’t be bought'),
         ];
+    }
+
+    /**
+     * Check that the database was backed up in the last day and, in production, copied off-site.
+     *
+     * @return HealthCheck
+     */
+    private function backups(): HealthCheck
+    {
+        $latest = $this->backups->latestSuccessful();
+        $fresh = $latest?->created_at !== null && $latest->created_at->gt(now()->subHours(26));
+        $offsite = $this->backups->offsiteConfigured();
+        $detail = match (true) {
+            $latest?->created_at === null => 'No backup yet: run php artisan platform:backup',
+            ! $offsite => 'Last backup '.$latest->created_at->diffForHumans().', kept on this server only: set PLATFORM_BACKUP_S3_*',
+            ! $latest->isOffsite() => 'Last backup '.$latest->created_at->diffForHumans().' didn’t reach off-site storage',
+            default => 'Last backup '.$latest->created_at->diffForHumans().', copied off-site',
+        };
+
+        return new HealthCheck('Database backups', 'storage', $fresh && (! app()->isProduction() || ($offsite && $latest->isOffsite())), $detail);
     }
 
     /**
@@ -86,6 +108,7 @@ final class SystemHealth
             ['data' => __('Closed access requests'), 'keeps' => trans_choice(':count day|:count days', (int) config('platform.access_request_retention_days')), 'job' => 'access-requests:prune'],
             ['data' => __('Analytics events and visits'), 'keeps' => __('Per the analytics retention settings'), 'job' => 'analytics:prune'],
             ['data' => __('Telemetry events, traces and payloads'), 'keeps' => __('Per each account’s Monitoring plan'), 'job' => 'telemetry:prune'],
+            ['data' => __('Platform database backups'), 'keeps' => __(':count local copies; off-site for :days days', ['count' => (int) config('platform.backups.keep_local'), 'days' => (int) config('platform.backups.keep_remote_days')]), 'job' => 'platform:backup'],
             ['data' => __('Server command output'), 'keeps' => __('Per the Infrastructure settings'), 'job' => 'servers:prune-commands'],
         ];
     }

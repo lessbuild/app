@@ -32,6 +32,7 @@ use App\Models\Website;
 use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Admin\PlatformAdmins;
+use App\Services\Admin\PlatformBackups;
 use App\Services\Admin\SystemHealth;
 use App\Services\Billing\Entitlements;
 use App\Services\Deploy\Automation;
@@ -534,3 +535,48 @@ Artisan::command('users:verify {email : The person\'s email}', function (): int 
 
     return 0;
 })->purpose('Mark a person\'s email address as verified');
+
+// Backups of the platform's own database: nightly, and on demand. See config/platform.php for off-site storage.
+Artisan::command('platform:backup', function (PlatformBackups $backups): int {
+    $backup = $backups->create('schedule');
+    if (! $backup->succeeded()) {
+        $this->error("Backup failed: {$backup->error}");
+
+        return 1;
+    }
+    $this->info("Backed up to {$backup->file} (".number_format((int) $backup->size / 1024, 1).' KB)'.($backup->isOffsite() ? ' and copied off-site.' : '. Not copied off-site: set PLATFORM_BACKUP_S3_*.'));
+    if ($backup->error !== null) {
+        $this->warn($backup->error);
+    }
+
+    return 0;
+})->purpose('Back up the platform database, copying it off-site when that\'s set up');
+Schedule::command('platform:backup')->dailyAt('02:30')->withoutOverlapping(60)->onOneServer();
+
+Artisan::command('platform:restore {backup : The backup\'s id or file name} {--force : Don\'t ask for confirmation}', function (PlatformBackups $backups): int {
+    $id = is_string($this->argument('backup')) ? $this->argument('backup') : '';
+    $backup = App\Models\PlatformBackup::query()->where(ctype_digit($id) ? 'id' : 'file', $id)->first();
+    if ($backup === null) {
+        $this->error("No backup {$id}. See php artisan platform:backups.");
+
+        return 1;
+    }
+    if (! $this->option('force') && ! $this->confirm("Replace the database with {$backup->file} from {$backup->created_at}? Stop the queue workers and run php artisan down first.")) {
+        return 1;
+    }
+    try {
+        $before = $backups->restore($backup);
+    } catch (RuntimeException $exception) {
+        $this->error($exception->getMessage());
+
+        return 1;
+    }
+    $this->info("Restored {$backup->file}. The database as it was is kept at {$before}. Run php artisan migrate, then php artisan up.");
+
+    return 0;
+})->purpose('Replace the platform database with a backup');
+
+Artisan::command('platform:backups', function (): void {
+    $this->table(['ID', 'File', 'Status', 'Size', 'Local', 'Off-site', 'When'], App\Models\PlatformBackup::query()->latest('id')->limit(30)->get()
+        ->map(fn (App\Models\PlatformBackup $backup): array => [$backup->id, $backup->file, $backup->status, $backup->size !== null ? number_format($backup->size / 1024, 1).' KB' : '—', $backup->isLocal() ? 'yes' : 'no', $backup->isOffsite() ? 'yes' : 'no', (string) $backup->created_at])->all());
+})->purpose('List recent platform database backups');
