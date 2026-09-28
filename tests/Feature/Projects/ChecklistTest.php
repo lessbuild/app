@@ -25,7 +25,7 @@ final class ChecklistTest extends TestCase
         $heading = __('Get :project going', ['project' => 'Storefront']);
 
         $this->actingAs($owner)->get("/projects/{$project->id}")->assertOk()->assertSee($heading)->assertSee(__(':done of :total done', ['done' => 0, 'total' => 7]))->assertSee(route('projects.setup', $project));
-        $this->actingAs($owner)->get($guide)->assertOk()->assertSee('Next: Connect a cloud provider')->assertSee(route('account.providers'))
+        $this->actingAs($owner)->get($guide)->assertOk()->assertSee('Step 1 of 7')->assertSee('Connect a cloud provider')->assertSee('aria-current="step"', false)->assertSee(route('account.providers'))
             ->assertSee('Turn on Infrastructure')->assertSee(route('projects.services.show', [$project, 'infrastructure']));
 
         foreach (['infrastructure', 'deploy', 'monitoring', 'analytics'] as $service) {
@@ -38,13 +38,13 @@ final class ChecklistTest extends TestCase
         $server->forceFill(['provisioning_status' => \App\Models\Server::STATUS_ACTIVE])->save();
         $website = \App\Models\Website::factory()->create(['server_id' => $server->id, 'environment_id' => $production->id, 'name' => 'Shop']);
         $repository = \App\Models\Repository::factory()->create(['project_id' => $project->id, 'website_id' => $website->id, 'environment_id' => $production->id]);
-        $this->actingAs($owner)->get($guide)->assertSee('Shop is live.')->assertSee('Next: Deploy')->assertSee(route('deploy.repositories.show', [$project, $repository->id]))
+        $this->actingAs($owner)->get($guide)->assertSee('Shop is live.')->assertSee('Step 5 of 7')->assertSee(route('deploy.repositories.show', [$project, $repository->id]))
             ->assertSee(__(':done of :total done', ['done' => 4, 'total' => 7]));
 
         \App\Models\Build::factory()->succeeded()->create(['repository_id' => $repository->id]);
         \App\Models\Monitor::factory()->create(['environment_id' => $production->id]);
         $site = \App\Models\AnalyticsSite::factory()->create(['project_id' => $project->id, 'name' => 'storefront.example']);
-        $this->actingAs($owner)->get($guide)->assertSee('Waiting for the first visit to storefront.example')->assertSee('Next: Measure visits');
+        $this->actingAs($owner)->get($guide)->assertSee('Waiting for the first visit to storefront.example')->assertSee('Step 7 of 7');
 
         $site->forceFill(['last_event_at' => now()])->save();
         $this->actingAs($owner)->get($guide)->assertSee('Storefront is set up.')->assertDontSee('http-equiv="refresh"', false);
