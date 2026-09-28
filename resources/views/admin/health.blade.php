@@ -15,4 +15,10 @@
         @endforeach
     </x-signal.ui.table>
     @include('admin._queues')
+    <x-signal.ui.table :caption="__('Retention')">
+        <x-slot:head><tr><th scope="col">{{ __('Data') }}</th><th scope="col">{{ __('Kept for') }}</th><th scope="col">{{ __('Deleted by') }}</th></tr></x-slot:head>
+        @foreach ($retention as $row)
+            <tr><td>{{ $row['data'] }}</td><td>{{ $row['keeps'] }}</td><td class="font-mono text-xs">{{ $row['job'] }}</td></tr>
+        @endforeach
+    </x-signal.ui.table>
 </x-signal.layouts.admin>

@@ -6,6 +6,8 @@ namespace App\Models;
 
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
@@ -28,6 +30,15 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class PlatformAdminEvent extends Model
 {
+    use MassPrunable;
+
+    /**
+     * The admin trail is kept this many days (two years); `model:prune` deletes older entries.
+     *
+     * @var int
+     */
+    public const RETENTION_DAYS = 730;
+
     /**
      * Events are written once, so they only record when.
      *
@@ -75,5 +86,15 @@ class PlatformAdminEvent extends Model
     protected function casts(): array
     {
         return ['created_at' => 'immutable_datetime'];
+    }
+
+    /**
+     * Get the entries old enough to delete.
+     *
+     * @return Builder<static>
+     */
+    public function prunable(): Builder
+    {
+        return static::query()->where('created_at', '<', now()->subDays(self::RETENTION_DAYS));
     }
 }

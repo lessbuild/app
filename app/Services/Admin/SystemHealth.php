@@ -6,6 +6,10 @@ namespace App\Services\Admin;
 
 use App\Data\Admin\HealthCheck;
 use App\Data\Admin\QueueState;
+use App\Models\AuditEntry;
+use App\Models\PlatformAdminEvent;
+use App\Models\RepositoryWebhookDelivery;
+use App\Models\SignInEvent;
 use Illuminate\Database\Migrations\Migrator;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -63,6 +67,26 @@ final class SystemHealth
             new HealthCheck('Failed jobs', 'processes', $failed === 0, $failed === null ? 'Unavailable' : trans_choice(':count failed job|:count failed jobs', $failed)),
             new HealthCheck('Mail', 'connectivity', ! $production || ! in_array($mailer, ['log', 'array'], true), $production && in_array($mailer, ['log', 'array'], true) ? "The {$mailer} mailer sends nothing" : $mailer),
             new HealthCheck('Stripe', 'connectivity', ! $production || (filled(config('services.stripe.secret')) && filled(config('services.stripe.webhook_secret'))), filled(config('services.stripe.secret')) ? 'Keys set' : 'Keys missing: paid plans can’t be bought'),
+        ];
+    }
+
+    /**
+     * Describe what the platform deletes on a schedule, and after how long.
+     *
+     * @return list<array{data: string, keeps: string, job: string}>
+     */
+    public function retention(): array
+    {
+        return [
+            ['data' => __('Sign-in history'), 'keeps' => trans_choice(':count day|:count days', SignInEvent::RETENTION_DAYS), 'job' => 'model:prune'],
+            ['data' => __('Account audit log'), 'keeps' => trans_choice(':count day|:count days', AuditEntry::RETENTION_DAYS), 'job' => 'model:prune'],
+            ['data' => __('Repository webhook deliveries'), 'keeps' => trans_choice(':count day|:count days', RepositoryWebhookDelivery::RETENTION_DAYS), 'job' => 'model:prune'],
+            ['data' => __('Admin trail'), 'keeps' => trans_choice(':count day|:count days', PlatformAdminEvent::RETENTION_DAYS), 'job' => 'model:prune'],
+            ['data' => __('Read notifications'), 'keeps' => trans_choice(':count day|:count days', (int) config('platform.read_notification_retention_days')), 'job' => 'notifications:prune'],
+            ['data' => __('Closed access requests'), 'keeps' => trans_choice(':count day|:count days', (int) config('platform.access_request_retention_days')), 'job' => 'access-requests:prune'],
+            ['data' => __('Analytics events and visits'), 'keeps' => __('Per the analytics retention settings'), 'job' => 'analytics:prune'],
+            ['data' => __('Telemetry events, traces and payloads'), 'keeps' => __('Per each account’s Monitoring plan'), 'job' => 'telemetry:prune'],
+            ['data' => __('Server command output'), 'keeps' => __('Per the Infrastructure settings'), 'job' => 'servers:prune-commands'],
         ];
     }
 

@@ -52,6 +52,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Inspiring;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Validation\ValidationException;
 
@@ -503,3 +504,11 @@ Artisan::command('access-requests:prune', function (): int {
     return 0;
 })->purpose('Delete access requests that were accepted or declined long ago');
 Schedule::command('access-requests:prune')->dailyAt('03:40')->withoutOverlapping(30)->onOneServer();
+
+Artisan::command('notifications:prune', function (): int {
+    $deleted = DB::table('notifications')->whereNotNull('read_at')->where('read_at', '<', now()->subDays((int) config('platform.read_notification_retention_days')))->delete();
+    $this->info("Deleted {$deleted} old read notifications.");
+
+    return 0;
+})->purpose('Delete notifications read long ago');
+Schedule::command('notifications:prune')->dailyAt('03:50')->withoutOverlapping(30)->onOneServer();

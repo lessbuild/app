@@ -58,14 +58,14 @@ The parts:
 
 ## Feature flags and retention (part 5)
 
-- **Flags:** a flag has a key, a description, and a state: off, on for everyone, or on for chosen accounts. Code asks `Features::enabled('key', $account)`. Admins create flags and change them; each change is audited. Unknown keys are off.
-- **Retention**, each scheduled daily with its window in `config/platform.php`:
-  - sign-in events after 180 days;
-  - read notifications after 90 days;
-  - repository webhook deliveries after 30 days;
-  - access requests as above;
-  - platform admin events after 2 years.
-  - The admin health page lists every retention job with its window and last run.
+- **Flags:** a flag has a key, a description, and a state: off, on for everyone, or on for chosen accounts. Code asks `Features::enabled('key', $account)`. Admins create flags (off at first), change them and delete them; each change is audited. Unknown keys are off. `FeatureFlags` reads each flag once per request.
+- **Retention**, each run daily:
+  - sign-in events after 90 days and the account audit log after a year (already pruned by `model:prune`);
+  - repository webhook deliveries after 30 days and the admin trail after two years (`model:prune`);
+  - read notifications after 90 days (`notifications:prune`);
+  - closed access requests after 180 days (`access-requests:prune`);
+  - analytics, telemetry and server command output with their existing jobs.
+  - The admin health page lists each with its window and job.
 
 ## Public contracts
 

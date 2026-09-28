@@ -24,6 +24,9 @@ return [
     // Days before declined and accepted access requests are deleted.
     'access_request_retention_days' => 180,
 
+    // Days read notifications stay in inboxes.
+    'read_notification_retention_days' => 90,
+
     // The queues the admin panel always lists, even when empty.
     'queues' => ['default', 'checks', 'alerts', 'telemetry', 'terminals'],
 ];

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Attributes\Table;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\MassPrunable;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
@@ -28,6 +30,15 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class RepositoryWebhookDelivery extends Model
 {
+    use MassPrunable;
+
+    /**
+     * Deliveries are kept this many days; `model:prune` deletes older ones.
+     *
+     * @var int
+     */
+    public const RETENTION_DAYS = 30;
+
     /**
      * Get the repository the delivery was for.
      *
@@ -58,5 +69,15 @@ class RepositoryWebhookDelivery extends Model
     protected function casts(): array
     {
         return ['changed_paths' => 'array'];
+    }
+
+    /**
+     * Get the entries old enough to delete.
+     *
+     * @return Builder<static>
+     */
+    public function prunable(): Builder
+    {
+        return static::query()->where('created_at', '<', now()->subDays(self::RETENTION_DAYS));
     }
 }

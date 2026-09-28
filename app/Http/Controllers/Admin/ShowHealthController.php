@@ -10,13 +10,13 @@ use Illuminate\Http\Response;
 final class ShowHealthController
 {
     /**
-     * Show the platform's health checks and queue backlogs, freshly run and never cached.
+     * Show the platform's health checks, queue backlogs and retention jobs, freshly run and never cached.
      *
      * @param  SystemHealth  $health
      * @return Response
      */
     public function __invoke(SystemHealth $health): Response
     {
-        return response()->view('admin.health', ['checks' => $health->checks(), 'queues' => $health->queues()])->header('Cache-Control', 'no-store, private');
+        return response()->view('admin.health', ['checks' => $health->checks(), 'queues' => $health->queues(), 'retention' => $health->retention()])->header('Cache-Control', 'no-store, private');
     }
 }

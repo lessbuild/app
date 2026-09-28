@@ -20,6 +20,7 @@ use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
 use App\Listeners\PreviewWebsiteSubscriber;
 use App\Models\ApiToken;
+use App\Services\Admin\FeatureFlags;
 use App\Services\Billing\PaymentProviderFactory;
 use App\Services\Dns\SystemDnsResolver;
 use App\Services\Monitoring\NativeDnsRecordResolver;
@@ -57,6 +58,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(TcpConnector::class, NativeTcpConnector::class);
         $this->app->bind(TelemetryIngestor::class, DatabaseTelemetryIngestor::class);
         $this->app->bind(TelemetryPayloadMapper::class, OtlpPayloadMapper::class);
+        // One per request (or job), so flags are read once and a change is seen by the next request.
+        $this->app->scoped(FeatureFlags::class);
         $this->app->singleton(PaymentProvider::class, fn ($app): PaymentProvider => PaymentProviderFactory::make($app['config']));
     }
 
