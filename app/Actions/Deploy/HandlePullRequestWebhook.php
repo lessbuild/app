@@ -8,7 +8,7 @@ use App\Data\Deploy\VerifiedRepositoryWebhook;
 use App\Models\Repository;
 use App\Models\RepositoryWebhookDelivery;
 use App\Services\Deploy\Previews;
-use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\DB;
 
 final class HandlePullRequestWebhook
 {
@@ -31,16 +31,25 @@ final class HandlePullRequestWebhook
      */
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): string
     {
-        $delivery = new RepositoryWebhookDelivery;
-        try {
+        // Checked under the repository's lock rather than by catching the unique index, which would abort an enclosing
+        // PostgreSQL transaction.
+        $delivery = DB::transaction(function () use ($repository, $webhook): ?RepositoryWebhookDelivery {
+            $locked = Repository::query()->lockForUpdate()->findOrFail($repository->id);
+            if ($locked->webhookDeliveries()->where('delivery_id', $webhook->deliveryId)->exists()) {
+                return null;
+            }
+            $delivery = new RepositoryWebhookDelivery;
             $delivery->forceFill([
-                'repository_id' => $repository->id, 'delivery_id' => $webhook->deliveryId, 'status' => 'received',
+                'repository_id' => $locked->id, 'delivery_id' => $webhook->deliveryId, 'status' => 'received',
                 'revision' => $webhook->revision, 'commit_message' => $webhook->pullRequestTitle,
             ])->save();
-        } catch (UniqueConstraintViolationException) {
+            $locked->forceFill(['webhook_last_received_at' => now()])->save();
+
+            return $delivery;
+        });
+        if ($delivery === null) {
             return 'duplicate';
         }
-        $repository->forceFill(['webhook_last_received_at' => now()])->save();
         $status = $this->previews->receive($repository, $webhook);
         $delivery->forceFill(['status' => $status])->save();
 
