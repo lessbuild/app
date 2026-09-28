@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class InstallRedisScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Redis';
+    public const TITLE = 'Install Redis';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install Redis and configure Redis';
+    public const DESCRIPTION = 'Install Redis and configure Redis';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-redis';
+    public const IDENTIFIER = 'installed-redis';
 
     /**
      * Shell script to run

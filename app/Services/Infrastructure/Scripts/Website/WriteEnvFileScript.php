@@ -8,6 +8,10 @@ use App\Models\Website;
 
 final class WriteEnvFileScript extends WebsiteProvisioningScript
 {
+    /**
+     * Writes the website's `.env` file, passing its contents base64-encoded so nothing in them is interpreted by the
+     * shell.
+     */
     public function script(int $step, Website $website): string
     {
         $directory = escapeshellarg("/var/www/{$website->deployment_slug}");

@@ -23,7 +23,7 @@ final class ShowBuildController
         return view('deploy.build', [
             'overview' => $overview->handle($project, $user),
             'build' => $build->load(['repository.provider', 'website', 'environment', 'requester', 'approver', 'rolledBackFrom', 'redeployedFrom', 'promotedFrom.environment', 'promotions.environment']),
-            'stages' => array_map(fn (string $class): string => $class::$title, $plan->scripts()),
+            'stages' => array_map(fn (string $class): string => $class::TITLE, $plan->scripts()),
             'canDeploy' => $user->can('deploy', $build->repository),
             'canApprove' => $user->can('approve', $build),
             'promotionTargets' => $build->status === Build::STATUS_SUCCEEDED && $build->environment !== null

@@ -12,11 +12,17 @@ use RuntimeException;
 /** The API client for a provider that hosts servers. Bound in the container so tests can swap in a fake. */
 class ServerProviderResolver
 {
+    /**
+     * The API client for a provider's stored credential.
+     */
     public function resolve(Provider $provider): ServerProvider
     {
         return $this->resolveCredentials($provider->type, $provider->token);
     }
 
+    /**
+     * The API client for a provider type and token; types that don't host servers throw.
+     */
     public function resolveCredentials(ProviderType $type, string $token): ServerProvider
     {
         return match ($type) {

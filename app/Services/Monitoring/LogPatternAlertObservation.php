@@ -13,7 +13,12 @@ use Illuminate\Database\Eloquent\Builder;
 
 final class LogPatternAlertObservation
 {
-    /** @return array{state: string, value: float|null, samples: int, reason: string|null} */
+    /**
+     * Counts events in the rule's environment (and service) whose text matches the pattern within the window, breaching
+     * at the threshold.
+     *
+     * @return array{state: string, value: float|null, samples: int, reason: string|null}
+     */
     public function measure(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array
     {
         if ($rule->match_text === null || $rule->match_text === '') {

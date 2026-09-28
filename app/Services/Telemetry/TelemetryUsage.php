@@ -17,8 +17,16 @@ final class TelemetryUsage
 {
     public const METER = 'monitoring.events';
 
+    /**
+     * Counts telemetry against allowances.
+     *
+     * @param  Entitlements  $entitlements  Reads the account's allowance.
+     */
     public function __construct(private readonly Entitlements $entitlements) {}
 
+    /**
+     * Events counted for the account from the start of the month up to the moment given.
+     */
     public function eventsThisMonth(Account $account, ?CarbonImmutable $at = null): int
     {
         $at = ($at ?? CarbonImmutable::now('UTC'))->utc();

@@ -9,11 +9,11 @@ use App\Services\Infrastructure\WebsiteCaddyConfiguration;
 
 class ConfigureWebRuntimeScript extends BuildProvisioningScript
 {
-    public static string $title = 'Switch web runtime';
+    public const TITLE = 'Switch web runtime';
 
-    public static string $description = 'Start the candidate runtime, verify it, and atomically route traffic to it';
+    public const DESCRIPTION = 'Start the candidate runtime, verify it, and atomically route traffic to it';
 
-    public static string $identifier = 'configured-web-runtime';
+    public const IDENTIFIER = 'configured-web-runtime';
 
     /**
      * Bind the shared Caddy renderer while retaining a direct-construction fallback for script tests and callers.
@@ -25,6 +25,9 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         $this->caddy = $caddy ?? new WebsiteCaddyConfiguration;
     }
 
+    /**
+     * Renders the website's Caddy site for the runtime being switched to.
+     */
     private readonly WebsiteCaddyConfiguration $caddy;
 
     /**

@@ -22,8 +22,20 @@ use Illuminate\Validation\ValidationException;
  */
 class ConfigurationOperations
 {
+    /**
+     * Runs configuration operations.
+     *
+     * @param  Deployments  $deployments  Queues the deploys.
+     * @param  BuildPayload  $payload  Recomputes the payload on retry, to check it still matches what was reviewed.
+     * @param  FinishBuild  $finish  Finishes builds that are canceled with their operation.
+     */
     public function __construct(private readonly Deployments $deployments, private readonly BuildPayload $payload, private readonly FinishBuild $finish) {}
 
+    /**
+     * Starts a pending or blocked deploy operation when its gates pass (target available, requester still allowed,
+     * repository unchanged, environment open), marking it delivered or awaiting approval; otherwise records why it's
+     * blocked.
+     */
     public function deliver(ConfigurationOperation $operation): ConfigurationOperation
     {
         return DB::transaction(function () use ($operation): ConfigurationOperation {
@@ -161,6 +173,9 @@ class ConfigurationOperations
         });
     }
 
+    /**
+     * Refuses the change with a message on `operation`.
+     */
     private function invalid(string $message): never
     {
         throw ValidationException::withMessages(['operation' => $message]);

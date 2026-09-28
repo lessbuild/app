@@ -9,6 +9,9 @@ use phpseclib4\Crypt\RSA\PrivateKey;
 
 class SshKeyPair
 {
+    /**
+     * The generated private key, from which both halves are exported.
+     */
     private readonly PrivateKey $key;
 
     /** Create a new 4096-bit RSA key pair for managed SSH access. */

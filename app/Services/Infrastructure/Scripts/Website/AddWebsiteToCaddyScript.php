@@ -9,8 +9,16 @@ use App\Services\Infrastructure\WebsiteCaddyConfiguration;
 
 final class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
 {
+    /**
+     * Adds a website's site to Caddy.
+     *
+     * @param  WebsiteCaddyConfiguration  $caddy  Renders the site block.
+     */
     public function __construct(private readonly WebsiteCaddyConfiguration $caddy) {}
 
+    /**
+     * Writes the website's Caddy site and access log, validates the whole configuration and reloads Caddy.
+     */
     public function script(int $step, Website $website): string
     {
         $slug = $website->deployment_slug;

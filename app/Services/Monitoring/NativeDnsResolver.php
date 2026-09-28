@@ -8,12 +8,18 @@ use App\Contracts\Monitoring\DnsResolver;
 
 final class NativeDnsResolver implements DnsResolver
 {
+    /**
+     * Resolves a hostname to its A and AAAA addresses, following CNAMEs.
+     */
     public function addresses(string $hostname): array
     {
         return $this->resolve($hostname, []);
     }
 
-    /** @param list<string> $visited
+    /**
+     * Follows CNAMEs up to five deep; a loop or an unresolvable target resolves to nothing.
+     *
+     * @param  list<string>  $visited
      * @return list<string>
      */
     private function resolve(string $hostname, array $visited): array

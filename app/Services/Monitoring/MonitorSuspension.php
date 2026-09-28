@@ -24,7 +24,12 @@ final class MonitorSuspension
         $this->pause($monitor, ['queue_snapshot_id' => null, ...($revoke ? ['queue_token_hash' => null] : [])]);
     }
 
-    /** @param array<string, mixed> $values */
+    /**
+     * Disables the monitor and resets its health and configuration revision, so any signal still in flight is ignored,
+     * and notes it on the open incident.
+     *
+     * @param  array<string, mixed>  $values
+     */
     private function pause(Monitor $monitor, array $values): void
     {
         $monitor->forceFill([

@@ -8,11 +8,11 @@ use App\Models\Build;
 
 class RunBuildCommandsScript extends RepositoryHookScript
 {
-    public static string $title = 'Run custom build commands';
+    public const TITLE = 'Run custom build commands';
 
-    public static string $description = 'Run repository-specific commands before activating the release';
+    public const DESCRIPTION = 'Run repository-specific commands before activating the release';
 
-    public static string $identifier = 'ran-custom-build-commands';
+    public const IDENTIFIER = 'ran-custom-build-commands';
 
     /**
      * Read the custom build hook from the build's repository.

@@ -8,11 +8,11 @@ use App\Models\Build;
 
 class ValidateCandidateScript extends BuildProvisioningScript
 {
-    public static string $title = 'Validate canary candidate';
+    public const TITLE = 'Validate canary candidate';
 
-    public static string $description = 'Exercise the candidate release over loopback before it receives production traffic';
+    public const DESCRIPTION = 'Exercise the candidate release over loopback before it receives production traffic';
 
-    public static string $identifier = 'validated-canary-candidate';
+    public const IDENTIFIER = 'validated-canary-candidate';
 
     /**
      * Render a temporary PHP server health probe when PHP canary validation is selected.

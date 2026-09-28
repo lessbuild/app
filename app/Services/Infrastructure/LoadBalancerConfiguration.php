@@ -36,6 +36,9 @@ final class LoadBalancerConfiguration
             ."        health_interval 10s\n        health_timeout 3s\n        fail_duration 30s\n        max_fails 2\n    }\n}\n";
     }
 
+    /**
+     * The script that writes the load balancer's site, formats it, validates the whole configuration and reloads Caddy.
+     */
     public function apply(LoadBalancer $balancer): string
     {
         $file = escapeshellarg($this->path($balancer->id));
@@ -43,11 +46,17 @@ final class LoadBalancerConfiguration
         return "set -e\nprintf '%s' ".escapeshellarg(base64_encode($this->site($balancer)))." | base64 --decode > {$file}\ncaddy fmt --overwrite {$file}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy";
     }
 
+    /**
+     * The script that removes the site, validates and reloads Caddy.
+     */
     public function remove(int $balancerId): string
     {
         return "set -e\nrm -f -- ".escapeshellarg($this->path($balancerId))."\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy";
     }
 
+    /**
+     * Where the load balancer's site is written.
+     */
     private function path(int $balancerId): string
     {
         return "/etc/caddy/websites/ha-{$balancerId}.conf";

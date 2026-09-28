@@ -10,8 +10,17 @@ use Throwable;
 
 final class NativeDnsRecordResolver implements DnsRecordResolver
 {
+    /**
+     * Resolves DNS records with PHP's resolver.
+     *
+     * @param  DnsRecordSet  $sets  Validates the hostname and bounds the response.
+     */
     public function __construct(private readonly DnsRecordSet $sets) {}
 
+    /**
+     * Runs the lookup in a child PHP process with a timeout, since the system resolver can't be interrupted otherwise.
+     * Oversized answers and failures come back as null.
+     */
     public function records(string $hostname, string $type, int $timeoutSeconds): ?array
     {
         $hostname = $this->sets->hostname($hostname);

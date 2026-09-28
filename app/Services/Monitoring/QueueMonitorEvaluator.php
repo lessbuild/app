@@ -16,6 +16,11 @@ final class QueueMonitorEvaluator
 {
     public const MAX_LIVE_WORKERS = 100;
 
+    /**
+     * Judges queue monitors from their reports and workers.
+     *
+     * @param  MonitorResults  $results  Records each judgement.
+     */
     public function __construct(private readonly MonitorResults $results) {}
 
     /** Caller holds source and monitor locks in a transaction. */
@@ -38,7 +43,13 @@ final class QueueMonitorEvaluator
         $monitor->forceFill(['next_check_at' => $monitor->enabled ? $state['next'] : null])->save();
     }
 
-    /** @return array{result: MonitorObservation, next: ?CarbonImmutable, snapshot: ?QueueSnapshot} */
+    /**
+     * Judges a queue monitor now: missing or stale reports, too few live workers (after their grace period), metrics
+     * over their thresholds, and jobs running too long each breach it; missing data leaves it unknown. Also returns when
+     * it next needs looking at.
+     *
+     * @return array{result: MonitorObservation, next: ?CarbonImmutable, snapshot: ?QueueSnapshot}
+     */
     public function inspect(Monitor $monitor, CarbonImmutable $now): array
     {
         $settings = $monitor->queueThresholds();
@@ -105,7 +116,12 @@ final class QueueMonitorEvaluator
         return ['result' => $result, 'next' => $next, 'snapshot' => $snapshot];
     }
 
-    /** @return Builder<QueueWorker> */
+    /**
+     * The monitor's workers under its current configuration that are idle or busy and were seen within the worker
+     * timeout.
+     *
+     * @return Builder<QueueWorker>
+     */
     public function liveWorkers(Monitor $monitor, CarbonImmutable $now): Builder
     {
         return QueueWorker::query()->where('monitor_id', $monitor->id)->where('config_revision', $monitor->config_revision)
@@ -113,6 +129,10 @@ final class QueueMonitorEvaluator
             ->where('last_seen_at', '>', $now->subSeconds($monitor->queueThresholds()['worker_timeout_seconds'])->format('Y-m-d H:i:s.u'));
     }
 
+    /**
+     * Starts evaluation afresh after its settings change, giving collectors and workers until the shorter timeout to
+     * report.
+     */
     public function reset(Monitor $monitor, CarbonImmutable $now): void
     {
         $settings = $monitor->queueThresholds();

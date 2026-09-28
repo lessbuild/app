@@ -12,6 +12,12 @@ use Illuminate\Support\Str;
 
 final class MetricProjection
 {
+    /**
+     * Turns metric events into series and samples.
+     *
+     * @param  TelemetryRedactor  $redactor  Removes secrets from series labels.
+     * @param  OtlpPayloadMapper  $mapper  Decodes OTLP attribute lists.
+     */
     public function __construct(private readonly TelemetryRedactor $redactor, private readonly OtlpPayloadMapper $mapper) {}
 
     /**
@@ -77,12 +83,19 @@ final class MetricProjection
         ];
     }
 
+    /**
+     * A sortable fixed-width key for a time, in nanoseconds.
+     */
     public static function timeKey(CarbonImmutable $time): string
     {
         return str_pad($time->format('Uu').'000', 20, '0', STR_PAD_LEFT);
     }
 
-    /** @param array<string, mixed> $event
+    /**
+     * What identifies the event's series: name, unit, resource, attributes and scope (for OTLP), or name, service and
+     * attributes (for JSON metrics).
+     *
+     * @param  array<string, mixed>  $event
      * @return array<string, mixed>
      */
     private function descriptor(array $event, bool $isOtlp): array
@@ -106,6 +119,9 @@ final class MetricProjection
         ];
     }
 
+    /**
+     * An OTLP nanosecond timestamp as a Carbon time, or null when it's missing or zero.
+     */
     private function timestamp(mixed $value): ?CarbonImmutable
     {
         if (! OtlpTimestamp::isValid($value) || ltrim((string) $value, '0') === '') {
@@ -117,7 +133,11 @@ final class MetricProjection
         return $timestamp === null ? null : CarbonImmutable::parse($timestamp->iso8601());
     }
 
-    /** @param array<string, mixed> $descriptor */
+    /**
+     * A readable label for where the series comes from: the first host, container, pod, instance or service name found.
+     *
+     * @param  array<string, mixed>  $descriptor
+     */
     private function resourceLabel(array $descriptor): string
     {
         foreach (['resource', 'attributes'] as $group) {
@@ -132,6 +152,9 @@ final class MetricProjection
         return 'Unspecified resource';
     }
 
+    /**
+     * Sorts object keys recursively, so equal descriptors hash the same.
+     */
     private function canonical(mixed $value): mixed
     {
         if (! is_array($value)) {

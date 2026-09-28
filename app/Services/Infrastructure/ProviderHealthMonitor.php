@@ -16,9 +16,20 @@ use Illuminate\Support\Facades\DB;
  */
 class ProviderHealthMonitor
 {
+    /**
+     * Checks providers' credentials.
+     *
+     * @param  ProviderConnectionTester  $tester  Asks the provider's API.
+     */
     public function __construct(private readonly ProviderConnectionTester $tester) {}
 
-    /** @return array{successful: bool, message: string, http_status: int|null, recorded: bool} */
+    /**
+     * Checks the credential and records the result under lock, keeping the latest checks. A provider fails after its
+     * threshold of failures in a row and recovers after one success; its creator is told about each change. Results are
+     * dropped if the credential changed during the check, or automatic checks were turned off.
+     *
+     * @return array{successful: bool, message: string, http_status: int|null, recorded: bool}
+     */
     public function check(Provider $provider, bool $automatic = false): array
     {
         $token = (string) $provider->getRawOriginal('token');

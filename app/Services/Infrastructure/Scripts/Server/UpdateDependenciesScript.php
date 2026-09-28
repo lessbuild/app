@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class UpdateDependenciesScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Initialise Server';
+    public const TITLE = 'Initialise Server';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Initialise the server, add ssh keys, update IP address.';
+    public const DESCRIPTION = 'Initialise the server, add ssh keys, update IP address.';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'initialised-server';
+    public const IDENTIFIER = 'initialised-server';
 
     /**
      * Shell script to run

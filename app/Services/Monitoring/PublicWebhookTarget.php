@@ -10,8 +10,17 @@ use Symfony\Component\HttpFoundation\IpUtils;
 
 final class PublicWebhookTarget
 {
+    /**
+     * Checks alert endpoints are safe to call.
+     *
+     * @param  DnsResolver  $dns  Resolves the endpoint's host.
+     */
     public function __construct(private readonly DnsResolver $dns) {}
 
+    /**
+     * The endpoint's host when the URL is a plain HTTPS address on port 443, without credentials or a fragment, and on
+     * the provider's own host and path for Slack, Teams, PagerDuty and Discord. Null otherwise.
+     */
     public function host(string $url, AlertDestinationType $type): ?string
     {
         if (strlen($url) > 2048 || preg_match('/[\x00-\x20\x7F-\xFF\\\\]/', $url) || ! str_starts_with($url, 'https://')) {
@@ -48,7 +57,12 @@ final class PublicWebhookTarget
         return $host;
     }
 
-    /** @return array{host: ?string, address: ?string, error: ?string} */
+    /**
+     * The endpoint's host and the address to connect to, or why it can't be used: invalid, not resolvable, or resolving
+     * to any non-public address.
+     *
+     * @return array{host: ?string, address: ?string, error: ?string}
+     */
     public function resolve(string $url, AlertDestinationType $type): array
     {
         $host = $this->host($url, $type);
@@ -68,6 +82,10 @@ final class PublicWebhookTarget
         return ['host' => $host, 'address' => $addresses[0], 'error' => null];
     }
 
+    /**
+     * Whether an address is on the public internet: not private, loopback, link-local, carrier-grade NAT, documentation,
+     * multicast or reserved (IPv4), and in global unicast space but not documentation or transition ranges (IPv6).
+     */
     public function isPublic(string $address): bool
     {
         if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4)) {

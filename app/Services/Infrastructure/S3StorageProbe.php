@@ -14,9 +14,19 @@ use Throwable;
 /** Proves a backup destination works: writes, reads back and deletes a small object with AWS Signature V4 requests. */
 class S3StorageProbe
 {
+    /**
+     * Tests backup destinations.
+     *
+     * @param  Factory  $http  Makes the signed requests.
+     */
     public function __construct(private readonly Factory $http) {}
 
-    /** @throws RuntimeException with a message safe to show (no response bodies) */
+    /**
+     * Writes a small test object, reads it back and compares it, then deletes it (a failed delete is reported but
+     * doesn't fail the check). Throws with a message safe to show when anything fails.
+     *
+     * @throws RuntimeException with a message safe to show (no response bodies)
+     */
     public function check(BackupDestination $destination): void
     {
         $prefix = trim($destination->path_prefix, '/');
@@ -41,6 +51,9 @@ class S3StorageProbe
         }
     }
 
+    /**
+     * Sends one signed S3 request for an object in the destination's bucket.
+     */
     private function request(BackupDestination $destination, string $method, string $key, string $body = ''): Response
     {
         [$base, $host, $basePath] = $this->endpoint($destination->endpoint);
@@ -57,7 +70,11 @@ class S3StorageProbe
         return $request->send($method, $base.$uri);
     }
 
-    /** @return array{string, string, string} base URL, host header and base path */
+    /**
+     * The base URL, host and path of an HTTPS endpoint without credentials, query or fragment.
+     *
+     * @return array{string, string, string} base URL, host header and base path
+     */
     private function endpoint(string $endpoint): array
     {
         $parts = parse_url(rtrim(trim($endpoint), '/'));
@@ -71,6 +88,9 @@ class S3StorageProbe
         return ["https://{$authority}", $authority, trim((string) ($parts['path'] ?? ''), '/')];
     }
 
+    /**
+     * A request path from its parts, with each segment URL-encoded exactly once.
+     */
     private function path(string ...$parts): string
     {
         $segments = [];
@@ -85,7 +105,11 @@ class S3StorageProbe
         return '/'.implode('/', $segments);
     }
 
-    /** @return array<string, string> */
+    /**
+     * The headers for an AWS Signature Version 4 request, including the signed Authorization header.
+     *
+     * @return array<string, string>
+     */
     private function signedHeaders(string $method, string $uri, string $host, string $region, string $accessKey, string $secretKey, string $body): array
     {
         if ($accessKey === '' || $secretKey === '' || $region === '') {
@@ -110,6 +134,9 @@ class S3StorageProbe
         return [...$headers, 'Authorization' => "AWS4-HMAC-SHA256 Credential={$accessKey}/{$scope}, SignedHeaders={$signed}, Signature=".hash_hmac('sha256', $stringToSign, $key)];
     }
 
+    /**
+     * Throws when a request failed, with the status and S3's error code but never the response body.
+     */
     private function assertSuccessful(string $operation, Response $response): void
     {
         if ($response->successful()) {

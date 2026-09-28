@@ -8,11 +8,11 @@ use App\Models\Build;
 
 class VerifyDeploymentHealthScript extends BuildProvisioningScript
 {
-    public static string $title = 'Verify deployment health';
+    public const TITLE = 'Verify deployment health';
 
-    public static string $description = 'Verify the website responds and restore the previous release on failure';
+    public const DESCRIPTION = 'Verify the website responds and restore the previous release on failure';
 
-    public static string $identifier = 'verified-deployment-health';
+    public const IDENTIFIER = 'verified-deployment-health';
 
     /**
      * Render the configured post-deployment HTTP health probe and failure reporting.

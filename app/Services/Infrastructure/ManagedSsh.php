@@ -12,10 +12,19 @@ use Symfony\Component\Process\Process;
 
 class ManagedSsh extends Ssh
 {
+    /**
+     * The private key file written for this connection, deleted when it closes.
+     */
     private ?string $temporaryPrivateKey = null;
 
+    /**
+     * The known-hosts file holding the pinned host key, deleted when the connection closes.
+     */
     private ?string $temporaryKnownHosts = null;
 
+    /**
+     * The SSH port, kept separately so the interactive terminal can build its command safely.
+     */
     private ?int $managedPort = null;
 
     /**

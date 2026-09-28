@@ -18,6 +18,11 @@ final class BackupScripts
 {
     private const INSTALL_RESTIC = 'if ! command -v restic >/dev/null 2>&1; then apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq restic; fi';
 
+    /**
+     * The backup script: dumps the database, copies `.env` and shared storage into a private staging directory, backs
+     * them up with restic (creating the repository the first time) tagged with the website, and keeps the last N
+     * snapshots.
+     */
     public function backup(WebsiteBackup $backup): string
     {
         $website = $backup->website;
@@ -48,6 +53,11 @@ final class BackupScripts
         BASH;
     }
 
+    /**
+     * The restore script: restores the snapshot to a staging directory, puts the site in maintenance, saves the current
+     * database, `.env` and storage, swaps in the restored ones, rebuilds caches and checks health. Any failure puts the
+     * saved state back.
+     */
     public function restore(BackupRestore $restore): string
     {
         $backup = $restore->backup;
@@ -169,6 +179,9 @@ final class BackupScripts
         BASH;
     }
 
+    /**
+     * The server's MySQL root password; throws when none is stored.
+     */
     private function mysqlPassword(WebsiteBackup $backup): string
     {
         return $backup->website->server->mysql_root_password ?? throw new RuntimeException('The server doesn’t have a stored MySQL root password.');

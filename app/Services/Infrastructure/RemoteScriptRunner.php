@@ -12,9 +12,19 @@ use RuntimeException;
 /** Uploads a shell script to a server over SSH and starts it in the background, returning its process ID and path. */
 class RemoteScriptRunner
 {
+    /**
+     * Starts scripts on servers.
+     *
+     * @param  Runner  $runner  Builds the SSH client.
+     */
     public function __construct(private readonly Runner $runner) {}
 
-    /** @return array{id: int, path: string} */
+    /**
+     * Uploads the script (retrying the upload), then runs it detached as root with its output to a log and its process
+     * ID in a file. Returns the process ID and script path.
+     *
+     * @return array{id: int, path: string}
+     */
     public function start(Server $server, string $script, string $name): array
     {
         $ssh = $this->runner->server($server)->create();

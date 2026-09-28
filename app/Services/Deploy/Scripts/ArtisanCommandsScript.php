@@ -8,20 +8,11 @@ use App\Models\Build;
 
 class ArtisanCommandsScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Run artisan commands';
+    public const TITLE = 'Run artisan commands';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Run the artisan commands';
+    public const DESCRIPTION = 'Run the artisan commands';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'run-artisan-commands';
+    public const IDENTIFIER = 'run-artisan-commands';
 
     /**
      * The script to run

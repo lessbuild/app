@@ -20,9 +20,20 @@ use Throwable;
 
 final class AlertNotificationTransport
 {
+    /**
+     * Delivers alerts to their destinations.
+     *
+     * @param  PublicWebhookTarget  $targets  Checks and resolves webhook endpoints.
+     */
     public function __construct(private readonly PublicWebhookTarget $targets) {}
 
-    /** @param array{type: AlertDestinationType, endpoint: ?string, secret: ?string, email: ?string} $target
+    /**
+     * Sends one alert. Email goes through the monitoring mailer. Webhook-style destinations are posted to the address
+     * checked when resolving (pinned, so DNS can't change underneath), over HTTPS only, without redirects or proxies,
+     * reading at most 16 KiB of response; generic webhooks are signed. Each provider's answer is judged by its own
+     * success rule, and failures are sorted into retryable, uncertain and rejected.
+     *
+     * @param  array{type: AlertDestinationType, endpoint: ?string, secret: ?string, email: ?string}  $target
      * @param  array<string, mixed>  $payload
      */
     public function send(string $id, array $target, array $payload): AlertDeliveryResult
@@ -134,6 +145,10 @@ final class AlertNotificationTransport
         }
     }
 
+    /**
+     * Whether the monitoring mailer is SMTP with a timeout of at most 15 seconds, so a slow mail server can't hold a
+     * worker.
+     */
     public function mailConfigured(): bool
     {
         $mailer = config('monitoring.alerts.mailer');
@@ -154,7 +169,10 @@ final class AlertNotificationTransport
             && is_numeric($config['timeout'] ?? null) && $config['timeout'] > 0 && $config['timeout'] <= 15;
     }
 
-    /** @param array<string, mixed> $payload
+    /**
+     * The alert as a Slack message: plain text (so titles can't inject formatting) and a button to the incident.
+     *
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function slackPayload(string $id, array $payload): array
@@ -175,6 +193,8 @@ final class AlertNotificationTransport
     }
 
     /**
+     * The alert as a Teams message card, green for recoveries and red otherwise.
+     *
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
@@ -201,6 +221,8 @@ final class AlertNotificationTransport
     }
 
     /**
+     * The alert as a PagerDuty event: triggering, or resolving on recovery, deduplicated per incident.
+     *
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
@@ -221,7 +243,10 @@ final class AlertNotificationTransport
         ];
     }
 
-    /** @param array<string, mixed> $payload
+    /**
+     * The alert as a Discord embed with mentions disabled, so titles can't ping anyone.
+     *
+     * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
     private function discordPayload(string $id, array $payload): array

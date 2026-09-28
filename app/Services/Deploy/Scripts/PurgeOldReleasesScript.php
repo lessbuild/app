@@ -8,20 +8,11 @@ use App\Models\Build;
 
 class PurgeOldReleasesScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Purge Old Releases';
+    public const TITLE = 'Purge Old Releases';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Purge the old releases on the server';
+    public const DESCRIPTION = 'Purge the old releases on the server';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'purged-releases';
+    public const IDENTIFIER = 'purged-releases';
 
     /**
      * The script to run

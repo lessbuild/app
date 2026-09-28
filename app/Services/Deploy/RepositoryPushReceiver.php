@@ -12,6 +12,12 @@ use Illuminate\Http\Request;
 /** The HTTP side of a Git host's push webhook: verify it, then hand the push to HandleRepositoryWebhook. */
 final class RepositoryPushReceiver
 {
+    /**
+     * Receives push webhooks for a repository.
+     *
+     * @param  RepositoryWebhookVerifier  $verifier  Checks the signature and reads the event.
+     * @param  HandleRepositoryWebhook  $handle  Turns the push into a deploy.
+     */
     public function __construct(private readonly RepositoryWebhookVerifier $verifier, private readonly HandleRepositoryWebhook $handle) {}
 
     /**

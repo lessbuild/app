@@ -12,9 +12,19 @@ use Carbon\CarbonImmutable;
 
 final class MetricAnomalyAlertObservation
 {
+    /**
+     * Measures metric anomaly alert rules.
+     *
+     * @param  MetricAnomalyDetector  $detector  Scores the series' points.
+     */
     public function __construct(private readonly MetricAnomalyDetector $detector) {}
 
-    /** @return array{state: string, value: float|null, samples: int, reason: string|null} */
+    /**
+     * Scores the latest sample in the window against the series' recent history, breaching when it's anomalous at the
+     * rule's threshold. Unknown while there are too few valid samples or the baseline is still warming up.
+     *
+     * @return array{state: string, value: float|null, samples: int, reason: string|null}
+     */
     public function measure(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array
     {
         $series = MetricSeries::query()->where('environment_id', $rule->environment_id)->find($rule->metric_series_id);

@@ -9,12 +9,17 @@ use App\Services\Deploy\ManagedResourceScript;
 
 class ConfigureResourcesScript extends BuildProvisioningScript
 {
-    public static string $title = 'Configure managed resources';
+    public const TITLE = 'Configure managed resources';
 
-    public static string $description = 'Ensure locally managed databases and cache services are available';
+    public const DESCRIPTION = 'Ensure locally managed databases and cache services are available';
 
-    public static string $identifier = 'configured-resources';
+    public const IDENTIFIER = 'configured-resources';
 
+    /**
+     * Makes sure the environment's managed resources are running.
+     *
+     * @param  ManagedResourceScript  $resources  Renders the commands for each managed resource.
+     */
     public function __construct(private readonly ManagedResourceScript $resources = new ManagedResourceScript) {}
 
     /**

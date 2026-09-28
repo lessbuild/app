@@ -9,20 +9,11 @@ use RuntimeException;
 
 class CloneRepositoryScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Clone Repository';
+    public const TITLE = 'Clone Repository';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Clone the repository on the server';
+    public const DESCRIPTION = 'Clone the repository on the server';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'cloned-repository';
+    public const IDENTIFIER = 'cloned-repository';
 
     /**
      * The script to run

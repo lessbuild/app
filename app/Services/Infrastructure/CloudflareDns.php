@@ -13,6 +13,10 @@ use RuntimeException;
 /** Keeps a domain's A/AAAA record at Cloudflare pointing at its website's server (not proxied), in the longest matching zone. */
 class CloudflareDns
 {
+    /**
+     * Creates or updates the domain's A or AAAA record in the most specific Cloudflare zone the token can see,
+     * unproxied, and remembers the zone and record IDs.
+     */
     public function sync(WebsiteDomain $domain): void
     {
         $domain->loadMissing(['dnsProvider', 'website.server']);
@@ -37,6 +41,9 @@ class CloudflareDns
         $domain->forceFill(['dns_record_id' => "{$zoneId}:{$id}", 'dns_status' => 'active', 'last_checked_at' => CarbonImmutable::now('UTC'), 'last_error' => null])->save();
     }
 
+    /**
+     * Deletes the domain's record at Cloudflare, if we created one.
+     */
     public function delete(WebsiteDomain $domain): void
     {
         $reference = $this->reference($domain->dns_record_id);
@@ -47,6 +54,9 @@ class CloudflareDns
         $this->client($token)->delete("/zones/{$reference[0]}/dns_records/{$reference[1]}")->throw();
     }
 
+    /**
+     * The ID of the longest active zone the hostname falls in.
+     */
     private function zone(string $token, string $hostname): string
     {
         $zones = $this->client($token)->get('/zones', ['per_page' => 50, 'status' => 'active'])->throw()->json('result');
@@ -64,12 +74,19 @@ class CloudflareDns
         return $best['id'];
     }
 
-    /** @return array{string, string}|null */
+    /**
+     * The zone and record IDs from a stored `zone:record` reference.
+     *
+     * @return array{string, string}|null
+     */
     private function reference(?string $reference): ?array
     {
         return is_string($reference) && preg_match('/\A([a-zA-Z0-9_-]+):([a-zA-Z0-9_-]+)\z/', $reference, $match) === 1 ? [$match[1], $match[2]] : null;
     }
 
+    /**
+     * An HTTP client for the Cloudflare API with the token, short timeouts and two quick retries.
+     */
     private function client(string $token): PendingRequest
     {
         return Http::baseUrl(rtrim((string) config('infrastructure.cloudflare_api_url'), '/'))->acceptJson()->asJson()->withToken($token)

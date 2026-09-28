@@ -8,20 +8,11 @@ use App\Models\Build;
 
 class SymlinkScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Symlink files';
+    public const TITLE = 'Symlink files';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Prepare environment and persistent storage before activation';
+    public const DESCRIPTION = 'Prepare environment and persistent storage before activation';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'symlinked';
+    public const IDENTIFIER = 'symlinked';
 
     /**
      * The script to run

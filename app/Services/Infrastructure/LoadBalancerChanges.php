@@ -13,7 +13,12 @@ use Illuminate\Support\Facades\DB;
 /** Changes a load balancer (under a row lock) and queues writing the new configuration to its server. */
 class LoadBalancerChanges
 {
-    /** @param (Closure(LoadBalancer): mixed)|null $change */
+    /**
+     * Runs a change on the locked load balancer, marks it pending and queues writing its configuration after commit.
+     * Load balancers being removed can't change.
+     *
+     * @param  (Closure(LoadBalancer): mixed)|null  $change
+     */
     public function apply(LoadBalancer $balancer, ?Closure $change = null): LoadBalancer
     {
         return DB::transaction(function () use ($balancer, $change): LoadBalancer {

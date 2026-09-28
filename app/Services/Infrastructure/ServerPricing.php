@@ -13,6 +13,11 @@ use Throwable;
 /** Looks up what each cloud server costs a month from its provider's size catalog (USD for DigitalOcean and Vultr, EUR gross for Hetzner). */
 class ServerPricing
 {
+    /**
+     * Prices servers.
+     *
+     * @param  ServerProviderResolver  $providers  Talks to each server's provider.
+     */
     public function __construct(private readonly ServerProviderResolver $providers) {}
 
     /**
@@ -49,7 +54,12 @@ class ServerPricing
         return $priced;
     }
 
-    /** @param list<array<string, mixed>> $sizes */
+    /**
+     * The monthly price of a size from the provider's size catalog: Hetzner's gross price for the server's location (or
+     * the first listed), Vultr's and DigitalOcean's monthly cost. Null when the size isn't listed.
+     *
+     * @param  list<array<string, mixed>>  $sizes
+     */
     public function price(ProviderType $type, array $sizes, string $size, ?string $region): ?float
     {
         foreach ($sizes as $entry) {

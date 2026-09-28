@@ -28,8 +28,18 @@ use Illuminate\Validation\ValidationException;
  */
 final class ConfigurationReconciler
 {
+    /**
+     * Applies reviewed documents.
+     *
+     * @param  ConfigurationDocument  $documents  Parses the reviewed document again.
+     * @param  ConfigurationBindings  $bindings  Resolves its names again, so a record removed since the review fails the application.
+     * @param  BuildPayload  $payload  Computes each deploy's payload, to recognise a deploy that would change nothing.
+     */
     public function __construct(private readonly ConfigurationDocument $documents, private readonly ConfigurationBindings $bindings, private readonly BuildPayload $payload) {}
 
+    /**
+     * Applies every environment in the document, then deletes the environments it removes along with their ownership.
+     */
     public function apply(ConfigurationReview $review, ConfigurationApplication $application, User $user): void
     {
         $document = $this->documents->parse($review->document);
@@ -48,6 +58,9 @@ final class ConfigurationReconciler
     }
 
     /**
+     * Creates or updates one environment and its processes, resources and variables, claims each as owned, removes what
+     * the document removes, and adds a deploy operation unless the latest one had the same intent.
+     *
      * @param  array<string, mixed>  $desired
      * @param  array{placements: array<string, array{website_id: int}>, secrets: array<string, array{variable_id: int, version: int}>, repositories: array<string, array{repository_id: int, fingerprint: string}>}  $resolved
      */
@@ -113,6 +126,9 @@ final class ConfigurationReconciler
     }
 
     /**
+     * A resource's configuration: connection details for managed databases and caches (a per-environment port for
+     * Valkey), or the bound secret values for external ones.
+     *
      * @param  array<string, mixed>  $settings
      * @param  array<string, array{variable_id: int, version: int}>  $secrets
      * @return array{variables: array<string, string>, container_name: string|null}
@@ -137,7 +153,12 @@ final class ConfigurationReconciler
         return ['variables' => $variables, 'container_name' => null];
     }
 
-    /** @param array{variable_id: int, version: int} $binding */
+    /**
+     * Copies a bound secret into the environment as a secret variable with the review's scope, adding a version when its
+     * value or scope changes.
+     *
+     * @param  array{variable_id: int, version: int}  $binding
+     */
     private function variable(Environment $environment, string $key, array $binding, string $scope, User $user, Project $project): EnvironmentVariable
     {
         $source = $this->source($binding, $scope === 'all' ? ['all'] : [$scope, 'all'], $project);
@@ -154,6 +175,9 @@ final class ConfigurationReconciler
     }
 
     /**
+     * The secret a binding refers to, at the reviewed version and in a compatible scope; a validation error when it
+     * changed or disappeared since the review.
+     *
      * @param  array{variable_id: int, version: int}  $binding
      * @param  list<string>  $scopes
      */
@@ -165,6 +189,9 @@ final class ConfigurationReconciler
         return $source ?? throw ValidationException::withMessages(['bindings' => 'The reviewed secret binding is no longer available.']);
     }
 
+    /**
+     * Records that configuration owns an object, under its logical name.
+     */
     private function claim(ConfigurationReview $review, string $slug, string $kind, string $name, string $key): void
     {
         $ownership = ConfigurationOwnership::query()->where('project_id', $review->project_id)->where('environment_slug', $slug)->where('kind', $kind)->where('logical_name', $name)->first() ?? new ConfigurationOwnership;

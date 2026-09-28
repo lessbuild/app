@@ -9,6 +9,9 @@ use App\Models\Repository;
 /** Keyed fingerprints that tell whether a repository or a deploy intent changed since a review, without exposing either. */
 final class ConfigurationIdentity
 {
+    /**
+     * A keyed fingerprint of the repository settings a deploy depends on, including its website's directory and server.
+     */
     public static function repository(Repository $repository): string
     {
         return hash_hmac('sha256', json_encode([
@@ -17,7 +20,11 @@ final class ConfigurationIdentity
         ], JSON_THROW_ON_ERROR), (string) config('app.key'));
     }
 
-    /** @param array<string, mixed> $payload the build payload the environment produces now */
+    /**
+     * A keyed fingerprint of a deploy's intent: the repository's fingerprint and the payload it would deploy.
+     *
+     * @param  array<string, mixed>  $payload  the build payload the environment produces now
+     */
     public static function intent(string $repositoryFingerprint, array $payload): string
     {
         return hash_hmac('sha256', json_encode([$repositoryFingerprint, $payload], JSON_THROW_ON_ERROR), (string) config('app.key'));

@@ -23,9 +23,19 @@ final class UsageAlerts
 {
     public const THRESHOLDS = [80, 100];
 
+    /**
+     * Sends usage alerts.
+     *
+     * @param  TelemetryUsage  $usage  Counts the month's events and reads the allowance.
+     * @param  EmailDeliveryLedger  $ledger  Makes sure each alert is sent once and records how it went.
+     */
     public function __construct(private readonly TelemetryUsage $usage, private readonly EmailDeliveryLedger $ledger) {}
 
-    /** @return Usage */
+    /**
+     * The account's usage this month: events counted, the allowance, the percentage used and the thresholds crossed.
+     *
+     * @return Usage
+     */
     public function summary(Account $account, ?CarbonImmutable $at = null): array
     {
         $at = ($at ?? CarbonImmutable::now('UTC'))->utc();
@@ -43,7 +53,12 @@ final class UsageAlerts
         ];
     }
 
-    /** @return array{sent: int, skipped: int, failed: int} */
+    /**
+     * Emails each verified owner of accounts that sent telemetry this month about the highest threshold crossed, once
+     * per threshold per month, and returns how many were sent, skipped or failed.
+     *
+     * @return array{sent: int, skipped: int, failed: int}
+     */
     public function send(?CarbonImmutable $at = null, ?string $accountId = null): array
     {
         $at = ($at ?? CarbonImmutable::now('UTC'))->utc();
@@ -68,7 +83,11 @@ final class UsageAlerts
         return $totals;
     }
 
-    /** @return list<User> */
+    /**
+     * The account's owners with a verified email.
+     *
+     * @return list<User>
+     */
     private function owners(Account $account): array
     {
         $owners = [];

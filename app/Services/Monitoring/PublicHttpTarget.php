@@ -8,9 +8,20 @@ use App\Contracts\Monitoring\DnsResolver;
 
 final class PublicHttpTarget
 {
+    /**
+     * Checks monitor targets are safe to reach.
+     *
+     * @param  DnsResolver  $dns  Resolves the target's host.
+     * @param  PublicWebhookTarget  $addresses  Decides which addresses are public.
+     */
     public function __construct(private readonly DnsResolver $dns, private readonly PublicWebhookTarget $addresses) {}
 
-    /** @return array{host: string, port: int, scheme: string, literal: bool}|null */
+    /**
+     * The scheme, host, port and whether the host is a literal IP, for an HTTP(S) URL without credentials, fragments or
+     * control characters whose host is a public IP or a valid DNS name. Null otherwise.
+     *
+     * @return array{host: string, port: int, scheme: string, literal: bool}|null
+     */
     public function parse(string $url): ?array
     {
         if (strlen($url) > 2048 || preg_match('/[\x00-\x20\x7F-\xFF\\\\]/', $url)
@@ -37,7 +48,12 @@ final class PublicHttpTarget
         return ['host' => $literal ? $address : $host, 'port' => $port, 'scheme' => $scheme, 'literal' => $literal];
     }
 
-    /** @return array{host: string, port: int, scheme: string, literal: bool, address: string, error: null}|array{error: string} */
+    /**
+     * The target with the address to connect to, or why it can't be reached: invalid, not resolvable, or resolving to
+     * any non-public address.
+     *
+     * @return array{host: string, port: int, scheme: string, literal: bool, address: string, error: null}|array{error: string}
+     */
     public function resolve(string $url): array
     {
         $target = $this->parse($url);

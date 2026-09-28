@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class InstallNodeScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Node';
+    public const TITLE = 'Install Node';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install Node and configure Node';
+    public const DESCRIPTION = 'Install Node and configure Node';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-node';
+    public const IDENTIFIER = 'installed-node';
 
     /**
      * Shell script to run

@@ -24,13 +24,22 @@ use App\Services\Infrastructure\Scripts\Web\InstallCaddyScript;
 /** The provisioning stages for each server type. Stage N is the Nth step; the base script (stage 0) sets up logging and callbacks. */
 final class ServerProvisioningPlan
 {
-    /** @return list<class-string<ServerScript>> */
+    /**
+     * Every provisioning script for the server's type, starting with the base script.
+     *
+     * @return list<class-string<ServerScript>>
+     */
     public function scripts(Server|ServerType $server): array
     {
         return [BaseScript::class, ...$this->steps($server)];
     }
 
-    /** @return list<class-string<ServerScript>> */
+    /**
+     * The stages after the base script: updates, swap and server configuration, the type's software, recipes, and the
+     * finish.
+     *
+     * @return list<class-string<ServerScript>>
+     */
     public function steps(Server|ServerType $server): array
     {
         $type = $server instanceof Server ? $server->type : $server;
@@ -46,6 +55,9 @@ final class ServerProvisioningPlan
         return [UpdateDependenciesScript::class, ConfigureSwapScript::class, ConfigureServerScript::class, ...$specific, RecipesScript::class, EndScript::class];
     }
 
+    /**
+     * The number of stages, which is the last progress value the script reports.
+     */
     public function finalStage(Server|ServerType $server): int
     {
         return count($this->steps($server));

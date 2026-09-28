@@ -22,12 +22,20 @@ final class ProviderIntents
 
     private const TTL_SECONDS = 600;
 
+    /**
+     * Remembers that this browser started connecting or confirming with a provider, for whom and when.
+     */
     public function start(Request $request, User $user, SocialProvider $provider, string $type): void
     {
         $request->session()->put(self::KEY, ['type' => $type, 'provider' => $provider->value, 'user_id' => $user->id, 'at' => now()->getTimestamp()]);
     }
 
-    /** @return array{type: string, valid: bool}|null null when no flow was started; valid is false when it expired or doesn't match */
+    /**
+     * Takes the remembered intent out of the session (so it can only be used once) and says whether it matches this
+     * person and provider and is still fresh. Null when nothing was started.
+     *
+     * @return array{type: string, valid: bool}|null null when no flow was started; valid is false when it expired or doesn't match
+     */
     public function pull(Request $request, User $user, SocialProvider $provider): ?array
     {
         $intent = $request->session()->pull(self::KEY);

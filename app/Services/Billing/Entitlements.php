@@ -18,11 +18,21 @@ use App\Queries\Projects\ServicesInUseQuery;
  */
 final class Entitlements
 {
+    /**
+     * Works out what accounts may do from their billing selections.
+     *
+     * @param  ServiceRegistry  $services  The services and their catalogues.
+     * @param  ServicesInUseQuery  $inUse  The services an account uses, which count at their free tier until one is chosen.
+     */
     public function __construct(
         private readonly ServiceRegistry $services,
         private readonly ServicesInUseQuery $inUse,
     ) {}
 
+    /**
+     * The account's entitlements: each chosen tier (or the free tier of a service in use), the most generous limit where
+     * tiers overlap, every feature they turn on, and add-on units added to limits.
+     */
     public function for(Account $account): AccountEntitlements
     {
         $selections = BillingSelection::query()->where('account_id', $account->id)->get();
@@ -62,6 +72,9 @@ final class Entitlements
         return new AccountEntitlements($tiers, $limits, array_values(array_unique($flags)));
     }
 
+    /**
+     * The larger of two limits, where null means unlimited.
+     */
     private function moreGenerous(?int $a, ?int $b): ?int
     {
         return $a === null || $b === null ? null : max($a, $b);

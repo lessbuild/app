@@ -17,7 +17,12 @@ use Symfony\Component\Yaml\Yaml;
  */
 final class ConfigurationDocument
 {
-    /** @return array{version: int, environments: array<string, array<string, mixed>>, remove?: array{environments?: list<string>}} */
+    /**
+     * Parses a version 2 document of at most 50 KB, refusing YAML aliases and deep nesting before anything expands, and
+     * validates its shape and every name, runtime, process and resource rule.
+     *
+     * @return array{version: int, environments: array<string, array<string, mixed>>, remove?: array{environments?: list<string>}}
+     */
     public function parse(string $yaml): array
     {
         if (strlen($yaml) > 50000) {
@@ -95,7 +100,13 @@ final class ConfigurationDocument
         return $document;
     }
 
-    /** @param array<string, mixed> $environment */
+    /**
+     * Validates one environment: names, adoption flags, removals that don't also appear as desired objects, runtime
+     * requirements per type, single-replica schedulers, and managed resources (no variable references, no managed object
+     * storage, at most one managed Valkey).
+     *
+     * @param  array<string, mixed>  $environment
+     */
     private function check(mixed $slug, array $environment): void
     {
         $this->name($slug);
@@ -142,6 +153,9 @@ final class ConfigurationDocument
         }
     }
 
+    /**
+     * Validates a name: lowercase slugs for objects, upper-case keys for variables.
+     */
     private function name(mixed $name, bool $variable = false, int $maximum = 100): void
     {
         if (! is_string($name) || strlen($name) > $maximum || preg_match($variable ? '/\A[A-Z_][A-Z0-9_]*\z/' : '/\A[a-z][a-z0-9_-]*\z/', $name) !== 1) {
@@ -149,7 +163,11 @@ final class ConfigurationDocument
         }
     }
 
-    /** @param array<mixed> $settings */
+    /**
+     * Validates an `adopt` flag is a boolean.
+     *
+     * @param  array<mixed>  $settings
+     */
     private function adoption(array $settings): void
     {
         if (array_key_exists('adopt', $settings) && ! is_bool($settings['adopt'])) {
@@ -173,6 +191,9 @@ final class ConfigurationDocument
         }
     }
 
+    /**
+     * Refuses the document with a fixed message that never echoes its content.
+     */
     private function invalid(): never
     {
         throw ValidationException::withMessages(['document' => 'Invalid version 2 application configuration.']);

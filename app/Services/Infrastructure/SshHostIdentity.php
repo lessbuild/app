@@ -9,7 +9,12 @@ use Symfony\Component\Process\Process;
 
 class SshHostIdentity
 {
-    /** @return array{known_host: string, fingerprint: string, algorithm: string} */
+    /**
+     * Reads the server's SSH host key, preferring Ed25519, then ECDSA, then RSA, and fingerprints it, so later
+     * connections can check they reach the same server.
+     *
+     * @return array{known_host: string, fingerprint: string, algorithm: string}
+     */
     public function scan(string $host, int $port): array
     {
         if (! filter_var($host, FILTER_VALIDATE_IP) || $port < 1 || $port > 65535) {

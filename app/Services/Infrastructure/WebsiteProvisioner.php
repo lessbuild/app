@@ -20,14 +20,25 @@ class WebsiteProvisioner
     /** @var list<class-string<WebsiteScript>> */
     public const STAGES = [AddWebsiteToCaddyScript::class, CreateMysqlDatabaseScript::class, WriteEnvFileScript::class];
 
+    /**
+     * Provisions websites.
+     *
+     * @param  RemoteScriptRunner  $runner  Uploads and starts the script on the server.
+     */
     public function __construct(private readonly RemoteScriptRunner $runner) {}
 
+    /**
+     * Starts provisioning the website on its server in the background.
+     */
     public function start(Website $website): void
     {
         $server = $website->server ?? throw new RuntimeException('The website has no server.');
         $this->runner->start($server, $this->script($website), $website->deployment_slug);
     }
 
+    /**
+     * The provisioning script: logging and failure reporting, then each stage.
+     */
     public function script(Website $website): string
     {
         $failure = escapeshellarg(ProvisioningCallbackUrl::websiteFailure($website));
@@ -64,6 +75,9 @@ class WebsiteProvisioner
         return $script."uploadWebsiteProvisioningLog\nrm -f -- \"\$LOG_FILE\" \"\$LOG_UPLOAD_FILE\"\n";
     }
 
+    /**
+     * The number of stages, which is the last progress value the script reports.
+     */
     public static function finalStage(): int
     {
         return count(self::STAGES);

@@ -12,6 +12,14 @@ use Illuminate\Support\Facades\DB;
 
 final class MonitorScheduler
 {
+    /**
+     * Schedules monitor checks.
+     *
+     * @param  MonitorQueue  $queue  Locks monitors and queues their checks.
+     * @param  MonitorCheckRunner  $runner  Settles checks whose workers died.
+     * @param  HeartbeatEvaluator  $heartbeats  Evaluates heartbeat monitors on schedule.
+     * @param  QueueMonitorEvaluator  $queues  Evaluates queue monitors on schedule.
+     */
     public function __construct(
         private readonly MonitorQueue $queue,
         private readonly MonitorCheckRunner $runner,
@@ -19,6 +27,11 @@ final class MonitorScheduler
         private readonly QueueMonitorEvaluator $queues,
     ) {}
 
+    /**
+     * Schedules due checks for up to `$limit` enabled monitors in projects with Monitoring on (after settling expired
+     * checks). Heartbeat and queue monitors are evaluated in place; others get a check queued with a lease, and
+     * intervals skipped while the scheduler was behind are counted.
+     */
     public function schedule(int $limit = 100): int
     {
         $limit = max(1, min(1000, $limit));
@@ -61,6 +74,9 @@ final class MonitorScheduler
         }, attempts: 3))->count();
     }
 
+    /**
+     * Settles checks whose lease ran out, so a dead worker's check doesn't block its monitor. Returns how many.
+     */
     public function recover(int $limit = 100): int
     {
         $ids = MonitorCheck::query()->whereIn('status', ['queued', 'running'])

@@ -14,6 +14,11 @@ final class HeartbeatEvaluator
 {
     public const MAX_ACTIVE_RUNS = 100;
 
+    /**
+     * Judges heartbeat monitors.
+     *
+     * @param  MonitorResults  $results  Records each judgement.
+     */
     public function __construct(private readonly MonitorResults $results) {}
 
     /** Caller holds the source and monitor locks in a transaction. */
@@ -38,6 +43,9 @@ final class HeartbeatEvaluator
         $this->scheduleDeadline($monitor);
     }
 
+    /**
+     * Sets when the monitor next needs looking at: the earliest running run's deadline or the next due time plus grace.
+     */
     public function scheduleDeadline(Monitor $monitor): void
     {
         $first = $monitor->heartbeatRuns()->where('config_revision', $monitor->config_revision)
@@ -49,6 +57,10 @@ final class HeartbeatEvaluator
         $monitor->forceFill(['next_check_at' => $monitor->enabled ? $next : null])->save();
     }
 
+    /**
+     * Records a heartbeat result as a completed check and, when it concerns the current configuration, as the monitor's
+     * health.
+     */
     public function observe(Monitor $monitor, string $outcome, string $reason, CarbonImmutable $now, ?HeartbeatRun $run = null, bool $current = true): void
     {
         $deadline = $run !== null ? $run->deadline_at : $monitor->heartbeat_due_at?->addMinutes((int) $monitor->heartbeat_grace_minutes);

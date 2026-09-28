@@ -10,20 +10,11 @@ use RuntimeException;
 
 class InstallMysqlScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Mysql';
+    public const TITLE = 'Install Mysql';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install Mysql and configure Mysql';
+    public const DESCRIPTION = 'Install Mysql and configure Mysql';
 
-    /**
-     * Event Identifier of the script
-     */
-    public static string $identifier = 'installed-mysql';
+    public const IDENTIFIER = 'installed-mysql';
 
     /**
      * Shell script to install Mysql

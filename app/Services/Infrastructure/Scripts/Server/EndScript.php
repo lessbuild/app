@@ -9,11 +9,11 @@ use App\Models\Server;
 
 class EndScript implements ServerScript
 {
-    public static string $title = 'Finish provisioning';
+    public const TITLE = 'Finish provisioning';
 
-    public static string $description = 'Finish setup and enable automatic system updates';
+    public const DESCRIPTION = 'Finish setup and enable automatic system updates';
 
-    public static string $identifier = 'finished-provisioning';
+    public const IDENTIFIER = 'finished-provisioning';
 
     /**
      * Base Script

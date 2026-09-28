@@ -10,7 +10,10 @@ final class TelemetryRedactor
 {
     public const REPLACEMENT = '[REDACTED]';
 
-    /** @param array<string, mixed> $event
+    /**
+     * Replaces secrets anywhere in an event before it's stored or shown.
+     *
+     * @param  array<string, mixed>  $event
      * @return array<string, mixed>
      */
     public function redact(array $event): array
@@ -18,6 +21,10 @@ final class TelemetryRedactor
         return $this->value($event, '', 0);
     }
 
+    /**
+     * Redacts a value recursively: sensitive keys and OTLP attributes with sensitive names lose their values, strings
+     * are scrubbed, and anything nested too deeply is replaced.
+     */
     private function value(mixed $value, string $path, int $depth): mixed
     {
         if ($depth > (int) config('monitoring.telemetry.max_json_depth')) {
@@ -50,6 +57,9 @@ final class TelemetryRedactor
         return $value;
     }
 
+    /**
+     * Whether a key (compared without punctuation and case) or its path matches a configured sensitive name or path.
+     */
     private function sensitive(string $key, string $path): bool
     {
         $normalized = (string) preg_replace('/[^a-z0-9]/', '', mb_strtolower($key));
@@ -69,6 +79,10 @@ final class TelemetryRedactor
         return false;
     }
 
+    /**
+     * Scrubs secrets from free text: bearer and basic credentials, ingest tokens, passwords in URLs, sensitive query
+     * parameters, and `password=`/`token:`-style assignments.
+     */
     private function text(string $value, string $path): string
     {
         $value = preg_replace('/\b(Bearer|Basic)\s+[a-z0-9._~+\/=-]+/i', '$1 '.self::REPLACEMENT, $value) ?? self::REPLACEMENT;

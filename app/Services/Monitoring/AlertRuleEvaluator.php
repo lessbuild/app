@@ -15,6 +15,14 @@ use Illuminate\Support\Facades\DB;
 /** Evaluates due alert rules once a minute and opens or recovers their incidents. */
 final class AlertRuleEvaluator
 {
+    /**
+     * Evaluates alert rules.
+     *
+     * @param  AlertObservation  $observations  Measures each rule.
+     * @param  IncidentLifecycle  $incidents  Closes incidents on recovery.
+     * @param  AlertDispatcher  $deliveries  Queues alerts for opened and recovered incidents.
+     * @param  MaintenanceWindowState  $maintenance  Holds back incidents during maintenance windows.
+     */
     public function __construct(
         private readonly AlertObservation $observations,
         private readonly IncidentLifecycle $incidents,
@@ -22,6 +30,9 @@ final class AlertRuleEvaluator
         private readonly MaintenanceWindowState $maintenance,
     ) {}
 
+    /**
+     * Evaluates up to `$limit` due rules in projects with Monitoring on, and returns how many were evaluated.
+     */
     public function evaluate(int $limit = 100): int
     {
         $now = CarbonImmutable::now('UTC');
@@ -33,6 +44,11 @@ final class AlertRuleEvaluator
         return $candidates->filter(fn (AlertRule $candidate): bool => $this->evaluateOne($candidate, $now))->count();
     }
 
+    /**
+     * Evaluates one rule for the minute that just ended, under lock: during maintenance it only records that; otherwise
+     * it counts consecutive breaches and recoveries, opens an incident (and alerts) after enough breaches and closes it
+     * after enough recoveries.
+     */
     private function evaluateOne(AlertRule $candidate, CarbonImmutable $now): bool
     {
         return DB::transaction(function () use ($candidate, $now): bool {

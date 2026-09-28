@@ -11,6 +11,13 @@ use Carbon\CarbonImmutable;
 
 final class MonitorResults
 {
+    /**
+     * Turns monitor observations into health, incidents and alerts.
+     *
+     * @param  IncidentLifecycle  $incidents  Closes incidents on recovery.
+     * @param  AlertDispatcher  $deliveries  Queues alerts for opened and recovered incidents.
+     * @param  MaintenanceWindowState  $maintenance  Holds back incidents during maintenance windows.
+     */
     public function __construct(
         private readonly IncidentLifecycle $incidents,
         private readonly AlertDispatcher $deliveries,

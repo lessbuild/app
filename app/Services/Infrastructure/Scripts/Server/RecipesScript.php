@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class RecipesScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Run Recipes';
+    public const TITLE = 'Run Recipes';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Run user defined recipes';
+    public const DESCRIPTION = 'Run user defined recipes';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'ran-recipes';
+    public const IDENTIFIER = 'ran-recipes';
 
     /**
      * Script to run

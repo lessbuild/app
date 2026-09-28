@@ -21,6 +21,10 @@ final class MonitorQueue
 
     public const LEASE_SECONDS = 120;
 
+    /**
+     * Queues a check's job inside the scheduling transaction on the primary database queue, and remembers the job's UUID
+     * so it can be discarded if the check is cancelled.
+     */
     public function dispatch(MonitorCheck $check): void
     {
         $config = config('queue.connections.'.self::NAME, []);
@@ -69,6 +73,9 @@ final class MonitorQueue
             && $monitor->environment->project->hasService('monitoring');
     }
 
+    /**
+     * Deletes the check's job if no worker has picked it up yet.
+     */
     public function discardPendingJob(MonitorCheck $check): void
     {
         if ($check->queue_job_uuid !== null) {

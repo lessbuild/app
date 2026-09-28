@@ -17,8 +17,18 @@ use App\Models\Website;
  */
 class WebsiteHealthChecks
 {
+    /**
+     * Keeps websites' health monitors in step.
+     *
+     * @param  SaveMonitor  $save  Creates or updates the monitor.
+     * @param  ArchiveMonitor  $archive  Archives it when it's no longer wanted.
+     */
     public function __construct(private readonly SaveMonitor $save, private readonly ArchiveMonitor $archive) {}
 
+    /**
+     * Creates or updates the website's health monitor from its settings when the check is on and its project has
+     * Monitoring, or archives it otherwise. A monitor in another environment is replaced.
+     */
     public function sync(Website $website, User $actor): void
     {
         $website->loadMissing(['environment.project', 'healthMonitor']);

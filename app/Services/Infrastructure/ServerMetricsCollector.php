@@ -30,8 +30,18 @@ final class ServerMetricsCollector
     printf 'process_count=%s\n' "$(ps -e --no-headers | wc -l)"
     BASH;
 
+    /**
+     * Collects server metrics.
+     *
+     * @param  ServerShell  $shell  Runs the collection script.
+     * @param  ServerAlerts  $alerts  Checks each reading against alert rules.
+     */
     public function __construct(private readonly ServerShell $shell, private readonly ServerAlerts $alerts) {}
 
+    /**
+     * Records a reading (percentages clamped, required values checked), deletes readings older than 30 days, and
+     * evaluates alert rules.
+     */
     public function collect(Server $server): ServerMetric
     {
         $result = $this->shell->run($server, self::SCRIPT);

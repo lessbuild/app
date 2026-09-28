@@ -9,6 +9,9 @@ use App\Models\Website;
 /** The Caddy site block for a website: its primary domain and aliases serve it, and redirects get their own blocks. */
 final class WebsiteCaddyConfiguration
 {
+    /**
+     * The site for a PHP website served by PHP-FPM from the document root.
+     */
     public function php(Website $website, string $documentRoot): string
     {
         return $this->render($website, implode("\n", [
@@ -20,6 +23,9 @@ final class WebsiteCaddyConfiguration
         ]));
     }
 
+    /**
+     * The site for a website served by an app listening on a local port.
+     */
     public function reverseProxy(Website $website, int $port): string
     {
         return $this->render($website, implode("\n", ['    encode zstd gzip', "    reverse_proxy 127.0.0.1:{$port}", $this->accessLog($website)]));
@@ -35,6 +41,10 @@ final class WebsiteCaddyConfiguration
         return 'http://'.(str_contains($hostname, ':') ? "[{$hostname}]" : $hostname);
     }
 
+    /**
+     * The site block for the website's primary hostname and aliases, plus a permanent-redirect block for each redirect
+     * domain.
+     */
     private function render(Website $website, string $body): string
     {
         $website->loadMissing('domains');
@@ -49,6 +59,9 @@ final class WebsiteCaddyConfiguration
         return implode("\n\n", $blocks)."\n";
     }
 
+    /**
+     * The site's JSON access log, rotated at 20 MiB and kept for a week.
+     */
     private function accessLog(Website $website): string
     {
         return "    log {\n        output file /var/log/caddy/{$website->deployment_slug}.access.log {\n            roll_size 20MiB\n            roll_keep 5\n            roll_keep_for 168h\n        }\n        format json\n    }";

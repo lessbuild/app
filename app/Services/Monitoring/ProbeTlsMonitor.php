@@ -12,8 +12,18 @@ use Throwable;
 
 final class ProbeTlsMonitor
 {
+    /**
+     * Runs TLS monitors.
+     *
+     * @param  PublicHttpTarget  $targets  Checks the host is public and resolves it.
+     * @param  TlsCertificateInspector  $inspector  Reads and verifies the certificate.
+     */
     public function __construct(private readonly PublicHttpTarget $targets, private readonly TlsCertificateInspector $inspector) {}
 
+    /**
+     * Connects to the host, verifies its certificate and reports whether it's valid, not yet valid, expired or expiring
+     * within the warning period, with its dates and fingerprint.
+     */
     public function probe(Monitor $monitor): MonitorObservation
     {
         $started = hrtime(true);

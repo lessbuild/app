@@ -19,8 +19,16 @@ final class ServerLogs
         'provisioning' => 'tail -n 200 -- /var/log/cloud-init-output.log',
     ];
 
+    /**
+     * Reads server logs.
+     *
+     * @param  ServerShell  $shell  Runs the command for each log.
+     */
     public function __construct(private readonly ServerShell $shell) {}
 
+    /**
+     * The tail of one of the server's logs, cut to the configured length.
+     */
     public function read(Server $server, string $type): string
     {
         $command = self::TYPES[$type] ?? throw new InvalidArgumentException('Unsupported server log type.');

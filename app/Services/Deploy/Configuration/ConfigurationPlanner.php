@@ -27,9 +27,20 @@ use Illuminate\Validation\ValidationException;
  */
 final class ConfigurationPlanner
 {
+    /**
+     * Plans configuration documents.
+     *
+     * @param  ConfigurationDocument  $documents  Parses and validates the document.
+     * @param  ConfigurationBindings  $bindings  Resolves the document's names to records.
+     * @param  Entitlements  $entitlements  Checks the plan includes workers and resources when the document asks for them.
+     */
     public function __construct(private readonly ConfigurationDocument $documents, private readonly ConfigurationBindings $bindings, private readonly Entitlements $entitlements) {}
 
     /**
+     * The changes applying the document would make, with a keyed fingerprint of everything it read. Documents that would
+     * break an invariant (a second or missing production environment, a type change of a resource, removing something
+     * configuration doesn't own, planning while a deploy runs) are refused.
+     *
      * @param  array<string, mixed>  $bindings
      * @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool}
      */
@@ -130,7 +141,13 @@ final class ConfigurationPlanner
         return ['version' => 2, 'project_id' => $project->id, 'changes' => $changes, 'fingerprint' => $fingerprint, 'omitted_objects' => 'preserved', 'apply_available' => ! collect($changes)->contains('action', 'adoption_required')];
     }
 
-    /** @param Collection<int, ConfigurationOwnership> $ownerships */
+    /**
+     * What applying would do to one object: update what configuration owns, create what's missing, adopt what exists
+     * when the document says so, or require adoption. Ownership that no longer matches its target, or a target owned
+     * under another name, is refused.
+     *
+     * @param  Collection<int, ConfigurationOwnership>  $ownerships
+     */
     private function action(Collection $ownerships, string $slug, string $kind, string $name, ?Model $current, bool $adopt): string
     {
         $ownership = $ownerships->first(fn (ConfigurationOwnership $record): bool => $record->environment_slug === $slug && $record->kind === $kind && $record->logical_name === $name);
@@ -183,6 +200,9 @@ final class ConfigurationPlanner
         return $changes;
     }
 
+    /**
+     * Refuses the plan with a message on `plan`.
+     */
     private function invalid(string $message): never
     {
         throw ValidationException::withMessages(['plan' => $message]);

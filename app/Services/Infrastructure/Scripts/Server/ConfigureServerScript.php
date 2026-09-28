@@ -11,20 +11,11 @@ use RuntimeException;
 
 class ConfigureServerScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Configure Server';
+    public const TITLE = 'Configure Server';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Configure the server, users and authorization';
+    public const DESCRIPTION = 'Configure the server, users and authorization';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'configured-server';
+    public const IDENTIFIER = 'configured-server';
 
     /**
      * Shell script to run

@@ -13,14 +13,27 @@ use App\Models\BillingSelection;
 /** Turns an account's paid selections into subscription line items and writes Stripe's item ids back. */
 final class SubscriptionItems
 {
+    /**
+     * Keeps the subscription's items in step with the account's selections.
+     *
+     * @param  PriceBook  $prices  The price for each selection.
+     * @param  PaymentProvider  $provider  Changes or cancels the subscription.
+     */
     public function __construct(private readonly PriceBook $prices, private readonly PaymentProvider $provider) {}
 
+    /**
+     * The `service:kind:item` reference stored on a subscription item.
+     */
     public static function reference(string $service, SelectionKind $kind, string $itemKey): string
     {
         return "{$service}:{$kind->value}:{$itemKey}";
     }
 
-    /** @return array{0: string, 1: SelectionKind, 2: string}|null */
+    /**
+     * Splits a reference back into service, kind and item, or null when it isn't one of ours.
+     *
+     * @return array{0: string, 1: SelectionKind, 2: string}|null
+     */
     public static function parse(string $reference): ?array
     {
         $parts = explode(':', $reference, 3);
@@ -29,7 +42,12 @@ final class SubscriptionItems
         return $kind !== null ? [$parts[0], $kind, $parts[2]] : null;
     }
 
-    /** @return list<LineItem> every selection that is billed (including ones running out at period end) */
+    /**
+     * The line items the account should be paying for: each selection with a price (imported selections keep their
+     * original price).
+     *
+     * @return list<LineItem> every selection that is billed (including ones running out at period end)
+     */
     public function desired(string $accountId): array
     {
         $items = [];
@@ -63,7 +81,11 @@ final class SubscriptionItems
         $this->storeItemIds($billing->account_id, $state->itemIds);
     }
 
-    /** @param array<string, string> $itemIds */
+    /**
+     * Stores the provider's item ID on each selection, so later changes update items in place.
+     *
+     * @param  array<string, string>  $itemIds
+     */
     public function storeItemIds(string $accountId, array $itemIds): void
     {
         foreach ($itemIds as $reference => $itemId) {

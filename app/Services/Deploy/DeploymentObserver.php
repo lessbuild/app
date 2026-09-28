@@ -14,9 +14,20 @@ use Throwable;
  */
 class DeploymentObserver
 {
+    /**
+     * Observes deploys after they go live.
+     *
+     * @param  Factory  $http  Requests the health URL.
+     * @param  Deployments  $deployments  Rolls back when the environment asks for it.
+     */
     public function __construct(private readonly Factory $http, private readonly Deployments $deployments) {}
 
-    /** @return string passed, failed, superseded or observing */
+    /**
+     * Checks the website's health once for an observed build: a newer live build supersedes it, a failed check fails it
+     * (and may roll back), and a healthy check past the deadline passes it.
+     *
+     * @return string passed, failed, superseded or observing
+     */
     public function check(Build $build): string
     {
         $website = $build->website;
@@ -41,6 +52,9 @@ class DeploymentObserver
         return $build->observation_deadline_at !== null && $build->observation_deadline_at->isPast() ? $this->finish($build, 'passed') : 'observing';
     }
 
+    /**
+     * Records the observation's outcome.
+     */
     private function finish(Build $build, string $status, ?string $error = null): string
     {
         $build->forceFill(['observation_status' => $status, 'observation_error' => $error])->save();

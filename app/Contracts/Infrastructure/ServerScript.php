@@ -6,6 +6,10 @@ namespace App\Contracts\Infrastructure;
 
 use App\Models\Server;
 
+/**
+ * One stage of a server's provisioning script. Each script also names its stage with constants: TITLE, DESCRIPTION,
+ * and IDENTIFIER (the stage's stable name, as Deployer called it).
+ */
 interface ServerScript
 {
     /**

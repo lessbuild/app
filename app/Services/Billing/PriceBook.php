@@ -11,8 +11,16 @@ use Illuminate\Contracts\Config\Repository;
 /** Stripe price IDs for catalogue items, from config/billing.php. */
 final class PriceBook
 {
+    /**
+     * Reads prices from config/billing.php.
+     *
+     * @param  Repository  $config  The configuration.
+     */
     public function __construct(private readonly Repository $config) {}
 
+    /**
+     * The Stripe price for a catalogue item, or null when it hasn't been set (which keeps it off sale).
+     */
     public function priceId(string $service, SelectionKind $kind, string $itemKey): ?string
     {
         $id = $this->config->get("billing.prices.{$service}.{$kind->value}.{$itemKey}");
@@ -26,6 +34,9 @@ final class PriceBook
         return $tier->isFree() || ($tier->monthlyCents !== null && $this->priceId($service, SelectionKind::Tier, $tier->key) !== null);
     }
 
+    /**
+     * The currency prices are in.
+     */
     public function currency(): string
     {
         return (string) $this->config->get('billing.currency', 'usd');

@@ -9,21 +9,17 @@ use App\Services\Deploy\ManagedResourceScript;
 
 class InstallDependenciesScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Repository Dependencies';
+    public const TITLE = 'Install Repository Dependencies';
+
+    public const DESCRIPTION = 'Install the repository dependencies on the server';
+
+    public const IDENTIFIER = 'installed-repository-dependencies';
 
     /**
-     * Description of the script
+     * Installs the release's dependencies.
+     *
+     * @param  ManagedResourceScript  $resources  Renders managed-resource setup the dependencies step needs.
      */
-    public static string $description = 'Install the repository dependencies on the server';
-
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-repository-dependencies';
-
     public function __construct(private readonly ManagedResourceScript $resources = new ManagedResourceScript) {}
 
     /**

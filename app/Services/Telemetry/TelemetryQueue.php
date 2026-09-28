@@ -27,6 +27,10 @@ final class TelemetryQueue
 
     public const BACKOFF = [5, 30, 120, 300];
 
+    /**
+     * Queues processing for a receipt inside the transaction that stored it, and remembers the job's UUID (on the
+     * database queue) so a lost job can be noticed and replaced.
+     */
     public function dispatch(IngestReceipt $receipt): void
     {
         if (DB::transactionLevel() === 0) {
@@ -52,6 +56,10 @@ final class TelemetryQueue
         $receipt->refresh();
     }
 
+    /**
+     * The telemetry queue connection, which must be the primary database's jobs table with a long enough reservation (or
+     * sync in tests), so jobs commit with their receipts.
+     */
     public function connection(): string
     {
         $name = config('monitoring.telemetry.queue_connection');
@@ -89,6 +97,10 @@ final class TelemetryQueue
         return IngestReceipt::query()->lockForUpdate()->find($receiptId);
     }
 
+    /**
+     * Queues a receipt again under a new generation: a failed one when someone asks, or (during recovery) a stuck one
+     * whose job is gone. Receipts without a kept payload, or past their attempts, are marked failed instead.
+     */
     public function retry(string $receiptId, bool $recovery = false): bool
     {
         return DB::transaction(function () use ($receiptId, $recovery): bool {
@@ -139,6 +151,9 @@ final class TelemetryQueue
         }, attempts: 3);
     }
 
+    /**
+     * Requeues up to `$limit` receipts that are due but have no job, and returns how many.
+     */
     public function recover(int $limit = 100): int
     {
         $this->connection();
@@ -153,6 +168,9 @@ final class TelemetryQueue
         return $receipts->filter(fn (string $id): bool => $this->retry($id, recovery: true))->count();
     }
 
+    /**
+     * Marks the receipt failed with an error code.
+     */
     public function markFailed(IngestReceipt $receipt, string $code): void
     {
         $receipt->forceFill([

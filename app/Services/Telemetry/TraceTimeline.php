@@ -103,6 +103,8 @@ final class TraceTimeline
     }
 
     /**
+     * Detaches spans whose parent links form a loop, noting it on each, so the waterfall can always be drawn as a tree.
+     *
      * @param  array<int, int|null>  $parents
      * @param  array<int, list<string>>  $notes
      */

@@ -11,8 +11,18 @@ use Throwable;
 
 final class NativeTlsCertificateInspector implements TlsCertificateInspector
 {
+    /**
+     * Inspects TLS certificates with curl.
+     *
+     * @param  PublicHttpTarget  $targets  Checks the hostname.
+     * @param  PublicWebhookTarget  $addresses  Refuses addresses that aren't public.
+     */
     public function __construct(private readonly PublicHttpTarget $targets, private readonly PublicWebhookTarget $addresses) {}
 
+    /**
+     * Opens a TLS connection only (no HTTP request is sent) to the pinned public address, verifying the certificate
+     * chain and hostname, and reads the leaf certificate.
+     */
     public function inspect(string $hostname, string $address, int $port, int $timeoutMilliseconds): TlsCertificateInspection
     {
         $authority = str_contains($hostname, ':') ? '['.$hostname.']' : $hostname;

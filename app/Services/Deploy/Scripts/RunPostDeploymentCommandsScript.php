@@ -8,17 +8,24 @@ use App\Models\Build;
 
 class RunPostDeploymentCommandsScript extends RepositoryHookScript
 {
-    public static string $title = 'Run post-deployment commands';
+    public const TITLE = 'Run post-deployment commands';
 
-    public static string $description = 'Run repository-specific commands after activating the release';
+    public const DESCRIPTION = 'Run repository-specific commands after activating the release';
 
-    public static string $identifier = 'ran-post-deployment-commands';
+    public const IDENTIFIER = 'ran-post-deployment-commands';
 
+    /**
+     * Runs the repository's post-deployment commands, preceded by preview initialisation. Tests can pass their own
+     * initialisation script.
+     */
     public function __construct(?PreviewInitializationScript $previewInitialization = null)
     {
         $this->previewInitialization = $previewInitialization ?? new PreviewInitializationScript;
     }
 
+    /**
+     * Runs a preview's one-time initialisation before the repository's own post-deployment commands.
+     */
     private readonly PreviewInitializationScript $previewInitialization;
 
     /**

@@ -14,27 +14,22 @@ use InvalidArgumentException;
 
 class DigitalOcean implements ServerProvider
 {
-    private string $_API_TOKEN;
+    private const DROPLETS = 'https://api.digitalocean.com/v2/droplets';
 
-    protected static string $_DROPLETS = 'https://api.digitalocean.com/v2/droplets';
+    private const REGIONS = 'https://api.digitalocean.com/v2/regions';
 
-    protected static string $_REGIONS = 'https://api.digitalocean.com/v2/regions';
+    private const SIZES = 'https://api.digitalocean.com/v2/sizes';
 
-    protected static string $_SIZES = 'https://api.digitalocean.com/v2/sizes';
+    private const IMAGES = 'https://api.digitalocean.com/v2/images';
 
-    protected static string $_IMAGES = 'https://api.digitalocean.com/v2/images';
-
-    protected static string $_KEYS = 'https://api.digitalocean.com/v2/account/keys';
+    private const KEYS = 'https://api.digitalocean.com/v2/account/keys';
 
     /**
-     * DigitalOcean constructor.
+     * A client for one DigitalOcean account.
      *
-     * @param  string  $api_token  DO API token
+     * @param  string  $apiToken  The account's personal access token, sent as a bearer token on every request.
      */
-    public function __construct(string $api_token)
-    {
-        $this->_API_TOKEN = $api_token;
-    }
+    public function __construct(private readonly string $apiToken) {}
 
     /**
      * Identify this cloud provider for displays and diagnostics.
@@ -111,7 +106,7 @@ class DigitalOcean implements ServerProvider
      */
     public function deleteSshKey(string $fingerprint): bool
     {
-        $response = $this->delete(self::$_KEYS.'/'.$fingerprint);
+        $response = $this->delete(self::KEYS.'/'.$fingerprint);
 
         return in_array($response->status(), [204, 404]);
     }
@@ -152,13 +147,15 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
+     * DigitalOcean's regions.
+     *
      * @return array<mixed> Available regions returned by the provider.
      *
      * @throws Exception
      */
     public function getRegions(): array
     {
-        $response = $this->get(self::$_REGIONS, []);
+        $response = $this->get(self::REGIONS, []);
 
         if ($response->status() !== 200) {
             throw new Exception('Invalid response code.');
@@ -168,13 +165,15 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
+     * DigitalOcean's droplet sizes (up to 200).
+     *
      * @return array<mixed> Available instance sizes returned by the provider.
      *
      * @throws Exception
      */
     public function getSizes(): array
     {
-        $response = $this->get(self::$_SIZES.'?per_page=200');
+        $response = $this->get(self::SIZES.'?per_page=200');
 
         if ($response->status() !== 200) {
             throw new Exception('Invalid response code.');
@@ -184,6 +183,8 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
+     * DigitalOcean's images of a type, distributions by default.
+     *
      * @param  string  $type  Provider image category, defaulting to distribution images.
      * @return array<mixed> Images in the requested category.
      *
@@ -191,7 +192,7 @@ class DigitalOcean implements ServerProvider
      */
     public function getImages(string $type = 'distribution'): array
     {
-        $response = $this->get(self::$_IMAGES."?type=$type", []);
+        $response = $this->get(self::IMAGES."?type=$type", []);
 
         if ($response->status() !== 200) {
             throw new Exception('Invalid response code.');
@@ -209,7 +210,7 @@ class DigitalOcean implements ServerProvider
      */
     public function getDroplets(): array
     {
-        $response = $this->get(self::$_DROPLETS, []);
+        $response = $this->get(self::DROPLETS, []);
 
         if ($response->status() !== 200) {
             throw new Exception('Invalid response code.');
@@ -228,7 +229,7 @@ class DigitalOcean implements ServerProvider
      */
     public function getDroplet(int|string $droplet_id): array
     {
-        $response = $this->get(self::$_DROPLETS.'/'.$droplet_id, []);
+        $response = $this->get(self::DROPLETS.'/'.$droplet_id, []);
 
         if (! in_array($response->status(), [200, 202, 204])) {
             throw new Exception('Invalid response code.');
@@ -251,7 +252,7 @@ class DigitalOcean implements ServerProvider
             throw new InvalidArgumentException("Missing the 'name' parameter.");
         }
 
-        $response = $this->post(self::$_DROPLETS, $params);
+        $response = $this->post(self::DROPLETS, $params);
 
         if (! in_array($response->status(), [200, 202, 204])) {
             throw $this->apiException($response);
@@ -275,7 +276,7 @@ class DigitalOcean implements ServerProvider
             throw new Exception("Missing the 'name' or 'key' parameter.");
         }
 
-        $response = $this->post(self::$_KEYS, $params);
+        $response = $this->post(self::KEYS, $params);
 
         if ($response->status() === 422) {
             $existing = $this->existingSshKey($params['public_key']);
@@ -304,7 +305,7 @@ class DigitalOcean implements ServerProvider
      */
     public function destroyDroplet(int|string $droplet_id): bool
     {
-        $response = $this->delete(self::$_DROPLETS.'/'.$droplet_id);
+        $response = $this->delete(self::DROPLETS.'/'.$droplet_id);
 
         if (! in_array($response->status(), [200, 202, 204, 404])) {
             return false;
@@ -322,7 +323,7 @@ class DigitalOcean implements ServerProvider
      */
     public function get(string $endpoint, array $custom_headers = []): Response
     {
-        return Http::withToken($this->_API_TOKEN)
+        return Http::withToken($this->apiToken)
             ->get($endpoint, $custom_headers);
     }
 
@@ -335,7 +336,7 @@ class DigitalOcean implements ServerProvider
      */
     public function post(string $endpoint, array $params): Response
     {
-        return Http::withToken($this->_API_TOKEN)
+        return Http::withToken($this->apiToken)
             ->post($endpoint, $params);
     }
 
@@ -347,11 +348,13 @@ class DigitalOcean implements ServerProvider
      */
     public function delete(string $endpoint): Response
     {
-        return Http::withToken($this->_API_TOKEN)
+        return Http::withToken($this->apiToken)
             ->delete($endpoint);
     }
 
     /**
+     * A JSON array from a response, or an exception when DigitalOcean returned something incomplete.
+     *
      * @param  Response  $response  The provider response to decode.
      * @param  string|null  $key  The top-level payload key, or null for the complete response.
      * @return array<array-key, mixed> The decoded object or list.
@@ -385,6 +388,9 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
+     * The account's SSH key with the same key material, found by its MD5 fingerprint, so importing the same key twice
+     * reuses it. Null when there isn't one.
+     *
      * @return array<string, mixed>|null
      */
     private function existingSshKey(string $publicKey): ?array
@@ -395,7 +401,7 @@ class DigitalOcean implements ServerProvider
         }
 
         $fingerprint = implode(':', str_split(md5($blob), 2));
-        $response = $this->get(self::$_KEYS.'/'.$fingerprint);
+        $response = $this->get(self::KEYS.'/'.$fingerprint);
         $sshKey = $response->status() === 200 ? $response->json('ssh_key') : null;
         if (! is_array($sshKey) || ! is_string($sshKey['public_key'] ?? null)) {
             return null;

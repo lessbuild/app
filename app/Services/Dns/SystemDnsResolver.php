@@ -9,6 +9,9 @@ use App\Contracts\DnsResolver;
 /** Uses the server's resolver. Fine for ownership checks, which only need to see a record eventually. */
 final class SystemDnsResolver implements DnsResolver
 {
+    /**
+     * The TXT strings the system resolver returns for the name; none when the lookup fails.
+     */
     public function txtRecords(string $name): array
     {
         $records = @dns_get_record($name, DNS_TXT);

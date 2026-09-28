@@ -13,12 +13,24 @@ use Illuminate\Support\Str;
 
 final class MonitorCheckRunner
 {
+    /**
+     * Runs monitor checks.
+     *
+     * @param  MonitorQueue  $queue  Locks the monitor and discards jobs for cancelled checks.
+     * @param  ProbeMonitor  $probe  Performs the check.
+     * @param  MonitorResults  $results  Records the result.
+     */
     public function __construct(
         private readonly MonitorQueue $queue,
         private readonly ProbeMonitor $probe,
         private readonly MonitorResults $results,
     ) {}
 
+    /**
+     * Runs one queued check: claims it with a lease under lock, probes outside the transaction, then records the result
+     * if the claim still holds. Checks whose monitor changed are cancelled, and ones whose lease ran out are recorded as
+     * missed or interrupted.
+     */
     public function process(string $id): void
     {
         $claimed = DB::transaction(function () use ($id): ?array {
@@ -64,6 +76,10 @@ final class MonitorCheckRunner
         }, attempts: 3);
     }
 
+    /**
+     * Settles a check whose worker died (or, with `$expiredOnly`, only one whose lease ran out) as missed or
+     * interrupted.
+     */
     public function interrupt(string $id, bool $expiredOnly = false): void
     {
         DB::transaction(function () use ($id, $expiredOnly): void {
@@ -81,7 +97,11 @@ final class MonitorCheckRunner
         }, attempts: 3);
     }
 
-    /** @return array{?Monitor, ?MonitorCheck} */
+    /**
+     * Locks the check's monitor, then the check, in that order, so scheduling and running can't deadlock.
+     *
+     * @return array{?Monitor, ?MonitorCheck}
+     */
     private function lock(string $id): array
     {
         $hint = MonitorCheck::query()->find($id);
@@ -93,12 +113,20 @@ final class MonitorCheckRunner
         return [$monitor, MonitorCheck::query()->lockForUpdate()->find($id)];
     }
 
-    /** @phpstan-assert-if-true Monitor $monitor */
+    /**
+     * Whether the check still applies: the monitor accepts checks and hasn't been reconfigured since the check was
+     * scheduled.
+     *
+     * @phpstan-assert-if-true Monitor $monitor
+     */
     private function eligible(?Monitor $monitor, MonitorCheck $check): bool
     {
         return $this->queue->eligible($monitor) && $monitor->config_revision === $check->config_revision;
     }
 
+    /**
+     * Cancels a check whose monitor changed, discarding its job.
+     */
     private function cancel(MonitorCheck $check): void
     {
         $this->queue->discardPendingJob($check);
@@ -108,6 +136,10 @@ final class MonitorCheckRunner
         ])->save();
     }
 
+    /**
+     * Stores the check's result and, unless a newer check already reported, updates the monitor's health, noting a gap
+     * when intervals were skipped.
+     */
     private function finish(Monitor $monitor, MonitorCheck $check, MonitorObservation $result): void
     {
         $this->queue->discardPendingJob($check);

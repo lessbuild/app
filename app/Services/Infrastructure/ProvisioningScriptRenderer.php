@@ -11,6 +11,8 @@ use LogicException;
 class ProvisioningScriptRenderer
 {
     /**
+     * The server's provisioning script: each stage's shell in order, numbered from 0 (the base script).
+     *
      * @param  list<class-string<ServerScript>>  $scripts
      */
     public function server(Server $server, array $scripts): string
@@ -48,7 +50,11 @@ class ProvisioningScriptRenderer
         return $output;
     }
 
-    /** @param list<class-string<ServerScript>> $scripts */
+    /**
+     * Renders each script class through the container, refusing anything that isn't a ServerScript.
+     *
+     * @param  list<class-string<ServerScript>>  $scripts
+     */
     private function render(array $scripts, callable $render, int $firstStep): string
     {
         $output = '';

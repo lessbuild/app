@@ -20,6 +20,11 @@ use Illuminate\Support\Facades\DB;
  */
 class Deployments
 {
+    /**
+     * Queues builds.
+     *
+     * @param  BuildPayload  $payload  Captures what each build deploys with.
+     */
     public function __construct(private readonly BuildPayload $payload) {}
 
     /** Why the repository's environment won't take a deploy now (locked, or outside its window), or null. */
@@ -53,6 +58,10 @@ class Deployments
     }
 
     /**
+     * Queues a build for the repository unless its website already has one active (null then). The build waits for
+     * approval when its environment requires it, in which case the approvers are notified after commit; otherwise it's
+     * published after commit.
+     *
      * @param  array<string, mixed>  $attributes  trigger_source, revision, commit_message, …
      * @return Build|null null when the website already has an active build
      */

@@ -12,6 +12,9 @@ use RuntimeException;
 /** The frame queue between the browser and the broker: sequenced, encrypted, and deleted once taken. */
 class TerminalFrames
 {
+    /**
+     * Queues keystrokes for the terminal's worker with the next input sequence number, which is returned.
+     */
     public function pushInput(ServerTerminalSession $session, string $input): int
     {
         return DB::transaction(function () use ($session, $input): int {
@@ -33,7 +36,12 @@ class TerminalFrames
         return $frames->pluck('payload')->implode('');
     }
 
-    /** @throws RuntimeException when the browser has stopped collecting output */
+    /**
+     * Queues output for the browser in frames of the configured size. When too much output is waiting because the
+     * browser stopped collecting it, the terminal is ended instead.
+     *
+     * @throws RuntimeException when the browser has stopped collecting output
+     */
     public function pushOutput(ServerTerminalSession $session, string $output): void
     {
         if ($output === '') {
@@ -67,6 +75,9 @@ class TerminalFrames
             ->map(fn (ServerTerminalFrame $frame): array => ['sequence' => $frame->sequence, 'data' => $frame->payload])->all());
     }
 
+    /**
+     * Stores one frame.
+     */
     private function frame(ServerTerminalSession $session, string $direction, int $sequence, string $payload): void
     {
         $frame = new ServerTerminalFrame;

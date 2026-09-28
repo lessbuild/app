@@ -16,7 +16,12 @@ use App\Models\Repository;
  */
 final class BuildPayload
 {
-    /** @return array<string, mixed> */
+    /**
+     * The repository's current payload: the website's `.env` and the repository subdirectory, plus, when it deploys to
+     * an environment, the runtime settings, runtime and build variables, enabled processes and resources.
+     *
+     * @return array<string, mixed>
+     */
     public function for(Repository $repository): array
     {
         $payload = ['base_environment' => (string) $repository->website->env_file, 'repository_root' => $repository->deploymentRoot()];

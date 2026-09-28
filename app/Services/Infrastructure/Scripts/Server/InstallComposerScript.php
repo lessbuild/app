@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class InstallComposerScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Composer';
+    public const TITLE = 'Install Composer';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install composer on the server';
+    public const DESCRIPTION = 'Install composer on the server';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-composer';
+    public const IDENTIFIER = 'installed-composer';
 
     /**
      * Shell script to run

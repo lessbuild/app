@@ -33,13 +33,21 @@ final class IngestIdentity
         }, $events);
     }
 
-    /** @param array<mixed> $value */
+    /**
+     * JSON with object keys sorted at every level, so equal data always encodes the same way.
+     *
+     * @param  array<mixed>  $value
+     */
     public function canonical(array $value): string
     {
         return json_encode($this->sortKeys($value), JSON_THROW_ON_ERROR | JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_PRESERVE_ZERO_FRACTION);
     }
 
-    /** @param array<mixed> $value
+    /**
+     * Keyed fingerprints of a value under the current and previous app keys, so a batch sent before a key rotation is
+     * still recognised after it.
+     *
+     * @param  array<mixed>  $value
      * @return list<string>
      */
     public function fingerprints(array $value): array
@@ -59,7 +67,12 @@ final class IngestIdentity
         ));
     }
 
-    /** @param list<string> $fingerprints */
+    /**
+     * Refuses a batch or event that reuses an identity with different content, which would otherwise be silently dropped
+     * as a duplicate.
+     *
+     * @param  list<string>  $fingerprints
+     */
     public function assertMatches(?string $stored, array $fingerprints, string $field): void
     {
         foreach ($fingerprints as $fingerprint) {
@@ -73,7 +86,10 @@ final class IngestIdentity
         ]);
     }
 
-    /** @param list<string> $fingerprints
+    /**
+     * The keys a batch's receipt is found by: its ID when the client named the batch, else each content fingerprint.
+     *
+     * @param  list<string>  $fingerprints
      * @return list<string>
      */
     public function receiptKeys(string $environmentId, string $batchId, IngestContext $context, array $fingerprints): array
@@ -88,7 +104,12 @@ final class IngestIdentity
         ])), $identifiers);
     }
 
-    /** @param array<string, mixed> $event */
+    /**
+     * An event's deduplication key: its ID (or position) within the batch or, for unnamed batches, within the
+     * environment and source.
+     *
+     * @param  array<string, mixed>  $event
+     */
     public function eventKey(string $environmentId, string $batchId, IngestContext $context, array $event, int $index): string
     {
         return hash('sha256', $this->canonical([
@@ -98,7 +119,10 @@ final class IngestIdentity
         ]));
     }
 
-    /** @param array<mixed> $value
+    /**
+     * Sorts object keys recursively, leaving lists in order.
+     *
+     * @param  array<mixed>  $value
      * @return array<mixed>
      */
     private function sortKeys(array $value): array

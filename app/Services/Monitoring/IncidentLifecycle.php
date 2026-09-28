@@ -13,6 +13,11 @@ use Carbon\CarbonImmutable;
 
 final class IncidentLifecycle
 {
+    /**
+     * Opens, closes and changes incidents.
+     *
+     * @param  AlertDispatcher  $alerts  Queues alerts for incident events.
+     */
     public function __construct(private readonly AlertDispatcher $alerts) {}
 
     /** Called inside a transaction holding the source and incident locks. */

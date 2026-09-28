@@ -14,7 +14,12 @@ use Throwable;
 /** Asks a provider's API whether it accepts the stored credential, using the least-privileged read each API offers. */
 final class ProviderConnectionTester
 {
-    /** @return array{successful: bool, message: string, http_status: int|null} */
+    /**
+     * Asks the provider whether it accepts the credential and returns the outcome with a message safe to show. GitHub
+     * App providers are tested by requesting an installation token.
+     *
+     * @return array{successful: bool, message: string, http_status: int|null}
+     */
     public function test(Provider $provider): array
     {
         $label = $provider->type->label();
@@ -49,6 +54,9 @@ final class ProviderConnectionTester
         ];
     }
 
+    /**
+     * The read-only API call used to test each provider type; cloud providers use a listing that scoped tokens can make.
+     */
     public function endpoint(ProviderType $type): string
     {
         return match ($type) {
@@ -63,6 +71,9 @@ final class ProviderConnectionTester
         };
     }
 
+    /**
+     * Sends the test request with the credential in the header the provider expects.
+     */
     private function request(Provider $provider): Response
     {
         $request = Http::acceptJson()->connectTimeout(3)->timeout(8)->withHeaders(['User-Agent' => (string) config('app.name')]);
@@ -74,6 +85,9 @@ final class ProviderConnectionTester
         };
     }
 
+    /**
+     * Adds the credential as a bearer token.
+     */
     private function bearer(PendingRequest $request, Provider $provider): PendingRequest
     {
         return $request->withToken($provider->token);

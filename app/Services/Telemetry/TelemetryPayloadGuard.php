@@ -6,6 +6,9 @@ namespace App\Services\Telemetry;
 
 final class TelemetryPayloadGuard
 {
+    /**
+     * Refuses NaN and infinite numbers anywhere in the payload.
+     */
     public function assertFiniteNumbers(mixed $value): void
     {
         abort_if(is_float($value) && ! is_finite($value), 400, 'Telemetry JSON numbers must be finite and within the supported numeric range.');
@@ -17,6 +20,9 @@ final class TelemetryPayloadGuard
         }
     }
 
+    /**
+     * Counts objects, arrays, keys and values in the raw JSON without decoding it, refusing bodies with too many.
+     */
     public function assertJsonComplexity(string $body): void
     {
         $limit = (int) config('monitoring.telemetry.max_json_nodes');
@@ -49,7 +55,11 @@ final class TelemetryPayloadGuard
         }
     }
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * Refuses batches with more events (or OTLP spans, log records or metric data points) than allowed.
+     *
+     * @param  array<string, mixed>  $payload
+     */
     public function assertRecordCount(array $payload, string $signal): void
     {
         if ($signal === 'ingest') {
@@ -93,7 +103,11 @@ final class TelemetryPayloadGuard
         }
     }
 
-    /** @param array<int, array<string, mixed>> $events */
+    /**
+     * Refuses batches whose events, once normalised, would take more storage than allowed.
+     *
+     * @param  array<int, array<string, mixed>>  $events
+     */
     public function assertNormalizedSize(array $events): void
     {
         $this->assertCount(count($events));
@@ -105,6 +119,9 @@ final class TelemetryPayloadGuard
         }
     }
 
+    /**
+     * Refuses a count above the per-batch event limit.
+     */
     private function assertCount(int $count): void
     {
         abort_if($count > (int) config('monitoring.telemetry.max_events_per_batch'), 413, 'Telemetry batch exceeds the event limit.');

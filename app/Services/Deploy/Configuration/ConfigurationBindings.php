@@ -18,6 +18,10 @@ use Illuminate\Validation\ValidationException;
 final class ConfigurationBindings
 {
     /**
+     * Resolves the document's placements, repositories and secrets to records the person may use in the project's
+     * account, checking each fits (a repository on the placement's website, a secret in a compatible scope). Any problem
+     * is one generic error, so bindings can't be used to probe other records.
+     *
      * @param  array<string, mixed>  $document
      * @param  array<string, mixed>  $bindings
      * @return array{placements: array<string, array{website_id: int, resource_fingerprint?: string}>, secrets: array<string, array{variable_id: int, version: int}>, repositories: array<string, array{repository_id: int, fingerprint: string}>}
@@ -76,7 +80,11 @@ final class ConfigurationBindings
         return $resolved;
     }
 
-    /** @param array<string, mixed> $bindings */
+    /**
+     * The ID bound to a name, or 0 when there's none.
+     *
+     * @param  array<string, mixed>  $bindings
+     */
     private function id(array $bindings, string $kind, string $name): int
     {
         $entries = $bindings[$kind] ?? [];
@@ -85,6 +93,9 @@ final class ConfigurationBindings
         return is_int($id) ? $id : 0;
     }
 
+    /**
+     * Refuses the bindings without saying which one failed.
+     */
     private function invalid(): never
     {
         throw ValidationException::withMessages(['bindings' => 'A required binding is unavailable or incompatible in this account.']);

@@ -9,6 +9,14 @@ use App\Models\Monitor;
 
 final class ProbeMonitor
 {
+    /**
+     * Runs the check for any monitor type.
+     *
+     * @param  ProbeHttpMonitor  $http  HTTP checks.
+     * @param  ProbeDnsMonitor  $dns  DNS checks.
+     * @param  ProbeTlsMonitor  $tls  TLS certificate checks.
+     * @param  ProbeTcpMonitor  $tcp  TCP port checks.
+     */
     public function __construct(
         private readonly ProbeHttpMonitor $http,
         private readonly ProbeDnsMonitor $dns,
@@ -16,6 +24,9 @@ final class ProbeMonitor
         private readonly ProbeTcpMonitor $tcp,
     ) {}
 
+    /**
+     * Runs the check for the monitor's type. Heartbeat and queue monitors aren't probed.
+     */
     public function probe(Monitor $monitor): MonitorObservation
     {
         return match ($monitor->type) {

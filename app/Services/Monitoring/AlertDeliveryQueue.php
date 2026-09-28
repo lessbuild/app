@@ -14,6 +14,11 @@ use LogicException;
 
 final class AlertDeliveryQueue
 {
+    /**
+     * Queues alert delivery jobs.
+     *
+     * @param  IncidentLocks  $incidents  Locks a delivery's incident with it.
+     */
     public function __construct(private readonly IncidentLocks $incidents) {}
 
     public const NAME = 'alerts';
@@ -26,6 +31,10 @@ final class AlertDeliveryQueue
 
     public const BACKOFF = [30, 120, 600, 1800];
 
+    /**
+     * Queues a delivery's job (delayed when it isn't due yet) inside the outbox transaction on the primary database
+     * queue, and remembers the job's UUID.
+     */
     public function dispatch(AlertDelivery $delivery): void
     {
         $config = config('queue.connections.'.self::NAME, []);
@@ -64,6 +73,9 @@ final class AlertDeliveryQueue
         return $delivery;
     }
 
+    /**
+     * Whether the delivery's job is still on the queue.
+     */
     public function jobExists(AlertDelivery $delivery): bool
     {
         return $delivery->queue_job_uuid !== null && DB::table('jobs')->where('queue', self::NAME)

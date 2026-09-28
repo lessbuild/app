@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class InstallCaddyScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Caddy';
+    public const TITLE = 'Install Caddy';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install Caddy server and configure Caddy.';
+    public const DESCRIPTION = 'Install Caddy server and configure Caddy.';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-caddy';
+    public const IDENTIFIER = 'installed-caddy';
 
     /**
      * Shell script to run

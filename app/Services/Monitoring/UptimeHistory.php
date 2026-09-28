@@ -21,6 +21,9 @@ final class UptimeHistory
     public const WINDOW_DAYS = 30;
 
     /**
+     * Each monitor's history over the last 30 UTC days, counting only completed checks of its current configuration, in
+     * one query.
+     *
      * @param  iterable<Monitor>  $monitors
      * @return array<int, History> keyed by monitor ID
      */
@@ -71,6 +74,9 @@ final class UptimeHistory
     }
 
     /**
+     * Turns one monitor's daily counts into a bar per day (outage if any check failed, degraded if any was unknown) and
+     * totals. Uptime counts passed and failed checks only.
+     *
      * @param  array<string, array{up: int, down: int, unknown: int}>  $counts
      * @return History
      */
@@ -114,7 +120,11 @@ final class UptimeHistory
         ];
     }
 
-    /** @param array{up: int, down: int, unknown: int} $count */
+    /**
+     * One day's counts as a sentence for the bar's tooltip.
+     *
+     * @param  array{up: int, down: int, unknown: int}  $count
+     */
     private function summary(array $count): string
     {
         if (array_sum($count) === 0) {

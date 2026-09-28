@@ -11,6 +11,9 @@ use InvalidArgumentException;
 
 final class HeartbeatSchedule
 {
+    /**
+     * When the next run is due after a moment: a fixed interval, or the next cron occurrence in the monitor's timezone.
+     */
     public function next(Monitor $monitor, CarbonImmutable $after): CarbonImmutable
     {
         if ($monitor->heartbeat_schedule === 'interval' && $monitor->heartbeat_interval_minutes >= 1
@@ -37,6 +40,9 @@ final class HeartbeatSchedule
         return CarbonImmutable::instance($cron->getNextRunDate($after, 0, false, $timezone))->utc();
     }
 
+    /**
+     * Starts the schedule afresh from now, forgetting runs seen under the old one.
+     */
     public function reset(Monitor $monitor, CarbonImmutable $now): void
     {
         $due = $monitor->enabled ? $this->next($monitor, $now) : null;

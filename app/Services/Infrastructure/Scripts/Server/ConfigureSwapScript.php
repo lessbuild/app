@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class ConfigureSwapScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Configure Swap';
+    public const TITLE = 'Configure Swap';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Configure the swap space';
+    public const DESCRIPTION = 'Configure the swap space';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'configured-swap';
+    public const IDENTIFIER = 'configured-swap';
 
     /**
      * Shell script to run

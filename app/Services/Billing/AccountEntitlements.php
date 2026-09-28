@@ -11,6 +11,8 @@ use App\Platform\Catalog\Tier;
 final readonly class AccountEntitlements
 {
     /**
+     * One account's limits and features, worked out by Entitlements.
+     *
      * @param  array<string, Tier>  $tiers  service => the tier that applies
      * @param  array<string, int|null>  $limits  entitlement key => limit (null = unlimited); missing keys are unlimited
      * @param  list<string>  $flags
@@ -21,11 +23,17 @@ final readonly class AccountEntitlements
         public array $flags,
     ) {}
 
+    /**
+     * The limit for a key, or null when the account has no limit there.
+     */
     public function limit(string $key): ?int
     {
         return $this->limits[$key] ?? null;
     }
 
+    /**
+     * Whether one of the account's tiers turns the feature on.
+     */
     public function has(string $flag): bool
     {
         return in_array($flag, $this->flags, true);

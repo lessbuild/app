@@ -8,20 +8,11 @@ use App\Models\Build;
 
 class ActivateReleaseScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Activate Release';
+    public const TITLE = 'Activate Release';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Activate the release on the server, and update the symlink';
+    public const DESCRIPTION = 'Activate the release on the server, and update the symlink';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'activated-release';
+    public const IDENTIFIER = 'activated-release';
 
     /**
      * The script to run

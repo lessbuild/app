@@ -9,11 +9,11 @@ use Illuminate\Support\Str;
 
 class ConfigureProcessesScript extends BuildProvisioningScript
 {
-    public static string $title = 'Configure workers and scheduler';
+    public const TITLE = 'Configure workers and scheduler';
 
-    public static string $description = 'Install and restart environment process definitions against the active release';
+    public const DESCRIPTION = 'Install and restart environment process definitions against the active release';
 
-    public static string $identifier = 'configured-processes';
+    public const IDENTIFIER = 'configured-processes';
 
     /**
      * Render systemd worker and scheduler units, replica activation and obsolete-unit cleanup.

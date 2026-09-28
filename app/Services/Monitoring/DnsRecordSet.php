@@ -12,6 +12,10 @@ final class DnsRecordSet
 
     public const RESPONSE_LIMIT = 32768;
 
+    /**
+     * A public DNS name, lowercased without its trailing dot, or null for invalid names and reserved suffixes such as
+     * `.local` and `.internal`.
+     */
     public function hostname(string $hostname): ?string
     {
         $hostname = $this->domain($hostname);
@@ -27,6 +31,9 @@ final class DnsRecordSet
         return $hostname;
     }
 
+    /**
+     * A syntactically valid DNS name, lowercased without its trailing dot, or null.
+     */
     private function domain(string $hostname): ?string
     {
         $hostname = strtolower(str_ends_with($hostname, '.') ? substr($hostname, 0, -1) : $hostname);
@@ -35,7 +42,12 @@ final class DnsRecordSet
             ? $hostname : null;
     }
 
-    /** @return list<string>|null */
+    /**
+     * Parses the expected records typed for a DNS monitor (one per line, 1 to 20) into the same form as observed ones;
+     * null if any line is invalid.
+     *
+     * @return list<string>|null
+     */
     public function expected(string $type, string $text): ?array
     {
         if (strlen($text) > self::EXPECTED_LIMIT || ! in_array($type, self::TYPES, true)) {
@@ -57,7 +69,11 @@ final class DnsRecordSet
         return $this->sorted($values);
     }
 
-    /** @param list<array<string, mixed>> $records
+    /**
+     * Normalises the records a lookup returned (only those of the monitor's type), or null when the answer is too large
+     * or malformed.
+     *
+     * @param  list<array<string, mixed>>  $records
      * @return list<string>|null
      */
     public function observed(string $type, array $records): ?array
@@ -95,6 +111,10 @@ final class DnsRecordSet
         return $this->sorted($values);
     }
 
+    /**
+     * One record value in canonical form: IPs compressed, names lowercased, MX as "priority target" (with the null MX `0
+     * .`), TXT as-is if printable.
+     */
     private function value(string $type, string $value): ?string
     {
         if ($type === 'TXT') {
@@ -120,7 +140,11 @@ final class DnsRecordSet
         return $this->domain($value);
     }
 
-    /** @param array<string, mixed> $record */
+    /**
+     * A TXT record's full text, joining its strings when the resolver split them.
+     *
+     * @param  array<string, mixed>  $record
+     */
     private function txt(array $record): ?string
     {
         if (isset($record['entries'])) {
@@ -134,7 +158,10 @@ final class DnsRecordSet
         return is_string($record['txt'] ?? null) ? $record['txt'] : null;
     }
 
-    /** @param list<string> $values
+    /**
+     * Unique values in a stable order, so sets compare equal regardless of answer order.
+     *
+     * @param  list<string>  $values
      * @return list<string>
      */
     private function sorted(array $values): array

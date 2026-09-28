@@ -13,11 +13,17 @@ use RuntimeException;
  */
 class GitHubApp
 {
+    /**
+     * Whether the App's ID, slug, webhook secret and private key are all set.
+     */
     public function configured(): bool
     {
         return filled(config('github-app.id')) && filled(config('github-app.slug')) && filled(config('github-app.webhook_secret')) && $this->privateKey() !== null;
     }
 
+    /**
+     * GitHub's page for installing the App, carrying the one-time state.
+     */
     public function installationUrl(string $state): string
     {
         $slug = trim((string) config('github-app.slug'));
@@ -28,6 +34,9 @@ class GitHubApp
         return 'https://github.com/apps/'.$slug.'/installations/new?'.http_build_query(['state' => $state]);
     }
 
+    /**
+     * A short-lived token for one installation, from GitHub's API.
+     */
     public function installationToken(string $installationId): string
     {
         $token = Http::acceptJson()->withToken($this->jwt())->withHeader('X-GitHub-Api-Version', '2026-03-10')
@@ -36,7 +45,11 @@ class GitHubApp
         return is_string($token) && $token !== '' ? $token : throw new RuntimeException('GitHub didn’t return an installation token.');
     }
 
-    /** @return list<array{id: int, full_name: string, private: bool, default_branch: string}> */
+    /**
+     * The repositories the installation can reach (first 100), with their visibility and default branch.
+     *
+     * @return list<array{id: int, full_name: string, private: bool, default_branch: string}>
+     */
     public function repositories(string $installationId): array
     {
         $repositories = Http::acceptJson()->withToken($this->installationToken($installationId))->withHeader('X-GitHub-Api-Version', '2026-03-10')
@@ -51,6 +64,10 @@ class GitHubApp
         return $list;
     }
 
+    /**
+     * A JSON Web Token signed with the App's private key, valid for nine minutes (backdated one, for clock drift), which
+     * GitHub requires to issue installation tokens.
+     */
     private function jwt(): string
     {
         $key = $this->privateKey();
@@ -82,6 +99,9 @@ class GitHubApp
         return null;
     }
 
+    /**
+     * Base64 in its URL-safe form without padding, as JWTs use.
+     */
     private function base64Url(string $value): string
     {
         return rtrim(strtr(base64_encode($value), '+/', '-_'), '=');

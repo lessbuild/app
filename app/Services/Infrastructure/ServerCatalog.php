@@ -12,6 +12,8 @@ use Illuminate\Support\Collection;
 class ServerCatalog
 {
     /**
+     * The provider's regions, sizes and images for the server form.
+     *
      * @return array{regions: array<int, array{id: string, label: string}>, sizes: array<int, array{id: string, label: string}>, images: array<int, array{id: string, label: string}>}
      */
     public function for(Provider $provider, ServerProvider $client): array
@@ -122,6 +124,8 @@ class ServerCatalog
     }
 
     /**
+     * Drops entries without an ID or label and sorts the rest naturally by label.
+     *
      * @param  Collection<array-key, array{id: string, label: string}>  $items
      * @return list<array{id: string, label: string}>
      */

@@ -17,7 +17,12 @@ class ServerDiscovery
      */
     public function __construct(private readonly SshHostIdentity $hostIdentity, private readonly Runner $runner) {}
 
-    /** @param array{public_ip:string,ssh_port:int,ssh_private_key:string} $configuration
+    /**
+     * Pins the server's host key, then runs a read-only script to learn its OS, architecture, resources and installed
+     * services. Refuses servers without direct root access, non-Ubuntu or unsupported releases, and unsupported
+     * architectures, and warns about existing services, another platform's marker, and little disk or memory.
+     *
+     * @param  array{public_ip:string,ssh_port:int,ssh_private_key:string}  $configuration
      * @return array<string,mixed>
      */
     public function inspect(array $configuration): array

@@ -24,6 +24,9 @@ final class DatabaseCommands
         return $this->mysql($website, $sql);
     }
 
+    /**
+     * Creates or updates an extra database user with the grants for its privilege on the website's database only.
+     */
     public function applyUser(DatabaseUser $user): string
     {
         $website = $user->website;
@@ -36,6 +39,9 @@ final class DatabaseCommands
             ." REVOKE ALL PRIVILEGES, GRANT OPTION FROM '{$username}'@'localhost'; GRANT {$grant} ON `{$database}`.* TO '{$username}'@'localhost'; FLUSH PRIVILEGES;");
     }
 
+    /**
+     * Drops an extra database user.
+     */
     public function removeUser(DatabaseUser $user): string
     {
         return $this->mysql($user->website, "DROP USER IF EXISTS '{$this->identifier($user->username)}'@'localhost'; FLUSH PRIVILEGES;");
@@ -52,16 +58,25 @@ final class DatabaseCommands
             .' | MYSQL_PWD='.escapeshellarg($password)." mysql --protocol=socket -u root {$to}";
     }
 
+    /**
+     * A MySQL command over the local socket as root, with the password in the environment rather than the command line.
+     */
     private function mysql(Website $website, string $sql): string
     {
         return 'MYSQL_PWD='.escapeshellarg($this->rootPassword($website)).' mysql --protocol=socket -u root --batch --skip-column-names -e '.escapeshellarg($sql);
     }
 
+    /**
+     * The server's MySQL root password; throws when none is stored.
+     */
     private function rootPassword(Website $website): string
     {
         return $website->server->mysql_root_password ?? throw new RuntimeException('The server doesn’t have a stored MySQL root password.');
     }
 
+    /**
+     * Checks a database or user name is a plain identifier before it goes into SQL.
+     */
     private function identifier(string $value): string
     {
         if (preg_match('/\A[a-zA-Z_][a-zA-Z0-9_]{0,63}\z/D', $value) !== 1) {

@@ -13,6 +13,8 @@ final class MetricAnomalyDetector
     public const SCORE_THRESHOLD = 3.5;
 
     /**
+     * Marks each point normal, anomalous, warming up or unknown against the points before it, and counts the anomalies.
+     *
      * @param  list<array<string, mixed>>  $points
      * @return array{points: list<array<string, mixed>>, count: int, max_score: float|null, baseline_points: int}
      */
@@ -54,6 +56,9 @@ final class MetricAnomalyDetector
     }
 
     /**
+     * Scores a value by its distance from the recent median, scaled by the larger of the median absolute deviation (as a
+     * standard deviation), the standard deviation, and 1% of the median. Needs enough history first.
+     *
      * @param  list<float>  $history
      * @return array{state: string, score: float|null, baseline: float|null, lower: float|null, upper: float|null, direction: string|null}
      */
@@ -87,6 +92,8 @@ final class MetricAnomalyDetector
     }
 
     /**
+     * The middle value (or the mean of the two middle ones).
+     *
      * @param  list<float>  $values
      */
     private function median(array $values): float

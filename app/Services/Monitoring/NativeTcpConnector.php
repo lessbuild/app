@@ -9,8 +9,17 @@ use InvalidArgumentException;
 
 final class NativeTcpConnector implements TcpConnector
 {
+    /**
+     * Opens TCP connections for TCP monitors.
+     *
+     * @param  PublicWebhookTarget  $addresses  Refuses addresses that aren't public.
+     */
     public function __construct(private readonly PublicWebhookTarget $addresses) {}
 
+    /**
+     * Opens and immediately closes a TCP connection to a public address, without sending anything. Refuses non-public
+     * addresses.
+     */
     public function connect(string $address, int $port, int $timeoutMilliseconds): bool
     {
         if ($port < 1 || $port > 65535 || $timeoutMilliseconds < 1 || ! $this->addresses->isPublic($address)) {

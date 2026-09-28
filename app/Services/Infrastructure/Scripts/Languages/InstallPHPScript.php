@@ -10,20 +10,11 @@ use RuntimeException;
 
 class InstallPHPScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install PHP';
+    public const TITLE = 'Install PHP';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install PHP and configure PHP';
+    public const DESCRIPTION = 'Install PHP and configure PHP';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-php';
+    public const IDENTIFIER = 'installed-php';
 
     /**
      * Shell script to run

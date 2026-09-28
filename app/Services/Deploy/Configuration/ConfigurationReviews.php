@@ -10,9 +10,18 @@ use Illuminate\Validation\ValidationException;
 /** Checks a review is still applicable: unapplied, not past its 15 minutes, and planning it again gives the same fingerprint. */
 final class ConfigurationReviews
 {
+    /**
+     * Checks reviews are still current.
+     *
+     * @param  ConfigurationPlanner  $planner  Plans the review's document again.
+     */
     public function __construct(private readonly ConfigurationPlanner $planner) {}
 
-    /** @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool} */
+    /**
+     * The review's plan, if the review is unapplied, unexpired, and nothing it depends on changed since.
+     *
+     * @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool}
+     */
     public function current(ConfigurationReview $review): array
     {
         if ($review->applied_at !== null || $review->expires_at->isPast()) {

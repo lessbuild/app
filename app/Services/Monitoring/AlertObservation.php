@@ -8,11 +8,20 @@ use App\Enums\AlertMetric;
 use App\Models\AlertRule;
 use App\Models\ServiceLevelObjective;
 use App\Models\TelemetryEvent;
+use App\Support\Telemetry\EventTime;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 
 final class AlertObservation
 {
+    /**
+     * Measures alert rules.
+     *
+     * @param  MetricAlertObservation  $metrics  Measures numeric metric rules.
+     * @param  MetricAnomalyAlertObservation  $anomalies  Measures metric anomaly rules.
+     * @param  LogPatternAlertObservation  $patterns  Measures log pattern rules.
+     * @param  ServiceObjectiveReport  $objectives  Measures SLO burn-rate rules.
+     */
     public function __construct(
         private readonly MetricAlertObservation $metrics,
         private readonly MetricAnomalyAlertObservation $anomalies,
@@ -20,7 +29,13 @@ final class AlertObservation
         private readonly ServiceObjectiveReport $objectives,
     ) {}
 
-    /** @return array<string, mixed> state (warming, no_data, maintenance, breaching or healthy), value, samples, window and reason */
+    /**
+     * Measures a rule over the window ending at `$until`: warming until the rule has watched a full window, then by
+     * metric (numeric metrics, anomalies, log patterns, SLO burn, telemetry volume or freshness, or request error rate,
+     * duration, exceptions and error logs from one grouped query). Too few samples is no data.
+     *
+     * @return array<string, mixed> state (warming, no_data, maintenance, breaching or healthy), value, samples, window and reason
+     */
     public function measure(AlertRule $rule, CarbonImmutable $until): array
     {
         $from = $until->subMinutes($rule->window_minutes);
@@ -57,8 +72,8 @@ final class AlertObservation
 
         if ($rule->metric === AlertMetric::TelemetryVolume) {
             $value = (float) $this->events($rule)
-                ->where('occurred_at', '>=', $from->format('Y-m-d H:i:s'))
-                ->where('occurred_at', '<', $until->format('Y-m-d H:i:s'))->count();
+                ->where('occurred_at', '>=', EventTime::boundary($from))
+                ->where('occurred_at', '<', EventTime::boundary($until))->count();
 
             return [
                 'state' => $value <= $rule->threshold ? 'breaching' : 'healthy',
@@ -68,8 +83,8 @@ final class AlertObservation
 
         if ($rule->metric === AlertMetric::TelemetryFreshness) {
             $latest = $this->events($rule)
-                ->where('occurred_at', '>=', $rule->monitoring_since->format('Y-m-d H:i:s'))
-                ->where('occurred_at', '<', $until->format('Y-m-d H:i:s'))->max('occurred_at');
+                ->where('occurred_at', '>=', EventTime::boundary($rule->monitoring_since))
+                ->where('occurred_at', '<', EventTime::boundary($until))->max('occurred_at');
             $latestAt = $latest === null ? $rule->monitoring_since : CarbonImmutable::parse((string) $latest, 'UTC');
             $value = (float) max(0, $latestAt->diffInSeconds($until, false));
 
@@ -80,8 +95,8 @@ final class AlertObservation
         }
 
         $query = $this->events($rule)
-            ->where('occurred_at', '>=', $from->format('Y-m-d H:i:s'))
-            ->where('occurred_at', '<', $until->format('Y-m-d H:i:s'));
+            ->where('occurred_at', '>=', EventTime::boundary($from))
+            ->where('occurred_at', '<', EventTime::boundary($until));
         $row = $query->toBase()
             ->selectRaw('COUNT(*) AS events')
             ->selectRaw("COUNT(CASE WHEN type = 'request' THEN 1 END) AS requests")
@@ -113,7 +128,11 @@ final class AlertObservation
         ];
     }
 
-    /** @return Builder<TelemetryEvent> */
+    /**
+     * The rule's environment's events, narrowed to its service when it has one.
+     *
+     * @return Builder<TelemetryEvent>
+     */
     private function events(AlertRule $rule): Builder
     {
         return TelemetryEvent::query()->where('environment_id', $rule->environment_id)

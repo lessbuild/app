@@ -42,9 +42,19 @@ BASH;
 
     private const KEYS = ['bp_diag_version', 'uid', 'architecture', 'php_version', 'storage_path', 'storage_writable', 'disk_percent', 'load_1m', 'memory_percent', 'process_count'];
 
+    /**
+     * Diagnoses servers.
+     *
+     * @param  ServerShell  $shell  Runs the read-only diagnostic script.
+     */
     public function __construct(private readonly ServerShell $shell) {}
 
-    /** @return list<array{name: string, category: string, passed: bool, detail: string}> */
+    /**
+     * Runs the diagnostic and turns its answers into checks. Failures are thrown with their stage as a message prefix,
+     * so the job can record where it failed.
+     *
+     * @return list<array{name: string, category: string, passed: bool, detail: string}>
+     */
     public function run(Server $server): array
     {
         $readiness = $this->readiness($server);
@@ -94,13 +104,22 @@ BASH;
         };
     }
 
-    /** @return array{name: string, category: string, passed: bool, detail: string} */
+    /**
+     * One check as the diagnostics tab shows it.
+     *
+     * @return array{name: string, category: string, passed: bool, detail: string}
+     */
     private function check(string $name, string $category, bool $passed, string $detail): array
     {
         return ['name' => $name, 'category' => $category, 'passed' => $passed, 'detail' => $detail];
     }
 
-    /** @return array{uid: int, architecture: string, php_version: string, storage_path: string, storage_writable: string, disk_percent: int, load_1m: float, memory_percent: int, process_count: int} */
+    /**
+     * Reads the script's `key=value` lines strictly: every expected key exactly once, each value in its expected form,
+     * and a bounded size. Anything else is treated as an invalid response rather than guessed at.
+     *
+     * @return array{uid: int, architecture: string, php_version: string, storage_path: string, storage_writable: string, disk_percent: int, load_1m: float, memory_percent: int, process_count: int}
+     */
     private function parse(string $output): array
     {
         if (strlen($output) > max(1, (int) config('infrastructure.server_diagnostic_output_max_characters', 16384))) {

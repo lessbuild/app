@@ -9,11 +9,11 @@ use App\Services\Deploy\EnvironmentFile;
 
 class SyncEnvironmentScript extends BuildProvisioningScript
 {
-    public static string $title = 'Sync environment configuration';
+    public const TITLE = 'Sync environment configuration';
 
-    public static string $description = 'Apply the immutable environment and attached-resource snapshot';
+    public const DESCRIPTION = 'Apply the immutable environment and attached-resource snapshot';
 
-    public static string $identifier = 'synced-environment';
+    public const IDENTIFIER = 'synced-environment';
 
     /**
      * Render runtime and build environment files from the captured deployment payload.

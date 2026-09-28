@@ -15,6 +15,12 @@ use LogicException;
 /** Writes alert deliveries (the outbox) for incident events and queues them. */
 final class AlertDispatcher
 {
+    /**
+     * Writes alert deliveries and queues them.
+     *
+     * @param  AlertDeliveryQueue  $queue  Queues each delivery's job.
+     * @param  TelemetryRedactor  $redactor  Redacts titles before they leave the platform.
+     */
     public function __construct(private readonly AlertDeliveryQueue $queue, private readonly TelemetryRedactor $redactor) {}
 
     /** Called in the incident transaction, after locking its project, environment, source and incident. */
@@ -65,7 +71,11 @@ final class AlertDispatcher
         }
     }
 
-    /** @param array<string, mixed> $payload */
+    /**
+     * Writes a delivery for the destination and queues it, now or at `$sendAt`.
+     *
+     * @param  array<string, mixed>  $payload
+     */
     public function queue(AlertDestination $destination, array $payload, ?Incident $incident = null, ?CarbonImmutable $sendAt = null): AlertDelivery
     {
         $delivery = new AlertDelivery;

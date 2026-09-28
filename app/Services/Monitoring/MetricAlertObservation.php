@@ -11,9 +11,19 @@ use Carbon\CarbonImmutable;
 
 final class MetricAlertObservation
 {
+    /**
+     * Measures numeric metric alert rules.
+     *
+     * @param  MetricChart  $charts  Reads the series over the rule's window.
+     */
     public function __construct(private readonly MetricChart $charts) {}
 
-    /** @return array{state: string, value: float|null, samples: int, reason: string|null} */
+    /**
+     * Computes the rule's aggregation (last, mean, min, max or rate) over the window and compares it with the threshold.
+     * Unknown when samples are missing, invalid, too few, stale, or a rate lacks a recent baseline.
+     *
+     * @return array{state: string, value: float|null, samples: int, reason: string|null}
+     */
     public function measure(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array
     {
         $series = MetricSeries::query()->where('environment_id', $rule->environment_id)->find($rule->metric_series_id);

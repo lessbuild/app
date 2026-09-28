@@ -10,6 +10,10 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 /** Checks a GitHub App webhook's signature with the App's secret and reads which installation and repository it's for. */
 final class GitHubAppWebhookVerifier
 {
+    /**
+     * Checks size (413), signature (401) and JSON (422), then returns a ping or the installation and lowercased
+     * repository name.
+     */
     public function verify(string $raw, ?string $signature, ?string $event): GitHubAppWebhook
     {
         if (strlen($raw) > max(1, (int) config('deploy.webhook_max_payload_bytes'))) {

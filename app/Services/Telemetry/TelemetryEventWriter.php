@@ -12,12 +12,22 @@ use Illuminate\Support\Str;
 
 final class TelemetryEventWriter
 {
+    /**
+     * Writes processed telemetry events.
+     *
+     * @param  TelemetryRedactor  $redactor  Removes secrets from events before they're stored.
+     * @param  RecordIssueOccurrence  $issues  Groups exceptions into issues.
+     */
     public function __construct(
         private readonly TelemetryRedactor $redactor,
         private readonly RecordIssueOccurrence $issues,
     ) {}
 
-    /** @param array<string, mixed> $event */
+    /**
+     * Stores one event under its deduplication key, linked to its release, and records exceptions against their issue.
+     *
+     * @param  array<string, mixed>  $event
+     */
     public function store(Environment $environment, array $event, string $dedupeKey, CarbonImmutable $receivedAt, ?int $releaseId = null): TelemetryEvent
     {
         $attributes = $this->attributes($environment, $event, $receivedAt);
@@ -36,7 +46,11 @@ final class TelemetryEventWriter
         return $record;
     }
 
-    /** @param array<string, mixed> $event
+    /**
+     * The event's columns: indexed text cut to its column length, severity defaulting to info, and the event's own time
+     * (or when it arrived).
+     *
+     * @param  array<string, mixed>  $event
      * @return array<string, mixed>
      */
     public function attributes(Environment $environment, array $event, CarbonImmutable $receivedAt): array
@@ -61,12 +75,19 @@ final class TelemetryEventWriter
         ];
     }
 
+    /**
+     * Cuts text to an indexed column's length.
+     */
     private function indexedText(?string $value, int $limit): ?string
     {
         return $value === null ? null : Str::substr($value, 0, $limit);
     }
 
     /**
+     * Redacts an event and drops the fields only used for deduplication. When a name, title, route or service is too
+     * long for its column, the full value is kept in the payload under `_beacon.indexed_fields`, so nothing the client
+     * sent is lost.
+     *
      * @param  array<string, mixed>  $event
      * @return array<string, mixed>
      */

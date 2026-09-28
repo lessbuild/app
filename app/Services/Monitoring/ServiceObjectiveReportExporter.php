@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Monitoring;
 
 use App\Models\ServiceLevelObjective;
+use App\Support\SpreadsheetCell;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -12,6 +13,8 @@ use RuntimeException;
 final class ServiceObjectiveReportExporter
 {
     /**
+     * The SLO report as a two-line CSV, with text cells protected from spreadsheet formulas.
+     *
      * @param  array<string, mixed>  $report
      */
     public function csv(ServiceLevelObjective $objective, array $report): string
@@ -28,10 +31,10 @@ final class ServiceObjectiveReportExporter
             'unknown_requests', 'budget_remaining_percent', 'burn_rate', 'status', 'generated_at_utc',
         ], ',', '"', '\\');
         fputcsv($handle, [
-            $this->text($objective->name),
-            $this->text($objective->indicatorLabel()),
-            $this->text($objective->environment->project->name.' / '.$objective->environment->name),
-            $this->text($objective->scopeLabel()),
+            SpreadsheetCell::text($objective->name),
+            SpreadsheetCell::text($objective->indicatorLabel()),
+            SpreadsheetCell::text($objective->environment->project->name.' / '.$objective->environment->name),
+            SpreadsheetCell::text($objective->scopeLabel()),
             $report['from']->toISOString(),
             $report['until']->toISOString(),
             $report['target'],
@@ -43,7 +46,7 @@ final class ServiceObjectiveReportExporter
             $report['unknown'],
             $report['budget_remaining'],
             $report['burn_rate'],
-            $this->text((string) $report['status']),
+            SpreadsheetCell::text((string) $report['status']),
             now('UTC')->toISOString(),
         ], ',', '"', '\\');
         rewind($handle);
@@ -57,13 +60,11 @@ final class ServiceObjectiveReportExporter
         return $csv;
     }
 
+    /**
+     * A download name from the SLO's name and the report's end.
+     */
     public function filename(ServiceLevelObjective $objective, CarbonImmutable $until): string
     {
         return Str::slug($objective->name).'-slo-report-'.$until->format('Ymd-His').'.csv';
-    }
-
-    private function text(string $value): string
-    {
-        return $value !== '' && in_array($value[0], ['=', '+', '-', '@'], true) ? "'".$value : $value;
     }
 }

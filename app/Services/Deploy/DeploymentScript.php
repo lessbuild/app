@@ -16,8 +16,17 @@ use LogicException;
  */
 final class DeploymentScript
 {
+    /**
+     * Renders the whole deploy script.
+     *
+     * @param  RepositoryDeploymentPlan  $plan  The stages in order.
+     */
     public function __construct(private readonly RepositoryDeploymentPlan $plan) {}
 
+    /**
+     * The bash script for a build: output goes to a log uploaded every five seconds, each stage runs in order, and any
+     * failure restores the previous release, uploads the log and reports the exit code.
+     */
     public function render(Build $build): string
     {
         $failure = ProvisioningCallbackUrl::buildFailure($build);

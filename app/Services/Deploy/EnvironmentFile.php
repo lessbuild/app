@@ -6,7 +6,12 @@ namespace App\Services\Deploy;
 
 class EnvironmentFile
 {
-    /** @param array<string, scalar|null> $variables */
+    /**
+     * Sets variables in `.env` text: each valid key replaces any existing line for it and is appended, double-quoted and
+     * escaped.
+     *
+     * @param  array<string, scalar|null>  $variables
+     */
     public function merge(string $base, array $variables): string
     {
         foreach ($variables as $key => $value) {

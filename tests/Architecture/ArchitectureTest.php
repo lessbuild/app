@@ -17,14 +17,6 @@ use ReflectionMethod;
  */
 final class ArchitectureTest extends TestCase
 {
-    /**
-     * Areas of app/ written before every member had to be documented. The backfill removes each one as it lands;
-     * once the list is empty, this constant goes too.
-     */
-    private const AREAS_AWAITING_DOCUMENTATION = [
-        'Services',
-    ];
-
     public function test_business_code_does_not_depend_on_the_http_layer(): void
     {
         $files = [];
@@ -117,10 +109,6 @@ final class ArchitectureTest extends TestCase
     #[DataProvider('applicationAreas')]
     public function test_every_method_and_property_is_documented(string $area): void
     {
-        if (in_array($area, self::AREAS_AWAITING_DOCUMENTATION, true)) {
-            $this->markTestIncomplete("app/{$area} is still being documented.");
-        }
-
         $missing = [];
         foreach ($this->phpFiles('app/'.$area) as $file) {
             $name = 'App\\'.str_replace('/', '\\', substr($this->relative($file), 4, -4));

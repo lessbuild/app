@@ -17,8 +17,16 @@ use Throwable;
 
 final class SocialiteSignInGateway implements SocialSignInGateway
 {
+    /**
+     * Signs people in through Socialite.
+     *
+     * @param  Repository  $config  Holds each provider's client credentials under `services.{provider}`.
+     */
     public function __construct(private readonly Repository $config) {}
 
+    /**
+     * Whether the provider has client credentials (and, for GitLab, a valid host) in this environment.
+     */
     public function configured(SocialProvider $provider): bool
     {
         $config = $this->settings($provider);
@@ -28,11 +36,18 @@ final class SocialiteSignInGateway implements SocialSignInGateway
             && ($provider !== SocialProvider::GitLab || $this->gitlabHost($config) !== null);
     }
 
+    /**
+     * The provider's authorisation page.
+     */
     public function redirect(SocialProvider $provider): RedirectResponse
     {
         return $this->driver($provider)->redirect();
     }
 
+    /**
+     * The person's profile from the provider's callback, with a usable ID, a valid email or none, and a display name
+     * falling back to the email's local part. Anything the provider gets wrong becomes SocialSignInFailed.
+     */
     public function profile(SocialProvider $provider): SocialProfile
     {
         try {
@@ -52,6 +67,9 @@ final class SocialiteSignInGateway implements SocialSignInGateway
         return new SocialProfile($id, $email, $name !== '' ? $name : ($email !== null ? Str::before($email, '@') : $provider->label()));
     }
 
+    /**
+     * A Socialite driver for the provider, pointed at our callback. Unconfigured providers throw.
+     */
     private function driver(SocialProvider $provider): AbstractProvider
     {
         if (! $this->configured($provider)) {
@@ -76,7 +94,11 @@ final class SocialiteSignInGateway implements SocialSignInGateway
         return $driver;
     }
 
-    /** @return array<string, mixed> */
+    /**
+     * The provider's configuration, or none.
+     *
+     * @return array<string, mixed>
+     */
     private function settings(SocialProvider $provider): array
     {
         $config = $this->config->get('services.'.$provider->value);

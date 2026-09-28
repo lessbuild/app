@@ -21,6 +21,16 @@ use UnexpectedValueException;
 
 final class ProcessTelemetryReceipt
 {
+    /**
+     * Processes queued telemetry batches.
+     *
+     * @param  TelemetryQueue  $queue  Locks the receipt and marks it failed when needed.
+     * @param  TelemetryEventWriter  $writer  Stores the events.
+     * @param  RecordReleases  $releases  Records the releases the events report.
+     * @param  RecordMetricSamples  $metrics  Records metric samples.
+     * @param  TelemetryUsage  $usage  Checks the account's allowance before storing.
+     * @param  RecordUsage  $recordUsage  Counts the stored events against the allowance.
+     */
     public function __construct(
         private readonly TelemetryQueue $queue,
         private readonly TelemetryEventWriter $writer,
@@ -183,6 +193,10 @@ final class ProcessTelemetryReceipt
         return null;
     }
 
+    /**
+     * Marks the receipt failed after its last attempt, keeping the last error code (or recording that the worker was
+     * interrupted). Receipts that finished or were retried since are left alone.
+     */
     public function failed(string $receiptId, int $generation): void
     {
         DB::transaction(function () use ($receiptId, $generation): void {

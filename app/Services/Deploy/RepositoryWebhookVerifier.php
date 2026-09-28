@@ -208,6 +208,9 @@ class RepositoryWebhookVerifier
 
     /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     /**
+     * Reads a GitHub push: whether it's a push, whether it's to the repository's branch (not a branch deletion), and the
+     * new revision, commit message and changed paths.
+     *
      * @param  array<mixed>  $payload
      * @return list<mixed>
      */
@@ -230,6 +233,8 @@ class RepositoryWebhookVerifier
 
     /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     /**
+     * Reads a GitLab push the same way, taking the message from the commit that matches the new revision.
+     *
      * @param  array<mixed>  $payload
      * @return list<mixed>
      */
@@ -255,6 +260,8 @@ class RepositoryWebhookVerifier
 
     /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     /**
+     * Reads a Bitbucket push the same way. Bitbucket doesn't list changed paths, so path filters can't apply.
+     *
      * @param  array<mixed>  $payload
      * @return list<mixed>
      */
@@ -278,6 +285,9 @@ class RepositoryWebhookVerifier
 
     /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     /**
+     * Reads a GitHub pull-request event: opened, reopened and synchronised pull requests update a preview; closed ones
+     * end it.
+     *
      * @param  array<mixed>  $payload
      * @return list<mixed>
      */
@@ -313,6 +323,9 @@ class RepositoryWebhookVerifier
 
     /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     /**
+     * Reads a GitLab merge-request event: open, reopen, update and approval changes update a preview; close and merge
+     * end it.
+     *
      * @param  array<mixed>  $payload
      * @return list<mixed>
      */
@@ -342,6 +355,8 @@ class RepositoryWebhookVerifier
 
     /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     /**
+     * Reads a Bitbucket pull-request event: created and updated update a preview; fulfilled and rejected end it.
+     *
      * @param  array<mixed>  $payload
      * @return list<mixed>
      */
@@ -370,7 +385,12 @@ class RepositoryWebhookVerifier
         );
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
+    /**
+     * Cleans a pull request's action, number, title, branches, revision and target repository, or returns nothing when
+     * the event isn't a usable pull request (no action, number or source branch).
+     *
+     * @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string}
+     */
     private function previewPayload(
         mixed $action,
         mixed $number,

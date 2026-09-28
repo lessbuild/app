@@ -19,8 +19,17 @@ final class ProbeHttpMonitor
 {
     public const BODY_LIMIT = 524288;
 
+    /**
+     * Runs HTTP monitors.
+     *
+     * @param  PublicHttpTarget  $targets  Checks the URL is public and resolves it.
+     */
     public function __construct(private readonly PublicHttpTarget $targets) {}
 
+    /**
+     * Requests the monitor's URL at its pinned public address, without redirects or proxies and reading at most the body
+     * limit, then checks the status range, required text and duration. Bearer tokens are only sent over HTTPS.
+     */
     public function probe(Monitor $monitor): MonitorObservation
     {
         $start = hrtime(true);

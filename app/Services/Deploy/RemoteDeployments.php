@@ -11,6 +11,11 @@ use RuntimeException;
 /** Stops a running deployment script, and switches a website's `current` to a retained release (ported from Deployer). */
 class RemoteDeployments
 {
+    /**
+     * Controls deploys running on servers.
+     *
+     * @param  ServerShell  $shell  Runs commands on the website's server.
+     */
     public function __construct(private readonly ServerShell $shell) {}
 
     /** Kill the script's process group (only if it's still that script) and return the log it had written. */

@@ -19,6 +19,9 @@ final class EmailDeliveryLedger
     public const STALE_MINUTES = 15;
 
     /**
+     * Sends one ledgered email: skips it when already sent or being sent by another run (for up to 15 minutes),
+     * otherwise marks it sending, sends, and records sent or failed. Returns what happened.
+     *
      * @param  class-string<UsageAlertDelivery|IssueDigestDelivery>  $model
      * @param  array<string, string|int>  $key  timestamps as 'Y-m-d H:i:s.u' strings
      * @param  array<string, mixed>  $values

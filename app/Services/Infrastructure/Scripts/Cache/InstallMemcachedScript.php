@@ -9,20 +9,11 @@ use App\Models\Server;
 
 class InstallMemcachedScript implements ServerScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Install Memcached';
+    public const TITLE = 'Install Memcached';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Install Memcached and configure Memcached';
+    public const DESCRIPTION = 'Install Memcached and configure Memcached';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'installed-memcached';
+    public const IDENTIFIER = 'installed-memcached';
 
     /**
      * Shell script to run

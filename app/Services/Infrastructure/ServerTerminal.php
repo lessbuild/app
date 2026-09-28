@@ -16,9 +16,19 @@ use Throwable;
 /** Opens an interactive root shell on a server over `ssh -tt`, checking its pinned host key. Swapped for a fake in tests. */
 class ServerTerminal
 {
+    /**
+     * Opens interactive shells on servers.
+     *
+     * @param  Runner  $runner  Builds the SSH client with the server's key and pinned host key.
+     */
     public function __construct(private readonly Runner $runner) {}
 
-    /** @throws RuntimeException with a message safe to show */
+    /**
+     * Opens a root shell with a pseudo-terminal of the given size on an active server with a pinned host key. The
+     * connection buffers output until it's read, and closing it stops the shell and removes the temporary key files.
+     *
+     * @throws RuntimeException with a message safe to show
+     */
     public function connect(Server $server, TerminalSize $size): TerminalConnection
     {
         if ($server->provisioning_status !== Server::STATUS_ACTIVE || $server->ssh_host_key === null || $server->public_ip === null || $server->ssh_private_key === null) {

@@ -22,11 +22,18 @@ final class MonitorChanges
         return Environment::query()->where('project_id', $project->id)->lockForUpdate()->findOrFail($environmentId);
     }
 
+    /**
+     * Refuses a change when the monitor changed since the form was opened.
+     */
     public function version(Monitor $monitor, int $version): void
     {
         StateConflict::unlessVersion($monitor->state_version, $version, __('This monitor changed. Refresh before trying again.'));
     }
 
+    /**
+     * Cancels the monitor's queued and running checks and unstarted jobs (and open heartbeat runs), because they would
+     * test the old settings.
+     */
     public function cancelChecks(Monitor $monitor): void
     {
         if ($monitor->type === 'heartbeat') {

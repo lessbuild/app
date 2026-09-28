@@ -27,9 +27,21 @@ use DateTimeInterface;
  */
 final class IssueDigest
 {
+    /**
+     * Builds and sends issue digests.
+     *
+     * @param  TelemetryRedactor  $redactor  Redacts issue titles and locations.
+     * @param  EmailDeliveryLedger  $ledger  Makes sure each digest is sent once and records how it went.
+     * @param  Entitlements  $entitlements  Checks the plan includes the digest.
+     */
     public function __construct(private readonly TelemetryRedactor $redactor, private readonly EmailDeliveryLedger $ledger, private readonly Entitlements $entitlements) {}
 
-    /** @return Digest */
+    /**
+     * The account's digest for a period: open, critical and snoozed counts, and the issues first seen or resolved in it.
+     * `active` is false when there's nothing to say.
+     *
+     * @return Digest
+     */
     public function report(Account $account, CarbonImmutable $from, CarbonImmutable $until): array
     {
         $issues = fn () => Issue::query()->whereIn('project_id', $account->projects()->select('id'));
@@ -51,7 +63,12 @@ final class IssueDigest
         ];
     }
 
-    /** @return array{sent: int, skipped: int, failed: int} */
+    /**
+     * Emails the digest for the period to everyone who wants it, in accounts whose plan includes it and that have
+     * something to report, once per person and period.
+     *
+     * @return array{sent: int, skipped: int, failed: int}
+     */
     public function send(CarbonImmutable $from, CarbonImmutable $until, ?string $accountId = null): array
     {
         $totals = ['sent' => 0, 'skipped' => 0, 'failed' => 0];
@@ -88,7 +105,12 @@ final class IssueDigest
         return $preference === null ? $account->roleOf($user) === AccountRole::Owner : (bool) $preference;
     }
 
-    /** @return list<User> */
+    /**
+     * The members who get the digest: owners unless they turned it off, and others who turned it on, as long as they can
+     * use Monitoring, aren't viewers, and have a verified email.
+     *
+     * @return list<User>
+     */
     private function recipients(Account $account): array
     {
         $preferences = IssueDigestPreference::query()->where('account_id', $account->id)->pluck('enabled', 'user_id');

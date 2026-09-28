@@ -103,6 +103,9 @@ final class ServiceObjectiveReport
         ];
     }
 
+    /**
+     * A stored UTC time as Carbon, or null.
+     */
     private function timestamp(mixed $value): ?CarbonImmutable
     {
         return $value === null ? null : CarbonImmutable::parse($value, 'UTC');

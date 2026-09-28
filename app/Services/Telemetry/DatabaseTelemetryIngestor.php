@@ -17,6 +17,15 @@ use Illuminate\Support\Facades\DB;
 
 final class DatabaseTelemetryIngestor implements TelemetryIngestor
 {
+    /**
+     * Accepts telemetry batches into the database.
+     *
+     * @param  TelemetryEventWriter  $writer  Prepares events for storage.
+     * @param  TelemetryPayloadGuard  $guard  Enforces the size limits.
+     * @param  IngestIdentity  $identity  Works out the batch's and each event's deduplication keys.
+     * @param  TelemetryQueue  $queue  Queues the batch for processing.
+     * @param  MetricProjection  $metrics  Prepares metric samples while the raw data is at hand.
+     */
     public function __construct(
         private readonly TelemetryEventWriter $writer,
         private readonly TelemetryPayloadGuard $guard,
@@ -25,7 +34,13 @@ final class DatabaseTelemetryIngestor implements TelemetryIngestor
         private readonly MetricProjection $metrics,
     ) {}
 
-    /** @param list<array<string, mixed>> $events */
+    /**
+     * Accepts a batch: a repeat of a batch already received returns its original receipt (and a changed payload under
+     * the same identity is refused); otherwise events already stored are counted as duplicates, the rest are kept with
+     * the receipt and queued for processing. The key and the project's Monitoring are checked again under lock.
+     *
+     * @param  list<array<string, mixed>>  $events
+     */
     public function ingest(Environment $environment, string $batchId, array $events, ?IngestContext $context = null): IngestResult
     {
         $context ??= new IngestContext;

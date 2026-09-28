@@ -11,8 +11,18 @@ use Throwable;
 
 final class ProbeDnsMonitor
 {
+    /**
+     * Runs DNS monitors.
+     *
+     * @param  DnsRecordResolver  $dns  Looks up the records.
+     * @param  DnsRecordSet  $sets  Normalises hostnames and records so they compare reliably.
+     */
     public function __construct(private readonly DnsRecordResolver $dns, private readonly DnsRecordSet $sets) {}
 
+    /**
+     * Looks up the monitor's records and compares them with the expected set: all must be there, and with an exact match
+     * nothing else may be. The counts go into the observation; the values themselves only into the encrypted evidence.
+     */
     public function probe(Monitor $monitor): MonitorObservation
     {
         $started = hrtime(true);

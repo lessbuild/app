@@ -15,6 +15,11 @@ use Illuminate\Support\Facades\Notification;
 /** Checks a new server reading against the account's alert rules and tells owners and admins when one trips or recovers. */
 class ServerAlerts
 {
+    /**
+     * Checks a new reading against the account's enabled rules for the server (and for every server). A rule trips after
+     * its consecutive breaches, outside its cooldown, and recovers on the first reading back in range; owners and admins
+     * are told about both.
+     */
     public function evaluate(ServerMetric $metric): void
     {
         $server = $metric->server;

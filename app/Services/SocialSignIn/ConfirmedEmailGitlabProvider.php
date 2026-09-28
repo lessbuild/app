@@ -11,10 +11,16 @@ use UnexpectedValueException;
 /** Uses GitLab's v4 profile endpoint and only passes the email on when GitLab has confirmed it. */
 final class ConfirmedEmailGitlabProvider extends GitlabProvider
 {
-    /** @var list<string> */
+    /**
+     * Only the profile and email are read.
+     *
+     * @var list<string>
+     */
     protected $scopes = ['read_user'];
 
     /**
+     * Reads the profile from GitLab's v4 API, dropping the email unless GitLab says it's confirmed.
+     *
      * @param  string  $token
      * @return array<string, mixed>
      */

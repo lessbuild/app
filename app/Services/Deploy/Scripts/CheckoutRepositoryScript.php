@@ -10,20 +10,11 @@ use InvalidArgumentException;
 
 class CheckoutRepositoryScript extends BuildProvisioningScript
 {
-    /**
-     * Title of the script
-     */
-    public static string $title = 'Checkout Repository';
+    public const TITLE = 'Checkout Repository';
 
-    /**
-     * Description of the script
-     */
-    public static string $description = 'Checkout the repository on the server';
+    public const DESCRIPTION = 'Checkout the repository on the server';
 
-    /**
-     * Identifier of the script
-     */
-    public static string $identifier = 'checked-repository';
+    public const IDENTIFIER = 'checked-repository';
 
     /**
      * The script to run

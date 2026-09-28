@@ -14,9 +14,19 @@ final class MetricChart
 {
     public const LIMIT = 600;
 
+    /**
+     * Reads metric series for charts and alerts.
+     *
+     * @param  MetricAnomalyDetector  $anomalies  Marks unusual points.
+     */
     public function __construct(private readonly MetricAnomalyDetector $anomalies) {}
 
-    /** @return array<string, mixed> */
+    /**
+     * A series' points over a window for charting (the latest ones when there are too many), as values or per-second
+     * rates, positioned on the chart and marked for anomalies.
+     *
+     * @return array<string, mixed>
+     */
     public function read(MetricSeries $series, CarbonImmutable $from, CarbonImmutable $until, string $mode): array
     {
         $samples = $series->samples()->where('time_key', '>=', MetricProjection::timeKey($from))
@@ -52,7 +62,12 @@ final class MetricChart
         ];
     }
 
-    /** @return array{value: float|null, state: string} */
+    /**
+     * One sample's value, or its rate from the previous sample (delta series use their own interval). Resets, gaps and
+     * invalid times give no value with the reason.
+     *
+     * @return array{value: float|null, state: string}
+     */
     public function reading(MetricSeries $series, MetricSample $sample, ?MetricSample $previous, string $mode): array
     {
         if ($sample->state !== 'valid' || $sample->value === null) {
