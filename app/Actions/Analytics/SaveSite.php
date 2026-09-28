@@ -9,6 +9,7 @@ use App\Exceptions\AnalyticsRuleViolation;
 use App\Models\AnalyticsSite;
 use App\Models\Project;
 use App\Models\User;
+use App\Services\Billing\Entitlements;
 use App\Support\Hostname;
 use Illuminate\Support\Facades\Gate;
 
@@ -20,11 +21,13 @@ final class SaveSite
      * Creates or changes an analytics site.
      *
      * @param  VerifySite  $verify  Verifies it once its domains are saved.
+     * @param  Entitlements  $entitlements  Checks the plan's site limit.
      */
-    public function __construct(private readonly VerifySite $verify) {}
+    public function __construct(private readonly VerifySite $verify, private readonly Entitlements $entitlements) {}
 
     /**
-     * Create a site in the project, or update one. New sites are verified straight away when a domain is already verified in the project.
+     * Create a site in the project, or update one. A new site counts against the account's `analytics.sites.max`. New
+     * sites are verified straight away when a domain is already verified in the project.
      *
      * @param  User  $actor
      * @param  Project  $project
@@ -42,6 +45,14 @@ final class SaveSite
         }
         if ($details->environmentId !== null && ! $project->environments()->whereKey($details->environmentId)->exists()) {
             throw AnalyticsRuleViolation::environmentNotInProject();
+        }
+
+        if ($site === null) {
+            $sites = AnalyticsSite::query()->whereIn('project_id', Project::query()->where('account_id', $project->account_id)->select('id'))->count();
+            $decision = $this->entitlements->for($project->account)->allows('analytics.sites.max', $sites + 1);
+            if (! $decision->allowed) {
+                throw AnalyticsRuleViolation::siteLimitReached($decision->reason ?? __('Your Analytics plan has no room for another site.'));
+            }
         }
 
         $site ??= new AnalyticsSite;

@@ -7,7 +7,9 @@ namespace App\Jobs\Analytics;
 use App\Actions\Analytics\RebuildGoalConversions;
 use App\Actions\Analytics\RebuildReportAggregates;
 use App\Actions\Analytics\RebuildSiteVisits;
+use App\Actions\Billing\RecordUsage;
 use App\Enums\IngestionStatus;
+use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsIngestionBatch;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
@@ -37,20 +39,23 @@ final class ProcessEventBatch implements ShouldQueue
     public function __construct(public int $batchId) {}
 
     /**
-     * Rebuild everything the batch touches in one transaction, marks it processed, and moves the site's "last
+     * Rebuild everything the batch touches in one transaction, mark it processed, count its pageviews against the
+     * account's monthly allowance (once, since a processed batch isn't processed again), and move the site's "last
      * processed" time forward.
      *
      * @param  RebuildSiteVisits  $rebuildSiteVisits
      * @param  RebuildGoalConversions  $rebuildGoalConversions
      * @param  RebuildReportAggregates  $rebuildReportAggregates
+     * @param  RecordUsage  $recordUsage
      * @return void
      */
     public function handle(
         RebuildSiteVisits $rebuildSiteVisits,
         RebuildGoalConversions $rebuildGoalConversions,
         RebuildReportAggregates $rebuildReportAggregates,
+        RecordUsage $recordUsage,
     ): void {
-        DB::transaction(function () use ($rebuildSiteVisits, $rebuildGoalConversions, $rebuildReportAggregates): void {
+        DB::transaction(function () use ($rebuildSiteVisits, $rebuildGoalConversions, $rebuildReportAggregates, $recordUsage): void {
             $batch = AnalyticsIngestionBatch::query()->lockForUpdate()->find($this->batchId);
 
             if (! $batch || $batch->status === IngestionStatus::Processed->value) {
@@ -67,6 +72,8 @@ final class ProcessEventBatch implements ShouldQueue
                 'failure_message' => null,
             ]);
             $site = $batch->site;
+            $pageviews = AnalyticsEvent::query()->where('ingestion_batch_id', $batch->id)->where('type', 'pageview')->count();
+            $recordUsage->handle($site->project->account_id, 'analytics.pageviews', $pageviews, $batch->accepted_at);
             if ($site->last_processed_at === null || $batch->processed_at?->greaterThan($site->last_processed_at)) {
                 $site->forceFill(['last_processed_at' => $batch->processed_at])->save();
             }

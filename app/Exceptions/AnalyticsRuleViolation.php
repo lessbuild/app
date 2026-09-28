@@ -20,6 +20,17 @@ final class AnalyticsRuleViolation extends RuleViolation
     }
 
     /**
+     * Build the violation for a new site beyond the plan's site limit.
+     *
+     * @param  string  $reason  the entitlement's explanation
+     * @return AnalyticsRuleViolation
+     */
+    public static function siteLimitReached(string $reason): self
+    {
+        return new self('name', $reason);
+    }
+
+    /**
      * Build the violation for a site pointed at an environment from a different project.
      *
      * @return AnalyticsRuleViolation

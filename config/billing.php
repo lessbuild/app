@@ -26,5 +26,11 @@ return [
                 'scale' => env('STRIPE_PRICE_MONITORING_SCALE'),
             ],
         ],
+        'analytics' => [
+            'tier' => [
+                'pro' => env('STRIPE_PRICE_ANALYTICS_PRO'),
+                'business' => env('STRIPE_PRICE_ANALYTICS_BUSINESS'),
+            ],
+        ],
     ],
 ];

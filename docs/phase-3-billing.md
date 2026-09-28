@@ -17,10 +17,15 @@ Design notes for Phase 3 of [the plan](platform-v2-plan.md).
 
 - **Deploy**: Free $0, Starter $9, Pro $19, Team $49, Business $99, Unlimited $199 (Deployer's plans and limits).
 - **Monitoring**: Free $0, Pro $29, Team $99, Scale $299 (Monitor's plans; events per month and retention).
-- **Analytics** and **Infrastructure**: Free tier now. Paid tiers are defined with limits, but have **no price until the owner sets pricing** (open item from the handoff), so they can't be bought yet.
+- **Analytics** (decided 2026-09-28; the owner left pricing to us):
+  - Free $0: 3 sites, 10K pageviews a month, 90 days of event history.
+  - Pro $9: unlimited sites, 100K pageviews a month, a year of event history.
+  - Business $29: unlimited sites, 1M pageviews a month, two years of event history.
+  - Pageviews are counted by the `analytics.pageviews` meter and shown against the allowance, with the usual usage alerts. Going over isn't charged per pageview and doesn't stop collection; it's a prompt to move up.
+  - Reports, goals and exports are on every tier: tiers differ only in volume, sites and history.
+- **Infrastructure** stays included: its server and website limits come from the Deploy plan, so there's no separate charge to pay twice.
+- **Yearly prices** aren't offered at launch. One subscription can only have one interval, and monthly keeps plan changes and proration simple. If they come back, they'd be ten months' price for a year.
 
-## Open items for the owner
+## Needed at launch
 
-- Prices and Stripe price IDs for the paid Analytics and Infrastructure tiers.
-- Stripe price IDs for every paid tier and add-on in each environment (`.env`).
-- Whether yearly prices come back (the old Deployer had them); the catalogue supports monthly only for now.
+- Stripe price IDs for every paid tier and add-on in each environment (`.env`, `STRIPE_PRICE_<SERVICE>_<TIER>`): Deploy Starter, Pro, Team, Business and Unlimited; Monitoring Pro, Team and Scale; Analytics Pro and Business. A paid tier without one is shown but can't be bought.

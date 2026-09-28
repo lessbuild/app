@@ -7,10 +7,12 @@ namespace Tests\Feature\Analytics;
 use App\Actions\Analytics\RebuildGoalConversions;
 use App\Actions\Analytics\RebuildReportAggregates;
 use App\Actions\Analytics\RebuildSiteVisits;
+use App\Actions\Billing\RecordUsage;
 use App\Jobs\Analytics\ProcessEventBatch;
 use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsIngestionBatch;
 use App\Models\AnalyticsSite;
+use App\Models\UsageRecord;
 use App\Queries\Analytics\AnalyticsReportQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -70,13 +72,15 @@ final class AnalyticsCollectionTest extends TestCase
         ]);
 
         $batch = AnalyticsIngestionBatch::query()->where('site_id', $site->id)->sole();
-        (new ProcessEventBatch($batch->id))->handle(app(RebuildSiteVisits::class), app(RebuildGoalConversions::class), app(RebuildReportAggregates::class));
+        (new ProcessEventBatch($batch->id))->handle(app(RebuildSiteVisits::class), app(RebuildGoalConversions::class), app(RebuildReportAggregates::class), app(RecordUsage::class));
 
         $this->assertDatabaseHas('analytics_ingestion_batches', [
             'id' => $batch->id,
             'status' => 'processed',
         ]);
         $this->assertNotNull($site->refresh()->last_processed_at);
+        // One pageview (the other event isn't one) counts against the plan's monthly allowance.
+        $this->assertSame(1, (int) UsageRecord::query()->where('meter', 'analytics.pageviews')->sum('quantity'));
         $this->assertDatabaseHas('analytics_daily_aggregates', ['site_id' => $site->id, 'dimension' => 'all']);
         $this->assertDatabaseHas('analytics_goal_conversions', ['site_id' => $site->id, 'goal_id' => $goal->id]);
     }
@@ -124,7 +128,7 @@ final class AnalyticsCollectionTest extends TestCase
         $this->assertFalse($report['hasData']);
         $this->assertDatabaseCount('analytics_visits', 0);
 
-        (new ProcessEventBatch($batch->id))->handle(app(RebuildSiteVisits::class), app(RebuildGoalConversions::class), app(RebuildReportAggregates::class));
+        (new ProcessEventBatch($batch->id))->handle(app(RebuildSiteVisits::class), app(RebuildGoalConversions::class), app(RebuildReportAggregates::class), app(RecordUsage::class));
 
         $report = app(AnalyticsReportQuery::class)->handle($site);
         $this->assertTrue($report['hasData']);
