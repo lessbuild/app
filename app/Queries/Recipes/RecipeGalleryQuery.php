@@ -38,7 +38,8 @@ final class RecipeGalleryQuery
             ->when($category !== null, fn (Builder $query) => $query->where('category', $category))
             ->when((bool) ($filters['favorites'] ?? false), fn (Builder $query) => $query->whereIn('id', RecipeFavorite::query()->where('user_id', $viewer->id)->select('recipe_id')));
         match ($filters['sort'] ?? 'popular') {
-            'rating' => $query->orderByDesc('ratings_avg_rating')->orderByDesc('ratings_count'),
+            // Unrated recipes last on every database (PostgreSQL sorts NULL first when descending).
+            'rating' => $query->orderByDesc(RecipeRating::query()->selectRaw('coalesce(avg(rating), 0)')->whereColumn('recipe_id', 'recipes.id'))->orderByDesc('ratings_count'),
             'newest' => $query->orderByDesc('published_at'),
             default => $query->orderByDesc('install_count'),
         };
