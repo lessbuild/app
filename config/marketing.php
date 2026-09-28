@@ -9,7 +9,7 @@ return [
     'summary' => 'Deploy from Git to servers in your own cloud accounts, watch every environment, and see how people use what you ship, with one account, one bill and one set of permissions.',
 
     'integrations' => [
-        ['Deploy → Monitoring', 'Every live deploy becomes a release marker, so issues and incidents point at the release that caused them.'],
+        ['Deploy → Monitoring and Analytics', 'Every live deploy becomes a release marker: issues and incidents point at the release that caused them, and Analytics reports list it beside the traffic.'],
         ['Infrastructure → Deploy', 'Repositories deploy to the websites and servers you manage here, with backups, domains and load balancers beside them.'],
         ['Monitoring → everyone', 'Alerts, incidents and status pages are shared by every service, with one set of destinations and escalations.'],
         ['One account', 'Members, roles, per-service access, API tokens, audit history and billing are set once for all four services.'],

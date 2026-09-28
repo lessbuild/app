@@ -11,7 +11,9 @@ use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsExport;
 use App\Models\AnalyticsGoal;
 use App\Models\AnalyticsSite;
+use App\Models\Deployment;
 use App\Models\Project;
+use App\Models\Release;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -53,6 +55,17 @@ final class ReportPagesTest extends TestCase
 
         $this->actingAs($this->owner)->get("{$base}?days=7&path=/thank-you")->assertOk()->assertSee('/thank-you')->assertSee(__('Clear'));
         $this->actingAs($this->owner)->get("{$base}?days=9999&site=999")->assertOk()->assertSee('Shop');
+    }
+
+    public function test_the_report_lists_releases_that_went_live_in_the_period(): void
+    {
+        $production = $this->project->environments()->where('slug', 'production')->firstOrFail();
+        $release = fn (string $version): int => Release::factory()->create(['project_id' => $this->project->id, 'version' => $version])->id;
+        Deployment::factory()->create(['environment_id' => $production->id, 'release_id' => $release('v2.4.0'), 'source' => 'deploy', 'deployed_at' => now()->subDays(2)]);
+        Deployment::factory()->create(['environment_id' => $production->id, 'release_id' => $release('v1.0.0'), 'deployed_at' => now()->subDays(60)]);
+
+        $this->actingAs($this->owner)->get("/projects/{$this->project->id}/analytics")
+            ->assertOk()->assertSee('Releases in this period')->assertSee('v2.4.0')->assertDontSee('v1.0.0');
     }
 
     public function test_goals_are_created_edited_and_removed_and_conversions_are_recounted(): void

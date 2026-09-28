@@ -98,7 +98,7 @@ This supersedes `docs/core-boundary-and-integration-plan-2026-09-26.md` and the 
    - GitHub and Stripe webhooks
    - Status page URLs
    Also marketing and pricing pages (D24).
-7. **Migration and cutover**:
+7. **Migration and cutover** — *dropped for data (owner, 2026-09-28): no old data is kept, so there are no importers. Cutover is a fresh start on v2; the old public contracts stay so agents and scripts can be repointed without changes.* The original plan:
    - Import commands from the three old databases. Each is idempotent, has a dry run and a reconciliation report, keeps old IDs in `legacy_*` columns, re-encrypts secrets, and preserves tracker IDs, ingest tokens and Stripe customers/subscriptions. Ambiguous records are held for review, as the existing importers do.
    - Rehearse on a copy of production.
    - Migrate customers in cohorts once their features are at parity.

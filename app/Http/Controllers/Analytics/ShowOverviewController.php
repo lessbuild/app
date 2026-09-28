@@ -8,6 +8,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\AnalyticsReportQuery;
 use App\Queries\Analytics\ProjectSitesQuery;
+use App\Queries\Analytics\SiteReleasesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -17,7 +18,8 @@ use Illuminate\Http\Request;
 final class ShowOverviewController
 {
     /**
-     * Show the report page. Unknown day ranges fall back to 30 days, and filters are cut to their column lengths.
+     * Show the report page, with the releases that went live in the period. Unknown day ranges fall back to 30 days,
+     * and filters are cut to their column lengths.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -25,9 +27,10 @@ final class ShowOverviewController
      * @param  ProjectOverviewQuery  $overview
      * @param  ProjectSitesQuery  $sites
      * @param  AnalyticsReportQuery  $report
+     * @param  SiteReleasesQuery  $releases
      * @return View
      */
-    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report): View
+    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report, SiteReleasesQuery $releases): View
     {
         $site = $sites->selected($project, $request->query('site'));
         $days = in_array((int) $request->query('days'), [7, 30, 90, 365], true) ? (int) $request->query('days') : 30;
@@ -37,13 +40,16 @@ final class ShowOverviewController
             $filters[$key] = $value !== '' ? mb_substr($value, 0, $max) : null;
         }
 
+        $summary = $site !== null ? $report->handle($site, $days, $filters) : null;
+
         return view('analytics.overview', [
             'overview' => $overview->handle($project, $user),
             'sites' => $sites->handle($project),
             'site' => $site,
             'days' => $days,
             'filters' => $filters,
-            'summary' => $site !== null ? $report->handle($site, $days, $filters) : null,
+            'summary' => $summary,
+            'releases' => $site !== null && $summary !== null ? $releases->handle($site, $summary['range']['start'], $summary['range']['end']) : collect(),
             'canManage' => $user->can('manageService', [$project, 'analytics']),
         ]);
     }

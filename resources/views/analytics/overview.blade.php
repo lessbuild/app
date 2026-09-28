@@ -77,6 +77,16 @@
             @else
                 <p class="text-sm text-muted">{{ __('No pageviews in this period yet.') }}</p>
             @endif
+            @if ($releases->isNotEmpty())
+                <div class="mt-4 border-t border-line pt-4">
+                    <h3 class="text-sm font-extrabold text-ink">{{ __('Releases in this period') }}</h3>
+                    <ul class="mt-2 grid gap-1 text-xs text-muted">
+                        @foreach ($releases as $deployment)
+                            <li><span class="tabular-nums">{{ $deployment->deployed_at->setTimezone($site->timezone)->format('M j, H:i') }}</span> · <span class="font-mono text-ink">{{ $deployment->release->version }}</span> · {{ $deployment->environment->name }}@if ($deployment->source === 'deploy') · {{ __('Deploy') }}@endif</li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </x-signal.ui.card>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
