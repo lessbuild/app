@@ -1,0 +1,91 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature\Admin;
+
+use App\Models\Account;
+use App\Models\BillingAccount;
+use App\Models\PlatformAdminEvent;
+use App\Models\Project;
+use App\Models\SignInEvent;
+use App\Models\User;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Cache;
+use Tests\Feature\Monitoring\MonitoringHelpers;
+use Tests\TestCase;
+
+final class AdminCustomersTest extends TestCase
+{
+    use MonitoringHelpers;
+    use RefreshDatabase;
+
+    public function test_business_analytics_counts_accounts_revenue_and_tiers(): void
+    {
+        $admin = $this->admin();
+        $paying = Project::factory()->withServices(['deploy'])->create();
+        $this->onTier($paying, 'deploy', 'pro');
+        $this->onTier($paying, 'monitoring', 'pro');
+        Project::factory()->create();
+
+        $page = $this->as($admin)->get('/admin/analytics')->assertOk();
+        $page->assertSee('Estimated monthly revenue')->assertSee('1 paying account')->assertSee('Deploy tiers')->assertSee('Sign-ups per day');
+        $totals = $page->viewData('totals');
+        $this->assertSame([3, 1], [$totals['accounts'], $totals['paid_accounts']]);
+        $this->assertGreaterThan(0, $totals['mrr_cents']);
+        $this->assertSame(1, $page->viewData('services')['deploy']['tiers']['pro']['accounts']);
+        $this->assertSame(2, $page->viewData('services')['deploy']['tiers']['free']['accounts']);
+        $this->assertCount(30, $page->viewData('trend'));
+        $this->assertTrue(Cache::has('admin:business-analytics'));
+    }
+
+    public function test_support_finds_and_opens_people_and_accounts_leaving_a_trail(): void
+    {
+        $admin = $this->admin();
+        $customer = User::factory()->create(['name' => 'Carla Customer', 'email' => 'carla@shop.test']);
+        $account = Account::factory()->withMember($customer)->create(['name' => 'Carla’s Shop']);
+        Project::factory()->for($account)->withServices(['analytics'])->create(['name' => 'Storefront']);
+        $billing = new BillingAccount;
+        $billing->forceFill(['account_id' => $account->id, 'stripe_customer_id' => 'cus_123', 'status' => 'active'])->save();
+        $this->onTier($account, 'analytics', 'growth');
+        $signIn = new SignInEvent;
+        $signIn->forceFill(['user_id' => $customer->id, 'succeeded' => true, 'two_factor' => false, 'ip_address' => '198.51.100.7'])->save();
+
+        $this->as($admin)->get('/admin/customers?q=CARLA@')->assertOk()->assertSee('carla@shop.test')->assertDontSee('Carla’s Shop');
+        $this->as($admin)->get('/admin/customers?q=cus_123')->assertOk()->assertSee('Carla’s Shop');
+        $this->as($admin)->get('/admin/customers?q=c')->assertOk()->assertDontSee('carla@shop.test');
+
+        $this->as($admin)->get("/admin/customers/accounts/{$account->id}")->assertOk()
+            ->assertSee('carla@shop.test')->assertSee('Storefront')->assertSee('analytics')->assertSee('cus_123')->assertSee('growth');
+        $this->as($admin)->get("/admin/customers/users/{$customer->id}")->assertOk()->assertSee('198.51.100.7')->assertSee('Carla’s Shop');
+        $this->as($admin)->get('/admin/customers/users/01ARZ3NDEKTSV4RRFFQ69G5FAV')->assertNotFound();
+
+        $this->assertSame(['Opened the account Carla’s Shop.', 'Opened carla@shop.test.'], PlatformAdminEvent::query()->where('action', 'customer.viewed')->orderBy('id')->pluck('description')->all());
+        $this->actingAs($customer)->get("/admin/customers/accounts/{$account->id}")->assertNotFound();
+    }
+
+    /**
+     * Make a platform admin with an authenticator app.
+     *
+     * @return User
+     */
+    private function admin(): User
+    {
+        $user = User::factory()->create();
+        Account::factory()->withMember($user)->create();
+        $user->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
+
+        return $user->refresh();
+    }
+
+    /**
+     * Act as the admin with a fresh confirmation.
+     *
+     * @param  User  $admin
+     * @return $this
+     */
+    private function as(User $admin): static
+    {
+        return $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
+    }
+}
