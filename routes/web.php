@@ -12,6 +12,7 @@ use App\Http\Controllers\Account\CreateApiTokenController;
 use App\Http\Controllers\Account\DeleteAccountController;
 use App\Http\Controllers\Account\DeleteProviderController;
 use App\Http\Controllers\Account\EditAccountSettingsController;
+use App\Http\Controllers\Account\ExportAuditLogController;
 use App\Http\Controllers\Account\InviteMemberController;
 use App\Http\Controllers\Account\OpenBillingPortalController;
 use App\Http\Controllers\Account\RemoveMemberController;
@@ -253,6 +254,7 @@ use App\Http\Controllers\Monitoring\UpdateMonitorController;
 use App\Http\Controllers\Monitoring\UpdateObjectiveController;
 use App\Http\Controllers\Monitoring\UpdateStatusPageController;
 use App\Http\Controllers\Monitoring\UpdateStatusUpdateController;
+use App\Http\Controllers\Notifications\ExportNotificationsController;
 use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Notifications\OpenNotificationController;
 use App\Http\Controllers\Notifications\ShowNotificationsController;
@@ -291,6 +293,8 @@ use App\Http\Controllers\Recipes\ShowRecipeReportsController;
 use App\Http\Controllers\Recipes\ShowRecipesController;
 use App\Http\Controllers\Recipes\StoreRecipeController;
 use App\Http\Controllers\Recipes\UpdateRecipeController;
+use App\Http\Controllers\SavedViews\DeleteSavedViewController;
+use App\Http\Controllers\SavedViews\StoreSavedViewController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\Services\ShowServiceController;
 use App\Http\Controllers\Settings\DeleteUserController;
@@ -391,6 +395,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
 
     Route::get('/search', SearchController::class)->middleware('throttle:120,1')->name('search');
     Route::get('/notifications', ShowNotificationsController::class)->name('notifications.index');
+    Route::get('/notifications/export', ExportNotificationsController::class)->middleware('throttle:10,1')->name('notifications.export');
     Route::post('/notifications/read', MarkAllNotificationsReadController::class)->name('notifications.read-all');
     Route::get('/notifications/{notification}', OpenNotificationController::class)->name('notifications.open');
 
@@ -656,11 +661,14 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
     Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
+    Route::get('/account/audit-log/export', ExportAuditLogController::class)->middleware(['account.can:viewAuditLog', 'throttle:10,1'])->name('account.audit-log.export');
     // GitHub App installs (Deployer's paths: the App's Setup URL points at /github-app/callback).
     Route::get('/github-app/connect', ConnectGitHubAppController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.connect');
     Route::get('/github-app/callback', CompleteGitHubAppInstallController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.callback');
     Route::get('/github-app/providers/{provider}/repositories', ShowGitHubAppRepositoriesController::class)->whereNumber('provider')->middleware(['can:view,provider', 'throttle:20,1'])->name('github-app.repositories');
     Route::post('/feedback', StoreFeedbackController::class)->middleware('throttle:10,1')->name('feedback.store');
+    Route::post('/saved-views', StoreSavedViewController::class)->middleware('throttle:30,1')->name('saved-views.store');
+    Route::delete('/saved-views/{view}', DeleteSavedViewController::class)->whereNumber('view')->middleware('throttle:30,1')->name('saved-views.destroy');
     // Platform operators only: a 404 for anyone else, a second factor, and a confirmation in the last 15 minutes.
     Route::prefix('/admin')->name('admin.')->middleware(['platform.admin', 'password.confirm:password.confirm,'.config('platform.admin_confirmation_seconds')])->group(function (): void {
         Route::get('/', ShowAdminHomeController::class)->name('home');

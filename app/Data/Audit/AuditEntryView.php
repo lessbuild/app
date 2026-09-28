@@ -20,6 +20,7 @@ final readonly class AuditEntryView
      * @param  ?string  $ipAddress  Where the request came from, when it came from a request.
      * @param  ?string  $device  The browser and system it came from.
      * @param  CarbonImmutable  $at  When it happened.
+     * @param  string  $category  Which group of actions it's in (AuditAction::CATEGORIES).
      */
     public function __construct(
         public string $id,
@@ -29,5 +30,6 @@ final readonly class AuditEntryView
         public ?string $ipAddress,
         public ?string $device,
         public CarbonImmutable $at,
+        public string $category = 'team',
     ) {}
 }

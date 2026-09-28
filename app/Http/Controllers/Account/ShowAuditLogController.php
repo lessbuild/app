@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Account;
 
+use App\Enums\AuditAction;
 use App\Http\Attributes\CurrentAccount;
+use App\Http\Requests\Account\AuditLogRequest;
 use App\Models\Account;
 use App\Models\AuditEntry;
 use App\Models\User;
@@ -12,31 +14,32 @@ use App\Queries\Audit\AccountAuditLogQuery;
 use App\Queries\Projects\ProjectSwitcherQuery;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
-use Illuminate\Http\Request;
 
 final class ShowAuditLogController
 {
     /**
-     * Show the account's audit log, optionally narrowed to one project.
+     * Show the account's audit log, narrowed by project, person, kind of change and dates.
      *
      * @param  Account  $account
-     * @param  Request  $request
+     * @param  AuditLogRequest  $request
      * @param  User  $user
      * @param  AccountAuditLogQuery  $query
      * @param  ProjectSwitcherQuery  $projects
      * @return View
      */
-    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, AccountAuditLogQuery $query, ProjectSwitcherQuery $projects): View
+    public function __invoke(#[CurrentAccount] Account $account, AuditLogRequest $request, #[CurrentUser] User $user, AccountAuditLogQuery $query, ProjectSwitcherQuery $projects): View
     {
         $projectOptions = $projects->handle($account, 500);
-        $projectId = $request->string('project')->toString();
-        $projectId = in_array($projectId, array_column($projectOptions, 'id'), true) ? $projectId : null;
+        $members = $account->members()->orderBy('name')->get(['users.id', 'users.name', 'users.email']);
+        $filters = $request->filters(array_column($projectOptions, 'id'), $members->pluck('id')->map(fn (mixed $id): string => (string) $id)->values()->all());
 
         return view('account.audit-log', [
             'account' => $account,
-            'entries' => $query->handle($account, $projectId)->withQueryString(),
+            'entries' => $query->handle($account, $filters)->withQueryString(),
+            'filters' => $filters,
             'projects' => $projectOptions,
-            'projectId' => $projectId,
+            'members' => $members,
+            'categories' => AuditAction::CATEGORIES,
             'retentionDays' => AuditEntry::RETENTION_DAYS,
         ]);
     }

@@ -81,6 +81,41 @@ enum AuditAction: string
     case StatusUpdateChanged = 'status_update.changed';
 
     /**
+     * The groups the audit log can be filtered by, with their labels.
+     *
+     * @var array<string, string>
+     */
+    public const CATEGORIES = ['team' => 'Account and team', 'security' => 'Sign-in and security', 'billing' => 'Billing', 'infrastructure' => 'Infrastructure', 'deploy' => 'Deploy', 'monitoring' => 'Monitoring'];
+
+    /**
+     * Get the group this action belongs to, for filtering the audit log.
+     *
+     * @return string one of CATEGORIES' keys
+     */
+    public function category(): string
+    {
+        return match (explode('.', $this->value)[0]) {
+            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token' => 'security',
+            'billing' => 'billing',
+            'server', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
+            'environment' => 'deploy',
+            'monitor', 'alert_destination', 'alert_escalations', 'alert_routing', 'alert_rule', 'dashboard', 'ingest_token', 'status_page', 'status_update' => 'monitoring',
+            default => 'team',
+        };
+    }
+
+    /**
+     * List the actions in one group.
+     *
+     * @param  string  $category
+     * @return list<self>
+     */
+    public static function inCategory(string $category): array
+    {
+        return array_values(array_filter(self::cases(), fn (self $action): bool => $action->category() === $category));
+    }
+
+    /**
      * Describe the entry in a sentence for the audit log, filled in from the context recorded with it. Missing values
      * print as "?" so an old entry with less context still reads.
      *
