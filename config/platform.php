@@ -27,6 +27,17 @@ return [
     // Days read notifications stay in inboxes.
     'read_notification_retention_days' => 90,
 
+    // A Monitoring status page (its slug) the operator runs for the platform itself; /status shows it when set.
+    'status_page' => env('PLATFORM_STATUS_PAGE'),
+
+    // The queues each service's work runs on, for the public platform status.
+    'service_queues' => [
+        'deploy' => ['default'],
+        'infrastructure' => ['default', 'terminals'],
+        'monitoring' => ['checks', 'alerts', 'telemetry'],
+        'analytics' => ['default'],
+    ],
+
     // The queues the admin panel always lists, even when empty.
     'queues' => ['default', 'checks', 'alerts', 'telemetry', 'terminals'],
 ];

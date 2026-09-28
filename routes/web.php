@@ -241,6 +241,8 @@ use App\Http\Controllers\Monitoring\UpdateStatusUpdateController;
 use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Notifications\OpenNotificationController;
 use App\Http\Controllers\Notifications\ShowNotificationsController;
+use App\Http\Controllers\Platform\ShowPlatformStatusController;
+use App\Http\Controllers\Platform\ShowPlatformStatusReportController;
 use App\Http\Controllers\Projects\AddDomainController;
 use App\Http\Controllers\Projects\CreateProjectController;
 use App\Http\Controllers\Projects\DeleteEnvironmentController;
@@ -326,6 +328,9 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/request-access', CreateAccessRequestController::class)->name('access-requests.create');
     Route::post('/request-access', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 });
+// Core's platform status page and report, kept at the same addresses.
+Route::get('/status', ShowPlatformStatusController::class)->middleware('throttle:120,1')->name('platform.status');
+Route::get('/status/report.json', ShowPlatformStatusReportController::class)->middleware('throttle:120,1')->name('platform.status.report');
 Route::get('/status/subscriptions/{subscription}/confirm/{token}', ConfirmStatusSubscriptionController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.confirm');
 Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', ShowUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
 Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe.store');

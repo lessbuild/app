@@ -13,6 +13,7 @@ use App\Platform\Catalog\DeployCatalog;
 use App\Services\Billing\Entitlements;
 use Illuminate\Contracts\Pagination\CursorPaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Pagination\Cursor;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -47,7 +48,8 @@ final class DeployApiQuery
     }
 
     /**
-     * Get one such project; 404 outside the account, 403 when the person may not use its Deploy.
+     * Get one such project by its ID, or by Deployer's numeric ID; 404 outside the account, 403 when the person may not
+     * use its Deploy.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -56,7 +58,7 @@ final class DeployApiQuery
      */
     public function project(User $user, Account $account, string $id): Project
     {
-        $project = Project::query()->where('account_id', $account->id)->with('environments')->findOrFail($id);
+        $project = self::byId(Project::query()->where('account_id', $account->id)->with('environments'), $id);
         Gate::forUser($user)->authorize('useService', [$project, 'deploy']);
 
         return $project;
@@ -91,7 +93,7 @@ final class DeployApiQuery
     }
 
     /**
-     * Get an environment of the account, checked the same way as its project.
+     * Get an environment of the account by its ID or Deployer's numeric ID, checked the same way as its project.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -100,7 +102,7 @@ final class DeployApiQuery
      */
     public function environment(User $user, Account $account, string $id): Environment
     {
-        $environment = Environment::query()->whereIn('project_id', Project::query()->where('account_id', $account->id)->select('id'))->with('project')->findOrFail($id);
+        $environment = self::byId(Environment::query()->whereIn('project_id', Project::query()->where('account_id', $account->id)->select('id'))->with('project'), $id);
         Gate::forUser($user)->authorize('useService', [$environment->project, 'deploy']);
 
         return $environment;
@@ -176,5 +178,20 @@ final class DeployApiQuery
             'trigger' => $build->trigger_source, 'revision' => $build->revision, 'promoted_from_build_id' => $build->promoted_from_build_id,
             'created_at' => $build->created_at?->toIso8601String(), 'finished_at' => $build->finished_at?->toIso8601String(),
         ];
+    }
+
+    /**
+     * Find a record by its v2 ID, or by Deployer's numeric ID (`legacy_id`) when the path has a number, so scripts
+     * written against Deployer keep working; 404 when there's none.
+     *
+     * @param  Builder<TModel>  $query
+     * @param  string  $id
+     * @return TModel
+     *
+     * @template TModel of Project|Environment
+     */
+    private static function byId(Builder $query, string $id): Model
+    {
+        return (ctype_digit($id) ? $query->where('legacy_id', (int) $id) : $query->whereKey($id))->firstOrFail();
     }
 }

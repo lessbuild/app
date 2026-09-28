@@ -48,6 +48,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $hibernate_after_minutes hibernate after this long without requests
  * @property \Carbon\CarbonImmutable|null $last_activity_at the last request or deploy seen, for hibernation
  * @property \Carbon\CarbonImmutable|null $hibernated_at when it went to sleep; null while running
+ * @property int|null $legacy_id Deployer's numeric ID, which the Deployer API v1 still accepts
  * @property-read Project $project
  * @property-read \Illuminate\Database\Eloquent\Collection<int, EnvironmentVariable> $variables
  * @property-read \Illuminate\Database\Eloquent\Collection<int, EnvironmentProcess> $processes
