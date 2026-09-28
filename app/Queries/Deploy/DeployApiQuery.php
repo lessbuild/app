@@ -161,7 +161,7 @@ final class DeployApiQuery
     {
         return ['id' => $project->id, 'name' => $project->name, 'slug' => $project->slug, 'environments' => $project->environments->map(fn (Environment $environment): array => [
             'id' => $environment->id, 'name' => $environment->name, 'slug' => $environment->slug, 'type' => $environment->kind->value,
-            'desired_replicas' => $environment->desired_replicas, 'state' => 'running',
+            'desired_replicas' => $environment->desired_replicas, 'state' => $environment->hibernated_at === null ? 'running' : 'hibernated',
         ])->values()->all()];
     }
 

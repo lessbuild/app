@@ -25,6 +25,7 @@ use App\Http\Controllers\Api\V1\Deploy\UpdateEnvironmentRuntimeController;
 use App\Http\Controllers\Api\V1\ShowAccountController;
 use App\Http\Controllers\Deploy\ReceiveGitHubAppWebhookController;
 use App\Http\Controllers\Deploy\ReceiveRepositoryWebhookController;
+use App\Http\Controllers\Docs\ShowOpenApiController;
 use App\Http\Controllers\Monitoring\RecordHeartbeatController;
 use App\Http\Controllers\Monitoring\RecordQueueSnapshotController;
 use App\Http\Controllers\Monitoring\RecordQueueWorkerController;
@@ -65,6 +66,9 @@ Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'
             ->whereNumber(['application', 'operation'])->whereIn('action', ['cancel', 'retry'])->name('api.v1.configuration.operations');
     });
 });
+
+// The API's OpenAPI description (resources/openapi/v1.yaml).
+Route::get('/openapi.json', ShowOpenApiController::class)->name('docs.openapi');
 
 // Public contract from the old Analytics app: the tracker posts here without a token.
 Route::post('/v1/collect/{publicId}', CollectEventsController::class)->middleware('throttle:collect')->where('publicId', '[A-Za-z0-9]+')->name('analytics.collect');

@@ -114,6 +114,7 @@ use App\Http\Controllers\Deploy\UpdateEnvironmentRuntimeController;
 use App\Http\Controllers\Deploy\UpdateRepositoryController;
 use App\Http\Controllers\Deploy\UpdateRepositoryPreviewsController;
 use App\Http\Controllers\Deploy\UpdateRepositoryWebhookController;
+use App\Http\Controllers\Docs\ShowApiReferenceController;
 use App\Http\Controllers\Infrastructure\CancelServerCommandController;
 use App\Http\Controllers\Infrastructure\CheckBackupDestinationController;
 use App\Http\Controllers\Infrastructure\CloseServerTerminalController;
@@ -328,6 +329,7 @@ Route::middleware('guest')->group(function (): void {
     Route::get('/request-access', CreateAccessRequestController::class)->name('access-requests.create');
     Route::post('/request-access', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 });
+Route::get('/docs/api', ShowApiReferenceController::class)->name('docs.api');
 // Core's platform status page and report, kept at the same addresses.
 Route::get('/status', ShowPlatformStatusController::class)->middleware('throttle:120,1')->name('platform.status');
 Route::get('/status/report.json', ShowPlatformStatusReportController::class)->middleware('throttle:120,1')->name('platform.status.report');

@@ -1,0 +1,610 @@
+openapi: 3.1.0
+info:
+  title: BuildPusher API
+  version: '1'
+  description: |
+    The platform's public API. Account and Deployer API v1 endpoints take an API token (Account → API tokens) as a
+    bearer token, limited to the token's account and scopes. Monitoring ingest takes an environment's ingest key;
+    heartbeat and queue endpoints take the monitor's own key; the analytics tracker posts without credentials.
+servers:
+  - url: /api
+tags:
+  - name: Account
+  - name: Deploy
+    description: Deployer API v1, unchanged from Deployer. Project and environment IDs may be v2 IDs or Deployer's numeric IDs.
+  - name: Monitoring
+  - name: Analytics
+  - name: Webhooks
+components:
+  securitySchemes:
+    apiToken:
+      type: http
+      scheme: bearer
+      description: An API token. Each operation lists the scope it needs.
+    ingestKey:
+      type: http
+      scheme: bearer
+      description: An environment's ingest key (Monitoring → Setup).
+    monitorKey:
+      type: http
+      scheme: bearer
+      description: A heartbeat or queue monitor's own key.
+  parameters:
+    project:
+      name: project
+      in: path
+      required: true
+      description: A project ID, or Deployer's numeric project ID.
+      schema: { type: string }
+    environment:
+      name: environment
+      in: path
+      required: true
+      description: An environment ID, or Deployer's numeric environment ID.
+      schema: { type: string }
+    build:
+      name: build
+      in: path
+      required: true
+      description: A deployment (build) ID.
+      schema: { type: integer }
+  responses:
+    Unauthenticated:
+      description: Missing or invalid credentials.
+    Forbidden:
+      description: The token lacks the scope, or the person may not use Deploy in the project.
+    NotFound:
+      description: Not found in the token's account.
+    Invalid:
+      description: Validation failed; `errors` lists the fields.
+  schemas:
+    Deployment:
+      type: object
+      properties:
+        id: { type: integer }
+        repository_id: { type: integer }
+        environment_id: { type: [string, 'null'] }
+        status: { type: string, enum: [queued, awaiting_approval, rejected, deploying, running, succeeded, failed, canceled] }
+        trigger: { type: string }
+        revision: { type: [string, 'null'] }
+        promoted_from_build_id: { type: [integer, 'null'] }
+        created_at: { type: [string, 'null'], format: date-time }
+        finished_at: { type: [string, 'null'], format: date-time }
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        slug: { type: string }
+        environments:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string }
+              name: { type: string }
+              slug: { type: string }
+              type: { type: string, enum: [production, staging, development, preview] }
+              desired_replicas: { type: integer }
+              state: { type: string, enum: [running, hibernated] }
+    Queued:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            status: { type: string, example: queued }
+paths:
+  /v1/account:
+    get:
+      tags: [Account]
+      summary: The token's account
+      security: [{ apiToken: [account:read] }]
+      responses:
+        '200': { description: "The account's ID, name and slug." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/me:
+    get:
+      tags: [Deploy]
+      summary: The token's person and account, with the Deploy plan
+      security: [{ apiToken: [deploy:read] }]
+      responses:
+        '200': { description: "Person and organization." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/projects:
+    get:
+      tags: [Deploy]
+      summary: Projects the person may deploy
+      security: [{ apiToken: [deploy:read] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: The projects; paged when `limit` or `cursor` is given.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data: { type: array, items: { $ref: '#/components/schemas/Project' } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/projects/{project}:
+    get:
+      tags: [Deploy]
+      summary: One project with its environments
+      security: [{ apiToken: [deploy:read] }]
+      parameters: [{ $ref: '#/components/parameters/project' }]
+      responses:
+        '200':
+          description: The project.
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: '#/components/schemas/Project' } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/deployments:
+    get:
+      tags: [Deploy]
+      summary: Deployments, newest first
+      security: [{ apiToken: [deploy:read] }]
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 100 } }
+        - { name: cursor, in: query, schema: { type: string } }
+      responses:
+        '200':
+          description: The deployments.
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Deployment' } } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+    post:
+      tags: [Monitoring]
+      summary: Record a deployment on an environment's Monitoring timeline
+      description: Idempotent by `deployment_id`. 201 when new, 200 when the same deployment is reported again.
+      security: [{ ingestKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [deployment_id, version]
+              properties:
+                deployment_id: { type: string, format: uuid }
+                version: { type: string, maxLength: 128 }
+                service: { type: string, maxLength: 100 }
+                service_namespace: { type: string, maxLength: 100 }
+                commit_sha: { type: string, pattern: '^[0-9a-fA-F]{7,64}$' }
+                note: { type: string, maxLength: 1000 }
+                deployed_at: { type: string, format: date-time }
+      responses:
+        '200': { description: "Already recorded." }
+        '201': { description: "Recorded." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '415': { description: "The body must be application/json." }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/deployments/{build}:
+    get:
+      tags: [Deploy]
+      summary: One deployment
+      security: [{ apiToken: [deploy:read] }]
+      parameters: [{ $ref: '#/components/parameters/build' }]
+      responses:
+        '200':
+          description: The deployment.
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: '#/components/schemas/Deployment' } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/deployments/{build}/log:
+    get:
+      tags: [Deploy]
+      summary: A deployment's log
+      security: [{ apiToken: [deploy:read] }]
+      parameters: [{ $ref: '#/components/parameters/build' }]
+      responses:
+        '200': { description: "The log's tail." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/deployments/{build}/rollback:
+    post:
+      tags: [Deploy]
+      summary: Make a retained release live again
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/build' }]
+      responses:
+        '202': { description: "The rollback is queued." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: "A deploy to the website is running." }
+  /v1/deployments/{build}/promote:
+    post:
+      tags: [Deploy]
+      summary: Promote a succeeded deployment to a later environment
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/build' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [target_environment_id]
+              properties:
+                target_environment_id: { type: string }
+                promotion_note: { type: string, maxLength: 500 }
+      responses:
+        '202': { description: "The promotion is queued." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/environments/{environment}/deploy:
+    post:
+      tags: [Deploy]
+      summary: Deploy the environment's repository
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/environment' }]
+      responses:
+        '202':
+          description: The deployment is queued.
+          content:
+            application/json:
+              schema: { type: object, properties: { data: { $ref: '#/components/schemas/Deployment' } } }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+        '409': { description: "A deploy is already running." }
+        '422': { description: "The environment is locked, outside its window, or not ready." }
+  /v1/environments/{environment}/scale:
+    patch:
+      tags: [Deploy]
+      summary: Set how many worker replicas run
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/environment' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [replicas], properties: { replicas: { type: integer, minimum: 1, maximum: 20 } } }
+      responses:
+        '202': { description: "The replicas are applied." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/environments/{environment}/runtime:
+    patch:
+      tags: [Deploy]
+      summary: Hibernate the environment or wake it
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/environment' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [state], properties: { state: { type: string, enum: [running, hibernated] } } }
+      responses:
+        '202': { description: "The change is queued." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/environments/{environment}/variables:
+    put:
+      tags: [Deploy]
+      summary: Replace the environment's variables from .env text
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/environment' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [variables], properties: { variables: { type: string, description: KEY=value lines } } }
+      responses:
+        '200': { description: "Applied; `count` says how many variables there are now." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/projects/{project}/workflow:
+    put:
+      tags: [Deploy]
+      summary: Apply a version 1 workflow document
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/project' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object, required: [workflow], properties: { workflow: { type: string, maxLength: 50000, description: YAML } } }
+      responses:
+        '200': { description: "Applied." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/projects/{project}/configuration/plan:
+    post:
+      tags: [Deploy]
+      summary: Plan a configuration document without changing anything
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/project' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [document, bindings]
+              properties:
+                document: { type: string, maxLength: 50000, description: Version 2 YAML }
+                bindings: { type: object }
+      responses:
+        '200': { description: "The plan." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/projects/{project}/configuration/reviews:
+    post:
+      tags: [Deploy]
+      summary: Freeze a plan for 15 minutes as a review
+      security: [{ apiToken: [deploy:write] }]
+      parameters: [{ $ref: '#/components/parameters/project' }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [document, bindings]
+              properties:
+                document: { type: string, maxLength: 50000 }
+                bindings: { type: object }
+      responses:
+        '201': { description: "The review's ID, plan and expiry." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/projects/{project}/configuration/reviews/{review}/apply:
+    post:
+      tags: [Deploy]
+      summary: Apply a review
+      security: [{ apiToken: [deploy:write] }]
+      parameters:
+        - { $ref: '#/components/parameters/project' }
+        - { name: review, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "The application receipt." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { description: "Expired, already applied, or the project changed since." }
+  /v1/projects/{project}/configuration/applications/{application}:
+    get:
+      tags: [Deploy]
+      summary: An application receipt and its operations
+      security: [{ apiToken: [deploy:read] }]
+      parameters:
+        - { $ref: '#/components/parameters/project' }
+        - { name: application, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200': { description: "The receipt." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/projects/{project}/configuration/applications/{application}/operations/{operation}/{action}:
+    post:
+      tags: [Deploy]
+      summary: Cancel or retry an operation
+      security: [{ apiToken: [deploy:write] }]
+      parameters:
+        - { $ref: '#/components/parameters/project' }
+        - { name: application, in: path, required: true, schema: { type: integer } }
+        - { name: operation, in: path, required: true, schema: { type: integer } }
+        - { name: action, in: path, required: true, schema: { type: string, enum: [cancel, retry] } }
+      responses:
+        '200': { description: "The operation." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '409': { description: "The operation can't be cancelled or retried now." }
+  /v1/ingest:
+    post:
+      tags: [Monitoring]
+      summary: Send a batch of telemetry events
+      security: [{ ingestKey: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [batch_id, events]
+              properties:
+                batch_id: { type: string, maxLength: 100 }
+                events:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [type]
+                    properties:
+                      id: { type: string }
+                      type: { type: string, enum: [request, query, job, exception, log, metric] }
+                      severity: { type: string, enum: [debug, info, warning, error, critical] }
+                      name: { type: string }
+                      title: { type: string }
+                      timestamp: { type: string, format: date-time }
+                      trace_id: { type: string }
+                      span_id: { type: string }
+                      parent_span_id: { type: string }
+                      route: { type: string }
+                      url: { type: string }
+                      service: { type: string }
+                      status_code: { type: integer }
+                      duration_ms: { type: number }
+                      fingerprint: { type: string }
+                      affected_users: { type: integer }
+                      details: { type: string }
+                      attributes: { type: object }
+                      payload: { type: object }
+      responses:
+        '202': { description: "Accepted; the receipt says how the batch was processed." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '413': { description: "The batch is too large." }
+        '415': { description: "The body must be application/json." }
+        '422': { $ref: '#/components/responses/Invalid' }
+        '429': { description: "Over the account's ingest rate." }
+  /v1/ingest/receipts/{receipt}:
+    get:
+      tags: [Monitoring]
+      summary: How a batch was processed
+      security: [{ ingestKey: [] }]
+      parameters: [{ name: receipt, in: path, required: true, schema: { type: string } }]
+      responses:
+        '200': { description: "The receipt." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /v1/otlp/v1/{signal}:
+    post:
+      tags: [Monitoring]
+      summary: OpenTelemetry (OTLP/HTTP JSON) traces, logs or metrics
+      security: [{ ingestKey: [] }]
+      parameters: [{ name: signal, in: path, required: true, schema: { type: string, enum: [traces, logs, metrics] } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { type: object }
+      responses:
+        '200': { description: "Accepted (OTLP partial success when some records were rejected)." }
+        '401': { description: "Missing or invalid key (google.rpc.Status body)." }
+        '415': { description: "The body must be application/json." }
+  /v1/heartbeats/{heartbeat}:
+    post:
+      tags: [Monitoring]
+      summary: A scheduled job's start, success or failure
+      security: [{ monitorKey: [] }]
+      parameters: [{ name: heartbeat, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [run_id, signal]
+              properties:
+                run_id: { type: string, format: uuid }
+                signal: { type: string, enum: [start, success, failure] }
+      responses:
+        '202': { description: "Recorded." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '415': { description: "The body must be application/json." }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/queues/{queue}/snapshots:
+    post:
+      tags: [Monitoring]
+      summary: A queue's sizes at a moment
+      security: [{ monitorKey: [] }]
+      parameters: [{ name: queue, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [snapshot_id, observed_at, pending]
+              properties:
+                snapshot_id: { type: string, format: uuid }
+                observed_at: { type: string, format: date-time, description: UTC with a Z }
+                pending: { type: integer, minimum: 0 }
+                delayed: { type: integer, minimum: 0 }
+                reserved: { type: integer, minimum: 0 }
+                failed: { type: integer, minimum: 0 }
+                oldest_wait_seconds: { type: integer, minimum: 0 }
+      responses:
+        '202': { description: "Recorded." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/queues/{queue}/workers:
+    post:
+      tags: [Monitoring]
+      summary: A worker's state
+      security: [{ monitorKey: [] }]
+      parameters: [{ name: queue, in: path, required: true, schema: { type: integer } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [worker_id, sequence, status]
+              properties:
+                worker_id: { type: string, format: uuid }
+                sequence: { type: integer, minimum: 1 }
+                status: { type: string, enum: [idle, busy, stopped] }
+                job_id: { type: string, format: uuid, description: Required when busy. }
+      responses:
+        '202': { description: "Recorded." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /v1/collect/{publicId}:
+    options:
+      tags: [Analytics]
+      summary: CORS preflight for the tracker
+      security: []
+      parameters: [{ name: publicId, in: path, required: true, schema: { type: string } }]
+      responses:
+        '204': { description: "The origin is allowed." }
+        '403': { description: "The origin isn't registered for the site." }
+    post:
+      tags: [Analytics]
+      summary: Pageviews and events from the tracker (/tracker/v1.js)
+      security: []
+      parameters: [{ name: publicId, in: path, required: true, schema: { type: string } }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  minItems: 1
+                  maxItems: 20
+                  items:
+                    type: object
+                    required: [id, type, path]
+                    properties:
+                      id: { type: string, format: uuid }
+                      type: { type: string, enum: [pageview, event] }
+                      occurred_at: { type: string, format: date-time }
+                      path: { type: string, maxLength: 2048 }
+                      referrer_host: { type: string }
+                      utm_source: { type: string }
+                      utm_medium: { type: string }
+                      utm_campaign: { type: string }
+                      device: { type: string }
+                      browser: { type: string }
+                      os: { type: string }
+                      visitor: { type: string }
+                      session: { type: string }
+                      properties: { type: object, maxProperties: 8 }
+      responses:
+        '202': { description: "Accepted." }
+        '403': { description: "The origin isn't registered for the site." }
+        '422': { $ref: '#/components/responses/Invalid' }
+  /repositories/{repository}/webhook:
+    post:
+      tags: [Webhooks]
+      summary: Push and pull-request webhooks from GitHub, GitLab or Bitbucket
+      description: Signed with the repository's webhook secret (GitHub/Bitbucket HMAC headers, GitLab signing token). The JSON `status` says what happened.
+      security: []
+      parameters: [{ name: repository, in: path, required: true, schema: { type: integer } }]
+      responses:
+        '200': { description: "Ignored, skipped, duplicate, or a preview status." }
+        '202': { description: "A deploy or preview is queued, or waiting behind a running deploy." }
+        '401': { description: "Bad signature." }
+        '404': { description: "Unknown repository, or push deploys are off." }
+        '409': { description: "The repository can't deploy (website or server not ready)." }
+        '413': { description: "The payload is too large." }
+        '422': { description: "The payload isn't usable." }
+  /github-app/webhook:
+    post:
+      tags: [Webhooks]
+      summary: The GitHub App's webhook
+      security: []
+      responses:
+        '200': { description: "Handled or a ping." }
+        '202': { description: "A deploy or preview is queued." }
+        '401': { description: "Bad signature." }
+        '404': { description: "No repository is connected through that installation." }
