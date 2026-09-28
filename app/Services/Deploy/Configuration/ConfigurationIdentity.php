@@ -11,6 +11,9 @@ final class ConfigurationIdentity
 {
     /**
      * A keyed fingerprint of the repository settings a deploy depends on, including its website's directory and server.
+     *
+     * @param  Repository  $repository
+     * @return string
      */
     public static function repository(Repository $repository): string
     {
@@ -23,7 +26,9 @@ final class ConfigurationIdentity
     /**
      * A keyed fingerprint of a deploy's intent: the repository's fingerprint and the payload it would deploy.
      *
+     * @param  string  $repositoryFingerprint
      * @param  array<string, mixed>  $payload  the build payload the environment produces now
+     * @return string
      */
     public static function intent(string $repositoryFingerprint, array $payload): string
     {

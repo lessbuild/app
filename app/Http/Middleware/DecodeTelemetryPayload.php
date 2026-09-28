@@ -26,7 +26,9 @@ final class DecodeTelemetryPayload
      * checks nesting, complexity and record counts, and hands the decoded object to the request. Each limit has its own
      * status and message, so clients can tell what to fix.
      *
+     * @param  Request  $request
      * @param  Closure(Request): Response  $next
+     * @return Response
      */
     public function handle(Request $request, Closure $next): Response
     {
@@ -77,6 +79,10 @@ final class DecodeTelemetryPayload
     /**
      * Gunzips in 1 KiB steps, stopping as soon as the output passes the limit, so a small compressed bomb can't expand
      * in memory. Concatenated gzip members are accepted; truncated or invalid data is a 400.
+     *
+     * @param  string  $body
+     * @param  int  $maxBytes
+     * @return string
      */
     private function decompress(string $body, int $maxBytes): string
     {

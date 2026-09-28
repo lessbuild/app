@@ -59,6 +59,8 @@ class ServerCommandExecution extends Model
 
     /**
      * Whether the command has finished, successfully or not.
+     *
+     * @return bool
      */
     public function isFinished(): bool
     {
@@ -67,6 +69,8 @@ class ServerCommandExecution extends Model
 
     /**
      * How long it ran; null until it has started and finished.
+     *
+     * @return int|null
      */
     public function durationSeconds(): ?int
     {

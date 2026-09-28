@@ -30,6 +30,9 @@ final class PruneTelemetryData
     /**
      * Delete telemetry events and finished receipts older than each account's Monitoring retention.
      *
+     * @param  bool  $dryRun
+     * @param  CarbonImmutable|null  $now
+     * @param  string|null  $accountId
      * @return array{accounts: int, events: int, identities: int, receipts: int, payloads: int, dry_run: bool}
      */
     public function handle(bool $dryRun = false, ?CarbonImmutable $now = null, ?string $accountId = null): array
@@ -66,6 +69,9 @@ final class PruneTelemetryData
      * Deletes the account's events older than the cutoff, with their deduplication identities, 500 at a time in
      * transactions. A dry run only counts them.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable  $cutoff
+     * @param  bool  $dryRun
      * @return array{events: int, identities: int}
      */
     private function pruneEvents(Account $account, CarbonImmutable $cutoff, bool $dryRun): array
@@ -95,6 +101,9 @@ final class PruneTelemetryData
     /**
      * Deletes completed ingest receipts older than the cutoff, with any payload still kept, the same way.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable  $cutoff
+     * @param  bool  $dryRun
      * @return array{receipts: int, payloads: int}
      */
     private function pruneReceipts(Account $account, CarbonImmutable $cutoff, bool $dryRun): array
@@ -123,6 +132,8 @@ final class PruneTelemetryData
     /**
      * The account's events from before the cutoff.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable  $cutoff
      * @return Builder<TelemetryEvent>
      */
     private function eventsFor(Account $account, CarbonImmutable $cutoff): Builder
@@ -138,6 +149,8 @@ final class PruneTelemetryData
     /**
      * The account's completed receipts last touched before the cutoff. Receipts still processing or failed are kept.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable  $cutoff
      * @return Builder<IngestReceipt>
      */
     private function completedReceiptsFor(Account $account, CarbonImmutable $cutoff): Builder
@@ -150,6 +163,9 @@ final class PruneTelemetryData
 
     /**
      * How many days the account's plan keeps telemetry, at least one; ten years when the plan sets no limit.
+     *
+     * @param  Account  $account
+     * @return int
      */
     private function retentionDays(Account $account): int
     {

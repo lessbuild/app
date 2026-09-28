@@ -19,6 +19,9 @@ final class BackupsQuery
      * The latest backups of the account's websites (or of one website) with their destination, restores and
      * verifications.
      *
+     * @param  string  $accountId
+     * @param  Website|null  $website
+     * @param  int  $limit
      * @return Collection<int, WebsiteBackup>
      */
     public function recent(string $accountId, ?Website $website = null, int $limit = 50): Collection
@@ -32,6 +35,7 @@ final class BackupsQuery
      * When the account last had a successful backup, restore and verification, and how long that restore took, for the
      * backups page's headline.
      *
+     * @param  string  $accountId
      * @return array{backup: CarbonImmutable|null, restore: CarbonImmutable|null, restore_seconds: int|null, verification: CarbonImmutable|null}
      */
     public function summary(string $accountId): array
@@ -51,6 +55,7 @@ final class BackupsQuery
     /**
      * The account's backups, including those of deleted websites.
      *
+     * @param  string  $accountId
      * @return Builder<WebsiteBackup>
      */
     private function backups(string $accountId): Builder

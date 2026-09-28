@@ -9,7 +9,13 @@ use App\Models\Monitor;
 /** Pauses heartbeat and queue monitors whose key was revoked, so stale signals can't change their health. */
 final class MonitorSuspension
 {
-    /** Caller holds the source and monitor locks in a transaction. */
+    /**
+     * Caller holds the source and monitor locks in a transaction.
+     *
+     * @param  Monitor  $monitor
+     * @param  bool  $revoke
+     * @return void
+     */
     public function heartbeat(Monitor $monitor, bool $revoke = false): void
     {
         $monitor->heartbeatRuns()->whereIn('status', ['running', 'timed_out'])->whereNull('terminal_signal')
@@ -18,7 +24,13 @@ final class MonitorSuspension
             ...($revoke ? ['heartbeat_token_hash' => null] : [])]);
     }
 
-    /** Caller holds the source and monitor locks in a transaction. */
+    /**
+     * Caller holds the source and monitor locks in a transaction.
+     *
+     * @param  Monitor  $monitor
+     * @param  bool  $revoke
+     * @return void
+     */
     public function queue(Monitor $monitor, bool $revoke = false): void
     {
         $this->pause($monitor, ['queue_snapshot_id' => null, ...($revoke ? ['queue_token_hash' => null] : [])]);
@@ -28,7 +40,9 @@ final class MonitorSuspension
      * Disables the monitor and resets its health and configuration revision, so any signal still in flight is ignored,
      * and notes it on the open incident.
      *
+     * @param  Monitor  $monitor
      * @param  array<string, mixed>  $values
+     * @return void
      */
     private function pause(Monitor $monitor, array $values): void
     {

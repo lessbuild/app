@@ -12,7 +12,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteLoadBalancer
 {
-    /** Remove the proxy configuration from its server, then the load balancer. Also retries a removal that failed. */
+    /**
+     * Remove the proxy configuration from its server, then the load balancer. Also retries a removal that failed.
+     *
+     * @param  User  $actor
+     * @param  LoadBalancer  $balancer
+     * @return void
+     */
     public function handle(User $actor, LoadBalancer $balancer): void
     {
         Gate::forUser($actor)->authorize('delete', $balancer);

@@ -18,6 +18,14 @@ final class CreateConfigurationReviewController
 {
     /**
      * Creates the review and returns its plan and expiry (201).
+     *
+     * @param  ConfigurationRequest  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $project
+     * @param  DeployApiQuery  $query
+     * @param  CreateConfigurationReview  $create
+     * @return JsonResponse
      */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, DeployApiQuery $query, CreateConfigurationReview $create): JsonResponse
     {

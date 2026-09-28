@@ -74,6 +74,8 @@ final class Issue extends Model
      * Limits a query to issues in the account's projects.
      *
      * @param  Builder<Issue>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void

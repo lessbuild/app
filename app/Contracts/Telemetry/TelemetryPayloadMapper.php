@@ -11,6 +11,7 @@ interface TelemetryPayloadMapper
      * ingestor. Unknown signals throw.
      *
      * @param  array<string, mixed>  $payload
+     * @param  string  $signal
      * @return array<int, array<string, mixed>>
      */
     public function map(array $payload, string $signal): array;

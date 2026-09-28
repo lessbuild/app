@@ -17,7 +17,11 @@ final class SaveMaintenanceWindow
     /**
      * Create or change a maintenance window. Monitors in the account don't open incidents or send alerts during one.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array<string, mixed>  $data
+     * @param  MaintenanceWindow|null  $window
+     * @return MaintenanceWindow
      */
     public function handle(Account $account, User $actor, array $data, ?MaintenanceWindow $window = null): MaintenanceWindow
     {
@@ -49,6 +53,9 @@ final class SaveMaintenanceWindow
 
     /**
      * A time from the form's `datetime-local` input, read as UTC, or null when it's empty or malformed.
+     *
+     * @param  mixed  $value
+     * @return CarbonImmutable|null
      */
     private function parse(mixed $value): ?CarbonImmutable
     {

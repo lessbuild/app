@@ -16,6 +16,13 @@ final class ArchiveMonitorController
 {
     /**
      * Archives a monitor, keeping its history, if it hasn't changed since the page was opened.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Monitor  $monitor
+     * @param  ArchiveMonitor  $archive
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, ArchiveMonitor $archive): RedirectResponse
     {

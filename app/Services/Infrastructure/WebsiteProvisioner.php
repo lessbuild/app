@@ -29,6 +29,9 @@ class WebsiteProvisioner
 
     /**
      * Starts provisioning the website on its server in the background.
+     *
+     * @param  Website  $website
+     * @return void
      */
     public function start(Website $website): void
     {
@@ -38,6 +41,9 @@ class WebsiteProvisioner
 
     /**
      * The provisioning script: logging and failure reporting, then each stage.
+     *
+     * @param  Website  $website
+     * @return string
      */
     public function script(Website $website): string
     {
@@ -77,6 +83,8 @@ class WebsiteProvisioner
 
     /**
      * The number of stages, which is the last progress value the script reports.
+     *
+     * @return int
      */
     public static function finalStage(): int
     {

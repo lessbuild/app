@@ -22,7 +22,14 @@ final class EnableService
      */
     public function __construct(private readonly ServiceRegistry $services) {}
 
-    /** Switch a service on for a project. Returns false when it already was. */
+    /**
+     * Switch a service on for a project. Returns false when it already was.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  string  $service
+     * @return bool
+     */
     public function handle(User $actor, Project $project, string $service): bool
     {
         if (! $this->services->has($service)) {

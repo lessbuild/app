@@ -16,6 +16,10 @@ final class SubscribeToStatusPage
 {
     /**
      * Start (or restart) an email subscription and send the confirmation link. Nothing is sent to the address until it's confirmed.
+     *
+     * @param  StatusPage  $page
+     * @param  string  $email
+     * @return StatusSubscription
      */
     public function handle(StatusPage $page, string $email): StatusSubscription
     {

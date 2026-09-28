@@ -15,6 +15,9 @@ final class DnsRecordSet
     /**
      * A public DNS name, lowercased without its trailing dot, or null for invalid names and reserved suffixes such as
      * `.local` and `.internal`.
+     *
+     * @param  string  $hostname
+     * @return string|null
      */
     public function hostname(string $hostname): ?string
     {
@@ -33,6 +36,9 @@ final class DnsRecordSet
 
     /**
      * A syntactically valid DNS name, lowercased without its trailing dot, or null.
+     *
+     * @param  string  $hostname
+     * @return string|null
      */
     private function domain(string $hostname): ?string
     {
@@ -46,6 +52,8 @@ final class DnsRecordSet
      * Parses the expected records typed for a DNS monitor (one per line, 1 to 20) into the same form as observed ones;
      * null if any line is invalid.
      *
+     * @param  string  $type
+     * @param  string  $text
      * @return list<string>|null
      */
     public function expected(string $type, string $text): ?array
@@ -73,6 +81,7 @@ final class DnsRecordSet
      * Normalises the records a lookup returned (only those of the monitor's type), or null when the answer is too large
      * or malformed.
      *
+     * @param  string  $type
      * @param  list<array<string, mixed>>  $records
      * @return list<string>|null
      */
@@ -114,6 +123,10 @@ final class DnsRecordSet
     /**
      * One record value in canonical form: IPs compressed, names lowercased, MX as "priority target" (with the null MX `0
      * .`), TXT as-is if printable.
+     *
+     * @param  string  $type
+     * @param  string  $value
+     * @return string|null
      */
     private function value(string $type, string $value): ?string
     {
@@ -144,6 +157,7 @@ final class DnsRecordSet
      * A TXT record's full text, joining its strings when the resolver split them.
      *
      * @param  array<string, mixed>  $record
+     * @return string|null
      */
     private function txt(array $record): ?string
     {

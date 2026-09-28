@@ -14,6 +14,9 @@ final class SearchMembersQuery
     /**
      * Members whose name or email contains the term, for the command palette.
      *
+     * @param  Account  $account
+     * @param  string  $term
+     * @param  int  $limit
      * @return list<SearchResult> members whose name or email matches
      */
     public function handle(Account $account, string $term, int $limit = 6): array

@@ -22,6 +22,8 @@ final class ProcessEventBatch implements ShouldQueue
 
     /**
      * Rebuilding aggregates can hit a lock or deadlock, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
@@ -35,6 +37,11 @@ final class ProcessEventBatch implements ShouldQueue
     /**
      * Rebuilds everything the batch touches in one transaction, marks it processed, and moves the site's "last
      * processed" time forward.
+     *
+     * @param  RebuildSiteVisits  $rebuildSiteVisits
+     * @param  RebuildGoalConversions  $rebuildGoalConversions
+     * @param  RebuildReportAggregates  $rebuildReportAggregates
+     * @return void
      */
     public function handle(
         RebuildSiteVisits $rebuildSiteVisits,
@@ -66,6 +73,9 @@ final class ProcessEventBatch implements ShouldQueue
 
     /**
      * Marks the batch failed with the reason.
+     *
+     * @param  Throwable|null  $exception
+     * @return void
      */
     public function failed(?Throwable $exception): void
     {

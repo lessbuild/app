@@ -18,6 +18,15 @@ final class ShowObjectiveController
 {
     /**
      * An SLO's page: its report, and its burn rate and export when the plan includes them.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ServiceLevelObjective  $objective
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ServiceObjectiveReport  $reports
+     * @param  ServiceObjectiveBurnRate  $burnRates
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ProjectOverviewQuery $overview, ServiceObjectiveReport $reports, ServiceObjectiveBurnRate $burnRates, Entitlements $entitlements): View
     {

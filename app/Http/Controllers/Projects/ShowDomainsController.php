@@ -15,6 +15,12 @@ final class ShowDomainsController
 {
     /**
      * The project's domains page.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectDomainsQuery  $domains
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectDomainsQuery $domains): View
     {

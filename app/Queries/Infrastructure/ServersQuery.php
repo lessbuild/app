@@ -12,6 +12,7 @@ final class ServersQuery
     /**
      * The account's servers by name, with their provider.
      *
+     * @param  string  $accountId
      * @return Collection<int, Server>
      */
     public function handle(string $accountId): Collection
@@ -21,6 +22,10 @@ final class ServersQuery
 
     /**
      * One of the account's servers with its provider and creator; 404 otherwise.
+     *
+     * @param  string  $accountId
+     * @param  string|int  $id
+     * @return Server
      */
     public function find(string $accountId, int|string $id): Server
     {

@@ -30,6 +30,9 @@ final class TelemetryQueue
     /**
      * Queues processing for a receipt inside the transaction that stored it, and remembers the job's UUID (on the
      * database queue) so a lost job can be noticed and replaced.
+     *
+     * @param  IngestReceipt  $receipt
+     * @return void
      */
     public function dispatch(IngestReceipt $receipt): void
     {
@@ -59,6 +62,8 @@ final class TelemetryQueue
     /**
      * The telemetry queue connection, which must be the primary database's jobs table with a long enough reservation (or
      * sync in tests), so jobs commit with their receipts.
+     *
+     * @return string
      */
     public function connection(): string
     {
@@ -81,7 +86,12 @@ final class TelemetryQueue
         return $name;
     }
 
-    /** Lock order matches ingestion: account → project → environment → receipt. */
+    /**
+     * Lock order matches ingestion: account → project → environment → receipt.
+     *
+     * @param  string  $receiptId
+     * @return IngestReceipt|null
+     */
     public function lockReceipt(string $receiptId): ?IngestReceipt
     {
         $hint = IngestReceipt::query()->select(['id', 'account_id', 'environment_id'])->find($receiptId);
@@ -100,6 +110,10 @@ final class TelemetryQueue
     /**
      * Queues a receipt again under a new generation: a failed one when someone asks, or (during recovery) a stuck one
      * whose job is gone. Receipts without a kept payload, or past their attempts, are marked failed instead.
+     *
+     * @param  string  $receiptId
+     * @param  bool  $recovery
+     * @return bool
      */
     public function retry(string $receiptId, bool $recovery = false): bool
     {
@@ -153,6 +167,9 @@ final class TelemetryQueue
 
     /**
      * Requeues up to `$limit` receipts that are due but have no job, and returns how many.
+     *
+     * @param  int  $limit
+     * @return int
      */
     public function recover(int $limit = 100): int
     {
@@ -170,6 +187,10 @@ final class TelemetryQueue
 
     /**
      * Marks the receipt failed with an error code.
+     *
+     * @param  IngestReceipt  $receipt
+     * @param  string  $code
+     * @return void
      */
     public function markFailed(IngestReceipt $receipt, string $code): void
     {

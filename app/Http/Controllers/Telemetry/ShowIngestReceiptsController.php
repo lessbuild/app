@@ -18,6 +18,13 @@ final class ShowIngestReceiptsController
 {
     /**
      * An environment's recent deliveries, optionally by status.
+     *
+     * @param  SearchIngestReceiptsRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $environment
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(SearchIngestReceiptsRequest $request, #[CurrentUser] User $user, Project $project, string $environment, ProjectOverviewQuery $overview): View
     {

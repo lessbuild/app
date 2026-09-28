@@ -13,6 +13,10 @@ final class ServerTerminalSessionPolicy
     /**
      * Typing into and reading a terminal: only the person who opened it, and only while they may still run commands on
      * the server.
+     *
+     * @param  User  $user
+     * @param  ServerTerminalSession  $terminal
+     * @return bool
      */
     public function use(User $user, ServerTerminalSession $terminal): bool
     {

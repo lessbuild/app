@@ -16,6 +16,13 @@ final class StoreEnvironmentProcessController
 {
     /**
      * Adds or changes a worker or scheduler process on an environment.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  SaveEnvironmentProcess  $save
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentProcess $save): RedirectResponse
     {

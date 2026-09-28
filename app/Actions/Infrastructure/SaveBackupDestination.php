@@ -29,7 +29,11 @@ final class SaveBackupDestination
      * where or how it connects clears its verified state. The bucket and prefix can't move once backups use them, because
      * the snapshots live there.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array{name: string, storage_provider: string, endpoint?: string|null, bucket: string, region: string, access_key?: string|null, secret_key?: string|null, path_prefix: string}  $data
+     * @param  BackupDestination|null  $destination
+     * @return BackupDestination
      */
     public function handle(Account $account, User $actor, array $data, ?BackupDestination $destination = null): BackupDestination
     {

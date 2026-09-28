@@ -29,6 +29,10 @@ final class AlertDeliveryRunner
      * Sends one delivery attempt: claims it under lock (skipping stale generations and deliveries not yet due,
      * cancelling ones no longer wanted, holding a recovery until its opening alert is out, failing ones past their
      * attempt limit), sends outside the transaction, then records the result if the claim still holds.
+     *
+     * @param  string  $id
+     * @param  int  $generation
+     * @return void
      */
     public function process(string $id, int $generation): void
     {
@@ -98,6 +102,10 @@ final class AlertDeliveryRunner
     /**
      * Settles a delivery whose worker died: unstarted ones fail, and one that was sending is retried for webhooks
      * (receivers can deduplicate) or marked uncertain for others.
+     *
+     * @param  string  $id
+     * @param  int  $generation
+     * @return void
      */
     public function interrupted(string $id, int $generation): void
     {
@@ -120,6 +128,9 @@ final class AlertDeliveryRunner
 
     /**
      * Settles or requeues up to `$limit` due deliveries whose jobs have gone missing, and returns how many.
+     *
+     * @param  int  $limit
+     * @return int
      */
     public function recover(int $limit = 100): int
     {
@@ -149,7 +160,12 @@ final class AlertDeliveryRunner
         }, attempts: 3))->count();
     }
 
-    /** Why a delivery should no longer be sent, or null when it still should. */
+    /**
+     * Why a delivery should no longer be sent, or null when it still should.
+     *
+     * @param  AlertDelivery  $delivery
+     * @return string|null
+     */
     public function cancellation(AlertDelivery $delivery): ?string
     {
         $destination = $delivery->destination;
@@ -190,6 +206,10 @@ final class AlertDeliveryRunner
     /**
      * Records an attempt's result: retryable results are retried with backoff (or the destination's Retry-After) until
      * the attempt limit, anything else is final.
+     *
+     * @param  AlertDelivery  $delivery
+     * @param  AlertDeliveryResult  $result
+     * @return void
      */
     private function finish(AlertDelivery $delivery, AlertDeliveryResult $result): void
     {
@@ -218,6 +238,11 @@ final class AlertDeliveryRunner
 
     /**
      * Ends a delivery in a final status with its error code.
+     *
+     * @param  AlertDelivery  $delivery
+     * @param  AlertDeliveryStatus  $status
+     * @param  string|null  $code
+     * @return void
      */
     private function terminal(AlertDelivery $delivery, AlertDeliveryStatus $status, ?string $code): void
     {
@@ -230,6 +255,9 @@ final class AlertDeliveryRunner
 
     /**
      * Queues the delivery again under a new generation, so any older job for it does nothing.
+     *
+     * @param  AlertDelivery  $delivery
+     * @return void
      */
     public function redispatch(AlertDelivery $delivery): void
     {

@@ -26,7 +26,12 @@ final class TelemetryEventWriter
     /**
      * Stores one event under its deduplication key, linked to its release, and records exceptions against their issue.
      *
+     * @param  Environment  $environment
      * @param  array<string, mixed>  $event
+     * @param  string  $dedupeKey
+     * @param  CarbonImmutable  $receivedAt
+     * @param  int|null  $releaseId
+     * @return TelemetryEvent
      */
     public function store(Environment $environment, array $event, string $dedupeKey, CarbonImmutable $receivedAt, ?int $releaseId = null): TelemetryEvent
     {
@@ -50,7 +55,9 @@ final class TelemetryEventWriter
      * The event's columns: indexed text cut to its column length, severity defaulting to info, and the event's own time
      * (or when it arrived).
      *
+     * @param  Environment  $environment
      * @param  array<string, mixed>  $event
+     * @param  CarbonImmutable  $receivedAt
      * @return array<string, mixed>
      */
     public function attributes(Environment $environment, array $event, CarbonImmutable $receivedAt): array
@@ -77,6 +84,10 @@ final class TelemetryEventWriter
 
     /**
      * Cuts text to an indexed column's length.
+     *
+     * @param  string|null  $value
+     * @param  int  $limit
+     * @return string|null
      */
     private function indexedText(?string $value, int $limit): ?string
     {

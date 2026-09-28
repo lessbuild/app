@@ -15,6 +15,12 @@ final class StoreWebsiteController
 {
     /**
      * Creates a website and shows its database name and password once.
+     *
+     * @param  WebsiteRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  CreateWebsite  $create
+     * @return RedirectResponse
      */
     public function __invoke(WebsiteRequest $request, #[CurrentUser] User $user, Project $project, CreateWebsite $create): RedirectResponse
     {

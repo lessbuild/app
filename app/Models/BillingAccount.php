@@ -18,16 +18,22 @@ class BillingAccount extends Model
 {
     /**
      * One billing record per account, keyed by the account's ID.
+     *
+     * @var string
      */
     protected $primaryKey = 'account_id';
 
     /**
      * The key is the account's ULID, not a sequence.
+     *
+     * @var bool
      */
     public $incrementing = false;
 
     /**
      * ULIDs are strings.
+     *
+     * @var string
      */
     protected $keyType = 'string';
 
@@ -41,7 +47,12 @@ class BillingAccount extends Model
         return ['current_period_end' => 'datetime'];
     }
 
-    /** The account's billing row, created (without Stripe) on first use. */
+    /**
+     * The account's billing row, created (without Stripe) on first use.
+     *
+     * @param  string  $accountId
+     * @return BillingAccount
+     */
     public static function forAccount(string $accountId): self
     {
         $billing = self::query()->find($accountId);
@@ -55,6 +66,8 @@ class BillingAccount extends Model
 
     /**
      * Whether there's a subscription still billing (active, trialing or past due) that changes must be synced to.
+     *
+     * @return bool
      */
     public function hasLiveSubscription(): bool
     {

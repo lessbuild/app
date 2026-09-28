@@ -78,6 +78,8 @@ class ServerTerminalSession extends Model
 
     /**
      * Whether the terminal is connecting or connected.
+     *
+     * @return bool
      */
     public function isActive(): bool
     {
@@ -86,6 +88,8 @@ class ServerTerminalSession extends Model
 
     /**
      * Whether it has run past its time limit or sat idle too long.
+     *
+     * @return bool
      */
     public function hasExpired(): bool
     {

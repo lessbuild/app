@@ -17,6 +17,14 @@ final class SendServerTerminalInputController
 {
     /**
      * Queues keystrokes for the terminal and returns their sequence number (202).
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ServerTerminalSession  $terminal
+     * @param  SendServerTerminalInput  $send
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, SendServerTerminalInput $send): JsonResponse
     {

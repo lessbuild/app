@@ -14,6 +14,11 @@ final class ShowNotificationsController
 {
     /**
      * The inbox, all or unread only.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  InboxQuery  $inbox
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, InboxQuery $inbox): View
     {

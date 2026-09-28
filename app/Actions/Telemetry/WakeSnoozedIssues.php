@@ -12,7 +12,12 @@ use Illuminate\Support\Facades\DB;
 
 final class WakeSnoozedIssues
 {
-    /** Reopen snoozed issues whose snooze has ended. */
+    /**
+     * Reopen snoozed issues whose snooze has ended.
+     *
+     * @param  int  $limit
+     * @return int
+     */
     public function handle(int $limit = 100): int
     {
         $now = CarbonImmutable::now('UTC');

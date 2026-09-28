@@ -14,6 +14,11 @@ final class SwitchAccountController
 {
     /**
      * Switches the person's current account. Accounts they don't belong to look like they don't exist.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  SwitchAccount  $switch
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Account $account, SwitchAccount $switch): RedirectResponse
     {

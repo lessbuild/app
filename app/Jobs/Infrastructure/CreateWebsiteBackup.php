@@ -22,11 +22,15 @@ final class CreateWebsiteBackup implements ShouldQueue
 
     /**
      * Two attempts, since a backup can fail on a busy server or storage.
+     *
+     * @var int
      */
     public int $tries = 2;
 
     /**
      * Backing up a large website can take up to an hour.
+     *
+     * @var int
      */
     public int $timeout = 3600;
 
@@ -40,6 +44,10 @@ final class CreateWebsiteBackup implements ShouldQueue
     /**
      * Claims the backup, runs the backup script, and stores the snapshot ID and size restic reports. On failure the
      * backup is put back in the queue so the retry can claim it.
+     *
+     * @param  ServerShell  $shell
+     * @param  BackupScripts  $scripts
+     * @return void
      */
     public function handle(ServerShell $shell, BackupScripts $scripts): void
     {
@@ -73,6 +81,9 @@ final class CreateWebsiteBackup implements ShouldQueue
 
     /**
      * Marks the backup failed once attempts run out.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

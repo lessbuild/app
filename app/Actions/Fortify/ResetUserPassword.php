@@ -23,7 +23,9 @@ final class ResetUserPassword implements ResetsUserPasswords
     /**
      * Validates the new password from a reset link and sets it.
      *
+     * @param  User  $user
      * @param  array<string, string>  $input
+     * @return void
      */
     public function reset(User $user, array $input): void
     {

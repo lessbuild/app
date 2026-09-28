@@ -16,6 +16,13 @@ final class ReplaceEnvironmentVariablesController
 {
     /**
      * Replaces an environment's variables with the pasted `.env` text.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  ReplaceEnvironmentVariables  $replace
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, ReplaceEnvironmentVariables $replace): RedirectResponse
     {

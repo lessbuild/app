@@ -15,7 +15,10 @@ final class SaveEnvironmentVariable
     /**
      * Set a variable (a new version if it exists). It reaches the server with the next deploy.
      *
+     * @param  User  $actor
+     * @param  Environment  $environment
      * @param  array{key: string, value: string, is_secret: bool, scope: string, rotation_due_at?: string|null}  $data
+     * @return EnvironmentVariable
      */
     public function handle(User $actor, Environment $environment, array $data): EnvironmentVariable
     {

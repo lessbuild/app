@@ -16,6 +16,12 @@ final class StoreAlertDestinationController
 {
     /**
      * Adds a destination, showing a webhook's signing secret once.
+     *
+     * @param  AlertDestinationRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveAlertDestination  $save
+     * @return RedirectResponse
      */
     public function __invoke(AlertDestinationRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertDestination $save): RedirectResponse
     {

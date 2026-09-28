@@ -11,6 +11,10 @@ final class WriteEnvFileScript extends WebsiteProvisioningScript
     /**
      * Writes the website's `.env` file, passing its contents base64-encoded so nothing in them is interpreted by the
      * shell.
+     *
+     * @param  int  $step
+     * @param  Website  $website
+     * @return string
      */
     public function script(int $step, Website $website): string
     {

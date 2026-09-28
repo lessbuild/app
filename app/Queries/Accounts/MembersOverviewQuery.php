@@ -20,6 +20,10 @@ final class MembersOverviewQuery
     /**
      * The members page for this viewer: members ordered by role then name, which of them the viewer may change, the
      * roles they may hand out, and pending invitations (only for people who manage members).
+     *
+     * @param  Account  $account
+     * @param  User  $viewer
+     * @return MembersOverview
      */
     public function handle(Account $account, User $viewer): MembersOverview
     {

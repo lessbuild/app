@@ -24,6 +24,8 @@ class EnabledService extends Model
 
     /**
      * Stored in `project_services`.
+     *
+     * @var string|null
      */
     protected $table = 'project_services';
 

@@ -18,7 +18,14 @@ final class ReplaceEnvironmentVariables
      */
     public function __construct(private readonly SaveEnvironmentVariable $save) {}
 
-    /** Replace every variable with a pasted `.env` (KEY=value lines; # comments and blank lines skipped). Returns how many were set. */
+    /**
+     * Replace every variable with a pasted `.env` (KEY=value lines; # comments and blank lines skipped). Returns how many were set.
+     *
+     * @param  User  $actor
+     * @param  Environment  $environment
+     * @param  string  $contents
+     * @return int
+     */
     public function handle(User $actor, Environment $environment, string $contents): int
     {
         $variables = [];

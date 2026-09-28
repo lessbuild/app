@@ -26,6 +26,8 @@ final class HandleRepositoryWebhook
      * Record a verified push to the branch and deploy it: once per delivery ID, skipped when no deployable path changed,
      * and held as pending while another deploy to the website runs (it follows when that finishes).
      *
+     * @param  Repository  $repository
+     * @param  VerifiedRepositoryWebhook  $webhook
      * @return string duplicate, unavailable, skipped, pending or queued
      */
     public function handle(Repository $repository, VerifiedRepositoryWebhook $webhook): string

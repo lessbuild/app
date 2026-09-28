@@ -28,7 +28,10 @@ final class UpdateAlertRouting
     /**
      * Choose which destinations hear about a rule's incidents, and for which events.
      *
+     * @param  AlertRule  $rule
+     * @param  User  $actor
      * @param  array{version: int|string, destinations?: list<int|string>, opened: bool|int|string, recovered: bool|int|string}  $data
+     * @return void
      */
     public function handle(AlertRule $rule, User $actor, array $data): void
     {

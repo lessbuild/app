@@ -12,6 +12,10 @@ final class AccountPolicy
 {
     /**
      * Opening the account at all: any member.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function view(User $user, Account $account): bool
     {
@@ -20,6 +24,10 @@ final class AccountPolicy
 
     /**
      * Renaming the account and changing its settings.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function update(User $user, Account $account): bool
     {
@@ -28,6 +36,10 @@ final class AccountPolicy
 
     /**
      * Inviting, removing and changing members.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function manageMembers(User $user, Account $account): bool
     {
@@ -36,6 +48,10 @@ final class AccountPolicy
 
     /**
      * Seeing the account's plans, usage and invoices.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function viewBilling(User $user, Account $account): bool
     {
@@ -44,6 +60,10 @@ final class AccountPolicy
 
     /**
      * Changing plans and payment details.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function manageBilling(User $user, Account $account): bool
     {
@@ -52,6 +72,10 @@ final class AccountPolicy
 
     /**
      * Creating and revoking the account's API tokens.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function manageApiTokens(User $user, Account $account): bool
     {
@@ -60,13 +84,24 @@ final class AccountPolicy
 
     /**
      * Reading the account's audit log.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function viewAuditLog(User $user, Account $account): bool
     {
         return $this->permits($user, $account, AccountPermission::ViewAuditLog);
     }
 
-    /** Whether the service shows up for this person at all (their membership may be limited to some services). */
+    /**
+     * Whether the service shows up for this person at all (their membership may be limited to some services).
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $service
+     * @return bool
+     */
     public function useService(User $user, Account $account, string $service): bool
     {
         $membership = $user->membershipIn($account);
@@ -76,6 +111,10 @@ final class AccountPolicy
 
     /**
      * Deleting the account and everything in it: owners only.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
      */
     public function delete(User $user, Account $account): bool
     {
@@ -84,6 +123,11 @@ final class AccountPolicy
 
     /**
      * Whether the person's role in the account includes the permission; non-members hold none.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  AccountPermission  $permission
+     * @return bool
      */
     private function permits(User $user, Account $account, AccountPermission $permission): bool
     {

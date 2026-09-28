@@ -21,6 +21,10 @@ final class VerifySite
     /**
      * A site may collect once one of its hostnames is a verified domain of its project, or a subdomain of one,
      * so nobody can point a tracker at a website they don't control. Returns whether it is verified.
+     *
+     * @param  User  $actor
+     * @param  AnalyticsSite  $site
+     * @return bool
      */
     public function handle(User $actor, AnalyticsSite $site): bool
     {

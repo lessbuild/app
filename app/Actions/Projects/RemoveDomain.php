@@ -13,6 +13,10 @@ final class RemoveDomain
 {
     /**
      * Removes a domain from the project.
+     *
+     * @param  User  $actor
+     * @param  Domain  $domain
+     * @return void
      */
     public function handle(User $actor, Domain $domain): void
     {

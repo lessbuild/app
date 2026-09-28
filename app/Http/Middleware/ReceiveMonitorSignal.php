@@ -22,7 +22,9 @@ final class ReceiveMonitorSignal
      * For heartbeat and queue signals, insists on uncompressed JSON of at most 2 KiB and three levels deep, and hands
      * the decoded object to the request.
      *
+     * @param  Request  $request
      * @param  Closure(Request): Response  $next
+     * @return Response
      */
     public function handle(Request $request, Closure $next): Response
     {

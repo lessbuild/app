@@ -30,6 +30,9 @@ final class RecordSignInActivity
     /**
      * Records a successful sign-in and how it was done, worked out from the route that finished it. After a two-factor
      * challenge, the first factor comes from the session.
+     *
+     * @param  Login  $event
+     * @return void
      */
     public function login(Login $event): void
     {
@@ -57,6 +60,9 @@ final class RecordSignInActivity
     /**
      * Records a wrong password for a known account. Unknown emails aren't recorded, since there's nobody to show them
      * to.
+     *
+     * @param  Failed  $event
+     * @return void
      */
     public function failed(Failed $event): void
     {
@@ -67,6 +73,9 @@ final class RecordSignInActivity
 
     /**
      * Records a wrong two-factor code, with the first factor the person had already passed.
+     *
+     * @param  TwoFactorAuthenticationFailed  $event
+     * @return void
      */
     public function twoFactorFailed(TwoFactorAuthenticationFailed $event): void
     {
@@ -76,6 +85,8 @@ final class RecordSignInActivity
     /**
      * The first factor of a sign-in waiting on its two-factor code. Provider sign-ins store theirs in the session;
      * otherwise it was a password.
+     *
+     * @return SignInMethod
      */
     private function pendingMethod(): SignInMethod
     {
@@ -86,6 +97,8 @@ final class RecordSignInActivity
 
     /**
      * The sign-in method for the provider named in the callback URL, or null for an unknown provider.
+     *
+     * @return SignInMethod|null
      */
     private function providerMethod(): ?SignInMethod
     {

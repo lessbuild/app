@@ -25,6 +25,8 @@ final class RecordQueueWorker
      * original receipt, an older one is a conflict. A queue can have at most 100 live workers, and a busy worker keeps
      * its job's start time while it stays on the same job.
      *
+     * @param  int  $monitorId
+     * @param  string  $tokenHash
      * @param  array{worker_id: string, sequence: int, status: string, job_id?: ?string}  $data
      * @return array{worker_id: string, sequence: int, status: string, replayed: bool, received_at: string}
      */
@@ -72,6 +74,8 @@ final class RecordQueueWorker
     /**
      * What the worker gets back: its ID, sequence and status, whether it was a replay, and when it was seen.
      *
+     * @param  QueueWorker  $worker
+     * @param  bool  $replayed
      * @return array{worker_id: string, sequence: int, status: string, replayed: bool, received_at: string}
      */
     private function receipt(QueueWorker $worker, bool $replayed): array

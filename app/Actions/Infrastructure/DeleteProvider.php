@@ -22,7 +22,14 @@ final class DeleteProvider
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Remove a provider that nothing uses any more. Its credential is kept (soft-deleted) for the audit trail but never used again. */
+    /**
+     * Remove a provider that nothing uses any more. Its credential is kept (soft-deleted) for the audit trail but never used again.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Provider  $provider
+     * @return void
+     */
     public function handle(Account $account, User $actor, Provider $provider): void
     {
         DB::transaction(function () use ($account, $actor, $provider): void {

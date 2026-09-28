@@ -67,6 +67,8 @@ class LoadBalancer extends Model
 
     /**
      * Whether removal has started or failed, when the load balancer can't be changed.
+     *
+     * @return bool
      */
     public function isRemoving(): bool
     {

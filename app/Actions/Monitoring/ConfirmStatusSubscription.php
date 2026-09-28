@@ -9,7 +9,13 @@ use Carbon\CarbonImmutable;
 
 final class ConfirmStatusSubscription
 {
-    /** Confirm a subscription with the one-time token from its email. Returns false when the token doesn't match or was already used. */
+    /**
+     * Confirm a subscription with the one-time token from its email. Returns false when the token doesn't match or was already used.
+     *
+     * @param  StatusSubscription  $subscription
+     * @param  string  $token
+     * @return bool
+     */
     public function handle(StatusSubscription $subscription, string $token): bool
     {
         if ($subscription->verification_token_hash === null || ! hash_equals($subscription->verification_token_hash, hash('sha256', $token))) {

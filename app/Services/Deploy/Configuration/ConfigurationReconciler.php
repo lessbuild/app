@@ -39,6 +39,11 @@ final class ConfigurationReconciler
 
     /**
      * Applies every environment in the document, then deletes the environments it removes along with their ownership.
+     *
+     * @param  ConfigurationReview  $review
+     * @param  ConfigurationApplication  $application
+     * @param  User  $user
+     * @return void
      */
     public function apply(ConfigurationReview $review, ConfigurationApplication $application, User $user): void
     {
@@ -61,8 +66,14 @@ final class ConfigurationReconciler
      * Creates or updates one environment and its processes, resources and variables, claims each as owned, removes what
      * the document removes, and adds a deploy operation unless the latest one had the same intent.
      *
+     * @param  ConfigurationReview  $review
+     * @param  ConfigurationApplication  $application
+     * @param  Project  $project
+     * @param  User  $user
+     * @param  string  $slug
      * @param  array<string, mixed>  $desired
      * @param  array{placements: array<string, array{website_id: int}>, secrets: array<string, array{variable_id: int, version: int}>, repositories: array<string, array{repository_id: int, fingerprint: string}>}  $resolved
+     * @return void
      */
     private function environment(ConfigurationReview $review, ConfigurationApplication $application, Project $project, User $user, string $slug, array $desired, array $resolved): void
     {
@@ -129,8 +140,12 @@ final class ConfigurationReconciler
      * A resource's configuration: connection details for managed databases and caches (a per-environment port for
      * Valkey), or the bound secret values for external ones.
      *
+     * @param  Environment  $environment
+     * @param  Website  $website
+     * @param  string  $name
      * @param  array<string, mixed>  $settings
      * @param  array<string, array{variable_id: int, version: int}>  $secrets
+     * @param  Project  $project
      * @return array{variables: array<string, string>, container_name: string|null}
      */
     private function resource(Environment $environment, Website $website, string $name, array $settings, array $secrets, Project $project): array
@@ -157,7 +172,13 @@ final class ConfigurationReconciler
      * Copies a bound secret into the environment as a secret variable with the review's scope, adding a version when its
      * value or scope changes.
      *
+     * @param  Environment  $environment
+     * @param  string  $key
      * @param  array{variable_id: int, version: int}  $binding
+     * @param  string  $scope
+     * @param  User  $user
+     * @param  Project  $project
+     * @return EnvironmentVariable
      */
     private function variable(Environment $environment, string $key, array $binding, string $scope, User $user, Project $project): EnvironmentVariable
     {
@@ -180,6 +201,8 @@ final class ConfigurationReconciler
      *
      * @param  array{variable_id: int, version: int}  $binding
      * @param  list<string>  $scopes
+     * @param  Project  $project
+     * @return EnvironmentVariable
      */
     private function source(array $binding, array $scopes, Project $project): EnvironmentVariable
     {
@@ -191,6 +214,13 @@ final class ConfigurationReconciler
 
     /**
      * Records that configuration owns an object, under its logical name.
+     *
+     * @param  ConfigurationReview  $review
+     * @param  string  $slug
+     * @param  string  $kind
+     * @param  string  $name
+     * @param  string  $key
+     * @return void
      */
     private function claim(ConfigurationReview $review, string $slug, string $kind, string $name, string $key): void
     {

@@ -11,7 +11,13 @@ use Illuminate\Support\Str;
 
 final class UpdateProfile
 {
-    /** A changed email address must be verified again before it is trusted. */
+    /**
+     * A changed email address must be verified again before it is trusted.
+     *
+     * @param  User  $user
+     * @param  UpdateProfileData  $data
+     * @return void
+     */
     public function handle(User $user, UpdateProfileData $data): void
     {
         $email = Str::lower(trim($data->email));

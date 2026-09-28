@@ -16,6 +16,10 @@ final class CurrentAccount implements ContextualAttribute
 {
     /**
      * The signed-in person's current account; 404 without one.
+     *
+     * @param  CurrentAccount  $attribute
+     * @param  Container  $container
+     * @return Account
      */
     public static function resolve(self $attribute, Container $container): Account
     {

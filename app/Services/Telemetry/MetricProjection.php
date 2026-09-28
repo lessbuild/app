@@ -24,6 +24,8 @@ final class MetricProjection
      * Server-owned metadata lives outside the submitted event and retry fingerprint.
      *
      * @param  array<string, mixed>  $event
+     * @param  IngestSource  $source
+     * @param  CarbonImmutable  $receivedAt
      * @return array{series: array<string, mixed>, sample: array<string, mixed>}|null
      */
     public function prepare(array $event, IngestSource $source, CarbonImmutable $receivedAt): ?array
@@ -85,6 +87,9 @@ final class MetricProjection
 
     /**
      * A sortable fixed-width key for a time, in nanoseconds.
+     *
+     * @param  CarbonImmutable  $time
+     * @return string
      */
     public static function timeKey(CarbonImmutable $time): string
     {
@@ -96,6 +101,7 @@ final class MetricProjection
      * attributes (for JSON metrics).
      *
      * @param  array<string, mixed>  $event
+     * @param  bool  $isOtlp
      * @return array<string, mixed>
      */
     private function descriptor(array $event, bool $isOtlp): array
@@ -121,6 +127,9 @@ final class MetricProjection
 
     /**
      * An OTLP nanosecond timestamp as a Carbon time, or null when it's missing or zero.
+     *
+     * @param  mixed  $value
+     * @return CarbonImmutable|null
      */
     private function timestamp(mixed $value): ?CarbonImmutable
     {
@@ -137,6 +146,7 @@ final class MetricProjection
      * A readable label for where the series comes from: the first host, container, pod, instance or service name found.
      *
      * @param  array<string, mixed>  $descriptor
+     * @return string
      */
     private function resourceLabel(array $descriptor): string
     {
@@ -154,6 +164,9 @@ final class MetricProjection
 
     /**
      * Sorts object keys recursively, so equal descriptors hash the same.
+     *
+     * @param  mixed  $value
+     * @return mixed
      */
     private function canonical(mixed $value): mixed
     {

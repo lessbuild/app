@@ -12,6 +12,8 @@ enum SocialProvider: string
 
     /**
      * The provider's name for sign-in buttons and connected-account lists.
+     *
+     * @return string
      */
     public function label(): string
     {

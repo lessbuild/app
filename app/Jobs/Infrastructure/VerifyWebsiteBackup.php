@@ -21,11 +21,15 @@ final class VerifyWebsiteBackup implements ShouldQueue
 
     /**
      * One attempt; a failed verification is a result worth keeping, and someone can run another.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * Restoring a large snapshot to check it can take up to an hour.
+     *
+     * @var int
      */
     public int $timeout = 3600;
 
@@ -48,6 +52,10 @@ final class VerifyWebsiteBackup implements ShouldQueue
     /**
      * Claims the verification, runs the verification script, and reads the stage markers it prints to decide which stage
      * (if any) failed.
+     *
+     * @param  ServerShell  $shell
+     * @param  BackupScripts  $scripts
+     * @return void
      */
     public function handle(ServerShell $shell, BackupScripts $scripts): void
     {
@@ -87,6 +95,9 @@ final class VerifyWebsiteBackup implements ShouldQueue
 
     /**
      * Marks an unfinished verification failed at the restore stage.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {
@@ -99,7 +110,10 @@ final class VerifyWebsiteBackup implements ShouldQueue
     /**
      * Stores the outcome, the per-check statuses, a message for the failed stage and how long it took.
      *
+     * @param  BackupVerification  $verification
+     * @param  string|null  $stage
      * @param  array<string, string>  $checks
+     * @return void
      */
     private function finish(BackupVerification $verification, ?string $stage, array $checks = []): void
     {

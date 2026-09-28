@@ -38,6 +38,9 @@ class StatusSubscription extends Model
 
     /**
      * A lookup key for an email address, so a subscriber can be found without decrypting every row.
+     *
+     * @param  string  $email
+     * @return string
      */
     public static function hashEmail(string $email): string
     {

@@ -15,7 +15,14 @@ use Illuminate\Validation\ValidationException;
 
 final class RetryServerInitialization
 {
-    /** Try again to fetch the IP and host key of a cloud server whose initialisation failed. Returns false if it wasn't in that state. */
+    /**
+     * Try again to fetch the IP and host key of a cloud server whose initialisation failed. Returns false if it wasn't in that state.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @return bool
+     */
     public function handle(Account $account, User $actor, Server $server): bool
     {
         Gate::forUser($actor)->authorize('update', $server);

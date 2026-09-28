@@ -35,6 +35,9 @@ class ConfigurationOperations
      * Starts a pending or blocked deploy operation when its gates pass (target available, requester still allowed,
      * repository unchanged, environment open), marking it delivered or awaiting approval; otherwise records why it's
      * blocked.
+     *
+     * @param  ConfigurationOperation  $operation
+     * @return ConfigurationOperation
      */
     public function deliver(ConfigurationOperation $operation): ConfigurationOperation
     {
@@ -67,7 +70,12 @@ class ConfigurationOperations
         });
     }
 
-    /** Bring operations up to date with their builds, and the application's status with its operations. */
+    /**
+     * Bring operations up to date with their builds, and the application's status with its operations.
+     *
+     * @param  ConfigurationApplication  $application
+     * @return ConfigurationApplication
+     */
     public function refresh(ConfigurationApplication $application): ConfigurationApplication
     {
         $operations = $application->relatedOperations()->with('build')->withExists('retry')->orderBy('id')->get();
@@ -113,7 +121,12 @@ class ConfigurationOperations
         return $application;
     }
 
-    /** Try a failed or canceled deploy again, exactly as reviewed; anything changed since needs a new review. */
+    /**
+     * Try a failed or canceled deploy again, exactly as reviewed; anything changed since needs a new review.
+     *
+     * @param  ConfigurationOperation  $original
+     * @return ConfigurationOperation
+     */
     public function retry(ConfigurationOperation $original): ConfigurationOperation
     {
         $retry = DB::transaction(function () use ($original): ConfigurationOperation {
@@ -152,7 +165,12 @@ class ConfigurationOperations
         return $retry;
     }
 
-    /** Cancel a deploy that hasn't started on the server (a running one is canceled from its deploy page). */
+    /**
+     * Cancel a deploy that hasn't started on the server (a running one is canceled from its deploy page).
+     *
+     * @param  ConfigurationOperation  $operation
+     * @return ConfigurationOperation
+     */
     public function cancel(ConfigurationOperation $operation): ConfigurationOperation
     {
         return DB::transaction(function () use ($operation): ConfigurationOperation {
@@ -175,6 +193,9 @@ class ConfigurationOperations
 
     /**
      * Refuses the change with a message on `operation`.
+     *
+     * @param  string  $message
+     * @return never
      */
     private function invalid(string $message): never
     {

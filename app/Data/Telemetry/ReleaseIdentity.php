@@ -21,6 +21,11 @@ final readonly class ReleaseIdentity
     /**
      * A release identity from raw labels, or null when the version is missing or any label is too long, has control
      * characters, or was redacted.
+     *
+     * @param  mixed  $version
+     * @param  mixed  $service
+     * @param  mixed  $namespace
+     * @return ReleaseIdentity|null
      */
     public static function from(mixed $version, mixed $service = null, mixed $namespace = null): ?self
     {
@@ -36,6 +41,8 @@ final readonly class ReleaseIdentity
      * its resource attributes (OTLP) or attributes (JSON; the event's own `service` wins there).
      *
      * @param  array<string, mixed>  $event
+     * @param  IngestSource  $source
+     * @return ReleaseIdentity|null
      */
     public static function fromEvent(array $event, IngestSource $source): ?self
     {
@@ -57,6 +64,8 @@ final readonly class ReleaseIdentity
     /**
      * A fixed-length key for the namespace and service together, used in unique indexes where the labels themselves
      * could be too long.
+     *
+     * @return string
      */
     public function serviceHash(): string
     {
@@ -65,6 +74,8 @@ final readonly class ReleaseIdentity
 
     /**
      * A fixed-length key for the version, for the same reason.
+     *
+     * @return string
      */
     public function versionHash(): string
     {
@@ -74,6 +85,11 @@ final readonly class ReleaseIdentity
     /**
      * Whether a label is safe to store: within the length limit, not blank unless optional, not a redaction placeholder,
      * and free of control characters.
+     *
+     * @param  mixed  $value
+     * @param  int  $limit
+     * @param  bool  $optional
+     * @return bool
      */
     private static function validLabel(mixed $value, int $limit, bool $optional = false): bool
     {

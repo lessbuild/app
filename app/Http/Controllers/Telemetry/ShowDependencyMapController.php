@@ -17,6 +17,13 @@ final class ShowDependencyMapController
 {
     /**
      * The dependency map for a range, optionally for one of the project's environments.
+     *
+     * @param  SearchDependencyMapRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  DependencyMapQuery  $dependencies
+     * @return View
      */
     public function __invoke(SearchDependencyMapRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, DependencyMapQuery $dependencies): View
     {

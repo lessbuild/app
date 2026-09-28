@@ -28,7 +28,14 @@ final class InviteMember
 
     public const EXPIRES_AFTER_DAYS = 7;
 
-    /** Invite an email address; re-inviting the same address replaces its previous pending invitation. */
+    /**
+     * Invite an email address; re-inviting the same address replaces its previous pending invitation.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  InviteMemberData  $data
+     * @return AccountInvitation
+     */
     public function handle(User $actor, Account $account, InviteMemberData $data): AccountInvitation
     {
         Gate::forUser($actor)->authorize('manageMembers', $account);

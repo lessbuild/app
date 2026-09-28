@@ -94,6 +94,8 @@ final class IngestReceipt extends Model
 
     /**
      * A sentence explaining the last processing error code, for the receipts page.
+     *
+     * @return string|null
      */
     public function processingError(): ?string
     {

@@ -18,6 +18,14 @@ final class PromoteDeploymentController
 {
     /**
      * Queues the promotion (202).
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $build
+     * @param  DeployApiQuery  $query
+     * @param  PromoteBuild  $promote
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $build, DeployApiQuery $query, PromoteBuild $promote): JsonResponse
     {

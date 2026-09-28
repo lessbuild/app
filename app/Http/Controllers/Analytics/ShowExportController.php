@@ -15,6 +15,12 @@ final class ShowExportController
 {
     /**
      * An export's page, which shows its progress and the download link.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $token
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $token, ProjectOverviewQuery $overview): View
     {

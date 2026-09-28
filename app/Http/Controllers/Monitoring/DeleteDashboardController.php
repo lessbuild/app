@@ -15,6 +15,12 @@ final class DeleteDashboardController
 {
     /**
      * Deletes a dashboard.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Dashboard  $dashboard
+     * @param  DeleteDashboard  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Dashboard $dashboard, DeleteDashboard $delete): RedirectResponse
     {

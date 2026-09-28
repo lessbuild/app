@@ -24,7 +24,14 @@ final class DeleteWebsite
      */
     public function __construct(private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
-    /** Delete a website: it disappears at once, and its files, Caddy site and database are removed from its servers in the background. */
+    /**
+     * Delete a website: it disappears at once, and its files, Caddy site and database are removed from its servers in the background.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Website  $website
+     * @return void
+     */
     public function handle(Account $account, User $actor, Website $website): void
     {
         DB::transaction(function () use ($account, $actor, $website): void {

@@ -89,6 +89,8 @@ final class RouteBindingServiceProvider extends ServiceProvider
     /**
      * Registers a route binding for every parameter in BINDINGS. The scoped lookup applies only to the routes the entry
      * names; other routes that happen to use the same parameter name get the raw value.
+     *
+     * @return void
      */
     public function boot(): void
     {
@@ -103,6 +105,10 @@ final class RouteBindingServiceProvider extends ServiceProvider
      * Soft-deleted records resolve on `*.show` routes only, so their pages stay reachable.
      *
      * @param  class-string<Model>  $model
+     * @param  string  $scope
+     * @param  string  $value
+     * @param  RoutingRoute  $route
+     * @return Model
      */
     private function resolve(string $model, string $scope, string $value, RoutingRoute $route): Model
     {
@@ -125,6 +131,9 @@ final class RouteBindingServiceProvider extends ServiceProvider
 
     /**
      * The route's project, whether it's already bound to a model or still the raw ID; 404 when it doesn't exist.
+     *
+     * @param  RoutingRoute  $route
+     * @return Project
      */
     private function project(RoutingRoute $route): Project
     {
@@ -136,6 +145,9 @@ final class RouteBindingServiceProvider extends ServiceProvider
     /**
      * The account a route is scoped to: the project's account when the URL names a project, otherwise the signed-in
      * person's current account. 404 when there is neither.
+     *
+     * @param  RoutingRoute  $route
+     * @return string
      */
     private function accountId(RoutingRoute $route): string
     {

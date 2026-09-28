@@ -13,6 +13,11 @@ final class GitHubAppWebhookVerifier
     /**
      * Checks size (413), signature (401) and JSON (422), then returns a ping or the installation and lowercased
      * repository name.
+     *
+     * @param  string  $raw
+     * @param  string|null  $signature
+     * @param  string|null  $event
+     * @return GitHubAppWebhook
      */
     public function verify(string $raw, ?string $signature, ?string $event): GitHubAppWebhook
     {

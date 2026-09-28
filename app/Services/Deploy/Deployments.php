@@ -27,7 +27,12 @@ class Deployments
      */
     public function __construct(private readonly BuildPayload $payload) {}
 
-    /** Why the repository's environment won't take a deploy now (locked, or outside its window), or null. */
+    /**
+     * Why the repository's environment won't take a deploy now (locked, or outside its window), or null.
+     *
+     * @param  Repository  $repository
+     * @return string|null
+     */
     public function blockReason(Repository $repository): ?string
     {
         return $repository->environment?->deploymentBlockReason();
@@ -36,6 +41,10 @@ class Deployments
     /**
      * Queue a rollback build that makes a retained release live again. It skips approval: it's putting back a release
      * that was already approved and live.
+     *
+     * @param  Build  $source
+     * @param  User|null  $requester
+     * @return Build|null
      */
     public function rollback(Build $source, ?User $requester): ?Build
     {
@@ -62,7 +71,9 @@ class Deployments
      * approval when its environment requires it, in which case the approvers are notified after commit; otherwise it's
      * published after commit.
      *
+     * @param  Repository  $repository
      * @param  array<string, mixed>  $attributes  trigger_source, revision, commit_message, …
+     * @param  User|null  $requester
      * @return Build|null null when the website already has an active build
      */
     public function queue(Repository $repository, array $attributes, ?User $requester = null): ?Build
@@ -90,7 +101,12 @@ class Deployments
         });
     }
 
-    /** A deploy that failed after going live (or failed its observation) goes back to the last good release, if the environment asks for that. */
+    /**
+     * A deploy that failed after going live (or failed its observation) goes back to the last good release, if the environment asks for that.
+     *
+     * @param  Build  $failed
+     * @return void
+     */
     public function rollBackAutomatically(Build $failed): void
     {
         if ($failed->trigger_source === 'rollback' || $failed->environment?->automatic_rollback !== true) {
@@ -104,7 +120,12 @@ class Deployments
         }
     }
 
-    /** Tell the people who could approve a waiting build (members with Deploy access, other than whoever asked for it). */
+    /**
+     * Tell the people who could approve a waiting build (members with Deploy access, other than whoever asked for it).
+     *
+     * @param  Build  $build
+     * @return void
+     */
     private function notifyApprovers(Build $build): void
     {
         $build->loadMissing(['repository', 'website', 'environment', 'requester', 'promotedFrom.environment']);

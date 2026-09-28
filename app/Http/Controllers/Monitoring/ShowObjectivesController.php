@@ -18,6 +18,13 @@ final class ShowObjectivesController
 {
     /**
      * The project's SLOs with each one's current report.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectAlertRulesQuery  $rules
+     * @param  ServiceObjectiveReport  $reports
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, ServiceObjectiveReport $reports): View
     {

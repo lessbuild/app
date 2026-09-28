@@ -13,7 +13,10 @@ final class RecordMetricSamples
     /**
      * Called inside the receipt transaction with application/environment locks held.
      *
+     * @param  Environment  $environment
      * @param  list<array{projection: array<string, mixed>, event_id: int}>  $points
+     * @param  CarbonImmutable  $receivedAt
+     * @return void
      */
     public function record(Environment $environment, array $points, CarbonImmutable $receivedAt): void
     {

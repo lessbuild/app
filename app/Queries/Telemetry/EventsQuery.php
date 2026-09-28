@@ -18,6 +18,7 @@ final class EventsQuery
      * status, duration and text) inside the time window. A custom window's end is exclusive, since its minutes come from
      * a form.
      *
+     * @param  Project  $project
      * @param  array<string, mixed>  $filters
      * @param  array{CarbonImmutable|null, CarbonImmutable|null}  $window
      * @return Builder<TelemetryEvent>
@@ -63,6 +64,7 @@ final class EventsQuery
      * the precise timestamp and ID.
      *
      * @param  Builder<TelemetryEvent>  $query
+     * @param  string  $sort
      * @return Builder<TelemetryEvent>
      */
     public function ordered(Builder $query, string $sort): Builder

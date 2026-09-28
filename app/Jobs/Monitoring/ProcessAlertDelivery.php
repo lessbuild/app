@@ -16,16 +16,22 @@ final class ProcessAlertDelivery implements ShouldQueue
 
     /**
      * One attempt per job: the delivery runner schedules its own retries with backoff.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * How long one delivery attempt may take.
+     *
+     * @var int
      */
     public int $timeout = AlertDeliveryQueue::TIMEOUT;
 
     /**
      * A timed-out attempt is failed and handed to the runner, which decides whether to retry.
+     *
+     * @var bool
      */
     public bool $failOnTimeout = true;
 
@@ -39,6 +45,9 @@ final class ProcessAlertDelivery implements ShouldQueue
 
     /**
      * Hands the delivery to its destination's transport and records the outcome.
+     *
+     * @param  AlertDeliveryRunner  $runner
+     * @return void
      */
     public function handle(AlertDeliveryRunner $runner): void
     {
@@ -49,6 +58,9 @@ final class ProcessAlertDelivery implements ShouldQueue
      * Records that the attempt was interrupted while sending. Webhooks carry a delivery ID receivers can deduplicate
      * on, so they're retried;
      * other destinations are marked uncertain, since the alert may have arrived.
+     *
+     * @param  Throwable|null  $exception
+     * @return void
      */
     public function failed(?Throwable $exception): void
     {

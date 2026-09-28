@@ -15,6 +15,12 @@ final class CheckBackupDestinationController
 {
     /**
      * Checks the destination's bucket can be written and shows the result.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  BackupDestination  $backupDestination
+     * @param  CheckBackupDestination  $check
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, BackupDestination $backupDestination, CheckBackupDestination $check): RedirectResponse
     {

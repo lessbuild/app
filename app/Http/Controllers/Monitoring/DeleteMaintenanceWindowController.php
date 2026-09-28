@@ -15,6 +15,12 @@ final class DeleteMaintenanceWindowController
 {
     /**
      * Deletes a maintenance window.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  MaintenanceWindow  $window
+     * @param  DeleteMaintenanceWindow  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, MaintenanceWindow $window, DeleteMaintenanceWindow $delete): RedirectResponse
     {

@@ -15,6 +15,11 @@ final class SetRepositoryWebhook
     /**
      * Turn the push webhook on (with a new secret, returned once for the Git host's settings) or off (returns null).
      * GitLab signs with a `whsec_` key; GitHub and Bitbucket with a shared secret.
+     *
+     * @param  User  $actor
+     * @param  Repository  $repository
+     * @param  bool  $enabled
+     * @return string|null
      */
     public function handle(User $actor, Repository $repository, bool $enabled): ?string
     {

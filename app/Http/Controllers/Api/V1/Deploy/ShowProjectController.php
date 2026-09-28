@@ -16,6 +16,12 @@ final class ShowProjectController
 {
     /**
      * Returns one project with its environments.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $project
+     * @param  DeployApiQuery  $query
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, DeployApiQuery $query): JsonResponse
     {

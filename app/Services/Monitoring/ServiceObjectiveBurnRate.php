@@ -17,6 +17,8 @@ final class ServiceObjectiveBurnRate
     public function __construct(private readonly ServiceObjectiveReport $reports) {}
 
     /**
+     * @param  ServiceLevelObjective  $objective
+     * @param  CarbonImmutable|null  $until
      * @return array{
      *     status: string,
      *     label: string,

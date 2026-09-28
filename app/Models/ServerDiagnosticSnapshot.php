@@ -46,6 +46,8 @@ class ServerDiagnosticSnapshot extends Model
     /**
      * Whether a run is under way and its lease hasn't lapsed; a lapsed lease means the worker died and a new run may
      * start.
+     *
+     * @return bool
      */
     public function isRunning(): bool
     {

@@ -18,7 +18,10 @@ final class RecordWebsiteProvisioning
      * Record what a website's setup script reported. Stale attempts are ignored. When the last stage finishes the website
      * goes live, its domains are applied, and a copy left on a previous server is removed.
      *
+     * @param  Website  $website
+     * @param  string  $attempt
      * @param  array{event: 'status', stage: int}|array{event: 'failed', message: string, exit_code: int|null}|array{event: 'log', log: string}  $report
+     * @return bool
      */
     public function handle(Website $website, string $attempt, array $report): bool
     {

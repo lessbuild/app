@@ -35,6 +35,9 @@ final class StatusUpdateRequest extends FormRequest
 
     /**
      * Adds a check that the status belongs to the kind of update (maintenance and incidents have different statuses).
+     *
+     * @param  Validator  $validator
+     * @return void
      */
     public function withValidator(Validator $validator): void
     {

@@ -16,6 +16,10 @@ class PurgeOldReleasesScript extends BuildProvisioningScript
 
     /**
      * The script to run
+     *
+     * @param  int  $step
+     * @param  Build  $build
+     * @return string
      */
     public function script(int $step, Build $build): string
     {

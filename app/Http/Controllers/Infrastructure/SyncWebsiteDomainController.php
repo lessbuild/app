@@ -13,6 +13,12 @@ final class SyncWebsiteDomainController
 {
     /**
      * Points a managed domain's DNS record at the website's server again.
+     *
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  string  $domain
+     * @param  SyncWebsiteDomain  $sync
+     * @return RedirectResponse
      */
     public function __invoke(Project $project, Website $website, string $domain, SyncWebsiteDomain $sync): RedirectResponse
     {

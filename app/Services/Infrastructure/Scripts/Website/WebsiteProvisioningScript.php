@@ -10,7 +10,13 @@ use App\Services\Infrastructure\ProvisioningCallbackUrl;
 
 abstract class WebsiteProvisioningScript implements WebsiteScript
 {
-    /** Upload the log so far and report that `$step` finished. */
+    /**
+     * Upload the log so far and report that `$step` finished.
+     *
+     * @param  int  $step
+     * @param  Website  $website
+     * @return string
+     */
     protected function progress(int $step, Website $website): string
     {
         $callback = escapeshellarg(ProvisioningCallbackUrl::websiteStatus($website));

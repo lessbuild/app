@@ -42,6 +42,8 @@ final class WebsiteDomainRequest extends FormRequest
 
     /**
      * Cleans the typed hostname before validation.
+     *
+     * @return void
      */
     protected function prepareForValidation(): void
     {

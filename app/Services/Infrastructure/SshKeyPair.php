@@ -11,6 +11,8 @@ class SshKeyPair
 {
     /**
      * The generated private key, from which both halves are exported.
+     *
+     * @var PrivateKey
      */
     private readonly PrivateKey $key;
 
@@ -20,13 +22,21 @@ class SshKeyPair
         $this->key = RSA::createKey(4096);
     }
 
-    /** Return the public key in OpenSSH authorized_keys format. */
+    /**
+     * Return the public key in OpenSSH authorized_keys format.
+     *
+     * @return string
+     */
     public function publicKey(): string
     {
         return $this->key->getPublicKey()->toString('OpenSSH');
     }
 
-    /** Return the unencrypted OpenSSH private key for encrypted application storage. */
+    /**
+     * Return the unencrypted OpenSSH private key for encrypted application storage.
+     *
+     * @return string
+     */
     public function privateKey(): string
     {
         return $this->key->toString('OpenSSH');

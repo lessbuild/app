@@ -12,6 +12,10 @@ final class DismissChecklist
 {
     /**
      * Hides the getting-started checklist for everyone on the project.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @return void
      */
     public function handle(User $actor, Project $project): void
     {

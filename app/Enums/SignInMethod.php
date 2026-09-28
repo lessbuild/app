@@ -17,6 +17,9 @@ enum SignInMethod: string
 
     /**
      * The sign-in method for a social provider; their values are the same.
+     *
+     * @param  SocialProvider  $provider
+     * @return SignInMethod
      */
     public static function fromProvider(SocialProvider $provider): self
     {
@@ -25,6 +28,8 @@ enum SignInMethod: string
 
     /**
      * How the method is named in sign-in activity.
+     *
+     * @return string
      */
     public function label(): string
     {

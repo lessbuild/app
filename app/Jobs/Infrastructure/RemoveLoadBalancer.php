@@ -21,11 +21,15 @@ final class RemoveLoadBalancer implements ShouldQueue
 
     /**
      * One attempt; a failed removal is shown so someone can try again.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * How long removing the proxy configuration may take.
+     *
+     * @var int
      */
     public int $timeout = 120;
 
@@ -38,6 +42,10 @@ final class RemoveLoadBalancer implements ShouldQueue
 
     /**
      * Removes the configuration and deletes the record once the server confirms.
+     *
+     * @param  ServerShell  $shell
+     * @param  LoadBalancerConfiguration  $configuration
+     * @return void
      */
     public function handle(ServerShell $shell, LoadBalancerConfiguration $configuration): void
     {
@@ -62,6 +70,9 @@ final class RemoveLoadBalancer implements ShouldQueue
 
     /**
      * Marks the removal failed with the server's error, keeping the record so it can be retried.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

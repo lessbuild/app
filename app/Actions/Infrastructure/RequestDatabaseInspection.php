@@ -12,7 +12,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class RequestDatabaseInspection
 {
-    /** Queue a look at the database's size, connections and tables (by a person, or the daily run with no actor). Null if one is already waiting. */
+    /**
+     * Queue a look at the database's size, connections and tables (by a person, or the daily run with no actor). Null if one is already waiting.
+     *
+     * @param  Website  $website
+     * @param  User|null  $actor
+     * @return DatabaseSnapshot|null
+     */
     public function handle(Website $website, ?User $actor = null): ?DatabaseSnapshot
     {
         if ($actor !== null) {

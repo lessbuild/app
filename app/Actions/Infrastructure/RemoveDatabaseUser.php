@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class RemoveDatabaseUser
 {
-    /** Drop the login from MySQL, then forget it. Also used when a user expires (no actor). Works on any plan. */
+    /**
+     * Drop the login from MySQL, then forget it. Also used when a user expires (no actor). Works on any plan.
+     *
+     * @param  DatabaseUser  $user
+     * @param  User|null  $actor
+     * @return void
+     */
     public function handle(DatabaseUser $user, ?User $actor = null): void
     {
         if ($actor !== null) {

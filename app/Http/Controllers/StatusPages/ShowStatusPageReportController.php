@@ -16,6 +16,10 @@ final class ShowStatusPageReportController
 {
     /**
      * The published page's report as JSON: overall state, components and the latest updates.
+     *
+     * @param  string  $slug
+     * @param  StatusPageReportQuery  $query
+     * @return JsonResponse
      */
     public function __invoke(string $slug, StatusPageReportQuery $query): JsonResponse
     {

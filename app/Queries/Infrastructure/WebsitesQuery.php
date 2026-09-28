@@ -16,6 +16,7 @@ final class WebsitesQuery
     /**
      * The account's websites by name, with their server.
      *
+     * @param  string  $accountId
      * @return Collection<int, Website>
      */
     public function handle(string $accountId): Collection
@@ -25,6 +26,10 @@ final class WebsitesQuery
 
     /**
      * One of the account's websites with its server, domains, environment and health monitor; 404 otherwise.
+     *
+     * @param  string  $accountId
+     * @param  string|int  $id
+     * @return Website
      */
     public function find(string $accountId, int|string $id): Website
     {
@@ -34,6 +39,7 @@ final class WebsitesQuery
     /**
      * The account's environments grouped by project, for linking a website to one.
      *
+     * @param  Account  $account
      * @return Collection<int, Environment>
      */
     public function environments(Account $account): Collection
@@ -44,6 +50,7 @@ final class WebsitesQuery
     /**
      * Servers a website can be created on: active app servers with a MySQL root password to create its database with.
      *
+     * @param  string  $accountId
      * @return Collection<int, Server>
      */
     public function hosts(string $accountId): Collection

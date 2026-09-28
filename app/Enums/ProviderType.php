@@ -17,6 +17,8 @@ enum ProviderType: string
 
     /**
      * The provider's product name.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -31,7 +33,11 @@ enum ProviderType: string
         };
     }
 
-    /** What the account uses it for. */
+    /**
+     * What the account uses it for.
+     *
+     * @return string
+     */
     public function purpose(): string
     {
         return match ($this) {
@@ -43,6 +49,8 @@ enum ProviderType: string
 
     /**
      * Whether we can create servers with this provider's API.
+     *
+     * @return bool
      */
     public function hostsServers(): bool
     {
@@ -51,13 +59,19 @@ enum ProviderType: string
 
     /**
      * Whether the provider hosts Git repositories we deploy from.
+     *
+     * @return bool
      */
     public function isSourceControl(): bool
     {
         return in_array($this, [self::GitHub, self::GitLab, self::Bitbucket], true);
     }
 
-    /** The Git host repositories are cloned from, for source-control providers. */
+    /**
+     * The Git host repositories are cloned from, for source-control providers.
+     *
+     * @return string|null
+     */
     public function repositoryHost(): ?string
     {
         return match ($this) {
@@ -68,7 +82,11 @@ enum ProviderType: string
         };
     }
 
-    /** The username that goes with the token for Git over HTTPS. */
+    /**
+     * The username that goes with the token for Git over HTTPS.
+     *
+     * @return string|null
+     */
     public function repositoryCredentialUsername(): ?string
     {
         return match ($this) {

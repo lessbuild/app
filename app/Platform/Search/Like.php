@@ -10,6 +10,9 @@ final class Like
     /**
      * Lowercases the term and escapes `\`, `%` and `_`, so what someone types is matched literally. Compare it against a
      * lowercased column.
+     *
+     * @param  string  $term
+     * @return string
      */
     public static function contains(string $term): string
     {

@@ -18,6 +18,13 @@ final class ChangeMemberRoleController
 {
     /**
      * Changes a member's role from the members page.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  string  $membership
+     * @param  ChangeMemberRole  $change
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, string $membership, ChangeMemberRole $change): RedirectResponse
     {

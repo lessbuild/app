@@ -57,6 +57,7 @@ final class AuditSubscriber
     /**
      * Every event that leaves an audit entry, and the method that records it.
      *
+     * @param  Dispatcher  $events
      * @return array<class-string, string>
      */
     public function subscribe(Dispatcher $events): array
@@ -99,6 +100,9 @@ final class AuditSubscriber
 
     /**
      * Records the account's creation, attributed to its first owner.
+     *
+     * @param  AccountCreated  $event
+     * @return void
      */
     public function accountCreated(AccountCreated $event): void
     {
@@ -107,6 +111,9 @@ final class AuditSubscriber
 
     /**
      * Records a rename with the old and new names.
+     *
+     * @param  AccountRenamed  $event
+     * @return void
      */
     public function accountRenamed(AccountRenamed $event): void
     {
@@ -115,6 +122,9 @@ final class AuditSubscriber
 
     /**
      * Records who was invited and with which role.
+     *
+     * @param  MemberInvited  $event
+     * @return void
      */
     public function memberInvited(MemberInvited $event): void
     {
@@ -126,6 +136,9 @@ final class AuditSubscriber
 
     /**
      * Records which invitation was withdrawn.
+     *
+     * @param  InvitationRevoked  $event
+     * @return void
      */
     public function invitationRevoked(InvitationRevoked $event): void
     {
@@ -134,6 +147,9 @@ final class AuditSubscriber
 
     /**
      * Records the new member joining, attributed to them.
+     *
+     * @param  InvitationAccepted  $event
+     * @return void
      */
     public function invitationAccepted(InvitationAccepted $event): void
     {
@@ -142,6 +158,9 @@ final class AuditSubscriber
 
     /**
      * Records a removal, or the member leaving when they removed themselves.
+     *
+     * @param  MemberRemoved  $event
+     * @return void
      */
     public function memberRemoved(MemberRemoved $event): void
     {
@@ -154,6 +173,9 @@ final class AuditSubscriber
 
     /**
      * Records a role change with the old and new roles.
+     *
+     * @param  MemberRoleChanged  $event
+     * @return void
      */
     public function memberRoleChanged(MemberRoleChanged $event): void
     {
@@ -166,6 +188,9 @@ final class AuditSubscriber
 
     /**
      * Records the member's new service list: "all services", "none", or the names.
+     *
+     * @param  MemberServiceAccessChanged  $event
+     * @return void
      */
     public function memberServiceAccessChanged(MemberServiceAccessChanged $event): void
     {
@@ -178,6 +203,9 @@ final class AuditSubscriber
 
     /**
      * Records a new project in the account log and the project's activity.
+     *
+     * @param  ProjectCreated  $event
+     * @return void
      */
     public function projectCreated(ProjectCreated $event): void
     {
@@ -186,6 +214,9 @@ final class AuditSubscriber
 
     /**
      * Records a change to a project's details, keeping the previous name for renames.
+     *
+     * @param  ProjectUpdated  $event
+     * @return void
      */
     public function projectUpdated(ProjectUpdated $event): void
     {
@@ -194,6 +225,9 @@ final class AuditSubscriber
 
     /**
      * Records a deleted project in the account log (its own activity went with it).
+     *
+     * @param  ProjectDeleted  $event
+     * @return void
      */
     public function projectDeleted(ProjectDeleted $event): void
     {
@@ -202,6 +236,9 @@ final class AuditSubscriber
 
     /**
      * Records a new environment in the project's activity.
+     *
+     * @param  EnvironmentCreated  $event
+     * @return void
      */
     public function environmentCreated(EnvironmentCreated $event): void
     {
@@ -211,6 +248,9 @@ final class AuditSubscriber
 
     /**
      * Records a deleted environment in the project's activity.
+     *
+     * @param  EnvironmentDeleted  $event
+     * @return void
      */
     public function environmentDeleted(EnvironmentDeleted $event): void
     {
@@ -219,6 +259,9 @@ final class AuditSubscriber
 
     /**
      * Records a domain being added, verified or removed in the project's activity.
+     *
+     * @param  DomainAdded|DomainVerified|DomainRemoved  $event
+     * @return void
      */
     public function domainChanged(DomainAdded|DomainVerified|DomainRemoved $event): void
     {
@@ -233,6 +276,9 @@ final class AuditSubscriber
 
     /**
      * Records a service being turned on in a project.
+     *
+     * @param  ServiceEnabled  $event
+     * @return void
      */
     public function serviceEnabled(ServiceEnabled $event): void
     {
@@ -241,6 +287,9 @@ final class AuditSubscriber
 
     /**
      * Records a service being turned off in a project.
+     *
+     * @param  ServiceDisabled  $event
+     * @return void
      */
     public function serviceDisabled(ServiceDisabled $event): void
     {
@@ -249,6 +298,9 @@ final class AuditSubscriber
 
     /**
      * Records a tier change with the tier names, and when it takes effect for scheduled downgrades.
+     *
+     * @param  ServiceTierChanged  $event
+     * @return void
      */
     public function planChanged(ServiceTierChanged $event): void
     {
@@ -263,6 +315,9 @@ final class AuditSubscriber
 
     /**
      * Records a profile change in the person's own security log.
+     *
+     * @param  ProfileUpdated  $event
+     * @return void
      */
     public function profileUpdated(ProfileUpdated $event): void
     {
@@ -271,6 +326,9 @@ final class AuditSubscriber
 
     /**
      * Records a password change in the person's own security log.
+     *
+     * @param  PasswordChanged  $event
+     * @return void
      */
     public function passwordChanged(PasswordChanged $event): void
     {
@@ -279,6 +337,9 @@ final class AuditSubscriber
 
     /**
      * Records two-factor authentication being confirmed.
+     *
+     * @param  TwoFactorAuthenticationConfirmed  $event
+     * @return void
      */
     public function twoFactorEnabled(TwoFactorAuthenticationConfirmed $event): void
     {
@@ -287,6 +348,9 @@ final class AuditSubscriber
 
     /**
      * Records two-factor authentication being turned off.
+     *
+     * @param  TwoFactorAuthenticationDisabled  $event
+     * @return void
      */
     public function twoFactorDisabled(TwoFactorAuthenticationDisabled $event): void
     {
@@ -295,6 +359,9 @@ final class AuditSubscriber
 
     /**
      * Records recovery codes being regenerated.
+     *
+     * @param  RecoveryCodesGenerated  $event
+     * @return void
      */
     public function recoveryCodesGenerated(RecoveryCodesGenerated $event): void
     {
@@ -304,6 +371,9 @@ final class AuditSubscriber
 
     /**
      * Records a passkey being registered, by name.
+     *
+     * @param  PasskeyRegistered  $event
+     * @return void
      */
     public function passkeyAdded(PasskeyRegistered $event): void
     {
@@ -312,6 +382,9 @@ final class AuditSubscriber
 
     /**
      * Records a passkey being deleted, by name.
+     *
+     * @param  PasskeyDeleted  $event
+     * @return void
      */
     public function passkeyRemoved(PasskeyDeleted $event): void
     {
@@ -320,6 +393,9 @@ final class AuditSubscriber
 
     /**
      * Records a sign-in provider being connected.
+     *
+     * @param  SocialIdentityConnected  $event
+     * @return void
      */
     public function socialConnected(SocialIdentityConnected $event): void
     {
@@ -328,6 +404,9 @@ final class AuditSubscriber
 
     /**
      * Records a sign-in provider being disconnected.
+     *
+     * @param  SocialIdentityDisconnected  $event
+     * @return void
      */
     public function socialDisconnected(SocialIdentityDisconnected $event): void
     {
@@ -336,6 +415,9 @@ final class AuditSubscriber
 
     /**
      * Records other browsers being signed out, with how many.
+     *
+     * @param  BrowsersSignedOut  $event
+     * @return void
      */
     public function browsersSignedOut(BrowsersSignedOut $event): void
     {
@@ -344,6 +426,9 @@ final class AuditSubscriber
 
     /**
      * Records a new API token with its scopes (never its secret).
+     *
+     * @param  ApiTokenCreated  $event
+     * @return void
      */
     public function apiTokenCreated(ApiTokenCreated $event): void
     {
@@ -355,13 +440,21 @@ final class AuditSubscriber
 
     /**
      * Records a revoked API token.
+     *
+     * @param  ApiTokenRevoked  $event
+     * @return void
      */
     public function apiTokenRevoked(ApiTokenRevoked $event): void
     {
         $this->record->handle(AuditAction::ApiTokenRevoked, $event->actor, $event->token->account_id, ['name' => $event->token->name]);
     }
 
-    /** A deleted user's own security log goes with them; shared accounts keep their record of what the person did. */
+    /**
+     * A deleted user's own security log goes with them; shared accounts keep their record of what the person did.
+     *
+     * @param  UserDeleting  $event
+     * @return void
+     */
     public function forgetPersonalEntries(UserDeleting $event): void
     {
         AuditEntry::query()->whereNull('account_id')->where('actor_id', $event->user->id)->delete();
@@ -370,8 +463,11 @@ final class AuditSubscriber
     /**
      * Fortify and Passkeys events type their user loosely, so check it is ours before recording.
      *
+     * @param  AuditAction  $action
+     * @param  mixed  $user
      * @param  array<string, scalar|null>  $context
      * @param  (callable(User): bool)|null  $when
+     * @return void
      */
     private function personal(AuditAction $action, mixed $user, array $context = [], ?callable $when = null): void
     {
@@ -382,6 +478,9 @@ final class AuditSubscriber
 
     /**
      * The service's display name, or the key itself for a service that no longer exists.
+     *
+     * @param  string  $key
+     * @return string
      */
     private function serviceName(string $key): string
     {
@@ -390,6 +489,9 @@ final class AuditSubscriber
 
     /**
      * A member as "Name <email>", so the entry still identifies them after they leave or rename themselves.
+     *
+     * @param  User  $user
+     * @return string
      */
     private function person(User $user): string
     {

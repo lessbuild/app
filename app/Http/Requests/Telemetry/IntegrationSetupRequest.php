@@ -24,6 +24,8 @@ final class IntegrationSetupRequest extends FormRequest
 
     /**
      * The chosen stack, or the stack-neutral default.
+     *
+     * @return string
      */
     public function stack(): string
     {

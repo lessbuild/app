@@ -15,6 +15,12 @@ final class DeleteStatusPageController
 {
     /**
      * Deletes a status page.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  StatusPage  $page
+     * @param  DeleteStatusPage  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, StatusPage $page, DeleteStatusPage $delete): RedirectResponse
     {

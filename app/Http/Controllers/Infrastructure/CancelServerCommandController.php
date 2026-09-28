@@ -15,6 +15,13 @@ final class CancelServerCommandController
 {
     /**
      * Cancels a queued command; one that already started can't be.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $execution
+     * @param  CancelServerCommand  $cancel
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $execution, CancelServerCommand $cancel): RedirectResponse
     {

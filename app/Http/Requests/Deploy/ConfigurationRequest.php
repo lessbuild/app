@@ -25,6 +25,8 @@ final class ConfigurationRequest extends FormRequest
 
     /**
      * The configuration document as posted.
+     *
+     * @return string
      */
     public function document(): string
     {

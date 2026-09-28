@@ -19,7 +19,14 @@ final class ScaleEnvironment
      */
     public function __construct(private readonly Entitlements $entitlements) {}
 
-    /** Set how many replicas of each worker run, within the environment's minimum and maximum. Applies with the next deploy. */
+    /**
+     * Set how many replicas of each worker run, within the environment's minimum and maximum. Applies with the next deploy.
+     *
+     * @param  User  $actor
+     * @param  Environment  $environment
+     * @param  int  $replicas
+     * @return void
+     */
     public function handle(User $actor, Environment $environment, int $replicas): void
     {
         Gate::forUser($actor)->authorize('configureDeploy', $environment);

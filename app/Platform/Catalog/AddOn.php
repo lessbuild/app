@@ -13,8 +13,8 @@ final readonly class AddOn
      * @param  string  $name  Shown on the billing page.
      * @param  ?int  $monthlyCentsPerUnit  Price per unit per month; null until it's priced, which keeps it off sale.
      * @param  string  $description  One line on the billing page explaining what a unit adds.
-     * @param  int  $maxQuantity  The most units one account may buy.
      * @param  array<string, int>  $grants  per unit bought: entitlement key => extra amount
+     * @param  int  $maxQuantity  The most units one account may buy.
      */
     public function __construct(
         public string $key,

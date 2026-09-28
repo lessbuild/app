@@ -74,6 +74,8 @@ class StatusUpdate extends Model
 
     /**
      * Whether the incident is resolved or the maintenance completed.
+     *
+     * @return bool
      */
     public function isClosed(): bool
     {
@@ -82,6 +84,8 @@ class StatusUpdate extends Model
 
     /**
      * The status as people read it.
+     *
+     * @return string
      */
     public function statusLabel(): string
     {

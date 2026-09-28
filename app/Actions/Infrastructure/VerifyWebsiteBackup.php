@@ -14,7 +14,13 @@ use Illuminate\Validation\ValidationException;
 
 final class VerifyWebsiteBackup
 {
-    /** Check a completed backup restores, in a temporary database on the same server. The live website isn't touched. */
+    /**
+     * Check a completed backup restores, in a temporary database on the same server. The live website isn't touched.
+     *
+     * @param  User  $actor
+     * @param  WebsiteBackup  $backup
+     * @return BackupVerification
+     */
     public function handle(User $actor, WebsiteBackup $backup): BackupVerification
     {
         Gate::forUser($actor)->authorize('backUp', $backup->website);

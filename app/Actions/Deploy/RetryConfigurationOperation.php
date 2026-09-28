@@ -20,7 +20,14 @@ final class RetryConfigurationOperation
      */
     public function __construct(private readonly ConfigurationOperations $operations) {}
 
-    /** Retry a failed or canceled configuration deploy as it was reviewed. Only the review's requester can. */
+    /**
+     * Retry a failed or canceled configuration deploy as it was reviewed. Only the review's requester can.
+     *
+     * @param  User  $actor
+     * @param  ConfigurationApplication  $application
+     * @param  ConfigurationOperation  $operation
+     * @return ConfigurationOperation
+     */
     public function handle(User $actor, ConfigurationApplication $application, ConfigurationOperation $operation): ConfigurationOperation
     {
         Gate::forUser($actor)->authorize('manageDeploy', $application->review->project);

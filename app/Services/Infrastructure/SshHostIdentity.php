@@ -13,6 +13,8 @@ class SshHostIdentity
      * Reads the server's SSH host key, preferring Ed25519, then ECDSA, then RSA, and fingerprints it, so later
      * connections can check they reach the same server.
      *
+     * @param  string  $host
+     * @param  int  $port
      * @return array{known_host: string, fingerprint: string, algorithm: string}
      */
     public function scan(string $host, int $port): array

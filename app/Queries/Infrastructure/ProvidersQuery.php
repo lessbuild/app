@@ -13,6 +13,7 @@ final class ProvidersQuery
     /**
      * The account's providers with how many servers each has.
      *
+     * @param  string  $accountId
      * @return Collection<int, Provider>
      */
     public function handle(string $accountId): Collection
@@ -23,6 +24,7 @@ final class ProvidersQuery
     /**
      * The account's providers that can create servers, for the server form.
      *
+     * @param  string  $accountId
      * @return Collection<int, Provider>
      */
     public function serverHosts(string $accountId): Collection
@@ -33,6 +35,10 @@ final class ProvidersQuery
 
     /**
      * One of the account's providers; 404 otherwise.
+     *
+     * @param  string  $accountId
+     * @param  string|int  $id
+     * @return Provider
      */
     public function find(string $accountId, int|string $id): Provider
     {

@@ -48,6 +48,8 @@ final class RepositoryRequest extends FormRequest
     /**
      * Normalises the repository URL (`https://`, `git@host:`, a `.git` suffix and trailing slashes all come off,
      * lowercased) and trims slashes from the deployment root before validation.
+     *
+     * @return void
      */
     protected function prepareForValidation(): void
     {

@@ -17,6 +17,9 @@ final class ServiceProjectsQuery
      * The account's projects for a service's enable page, those with the service on first, with whether the viewer may
      * turn it on or off in each.
      *
+     * @param  Account  $account
+     * @param  string  $service
+     * @param  User  $viewer
      * @return list<ServiceProjectRow>
      */
     public function handle(Account $account, string $service, User $viewer): array

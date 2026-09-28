@@ -14,6 +14,11 @@ final class ReceiveRepositoryWebhookController
 {
     /**
      * Hands a push webhook to its repository, answering with Deployer's status codes; unknown repositories get a 404.
+     *
+     * @param  Request  $request
+     * @param  string  $repository
+     * @param  RepositoryPushReceiver  $receive
+     * @return JsonResponse
      */
     public function __invoke(Request $request, string $repository, RepositoryPushReceiver $receive): JsonResponse
     {

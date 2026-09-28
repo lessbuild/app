@@ -19,7 +19,14 @@ final class CancelConfigurationOperation
      */
     public function __construct(private readonly ConfigurationOperations $operations) {}
 
-    /** Cancel a configuration deploy that hasn't started on the server. */
+    /**
+     * Cancel a configuration deploy that hasn't started on the server.
+     *
+     * @param  User  $actor
+     * @param  ConfigurationApplication  $application
+     * @param  ConfigurationOperation  $operation
+     * @return ConfigurationOperation
+     */
     public function handle(User $actor, ConfigurationApplication $application, ConfigurationOperation $operation): ConfigurationOperation
     {
         Gate::forUser($actor)->authorize('manageDeploy', $application->review->project);

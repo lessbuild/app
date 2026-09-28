@@ -190,13 +190,19 @@ class Build extends Model
 
     /**
      * Whether the deploy is still queued, waiting for approval or running.
+     *
+     * @return bool
      */
     public function isActive(): bool
     {
         return in_array($this->status, self::ACTIVE, true);
     }
 
-    /** The repository subdirectory this build deploys, as it was when queued. */
+    /**
+     * The repository subdirectory this build deploys, as it was when queued.
+     *
+     * @return string
+     */
     public function deploymentRoot(): string
     {
         $payload = $this->environment_payload;
@@ -204,7 +210,12 @@ class Build extends Model
         return RepositoryPath::normalizeRoot(is_array($payload) && array_key_exists('repository_root', $payload) ? $payload['repository_root'] : $this->repository->deployment_root);
     }
 
-    /** A path under the website's directory for a phase (`setup` while building, `current` once live), inside the deployed subdirectory. */
+    /**
+     * A path under the website's directory for a phase (`setup` while building, `current` once live), inside the deployed subdirectory.
+     *
+     * @param  string  $phase
+     * @return string
+     */
     public function deploymentPath(string $phase): string
     {
         return RepositoryPath::withRoot("/var/www/{$this->website->deployment_slug}/{$phase}", $this->deploymentRoot());
@@ -212,6 +223,8 @@ class Build extends Model
 
     /**
      * The release directory name: the one recorded when it started, else one made from its creation time and ID.
+     *
+     * @return string
      */
     public function releaseIdentifier(): string
     {
@@ -220,6 +233,8 @@ class Build extends Model
 
     /**
      * The first 12 characters of the commit, for display.
+     *
+     * @return string|null
      */
     public function shortRevision(): ?string
     {

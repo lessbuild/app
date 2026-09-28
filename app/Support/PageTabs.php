@@ -12,7 +12,9 @@ final class PageTabs
      * render every panel and switch between them in the browser, so this only decides which panel is visible on first
      * load.
      *
+     * @param  mixed  $requested
      * @param  array<string, mixed>  $tabs  key => label, in display order
+     * @return string
      */
     public static function current(mixed $requested, array $tabs): string
     {

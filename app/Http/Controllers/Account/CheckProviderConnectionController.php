@@ -14,6 +14,11 @@ final class CheckProviderConnectionController
 {
     /**
      * Checks the provider's stored credential now and shows the result.
+     *
+     * @param  User  $user
+     * @param  Provider  $provider
+     * @param  ProviderHealthMonitor  $monitor
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Provider $provider, ProviderHealthMonitor $monitor): RedirectResponse
     {

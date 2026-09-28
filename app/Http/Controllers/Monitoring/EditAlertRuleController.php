@@ -20,6 +20,14 @@ final class EditAlertRuleController
 {
     /**
      * The alert rule form, filled in.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertRule  $rule
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectAlertRulesQuery  $rules
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, AlertRule $rule, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
     {

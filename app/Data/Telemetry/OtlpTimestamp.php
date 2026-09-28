@@ -25,6 +25,9 @@ final readonly class OtlpTimestamp
 
     /**
      * Whether a value is an unsigned 64-bit integer, given as an int or a string of digits.
+     *
+     * @param  mixed  $value
+     * @return bool
      */
     public static function isValid(mixed $value): bool
     {
@@ -39,6 +42,9 @@ final readonly class OtlpTimestamp
 
     /**
      * Parses an OTLP nanosecond timestamp; null stays null, and anything that isn't an unsigned 64-bit integer throws.
+     *
+     * @param  mixed  $value
+     * @return OtlpTimestamp|null
      */
     public static function fromUnixNano(mixed $value): ?self
     {
@@ -59,6 +65,8 @@ final readonly class OtlpTimestamp
 
     /**
      * The timestamp in UTC with microsecond precision, which is as fine as Carbon goes.
+     *
+     * @return string
      */
     public function iso8601(): string
     {
@@ -70,6 +78,9 @@ final readonly class OtlpTimestamp
     /**
      * The time from this timestamp to `$end` in milliseconds, computed from the split seconds and nanoseconds so no
      * precision is lost to floats.
+     *
+     * @param  OtlpTimestamp  $end
+     * @return float
      */
     public function millisecondsUntil(self $end): float
     {

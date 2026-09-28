@@ -26,6 +26,9 @@ final readonly class TlsCertificateInspection
     /**
      * The result for a failed connection: network and TLS errors mean the target failed, anything else means the checker
      * itself had a problem.
+     *
+     * @param  int  $errorCode
+     * @return TlsCertificateInspection
      */
     public static function fromCurlFailure(int $errorCode): self
     {
@@ -35,7 +38,13 @@ final readonly class TlsCertificateInspection
         ], true) ? 'tls_connection_failed' : 'checker_unavailable');
     }
 
-    /** Extract metadata only after the transport has verified the certificate and hostname. */
+    /**
+     * Extract metadata only after the transport has verified the certificate and hostname.
+     *
+     * @param  string  $pem
+     * @param  float|null  $connectMs
+     * @return TlsCertificateInspection
+     */
     public static function fromVerifiedPem(string $pem, ?float $connectMs = null): self
     {
         if (strlen($pem) > 65536 || ! str_starts_with($pem, '-----BEGIN CERTIFICATE-----')) {

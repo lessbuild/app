@@ -21,6 +21,8 @@ final class BrowserSessions
 
     /**
      * Whether sessions are in the database, the only store they can be listed from.
+     *
+     * @return bool
      */
     public function available(): bool
     {
@@ -29,6 +31,9 @@ final class BrowserSessions
 
     /**
      * The person's session rows.
+     *
+     * @param  User  $user
+     * @return Builder
      */
     public function for(User $user): Builder
     {

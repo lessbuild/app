@@ -14,7 +14,13 @@ use Illuminate\Support\Str;
 
 final class CreateAccount
 {
-    /** Create an account owned by the user, and make it their current account if they have none. */
+    /**
+     * Create an account owned by the user, and make it their current account if they have none.
+     *
+     * @param  User  $owner
+     * @param  string  $name
+     * @return Account
+     */
     public function handle(User $owner, string $name): Account
     {
         $account = DB::transaction(function () use ($owner, $name): Account {
@@ -41,6 +47,9 @@ final class CreateAccount
     /**
      * A URL slug from the account's name, with a random suffix when it's taken. Slugs are global, so a random suffix
      * avoids guessable collisions.
+     *
+     * @param  string  $name
+     * @return string
      */
     private function uniqueSlug(string $name): string
     {

@@ -16,7 +16,10 @@ final class RequestExport
     /**
      * Queue a CSV of the report with these filters. Returns the secret token for its status/download page.
      *
+     * @param  User  $actor
+     * @param  AnalyticsSite  $site
      * @param  array<string, string|int|null>  $filters
+     * @return string
      */
     public function handle(User $actor, AnalyticsSite $site, array $filters): string
     {

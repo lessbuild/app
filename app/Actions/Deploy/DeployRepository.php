@@ -21,7 +21,15 @@ final class DeployRepository
      */
     public function __construct(private readonly Deployments $deployments) {}
 
-    /** Deploy the branch's latest commit, or a given one. */
+    /**
+     * Deploy the branch's latest commit, or a given one.
+     *
+     * @param  User  $actor
+     * @param  Repository  $repository
+     * @param  string|null  $revision
+     * @param  string  $trigger
+     * @return Build
+     */
     public function handle(User $actor, Repository $repository, ?string $revision = null, string $trigger = 'manual'): Build
     {
         Gate::forUser($actor)->authorize('deploy', $repository);

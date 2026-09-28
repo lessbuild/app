@@ -29,7 +29,14 @@ final class ArchiveMonitor
         private readonly RecordAuditEntry $audit,
     ) {}
 
-    /** Stop a monitor and archive it. Its checks and incidents stay in the history. */
+    /**
+     * Stop a monitor and archive it. Its checks and incidents stay in the history.
+     *
+     * @param  Monitor  $monitor
+     * @param  User  $actor
+     * @param  int  $version
+     * @return void
+     */
     public function handle(Monitor $monitor, User $actor, int $version): void
     {
         DB::transaction(function () use ($monitor, $actor, $version): void {

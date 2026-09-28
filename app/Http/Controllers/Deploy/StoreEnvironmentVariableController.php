@@ -16,6 +16,13 @@ final class StoreEnvironmentVariableController
 {
     /**
      * Adds or changes one variable on an environment.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  SaveEnvironmentVariable  $save
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentVariable $save): RedirectResponse
     {

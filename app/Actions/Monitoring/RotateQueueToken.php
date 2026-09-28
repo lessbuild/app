@@ -24,7 +24,15 @@ final class RotateQueueToken
      */
     public function __construct(private readonly MonitorQueue $queue, private readonly MonitorSuspension $suspension) {}
 
-    /** Issue a new queue key (returned once), or revoke the key and pause the monitor. */
+    /**
+     * Issue a new queue key (returned once), or revoke the key and pause the monitor.
+     *
+     * @param  User  $actor
+     * @param  Monitor  $monitor
+     * @param  int  $version
+     * @param  bool  $revoke
+     * @return string|null
+     */
     public function handle(User $actor, Monitor $monitor, int $version, bool $revoke = false): ?string
     {
         return DB::transaction(function () use ($actor, $monitor, $version, $revoke): ?string {

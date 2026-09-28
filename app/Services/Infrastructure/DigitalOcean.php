@@ -300,6 +300,8 @@ class DigitalOcean implements ServerProvider
     /**
      * Destroys a Droplet
      *
+     * @param  string|int  $droplet_id
+     * @return bool
      *
      * @throws Exception
      */
@@ -391,6 +393,7 @@ class DigitalOcean implements ServerProvider
      * The account's SSH key with the same key material, found by its MD5 fingerprint, so importing the same key twice
      * reuses it. Null when there isn't one.
      *
+     * @param  string  $publicKey
      * @return array<string, mixed>|null
      */
     private function existingSshKey(string $publicKey): ?array
@@ -478,7 +481,6 @@ class DigitalOcean implements ServerProvider
      * @param  string|null  $status  Provider droplet status.
      * @param  string|null  $publicIp  Public address reported by the provider.
      * @param  string  $readyStatus  Provider status that means the instance is running.
-     * @return string One of the shared cloud readiness values.
      * @return 'ready'|'not_ready'|'unknown'
      */
     private function readiness(?string $status, ?string $publicIp, string $readyStatus): string

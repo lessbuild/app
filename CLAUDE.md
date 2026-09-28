@@ -22,7 +22,18 @@ A conventional Laravel layout, organised by type (not by domain). Within a type,
 - `app/Support/` — small stateless helpers.
 - Actions, Queries, Models and Data never depend on the HTTP layer.
 - Every mutation is authorised by a Policy. Secrets use encrypted casts. Sensitive columns are never mass-assignable.
-- **Document every method and every property** — public or private, including `__invoke`, constructors, enum methods and small private helpers. Each docblock opens with a real explanation: what the member is for, why it exists, and anything a reader can't see from the signature (side effects, units, invariants, failure modes). Promoted constructor properties are described with `@param` lines in the constructor's docblock. Don't restate the name ("Gets the user"); explain it. `ArchitectureTest::test_every_method_and_property_is_documented` enforces this.
+- **Document every method and every property** — public or private, including `__invoke`, constructors, enum methods and small private helpers. Every method docblock has a summary line, then an `@param` line for every parameter and an `@return` line (constructors excepted), even when they repeat the native types:
+
+  ```php
+  /**
+   * Search jobs and filter the results.
+   *
+   * @param  \Illuminate\Http\Request  $request
+   * @return \Illuminate\Contracts\View\View
+   */
+  ```
+
+  Properties get a summary line and `@var`. Promoted constructor properties are described on their `@param` lines. The summary explains what the member is for; don't just restate its name. `pint.json` turns off `no_superfluous_phpdoc_tags` so Pint keeps these tags, and `ArchitectureTest::test_every_method_and_property_is_documented` enforces the rule.
 - Existing code isn't a ceiling. When a pattern you meet is weak (unclear names, tangled methods, missing docs), improve it rather than copying it.
 - Architecture tests in `tests/Architecture` enforce these rules. Keep them passing.
 

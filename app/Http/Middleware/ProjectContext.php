@@ -26,6 +26,10 @@ final class ProjectContext
 
     /**
      * 404s people who may not see the project, and makes its account current when it isn't.
+     *
+     * @param  Request  $request
+     * @param  Closure  $next
+     * @return Response
      */
     public function handle(Request $request, Closure $next): Response
     {

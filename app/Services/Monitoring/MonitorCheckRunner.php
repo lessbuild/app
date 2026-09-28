@@ -30,6 +30,9 @@ final class MonitorCheckRunner
      * Runs one queued check: claims it with a lease under lock, probes outside the transaction, then records the result
      * if the claim still holds. Checks whose monitor changed are cancelled, and ones whose lease ran out are recorded as
      * missed or interrupted.
+     *
+     * @param  string  $id
+     * @return void
      */
     public function process(string $id): void
     {
@@ -79,6 +82,10 @@ final class MonitorCheckRunner
     /**
      * Settles a check whose worker died (or, with `$expiredOnly`, only one whose lease ran out) as missed or
      * interrupted.
+     *
+     * @param  string  $id
+     * @param  bool  $expiredOnly
+     * @return void
      */
     public function interrupt(string $id, bool $expiredOnly = false): void
     {
@@ -100,6 +107,7 @@ final class MonitorCheckRunner
     /**
      * Locks the check's monitor, then the check, in that order, so scheduling and running can't deadlock.
      *
+     * @param  string  $id
      * @return array{?Monitor, ?MonitorCheck}
      */
     private function lock(string $id): array
@@ -117,6 +125,10 @@ final class MonitorCheckRunner
      * Whether the check still applies: the monitor accepts checks and hasn't been reconfigured since the check was
      * scheduled.
      *
+     * @param  Monitor|null  $monitor
+     * @param  MonitorCheck  $check
+     * @return bool
+     *
      * @phpstan-assert-if-true Monitor $monitor
      */
     private function eligible(?Monitor $monitor, MonitorCheck $check): bool
@@ -126,6 +138,9 @@ final class MonitorCheckRunner
 
     /**
      * Cancels a check whose monitor changed, discarding its job.
+     *
+     * @param  MonitorCheck  $check
+     * @return void
      */
     private function cancel(MonitorCheck $check): void
     {
@@ -139,6 +154,11 @@ final class MonitorCheckRunner
     /**
      * Stores the check's result and, unless a newer check already reported, updates the monitor's health, noting a gap
      * when intervals were skipped.
+     *
+     * @param  Monitor  $monitor
+     * @param  MonitorCheck  $check
+     * @param  MonitorObservation  $result
+     * @return void
      */
     private function finish(Monitor $monitor, MonitorCheck $check, MonitorObservation $result): void
     {

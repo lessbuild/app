@@ -39,6 +39,8 @@ class AnalyticsSite extends Model
 
     /**
      * Stored in `analytics_sites`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_sites';
 
@@ -51,6 +53,8 @@ class AnalyticsSite extends Model
 
     /**
      * Gives each new site a random public ID for its tracker snippet, so the internal ID isn't exposed.
+     *
+     * @return void
      */
     protected static function booted(): void
     {
@@ -140,6 +144,8 @@ class AnalyticsSite extends Model
     /**
      * Whether one of the site's hostnames was matched to a verified domain of its project, proving the project controls
      * the website.
+     *
+     * @return bool
      */
     public function isVerified(): bool
     {
@@ -148,6 +154,8 @@ class AnalyticsSite extends Model
 
     /**
      * Whether events are accepted: collection is on, not paused, and the site is verified.
+     *
+     * @return bool
      */
     public function isCollectionAvailable(): bool
     {
@@ -156,6 +164,9 @@ class AnalyticsSite extends Model
 
     /**
      * Whether a page path matches one of the site's excluded patterns (such as `/admin/*`) and shouldn't be recorded.
+     *
+     * @param  string  $path
+     * @return bool
      */
     public function excludesPath(string $path): bool
     {

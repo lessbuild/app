@@ -13,6 +13,8 @@ final class SearchDependencyMapRequest extends FormRequest
 {
     /**
      * Always allowed: the route's middleware already checked access to the project.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {

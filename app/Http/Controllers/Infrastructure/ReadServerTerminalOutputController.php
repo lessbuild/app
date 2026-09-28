@@ -17,6 +17,14 @@ final class ReadServerTerminalOutputController
 {
     /**
      * Returns the terminal's output after the browser's cursor, never cached.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ServerTerminalSession  $terminal
+     * @param  ReadServerTerminalOutput  $read
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, ReadServerTerminalOutput $read): JsonResponse
     {

@@ -21,6 +21,8 @@ final class ProviderConnectionChanged extends InboxNotification
 
     /**
      * Names the provider and whether it connects.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -31,6 +33,8 @@ final class ProviderConnectionChanged extends InboxNotification
 
     /**
      * The provider's error, or that it accepts the credential again.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -39,6 +43,8 @@ final class ProviderConnectionChanged extends InboxNotification
 
     /**
      * The provider's page, where the credential can be replaced.
+     *
+     * @return string
      */
     protected function url(): string
     {
@@ -47,6 +53,8 @@ final class ProviderConnectionChanged extends InboxNotification
 
     /**
      * The provider's account.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

@@ -15,6 +15,12 @@ final class RevokeIngestTokenController
 {
     /**
      * Revokes an ingest key.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  IngestToken  $token
+     * @param  RevokeIngestToken  $revoke
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, IngestToken $token, RevokeIngestToken $revoke): RedirectResponse
     {

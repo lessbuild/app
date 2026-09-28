@@ -30,6 +30,10 @@ final class ApplyConfigurationReview
     /**
      * Apply a review, once, as its requester: the project is locked, the plan re-checked against the fingerprint, local
      * changes made in one transaction, and then its deploys start. Applying again returns the same receipt.
+     *
+     * @param  User  $actor
+     * @param  ConfigurationReview  $review
+     * @return ConfigurationApplication
      */
     public function handle(User $actor, ConfigurationReview $review): ConfigurationApplication
     {

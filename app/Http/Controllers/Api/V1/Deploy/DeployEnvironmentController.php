@@ -17,6 +17,13 @@ final class DeployEnvironmentController
 {
     /**
      * Queues a deploy of the environment's first repository (202), or 422 when it has none.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $environment
+     * @param  DeployApiQuery  $query
+     * @param  DeployRepository  $deploy
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $environment, DeployApiQuery $query, DeployRepository $deploy): JsonResponse
     {

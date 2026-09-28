@@ -16,6 +16,12 @@ final class ShowDeploymentController
 {
     /**
      * Returns one deploy.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $build
+     * @param  DeployApiQuery  $query
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $build, DeployApiQuery $query): JsonResponse
     {

@@ -26,6 +26,7 @@ class DeploymentObserver
      * Checks the website's health once for an observed build: a newer live build supersedes it, a failed check fails it
      * (and may roll back), and a healthy check past the deadline passes it.
      *
+     * @param  Build  $build
      * @return string passed, failed, superseded or observing
      */
     public function check(Build $build): string
@@ -54,6 +55,11 @@ class DeploymentObserver
 
     /**
      * Records the observation's outcome.
+     *
+     * @param  Build  $build
+     * @param  string  $status
+     * @param  string|null  $error
+     * @return string
      */
     private function finish(Build $build, string $status, ?string $error = null): string
     {

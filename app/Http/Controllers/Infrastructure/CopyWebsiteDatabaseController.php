@@ -17,6 +17,13 @@ final class CopyWebsiteDatabaseController
     /**
      * Copies this website's database over another website's on the same server, once the person has typed the
      * confirmation.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  CopyWebsiteDatabase  $copy
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, CopyWebsiteDatabase $copy): RedirectResponse
     {

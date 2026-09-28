@@ -13,6 +13,10 @@ final class AnalyticsSitePolicy
 {
     /**
      * Adding an analytics site to a project: people who manage Analytics there.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function create(User $user, Project $project): bool
     {
@@ -21,6 +25,10 @@ final class AnalyticsSitePolicy
 
     /**
      * Seeing a site's reports: people who may use Analytics in its project.
+     *
+     * @param  User  $user
+     * @param  AnalyticsSite  $site
+     * @return bool
      */
     public function view(User $user, AnalyticsSite $site): bool
     {
@@ -29,6 +37,10 @@ final class AnalyticsSitePolicy
 
     /**
      * Downloading a site's data, allowed to anyone who may see its reports.
+     *
+     * @param  User  $user
+     * @param  AnalyticsSite  $site
+     * @return bool
      */
     public function export(User $user, AnalyticsSite $site): bool
     {
@@ -37,6 +49,10 @@ final class AnalyticsSitePolicy
 
     /**
      * Changing a site's domains, goals and settings: people who manage Analytics in its project.
+     *
+     * @param  User  $user
+     * @param  AnalyticsSite  $site
+     * @return bool
      */
     public function update(User $user, AnalyticsSite $site): bool
     {
@@ -45,6 +61,10 @@ final class AnalyticsSitePolicy
 
     /**
      * Removing a site, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  AnalyticsSite  $site
+     * @return bool
      */
     public function delete(User $user, AnalyticsSite $site): bool
     {

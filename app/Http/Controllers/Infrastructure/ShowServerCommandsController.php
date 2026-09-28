@@ -19,6 +19,13 @@ final class ShowServerCommandsController
 {
     /**
      * The server's command runner and history, optionally filtered by status, with one command's output open.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ProjectOverviewQuery $overview): View
     {

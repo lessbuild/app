@@ -27,6 +27,8 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
 
     /**
      * Renders the website's Caddy site for the runtime being switched to.
+     *
+     * @var WebsiteCaddyConfiguration
      */
     private readonly WebsiteCaddyConfiguration $caddy;
 

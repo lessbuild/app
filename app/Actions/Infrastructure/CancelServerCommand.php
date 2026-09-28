@@ -12,7 +12,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class CancelServerCommand
 {
-    /** Cancel a command that hasn't started. Returns false once it's running or finished. */
+    /**
+     * Cancel a command that hasn't started. Returns false once it's running or finished.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  ServerCommandExecution  $execution
+     * @return bool
+     */
     public function handle(Account $account, User $actor, ServerCommandExecution $execution): bool
     {
         Gate::forUser($actor)->authorize('runCommands', $execution->server);

@@ -27,6 +27,11 @@ final class RunServerDiagnostics
     /**
      * Queue a diagnostic run, or return the one already running. If the server can't be diagnosed yet (not active, no
      * pinned host key), the snapshot records why at once.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @return ServerDiagnosticSnapshot
      */
     public function handle(Account $account, User $actor, Server $server): ServerDiagnosticSnapshot
     {

@@ -25,6 +25,12 @@ final class ShowProjectServiceController
     /**
      * A service inside the project. Once the service is on and has its own pages, this forwards to them; otherwise it's
      * the enable page.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $service
+     * @param  ProjectOverviewQuery  $query
+     * @return View|RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $service, ProjectOverviewQuery $query): View|RedirectResponse
     {
@@ -46,6 +52,9 @@ final class ShowProjectServiceController
 
     /**
      * The service named in the URL; unknown keys are a 404.
+     *
+     * @param  string  $key
+     * @return PlatformService
      */
     private function service(string $key): PlatformService
     {

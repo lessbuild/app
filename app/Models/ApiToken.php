@@ -25,6 +25,8 @@ class ApiToken extends PersonalAccessToken
 {
     /**
      * Sanctum's table, `personal_access_tokens`.
+     *
+     * @var string|null
      */
     protected $table = 'personal_access_tokens';
 

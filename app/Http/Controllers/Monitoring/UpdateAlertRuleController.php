@@ -15,6 +15,12 @@ final class UpdateAlertRuleController
 {
     /**
      * Saves an alert rule.
+     *
+     * @param  AlertRuleRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveAlertRule  $save
+     * @return RedirectResponse
      */
     public function __invoke(AlertRuleRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertRule $save): RedirectResponse
     {

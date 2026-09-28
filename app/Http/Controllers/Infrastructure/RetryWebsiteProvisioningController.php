@@ -15,6 +15,12 @@ final class RetryWebsiteProvisioningController
 {
     /**
      * Tries a failed website setup again.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  RetryWebsiteProvisioning  $retry
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, RetryWebsiteProvisioning $retry): RedirectResponse
     {

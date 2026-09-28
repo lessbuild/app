@@ -15,6 +15,12 @@ final class DeleteRepositoryController
 {
     /**
      * Disconnects a repository. Its website keeps the release it's running.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Repository  $repository
+     * @param  DeleteRepository  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Repository $repository, DeleteRepository $delete): RedirectResponse
     {

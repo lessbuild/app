@@ -45,6 +45,8 @@ final class StatusPageRequest extends FormRequest
 
     /**
      * Slugifies what was typed as the slug, treating an empty result as none.
+     *
+     * @return void
      */
     protected function prepareForValidation(): void
     {

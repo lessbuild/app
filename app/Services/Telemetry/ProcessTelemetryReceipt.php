@@ -40,7 +40,13 @@ final class ProcessTelemetryReceipt
         private readonly RecordUsage $recordUsage,
     ) {}
 
-    /** Returns a release delay when an early delivery must wait for its retry window. */
+    /**
+     * Returns a release delay when an early delivery must wait for its retry window.
+     *
+     * @param  string  $receiptId
+     * @param  int  $generation
+     * @return int|null
+     */
     public function process(string $receiptId, int $generation): ?int
     {
         $claim = DB::transaction(function () use ($receiptId, $generation): IngestReceipt|int|null {
@@ -196,6 +202,10 @@ final class ProcessTelemetryReceipt
     /**
      * Marks the receipt failed after its last attempt, keeping the last error code (or recording that the worker was
      * interrupted). Receipts that finished or were retried since are left alone.
+     *
+     * @param  string  $receiptId
+     * @param  int  $generation
+     * @return void
      */
     public function failed(string $receiptId, int $generation): void
     {

@@ -20,6 +20,12 @@ final class AuthorizeCurrentAccount
     /**
      * Authorises the ability against the current account, passing class names and route parameters listed after it.
      * People without a current account get a 404.
+     *
+     * @param  Request  $request
+     * @param  Closure  $next
+     * @param  string  $ability
+     * @param  string  ...$extra
+     * @return Response
      */
     public function handle(Request $request, Closure $next, string $ability, string ...$extra): Response
     {

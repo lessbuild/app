@@ -16,6 +16,13 @@ final class UpdateAlertRoutingController
 {
     /**
      * Saves where a rule sends alerts.
+     *
+     * @param  AlertRoutingRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertRule  $rule
+     * @param  UpdateAlertRouting  $update
+     * @return RedirectResponse
      */
     public function __invoke(AlertRoutingRequest $request, #[CurrentUser] User $user, Project $project, AlertRule $rule, UpdateAlertRouting $update): RedirectResponse
     {

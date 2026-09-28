@@ -13,6 +13,8 @@ enum EnvironmentKind: string
 
     /**
      * The kind's name as shown on environment lists and forms.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -24,7 +26,11 @@ enum EnvironmentKind: string
         };
     }
 
-    /** Where the environment sits on the way to production: builds are promoted to a higher rank only. */
+    /**
+     * Where the environment sits on the way to production: builds are promoted to a higher rank only.
+     *
+     * @return int
+     */
     public function rank(): int
     {
         return match ($this) {

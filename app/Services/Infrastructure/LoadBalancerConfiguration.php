@@ -11,7 +11,12 @@ use RuntimeException;
 /** The Caddy site for a load balancer (`/etc/caddy/websites/ha-{id}.conf`) and the scripts that write or remove it. */
 final class LoadBalancerConfiguration
 {
-    /** Least-connections proxying to enabled, active nodes (repeated by weight), with active health checks; a 503 page without any. */
+    /**
+     * Least-connections proxying to enabled, active nodes (repeated by weight), with active health checks; a 503 page without any.
+     *
+     * @param  LoadBalancer  $balancer
+     * @return string
+     */
     public function site(LoadBalancer $balancer): string
     {
         $hostname = strtolower($balancer->hostname);
@@ -38,6 +43,9 @@ final class LoadBalancerConfiguration
 
     /**
      * The script that writes the load balancer's site, formats it, validates the whole configuration and reloads Caddy.
+     *
+     * @param  LoadBalancer  $balancer
+     * @return string
      */
     public function apply(LoadBalancer $balancer): string
     {
@@ -48,6 +56,9 @@ final class LoadBalancerConfiguration
 
     /**
      * The script that removes the site, validates and reloads Caddy.
+     *
+     * @param  int  $balancerId
+     * @return string
      */
     public function remove(int $balancerId): string
     {
@@ -56,6 +67,9 @@ final class LoadBalancerConfiguration
 
     /**
      * Where the load balancer's site is written.
+     *
+     * @param  int  $balancerId
+     * @return string
      */
     private function path(int $balancerId): string
     {

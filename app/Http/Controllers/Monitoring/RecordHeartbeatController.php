@@ -13,6 +13,10 @@ final class RecordHeartbeatController
 {
     /**
      * Records the ping for the monitor the middleware authenticated and returns its receipt, never cached.
+     *
+     * @param  StoreHeartbeatRequest  $request
+     * @param  RecordHeartbeat  $heartbeats
+     * @return JsonResponse
      */
     public function __invoke(StoreHeartbeatRequest $request, RecordHeartbeat $heartbeats): JsonResponse
     {

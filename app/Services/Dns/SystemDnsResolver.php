@@ -11,6 +11,9 @@ final class SystemDnsResolver implements DnsResolver
 {
     /**
      * The TXT strings the system resolver returns for the name; none when the lookup fails.
+     *
+     * @param  string  $name
+     * @return list<string>
      */
     public function txtRecords(string $name): array
     {

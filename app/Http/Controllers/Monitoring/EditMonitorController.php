@@ -16,6 +16,12 @@ final class EditMonitorController
 {
     /**
      * The monitor form, filled in, with its current alert routing.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Monitor  $monitor
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Monitor $monitor, ProjectOverviewQuery $overview): View
     {

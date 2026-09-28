@@ -43,6 +43,12 @@ final class ConfirmServerImport
     /**
      * Create the server from an unexpired, unused assessment and start provisioning it over SSH. The root password for this
      * run is on the returned model (`provisioningRootPassword()`).
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  ServerImportAssessment  $assessment
+     * @param  string  $token
+     * @return Server
      */
     public function handle(Account $account, User $actor, ServerImportAssessment $assessment, string $token): Server
     {

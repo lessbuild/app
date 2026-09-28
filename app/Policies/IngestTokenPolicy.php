@@ -15,6 +15,10 @@ final class IngestTokenPolicy
 
     /**
      * Creating a telemetry ingest token: people who manage Monitoring in the project.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function create(User $user, Project $project): bool
     {
@@ -23,6 +27,10 @@ final class IngestTokenPolicy
 
     /**
      * Changing a token: the same people.
+     *
+     * @param  User  $user
+     * @param  IngestToken  $record
+     * @return bool
      */
     public function update(User $user, IngestToken $record): bool
     {
@@ -31,6 +39,10 @@ final class IngestTokenPolicy
 
     /**
      * Revoking a token, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  IngestToken  $record
+     * @return bool
      */
     public function delete(User $user, IngestToken $record): bool
     {

@@ -16,6 +16,13 @@ final class ArchiveAlertDestinationController
 {
     /**
      * Archives a destination, if it hasn't changed since the page was opened.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertDestination  $destination
+     * @param  ArchiveAlertDestination  $archive
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDestination $destination, ArchiveAlertDestination $archive): RedirectResponse
     {

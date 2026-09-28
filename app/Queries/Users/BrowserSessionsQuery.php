@@ -23,6 +23,8 @@ final class BrowserSessionsQuery
      * The person's 50 most recent sessions with a readable device and whether each is the current one; null when the
      * session driver can't list sessions.
      *
+     * @param  User  $user
+     * @param  string  $currentSessionId
      * @return list<BrowserSession>|null null when the session store can't list sessions
      */
     public function handle(User $user, string $currentSessionId): ?array

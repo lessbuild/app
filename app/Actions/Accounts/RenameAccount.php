@@ -13,6 +13,11 @@ final class RenameAccount
 {
     /**
      * Renames the account; an unchanged name records nothing.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  string  $name
+     * @return Account
      */
     public function handle(User $actor, Account $account, string $name): Account
     {

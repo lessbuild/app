@@ -16,6 +16,13 @@ final class UpdateObjectiveController
 {
     /**
      * Saves an SLO.
+     *
+     * @param  ServiceLevelObjectiveRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ServiceLevelObjective  $objective
+     * @param  SaveServiceLevelObjective  $save
+     * @return RedirectResponse
      */
     public function __invoke(ServiceLevelObjectiveRequest $request, #[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, SaveServiceLevelObjective $save): RedirectResponse
     {

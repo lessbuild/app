@@ -19,6 +19,9 @@ final class ServiceRegistry
     /**
      * Adds a service. Keys are stored in the database, so a second service with the same key is a programming error and
      * throws.
+     *
+     * @param  PlatformService  $service
+     * @return void
      */
     public function register(PlatformService $service): void
     {
@@ -40,6 +43,9 @@ final class ServiceRegistry
 
     /**
      * Whether a key names a registered service, used to validate service keys from requests.
+     *
+     * @param  string  $key
+     * @return bool
      */
     public function has(string $key): bool
     {
@@ -48,6 +54,9 @@ final class ServiceRegistry
 
     /**
      * The service with this key, or null.
+     *
+     * @param  string  $key
+     * @return PlatformService|null
      */
     public function find(string $key): ?PlatformService
     {

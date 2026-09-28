@@ -26,11 +26,15 @@ final class InitialiseServer implements ShouldQueue
 
     /**
      * A new cloud server can take a few minutes to get its public IP, so this retries up to ten times.
+     *
+     * @var int
      */
     public int $tries = 10;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 10;
 
@@ -45,6 +49,10 @@ final class InitialiseServer implements ShouldQueue
     /**
      * Asks the provider for the server's addresses, pins its SSH host key, and moves it on to provisioning. Throws (and
      * so retries) while the IP isn't there yet.
+     *
+     * @param  ServerProviderResolver  $providers
+     * @param  SshHostIdentity  $hostIdentity
+     * @return void
      */
     public function handle(ServerProviderResolver $providers, SshHostIdentity $hostIdentity): void
     {
@@ -70,6 +78,9 @@ final class InitialiseServer implements ShouldQueue
 
     /**
      * Marks the server failed at initialisation once retries run out.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

@@ -15,6 +15,13 @@ final class RerunServerCommandController
 {
     /**
      * Queues a past command again and shows its output as it runs.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $execution
+     * @param  RunServerCommand  $run
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $execution, RunServerCommand $run): RedirectResponse
     {

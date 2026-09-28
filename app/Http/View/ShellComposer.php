@@ -37,6 +37,9 @@ final class ShellComposer
     /**
      * Gives the layout its shell: switchers, primary and section navigation, account links and the unread count. Guests
      * get nothing.
+     *
+     * @param  View  $view
+     * @return void
      */
     public function compose(View $view): void
     {
@@ -69,6 +72,9 @@ final class ShellComposer
      * Row one: Projects and each service the person may use. Inside a project a service opens that project's service;
      * elsewhere, the service across the account.
      *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  Project|null  $project
      * @return list<NavLink>
      */
     private function primaryNav(User $user, Account $account, ?Project $project): array
@@ -94,6 +100,9 @@ final class ShellComposer
      * Row two: the current service's pages inside a project, the project's own pages, account pages, or personal
      * settings, depending on where the person is.
      *
+     * @param  User  $user
+     * @param  Account|null  $account
+     * @param  Project|null  $project
      * @return array{0: string, 1: list<NavLink>}
      */
     private function sections(User $user, ?Account $account, ?Project $project): array
@@ -137,7 +146,11 @@ final class ShellComposer
         return ['', []];
     }
 
-    /** The service whose pages are showing: the generic {service} pages, or a service's own routes (e.g. analytics.*). */
+    /**
+     * The service whose pages are showing: the generic {service} pages, or a service's own routes (e.g. analytics.*).
+     *
+     * @return string|null
+     */
     private function currentService(): ?string
     {
         $service = $this->request->route('service');
@@ -156,6 +169,8 @@ final class ShellComposer
     /**
      * The account pages the person may open, for the user menu and the account section.
      *
+     * @param  User  $user
+     * @param  Account  $account
      * @return list<NavLink>
      */
     private function accountLinks(User $user, Account $account): array

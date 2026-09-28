@@ -16,6 +16,13 @@ final class ShowMonitorController
 {
     /**
      * A monitor's page with its history, and a newly issued key when there is one.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Monitor  $monitor
+     * @param  ProjectOverviewQuery  $overview
+     * @param  MonitorHistoryQuery  $history
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Monitor $monitor, ProjectOverviewQuery $overview, MonitorHistoryQuery $history): View
     {

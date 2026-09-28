@@ -19,7 +19,12 @@ final class RegisterUser
      */
     public function __construct(private readonly CreateAccount $createAccount) {}
 
-    /** Create the user together with a first account they own, so every signed-in user has somewhere to work. */
+    /**
+     * Create the user together with a first account they own, so every signed-in user has somewhere to work.
+     *
+     * @param  RegisterUserData  $data
+     * @return User
+     */
     public function handle(RegisterUserData $data): User
     {
         return DB::transaction(function () use ($data): User {

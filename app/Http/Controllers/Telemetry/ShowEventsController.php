@@ -19,6 +19,13 @@ final class ShowEventsController
 {
     /**
      * The event browser, 50 events to a page, with the filters kept in the page links.
+     *
+     * @param  SearchEventsRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  EventsQuery  $search
+     * @return View
      */
     public function __invoke(SearchEventsRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, EventsQuery $search): View
     {

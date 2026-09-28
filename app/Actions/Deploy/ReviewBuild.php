@@ -13,7 +13,15 @@ use Illuminate\Support\Facades\Gate;
 
 final class ReviewBuild
 {
-    /** Approve a deploy that's waiting (it starts) or reject it, with an optional note. */
+    /**
+     * Approve a deploy that's waiting (it starts) or reject it, with an optional note.
+     *
+     * @param  User  $actor
+     * @param  Build  $build
+     * @param  bool  $approve
+     * @param  string|null  $note
+     * @return void
+     */
     public function handle(User $actor, Build $build, bool $approve, ?string $note = null): void
     {
         Gate::forUser($actor)->authorize('approve', $build);

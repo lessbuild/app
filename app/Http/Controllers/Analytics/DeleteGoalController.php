@@ -15,6 +15,13 @@ final class DeleteGoalController
 {
     /**
      * Deletes a goal and removes it from the site's history.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AnalyticsSite  $site
+     * @param  string  $goal
+     * @param  DeleteGoal  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, string $goal, DeleteGoal $delete): RedirectResponse
     {

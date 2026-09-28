@@ -18,6 +18,10 @@ final class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
 
     /**
      * Writes the website's Caddy site and access log, validates the whole configuration and reloads Caddy.
+     *
+     * @param  int  $step
+     * @param  Website  $website
+     * @return string
      */
     public function script(int $step, Website $website): string
     {

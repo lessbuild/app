@@ -27,6 +27,7 @@ final class CreateNewUser implements CreatesNewUsers
      * Validates the registration form and registers the person.
      *
      * @param  array<string, string>  $input
+     * @return User
      */
     public function create(array $input): User
     {

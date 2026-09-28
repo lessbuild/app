@@ -16,6 +16,7 @@ final class CollectionHealthQuery
     public const DEFAULT_STALE_AFTER_MINUTES = 60;
 
     /**
+     * @param  Project  $project
      * @return array{
      *     environments: Collection<int, array{environment: Environment, state: CollectionHealthState, description: string}>,
      *     total: int,
@@ -56,6 +57,11 @@ final class CollectionHealthQuery
     /**
      * Whether an environment is receiving telemetry: no usable ingest key, nothing received yet, nothing within the
      * stale window, or receiving.
+     *
+     * @param  Environment  $environment
+     * @param  CarbonImmutable  $now
+     * @param  int  $staleAfterMinutes
+     * @return CollectionHealthState
      */
     private function state(Environment $environment, CarbonImmutable $now, int $staleAfterMinutes): CollectionHealthState
     {
@@ -74,6 +80,12 @@ final class CollectionHealthQuery
 
     /**
      * One line explaining the state, with when the last event arrived.
+     *
+     * @param  Environment  $environment
+     * @param  CollectionHealthState  $state
+     * @param  CarbonImmutable  $now
+     * @param  int  $staleAfterMinutes
+     * @return string
      */
     private function description(Environment $environment, CollectionHealthState $state, CarbonImmutable $now, int $staleAfterMinutes): string
     {

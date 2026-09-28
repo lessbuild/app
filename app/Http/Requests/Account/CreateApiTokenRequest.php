@@ -30,6 +30,8 @@ final class CreateApiTokenRequest extends FormRequest
 
     /**
      * The token to create; "never" becomes no expiry.
+     *
+     * @return CreateApiTokenData
      */
     public function toData(): CreateApiTokenData
     {

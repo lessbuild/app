@@ -15,6 +15,12 @@ final class DeleteWebsiteController
 {
     /**
      * Deletes a website; it's removed from its server in the background.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  DeleteWebsite  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, DeleteWebsite $delete): RedirectResponse
     {

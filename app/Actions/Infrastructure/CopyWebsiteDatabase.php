@@ -18,6 +18,12 @@ final class CopyWebsiteDatabase
     /**
      * Replace the target website's database with a copy of the source's. The person types the target's name to confirm;
      * both must be on the same server, and websites linked to a production environment can't be overwritten.
+     *
+     * @param  User  $actor
+     * @param  Website  $source
+     * @param  Website  $target
+     * @param  string  $confirmation
+     * @return DatabaseClone
      */
     public function handle(User $actor, Website $source, Website $target, string $confirmation): DatabaseClone
     {

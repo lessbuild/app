@@ -15,6 +15,10 @@ final class AlertDeliveryPolicy
 
     /**
      * Retrying a failed or uncertain delivery: the account's settings managers.
+     *
+     * @param  User  $user
+     * @param  AlertDelivery  $record
+     * @return bool
      */
     public function update(User $user, AlertDelivery $record): bool
     {

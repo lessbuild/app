@@ -14,7 +14,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class RemoveMember
 {
-    /** Remove a member, or let a member leave; the account always keeps an owner. */
+    /**
+     * Remove a member, or let a member leave; the account always keeps an owner.
+     *
+     * @param  User  $actor
+     * @param  Membership  $membership
+     * @return void
+     */
     public function handle(User $actor, Membership $membership): void
     {
         $account = $membership->account;

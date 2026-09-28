@@ -18,6 +18,13 @@ final class RunServerCommand
     /**
      * Queue a root shell command on an active server, one at a time per server. With `$rerunOf`, the earlier command
      * (which must have finished) is run again.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @param  string|null  $command
+     * @param  ServerCommandExecution|null  $rerunOf
+     * @return ServerCommandExecution
      */
     public function handle(Account $account, User $actor, Server $server, ?string $command, ?ServerCommandExecution $rerunOf = null): ServerCommandExecution
     {

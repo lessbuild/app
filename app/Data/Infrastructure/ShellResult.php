@@ -18,13 +18,19 @@ final readonly class ShellResult
 
     /**
      * Whether the command finished with exit code 0.
+     *
+     * @return bool
      */
     public function successful(): bool
     {
         return $this->exitCode === 0;
     }
 
-    /** Standard output and error together, trimmed. */
+    /**
+     * Standard output and error together, trimmed.
+     *
+     * @return string
+     */
     public function combined(): string
     {
         return trim(implode(PHP_EOL, array_filter([$this->output, $this->errorOutput], fn (string $part): bool => $part !== '')));

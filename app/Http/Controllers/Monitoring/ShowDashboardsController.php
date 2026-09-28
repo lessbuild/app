@@ -18,6 +18,13 @@ final class ShowDashboardsController
 {
     /**
      * The dashboards page and the plan's dashboard limit.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  DashboardsQuery  $dashboards
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, DashboardsQuery $dashboards, Entitlements $entitlements): View
     {

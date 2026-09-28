@@ -26,6 +26,10 @@ final class ProjectOverviewQuery
     /**
      * The project, its environments (production first), a card for every service saying whether it's on and what the
      * viewer may do with it, and whether the viewer may change the project.
+     *
+     * @param  Project  $project
+     * @param  User  $viewer
+     * @return ProjectOverview
      */
     public function handle(Project $project, User $viewer): ProjectOverview
     {

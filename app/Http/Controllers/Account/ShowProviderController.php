@@ -16,6 +16,11 @@ final class ShowProviderController
 {
     /**
      * One provider's page: its recent connection checks, its servers, and its settings.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  Provider  $provider
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, Provider $provider): View
     {

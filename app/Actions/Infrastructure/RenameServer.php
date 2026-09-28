@@ -20,7 +20,15 @@ final class RenameServer
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Set the name shown in the app. The machine's hostname stays as created. */
+    /**
+     * Set the name shown in the app. The machine's hostname stays as created.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @param  string|null  $displayName
+     * @return void
+     */
     public function handle(Account $account, User $actor, Server $server, ?string $displayName): void
     {
         Gate::forUser($actor)->authorize('update', $server);

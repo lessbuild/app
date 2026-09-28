@@ -40,6 +40,9 @@ final class IssueDigest
      * The account's digest for a period: open, critical and snoozed counts, and the issues first seen or resolved in it.
      * `active` is false when there's nothing to say.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return Digest
      */
     public function report(Account $account, CarbonImmutable $from, CarbonImmutable $until): array
@@ -67,6 +70,9 @@ final class IssueDigest
      * Emails the digest for the period to everyone who wants it, in accounts whose plan includes it and that have
      * something to report, once per person and period.
      *
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @param  string|null  $accountId
      * @return array{sent: int, skipped: int, failed: int}
      */
     public function send(CarbonImmutable $from, CarbonImmutable $until, ?string $accountId = null): array
@@ -97,7 +103,13 @@ final class IssueDigest
         return $totals;
     }
 
-    /** Whether a member gets the digest: their own choice, or by default only owners. */
+    /**
+     * Whether a member gets the digest: their own choice, or by default only owners.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @return bool
+     */
     public function wants(Account $account, User $user): bool
     {
         $preference = IssueDigestPreference::query()->where('account_id', $account->id)->where('user_id', $user->id)->value('enabled');
@@ -109,6 +121,7 @@ final class IssueDigest
      * The members who get the digest: owners unless they turned it off, and others who turned it on, as long as they can
      * use Monitoring, aren't viewers, and have a verified email.
      *
+     * @param  Account  $account
      * @return list<User>
      */
     private function recipients(Account $account): array
@@ -129,6 +142,7 @@ final class IssueDigest
      * The ten latest, with titles redacted.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<Issue>  $query
+     * @param  string  $column
      * @return list<DigestIssue>
      */
     private function issues(\Illuminate\Database\Eloquent\Builder $query, string $column): array

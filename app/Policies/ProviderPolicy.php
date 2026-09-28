@@ -14,7 +14,12 @@ final class ProviderPolicy
 {
     use ChecksAccountRole;
 
-    /** Providers of the person's current account. */
+    /**
+     * Providers of the person's current account.
+     *
+     * @param  User  $user
+     * @return bool
+     */
     public function viewAny(User $user): bool
     {
         return $user->current_account_id !== null && $this->allows($user, $user->current_account_id, AccountPermission::ManageSettings);
@@ -22,6 +27,9 @@ final class ProviderPolicy
 
     /**
      * Connecting a new provider to the current account, allowed to the same people as viewAny.
+     *
+     * @param  User  $user
+     * @return bool
      */
     public function create(User $user): bool
     {
@@ -30,6 +38,10 @@ final class ProviderPolicy
 
     /**
      * Seeing a provider's details: the account's settings managers.
+     *
+     * @param  User  $user
+     * @param  Provider  $provider
+     * @return bool
      */
     public function view(User $user, Provider $provider): bool
     {
@@ -38,6 +50,10 @@ final class ProviderPolicy
 
     /**
      * Replacing a provider's credential or renaming it, allowed to the same people as view.
+     *
+     * @param  User  $user
+     * @param  Provider  $provider
+     * @return bool
      */
     public function update(User $user, Provider $provider): bool
     {
@@ -46,6 +62,10 @@ final class ProviderPolicy
 
     /**
      * Disconnecting a provider, allowed to the same people as view.
+     *
+     * @param  User  $user
+     * @param  Provider  $provider
+     * @return bool
      */
     public function delete(User $user, Provider $provider): bool
     {

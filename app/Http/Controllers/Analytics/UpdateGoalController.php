@@ -16,6 +16,14 @@ final class UpdateGoalController
 {
     /**
      * Changes a goal; the new definition counts from now on.
+     *
+     * @param  GoalRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AnalyticsSite  $site
+     * @param  string  $goal
+     * @param  SaveGoal  $save
+     * @return RedirectResponse
      */
     public function __invoke(GoalRequest $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, string $goal, SaveGoal $save): RedirectResponse
     {

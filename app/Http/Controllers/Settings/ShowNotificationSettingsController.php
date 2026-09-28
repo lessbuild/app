@@ -16,6 +16,11 @@ final class ShowNotificationSettingsController
 {
     /**
      * The email settings page, offering the issue digest to members who use Monitoring on a plan that includes it.
+     *
+     * @param  User  $user
+     * @param  IssueDigest  $digest
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, IssueDigest $digest, Entitlements $entitlements): View
     {

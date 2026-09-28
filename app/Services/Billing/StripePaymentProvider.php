@@ -39,6 +39,8 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * Stripe is configured, so paid tiers can be bought.
+     *
+     * @return bool
      */
     public function available(): bool
     {
@@ -47,6 +49,11 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * Creates the Stripe customer, tagged with the account's ID.
+     *
+     * @param  string  $accountId
+     * @param  string  $name
+     * @param  string  $email
+     * @return string
      */
     public function createCustomer(string $accountId, string $name, string $email): string
     {
@@ -60,6 +67,13 @@ final class StripePaymentProvider implements PaymentProvider
     /**
      * A Checkout session for a new subscription with these items, tagged with the account and the price-to-reference
      * map.
+     *
+     * @param  string  $customerId
+     * @param  string  $accountId
+     * @param  list<LineItem>  $items
+     * @param  string  $successUrl
+     * @param  string  $cancelUrl
+     * @return string
      */
     public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl): string
     {
@@ -77,6 +91,10 @@ final class StripePaymentProvider implements PaymentProvider
     /**
      * Makes the subscription's items match, updating a service's item in place when it changes tier, adding and removing
      * others, with prorations.
+     *
+     * @param  string  $subscriptionId
+     * @param  list<LineItem>  $items
+     * @return SubscriptionState
      */
     public function syncSubscription(string $subscriptionId, array $items): SubscriptionState
     {
@@ -114,6 +132,9 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * The subscription's current status, period end and item IDs.
+     *
+     * @param  string  $subscriptionId
+     * @return SubscriptionState
      */
     public function subscription(string $subscriptionId): SubscriptionState
     {
@@ -122,6 +143,9 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * Cancels the subscription now, prorated.
+     *
+     * @param  string  $subscriptionId
+     * @return void
      */
     public function cancelSubscription(string $subscriptionId): void
     {
@@ -130,6 +154,10 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * A billing portal session that returns to the given page.
+     *
+     * @param  string  $customerId
+     * @param  string  $returnUrl
+     * @return string
      */
     public function portalUrl(string $customerId, string $returnUrl): string
     {
@@ -138,6 +166,10 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * The customer's latest invoices.
+     *
+     * @param  string  $customerId
+     * @param  int  $limit
+     * @return list<InvoiceSummary>
      */
     public function invoices(string $customerId, int $limit = 12): array
     {
@@ -160,6 +192,13 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * Sends a meter event; Stripe drops repeats with the same identifier.
+     *
+     * @param  string  $customerId
+     * @param  string  $eventName
+     * @param  int  $quantity
+     * @param  CarbonInterface  $at
+     * @param  string  $idempotencyKey
+     * @return void
      */
     public function reportUsage(string $customerId, string $eventName, int $quantity, CarbonInterface $at, string $idempotencyKey): void
     {
@@ -173,6 +212,10 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * Checks the signature with the endpoint secret and parses the event. A missing secret refuses everything.
+     *
+     * @param  string  $payload
+     * @param  string  $signature
+     * @return WebhookEvent
      */
     public function verifyWebhook(string $payload, string $signature): WebhookEvent
     {
@@ -189,7 +232,12 @@ final class StripePaymentProvider implements PaymentProvider
         return new WebhookEvent((string) $event->id, (string) $event->type, $object);
     }
 
-    /** A service's tier occupies one item whichever tier it is; each add-on has its own. */
+    /**
+     * A service's tier occupies one item whichever tier it is; each add-on has its own.
+     *
+     * @param  string  $reference
+     * @return string
+     */
     private static function slot(string $reference): string
     {
         $parts = explode(':', $reference, 3);
@@ -201,6 +249,7 @@ final class StripePaymentProvider implements PaymentProvider
      * The subscription metadata mapping each price to its reference, since Checkout can't put metadata on items.
      *
      * @param  list<LineItem>  $items
+     * @return string
      */
     private function referenceMap(array $items): string
     {
@@ -215,6 +264,7 @@ final class StripePaymentProvider implements PaymentProvider
     /**
      * The subscription's item IDs by reference, from each item's metadata or else the price map.
      *
+     * @param  Subscription  $subscription
      * @return array<string, string> reference => item id
      */
     private function itemsByReference(Subscription $subscription): array
@@ -234,6 +284,9 @@ final class StripePaymentProvider implements PaymentProvider
 
     /**
      * The subscription as a SubscriptionState.
+     *
+     * @param  Subscription  $subscription
+     * @return SubscriptionState
      */
     private function state(Subscription $subscription): SubscriptionState
     {
@@ -250,10 +303,10 @@ final class StripePaymentProvider implements PaymentProvider
      * Runs a Stripe request, reporting failures and turning them into PaymentProviderUnavailable with a message that's
      * safe to show.
      *
-     * @template T
-     *
      * @param  Closure(): T  $request
      * @return T
+     *
+     * @template T
      */
     private function call(Closure $request): mixed
     {

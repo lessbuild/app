@@ -17,6 +17,8 @@ final class EventTextSearch
      * wildcards so a search for `100%` means the literal text.
      *
      * @param  Builder<TelemetryEvent>  $query
+     * @param  string  $text
+     * @return void
      */
     public static function apply(Builder $query, string $text): void
     {

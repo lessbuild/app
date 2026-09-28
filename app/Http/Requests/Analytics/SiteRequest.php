@@ -27,6 +27,8 @@ final class SiteRequest extends FormRequest
 
     /**
      * The site's settings with domains and excluded paths as lists.
+     *
+     * @return SiteDetails
      */
     public function toDetails(): SiteDetails
     {
@@ -42,6 +44,7 @@ final class SiteRequest extends FormRequest
     /**
      * Splits text on new lines and commas, dropping blanks.
      *
+     * @param  string  $value
      * @return list<string> one per line or comma
      */
     private static function lines(string $value): array

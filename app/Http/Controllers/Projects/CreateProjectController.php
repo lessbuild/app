@@ -14,6 +14,10 @@ final class CreateProjectController
 {
     /**
      * The new project form.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user): View
     {

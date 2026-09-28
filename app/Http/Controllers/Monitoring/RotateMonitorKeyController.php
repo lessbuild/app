@@ -18,6 +18,14 @@ final class RotateMonitorKeyController
 {
     /**
      * Issues a new key and shows it once.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Monitor  $monitor
+     * @param  RotateHeartbeatToken  $heartbeats
+     * @param  RotateQueueToken  $queues
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Monitor $monitor, RotateHeartbeatToken $heartbeats, RotateQueueToken $queues): RedirectResponse
     {

@@ -16,6 +16,11 @@ final class ShowRepositoriesController
 {
     /**
      * The project's repositories with each one's latest deploy.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {

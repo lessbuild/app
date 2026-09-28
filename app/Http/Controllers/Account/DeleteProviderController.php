@@ -16,6 +16,12 @@ final class DeleteProviderController
 {
     /**
      * Disconnects a provider from the account.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  Provider  $provider
+     * @param  DeleteProvider  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, Provider $provider, DeleteProvider $delete): RedirectResponse
     {

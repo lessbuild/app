@@ -26,7 +26,9 @@ final class AuthenticateQueueToken
      * Finds the queue monitor in the URL and checks the bearer key against its hash, then passes the monitor and key
      * hash on as request attributes. Wrong keys and unavailable monitors get the same 401.
      *
+     * @param  Request  $request
      * @param  Closure(Request): Response  $next
+     * @return Response
      */
     public function handle(Request $request, Closure $next): Response
     {

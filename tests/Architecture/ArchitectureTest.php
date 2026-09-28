@@ -102,8 +102,9 @@ final class ArchitectureTest extends TestCase
     }
 
     /**
-     * Every method and property in one top-level area of app/ carries a docblock that explains it, and
-     * promoted constructor properties are described by `@param` lines on the constructor. A docblock made
+     * Every method and property in one top-level area of app/ carries a docblock that explains it. Methods list
+     * `@param` for every parameter and `@return` (constructors excepted); properties carry `@var`; promoted
+     * constructor properties are described by `@param` lines on the constructor. A docblock made
      * only of tags (`@return list<string>`) doesn't count: it types the member without saying what it's for.
      */
     #[DataProvider('applicationAreas')]
@@ -123,8 +124,8 @@ final class ArchitectureTest extends TestCase
                     continue;
                 }
                 if ($property->class === $name && ! $property->isPromoted() && $property->getDeclaringClass()->getFileName() === $file
-                    && ! $this->explains($property->getDocComment())) {
-                    $missing[] = "{$name}::\${$property->name}";
+                    && (! $this->explains($property->getDocComment()) || preg_match('/@var\s+\S/', (string) $property->getDocComment()) !== 1)) {
+                    $missing[] = "{$name}::\${$property->name} (needs an explanation and @var)";
                 }
             }
 
@@ -135,6 +136,14 @@ final class ArchitectureTest extends TestCase
                 $docblock = $method->getDocComment();
                 if (! $this->explains($docblock)) {
                     $missing[] = "{$name}::{$method->name}()";
+                }
+                foreach ($method->getParameters() as $parameter) {
+                    if ($docblock === false || preg_match('/@param\s+\S.*?(?:\.\.\.)?\$'.$parameter->name.'\b/', $docblock) !== 1) {
+                        $missing[] = "{$name}::{$method->name}() needs @param for \${$parameter->name}";
+                    }
+                }
+                if (! $method->isConstructor() && ($docblock === false || preg_match('/@return\s+\S/', $docblock) !== 1)) {
+                    $missing[] = "{$name}::{$method->name}() needs @return";
                 }
                 foreach ($method->isConstructor() ? $method->getParameters() : [] as $parameter) {
                     if ($parameter->isPromoted() && ($docblock === false || preg_match('/@param\s+.*?\$'.$parameter->name.'\s+\S/', $docblock) !== 1)) {

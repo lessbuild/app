@@ -15,6 +15,12 @@ final class StoreObjectiveController
 {
     /**
      * Creates an SLO.
+     *
+     * @param  ServiceLevelObjectiveRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveServiceLevelObjective  $save
+     * @return RedirectResponse
      */
     public function __invoke(ServiceLevelObjectiveRequest $request, #[CurrentUser] User $user, Project $project, SaveServiceLevelObjective $save): RedirectResponse
     {

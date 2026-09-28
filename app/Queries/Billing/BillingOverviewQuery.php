@@ -43,6 +43,9 @@ final class BillingOverviewQuery
     /**
      * Each service's current tier, the tiers it can move to, this month's metered usage against allowances, the monthly
      * total of tiers and add-ons, and the subscription's state.
+     *
+     * @param  Account  $account
+     * @return BillingOverview
      */
     public function handle(Account $account): BillingOverview
     {

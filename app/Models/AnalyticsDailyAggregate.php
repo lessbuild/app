@@ -19,6 +19,8 @@ class AnalyticsDailyAggregate extends Model
 {
     /**
      * Stored in `analytics_daily_aggregates`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_daily_aggregates';
 

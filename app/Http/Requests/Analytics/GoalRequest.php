@@ -27,6 +27,8 @@ final class GoalRequest extends FormRequest
 
     /**
      * The goal's settings.
+     *
+     * @return GoalDetails
      */
     public function toDetails(): GoalDetails
     {

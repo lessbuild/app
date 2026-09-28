@@ -14,6 +14,7 @@ final class ProjectDomainsQuery
     /**
      * The project's domains with the TXT record that verifies each.
      *
+     * @param  Project  $project
      * @return list<DomainRow> unverified first, then alphabetical
      */
     public function handle(Project $project): array

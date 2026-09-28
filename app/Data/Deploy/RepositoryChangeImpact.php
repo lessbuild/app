@@ -29,6 +29,8 @@ final readonly class RepositoryChangeImpact
 
     /**
      * Determine whether the delivery can be safely skipped by the automatic path filter.
+     *
+     * @return bool
      */
     public function isUnaffected(): bool
     {

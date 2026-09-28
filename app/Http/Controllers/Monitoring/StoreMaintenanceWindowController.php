@@ -15,6 +15,12 @@ final class StoreMaintenanceWindowController
 {
     /**
      * Schedules a maintenance window.
+     *
+     * @param  MaintenanceWindowRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveMaintenanceWindow  $save
+     * @return RedirectResponse
      */
     public function __invoke(MaintenanceWindowRequest $request, #[CurrentUser] User $user, Project $project, SaveMaintenanceWindow $save): RedirectResponse
     {

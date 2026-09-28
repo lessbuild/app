@@ -31,7 +31,12 @@ final class HandleBillingWebhook
         private readonly ServiceRegistry $services,
     ) {}
 
-    /** Apply a verified Stripe event once. Returns false for duplicates and events we don't use. */
+    /**
+     * Apply a verified Stripe event once. Returns false for duplicates and events we don't use.
+     *
+     * @param  WebhookEvent  $event
+     * @return bool
+     */
     public function handle(WebhookEvent $event): bool
     {
         // ON CONFLICT DO NOTHING: a retried delivery is skipped without an error that would abort a PostgreSQL transaction.
@@ -52,6 +57,7 @@ final class HandleBillingWebhook
      * the event can't be matched to an account.
      *
      * @param  array<string, mixed>  $session
+     * @return bool
      */
     private function checkoutCompleted(array $session): bool
     {
@@ -104,6 +110,7 @@ final class HandleBillingWebhook
      * Copies the subscription's status and period end.
      *
      * @param  array<string, mixed>  $subscription
+     * @return bool
      */
     private function subscriptionUpdated(array $subscription): bool
     {
@@ -123,6 +130,7 @@ final class HandleBillingWebhook
      * Clears the subscription and every selection, putting each service back on its free tier.
      *
      * @param  array<string, mixed>  $subscription
+     * @return bool
      */
     private function subscriptionDeleted(array $subscription): bool
     {
@@ -153,6 +161,7 @@ final class HandleBillingWebhook
      * The billing record for a subscription in a webhook, or null when it isn't ours.
      *
      * @param  array<string, mixed>  $subscription
+     * @return BillingAccount|null
      */
     private function billingFor(array $subscription): ?BillingAccount
     {
@@ -165,6 +174,7 @@ final class HandleBillingWebhook
      * Newer Stripe API versions put the period on each item; older ones on the subscription.
      *
      * @param  array<string, mixed>  $subscription
+     * @return CarbonImmutable|null
      */
     private static function periodEnd(array $subscription): ?CarbonImmutable
     {

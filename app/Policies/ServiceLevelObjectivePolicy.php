@@ -17,6 +17,10 @@ final class ServiceLevelObjectivePolicy
 
     /**
      * Defining an SLO: people who manage Monitoring in the project, with a verified email since SLOs can page people.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function create(User $user, Project $project): bool
     {
@@ -25,13 +29,23 @@ final class ServiceLevelObjectivePolicy
 
     /**
      * Changing an SLO: the same people as create, while it isn't archived.
+     *
+     * @param  User  $user
+     * @param  ServiceLevelObjective  $record
+     * @return bool
      */
     public function update(User $user, ServiceLevelObjective $record): bool
     {
         return $this->live($record) && $this->managesMonitoring($user, $record->environment->project) && $user->hasVerifiedEmail();
     }
 
-    /** CSV reports are a Team and Scale feature. */
+    /**
+     * CSV reports are a Team and Scale feature.
+     *
+     * @param  User  $user
+     * @param  ServiceLevelObjective  $record
+     * @return Response
+     */
     public function export(User $user, ServiceLevelObjective $record): Response
     {
         if (! $user->can('useService', [$record->environment->project, 'monitoring'])) {
@@ -45,6 +59,10 @@ final class ServiceLevelObjectivePolicy
 
     /**
      * Archiving an SLO, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  ServiceLevelObjective  $record
+     * @return bool
      */
     public function delete(User $user, ServiceLevelObjective $record): bool
     {

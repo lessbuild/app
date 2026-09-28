@@ -20,6 +20,11 @@ final class CollectEventsController
      * Accepts pageviews and custom events from the tracker. Unknown or paused sites get a 404, bots are accepted and
      * dropped, other origins are refused, excluded paths are skipped, and everything else is cleaned and queued for
      * processing.
+     *
+     * @param  CollectEventsRequest  $request
+     * @param  string  $publicId
+     * @param  AcceptEventBatch  $acceptEventBatch
+     * @return JsonResponse
      */
     public function __invoke(CollectEventsRequest $request, string $publicId, AcceptEventBatch $acceptEventBatch): JsonResponse
     {

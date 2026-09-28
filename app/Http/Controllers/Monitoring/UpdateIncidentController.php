@@ -16,6 +16,13 @@ final class UpdateIncidentController
 {
     /**
      * Acknowledges, assigns, annotates or resolves an incident.
+     *
+     * @param  IncidentRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Incident  $incident
+     * @param  UpdateIncident  $update
+     * @return RedirectResponse
      */
     public function __invoke(IncidentRequest $request, #[CurrentUser] User $user, Project $project, Incident $incident, UpdateIncident $update): RedirectResponse
     {

@@ -17,6 +17,11 @@ final class ReceiveGitHubAppWebhookController
     /**
      * Verifies a GitHub App webhook, answers pings, and hands pushes to the repository connected through that
      * installation.
+     *
+     * @param  Request  $request
+     * @param  GitHubAppWebhookVerifier  $app
+     * @param  RepositoryPushReceiver  $receive
+     * @return JsonResponse
      */
     public function __invoke(Request $request, GitHubAppWebhookVerifier $app, RepositoryPushReceiver $receive): JsonResponse
     {

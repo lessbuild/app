@@ -17,6 +17,10 @@ final class RepositoryPolicy
 
     /**
      * Seeing a repository and its deploys: account members who may view projects and use Deploy.
+     *
+     * @param  User  $user
+     * @param  Repository  $repository
+     * @return bool
      */
     public function view(User $user, Repository $repository): bool
     {
@@ -25,6 +29,10 @@ final class RepositoryPolicy
 
     /**
      * Connecting a repository to a project: members who may manage projects and use Deploy.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function create(User $user, Project $project): bool
     {
@@ -33,6 +41,10 @@ final class RepositoryPolicy
 
     /**
      * Changing a repository's branch, commands and webhook: the same people as create.
+     *
+     * @param  User  $user
+     * @param  Repository  $repository
+     * @return bool
      */
     public function update(User $user, Repository $repository): bool
     {
@@ -41,13 +53,23 @@ final class RepositoryPolicy
 
     /**
      * Disconnecting a repository, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  Repository  $repository
+     * @return bool
      */
     public function delete(User $user, Repository $repository): bool
     {
         return $this->update($user, $repository);
     }
 
-    /** Deploying, redeploying, rolling back and canceling. */
+    /**
+     * Deploying, redeploying, rolling back and canceling.
+     *
+     * @param  User  $user
+     * @param  Repository  $repository
+     * @return bool
+     */
     public function deploy(User $user, Repository $repository): bool
     {
         return $this->update($user, $repository);

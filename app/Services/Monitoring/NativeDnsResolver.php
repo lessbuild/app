@@ -10,6 +10,9 @@ final class NativeDnsResolver implements DnsResolver
 {
     /**
      * Resolves a hostname to its A and AAAA addresses, following CNAMEs.
+     *
+     * @param  string  $hostname
+     * @return list<string>
      */
     public function addresses(string $hostname): array
     {
@@ -19,6 +22,7 @@ final class NativeDnsResolver implements DnsResolver
     /**
      * Follows CNAMEs up to five deep; a loop or an unresolvable target resolves to nothing.
      *
+     * @param  string  $hostname
      * @param  list<string>  $visited
      * @return list<string>
      */

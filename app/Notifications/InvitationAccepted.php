@@ -17,6 +17,8 @@ final class InvitationAccepted extends InboxNotification
 
     /**
      * Who joined which account.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -25,6 +27,8 @@ final class InvitationAccepted extends InboxNotification
 
     /**
      * That it was their invitation.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -33,6 +37,8 @@ final class InvitationAccepted extends InboxNotification
 
     /**
      * The members page.
+     *
+     * @return string
      */
     protected function url(): string
     {
@@ -41,6 +47,8 @@ final class InvitationAccepted extends InboxNotification
 
     /**
      * The account that gained a member.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

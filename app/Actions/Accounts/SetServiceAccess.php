@@ -25,7 +25,10 @@ final class SetServiceAccess
      * Sets the services a member may use (null for all of them). Owners and admins always have every service, unknown
      * keys are dropped, and nothing is recorded when the list doesn't change.
      *
+     * @param  User  $actor
+     * @param  Membership  $membership
      * @param  list<string>|null  $services  null gives access to every service, including ones added later
+     * @return Membership
      */
     public function handle(User $actor, Membership $membership, ?array $services): Membership
     {

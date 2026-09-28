@@ -13,6 +13,10 @@ final class ShowPrivacyController
 {
     /**
      * The privacy page: data export, and what deleting the person would do to their accounts.
+     *
+     * @param  User  $user
+     * @param  DepartureQuery  $departure
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, DepartureQuery $departure): View
     {

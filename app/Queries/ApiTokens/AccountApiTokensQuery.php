@@ -18,6 +18,8 @@ final class AccountApiTokensQuery
      * The account's API tokens, newest first, with their owners' names ("Former member" once the owner is gone) and
      * scopes.
      *
+     * @param  Account  $account
+     * @param  User  $viewer
      * @return list<ApiTokenRow>
      */
     public function handle(Account $account, User $viewer): array

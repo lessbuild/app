@@ -20,6 +20,7 @@ final class PublicHttpTarget
      * The scheme, host, port and whether the host is a literal IP, for an HTTP(S) URL without credentials, fragments or
      * control characters whose host is a public IP or a valid DNS name. Null otherwise.
      *
+     * @param  string  $url
      * @return array{host: string, port: int, scheme: string, literal: bool}|null
      */
     public function parse(string $url): ?array
@@ -52,6 +53,7 @@ final class PublicHttpTarget
      * The target with the address to connect to, or why it can't be reached: invalid, not resolvable, or resolving to
      * any non-public address.
      *
+     * @param  string  $url
      * @return array{host: string, port: int, scheme: string, literal: bool, address: string, error: null}|array{error: string}
      */
     public function resolve(string $url): array

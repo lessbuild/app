@@ -14,6 +14,12 @@ final class SignOutBrowserController
 {
     /**
      * Signs out one of the person's other browsers.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  SignOutBrowsers  $signOut
+     * @param  string  $session
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, SignOutBrowsers $signOut, string $session): RedirectResponse
     {

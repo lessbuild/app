@@ -23,7 +23,11 @@ final class ApplyEndedSelections
      */
     public function __construct(private readonly SubscriptionItems $items, private readonly ServiceRegistry $services) {}
 
-    /** Remove selections whose paid period has ended and update the subscriptions. Returns how many ended. */
+    /**
+     * Remove selections whose paid period has ended and update the subscriptions. Returns how many ended.
+     *
+     * @return int
+     */
     public function handle(): int
     {
         $ended = BillingSelection::query()->whereNotNull('ends_at')->where('ends_at', '<=', now())->get();

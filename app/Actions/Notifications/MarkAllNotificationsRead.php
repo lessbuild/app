@@ -10,6 +10,9 @@ final class MarkAllNotificationsRead
 {
     /**
      * Marks every unread notification read and returns how many there were.
+     *
+     * @param  User  $user
+     * @return int
      */
     public function handle(User $user): int
     {

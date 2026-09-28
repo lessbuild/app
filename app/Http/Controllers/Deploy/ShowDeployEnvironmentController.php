@@ -17,6 +17,13 @@ final class ShowDeployEnvironmentController
 {
     /**
      * An environment's deploy settings, in tabs: controls, how deploys run, variables, workers and resources.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, ProjectOverviewQuery $overview): View
     {

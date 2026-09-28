@@ -30,7 +30,10 @@ final class UpdateAlertEscalations
     /**
      * Replace a rule's escalation steps: destinations alerted later if its incident is still open.
      *
+     * @param  AlertRule  $rule
+     * @param  User  $actor
      * @param  array{version: int|string, escalations?: list<array{destination_id?: int|string|null, delay_minutes?: int|string|null}>}  $data
+     * @return void
      */
     public function handle(AlertRule $rule, User $actor, array $data): void
     {

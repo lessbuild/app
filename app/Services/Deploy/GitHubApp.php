@@ -15,6 +15,8 @@ class GitHubApp
 {
     /**
      * Whether the App's ID, slug, webhook secret and private key are all set.
+     *
+     * @return bool
      */
     public function configured(): bool
     {
@@ -23,6 +25,9 @@ class GitHubApp
 
     /**
      * GitHub's page for installing the App, carrying the one-time state.
+     *
+     * @param  string  $state
+     * @return string
      */
     public function installationUrl(string $state): string
     {
@@ -36,6 +41,9 @@ class GitHubApp
 
     /**
      * A short-lived token for one installation, from GitHub's API.
+     *
+     * @param  string  $installationId
+     * @return string
      */
     public function installationToken(string $installationId): string
     {
@@ -48,6 +56,7 @@ class GitHubApp
     /**
      * The repositories the installation can reach (first 100), with their visibility and default branch.
      *
+     * @param  string  $installationId
      * @return list<array{id: int, full_name: string, private: bool, default_branch: string}>
      */
     public function repositories(string $installationId): array
@@ -67,6 +76,8 @@ class GitHubApp
     /**
      * A JSON Web Token signed with the App's private key, valid for nine minutes (backdated one, for clock drift), which
      * GitHub requires to issue installation tokens.
+     *
+     * @return string
      */
     private function jwt(): string
     {
@@ -84,7 +95,11 @@ class GitHubApp
         return $unsigned.'.'.$this->base64Url($signature);
     }
 
-    /** The unencrypted RSA key from config (the key itself, or a readable file), or null. */
+    /**
+     * The unencrypted RSA key from config (the key itself, or a readable file), or null.
+     *
+     * @return string|null
+     */
     private function privateKey(): ?string
     {
         foreach ([(string) config('github-app.private_key'), (string) config('github-app.private_key_path')] as $source) {
@@ -101,6 +116,9 @@ class GitHubApp
 
     /**
      * Base64 in its URL-safe form without padding, as JWTs use.
+     *
+     * @param  string  $value
+     * @return string
      */
     private function base64Url(string $value): string
     {

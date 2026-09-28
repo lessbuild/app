@@ -16,7 +16,15 @@ use Illuminate\Support\Str;
 
 final class AddDomain
 {
-    /** Claim a hostname for the project; it stays unverified until its TXT record is found. */
+    /**
+     * Claim a hostname for the project; it stays unverified until its TXT record is found.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  string  $hostname
+     * @param  string|null  $environmentId
+     * @return Domain
+     */
     public function handle(User $actor, Project $project, string $hostname, ?string $environmentId = null): Domain
     {
         Gate::forUser($actor)->authorize('update', $project);

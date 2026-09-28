@@ -33,6 +33,8 @@ final class DeployApiQuery
     /**
      * The account's projects whose Deploy the person may use, with their environments.
      *
+     * @param  User  $user
+     * @param  Account  $account
      * @return Builder<Project>
      */
     public function projects(User $user, Account $account): Builder
@@ -44,6 +46,11 @@ final class DeployApiQuery
 
     /**
      * One such project; 404 outside the account, 403 when the person may not use its Deploy.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $id
+     * @return Project
      */
     public function project(User $user, Account $account, string $id): Project
     {
@@ -56,6 +63,8 @@ final class DeployApiQuery
     /**
      * Deploys of repositories in the projects the person may use, including repositories disconnected since.
      *
+     * @param  User  $user
+     * @param  Account  $account
      * @return Builder<Build>
      */
     public function builds(User $user, Account $account): Builder
@@ -65,6 +74,11 @@ final class DeployApiQuery
 
     /**
      * One such deploy with its repository, website and environment; 404 when it's outside them.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $id
+     * @return Build
      */
     public function build(User $user, Account $account, string $id): Build
     {
@@ -76,6 +90,11 @@ final class DeployApiQuery
 
     /**
      * An environment of the account, checked the same way as its project.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $id
+     * @return Environment
      */
     public function environment(User $user, Account $account, string $id): Environment
     {
@@ -88,11 +107,14 @@ final class DeployApiQuery
     /**
      * Deployer's optional cursor pagination: without `limit` or `cursor` the whole (bounded) list is returned.
      *
-     * @template TModel of \Illuminate\Database\Eloquent\Model
-     *
      * @param  Builder<TModel>  $query
+     * @param  mixed  $limit
+     * @param  mixed  $cursor
      * @param  'asc'|'desc'  $direction
+     * @param  int  $unpaged
      * @return array{items: array<int, TModel>, meta: array{limit: int, next_cursor: string|null}|null}
+     *
+     * @template TModel of \Illuminate\Database\Eloquent\Model
      */
     public function page(Builder $query, mixed $limit, mixed $cursor, string $direction, int $unpaged): array
     {
@@ -113,6 +135,8 @@ final class DeployApiQuery
     /**
      * The `/me` payload: the person and the account ("organization" in Deployer's API) with its Deploy plan.
      *
+     * @param  User  $user
+     * @param  Account  $account
      * @return array<string, mixed>
      */
     public function account(User $user, Account $account): array
@@ -125,6 +149,7 @@ final class DeployApiQuery
     /**
      * A project as the API returns it, with its environments. `state` is always "running" until hibernation exists.
      *
+     * @param  Project  $project
      * @return array<string, mixed>
      */
     public function projectData(Project $project): array
@@ -138,6 +163,7 @@ final class DeployApiQuery
     /**
      * A deploy as the API returns it.
      *
+     * @param  Build  $build
      * @return array<string, mixed>
      */
     public function buildData(Build $build): array

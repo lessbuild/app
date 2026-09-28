@@ -13,6 +13,10 @@ final class RecordQueueSnapshotController
 {
     /**
      * Records the report for the monitor the middleware authenticated and returns its receipt, never cached.
+     *
+     * @param  StoreQueueSnapshotRequest  $request
+     * @param  RecordQueueSnapshot  $snapshots
+     * @return JsonResponse
      */
     public function __invoke(StoreQueueSnapshotRequest $request, RecordQueueSnapshot $snapshots): JsonResponse
     {

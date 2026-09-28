@@ -19,6 +19,11 @@ final class DeleteUserController
     /**
      * Deletes the person once they've typed their email exactly, then signs them out. Accounts they'd leave without an
      * owner block the deletion.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  DeleteUser  $delete
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, DeleteUser $delete): RedirectResponse
     {

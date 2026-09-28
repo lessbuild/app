@@ -16,6 +16,13 @@ final class StoreWebsiteDomainController
 {
     /**
      * Adds a domain to a website, with a notice when its DNS couldn't be set up.
+     *
+     * @param  WebsiteDomainRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  SaveWebsiteDomain  $save
+     * @return RedirectResponse
      */
     public function __invoke(WebsiteDomainRequest $request, #[CurrentUser] User $user, Project $project, Website $website, SaveWebsiteDomain $save): RedirectResponse
     {

@@ -41,6 +41,8 @@ class QueueSnapshot extends Model
 
     /**
      * The payload hash, used to spot repeated reports, isn't serialised.
+     *
+     * @var list<string>
      */
     protected $hidden = ['payload_hash'];
 

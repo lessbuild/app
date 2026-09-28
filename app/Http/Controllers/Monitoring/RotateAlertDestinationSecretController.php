@@ -16,6 +16,13 @@ final class RotateAlertDestinationSecretController
 {
     /**
      * Issues a new signing secret and shows it once.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertDestination  $destination
+     * @param  RotateAlertDestinationSecret  $rotate
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDestination $destination, RotateAlertDestinationSecret $rotate): RedirectResponse
     {

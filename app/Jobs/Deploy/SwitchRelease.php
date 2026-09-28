@@ -22,6 +22,8 @@ final class SwitchRelease implements ShouldQueue
 
     /**
      * One attempt: switching the `current` symlink either happened or failed, and the deploy is finished either way.
+     *
+     * @var int
      */
     public int $tries = 1;
 
@@ -36,6 +38,11 @@ final class SwitchRelease implements ShouldQueue
     /**
      * Claims the build, points the website at its release and finishes the deploy as succeeded, or as failed with the
      * server's error.
+     *
+     * @param  RemoteDeployments  $remote
+     * @param  FinishBuild  $finish
+     * @param  RepositoryDeploymentPlan  $plan
+     * @return void
      */
     public function handle(RemoteDeployments $remote, FinishBuild $finish, RepositoryDeploymentPlan $plan): void
     {

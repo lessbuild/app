@@ -13,6 +13,8 @@ enum CollectionHealthState: string
 
     /**
      * The state's name as the telemetry setup page shows it.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -27,6 +29,8 @@ enum CollectionHealthState: string
     /**
      * The badge colour for the state: green while events arrive, amber when they've gone quiet, red when there's no
      * token to send with.
+     *
+     * @return string
      */
     public function tone(): string
     {

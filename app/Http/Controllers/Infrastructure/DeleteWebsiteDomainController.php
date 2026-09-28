@@ -15,6 +15,13 @@ final class DeleteWebsiteDomainController
 {
     /**
      * Removes a domain from a website.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  string  $domain
+     * @param  DeleteWebsiteDomain  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $domain, DeleteWebsiteDomain $delete): RedirectResponse
     {

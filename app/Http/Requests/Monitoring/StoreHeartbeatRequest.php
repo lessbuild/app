@@ -12,6 +12,8 @@ final class StoreHeartbeatRequest extends FormRequest
 {
     /**
      * Allowed once the heartbeat key middleware has identified the monitor.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {

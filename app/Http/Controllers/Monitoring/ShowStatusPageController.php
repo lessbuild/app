@@ -17,6 +17,13 @@ final class ShowStatusPageController
 {
     /**
      * A status page's team view: its report, posted updates and confirmed subscriber count.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  StatusPage  $page
+     * @param  ProjectOverviewQuery  $overview
+     * @param  StatusPageReportQuery  $report
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, StatusPage $page, ProjectOverviewQuery $overview, StatusPageReportQuery $report): View
     {

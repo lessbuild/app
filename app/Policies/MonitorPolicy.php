@@ -15,6 +15,10 @@ final class MonitorPolicy
 
     /**
      * Creating a monitor: people who manage Monitoring in the project, with a verified email since monitors send alerts.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function create(User $user, Project $project): bool
     {
@@ -23,13 +27,23 @@ final class MonitorPolicy
 
     /**
      * Changing, pausing or resuming a monitor: the same people as create, while it isn't archived.
+     *
+     * @param  User  $user
+     * @param  Monitor  $record
+     * @return bool
      */
     public function update(User $user, Monitor $record): bool
     {
         return $this->live($record) && $this->managesMonitoring($user, $record->environment->project) && $user->hasVerifiedEmail();
     }
 
-    /** Heartbeat and queue monitors have a key their jobs sign in with. */
+    /**
+     * Heartbeat and queue monitors have a key their jobs sign in with.
+     *
+     * @param  User  $user
+     * @param  Monitor  $record
+     * @return bool
+     */
     public function rotateKey(User $user, Monitor $record): bool
     {
         return in_array($record->type, ['heartbeat', 'queue'], true) && $this->update($user, $record);
@@ -37,6 +51,10 @@ final class MonitorPolicy
 
     /**
      * Archiving a monitor, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  Monitor  $record
+     * @return bool
      */
     public function delete(User $user, Monitor $record): bool
     {

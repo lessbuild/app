@@ -16,6 +16,13 @@ final class StoreStatusUpdateController
 {
     /**
      * Posts an update; subscribers are emailed when the page is published.
+     *
+     * @param  StatusUpdateRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  StatusPage  $page
+     * @param  SaveStatusUpdate  $save
+     * @return RedirectResponse
      */
     public function __invoke(StatusUpdateRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, SaveStatusUpdate $save): RedirectResponse
     {

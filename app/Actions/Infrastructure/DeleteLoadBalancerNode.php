@@ -18,7 +18,13 @@ final class DeleteLoadBalancerNode
      */
     public function __construct(private readonly LoadBalancerChanges $changes) {}
 
-    /** Stop sending traffic to a server. */
+    /**
+     * Stop sending traffic to a server.
+     *
+     * @param  User  $actor
+     * @param  LoadBalancerNode  $node
+     * @return void
+     */
     public function handle(User $actor, LoadBalancerNode $node): void
     {
         Gate::forUser($actor)->authorize('update', $node->loadBalancer);

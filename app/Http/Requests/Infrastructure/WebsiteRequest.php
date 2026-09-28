@@ -44,6 +44,8 @@ final class WebsiteRequest extends FormRequest
 
     /**
      * Cleans the typed hostname and makes the health check path start with `/`.
+     *
+     * @return void
      */
     protected function prepareForValidation(): void
     {

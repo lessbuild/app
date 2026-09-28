@@ -17,6 +17,12 @@ final class CreateMonitorController
 {
     /**
      * The new monitor form for the chosen check type (HTTP by default), with the account's destinations.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {

@@ -21,6 +21,8 @@ class AnalyticsGoalVersion extends Model
 {
     /**
      * Stored in `analytics_goal_versions`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_goal_versions';
 

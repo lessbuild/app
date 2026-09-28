@@ -20,7 +20,13 @@ final class CancelBuild
      */
     public function __construct(private readonly FinishBuild $finish, private readonly RemoteDeployments $remote) {}
 
-    /** Stop a build: a waiting one is simply dropped; a running one's script is killed on the server (keeping its log). */
+    /**
+     * Stop a build: a waiting one is simply dropped; a running one's script is killed on the server (keeping its log).
+     *
+     * @param  User  $actor
+     * @param  Build  $build
+     * @return void
+     */
     public function handle(User $actor, Build $build): void
     {
         Gate::forUser($actor)->authorize('deploy', $build->repository);

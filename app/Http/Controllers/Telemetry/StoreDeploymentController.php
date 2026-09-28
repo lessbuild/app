@@ -17,6 +17,12 @@ final class StoreDeploymentController
 {
     /**
      * Records a deployment by hand for one of the project's environments.
+     *
+     * @param  StoreDeploymentRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  RecordDeployment  $record
+     * @return RedirectResponse
      */
     public function __invoke(StoreDeploymentRequest $request, #[CurrentUser] User $user, Project $project, RecordDeployment $record): RedirectResponse
     {

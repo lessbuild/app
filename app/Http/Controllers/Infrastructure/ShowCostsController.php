@@ -16,6 +16,12 @@ final class ShowCostsController
 {
     /**
      * The costs page, with the budget for people allowed to set it.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  InfrastructureCostsQuery  $costs
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, InfrastructureCostsQuery $costs): View
     {

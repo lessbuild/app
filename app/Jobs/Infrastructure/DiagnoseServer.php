@@ -21,6 +21,8 @@ final class DiagnoseServer implements ShouldQueue
 
     /**
      * One attempt; someone can run the diagnostic again.
+     *
+     * @var int
      */
     public int $tries = 1;
 
@@ -35,6 +37,9 @@ final class DiagnoseServer implements ShouldQueue
     /**
      * Runs the checks and stores them, or records which stage failed (server state, host identity, transport or
      * response).
+     *
+     * @param  ServerDiagnostics  $diagnostics
+     * @return void
      */
     public function handle(ServerDiagnostics $diagnostics): void
     {
@@ -55,6 +60,9 @@ final class DiagnoseServer implements ShouldQueue
 
     /**
      * Records a transport failure when the job itself couldn't finish.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {
@@ -65,6 +73,7 @@ final class DiagnoseServer implements ShouldQueue
      * Stores the outcome on the snapshot, if it's still this run's, and releases its lease.
      *
      * @param  array<string, mixed>  $values
+     * @return void
      */
     private function finish(array $values): void
     {

@@ -13,6 +13,10 @@ final class EnvironmentPolicy
     /**
      * Changing an environment's deploy settings, variables, processes and resources: people who manage Deploy in its
      * project.
+     *
+     * @param  User  $user
+     * @param  Environment  $environment
+     * @return bool
      */
     public function configureDeploy(User $user, Environment $environment): bool
     {

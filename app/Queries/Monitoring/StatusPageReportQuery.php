@@ -38,6 +38,8 @@ final class StatusPageReportQuery
      * The page's overall state, each component's state and 30-day history, open and recent incidents, and its posted
      * updates split into active, upcoming maintenance and past. Archived monitors are left off.
      *
+     * @param  StatusPage  $page
+     * @param  CarbonImmutable|null  $now
      * @return Report
      */
     public function handle(StatusPage $page, ?CarbonImmutable $now = null): array
@@ -89,6 +91,9 @@ final class StatusPageReportQuery
 
     /**
      * The words shown for a state.
+     *
+     * @param  string  $state
+     * @return string
      */
     public function label(string $state): string
     {
@@ -103,7 +108,9 @@ final class StatusPageReportQuery
     /**
      * Open incidents, and ones resolved in the last 30 days, for the page's monitors.
      *
+     * @param  StatusPage  $page
      * @param  list<int>  $monitorIds
+     * @param  CarbonImmutable  $now
      * @return Collection<int, Incident>
      */
     private function incidents(StatusPage $page, array $monitorIds, CarbonImmutable $now): Collection
@@ -124,6 +131,7 @@ final class StatusPageReportQuery
      *
      * @param  list<array{state: string}>  $components
      * @param  \Illuminate\Support\Collection<int, StatusUpdate>  $activeUpdates
+     * @return string
      */
     private function overall(array $components, \Illuminate\Support\Collection $activeUpdates): string
     {

@@ -29,6 +29,10 @@ final class OpenServerTerminal
      * Open a root shell for the person, sized to their browser. Returns the session and a token the caller keeps in the
      * person's browser session: requests without it can't use the terminal.
      *
+     * @param  User  $actor
+     * @param  Server  $server
+     * @param  int  $columns
+     * @param  int  $rows
      * @return array{ServerTerminalSession, string}
      */
     public function handle(User $actor, Server $server, int $columns, int $rows): array

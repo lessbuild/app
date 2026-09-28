@@ -26,7 +26,11 @@ final class SaveProvider
     /**
      * Connect a provider, or change one. A new token, or a new type, resets the connection health. The type can't change while servers use it.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by ProviderRequest
+     * @param  Provider|null  $provider
+     * @return Provider
      */
     public function handle(Account $account, User $actor, array $data, ?Provider $provider = null): Provider
     {

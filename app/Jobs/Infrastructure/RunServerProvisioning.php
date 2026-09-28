@@ -23,11 +23,15 @@ final class RunServerProvisioning implements ShouldQueue
 
     /**
      * Starting the provisioning script can fail on a newly booted server, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 10;
 
@@ -42,6 +46,11 @@ final class RunServerProvisioning implements ShouldQueue
     /**
      * Claims the attempt, hands the one-time root password to the script and starts it in the background. The stored
      * password is cleared once the script has it; on failure the attempt is put back so the retry starts cleanly.
+     *
+     * @param  RemoteScriptRunner  $runner
+     * @param  ProvisioningScriptRenderer  $renderer
+     * @param  ServerProvisioningPlan  $plan
+     * @return void
      */
     public function handle(RemoteScriptRunner $runner, ProvisioningScriptRenderer $renderer, ServerProvisioningPlan $plan): void
     {
@@ -66,6 +75,9 @@ final class RunServerProvisioning implements ShouldQueue
 
     /**
      * Marks provisioning failed at the remote phase and clears the password.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

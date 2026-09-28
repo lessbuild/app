@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteSite
 {
-    /** Delete a site with all its events, visits, goals and reports. The tracker stops being accepted immediately. */
+    /**
+     * Delete a site with all its events, visits, goals and reports. The tracker stops being accepted immediately.
+     *
+     * @param  User  $actor
+     * @param  AnalyticsSite  $site
+     * @return void
+     */
     public function handle(User $actor, AnalyticsSite $site): void
     {
         Gate::forUser($actor)->authorize('delete', $site);

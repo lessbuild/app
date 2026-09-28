@@ -15,6 +15,10 @@ final class DashboardController
 {
     /**
      * The dashboard: the current account's projects, and whether the person may create one.
+     *
+     * @param  User  $user
+     * @param  AccountProjectsQuery  $projects
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, AccountProjectsQuery $projects): View
     {

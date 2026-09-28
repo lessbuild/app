@@ -20,6 +20,12 @@ final class StoreEnvironmentController
     /**
      * Adds an environment to the project. Rule violations are shown on the environment form rather than the project's
      * own fields.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  CreateEnvironment  $create
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, CreateEnvironment $create): RedirectResponse
     {

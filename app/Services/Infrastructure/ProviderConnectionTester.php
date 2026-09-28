@@ -18,6 +18,7 @@ final class ProviderConnectionTester
      * Asks the provider whether it accepts the credential and returns the outcome with a message safe to show. GitHub
      * App providers are tested by requesting an installation token.
      *
+     * @param  Provider  $provider
      * @return array{successful: bool, message: string, http_status: int|null}
      */
     public function test(Provider $provider): array
@@ -56,6 +57,9 @@ final class ProviderConnectionTester
 
     /**
      * The read-only API call used to test each provider type; cloud providers use a listing that scoped tokens can make.
+     *
+     * @param  ProviderType  $type
+     * @return string
      */
     public function endpoint(ProviderType $type): string
     {
@@ -73,6 +77,9 @@ final class ProviderConnectionTester
 
     /**
      * Sends the test request with the credential in the header the provider expects.
+     *
+     * @param  Provider  $provider
+     * @return Response
      */
     private function request(Provider $provider): Response
     {
@@ -87,6 +94,10 @@ final class ProviderConnectionTester
 
     /**
      * Adds the credential as a bearer token.
+     *
+     * @param  PendingRequest  $request
+     * @param  Provider  $provider
+     * @return PendingRequest
      */
     private function bearer(PendingRequest $request, Provider $provider): PendingRequest
     {

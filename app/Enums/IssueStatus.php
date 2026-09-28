@@ -13,6 +13,8 @@ enum IssueStatus: string
 
     /**
      * The status as shown on the issues list and issue page.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -21,6 +23,8 @@ enum IssueStatus: string
 
     /**
      * The badge colour for the status.
+     *
+     * @return string
      */
     public function tone(): string
     {

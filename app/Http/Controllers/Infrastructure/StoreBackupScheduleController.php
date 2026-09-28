@@ -16,6 +16,13 @@ final class StoreBackupScheduleController
 {
     /**
      * Adds a daily or weekly backup schedule to a website.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  SaveBackupSchedule  $save
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, SaveBackupSchedule $save): RedirectResponse
     {

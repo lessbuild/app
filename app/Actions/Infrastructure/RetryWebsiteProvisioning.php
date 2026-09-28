@@ -22,7 +22,14 @@ final class RetryWebsiteProvisioning
      */
     public function __construct(private readonly WebsiteServers $servers) {}
 
-    /** Set a failed website up again, or retry removing the copy on its previous server. Returns false if neither applies. */
+    /**
+     * Set a failed website up again, or retry removing the copy on its previous server. Returns false if neither applies.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Website  $website
+     * @return bool
+     */
     public function handle(Account $account, User $actor, Website $website): bool
     {
         Gate::forUser($actor)->authorize('update', $website);

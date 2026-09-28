@@ -13,6 +13,10 @@ final class ChangePassword
 {
     /**
      * Sets a new password and rotates the remember token, which signs out "remember me" cookies on other devices.
+     *
+     * @param  User  $user
+     * @param  string  $password
+     * @return void
      */
     public function handle(User $user, #[SensitiveParameter] string $password): void
     {

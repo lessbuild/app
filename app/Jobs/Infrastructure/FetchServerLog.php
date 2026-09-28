@@ -21,11 +21,15 @@ final class FetchServerLog implements ShouldQueue
 
     /**
      * Reading a log over SSH can fail briefly, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 10;
 
@@ -39,6 +43,9 @@ final class FetchServerLog implements ShouldQueue
 
     /**
      * Reads the log's tail from an active server into its snapshot.
+     *
+     * @param  ServerLogs  $logs
+     * @return void
      */
     public function handle(ServerLogs $logs): void
     {
@@ -58,6 +65,9 @@ final class FetchServerLog implements ShouldQueue
 
     /**
      * Marks the snapshot failed with the reason.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

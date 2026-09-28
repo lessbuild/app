@@ -17,7 +17,9 @@ final class AuthenticateIngestToken
      * its project must have Monitoring on. `last_used_at` is written at most once a minute, so busy keys don't cause a
      * write per request.
      *
+     * @param  Request  $request
      * @param  Closure(Request): Response  $next
+     * @return Response
      */
     public function handle(Request $request, Closure $next): Response
     {

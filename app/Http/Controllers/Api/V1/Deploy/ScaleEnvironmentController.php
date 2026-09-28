@@ -18,6 +18,14 @@ final class ScaleEnvironmentController
 {
     /**
      * Sets the replica count, validated against the environment's minimum and maximum (202).
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $environment
+     * @param  DeployApiQuery  $query
+     * @param  ScaleEnvironment  $scale
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $environment, DeployApiQuery $query, ScaleEnvironment $scale): JsonResponse
     {

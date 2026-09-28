@@ -16,6 +16,13 @@ final class UpdateAlertEscalationsController
 {
     /**
      * Saves a rule's escalation steps.
+     *
+     * @param  AlertEscalationsRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertRule  $rule
+     * @param  UpdateAlertEscalations  $update
+     * @return RedirectResponse
      */
     public function __invoke(AlertEscalationsRequest $request, #[CurrentUser] User $user, Project $project, AlertRule $rule, UpdateAlertEscalations $update): RedirectResponse
     {

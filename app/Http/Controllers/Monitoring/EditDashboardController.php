@@ -15,6 +15,12 @@ final class EditDashboardController
 {
     /**
      * The dashboard form, filled in.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Dashboard  $dashboard
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Dashboard $dashboard, ProjectOverviewQuery $overview): View
     {

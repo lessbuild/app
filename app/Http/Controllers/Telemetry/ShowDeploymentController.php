@@ -19,6 +19,15 @@ final class ShowDeploymentController
 {
     /**
      * A deployment's page comparing equal windows before and after it.
+     *
+     * @param  SearchReleasesRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Deployment  $deployment
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ReleaseMetricsQuery  $metrics
+     * @param  TelemetryRedactor  $redactor
+     * @return View
      */
     public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, Deployment $deployment, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics, TelemetryRedactor $redactor): View
     {

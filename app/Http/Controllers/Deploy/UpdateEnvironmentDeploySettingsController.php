@@ -16,6 +16,13 @@ final class UpdateEnvironmentDeploySettingsController
 {
     /**
      * Saves how an environment's deploys run: strategy, observation, runtime, commands and scaling.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  UpdateEnvironmentDeploySettings  $update
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, UpdateEnvironmentDeploySettings $update): RedirectResponse
     {

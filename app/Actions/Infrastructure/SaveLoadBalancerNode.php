@@ -24,7 +24,11 @@ final class SaveLoadBalancerNode
     /**
      * Send traffic to a server in the account (new node), or change a node's port, weight or whether it's in rotation.
      *
+     * @param  User  $actor
+     * @param  LoadBalancer  $balancer
      * @param  array{server_id?: int|string, upstream_port: int|string, weight: int|string, is_enabled?: bool|string|null}  $data
+     * @param  LoadBalancerNode|null  $node
+     * @return LoadBalancerNode
      */
     public function handle(User $actor, LoadBalancer $balancer, array $data, ?LoadBalancerNode $node = null): LoadBalancerNode
     {

@@ -15,7 +15,11 @@ final class SaveServerAlertRule
     /**
      * Add an alert on a server metric, for one server or (with `$server` null) every server in the account.
      *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server|null  $server
      * @param  array{name: string, metric: string, operator: string, threshold: float|int|string, consecutive_breaches: int|string, cooldown_minutes: int|string}  $data
+     * @return ServerAlertRule
      */
     public function handle(Account $account, User $actor, ?Server $server, array $data): ServerAlertRule
     {

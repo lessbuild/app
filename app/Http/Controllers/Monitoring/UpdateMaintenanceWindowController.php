@@ -16,6 +16,13 @@ final class UpdateMaintenanceWindowController
 {
     /**
      * Saves a maintenance window.
+     *
+     * @param  MaintenanceWindowRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  MaintenanceWindow  $window
+     * @param  SaveMaintenanceWindow  $save
+     * @return RedirectResponse
      */
     public function __invoke(MaintenanceWindowRequest $request, #[CurrentUser] User $user, Project $project, MaintenanceWindow $window, SaveMaintenanceWindow $save): RedirectResponse
     {

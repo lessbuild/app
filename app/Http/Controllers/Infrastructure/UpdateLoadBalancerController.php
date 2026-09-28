@@ -16,6 +16,13 @@ final class UpdateLoadBalancerController
 {
     /**
      * Saves a load balancer.
+     *
+     * @param  LoadBalancerRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  LoadBalancer  $loadBalancer
+     * @param  SaveLoadBalancer  $save
+     * @return RedirectResponse
      */
     public function __invoke(LoadBalancerRequest $request, #[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, SaveLoadBalancer $save): RedirectResponse
     {

@@ -24,6 +24,7 @@ final class ServerAlertChanged extends InboxNotification
     /**
      * By email so someone hears about it away from the app, and in the inbox.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -33,6 +34,9 @@ final class ServerAlertChanged extends InboxNotification
 
     /**
      * The title and body, with a link to the server.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -41,6 +45,8 @@ final class ServerAlertChanged extends InboxNotification
 
     /**
      * Names the rule and server, and says "recovered" when it's back.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -51,6 +57,8 @@ final class ServerAlertChanged extends InboxNotification
 
     /**
      * The metric's value against the threshold, or the value it's back to.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -62,7 +70,11 @@ final class ServerAlertChanged extends InboxNotification
             : __(':metric is back to :value.', ['metric' => $metric, 'value' => $value]);
     }
 
-    /** The server's page in the first project with Infrastructure on; servers belong to the account, not a project. */
+    /**
+     * The server's page in the first project with Infrastructure on; servers belong to the account, not a project.
+     *
+     * @return string
+     */
     protected function url(): string
     {
         $project = $this->server->account->projects()->whereHas('enabledServices', fn ($query) => $query->where('service', 'infrastructure'))->orderBy('created_at')->first();
@@ -72,6 +84,8 @@ final class ServerAlertChanged extends InboxNotification
 
     /**
      * The server's account, so the inbox shows it in the right account.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

@@ -16,6 +16,13 @@ final class StoreDatabaseUserController
 {
     /**
      * Adds an extra database user and shows its password once.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  CreateDatabaseUser  $create
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, CreateDatabaseUser $create): RedirectResponse
     {

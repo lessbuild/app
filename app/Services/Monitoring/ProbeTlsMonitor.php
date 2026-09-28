@@ -23,6 +23,9 @@ final class ProbeTlsMonitor
     /**
      * Connects to the host, verifies its certificate and reports whether it's valid, not yet valid, expired or expiring
      * within the warning period, with its dates and fingerprint.
+     *
+     * @param  Monitor  $monitor
+     * @return MonitorObservation
      */
     public function probe(Monitor $monitor): MonitorObservation
     {

@@ -23,6 +23,9 @@ final class MetricAnomalyAlertObservation
      * Scores the latest sample in the window against the series' recent history, breaching when it's anomalous at the
      * rule's threshold. Unknown while there are too few valid samples or the baseline is still warming up.
      *
+     * @param  AlertRule  $rule
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return array{state: string, value: float|null, samples: int, reason: string|null}
      */
     public function measure(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array

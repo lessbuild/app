@@ -32,7 +32,11 @@ final class SaveAlertDestination
     /**
      * Create or change where alerts go: an account member's email, a signed webhook, Slack, Teams, Discord or PagerDuty.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array<string, mixed>  $data
+     * @param  AlertDestination|null  $destination
+     * @return AlertDestination
      */
     public function handle(Account $account, User $actor, array $data, ?AlertDestination $destination = null): AlertDestination
     {

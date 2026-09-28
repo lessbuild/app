@@ -17,6 +17,8 @@ class RunPostDeploymentCommandsScript extends RepositoryHookScript
     /**
      * Runs the repository's post-deployment commands, preceded by preview initialisation. Tests can pass their own
      * initialisation script.
+     *
+     * @param  PreviewInitializationScript|null  $previewInitialization
      */
     public function __construct(?PreviewInitializationScript $previewInitialization = null)
     {
@@ -25,6 +27,8 @@ class RunPostDeploymentCommandsScript extends RepositoryHookScript
 
     /**
      * Runs a preview's one-time initialisation before the repository's own post-deployment commands.
+     *
+     * @var PreviewInitializationScript
      */
     private readonly PreviewInitializationScript $previewInitialization;
 

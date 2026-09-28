@@ -15,6 +15,12 @@ final class UpdateInfrastructureBudgetController
 {
     /**
      * Sets or clears the account's monthly infrastructure budget.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SetInfrastructureBudget  $set
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, SetInfrastructureBudget $set): RedirectResponse
     {

@@ -16,6 +16,8 @@ final class PlatformServiceProvider extends ServiceProvider
     /**
      * Registers the service registry as a singleton holding Deploy, Infrastructure, Monitoring and Analytics, in the
      * order the shell and billing pages list them.
+     *
+     * @return void
      */
     public function register(): void
     {

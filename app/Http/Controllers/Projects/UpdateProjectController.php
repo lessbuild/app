@@ -15,6 +15,12 @@ final class UpdateProjectController
 {
     /**
      * Saves the project's name and description.
+     *
+     * @param  ProjectRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  UpdateProject  $update
+     * @return RedirectResponse
      */
     public function __invoke(ProjectRequest $request, #[CurrentUser] User $user, Project $project, UpdateProject $update): RedirectResponse
     {

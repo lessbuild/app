@@ -18,6 +18,14 @@ final class ReplaceEnvironmentVariablesController
 {
     /**
      * Replaces the variables and returns how many there are now.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $environment
+     * @param  DeployApiQuery  $query
+     * @param  ReplaceEnvironmentVariables  $replace
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $environment, DeployApiQuery $query, ReplaceEnvironmentVariables $replace): JsonResponse
     {

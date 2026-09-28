@@ -25,6 +25,7 @@ final class IncidentAssigneeSubscriber
     /**
      * The membership changes that can take away someone's access to incidents.
      *
+     * @param  Dispatcher  $events
      * @return array<class-string, string>
      */
     public function subscribe(Dispatcher $events): array
@@ -38,6 +39,9 @@ final class IncidentAssigneeSubscriber
 
     /**
      * Unassigns every incident in the account from a member who left or was removed.
+     *
+     * @param  MemberRemoved  $event
+     * @return void
      */
     public function memberRemoved(MemberRemoved $event): void
     {
@@ -46,6 +50,9 @@ final class IncidentAssigneeSubscriber
 
     /**
      * Unassigns a member whose new role or service list means they can no longer be assigned incidents.
+     *
+     * @param  MemberRoleChanged|MemberServiceAccessChanged  $event
+     * @return void
      */
     public function accessChanged(MemberRoleChanged|MemberServiceAccessChanged $event): void
     {

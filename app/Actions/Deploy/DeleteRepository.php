@@ -12,7 +12,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteRepository
 {
-    /** Stop deploying from a repository. Its builds stay in the history; the website and its releases aren't touched. */
+    /**
+     * Stop deploying from a repository. Its builds stay in the history; the website and its releases aren't touched.
+     *
+     * @param  User  $actor
+     * @param  Repository  $repository
+     * @return void
+     */
     public function handle(User $actor, Repository $repository): void
     {
         Gate::forUser($actor)->authorize('delete', $repository);

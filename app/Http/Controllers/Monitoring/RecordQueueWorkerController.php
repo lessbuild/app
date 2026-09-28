@@ -13,6 +13,10 @@ final class RecordQueueWorkerController
 {
     /**
      * Records the worker heartbeat for the monitor the middleware authenticated and returns its receipt, never cached.
+     *
+     * @param  StoreQueueWorkerRequest  $request
+     * @param  RecordQueueWorker  $workers
+     * @return JsonResponse
      */
     public function __invoke(StoreQueueWorkerRequest $request, RecordQueueWorker $workers): JsonResponse
     {

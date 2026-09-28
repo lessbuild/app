@@ -18,6 +18,11 @@ final class RecordBuildCallbackController
     /**
      * Records a deploy script's report (a stage reached, a failure, a log chunk or the deployed revision). The URL's
      * signature, checked by middleware, proves it came from the script.
+     *
+     * @param  Request  $request
+     * @param  string  $build
+     * @param  string  $event
+     * @return Response
      */
     public function __invoke(Request $request, string $build, string $event): Response
     {

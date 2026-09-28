@@ -23,6 +23,12 @@ final class EnableProjectServiceController
 
     /**
      * Turns a service on in the project and opens it.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $service
+     * @param  EnableService  $enable
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $service, EnableService $enable): RedirectResponse
     {
@@ -34,6 +40,9 @@ final class EnableProjectServiceController
 
     /**
      * The service named in the URL; unknown keys are a 404.
+     *
+     * @param  string  $key
+     * @return PlatformService
      */
     private function service(string $key): PlatformService
     {

@@ -15,6 +15,11 @@ final class CreateServerImportController
 {
     /**
      * The form for importing an existing server.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {

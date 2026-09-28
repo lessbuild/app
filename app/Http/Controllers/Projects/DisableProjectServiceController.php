@@ -23,6 +23,12 @@ final class DisableProjectServiceController
 
     /**
      * Turns a service off in the project. Its data is kept for when it's turned back on.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $service
+     * @param  DisableService  $disable
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $service, DisableService $disable): RedirectResponse
     {
@@ -34,6 +40,9 @@ final class DisableProjectServiceController
 
     /**
      * The service named in the URL; unknown keys are a 404.
+     *
+     * @param  string  $key
+     * @return PlatformService
      */
     private function service(string $key): PlatformService
     {

@@ -16,6 +16,11 @@ final class ShowMeController
 {
     /**
      * Returns the token's person and account.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  DeployApiQuery  $query
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, DeployApiQuery $query): JsonResponse
     {

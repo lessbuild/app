@@ -84,6 +84,9 @@ class Account extends Model
 
     /**
      * The person's role in the account, or null when they aren't a member.
+     *
+     * @param  User  $user
+     * @return AccountRole|null
      */
     public function roleOf(User $user): ?AccountRole
     {
@@ -92,6 +95,8 @@ class Account extends Model
 
     /**
      * How many owners the account has, which must never drop to zero.
+     *
+     * @return int
      */
     public function ownerCount(): int
     {

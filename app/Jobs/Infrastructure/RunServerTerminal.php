@@ -27,10 +27,16 @@ final class RunServerTerminal implements ShouldQueue
 
     /**
      * One attempt: a terminal is a live connection, and reconnecting would lose what was on screen.
+     *
+     * @var int
      */
     public int $tries = 1;
 
-    /** The session's time limit plus room to hang up. */
+    /**
+     * The session's time limit plus room to hang up.
+     *
+     * @var int
+     */
     public int $timeout;
 
     /**
@@ -47,6 +53,10 @@ final class RunServerTerminal implements ShouldQueue
 
     /**
      * Opens the shell, marks the session connected, relays until it ends, and records why it ended.
+     *
+     * @param  ServerTerminal  $terminals
+     * @param  TerminalFrames  $frames
+     * @return void
      */
     public function handle(ServerTerminal $terminals, TerminalFrames $frames): void
     {
@@ -71,6 +81,9 @@ final class RunServerTerminal implements ShouldQueue
 
     /**
      * Closes the session as failed when the worker itself stopped.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {
@@ -84,6 +97,9 @@ final class RunServerTerminal implements ShouldQueue
      * Moves keystrokes to the shell and output to the browser until the session is closed, expires or the shell exits,
      * heartbeating every five seconds so a dead worker can be noticed.
      *
+     * @param  ServerTerminalSession  $session
+     * @param  TerminalConnection  $connection
+     * @param  TerminalFrames  $frames
      * @return string why it ended
      */
     private function relay(ServerTerminalSession $session, TerminalConnection $connection, TerminalFrames $frames): string
@@ -118,6 +134,11 @@ final class RunServerTerminal implements ShouldQueue
 
     /**
      * Closes the session with a status and short reason, unless it's already closed.
+     *
+     * @param  ServerTerminalSession  $session
+     * @param  string  $status
+     * @param  string  $reason
+     * @return void
      */
     private function finish(ServerTerminalSession $session, string $status, string $reason): void
     {

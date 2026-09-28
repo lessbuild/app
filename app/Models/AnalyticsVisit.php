@@ -21,6 +21,8 @@ class AnalyticsVisit extends Model
 {
     /**
      * Stored in `analytics_visits`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_visits';
 

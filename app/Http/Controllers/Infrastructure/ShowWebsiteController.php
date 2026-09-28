@@ -24,6 +24,15 @@ final class ShowWebsiteController
 {
     /**
      * A website's page, in tabs: overview, domains, database, backups, and settings for people who may change it.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  ProjectOverviewQuery  $overview
+     * @param  WebsitesQuery  $websites
+     * @param  BackupsQuery  $backups
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, ProjectOverviewQuery $overview, WebsitesQuery $websites, BackupsQuery $backups): View
     {

@@ -20,6 +20,14 @@ final class CreateAlertRuleController
 {
     /**
      * The new alert rule form, with the project's SLOs and metric series to choose from and the plan's features.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectAlertRulesQuery  $rules
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules, Entitlements $entitlements): View
     {

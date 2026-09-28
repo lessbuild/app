@@ -12,7 +12,11 @@ final class WarnAboutExpiringTokens
 {
     public const WARN_DAYS_BEFORE = 7;
 
-    /** Tell each token's owner once, a week before it expires. Returns how many owners were told. */
+    /**
+     * Tell each token's owner once, a week before it expires. Returns how many owners were told.
+     *
+     * @return int
+     */
     public function handle(): int
     {
         $warned = 0;

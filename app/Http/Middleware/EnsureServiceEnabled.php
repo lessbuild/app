@@ -16,6 +16,11 @@ final class EnsureServiceEnabled
     /**
      * Lets the request through when the person may use the service and it's on in the project; sends them to its enable
      * page when it's off, and refuses them otherwise.
+     *
+     * @param  Request  $request
+     * @param  Closure  $next
+     * @param  string  $service
+     * @return Response
      */
     public function handle(Request $request, Closure $next, string $service): Response
     {

@@ -49,6 +49,8 @@ final class Deployment extends Model
      * Limits a query to deployments in the account's environments whose release also belongs to the account.
      *
      * @param  Builder<Deployment>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void

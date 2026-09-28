@@ -21,6 +21,7 @@ final class BuildAwaitingApproval extends InboxNotification
     /**
      * By email, since a deploy may be waiting on it, and in the inbox.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -30,6 +31,9 @@ final class BuildAwaitingApproval extends InboxNotification
 
     /**
      * The title and body, with a link to review the deploy.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -38,6 +42,8 @@ final class BuildAwaitingApproval extends InboxNotification
 
     /**
      * Names the deploy and the environment it's for.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -46,6 +52,8 @@ final class BuildAwaitingApproval extends InboxNotification
 
     /**
      * Who asked for it and what: a promotion from another environment, or a deploy of a repository.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -58,6 +66,8 @@ final class BuildAwaitingApproval extends InboxNotification
 
     /**
      * The deploy's page, where it can be approved or rejected.
+     *
+     * @return string
      */
     protected function url(): string
     {
@@ -66,6 +76,8 @@ final class BuildAwaitingApproval extends InboxNotification
 
     /**
      * The account of the website being deployed to.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

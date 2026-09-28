@@ -50,6 +50,8 @@ class MonitorCheck extends Model
 
     /**
      * Queue bookkeeping and the private evidence never leave the server in serialised form.
+     *
+     * @var list<string>
      */
     protected $hidden = ['processing_token', 'queue_job_uuid', 'evidence', 'scheduled_slot'];
 

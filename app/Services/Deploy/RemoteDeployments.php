@@ -18,7 +18,12 @@ class RemoteDeployments
      */
     public function __construct(private readonly ServerShell $shell) {}
 
-    /** Kill the script's process group (only if it's still that script) and return the log it had written. */
+    /**
+     * Kill the script's process group (only if it's still that script) and return the log it had written.
+     *
+     * @param  Build  $build
+     * @return string|null
+     */
     public function stop(Build $build): ?string
     {
         $path = $build->remote_process_path;
@@ -56,7 +61,12 @@ class RemoteDeployments
         return $result->output === '' ? null : $result->output;
     }
 
-    /** Point `current` at the build's retained release, reload PHP-FPM, and put the previous one back if the health check fails. */
+    /**
+     * Point `current` at the build's retained release, reload PHP-FPM, and put the previous one back if the health check fails.
+     *
+     * @param  Build  $build
+     * @return string
+     */
     public function activate(Build $build): string
     {
         $website = $build->website;

@@ -22,6 +22,12 @@ final class NativeTlsCertificateInspector implements TlsCertificateInspector
     /**
      * Opens a TLS connection only (no HTTP request is sent) to the pinned public address, verifying the certificate
      * chain and hostname, and reads the leaf certificate.
+     *
+     * @param  string  $hostname
+     * @param  string  $address
+     * @param  int  $port
+     * @param  int  $timeoutMilliseconds
+     * @return TlsCertificateInspection
      */
     public function inspect(string $hostname, string $address, int $port, int $timeoutMilliseconds): TlsCertificateInspection
     {

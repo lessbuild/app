@@ -16,6 +16,13 @@ final class UpdateDeploymentControlsController
 {
     /**
      * Locks or unlocks deploys to an environment and sets the window deploys may run in.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  UpdateDeploymentControls  $update
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, UpdateDeploymentControls $update): RedirectResponse
     {

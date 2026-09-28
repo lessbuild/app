@@ -10,6 +10,8 @@ final class CollectEventsRequest extends FormRequest
 {
     /**
      * Refuses bodies over 32 KiB before anything is parsed.
+     *
+     * @return void
      */
     protected function prepareForValidation(): void
     {
@@ -18,6 +20,8 @@ final class CollectEventsRequest extends FormRequest
 
     /**
      * Always allowed: the collection endpoint is public, and the site and origin are checked by the controller.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {

@@ -42,6 +42,8 @@ class AppServiceProvider extends ServiceProvider
 {
     /**
      * Register any application services.
+     *
+     * @return void
      */
     public function register(): void
     {
@@ -59,6 +61,8 @@ class AppServiceProvider extends ServiceProvider
 
     /**
      * Bootstrap any application services.
+     *
+     * @return void
      */
     public function boot(): void
     {
@@ -95,6 +99,9 @@ class AppServiceProvider extends ServiceProvider
      * The rate-limit key for telemetry ingest. Requests are grouped by a hash of their ingest token (bearer or
      * `X-Beacon-Token`), so one noisy key can't exhaust another's allowance and the raw token never appears in the
      * cache; tokenless requests fall back to the client IP.
+     *
+     * @param  Request  $request
+     * @return string
      */
     private static function ingestKey(Request $request): string
     {

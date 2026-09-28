@@ -14,6 +14,10 @@ class TerminalFrames
 {
     /**
      * Queues keystrokes for the terminal's worker with the next input sequence number, which is returned.
+     *
+     * @param  ServerTerminalSession  $session
+     * @param  string  $input
+     * @return int
      */
     public function pushInput(ServerTerminalSession $session, string $input): int
     {
@@ -27,7 +31,12 @@ class TerminalFrames
         });
     }
 
-    /** Take (and delete) the waiting input, oldest first. */
+    /**
+     * Take (and delete) the waiting input, oldest first.
+     *
+     * @param  ServerTerminalSession  $session
+     * @return string
+     */
     public function takeInput(ServerTerminalSession $session): string
     {
         $frames = ServerTerminalFrame::query()->where('server_terminal_session_id', $session->id)->where('direction', 'in')->orderBy('sequence')->get();
@@ -39,6 +48,10 @@ class TerminalFrames
     /**
      * Queues output for the browser in frames of the configured size. When too much output is waiting because the
      * browser stopped collecting it, the terminal is ended instead.
+     *
+     * @param  ServerTerminalSession  $session
+     * @param  string  $output
+     * @return void
      *
      * @throws RuntimeException when the browser has stopped collecting output
      */
@@ -64,6 +77,9 @@ class TerminalFrames
     /**
      * Output after `$after`; frames up to `$after` have reached the browser and are deleted.
      *
+     * @param  ServerTerminalSession  $session
+     * @param  int  $after
+     * @param  int  $limit
      * @return list<array{sequence: int, data: string}>
      */
     public function output(ServerTerminalSession $session, int $after, int $limit = 100): array
@@ -77,6 +93,12 @@ class TerminalFrames
 
     /**
      * Stores one frame.
+     *
+     * @param  ServerTerminalSession  $session
+     * @param  string  $direction
+     * @param  int  $sequence
+     * @param  string  $payload
+     * @return void
      */
     private function frame(ServerTerminalSession $session, string $direction, int $sequence, string $payload): void
     {

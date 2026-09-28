@@ -32,6 +32,7 @@ final class StatusUpdateNotification extends Notification implements ShouldQueue
     /**
      * Email only: subscribers are addresses, not users.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -42,6 +43,9 @@ final class StatusUpdateNotification extends Notification implements ShouldQueue
     /**
      * The update with its status and any root cause, remediation and follow-up, a link to the page, and one-click
      * unsubscribe headers so mail clients can offer it.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {

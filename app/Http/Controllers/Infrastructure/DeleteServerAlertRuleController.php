@@ -16,6 +16,13 @@ final class DeleteServerAlertRuleController
 {
     /**
      * Removes a server alert rule.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $rule
+     * @param  DeleteServerAlertRule  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $rule, DeleteServerAlertRule $delete): RedirectResponse
     {

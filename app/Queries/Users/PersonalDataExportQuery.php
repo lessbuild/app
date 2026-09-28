@@ -23,6 +23,7 @@ final class PersonalDataExportQuery
     /**
      * Their profile, memberships, connected providers, passkeys, API tokens (never secrets), sign-ins and activity.
      *
+     * @param  User  $user
      * @return array<string, mixed>
      */
     public function handle(User $user): array

@@ -25,7 +25,10 @@ final class SaveEnvironmentResource
      * Add or change a resource. Managed MySQL uses the website's own database; managed Redis and Valkey run on the server;
      * anything else is external and described by pasted KEY=value variables. Its variables go into `.env` on deploy.
      *
+     * @param  User  $actor
+     * @param  Environment  $environment
      * @param  array{name: string, type: string, is_managed: bool, variables: string|null}  $data
+     * @return EnvironmentResource
      */
     public function handle(User $actor, Environment $environment, array $data): EnvironmentResource
     {

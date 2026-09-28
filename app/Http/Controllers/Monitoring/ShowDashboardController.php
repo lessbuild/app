@@ -17,6 +17,13 @@ final class ShowDashboardController
 {
     /**
      * A dashboard with its widgets filled in.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Dashboard  $dashboard
+     * @param  ProjectOverviewQuery  $overview
+     * @param  DashboardReportQuery  $report
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Dashboard $dashboard, ProjectOverviewQuery $overview, DashboardReportQuery $report): View
     {

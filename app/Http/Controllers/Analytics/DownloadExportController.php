@@ -14,6 +14,10 @@ final class DownloadExportController
 {
     /**
      * Downloads a finished export by its secret token. Expired or unfinished exports are gone (410).
+     *
+     * @param  Project  $project
+     * @param  string  $token
+     * @return StreamedResponse
      */
     public function __invoke(Project $project, string $token): StreamedResponse
     {

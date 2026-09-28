@@ -41,6 +41,9 @@ class MaintenanceWindow extends Model
      * Limits a query to the account's windows in effect at a moment.
      *
      * @param  Builder<MaintenanceWindow>  $query
+     * @param  Account  $account
+     * @param  CarbonImmutable  $at
+     * @return void
      */
     #[Scope]
     protected function activeAt(Builder $query, Account $account, CarbonImmutable $at): void

@@ -21,6 +21,8 @@ enum ApiScope: string
 
     /**
      * The part of the platform the scope covers, as shown on the token form.
+     *
+     * @return string
      */
     public function group(): string
     {
@@ -36,13 +38,19 @@ enum ApiScope: string
 
     /**
      * How the scope reads on the token form and token list, such as "Deploy: read and write".
+     *
+     * @return string
      */
     public function label(): string
     {
         return str_ends_with($this->value, ':write') ? __(':group: read and write', ['group' => $this->group()]) : __(':group: read', ['group' => $this->group()]);
     }
 
-    /** Write access implies read access to the same area. */
+    /**
+     * Write access implies read access to the same area.
+     *
+     * @return ApiScope|null
+     */
     public function implied(): ?self
     {
         return str_ends_with($this->value, ':write') ? self::tryFrom(str_replace(':write', ':read', $this->value)) : null;

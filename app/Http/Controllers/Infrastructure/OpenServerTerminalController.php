@@ -18,6 +18,13 @@ final class OpenServerTerminalController
     /**
      * Opens a terminal at the browser's window size and keeps its token in this browser's session, so only this browser
      * can type into it.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  OpenServerTerminal  $open
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, OpenServerTerminal $open): RedirectResponse
     {

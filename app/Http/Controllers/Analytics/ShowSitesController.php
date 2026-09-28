@@ -15,6 +15,12 @@ final class ShowSitesController
 {
     /**
      * The project's analytics sites.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectSitesQuery  $sites
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites): View
     {

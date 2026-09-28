@@ -15,6 +15,13 @@ final class DeleteBackupScheduleController
 {
     /**
      * Removes one of a website's backup schedules.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  string  $schedule
+     * @param  DeleteBackupSchedule  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $schedule, DeleteBackupSchedule $delete): RedirectResponse
     {

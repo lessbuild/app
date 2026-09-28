@@ -16,6 +16,8 @@ final class RemovedFromAccount extends InboxNotification
 
     /**
      * Which account they were removed from.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -24,6 +26,8 @@ final class RemovedFromAccount extends InboxNotification
 
     /**
      * Who removed them.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -32,6 +36,8 @@ final class RemovedFromAccount extends InboxNotification
 
     /**
      * Their dashboard, since the account's pages are closed to them now.
+     *
+     * @return string
      */
     protected function url(): string
     {

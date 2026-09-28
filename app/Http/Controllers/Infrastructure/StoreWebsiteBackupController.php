@@ -17,6 +17,13 @@ final class StoreWebsiteBackupController
 {
     /**
      * Starts a backup now, unless one is already running.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  QueueWebsiteBackup  $queue
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, QueueWebsiteBackup $queue): RedirectResponse
     {

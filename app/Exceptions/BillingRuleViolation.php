@@ -9,6 +9,8 @@ final class BillingRuleViolation extends RuleViolation
 {
     /**
      * The requested tier isn't in the service's billing catalogue.
+     *
+     * @return BillingRuleViolation
      */
     public static function unknown(): self
     {
@@ -17,6 +19,8 @@ final class BillingRuleViolation extends RuleViolation
 
     /**
      * The tier exists in the catalogue but has no price yet, so it can't be chosen.
+     *
+     * @return BillingRuleViolation
      */
     public static function notOnSale(): self
     {
@@ -25,6 +29,8 @@ final class BillingRuleViolation extends RuleViolation
 
     /**
      * No payment provider is configured in this environment, so only free tiers can be chosen.
+     *
+     * @return BillingRuleViolation
      */
     public static function unavailable(): self
     {

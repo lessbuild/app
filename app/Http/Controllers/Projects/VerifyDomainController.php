@@ -14,6 +14,12 @@ final class VerifyDomainController
 {
     /**
      * Looks for the domain's TXT record now and says whether it was found.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $domain
+     * @param  VerifyDomain  $verify
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $domain, VerifyDomain $verify): RedirectResponse
     {

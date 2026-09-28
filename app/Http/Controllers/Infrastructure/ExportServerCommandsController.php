@@ -15,6 +15,10 @@ final class ExportServerCommandsController
 {
     /**
      * Streams the command history as a UTF-8 CSV, newest first.
+     *
+     * @param  Project  $project
+     * @param  Server  $server
+     * @return StreamedResponse
      */
     public function __invoke(Project $project, Server $server): StreamedResponse
     {

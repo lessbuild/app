@@ -15,6 +15,13 @@ final class RestoreWebsiteBackupController
 {
     /**
      * Starts restoring a website from a backup; a failed restore puts the website back as it was.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  string  $backup
+     * @param  RestoreWebsiteBackup  $restore
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $backup, RestoreWebsiteBackup $restore): RedirectResponse
     {

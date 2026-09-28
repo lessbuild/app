@@ -21,6 +21,10 @@ final class LoadBalancerPolicy
     /**
      * Creating a load balancer: the account's settings managers, on a Deploy plan with high availability. The denial
      * says which plan is needed.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return Response
      */
     public function create(User $user, Account|Project $scope): Response
     {
@@ -34,7 +38,13 @@ final class LoadBalancerPolicy
             : Response::deny(__('Load balancers come with the Business Deploy plan and above.'));
     }
 
-    /** Changing and removing the account's load balancers (works on any plan). */
+    /**
+     * Changing and removing the account's load balancers (works on any plan).
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
+     */
     public function manageAny(User $user, Project $project): bool
     {
         return $this->allows($user, $project->account_id, AccountPermission::ManageSettings);
@@ -42,6 +52,10 @@ final class LoadBalancerPolicy
 
     /**
      * Changing one of the account's load balancers: the account's settings managers, on any plan.
+     *
+     * @param  User  $user
+     * @param  LoadBalancer  $balancer
+     * @return bool
      */
     public function update(User $user, LoadBalancer $balancer): bool
     {
@@ -50,6 +64,10 @@ final class LoadBalancerPolicy
 
     /**
      * Removing a load balancer, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  LoadBalancer  $balancer
+     * @return bool
      */
     public function delete(User $user, LoadBalancer $balancer): bool
     {

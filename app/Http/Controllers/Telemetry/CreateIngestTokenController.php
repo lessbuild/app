@@ -16,6 +16,13 @@ final class CreateIngestTokenController
 {
     /**
      * Creates an ingest key for one of the project's environments, optionally expiring, and shows it once.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $environment
+     * @param  CreateIngestToken  $create
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $environment, CreateIngestToken $create): RedirectResponse
     {

@@ -15,6 +15,8 @@ final class IssuesQuery
      * The project's issues matching the issues page's status, severity and ownership filters and text search over title
      * and location.
      *
+     * @param  Project  $project
+     * @param  User  $user
      * @param  array<string, mixed>  $filters
      * @return Builder<Issue>
      */

@@ -22,6 +22,16 @@ final class ShowMetricSeriesController
     /**
      * A metric series chart over the last hour, day or week. Asking for a rate on a series that isn't a counter is a
      * 422.
+     *
+     * @param  SearchMetricsRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  MetricSeries  $series
+     * @param  ProjectOverviewQuery  $overview
+     * @param  MetricChart  $charts
+     * @param  TelemetryRedactor  $redactor
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(SearchMetricsRequest $request, #[CurrentUser] User $user, Project $project, MetricSeries $series, ProjectOverviewQuery $overview, MetricChart $charts, TelemetryRedactor $redactor, Entitlements $entitlements): View
     {

@@ -23,6 +23,7 @@ final class InvoicesQuery
      * The account's recent invoices, or an empty list before it has a customer. When the provider can't be reached,
      * null, so the page can say so instead of showing none.
      *
+     * @param  Account  $account
      * @return list<InvoiceSummary>|null null when invoices can't be loaded right now
      */
     public function handle(Account $account): ?array

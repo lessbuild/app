@@ -21,6 +21,7 @@ final class ConfigurationDocument
      * Parses a version 2 document of at most 50 KB, refusing YAML aliases and deep nesting before anything expands, and
      * validates its shape and every name, runtime, process and resource rule.
      *
+     * @param  string  $yaml
      * @return array{version: int, environments: array<string, array<string, mixed>>, remove?: array{environments?: list<string>}}
      */
     public function parse(string $yaml): array
@@ -105,7 +106,9 @@ final class ConfigurationDocument
      * requirements per type, single-replica schedulers, and managed resources (no variable references, no managed object
      * storage, at most one managed Valkey).
      *
+     * @param  mixed  $slug
      * @param  array<string, mixed>  $environment
+     * @return void
      */
     private function check(mixed $slug, array $environment): void
     {
@@ -155,6 +158,11 @@ final class ConfigurationDocument
 
     /**
      * Validates a name: lowercase slugs for objects, upper-case keys for variables.
+     *
+     * @param  mixed  $name
+     * @param  bool  $variable
+     * @param  int  $maximum
+     * @return void
      */
     private function name(mixed $name, bool $variable = false, int $maximum = 100): void
     {
@@ -167,6 +175,7 @@ final class ConfigurationDocument
      * Validates an `adopt` flag is a boolean.
      *
      * @param  array<mixed>  $settings
+     * @return void
      */
     private function adoption(array $settings): void
     {
@@ -175,7 +184,12 @@ final class ConfigurationDocument
         }
     }
 
-    /** Bound the expanded data (10,000 nodes, depth 12) before wildcard validation rules expand it. */
+    /**
+     * Bound the expanded data (10,000 nodes, depth 12) before wildcard validation rules expand it.
+     *
+     * @param  mixed  $document
+     * @return void
+     */
     private function bound(mixed $document): void
     {
         $pending = [[$document, 0]];
@@ -193,6 +207,8 @@ final class ConfigurationDocument
 
     /**
      * Refuses the document with a fixed message that never echoes its content.
+     *
+     * @return never
      */
     private function invalid(): never
     {

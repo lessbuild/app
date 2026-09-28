@@ -15,7 +15,14 @@ final class RecordBuildFailure
      */
     public function __construct(private readonly FinishBuild $finish) {}
 
-    /** The deployment script failed (signed callback); it has already put the previous release back. */
+    /**
+     * The deployment script failed (signed callback); it has already put the previous release back.
+     *
+     * @param  Build  $build
+     * @param  string  $message
+     * @param  int|null  $exitCode
+     * @return void
+     */
     public function handle(Build $build, string $message, ?int $exitCode): void
     {
         $message = trim(preg_replace('/[\x00-\x1F\x7F]/u', ' ', $message) ?? '') ?: 'Remote deployment script failed';

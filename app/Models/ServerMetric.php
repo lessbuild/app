@@ -34,11 +34,15 @@ class ServerMetric extends Model
 {
     /**
      * Each sample records its own `recorded_at`; rows are never updated.
+     *
+     * @var bool
      */
     public $timestamps = false;
 
     /**
      * Only the key is guarded: samples are written by the collector, never from request input.
+     *
+     * @var array<string>
      */
     protected $guarded = ['id'];
 

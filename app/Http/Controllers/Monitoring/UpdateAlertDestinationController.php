@@ -15,6 +15,12 @@ final class UpdateAlertDestinationController
 {
     /**
      * Saves a destination.
+     *
+     * @param  AlertDestinationRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveAlertDestination  $save
+     * @return RedirectResponse
      */
     public function __invoke(AlertDestinationRequest $request, #[CurrentUser] User $user, Project $project, SaveAlertDestination $save): RedirectResponse
     {

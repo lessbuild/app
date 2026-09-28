@@ -17,6 +17,14 @@ final class ShowServerTerminalController
 {
     /**
      * The terminal page. Only the browser that opened the terminal can type into it; others see it read-only.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ServerTerminalSession  $terminal
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, ProjectOverviewQuery $overview): View
     {

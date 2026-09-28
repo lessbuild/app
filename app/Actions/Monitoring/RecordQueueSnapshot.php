@@ -26,6 +26,8 @@ final class RecordQueueSnapshot
      * original receipt; reusing it for a different payload, or sending a second snapshot for the same moment, is a
      * conflict. Reports older than the latest are stored but not applied.
      *
+     * @param  int  $monitorId
+     * @param  string  $tokenHash
      * @param  array<string, mixed>  $data
      * @return array{snapshot_id: string, replayed: bool, applied: bool, received_at: string}
      */
@@ -76,6 +78,8 @@ final class RecordQueueSnapshot
      * What the collector gets back: the snapshot ID, whether it was a replay, whether it was applied, and when it
      * arrived.
      *
+     * @param  QueueSnapshot  $snapshot
+     * @param  bool  $replayed
      * @return array{snapshot_id: string, replayed: bool, applied: bool, received_at: string}
      */
     private function receipt(QueueSnapshot $snapshot, bool $replayed): array

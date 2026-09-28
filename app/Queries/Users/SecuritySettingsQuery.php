@@ -19,6 +19,10 @@ final class SecuritySettingsQuery
     /**
      * The security page's state: password, two-factor (with the setup secret and QR code while pending, and recovery
      * codes only right after they're shown on purpose), passkeys and connected providers.
+     *
+     * @param  User  $user
+     * @param  bool  $revealRecoveryCodes
+     * @return SecuritySettings
      */
     public function handle(User $user, bool $revealRecoveryCodes = false): SecuritySettings
     {

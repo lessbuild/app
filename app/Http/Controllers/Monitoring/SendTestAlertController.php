@@ -16,6 +16,13 @@ final class SendTestAlertController
 {
     /**
      * Queues a test alert; its outcome appears in the delivery history.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertDestination  $destination
+     * @param  SendTestAlert  $send
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDestination $destination, SendTestAlert $send): RedirectResponse
     {

@@ -14,6 +14,9 @@ class ServerProviderResolver
 {
     /**
      * The API client for a provider's stored credential.
+     *
+     * @param  Provider  $provider
+     * @return ServerProvider
      */
     public function resolve(Provider $provider): ServerProvider
     {
@@ -22,6 +25,10 @@ class ServerProviderResolver
 
     /**
      * The API client for a provider type and token; types that don't host servers throw.
+     *
+     * @param  ProviderType  $type
+     * @param  string  $token
+     * @return ServerProvider
      */
     public function resolveCredentials(ProviderType $type, string $token): ServerProvider
     {

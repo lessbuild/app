@@ -21,7 +21,13 @@ final class HeartbeatEvaluator
      */
     public function __construct(private readonly MonitorResults $results) {}
 
-    /** Caller holds the source and monitor locks in a transaction. */
+    /**
+     * Caller holds the source and monitor locks in a transaction.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
+     * @return void
+     */
     public function evaluate(Monitor $monitor, CarbonImmutable $now): void
     {
         $expired = $monitor->heartbeatRuns()->where('config_revision', $monitor->config_revision)
@@ -45,6 +51,9 @@ final class HeartbeatEvaluator
 
     /**
      * Sets when the monitor next needs looking at: the earliest running run's deadline or the next due time plus grace.
+     *
+     * @param  Monitor  $monitor
+     * @return void
      */
     public function scheduleDeadline(Monitor $monitor): void
     {
@@ -60,6 +69,14 @@ final class HeartbeatEvaluator
     /**
      * Records a heartbeat result as a completed check and, when it concerns the current configuration, as the monitor's
      * health.
+     *
+     * @param  Monitor  $monitor
+     * @param  string  $outcome
+     * @param  string  $reason
+     * @param  CarbonImmutable  $now
+     * @param  HeartbeatRun|null  $run
+     * @param  bool  $current
+     * @return void
      */
     public function observe(Monitor $monitor, string $outcome, string $reason, CarbonImmutable $now, ?HeartbeatRun $run = null, bool $current = true): void
     {

@@ -14,6 +14,10 @@ final class ResticRepository
     /**
      * The restic repository URL for one website's backups inside a destination bucket. It refuses endpoints that aren't
      * HTTPS and bucket names or prefixes with characters that could escape the shell command they're used in.
+     *
+     * @param  BackupDestination  $destination
+     * @param  Website  $website
+     * @return string
      */
     public static function repository(BackupDestination $destination, Website $website): string
     {
@@ -32,7 +36,13 @@ final class ResticRepository
         return "s3:{$endpoint}/{$destination->bucket}/{$prefix}/websites/{$website->id}";
     }
 
-    /** `KEY='value' …` to put before each restic command. */
+    /**
+     * `KEY='value' …` to put before each restic command.
+     *
+     * @param  BackupDestination  $destination
+     * @param  Website  $website
+     * @return string
+     */
     public static function environment(BackupDestination $destination, Website $website): string
     {
         return implode(' ', [

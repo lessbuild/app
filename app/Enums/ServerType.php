@@ -16,6 +16,8 @@ enum ServerType: string
 
     /**
      * The server type's name as shown on server forms and lists.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -29,7 +31,11 @@ enum ServerType: string
         };
     }
 
-    /** Website provisioning creates a local MySQL database, so only full app servers host websites. */
+    /**
+     * Website provisioning creates a local MySQL database, so only full app servers host websites.
+     *
+     * @return bool
+     */
     public function canHostWebsites(): bool
     {
         return $this === self::App;

@@ -15,6 +15,12 @@ final class PlanConfigurationController
 {
     /**
      * Plans the posted configuration document and shows the plan on the configuration page, keeping what was typed.
+     *
+     * @param  ConfigurationRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  PlanConfiguration  $plan
+     * @return RedirectResponse
      */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, Project $project, PlanConfiguration $plan): RedirectResponse
     {

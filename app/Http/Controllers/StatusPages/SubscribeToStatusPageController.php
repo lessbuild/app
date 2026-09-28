@@ -13,6 +13,11 @@ final class SubscribeToStatusPageController
 {
     /**
      * Subscribes an email address and sends the confirmation email.
+     *
+     * @param  SubscribeToStatusPageRequest  $request
+     * @param  string  $slug
+     * @param  SubscribeToStatusPage  $subscribe
+     * @return RedirectResponse
      */
     public function __invoke(SubscribeToStatusPageRequest $request, string $slug, SubscribeToStatusPage $subscribe): RedirectResponse
     {

@@ -15,6 +15,8 @@ final class DeployService implements PlatformService
 {
     /**
      * Stored on projects and billing items as `deploy`.
+     *
+     * @return string
      */
     public function key(): string
     {
@@ -23,6 +25,8 @@ final class DeployService implements PlatformService
 
     /**
      * Shown as "Deploy".
+     *
+     * @return string
      */
     public function name(): string
     {
@@ -31,6 +35,8 @@ final class DeployService implements PlatformService
 
     /**
      * Describes Deploy on the service cards.
+     *
+     * @return string
      */
     public function tagline(): string
     {
@@ -39,6 +45,8 @@ final class DeployService implements PlatformService
 
     /**
      * An upload cloud, standing for releases.
+     *
+     * @return string
      */
     public function icon(): string
     {
@@ -47,6 +55,9 @@ final class DeployService implements PlatformService
 
     /**
      * Repositories (with their builds), environment deploy settings, and configuration documents.
+     *
+     * @param  string  $projectId
+     * @return list<ServiceNavItem>
      */
     public function navItems(string $projectId): array
     {
@@ -59,6 +70,8 @@ final class DeployService implements PlatformService
 
     /**
      * Deploy read and write, which the Deployer API v1 endpoints check.
+     *
+     * @return list<ApiScope>
      */
     public function apiScopes(): array
     {
@@ -67,6 +80,8 @@ final class DeployService implements PlatformService
 
     /**
      * Deployer's tiers, carried over unchanged.
+     *
+     * @return ServiceBilling
      */
     public function billing(): ServiceBilling
     {

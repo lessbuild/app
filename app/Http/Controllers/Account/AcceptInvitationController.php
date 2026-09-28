@@ -13,6 +13,11 @@ final class AcceptInvitationController
 {
     /**
      * Joins the invitation's account as the signed-in person and takes them to its dashboard.
+     *
+     * @param  User  $user
+     * @param  string  $token
+     * @param  AcceptInvitation  $acceptInvitation
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, string $token, AcceptInvitation $acceptInvitation): RedirectResponse
     {

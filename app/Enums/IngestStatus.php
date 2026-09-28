@@ -14,6 +14,8 @@ enum IngestStatus: string
 
     /**
      * The receipt status as shown on the ingest receipts page.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -22,6 +24,8 @@ enum IngestStatus: string
 
     /**
      * The badge colour for the status.
+     *
+     * @return string
      */
     public function tone(): string
     {

@@ -15,6 +15,12 @@ final class StoreDashboardController
 {
     /**
      * Creates a dashboard.
+     *
+     * @param  DashboardRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveDashboard  $save
+     * @return RedirectResponse
      */
     public function __invoke(DashboardRequest $request, #[CurrentUser] User $user, Project $project, SaveDashboard $save): RedirectResponse
     {

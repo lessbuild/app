@@ -41,6 +41,9 @@ final class ServerMetricsCollector
     /**
      * Records a reading (percentages clamped, required values checked), deletes readings older than 30 days, and
      * evaluates alert rules.
+     *
+     * @param  Server  $server
+     * @return ServerMetric
      */
     public function collect(Server $server): ServerMetric
     {

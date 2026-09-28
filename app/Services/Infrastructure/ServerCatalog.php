@@ -14,6 +14,8 @@ class ServerCatalog
     /**
      * The provider's regions, sizes and images for the server form.
      *
+     * @param  Provider  $provider
+     * @param  ServerProvider  $client
      * @return array{regions: array<int, array{id: string, label: string}>, sizes: array<int, array{id: string, label: string}>, images: array<int, array{id: string, label: string}>}
      */
     public function for(Provider $provider, ServerProvider $client): array

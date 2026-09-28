@@ -16,6 +16,13 @@ final class ConfirmServerImportController
 {
     /**
      * Imports the inspected server, using the confirmation token this browser was given when it inspected it.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $assessment
+     * @param  ConfirmServerImport  $confirm
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $assessment, ConfirmServerImport $confirm): RedirectResponse
     {

@@ -21,7 +21,15 @@ final class SaveSite
      */
     public function __construct(private readonly VerifySite $verify) {}
 
-    /** Create a site in the project, or update one. New sites are verified straight away when a domain is already verified in the project. */
+    /**
+     * Create a site in the project, or update one. New sites are verified straight away when a domain is already verified in the project.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  SiteDetails  $details
+     * @param  AnalyticsSite|null  $site
+     * @return AnalyticsSite
+     */
     public function handle(User $actor, Project $project, SiteDetails $details, ?AnalyticsSite $site = null): AnalyticsSite
     {
         Gate::forUser($actor)->authorize($site === null ? 'create' : 'update', $site ?? [AnalyticsSite::class, $project]);

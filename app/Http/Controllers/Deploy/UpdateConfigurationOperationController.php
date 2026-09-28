@@ -17,6 +17,15 @@ final class UpdateConfigurationOperationController
 {
     /**
      * Retries or cancels one of an applied configuration's operations.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ConfigurationApplication  $application
+     * @param  string  $operation
+     * @param  string  $action
+     * @param  RetryConfigurationOperation  $retry
+     * @param  CancelConfigurationOperation  $cancel
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationApplication $application, string $operation, string $action, RetryConfigurationOperation $retry, CancelConfigurationOperation $cancel): RedirectResponse
     {

@@ -16,6 +16,13 @@ final class UpdateBackupDestinationController
 {
     /**
      * Saves a backup destination.
+     *
+     * @param  BackupDestinationRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  BackupDestination  $backupDestination
+     * @param  SaveBackupDestination  $save
+     * @return RedirectResponse
      */
     public function __invoke(BackupDestinationRequest $request, #[CurrentUser] User $user, Project $project, BackupDestination $backupDestination, SaveBackupDestination $save): RedirectResponse
     {

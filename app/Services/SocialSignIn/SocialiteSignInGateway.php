@@ -26,6 +26,9 @@ final class SocialiteSignInGateway implements SocialSignInGateway
 
     /**
      * Whether the provider has client credentials (and, for GitLab, a valid host) in this environment.
+     *
+     * @param  SocialProvider  $provider
+     * @return bool
      */
     public function configured(SocialProvider $provider): bool
     {
@@ -38,6 +41,9 @@ final class SocialiteSignInGateway implements SocialSignInGateway
 
     /**
      * The provider's authorisation page.
+     *
+     * @param  SocialProvider  $provider
+     * @return RedirectResponse
      */
     public function redirect(SocialProvider $provider): RedirectResponse
     {
@@ -47,6 +53,9 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     /**
      * The person's profile from the provider's callback, with a usable ID, a valid email or none, and a display name
      * falling back to the email's local part. Anything the provider gets wrong becomes SocialSignInFailed.
+     *
+     * @param  SocialProvider  $provider
+     * @return SocialProfile
      */
     public function profile(SocialProvider $provider): SocialProfile
     {
@@ -69,6 +78,9 @@ final class SocialiteSignInGateway implements SocialSignInGateway
 
     /**
      * A Socialite driver for the provider, pointed at our callback. Unconfigured providers throw.
+     *
+     * @param  SocialProvider  $provider
+     * @return AbstractProvider
      */
     private function driver(SocialProvider $provider): AbstractProvider
     {
@@ -97,6 +109,7 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     /**
      * The provider's configuration, or none.
      *
+     * @param  SocialProvider  $provider
      * @return array<string, mixed>
      */
     private function settings(SocialProvider $provider): array
@@ -110,6 +123,7 @@ final class SocialiteSignInGateway implements SocialSignInGateway
      * Only a bare HTTPS origin is accepted, so a misconfigured host can't leak tokens over plain HTTP.
      *
      * @param  array<string, mixed>  $config
+     * @return string|null
      */
     private function gitlabHost(array $config): ?string
     {

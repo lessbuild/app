@@ -18,6 +18,8 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
 
     /**
      * Seconds during which another collection for the same server isn't queued, so a slow server can't pile them up.
+     *
+     * @var int
      */
     public int $uniqueFor = 240;
 
@@ -30,6 +32,8 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
 
     /**
      * One collection per server at a time.
+     *
+     * @return string
      */
     public function uniqueId(): string
     {
@@ -38,6 +42,9 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
 
     /**
      * Collects a sample if the server is still active.
+     *
+     * @param  ServerMetricsCollector  $collector
+     * @return void
      */
     public function handle(ServerMetricsCollector $collector): void
     {

@@ -22,11 +22,15 @@ final class RemoveWebsitePlacement implements ShouldQueue
 
     /**
      * Removing files can fail while the server is busy, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 10;
 
@@ -43,6 +47,9 @@ final class RemoveWebsitePlacement implements ShouldQueue
     /**
      * Removes everything the website had on the server and clears the pending cleanup. A server that no longer exists
      * has nothing to clean.
+     *
+     * @param  ServerShell  $shell
+     * @return void
      */
     public function handle(ServerShell $shell): void
     {
@@ -67,6 +74,9 @@ final class RemoveWebsitePlacement implements ShouldQueue
 
     /**
      * Records why cleanup failed, so the website page can show it.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

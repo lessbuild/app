@@ -18,6 +18,12 @@ final class ListProjectsController
 {
     /**
      * Returns the projects the token can deploy, oldest first.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  DeployApiQuery  $query
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, DeployApiQuery $query): JsonResponse
     {

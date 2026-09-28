@@ -12,6 +12,8 @@ final class ProjectSwitcherQuery
     /**
      * The account's projects by name, for the project switcher.
      *
+     * @param  Account  $account
+     * @param  int  $limit
      * @return list<array{id: string, name: string}>
      */
     public function handle(Account $account, int $limit = 50): array

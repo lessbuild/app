@@ -18,6 +18,14 @@ final class ShowReleaseController
 {
     /**
      * A release's metrics over a range, optionally in one of the project's environments.
+     *
+     * @param  SearchReleasesRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Release  $release
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ReleaseMetricsQuery  $metrics
+     * @return View
      */
     public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, Release $release, ProjectOverviewQuery $overview, ReleaseMetricsQuery $metrics): View
     {

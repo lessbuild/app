@@ -22,7 +22,15 @@ final class ArchiveAlertDestination
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Turn a destination off and archive it; its delivery history stays. */
+    /**
+     * Turn a destination off and archive it; its delivery history stays.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  AlertDestination  $destination
+     * @param  int  $version
+     * @return AlertDestination
+     */
     public function handle(Account $account, User $actor, AlertDestination $destination, int $version): AlertDestination
     {
         return DB::transaction(function () use ($account, $actor, $destination, $version): AlertDestination {

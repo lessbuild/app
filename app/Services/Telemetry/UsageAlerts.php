@@ -34,6 +34,8 @@ final class UsageAlerts
     /**
      * The account's usage this month: events counted, the allowance, the percentage used and the thresholds crossed.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable|null  $at
      * @return Usage
      */
     public function summary(Account $account, ?CarbonImmutable $at = null): array
@@ -57,6 +59,8 @@ final class UsageAlerts
      * Emails each verified owner of accounts that sent telemetry this month about the highest threshold crossed, once
      * per threshold per month, and returns how many were sent, skipped or failed.
      *
+     * @param  CarbonImmutable|null  $at
+     * @param  string|null  $accountId
      * @return array{sent: int, skipped: int, failed: int}
      */
     public function send(?CarbonImmutable $at = null, ?string $accountId = null): array
@@ -86,6 +90,7 @@ final class UsageAlerts
     /**
      * The account's owners with a verified email.
      *
+     * @param  Account  $account
      * @return list<User>
      */
     private function owners(Account $account): array

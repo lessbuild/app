@@ -61,6 +61,8 @@ class Domain extends Model
 
     /**
      * The name of the TXT record that proves ownership, under a fixed prefix of the hostname.
+     *
+     * @return string
      */
     public function recordName(): string
     {
@@ -69,6 +71,8 @@ class Domain extends Model
 
     /**
      * The value that TXT record must have.
+     *
+     * @return string
      */
     public function recordValue(): string
     {
@@ -77,6 +81,8 @@ class Domain extends Model
 
     /**
      * The hostname as people read it (Unicode rather than punycode).
+     *
+     * @return string
      */
     public function displayName(): string
     {

@@ -24,6 +24,9 @@ final class MonitorQueue
     /**
      * Queues a check's job inside the scheduling transaction on the primary database queue, and remembers the job's UUID
      * so it can be discarded if the check is cancelled.
+     *
+     * @param  MonitorCheck  $check
+     * @return void
      */
     public function dispatch(MonitorCheck $check): void
     {
@@ -42,7 +45,12 @@ final class MonitorQueue
         $check->forceFill(['queue_job_uuid' => $uuid])->save();
     }
 
-    /** Project → environment → monitor; callers then lock check / incident rows. */
+    /**
+     * Project → environment → monitor; callers then lock check / incident rows.
+     *
+     * @param  int  $id
+     * @return Monitor|null
+     */
     public function lockMonitor(int $id): ?Monitor
     {
         $monitor = Monitor::withTrashed()->find($id);
@@ -65,6 +73,9 @@ final class MonitorQueue
     /**
      * Whether a monitor should run: it is on, and its project still has Monitoring turned on.
      *
+     * @param  Monitor|null  $monitor
+     * @return bool
+     *
      * @phpstan-assert-if-true Monitor $monitor
      */
     public function eligible(?Monitor $monitor): bool
@@ -75,6 +86,9 @@ final class MonitorQueue
 
     /**
      * Deletes the check's job if no worker has picked it up yet.
+     *
+     * @param  MonitorCheck  $check
+     * @return void
      */
     public function discardPendingJob(MonitorCheck $check): void
     {

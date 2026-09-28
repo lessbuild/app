@@ -18,6 +18,12 @@ final class CompleteGitHubAppInstallController
     /**
      * Connects the installation GitHub sent the person back with, if the one-time state matches the one this browser
      * started with, and lists its repositories.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  InstallGitHubApp  $install
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, #[CurrentAccount] Account $account, InstallGitHubApp $install): RedirectResponse
     {

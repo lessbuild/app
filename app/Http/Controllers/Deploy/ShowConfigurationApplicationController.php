@@ -16,6 +16,13 @@ final class ShowConfigurationApplicationController
 {
     /**
      * An applied configuration's progress. Only the person who asked for the review may retry its operations.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ConfigurationApplication  $application
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ConfigurationQuery  $configuration
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationApplication $application, ProjectOverviewQuery $overview, ConfigurationQuery $configuration): View
     {

@@ -18,6 +18,7 @@ final class ReleaseMetricsQuery
     /**
      * The time window for a release page's range: the last day, 7 days or 30 days.
      *
+     * @param  string  $range
      * @return array{CarbonImmutable, CarbonImmutable}
      */
     public function window(string $range): array
@@ -32,6 +33,11 @@ final class ReleaseMetricsQuery
     /**
      * The events of one release in the project, optionally in one environment, inside the window.
      *
+     * @param  Project  $project
+     * @param  Release  $release
+     * @param  string|null  $environmentId
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return Builder<TelemetryEvent>
      */
     public function events(Project $project, Release $release, ?string $environmentId, CarbonImmutable $from, CarbonImmutable $until): Builder
@@ -73,7 +79,12 @@ final class ReleaseMetricsQuery
         ];
     }
 
-    /** Equal observed windows, narrowed for deployments less than a full window old.
+    /**
+     * Equal observed windows, narrowed for deployments less than a full window old.
+     *
+     * @param  Project  $project
+     * @param  Deployment  $deployment
+     * @param  int  $minutes
      * @return array{before: array<string, int|float|null>|null, after: array<string, int|float|null>|null, from: CarbonImmutable, deployedAt: CarbonImmutable, until: CarbonImmutable, seconds: int, requestedMinutes: int}
      */
     public function aroundDeployment(Project $project, Deployment $deployment, int $minutes): array

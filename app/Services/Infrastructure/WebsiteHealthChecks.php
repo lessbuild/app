@@ -28,6 +28,10 @@ class WebsiteHealthChecks
     /**
      * Creates or updates the website's health monitor from its settings when the check is on and its project has
      * Monitoring, or archives it otherwise. A monitor in another environment is replaced.
+     *
+     * @param  Website  $website
+     * @param  User  $actor
+     * @return void
      */
     public function sync(Website $website, User $actor): void
     {

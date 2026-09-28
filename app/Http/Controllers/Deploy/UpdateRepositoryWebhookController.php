@@ -16,6 +16,13 @@ final class UpdateRepositoryWebhookController
 {
     /**
      * Turns push deploys on (showing the new webhook secret once) or off.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Repository  $repository
+     * @param  SetRepositoryWebhook  $set
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Repository $repository, SetRepositoryWebhook $set): RedirectResponse
     {

@@ -17,6 +17,10 @@ final class ServerAlertRulePolicy
 
     /**
      * Adding a server alert rule: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
@@ -25,6 +29,10 @@ final class ServerAlertRulePolicy
 
     /**
      * Removing a rule: the same people.
+     *
+     * @param  User  $user
+     * @param  ServerAlertRule  $rule
+     * @return bool
      */
     public function delete(User $user, ServerAlertRule $rule): bool
     {

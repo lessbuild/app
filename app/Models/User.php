@@ -99,6 +99,9 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
 
     /**
      * Their membership in an account, or null.
+     *
+     * @param  Account  $account
+     * @return Membership|null
      */
     public function membershipIn(Account $account): ?Membership
     {

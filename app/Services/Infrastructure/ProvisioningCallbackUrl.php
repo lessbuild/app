@@ -14,6 +14,9 @@ final class ProvisioningCallbackUrl
 {
     /**
      * The URL a server's provisioning script reports finished stages to.
+     *
+     * @param  Server  $server
+     * @return string
      */
     public static function serverStatus(Server $server): string
     {
@@ -22,6 +25,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL it reports failure to.
+     *
+     * @param  Server  $server
+     * @return string
      */
     public static function serverFailure(Server $server): string
     {
@@ -30,6 +36,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL it uploads its log to.
+     *
+     * @param  Server  $server
+     * @return string
      */
     public static function serverLog(Server $server): string
     {
@@ -38,6 +47,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL a website's setup script reports finished stages to.
+     *
+     * @param  Website  $website
+     * @return string
      */
     public static function websiteStatus(Website $website): string
     {
@@ -46,6 +58,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL it reports failure to.
+     *
+     * @param  Website  $website
+     * @return string
      */
     public static function websiteFailure(Website $website): string
     {
@@ -54,13 +69,21 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL it uploads its log to.
+     *
+     * @param  Website  $website
+     * @return string
      */
     public static function websiteLog(Website $website): string
     {
         return self::website('log', $website);
     }
 
-    /** Deployment callbacks keep Deployer's URLs (`/builds/{build}/deployment/callback/{event}`), a public contract. */
+    /**
+     * Deployment callbacks keep Deployer's URLs (`/builds/{build}/deployment/callback/{event}`), a public contract.
+     *
+     * @param  Build  $build
+     * @return string
+     */
     public static function buildStatus(Build $build): string
     {
         return self::build('callbacks.build.status', $build);
@@ -68,6 +91,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL a deploy script reports failure to.
+     *
+     * @param  Build  $build
+     * @return string
      */
     public static function buildFailure(Build $build): string
     {
@@ -76,6 +102,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL it uploads its log to.
+     *
+     * @param  Build  $build
+     * @return string
      */
     public static function buildLog(Build $build): string
     {
@@ -84,6 +113,9 @@ final class ProvisioningCallbackUrl
 
     /**
      * The URL it reports the deployed commit to.
+     *
+     * @param  Build  $build
+     * @return string
      */
     public static function buildRevision(Build $build): string
     {
@@ -92,6 +124,10 @@ final class ProvisioningCallbackUrl
 
     /**
      * A signed URL for a deploy callback route, expiring after the configured time.
+     *
+     * @param  string  $route
+     * @param  Build  $build
+     * @return string
      */
     private static function build(string $route, Build $build): string
     {
@@ -101,6 +137,10 @@ final class ProvisioningCallbackUrl
     /**
      * A signed URL for a website callback, carrying its provisioning attempt so reports from an earlier attempt are
      * ignored.
+     *
+     * @param  string  $event
+     * @param  Website  $website
+     * @return string
      */
     private static function website(string $event, Website $website): string
     {
@@ -114,6 +154,10 @@ final class ProvisioningCallbackUrl
     /**
      * A signed URL for a server callback, carrying its provisioning attempt so reports from an earlier attempt are
      * ignored.
+     *
+     * @param  string  $event
+     * @param  Server  $server
+     * @return string
      */
     private static function server(string $event, Server $server): string
     {

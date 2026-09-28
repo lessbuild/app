@@ -20,6 +20,8 @@ final class AnalyticsReportQuery
      * campaigns, recent activity and goal counts. Unfiltered reports longer than 90 days read the daily aggregates
      * instead of raw events; only events whose batch has been processed are counted.
      *
+     * @param  AnalyticsSite  $site
+     * @param  int  $days
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>
      */
@@ -118,6 +120,10 @@ final class AnalyticsReportQuery
     /**
      * The change from the previous period as a signed percentage, "New" when there was nothing before, or null when
      * there's nothing either time.
+     *
+     * @param  int  $current
+     * @param  int  $previous
+     * @return string|null
      */
     private function change(int $current, int $previous): ?string
     {
@@ -132,6 +138,9 @@ final class AnalyticsReportQuery
      * Unique visitors per day, averaged over the period. Visitor hashes rotate daily, so each day is counted on its own.
      *
      * @param  Collection<int, AnalyticsEvent>  $events
+     * @param  string  $timezone
+     * @param  int  $days
+     * @return int
      */
     private function averageDailyVisitors(Collection $events, string $timezone, int $days): int
     {
@@ -146,6 +155,7 @@ final class AnalyticsReportQuery
      * pageview from the same session or visitor.
      *
      * @param  Collection<int, AnalyticsEvent>  $events
+     * @return int
      */
     private function estimateVisits(Collection $events): int
     {
@@ -170,6 +180,9 @@ final class AnalyticsReportQuery
      * Pageviews per day in the site's timezone, with empty days as zero.
      *
      * @param  Collection<int, AnalyticsEvent>  $events
+     * @param  string  $timezone
+     * @param  CarbonImmutable  $start
+     * @param  CarbonImmutable  $end
      * @return array<int, array{date: string, value: int}>
      */
     private function series(Collection $events, string $timezone, CarbonImmutable $start, CarbonImmutable $end): array
@@ -193,6 +206,7 @@ final class AnalyticsReportQuery
      * The five most common values of an event field, with missing values as "Unknown".
      *
      * @param  Collection<int, AnalyticsEvent>  $events
+     * @param  string  $field
      * @return array<int, array{label: string, value: int}>
      */
     private function ranking(Collection $events, string $field): array
@@ -206,6 +220,7 @@ final class AnalyticsReportQuery
      * The five most common values of a visit field, such as landing or exit page.
      *
      * @param  Collection<int, AnalyticsVisit>  $visits
+     * @param  string  $field
      * @return array<int, array{label: string, value: int}>
      */
     private function visitRanking(Collection $visits, string $field): array
@@ -329,7 +344,9 @@ final class AnalyticsReportQuery
      * The key of the visit an event belongs to: the visit of the same session or visitor whose time span includes the
      * event.
      *
+     * @param  AnalyticsEvent  $event
      * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
+     * @return string|null
      */
     private function visitForEvent(AnalyticsEvent $event, Collection $visitMap): ?string
     {
@@ -356,6 +373,11 @@ final class AnalyticsReportQuery
      * The report built from daily aggregates, or null when none exist yet. Entry and exit pages, recent activity and
      * goals aren't aggregated, so they're left empty.
      *
+     * @param  AnalyticsSite  $site
+     * @param  int  $days
+     * @param  CarbonImmutable  $start
+     * @param  CarbonImmutable  $end
+     * @param  CarbonImmutable  $comparisonStart
      * @param  array<string, string|null>  $filters
      * @return array<string, mixed>|null
      */
@@ -418,6 +440,8 @@ final class AnalyticsReportQuery
      * The total of one column across aggregate rows.
      *
      * @param  Collection<int, AnalyticsDailyAggregate>  $rows
+     * @param  string  $column
+     * @return int
      */
     private function aggregateSum(Collection $rows, string $column): int
     {
@@ -428,6 +452,8 @@ final class AnalyticsReportQuery
      * Daily visitors from aggregates, averaged over the period.
      *
      * @param  Collection<int, AnalyticsDailyAggregate>  $rows
+     * @param  int  $days
+     * @return int
      */
     private function aggregateAverageVisitors(Collection $rows, int $days): int
     {
@@ -438,6 +464,8 @@ final class AnalyticsReportQuery
      * Pageviews per day from aggregates, with missing days as zero.
      *
      * @param  Collection<int, AnalyticsDailyAggregate>  $rows
+     * @param  CarbonImmutable  $start
+     * @param  CarbonImmutable  $end
      * @return list<array{date: string, value: int}>
      */
     private function aggregateSeries(Collection $rows, CarbonImmutable $start, CarbonImmutable $end): array
@@ -456,6 +484,11 @@ final class AnalyticsReportQuery
     /**
      * The five largest values of one aggregated dimension over the period.
      *
+     * @param  AnalyticsSite  $site
+     * @param  string  $dimension
+     * @param  CarbonImmutable  $start
+     * @param  CarbonImmutable  $end
+     * @param  string  $column
      * @return array<int, array{label: string, value: int}>
      */
     private function aggregateRanking(AnalyticsSite $site, string $dimension, CarbonImmutable $start, CarbonImmutable $end, string $column): array

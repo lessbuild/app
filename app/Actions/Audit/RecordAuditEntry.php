@@ -24,7 +24,12 @@ final class RecordAuditEntry
      * and user agent, and the account and project it belongs to. Entries without an account are the person's own
      * security log.
      *
+     * @param  AuditAction  $action
+     * @param  User|null  $actor
+     * @param  string|null  $accountId
      * @param  array<string, scalar|null>  $context
+     * @param  string|null  $projectId
+     * @return void
      */
     public function handle(AuditAction $action, ?User $actor, ?string $accountId = null, array $context = [], ?string $projectId = null): void
     {

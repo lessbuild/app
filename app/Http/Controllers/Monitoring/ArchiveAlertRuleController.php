@@ -16,6 +16,13 @@ final class ArchiveAlertRuleController
 {
     /**
      * Archives an alert rule, if it hasn't changed since the page was opened.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertRule  $rule
+     * @param  ArchiveAlertRule  $archive
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertRule $rule, ArchiveAlertRule $archive): RedirectResponse
     {

@@ -21,11 +21,15 @@ final class ProvisionWebsite implements ShouldQueue
 
     /**
      * Starting website provisioning can fail on a busy server, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 10;
 
@@ -39,6 +43,9 @@ final class ProvisionWebsite implements ShouldQueue
 
     /**
      * Claims the attempt and starts provisioning on the server.
+     *
+     * @param  WebsiteProvisioner  $provisioner
+     * @return void
      */
     public function handle(WebsiteProvisioner $provisioner): void
     {
@@ -50,6 +57,9 @@ final class ProvisionWebsite implements ShouldQueue
 
     /**
      * Marks the website failed and stores the error as its provisioning log.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

@@ -22,6 +22,14 @@ final class ShowServerController
     /**
      * A server's page, in tabs: overview, alerts and diagnostics (once it's active), logs, and settings for people who
      * may change it.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ServerProvisioningPlan  $plan
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ProjectOverviewQuery $overview, ServerProvisioningPlan $plan): View
     {

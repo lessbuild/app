@@ -16,6 +16,13 @@ final class UpdateWebsiteController
 {
     /**
      * Saves a website, saying when the change means it's being set up again.
+     *
+     * @param  WebsiteRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  UpdateWebsite  $update
+     * @return RedirectResponse
      */
     public function __invoke(WebsiteRequest $request, #[CurrentUser] User $user, Project $project, Website $website, UpdateWebsite $update): RedirectResponse
     {

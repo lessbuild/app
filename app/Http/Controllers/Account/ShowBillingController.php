@@ -17,6 +17,13 @@ final class ShowBillingController
 {
     /**
      * The billing page: plans, usage, invoices, and a message after returning from checkout.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  BillingOverviewQuery  $overview
+     * @param  InvoicesQuery  $invoices
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices): View
     {

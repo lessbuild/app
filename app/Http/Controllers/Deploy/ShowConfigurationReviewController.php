@@ -15,6 +15,12 @@ final class ShowConfigurationReviewController
 {
     /**
      * A configuration review. Only the person who asked for it may apply it.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ConfigurationReview  $review
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ConfigurationReview $review, ProjectOverviewQuery $overview): View
     {

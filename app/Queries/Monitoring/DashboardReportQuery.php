@@ -37,6 +37,7 @@ final class DashboardReportQuery
     /**
      * Each widget with the data it shows. The telemetry summary is computed once and shared by the widgets that need it.
      *
+     * @param  Dashboard  $dashboard
      * @return list<array{type: string, label: string, data: array<string, mixed>}>
      */
     public function handle(Dashboard $dashboard): array

@@ -17,7 +17,14 @@ use Illuminate\Support\Str;
 
 final class CreateProject
 {
-    /** Create a project with its Production environment. */
+    /**
+     * Create a project with its Production environment.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  ProjectDetails  $details
+     * @return Project
+     */
     public function handle(User $actor, Account $account, ProjectDetails $details): Project
     {
         Gate::forUser($actor)->authorize('create', [Project::class, $account]);
@@ -46,6 +53,10 @@ final class CreateProject
 
     /**
      * A URL slug from the project's name, numbered when the account already has it.
+     *
+     * @param  Account  $account
+     * @param  string  $name
+     * @return string
      */
     private function uniqueSlug(Account $account, string $name): string
     {

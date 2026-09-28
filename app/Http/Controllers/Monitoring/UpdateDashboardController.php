@@ -16,6 +16,13 @@ final class UpdateDashboardController
 {
     /**
      * Saves a dashboard.
+     *
+     * @param  DashboardRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Dashboard  $dashboard
+     * @param  SaveDashboard  $save
+     * @return RedirectResponse
      */
     public function __invoke(DashboardRequest $request, #[CurrentUser] User $user, Project $project, Dashboard $dashboard, SaveDashboard $save): RedirectResponse
     {

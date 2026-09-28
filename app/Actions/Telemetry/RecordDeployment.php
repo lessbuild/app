@@ -32,7 +32,11 @@ final class RecordDeployment
      * Record that a release was deployed to an environment: by a person (from the UI) or a pipeline (with an ingest key).
      * Retrying with the same deployment ID and details returns the original.
      *
+     * @param  Environment  $environment
      * @param  array{deployment_id: string, version: string, service?: string|null, service_namespace?: string|null, commit_sha?: string|null, note?: string|null, deployed_at?: string|null}  $data
+     * @param  User|null  $actor
+     * @param  IngestToken|null  $token
+     * @return Deployment
      */
     public function handle(Environment $environment, array $data, ?User $actor = null, ?IngestToken $token = null): Deployment
     {

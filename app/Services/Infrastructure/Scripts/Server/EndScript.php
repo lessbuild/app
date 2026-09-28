@@ -17,6 +17,10 @@ class EndScript implements ServerScript
 
     /**
      * Base Script
+     *
+     * @param  int  $step
+     * @param  Server  $server
+     * @return string
      */
     public function script(int $step, Server $server): string
     {

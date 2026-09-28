@@ -15,7 +15,10 @@ final class SaveBackupSchedule
     /**
      * Back a website up to a destination on a schedule (one schedule per destination; saving again changes it).
      *
+     * @param  User  $actor
+     * @param  Website  $website
      * @param  array{backup_destination_id: int|string, frequency: string, weekday?: int|string|null, run_at: string, retention_count: int|string}  $data
+     * @return WebsiteBackupSchedule
      */
     public function handle(User $actor, Website $website, array $data): WebsiteBackupSchedule
     {

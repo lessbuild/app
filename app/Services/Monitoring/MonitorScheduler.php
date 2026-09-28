@@ -31,6 +31,9 @@ final class MonitorScheduler
      * Schedules due checks for up to `$limit` enabled monitors in projects with Monitoring on (after settling expired
      * checks). Heartbeat and queue monitors are evaluated in place; others get a check queued with a lease, and
      * intervals skipped while the scheduler was behind are counted.
+     *
+     * @param  int  $limit
+     * @return int
      */
     public function schedule(int $limit = 100): int
     {
@@ -76,6 +79,9 @@ final class MonitorScheduler
 
     /**
      * Settles checks whose lease ran out, so a dead worker's check doesn't block its monitor. Returns how many.
+     *
+     * @param  int  $limit
+     * @return int
      */
     public function recover(int $limit = 100): int
     {

@@ -20,6 +20,7 @@ final class ConfigurationReviews
     /**
      * The review's plan, if the review is unapplied, unexpired, and nothing it depends on changed since.
      *
+     * @param  ConfigurationReview  $review
      * @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool}
      */
     public function current(ConfigurationReview $review): array

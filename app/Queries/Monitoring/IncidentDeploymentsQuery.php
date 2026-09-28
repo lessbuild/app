@@ -19,7 +19,12 @@ final class IncidentDeploymentsQuery
      */
     public function __construct(private readonly Entitlements $entitlements) {}
 
-    /** How far back the account's Monitoring tier looks; 0 means the feature isn't included. */
+    /**
+     * How far back the account's Monitoring tier looks; 0 means the feature isn't included.
+     *
+     * @param  Incident  $incident
+     * @return int
+     */
     public function minutes(Incident $incident): int
     {
         return (int) ($this->entitlements->for($incident->account)->limit('monitoring.deployment_context.minutes') ?? 0);
@@ -29,6 +34,7 @@ final class IncidentDeploymentsQuery
      * Up to ten deploys to the incident's environment in the window before it opened. Empty when the plan doesn't
      * include deployment context or the incident has no environment.
      *
+     * @param  Incident  $incident
      * @return Collection<int, Deployment>
      */
     public function handle(Incident $incident): Collection

@@ -16,6 +16,12 @@ final class UpdateNotificationSettingsController
 {
     /**
      * Turns the issue digest on or off.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  SaveIssueDigestPreference  $save
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, SaveIssueDigestPreference $save): RedirectResponse
     {

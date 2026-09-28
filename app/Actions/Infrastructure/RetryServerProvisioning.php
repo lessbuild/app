@@ -28,6 +28,11 @@ final class RetryServerProvisioning
     /**
      * Run the stages a failed remote provisioning didn't finish, over SSH. If it failed before the root password was set,
      * a new one is made and returned (shown once); otherwise null. Returns false if the server wasn't in that state.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @return string|false|null
      */
     public function handle(Account $account, User $actor, Server $server): string|false|null
     {

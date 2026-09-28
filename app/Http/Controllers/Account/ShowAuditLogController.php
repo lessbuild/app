@@ -18,6 +18,13 @@ final class ShowAuditLogController
 {
     /**
      * The account's audit log, optionally narrowed to one project.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  AccountAuditLogQuery  $query
+     * @param  ProjectSwitcherQuery  $projects
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, AccountAuditLogQuery $query, ProjectSwitcherQuery $projects): View
     {

@@ -17,6 +17,12 @@ final class RecordServerProvisioningController
 {
     /**
      * Records a provisioning script's report for the attempt named in the URL.
+     *
+     * @param  Request  $request
+     * @param  string  $serverId
+     * @param  string  $event
+     * @param  RecordServerProvisioning  $record
+     * @return Response
      */
     public function __invoke(Request $request, string $serverId, string $event, RecordServerProvisioning $record): Response
     {

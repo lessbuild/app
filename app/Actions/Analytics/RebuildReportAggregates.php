@@ -19,6 +19,10 @@ final class RebuildReportAggregates
     /**
      * Rebuilds the daily totals that long-range reports read, for the days a batch touched or every day the site has
      * data. Each day gets an overall row plus rows per page, device, browser, system, source and campaign.
+     *
+     * @param  AnalyticsSite  $site
+     * @param  AnalyticsIngestionBatch|null  $batch
+     * @return void
      */
     public function handle(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null): void
     {
@@ -74,6 +78,7 @@ final class RebuildReportAggregates
     /**
      * Every local day with countable events or visits.
      *
+     * @param  AnalyticsSite  $site
      * @return Collection<int, string>
      */
     private function allDates(AnalyticsSite $site): Collection
@@ -90,7 +95,9 @@ final class RebuildReportAggregates
     /**
      * The countable events on the given local days.
      *
+     * @param  AnalyticsSite  $site
      * @param  Collection<int, string>  $dates
+     * @param  AnalyticsIngestionBatch|null  $batch
      * @return Collection<int, AnalyticsEvent>
      */
     private function eventsForDates(AnalyticsSite $site, Collection $dates, ?AnalyticsIngestionBatch $batch): Collection
@@ -111,6 +118,7 @@ final class RebuildReportAggregates
     /**
      * Visits that started on the given local days.
      *
+     * @param  AnalyticsSite  $site
      * @param  Collection<int, string>  $dates
      * @return Collection<int, AnalyticsVisit>
      */
@@ -170,7 +178,9 @@ final class RebuildReportAggregates
     /**
      * The visit an event happened in, or null.
      *
+     * @param  AnalyticsEvent  $event
      * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
+     * @return AnalyticsVisit|null
      */
     private function visitForEvent(AnalyticsEvent $event, Collection $visitMap): ?AnalyticsVisit
     {
@@ -184,9 +194,14 @@ final class RebuildReportAggregates
      * One aggregate row: pageviews, visits, visitors, goal completions, converted visits, and bounces among visits that
      * ended at least 30 minutes ago.
      *
+     * @param  AnalyticsSite  $site
+     * @param  string  $date
+     * @param  string  $dimension
+     * @param  string|null  $value
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @param  Collection<int, AnalyticsGoal>  $goals
+     * @param  CarbonImmutable  $now
      * @return array<string, mixed>
      */
     private function row(AnalyticsSite $site, string $date, string $dimension, ?string $value, Collection $events, Collection $visits, Collection $goals, CarbonImmutable $now): array
@@ -219,6 +234,10 @@ final class RebuildReportAggregates
 
     /**
      * A time's date in the site's timezone.
+     *
+     * @param  mixed  $value
+     * @param  string  $timezone
+     * @return string
      */
     private function localDate(mixed $value, string $timezone): string
     {
@@ -227,6 +246,9 @@ final class RebuildReportAggregates
 
     /**
      * Where a visit came from, labelled the same way the report labels sources.
+     *
+     * @param  AnalyticsVisit  $visit
+     * @return string
      */
     private function source(AnalyticsVisit $visit): string
     {

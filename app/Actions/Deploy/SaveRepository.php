@@ -18,7 +18,11 @@ final class SaveRepository
     /**
      * Connect a repository to a website in the project's account, or change it.
      *
+     * @param  User  $actor
+     * @param  Project  $project
      * @param  array{name: string, provider_id: int|string, url: string, branch: string, website_id: int|string, environment_id?: string|null, deployment_root?: string|null, build_commands?: string|null, post_deployment_commands?: string|null, auto_deploy_include_paths?: list<string>, auto_deploy_exclude_paths?: list<string>}  $data  validated by RepositoryRequest
+     * @param  Repository|null  $repository
+     * @return Repository
      */
     public function handle(User $actor, Project $project, array $data, ?Repository $repository = null): Repository
     {

@@ -15,6 +15,8 @@ final class InfrastructureService implements PlatformService
 {
     /**
      * Stored on projects and billing items as `infrastructure`.
+     *
+     * @return string
      */
     public function key(): string
     {
@@ -23,6 +25,8 @@ final class InfrastructureService implements PlatformService
 
     /**
      * Shown as "Infrastructure".
+     *
+     * @return string
      */
     public function name(): string
     {
@@ -31,6 +35,8 @@ final class InfrastructureService implements PlatformService
 
     /**
      * Describes Infrastructure on the service cards.
+     *
+     * @return string
      */
     public function tagline(): string
     {
@@ -39,6 +45,8 @@ final class InfrastructureService implements PlatformService
 
     /**
      * A server.
+     *
+     * @return string
      */
     public function icon(): string
     {
@@ -47,6 +55,9 @@ final class InfrastructureService implements PlatformService
 
     /**
      * Servers (and imports), websites, load balancers, backups and costs.
+     *
+     * @param  string  $projectId
+     * @return list<ServiceNavItem>
      */
     public function navItems(string $projectId): array
     {
@@ -61,6 +72,8 @@ final class InfrastructureService implements PlatformService
 
     /**
      * Infrastructure read and write.
+     *
+     * @return list<ApiScope>
      */
     public function apiScopes(): array
     {
@@ -69,6 +82,8 @@ final class InfrastructureService implements PlatformService
 
     /**
      * A single included tier; server limits come from the Deploy plan for now.
+     *
+     * @return ServiceBilling
      */
     public function billing(): ServiceBilling
     {

@@ -10,7 +10,9 @@ class EnvironmentFile
      * Sets variables in `.env` text: each valid key replaces any existing line for it and is appended, double-quoted and
      * escaped.
      *
+     * @param  string  $base
      * @param  array<string, scalar|null>  $variables
+     * @return string
      */
     public function merge(string $base, array $variables): string
     {

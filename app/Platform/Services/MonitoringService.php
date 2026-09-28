@@ -15,6 +15,8 @@ final class MonitoringService implements PlatformService
 {
     /**
      * Stored on projects and billing items as `monitoring`.
+     *
+     * @return string
      */
     public function key(): string
     {
@@ -23,6 +25,8 @@ final class MonitoringService implements PlatformService
 
     /**
      * Shown as "Monitoring".
+     *
+     * @return string
      */
     public function name(): string
     {
@@ -31,6 +35,8 @@ final class MonitoringService implements PlatformService
 
     /**
      * Describes Monitoring on the service cards.
+     *
+     * @return string
      */
     public function tagline(): string
     {
@@ -39,6 +45,8 @@ final class MonitoringService implements PlatformService
 
     /**
      * A check mark, standing for passing checks.
+     *
+     * @return string
      */
     public function icon(): string
     {
@@ -48,6 +56,9 @@ final class MonitoringService implements PlatformService
     /**
      * Monitors, incidents, issues, telemetry events and traces, metrics and dashboards, releases, SLOs,
      * alerting, status pages and the telemetry setup.
+     *
+     * @param  string  $projectId
+     * @return list<ServiceNavItem>
      */
     public function navItems(string $projectId): array
     {
@@ -67,6 +78,8 @@ final class MonitoringService implements PlatformService
 
     /**
      * Monitoring read and write.
+     *
+     * @return list<ApiScope>
      */
     public function apiScopes(): array
     {
@@ -75,6 +88,8 @@ final class MonitoringService implements PlatformService
 
     /**
      * Monitor's tiers and usage meters, carried over unchanged.
+     *
+     * @return ServiceBilling
      */
     public function billing(): ServiceBilling
     {

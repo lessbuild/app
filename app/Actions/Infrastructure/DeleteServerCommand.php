@@ -11,7 +11,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteServerCommand
 {
-    /** Delete a finished command and its output from the history. Queued or running ones stay. */
+    /**
+     * Delete a finished command and its output from the history. Queued or running ones stay.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  ServerCommandExecution  $execution
+     * @return bool
+     */
     public function handle(Account $account, User $actor, ServerCommandExecution $execution): bool
     {
         Gate::forUser($actor)->authorize('runCommands', $execution->server);

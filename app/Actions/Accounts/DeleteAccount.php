@@ -13,7 +13,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteAccount
 {
-    /** Delete an account and everything that belongs to it (memberships, invitations, tokens, audit log). */
+    /**
+     * Delete an account and everything that belongs to it (memberships, invitations, tokens, audit log).
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @return void
+     */
     public function handle(User $actor, Account $account): void
     {
         Gate::forUser($actor)->authorize('delete', $account);

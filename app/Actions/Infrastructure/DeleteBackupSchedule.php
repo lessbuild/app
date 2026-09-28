@@ -10,7 +10,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteBackupSchedule
 {
-    /** Stop scheduled backups to a destination. Backups already taken stay. */
+    /**
+     * Stop scheduled backups to a destination. Backups already taken stay.
+     *
+     * @param  User  $actor
+     * @param  WebsiteBackupSchedule  $schedule
+     * @return void
+     */
     public function handle(User $actor, WebsiteBackupSchedule $schedule): void
     {
         Gate::forUser($actor)->authorize('update', $schedule->website);

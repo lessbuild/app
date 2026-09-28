@@ -13,17 +13,26 @@ interface SocialSignInGateway
 {
     /**
      * Whether sign-in with the provider is set up in this environment.
+     *
+     * @param  SocialProvider  $provider
+     * @return bool
      */
     public function configured(SocialProvider $provider): bool;
 
     /**
      * Sends the person to the provider to approve signing in.
+     *
+     * @param  SocialProvider  $provider
+     * @return RedirectResponse
      */
     public function redirect(SocialProvider $provider): RedirectResponse;
 
     /**
      * The person's profile once the provider sends them back. Throws SocialSignInFailed when the provider refused or
      * returned something unusable.
+     *
+     * @param  SocialProvider  $provider
+     * @return SocialProfile
      *
      * @throws SocialSignInFailed when the provider rejects the callback or returns an unusable profile
      */

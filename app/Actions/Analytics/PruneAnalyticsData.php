@@ -16,6 +16,7 @@ final class PruneAnalyticsData
     /**
      * Drop raw events and visits past their retention, old daily reports and expired exports.
      *
+     * @param  int|null  $days
      * @return array{events: int, visits: int, batches: int, aggregates: int, exports: int}
      */
     public function handle(?int $days = null): array

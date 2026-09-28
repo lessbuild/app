@@ -17,6 +17,7 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
      * Converts an OTLP/JSON export into events for the signal.
      *
      * @param  array<string, mixed>  $payload
+     * @param  string  $signal
      * @return array<int, array<string, mixed>>
      */
     public function map(array $payload, string $signal): array
@@ -301,6 +302,7 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
      * A data point's value: the gauge or sum value, else a histogram's count or sum.
      *
      * @param  array<string, mixed>  $dataPoint
+     * @return mixed
      */
     private function metricValue(array $dataPoint): mixed
     {
@@ -336,6 +338,9 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * An OTLP `AnyValue` as a plain PHP value, recursively for arrays and key-value lists.
+     *
+     * @param  mixed  $value
+     * @return mixed
      */
     private function value(mixed $value): mixed
     {
@@ -364,6 +369,8 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
      * The first of several attribute keys that's present, since conventions changed names over versions.
      *
      * @param  array<string, mixed>  $attributes
+     * @param  string  ...$keys
+     * @return mixed
      */
     private function attribute(array $attributes, string ...$keys): mixed
     {
@@ -380,7 +387,10 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
      * The event's type: an explicit `beacon.event.type` or `event.type` when it's known, else exception, query or job
      * from the attributes present, else the signal's default.
      *
+     * @param  string|null  $explicitType
      * @param  array<string, mixed>  $attributes
+     * @param  string  $fallback
+     * @return string
      */
     private function eventType(?string $explicitType, array $attributes, string $fallback): string
     {
@@ -407,6 +417,7 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
      * The service name from `service.name`, or `service`.
      *
      * @param  array<string, mixed>  $attributes
+     * @return string|null
      */
     private function serviceName(array $attributes): ?string
     {
@@ -415,6 +426,9 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * A non-empty scalar as a string, or null.
+     *
+     * @param  mixed  $value
+     * @return string|null
      */
     private function stringValue(mixed $value): ?string
     {
@@ -423,6 +437,9 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * An HTTP status between 100 and 599, or null.
+     *
+     * @param  mixed  $value
+     * @return int|null
      */
     private function statusCode(mixed $value): ?int
     {
@@ -437,6 +454,11 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * A span's severity: error for exceptions, failed status or 5xx, warning for 4xx, info otherwise.
+     *
+     * @param  mixed  $status
+     * @param  int|null  $statusCode
+     * @param  string  $type
+     * @return string
      */
     private function spanSeverity(mixed $status, ?int $statusCode, string $type): string
     {
@@ -453,6 +475,11 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * A log record's severity from its number (OTLP's 1–24 scale) or, without one, from its text.
+     *
+     * @param  mixed  $severity
+     * @param  int|null  $number
+     * @param  string  $type
+     * @return string
      */
     private function logSeverity(mixed $severity, ?int $number, string $type): string
     {
@@ -489,6 +516,9 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * A timestamp, treating zero as unknown.
+     *
+     * @param  mixed  $value
+     * @return OtlpTimestamp|null
      */
     private function knownTimestamp(mixed $value): ?OtlpTimestamp
     {
@@ -499,6 +529,9 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * A trace or span ID lowercased, or null when empty.
+     *
+     * @param  string|null  $value
+     * @return string|null
      */
     private function identifier(?string $value): ?string
     {
@@ -535,8 +568,10 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
     /**
      * A stable ID from a record's content, numbered when identical records appear more than once in the same export.
      *
+     * @param  string  $signal
      * @param  array<int, mixed>  $identity
      * @param  array<string, int>  $occurrences
+     * @return string
      */
     private function recordIdentity(string $signal, array $identity, array &$occurrences): string
     {
@@ -549,6 +584,9 @@ final class OtlpPayloadMapper implements TelemetryPayloadMapper
 
     /**
      * Sorts object keys recursively, so equal data serialises the same.
+     *
+     * @param  mixed  $value
+     * @return mixed
      */
     private function canonical(mixed $value): mixed
     {

@@ -16,11 +16,15 @@ final class ProcessQueuedTelemetry implements ShouldQueue
 
     /**
      * How many times a queued batch is attempted before its receipt is marked failed.
+     *
+     * @var int
      */
     public int $tries = TelemetryQueue::MAX_ATTEMPTS;
 
     /**
      * How long one attempt may run.
+     *
+     * @var int
      */
     public int $timeout = TelemetryQueue::TIMEOUT;
 
@@ -44,6 +48,9 @@ final class ProcessQueuedTelemetry implements ShouldQueue
 
     /**
      * Processes the batch. When the processor asks to wait, the job goes back on the queue for that many seconds.
+     *
+     * @param  ProcessTelemetryReceipt  $processor
+     * @return void
      */
     public function handle(ProcessTelemetryReceipt $processor): void
     {
@@ -56,6 +63,9 @@ final class ProcessQueuedTelemetry implements ShouldQueue
 
     /**
      * Marks the receipt failed once attempts run out.
+     *
+     * @param  Throwable|null  $exception
+     * @return void
      */
     public function failed(?Throwable $exception): void
     {

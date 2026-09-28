@@ -10,6 +10,8 @@ final class MonitoringCatalog
     /**
      * Monitor's Free, Pro, Team and Scale tiers with their event, retention, application and seat limits and feature
      * flags, plus the events meter that counts usage against each tier's monthly allowance.
+     *
+     * @return ServiceBilling
      */
     public static function billing(): ServiceBilling
     {
@@ -28,8 +30,20 @@ final class MonitoringCatalog
      * Builds a tier from Monitor's plan table, turning dollars into cents and the positional limits into entitlement
      * keys, so the table above stays readable.
      *
+     * @param  string  $key
+     * @param  string  $name
+     * @param  int  $dollars
+     * @param  string  $description
      * @param  list<string>  $features
+     * @param  int  $events
+     * @param  int  $retention
+     * @param  int|null  $apps
+     * @param  int|null  $seats
+     * @param  int|null  $dashboards
+     * @param  int  $deploymentContextMinutes
+     * @param  int  $escalationSteps
      * @param  list<string>  $flags
+     * @return Tier
      */
     private static function tier(string $key, string $name, int $dollars, string $description, array $features, int $events, int $retention, ?int $apps, ?int $seats, ?int $dashboards, int $deploymentContextMinutes, int $escalationSteps, array $flags): Tier
     {

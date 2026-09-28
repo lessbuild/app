@@ -21,7 +21,12 @@ final class RebuildSiteReports
         private readonly RebuildReportAggregates $aggregates,
     ) {}
 
-    /** Recompute visits, goal conversions and daily reports for the whole site (after a goal changes). */
+    /**
+     * Recompute visits, goal conversions and daily reports for the whole site (after a goal changes).
+     *
+     * @param  AnalyticsSite  $site
+     * @return void
+     */
     public function handle(AnalyticsSite $site): void
     {
         $this->visits->handle($site);

@@ -97,6 +97,8 @@ class Provider extends Model
 
     /**
      * Whether anything still depends on the provider (servers or repositories), which blocks disconnecting it.
+     *
+     * @return bool
      */
     public function hasAttachedResources(): bool
     {
@@ -113,13 +115,22 @@ class Provider extends Model
         return $this->hasMany(Repository::class);
     }
 
-    /** A GitHub App installation (credential_type `app`, external_id the installation ID) rather than a token. */
+    /**
+     * A GitHub App installation (credential_type `app`, external_id the installation ID) rather than a token.
+     *
+     * @return bool
+     */
     public function isGitHubApp(): bool
     {
         return $this->type === ProviderType::GitHub && $this->credential_type === 'app' && filled($this->external_id);
     }
 
-    /** Whether a repository URL (`host/owner/name`) is on this provider's Git host. */
+    /**
+     * Whether a repository URL (`host/owner/name`) is on this provider's Git host.
+     *
+     * @param  string  $url
+     * @return bool
+     */
     public function supportsRepositoryUrl(string $url): bool
     {
         $host = $this->type->repositoryHost();

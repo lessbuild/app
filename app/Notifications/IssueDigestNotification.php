@@ -21,6 +21,7 @@ final class IssueDigestNotification extends Notification
     /**
      * Digests are email only; the issues pages already show the same information in the app.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -31,6 +32,9 @@ final class IssueDigestNotification extends Notification
     /**
      * The open, critical and snoozed counts, then each new and resolved issue with a link, the period covered, and where
      * to turn the digest off.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {

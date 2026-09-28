@@ -76,6 +76,8 @@ final class AlertRuleRequest extends FormRequest
      * right kind of series for the calculation), that an existing rule's environment isn't changed, and that labels and
      * patterns contain no secrets.
      *
+     * @param  TelemetryRedactor  $redactor
+     * @param  Entitlements  $entitlements
      * @return array<callable(Validator): void>
      */
     public function after(TelemetryRedactor $redactor, Entitlements $entitlements): array
@@ -129,6 +131,8 @@ final class AlertRuleRequest extends FormRequest
 
     /**
      * The project in the URL.
+     *
+     * @return Project
      */
     public function project(): Project
     {
@@ -138,7 +142,11 @@ final class AlertRuleRequest extends FormRequest
         return $project;
     }
 
-    /** The rule being changed, or null when creating one. */
+    /**
+     * The rule being changed, or null when creating one.
+     *
+     * @return AlertRule|null
+     */
     public function rule(): ?AlertRule
     {
         $rule = $this->route('rule');

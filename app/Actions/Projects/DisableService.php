@@ -11,7 +11,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class DisableService
 {
-    /** Switch a service off. Its data stays, so switching it back on picks up where it left off. */
+    /**
+     * Switch a service off. Its data stays, so switching it back on picks up where it left off.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  string  $service
+     * @return bool
+     */
     public function handle(User $actor, Project $project, string $service): bool
     {
         Gate::forUser($actor)->authorize('manageService', [$project, $service]);

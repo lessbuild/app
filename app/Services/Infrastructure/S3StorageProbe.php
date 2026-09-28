@@ -25,6 +25,9 @@ class S3StorageProbe
      * Writes a small test object, reads it back and compares it, then deletes it (a failed delete is reported but
      * doesn't fail the check). Throws with a message safe to show when anything fails.
      *
+     * @param  BackupDestination  $destination
+     * @return void
+     *
      * @throws RuntimeException with a message safe to show (no response bodies)
      */
     public function check(BackupDestination $destination): void
@@ -53,6 +56,12 @@ class S3StorageProbe
 
     /**
      * Sends one signed S3 request for an object in the destination's bucket.
+     *
+     * @param  BackupDestination  $destination
+     * @param  string  $method
+     * @param  string  $key
+     * @param  string  $body
+     * @return Response
      */
     private function request(BackupDestination $destination, string $method, string $key, string $body = ''): Response
     {
@@ -73,6 +82,7 @@ class S3StorageProbe
     /**
      * The base URL, host and path of an HTTPS endpoint without credentials, query or fragment.
      *
+     * @param  string  $endpoint
      * @return array{string, string, string} base URL, host header and base path
      */
     private function endpoint(string $endpoint): array
@@ -90,6 +100,9 @@ class S3StorageProbe
 
     /**
      * A request path from its parts, with each segment URL-encoded exactly once.
+     *
+     * @param  string  ...$parts
+     * @return string
      */
     private function path(string ...$parts): string
     {
@@ -108,6 +121,13 @@ class S3StorageProbe
     /**
      * The headers for an AWS Signature Version 4 request, including the signed Authorization header.
      *
+     * @param  string  $method
+     * @param  string  $uri
+     * @param  string  $host
+     * @param  string  $region
+     * @param  string  $accessKey
+     * @param  string  $secretKey
+     * @param  string  $body
      * @return array<string, string>
      */
     private function signedHeaders(string $method, string $uri, string $host, string $region, string $accessKey, string $secretKey, string $body): array
@@ -136,6 +156,10 @@ class S3StorageProbe
 
     /**
      * Throws when a request failed, with the status and S3's error code but never the response body.
+     *
+     * @param  string  $operation
+     * @param  Response  $response
+     * @return void
      */
     private function assertSuccessful(string $operation, Response $response): void
     {

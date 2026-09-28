@@ -34,7 +34,10 @@ final class CreateWebsite
     /**
      * Create a website on an app server and set it up over SSH. Counts against `deploy.websites.max`.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by WebsiteRequest
+     * @return Website
      */
     public function handle(Account $account, User $actor, array $data): Website
     {

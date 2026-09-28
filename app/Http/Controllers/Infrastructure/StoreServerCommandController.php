@@ -16,6 +16,13 @@ final class StoreServerCommandController
 {
     /**
      * Queues a command and shows its output as it runs.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  RunServerCommand  $run
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, RunServerCommand $run): RedirectResponse
     {

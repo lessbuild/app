@@ -19,6 +19,8 @@ enum AlertMetric: string
 
     /**
      * The metric's name on the alert rule form, with its unit.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -38,6 +40,8 @@ enum AlertMetric: string
 
     /**
      * The largest threshold the rule form accepts for this metric, in the metric's own unit.
+     *
+     * @return int
      */
     public function maximum(): int
     {
@@ -56,6 +60,8 @@ enum AlertMetric: string
     /**
      * Whether thresholds must be whole numbers: counts of events and freshness in seconds can't be fractional, unlike
      * rates and durations.
+     *
+     * @return bool
      */
     public function hasWholeNumberThreshold(): bool
     {
@@ -65,6 +71,8 @@ enum AlertMetric: string
     /**
      * Whether the metric watches the telemetry pipeline itself (volume and freshness) rather than the application. These
      * need the guardrails plan feature.
+     *
+     * @return bool
      */
     public function isTelemetryGuardrail(): bool
     {
@@ -73,6 +81,8 @@ enum AlertMetric: string
 
     /**
      * Whether the rule measures how fast an SLO's error budget is burning, which needs the SLO burn-rate plan feature.
+     *
+     * @return bool
      */
     public function isSloBurnRate(): bool
     {
@@ -81,6 +91,8 @@ enum AlertMetric: string
 
     /**
      * Whether the rule fires on anomaly scores instead of a fixed threshold, which needs the anomaly plan feature.
+     *
+     * @return bool
      */
     public function isAnomaly(): bool
     {

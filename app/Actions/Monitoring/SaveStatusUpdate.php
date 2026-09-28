@@ -28,7 +28,11 @@ final class SaveStatusUpdate
     /**
      * Post or change an incident or maintenance notice, then email the page's confirmed subscribers (after the commit).
      *
+     * @param  StatusPage  $page
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by StatusUpdateRequest; times are UTC
+     * @param  StatusUpdate|null  $update
+     * @return StatusUpdate
      */
     public function handle(StatusPage $page, User $actor, array $data, ?StatusUpdate $update = null): StatusUpdate
     {

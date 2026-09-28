@@ -20,7 +20,15 @@ final class IncidentLifecycle
      */
     public function __construct(private readonly AlertDispatcher $alerts) {}
 
-    /** Called inside a transaction holding the source and incident locks. */
+    /**
+     * Called inside a transaction holding the source and incident locks.
+     *
+     * @param  Incident  $incident
+     * @param  string  $reason
+     * @param  CarbonImmutable  $now
+     * @param  User|null  $actor
+     * @return void
+     */
     public function close(Incident $incident, string $reason, CarbonImmutable $now, ?User $actor = null): void
     {
         $incident->forceFill([
@@ -36,7 +44,14 @@ final class IncidentLifecycle
         }
     }
 
-    /** Unassign someone who left the account or lost access to Monitoring from its incidents and issues. */
+    /**
+     * Unassign someone who left the account or lost access to Monitoring from its incidents and issues.
+     *
+     * @param  Account  $account
+     * @param  User  $member
+     * @param  User|null  $actor
+     * @return void
+     */
     public function unassignMember(Account $account, User $member, ?User $actor): void
     {
         Issue::query()->whereIn('project_id', Project::query()->where('account_id', $account->id)->select('id'))

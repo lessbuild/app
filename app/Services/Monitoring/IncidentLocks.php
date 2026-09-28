@@ -15,6 +15,9 @@ final class IncidentLocks
     /**
      * Lock an incident and its source in the platform's lock order: project → environment → monitor or rule → incident.
      * Called inside a transaction, after the account lock when one is needed.
+     *
+     * @param  int  $id
+     * @return Incident|null
      */
     public function find(int $id): ?Incident
     {

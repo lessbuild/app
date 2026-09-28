@@ -15,6 +15,12 @@ final class StoreWebsiteImportController
 {
     /**
      * Adopts an existing website without changing anything on the server.
+     *
+     * @param  ImportWebsiteRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ImportWebsite  $import
+     * @return RedirectResponse
      */
     public function __invoke(ImportWebsiteRequest $request, #[CurrentUser] User $user, Project $project, ImportWebsite $import): RedirectResponse
     {

@@ -13,6 +13,11 @@ final class DeleteServerAlertRule
 {
     /**
      * Deletes one of the account's server alert rules.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  ServerAlertRule  $rule
+     * @return void
      */
     public function handle(Account $account, User $actor, ServerAlertRule $rule): void
     {

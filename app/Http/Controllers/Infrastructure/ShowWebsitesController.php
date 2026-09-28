@@ -18,6 +18,13 @@ final class ShowWebsitesController
 {
     /**
      * The account's websites and the plan's website limit.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  WebsitesQuery  $websites
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, WebsitesQuery $websites, Entitlements $entitlements): View
     {

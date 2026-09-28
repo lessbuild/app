@@ -22,6 +22,11 @@ final class SignOutBrowsers
      * End one browser session, or every session except the current one when $sessionId is null.
      * The single "remember me" token is rotated too, otherwise a signed-out browser would sign
      * straight back in from its cookie; the current session keeps working.
+     *
+     * @param  User  $user
+     * @param  string  $currentSessionId
+     * @param  string|null  $sessionId
+     * @return int
      */
     public function handle(User $user, string $currentSessionId, ?string $sessionId = null): int
     {

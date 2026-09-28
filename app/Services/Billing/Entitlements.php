@@ -32,6 +32,9 @@ final class Entitlements
     /**
      * The account's entitlements: each chosen tier (or the free tier of a service in use), the most generous limit where
      * tiers overlap, every feature they turn on, and add-on units added to limits.
+     *
+     * @param  Account  $account
+     * @return AccountEntitlements
      */
     public function for(Account $account): AccountEntitlements
     {
@@ -74,13 +77,23 @@ final class Entitlements
 
     /**
      * The larger of two limits, where null means unlimited.
+     *
+     * @param  int|null  $a
+     * @param  int|null  $b
+     * @return int|null
      */
     private function moreGenerous(?int $a, ?int $b): ?int
     {
         return $a === null || $b === null ? null : max($a, $b);
     }
 
-    /** The tier that applies to a service, even if the account doesn't use it yet. */
+    /**
+     * The tier that applies to a service, even if the account doesn't use it yet.
+     *
+     * @param  Account  $account
+     * @param  string  $service
+     * @return Tier|null
+     */
     public function tierFor(Account $account, string $service): ?Tier
     {
         return $this->for($account)->tiers[$service] ?? $this->services->find($service)?->billing()->defaultTier();

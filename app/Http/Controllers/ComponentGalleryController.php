@@ -11,6 +11,8 @@ final class ComponentGalleryController
 {
     /**
      * The Signal component gallery, available only in local and testing environments.
+     *
+     * @return View
      */
     public function __invoke(): View
     {

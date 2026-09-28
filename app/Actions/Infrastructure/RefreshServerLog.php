@@ -14,7 +14,15 @@ use Illuminate\Support\Facades\Gate;
 
 final class RefreshServerLog
 {
-    /** Fetch a fresh copy of one of an active server's logs. Returns false for an unknown log or a server that isn't active. */
+    /**
+     * Fetch a fresh copy of one of an active server's logs. Returns false for an unknown log or a server that isn't active.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @param  string  $type
+     * @return bool
+     */
     public function handle(Account $account, User $actor, Server $server, string $type): bool
     {
         Gate::forUser($actor)->authorize('view', $server);

@@ -9,6 +9,8 @@ final class AnalyticsCatalog
 {
     /**
      * A single free tier. Analytics was never billed, and paid tiers wait for pricing.
+     *
+     * @return ServiceBilling
      */
     public static function billing(): ServiceBilling
     {

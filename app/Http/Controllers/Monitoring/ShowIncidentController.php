@@ -16,6 +16,13 @@ final class ShowIncidentController
 {
     /**
      * An incident's page: its timeline and who it can be assigned to.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Incident  $incident
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectIncidentsQuery  $incidents
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Incident $incident, ProjectOverviewQuery $overview, ProjectIncidentsQuery $incidents): View
     {

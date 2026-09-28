@@ -16,6 +16,13 @@ final class UpdateRepositoryController
 {
     /**
      * Saves a repository's settings; the next deploy uses them.
+     *
+     * @param  RepositoryRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Repository  $repository
+     * @param  SaveRepository  $save
+     * @return RedirectResponse
      */
     public function __invoke(RepositoryRequest $request, #[CurrentUser] User $user, Project $project, Repository $repository, SaveRepository $save): RedirectResponse
     {

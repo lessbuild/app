@@ -24,7 +24,9 @@ final class UpdateUserPassword implements UpdatesUserPasswords
      * Validates the new password, and the current one when the person has one (people who signed up through a provider
      * don't), then changes it.
      *
+     * @param  User  $user
      * @param  array<string, string>  $input
+     * @return void
      */
     public function update(User $user, array $input): void
     {

@@ -9,7 +9,12 @@ use App\Models\AnalyticsIngestionBatch;
 
 final class DispatchPendingBatches
 {
-    /** Queue batches whose processing never started or failed (after a short grace period). Returns how many. */
+    /**
+     * Queue batches whose processing never started or failed (after a short grace period). Returns how many.
+     *
+     * @param  int  $limit
+     * @return int
+     */
     public function handle(int $limit = 500): int
     {
         $ids = AnalyticsIngestionBatch::query()

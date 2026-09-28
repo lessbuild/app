@@ -24,6 +24,8 @@ final class ProjectRequest extends FormRequest
 
     /**
      * The project's details, with a blank description as none.
+     *
+     * @return ProjectDetails
      */
     public function toDetails(): ProjectDetails
     {

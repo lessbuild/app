@@ -16,6 +16,14 @@ final class UpdateLoadBalancerNodeController
 {
     /**
      * Saves a node's port, weight and whether it receives traffic.
+     *
+     * @param  LoadBalancerNodeRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  LoadBalancer  $loadBalancer
+     * @param  string  $node
+     * @param  SaveLoadBalancerNode  $save
+     * @return RedirectResponse
      */
     public function __invoke(LoadBalancerNodeRequest $request, #[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, string $node, SaveLoadBalancerNode $save): RedirectResponse
     {

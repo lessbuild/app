@@ -28,6 +28,9 @@ final class DeviceLabel
     /**
      * A short description of a browser session ("Firefox on macOS") for the sessions and sign-in activity lists. It only
      * needs to be recognisable, so it checks a few well-known markers instead of parsing the user agent fully.
+     *
+     * @param  string|null  $userAgent
+     * @return string
      */
     public static function from(?string $userAgent): string
     {
@@ -49,6 +52,8 @@ final class DeviceLabel
      * Safari, so they're listed first.
      *
      * @param  array<string, string>  $needles
+     * @param  string  $haystack
+     * @return string|null
      */
     private static function first(array $needles, string $haystack): ?string
     {

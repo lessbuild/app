@@ -13,6 +13,10 @@ final class RevokeInvitation
 {
     /**
      * Withdraws a pending invitation; one already accepted, revoked or expired is left alone.
+     *
+     * @param  User  $actor
+     * @param  AccountInvitation  $invitation
+     * @return void
      */
     public function handle(User $actor, AccountInvitation $invitation): void
     {

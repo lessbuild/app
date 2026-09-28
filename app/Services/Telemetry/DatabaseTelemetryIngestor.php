@@ -39,7 +39,11 @@ final class DatabaseTelemetryIngestor implements TelemetryIngestor
      * the same identity is refused); otherwise events already stored are counted as duplicates, the rest are kept with
      * the receipt and queued for processing. The key and the project's Monitoring are checked again under lock.
      *
+     * @param  Environment  $environment
+     * @param  string  $batchId
      * @param  list<array<string, mixed>>  $events
+     * @param  IngestContext|null  $context
+     * @return IngestResult
      */
     public function ingest(Environment $environment, string $batchId, array $events, ?IngestContext $context = null): IngestResult
     {

@@ -24,6 +24,13 @@ final class InstallGitHubApp
     /**
      * GitHub sent the person back after installing the App: record the installation as a GitHub provider of the account.
      * `$state` must match the hash kept in their session when they left, so an installation can't be attached by a link.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  string  $installationId
+     * @param  string  $state
+     * @param  string|null  $expectedHash
+     * @return Provider
      */
     public function handle(User $actor, Account $account, string $installationId, string $state, ?string $expectedHash): Provider
     {

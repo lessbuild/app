@@ -27,6 +27,8 @@ class AnalyticsEvent extends Model
 {
     /**
      * Stored in `analytics_events`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_events';
 
@@ -72,6 +74,8 @@ class AnalyticsEvent extends Model
      * batch, and, while it's being processed, the given batch.
      *
      * @param  Builder<self>  $query
+     * @param  AnalyticsIngestionBatch|null  $batch
+     * @return void
      */
     #[Scope]
     protected function countable(Builder $query, ?AnalyticsIngestionBatch $batch = null): void
@@ -88,6 +92,8 @@ class AnalyticsEvent extends Model
     /**
      * Whose visit the event belongs to: its session, else its daily visitor hash, else the event alone, so events
      * without either never merge with someone else's.
+     *
+     * @return string
      */
     public function visitorIdentity(): string
     {

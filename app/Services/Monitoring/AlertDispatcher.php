@@ -23,7 +23,13 @@ final class AlertDispatcher
      */
     public function __construct(private readonly AlertDeliveryQueue $queue, private readonly TelemetryRedactor $redactor) {}
 
-    /** Called in the incident transaction, after locking its project, environment, source and incident. */
+    /**
+     * Called in the incident transaction, after locking its project, environment, source and incident.
+     *
+     * @param  Incident  $incident
+     * @param  string  $event
+     * @return void
+     */
     public function record(Incident $incident, string $event): void
     {
         if (DB::transactionLevel() === 0 || ! in_array($event, ['opened', 'recovered'], true)) {
@@ -74,7 +80,11 @@ final class AlertDispatcher
     /**
      * Writes a delivery for the destination and queues it, now or at `$sendAt`.
      *
+     * @param  AlertDestination  $destination
      * @param  array<string, mixed>  $payload
+     * @param  Incident|null  $incident
+     * @param  CarbonImmutable|null  $sendAt
+     * @return AlertDelivery
      */
     public function queue(AlertDestination $destination, array $payload, ?Incident $incident = null, ?CarbonImmutable $sendAt = null): AlertDelivery
     {

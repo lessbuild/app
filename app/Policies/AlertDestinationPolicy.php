@@ -16,6 +16,10 @@ final class AlertDestinationPolicy
 
     /**
      * Adding an alert destination (email, Slack, a webhook…): people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
@@ -24,6 +28,10 @@ final class AlertDestinationPolicy
 
     /**
      * Changing a destination: the same people, while it isn't archived.
+     *
+     * @param  User  $user
+     * @param  AlertDestination  $record
+     * @return bool
      */
     public function update(User $user, AlertDestination $record): bool
     {
@@ -32,6 +40,10 @@ final class AlertDestinationPolicy
 
     /**
      * Archiving a destination, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  AlertDestination  $record
+     * @return bool
      */
     public function delete(User $user, AlertDestination $record): bool
     {

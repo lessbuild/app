@@ -27,6 +27,7 @@ final class ServerProvisioningPlan
     /**
      * Every provisioning script for the server's type, starting with the base script.
      *
+     * @param  Server|ServerType  $server
      * @return list<class-string<ServerScript>>
      */
     public function scripts(Server|ServerType $server): array
@@ -38,6 +39,7 @@ final class ServerProvisioningPlan
      * The stages after the base script: updates, swap and server configuration, the type's software, recipes, and the
      * finish.
      *
+     * @param  Server|ServerType  $server
      * @return list<class-string<ServerScript>>
      */
     public function steps(Server|ServerType $server): array
@@ -57,6 +59,9 @@ final class ServerProvisioningPlan
 
     /**
      * The number of stages, which is the last progress value the script reports.
+     *
+     * @param  Server|ServerType  $server
+     * @return int
      */
     public function finalStage(Server|ServerType $server): int
     {

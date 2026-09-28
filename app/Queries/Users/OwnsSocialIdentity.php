@@ -12,6 +12,11 @@ final class OwnsSocialIdentity
 {
     /**
      * Whether the provider account is already connected to this person.
+     *
+     * @param  User  $user
+     * @param  SocialProvider  $provider
+     * @param  SocialProfile  $profile
+     * @return bool
      */
     public function handle(User $user, SocialProvider $provider, SocialProfile $profile): bool
     {

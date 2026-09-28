@@ -20,6 +20,11 @@ final class NativeDnsRecordResolver implements DnsRecordResolver
     /**
      * Runs the lookup in a child PHP process with a timeout, since the system resolver can't be interrupted otherwise.
      * Oversized answers and failures come back as null.
+     *
+     * @param  string  $hostname
+     * @param  string  $type
+     * @param  int  $timeoutSeconds
+     * @return list<array<string, mixed>>|null
      */
     public function records(string $hostname, string $type, int $timeoutSeconds): ?array
     {

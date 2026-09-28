@@ -25,6 +25,9 @@ final readonly class AccountEntitlements
 
     /**
      * The limit for a key, or null when the account has no limit there.
+     *
+     * @param  string  $key
+     * @return int|null
      */
     public function limit(string $key): ?int
     {
@@ -33,13 +36,22 @@ final readonly class AccountEntitlements
 
     /**
      * Whether one of the account's tiers turns the feature on.
+     *
+     * @param  string  $flag
+     * @return bool
      */
     public function has(string $flag): bool
     {
         return in_array($flag, $this->flags, true);
     }
 
-    /** May the account have $wanted of something limited by $key (e.g. members after adding one)? */
+    /**
+     * May the account have $wanted of something limited by $key (e.g. members after adding one)?
+     *
+     * @param  string  $key
+     * @param  int  $wanted
+     * @return Decision
+     */
     public function allows(string $key, int $wanted): Decision
     {
         $limit = $this->limit($key);

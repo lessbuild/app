@@ -74,6 +74,8 @@ final class TelemetryEvent extends Model
      * Limits a query to events in the account's environments.
      *
      * @param  Builder<TelemetryEvent>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -86,6 +88,7 @@ final class TelemetryEvent extends Model
      * itself isn't loaded.
      *
      * @param  Builder<TelemetryEvent>  $query
+     * @return void
      */
     #[Scope]
     protected function summary(Builder $query): void

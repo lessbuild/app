@@ -33,8 +33,10 @@ final class AlertNotificationTransport
      * reading at most 16 KiB of response; generic webhooks are signed. Each provider's answer is judged by its own
      * success rule, and failures are sorted into retryable, uncertain and rejected.
      *
+     * @param  string  $id
      * @param  array{type: AlertDestinationType, endpoint: ?string, secret: ?string, email: ?string}  $target
      * @param  array<string, mixed>  $payload
+     * @return AlertDeliveryResult
      */
     public function send(string $id, array $target, array $payload): AlertDeliveryResult
     {
@@ -148,6 +150,8 @@ final class AlertNotificationTransport
     /**
      * Whether the monitoring mailer is SMTP with a timeout of at most 15 seconds, so a slow mail server can't hold a
      * worker.
+     *
+     * @return bool
      */
     public function mailConfigured(): bool
     {
@@ -172,6 +176,7 @@ final class AlertNotificationTransport
     /**
      * The alert as a Slack message: plain text (so titles can't inject formatting) and a button to the incident.
      *
+     * @param  string  $id
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
@@ -195,6 +200,7 @@ final class AlertNotificationTransport
     /**
      * The alert as a Teams message card, green for recoveries and red otherwise.
      *
+     * @param  string  $id
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
@@ -223,6 +229,8 @@ final class AlertNotificationTransport
     /**
      * The alert as a PagerDuty event: triggering, or resolving on recovery, deduplicated per incident.
      *
+     * @param  string  $id
+     * @param  string  $routingKey
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */
@@ -246,6 +254,7 @@ final class AlertNotificationTransport
     /**
      * The alert as a Discord embed with mentions disabled, so titles can't ping anyone.
      *
+     * @param  string  $id
      * @param  array<string, mixed>  $payload
      * @return array<string, mixed>
      */

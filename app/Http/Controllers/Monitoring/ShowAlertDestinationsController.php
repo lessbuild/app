@@ -17,6 +17,12 @@ final class ShowAlertDestinationsController
 {
     /**
      * The destinations page.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  AlertDestinationsQuery  $destinations
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, AlertDestinationsQuery $destinations): View
     {

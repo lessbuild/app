@@ -19,6 +19,8 @@ final class HttpRequestOrigin implements RequestOrigin
 
     /**
      * The request's client IP; null in console commands and queued jobs.
+     *
+     * @return string|null
      */
     public function ipAddress(): ?string
     {
@@ -27,6 +29,8 @@ final class HttpRequestOrigin implements RequestOrigin
 
     /**
      * The request's user agent; null in console commands and queued jobs.
+     *
+     * @return string|null
      */
     public function userAgent(): ?string
     {
@@ -35,6 +39,8 @@ final class HttpRequestOrigin implements RequestOrigin
 
     /**
      * The current request, or null outside one. Tests count as requests, so audit entries in tests carry an origin.
+     *
+     * @return Request|null
      */
     private function request(): ?Request
     {

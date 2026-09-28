@@ -16,6 +16,12 @@ final class InviteMemberController
 {
     /**
      * Sends an invitation to join the account.
+     *
+     * @param  Account  $account
+     * @param  InviteMemberRequest  $request
+     * @param  User  $user
+     * @param  InviteMember  $invite
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, InviteMemberRequest $request, #[CurrentUser] User $user, InviteMember $invite): RedirectResponse
     {

@@ -15,7 +15,9 @@ final class ServiceObjectiveReportExporter
     /**
      * The SLO report as a two-line CSV, with text cells protected from spreadsheet formulas.
      *
+     * @param  ServiceLevelObjective  $objective
      * @param  array<string, mixed>  $report
+     * @return string
      */
     public function csv(ServiceLevelObjective $objective, array $report): string
     {
@@ -62,6 +64,10 @@ final class ServiceObjectiveReportExporter
 
     /**
      * A download name from the SLO's name and the report's end.
+     *
+     * @param  ServiceLevelObjective  $objective
+     * @param  CarbonImmutable  $until
+     * @return string
      */
     public function filename(ServiceLevelObjective $objective, CarbonImmutable $until): string
     {

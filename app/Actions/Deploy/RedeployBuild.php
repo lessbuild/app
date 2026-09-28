@@ -16,7 +16,13 @@ final class RedeployBuild
      */
     public function __construct(private readonly DeployRepository $deploy) {}
 
-    /** Build and deploy a past build's commit again, with the repository's current settings. */
+    /**
+     * Build and deploy a past build's commit again, with the repository's current settings.
+     *
+     * @param  User  $actor
+     * @param  Build  $source
+     * @return Build
+     */
     public function handle(User $actor, Build $source): Build
     {
         $build = $this->deploy->handle($actor, $source->repository, $source->revision, 'redeploy');

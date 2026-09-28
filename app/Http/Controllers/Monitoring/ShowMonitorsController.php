@@ -16,6 +16,12 @@ final class ShowMonitorsController
 {
     /**
      * The project's monitors.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectMonitorsQuery  $monitors
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectMonitorsQuery $monitors): View
     {

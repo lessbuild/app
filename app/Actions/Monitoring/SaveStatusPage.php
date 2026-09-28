@@ -28,7 +28,11 @@ final class SaveStatusPage
     /**
      * Create or change a status page and replace its components (in the order given) with the chosen monitors.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by StatusPageRequest
+     * @param  StatusPage|null  $page
+     * @return StatusPage
      */
     public function handle(Account $account, User $actor, array $data, ?StatusPage $page = null): StatusPage
     {
@@ -79,7 +83,9 @@ final class SaveStatusPage
      * The page's URL slug: the one asked for, the one it already has, or one made from its name with a random suffix,
      * since slugs are shared by every account.
      *
+     * @param  StatusPage  $page
      * @param  array<string, mixed>  $data
+     * @return string
      */
     private function slug(StatusPage $page, array $data): string
     {

@@ -30,6 +30,7 @@ final class AccountInvitationNotification extends Notification implements Should
     /**
      * Invitations go by email only: the invitee may not have a user here yet.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -39,6 +40,9 @@ final class AccountInvitationNotification extends Notification implements Should
 
     /**
      * Says who invited them, to which account and role, links to the invitation page and says when it expires.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {

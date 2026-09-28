@@ -16,6 +16,12 @@ final class ShowSessionsController
 {
     /**
      * The sessions page: signed-in browsers and recent sign-ins.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  BrowserSessionsQuery  $sessions
+     * @param  RecentSignInsQuery  $signIns
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, BrowserSessionsQuery $sessions, RecentSignInsQuery $signIns): View
     {

@@ -18,6 +18,14 @@ final class PlanConfigurationController
 {
     /**
      * Returns the plan for the posted document.
+     *
+     * @param  ConfigurationRequest  $request
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $project
+     * @param  DeployApiQuery  $query
+     * @param  PlanConfiguration  $plan
+     * @return JsonResponse
      */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, DeployApiQuery $query, PlanConfiguration $plan): JsonResponse
     {

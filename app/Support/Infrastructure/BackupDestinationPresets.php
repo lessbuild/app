@@ -23,7 +23,14 @@ final class BackupDestinationPresets
         ];
     }
 
-    /** The endpoint for Spaces and S3 when only the region was given. */
+    /**
+     * The endpoint for Spaces and S3 when only the region was given.
+     *
+     * @param  string  $provider
+     * @param  string  $region
+     * @param  string|null  $endpoint
+     * @return string|null
+     */
     public static function endpoint(string $provider, string $region, ?string $endpoint): ?string
     {
         if (filled($endpoint) || preg_match('/\A[a-z0-9][a-z0-9-]{0,31}\z/iD', $region) !== 1) {

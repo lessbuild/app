@@ -24,6 +24,7 @@ final class IncidentAlertNotification extends Notification
     /**
      * Email; other destination types are delivered by their own transports.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -34,6 +35,9 @@ final class IncidentAlertNotification extends Notification
     /**
      * The event and incident title, where it happened, the monitor's latest observation with its details, and a link to
      * the incident. Sent through the monitoring mailer when one is configured.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -72,6 +76,10 @@ final class IncidentAlertNotification extends Notification
 
     /**
      * A payload value as text, or the default when it's missing or not scalar.
+     *
+     * @param  string  $key
+     * @param  string  $default
+     * @return string
      */
     private function text(string $key, string $default = ''): string
     {

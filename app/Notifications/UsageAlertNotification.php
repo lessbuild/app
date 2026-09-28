@@ -23,6 +23,7 @@ final class UsageAlertNotification extends InboxNotification
     /**
      * By email, because telemetry stops being accepted at 100%, and in the inbox.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -32,6 +33,9 @@ final class UsageAlertNotification extends InboxNotification
 
     /**
      * The usage, when the allowance resets, and a link to plans.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {
@@ -44,6 +48,8 @@ final class UsageAlertNotification extends InboxNotification
 
     /**
      * How much of the allowance is used, or that all of it is.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -54,6 +60,8 @@ final class UsageAlertNotification extends InboxNotification
 
     /**
      * The event count against the limit and what happens at 100%.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -66,6 +74,8 @@ final class UsageAlertNotification extends InboxNotification
 
     /**
      * The billing page, to upgrade.
+     *
+     * @return string
      */
     protected function url(): string
     {
@@ -74,6 +84,8 @@ final class UsageAlertNotification extends InboxNotification
 
     /**
      * The account the usage belongs to.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

@@ -13,6 +13,8 @@ enum IngestSource: string
 
     /**
      * How the ingest receipts page names the source.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -26,6 +28,8 @@ enum IngestSource: string
 
     /**
      * The OTLP signal the source carries, or null for our own JSON event format.
+     *
+     * @return string|null
      */
     public function signal(): ?string
     {

@@ -18,6 +18,12 @@ final class SearchController
     /**
      * The command palette's search: projects, domains and members of the current account matching at least two typed
      * characters, grouped, with empty groups left out.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  SearchProjectsQuery  $projects
+     * @param  SearchMembersQuery  $members
+     * @return JsonResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, SearchProjectsQuery $projects, SearchMembersQuery $members): JsonResponse
     {

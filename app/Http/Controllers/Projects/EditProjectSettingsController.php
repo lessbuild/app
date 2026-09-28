@@ -15,6 +15,11 @@ final class EditProjectSettingsController
 {
     /**
      * The project settings page, offering every environment kind except production.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $query
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query): View
     {

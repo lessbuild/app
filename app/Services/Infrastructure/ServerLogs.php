@@ -28,6 +28,10 @@ final class ServerLogs
 
     /**
      * The tail of one of the server's logs, cut to the configured length.
+     *
+     * @param  Server  $server
+     * @param  string  $type
+     * @return string
      */
     public function read(Server $server, string $type): string
     {

@@ -13,6 +13,8 @@ final class StoreOtlpRequest extends FormRequest
 {
     /**
      * Always allowed: the ingest key was checked by middleware.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {
@@ -29,7 +31,12 @@ final class StoreOtlpRequest extends FormRequest
         return $this->json()->all();
     }
 
-    /** Preserve protocol metadata and extension fields after validating their enclosing structures. */
+    /**
+     * Preserve protocol metadata and extension fields after validating their enclosing structures.
+     *
+     * @param  Validator  $validator
+     * @return void
+     */
     public function withValidator(Validator $validator): void
     {
         $validator->excludeUnvalidatedArrayKeys = false;
@@ -122,6 +129,8 @@ final class StoreOtlpRequest extends FormRequest
     /**
      * Rules for a trace or span ID: hex of exactly `$length` characters and not all zeros, required for spans.
      *
+     * @param  int  $length
+     * @param  bool  $required
      * @return array<int, string>
      */
     private function identifierRules(int $length, bool $required = false): array
@@ -133,7 +142,11 @@ final class StoreOtlpRequest extends FormRequest
      * Checks one record's timestamps and enum fields for its signal; metric data points are checked recursively as
      * "points".
      *
+     * @param  Validator  $validator
      * @param  array<string, mixed>  $record
+     * @param  string  $path
+     * @param  string  $signal
+     * @return void
      */
     private function validateRecord(Validator $validator, array $record, string $path, string $signal): void
     {
@@ -214,6 +227,7 @@ final class StoreOtlpRequest extends FormRequest
      * Rules for an attribute list: at most the configured number of attributes, each with a key of at most 256
      * characters and a valid OTLP value.
      *
+     * @param  string  $path
      * @return array<string, array<int, mixed>>
      */
     private function attributeRules(string $path): array
@@ -228,6 +242,8 @@ final class StoreOtlpRequest extends FormRequest
 
     /**
      * A validation rule that fails for anything that isn't a valid OTLP `AnyValue`.
+     *
+     * @return Closure
      */
     private function valueRule(): Closure
     {
@@ -241,6 +257,9 @@ final class StoreOtlpRequest extends FormRequest
     /**
      * Whether a value is a valid OTLP `AnyValue`: null, or an object with at most one typed field whose content fits the
      * type. Arrays and key-value lists are checked recursively, and key-value lists share the attribute limit.
+     *
+     * @param  mixed  $value
+     * @return bool
      */
     private function validValue(mixed $value): bool
     {

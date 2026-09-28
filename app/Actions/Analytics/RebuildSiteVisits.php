@@ -17,6 +17,10 @@ class RebuildSiteVisits
     /**
      * Rebuilds visits from events: for the whole site, or only the visits of the visitors and sessions a batch touched.
      * Old visits in scope are deleted and replaced.
+     *
+     * @param  AnalyticsSite  $site
+     * @param  AnalyticsIngestionBatch|null  $batch
+     * @return void
      */
     public function handle(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null): void
     {
@@ -92,6 +96,7 @@ class RebuildSiteVisits
      * Inserts rebuilt visits in one statement.
      *
      * @param  array<string, array<string, mixed>>  $visits
+     * @return void
      */
     private function insert(array $visits): void
     {
@@ -102,6 +107,11 @@ class RebuildSiteVisits
 
     /**
      * A stable key for a visit: who it belongs to, when it started, and the local day.
+     *
+     * @param  string  $identity
+     * @param  CarbonImmutable  $occurredAt
+     * @param  string  $timezone
+     * @return string
      */
     private function visitKey(string $identity, CarbonImmutable $occurredAt, string $timezone): string
     {
@@ -114,6 +124,7 @@ class RebuildSiteVisits
      * completions.
      *
      * @param  Collection<int, AnalyticsEvent>  $events
+     * @param  AnalyticsSite  $site
      * @param  Collection<int, AnalyticsGoal>  $goals
      * @return array<string, array<string, mixed>>
      */

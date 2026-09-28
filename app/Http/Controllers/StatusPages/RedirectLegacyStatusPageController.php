@@ -11,6 +11,10 @@ final class RedirectLegacyStatusPageController
 {
     /**
      * Permanently redirects the old address to the new one.
+     *
+     * @param  string  $product
+     * @param  string  $slug
+     * @return RedirectResponse
      */
     public function __invoke(string $product, string $slug): RedirectResponse
     {

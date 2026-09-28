@@ -15,6 +15,10 @@ final class RecordDeploymentApiController
 {
     /**
      * Records a deployment reported by a pipeline with the environment's key.
+     *
+     * @param  StoreDeploymentApiRequest  $request
+     * @param  RecordDeployment  $record
+     * @return JsonResponse
      */
     public function __invoke(StoreDeploymentApiRequest $request, RecordDeployment $record): JsonResponse
     {

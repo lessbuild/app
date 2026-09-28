@@ -16,6 +16,8 @@ enum AlertDeliveryStatus: string
 
     /**
      * Whether the delivery is still in flight (queued, sending or waiting to retry), so it can't be retried by hand yet.
+     *
+     * @return bool
      */
     public function pending(): bool
     {
@@ -25,6 +27,8 @@ enum AlertDeliveryStatus: string
     /**
      * Whether someone may resend it by hand: it failed, or the provider's answer was ambiguous and it may not have
      * arrived.
+     *
+     * @return bool
      */
     public function retryable(): bool
     {
@@ -33,6 +37,8 @@ enum AlertDeliveryStatus: string
 
     /**
      * The status as the delivery history shows it.
+     *
+     * @return string
      */
     public function label(): string
     {

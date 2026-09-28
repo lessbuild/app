@@ -12,6 +12,9 @@ final class ShowAccountController
 {
     /**
      * `GET /api/v1/account`: the account the token acts in.
+     *
+     * @param  Request  $request
+     * @return JsonResponse
      */
     public function __invoke(Request $request): JsonResponse
     {

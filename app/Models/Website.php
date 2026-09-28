@@ -92,6 +92,8 @@ class Website extends Model
     /**
      * Gives each new website a provisioning token and a directory slug made from its name (at most 32 characters,
      * unique in the account), and adds its URL as its primary domain once it's created.
+     *
+     * @return void
      */
     protected static function booted(): void
     {
@@ -243,13 +245,20 @@ class Website extends Model
 
     /**
      * The MySQL database and user name: the directory slug with hyphens as underscores.
+     *
+     * @return string
      */
     public function databaseIdentifier(): string
     {
         return str_replace('-', '_', $this->deployment_slug);
     }
 
-    /** Where a release phase lives on the server. Deploy adds the repository's subdirectory. */
+    /**
+     * Where a release phase lives on the server. Deploy adds the repository's subdirectory.
+     *
+     * @param  string  $phase
+     * @return string
+     */
     public function deploymentPath(string $phase): string
     {
         return "/var/www/{$this->deployment_slug}/{$phase}";
@@ -257,6 +266,8 @@ class Website extends Model
 
     /**
      * Whether the website is still being set up.
+     *
+     * @return bool
      */
     public function isProvisioning(): bool
     {

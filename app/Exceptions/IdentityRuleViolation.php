@@ -9,6 +9,8 @@ final class IdentityRuleViolation extends RuleViolation
 {
     /**
      * Disconnecting this provider would leave the person with no password, passkey or other provider to sign in with.
+     *
+     * @return IdentityRuleViolation
      */
     public static function lastSignInMethod(): self
     {
@@ -17,6 +19,8 @@ final class IdentityRuleViolation extends RuleViolation
 
     /**
      * The provider account being connected already belongs to another user here.
+     *
+     * @return IdentityRuleViolation
      */
     public static function identityTaken(): self
     {
@@ -25,6 +29,9 @@ final class IdentityRuleViolation extends RuleViolation
 
     /**
      * The person already has a different account from this provider connected; only one per provider is allowed.
+     *
+     * @param  string  $provider
+     * @return IdentityRuleViolation
      */
     public static function providerAlreadyConnected(string $provider): self
     {
@@ -33,6 +40,9 @@ final class IdentityRuleViolation extends RuleViolation
 
     /**
      * The provider didn't vouch for the account's email address, so we can't trust it to identify the person.
+     *
+     * @param  string  $provider
+     * @return IdentityRuleViolation
      */
     public static function noVerifiedEmail(string $provider): self
     {

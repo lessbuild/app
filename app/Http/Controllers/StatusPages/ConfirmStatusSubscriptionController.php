@@ -13,6 +13,11 @@ final class ConfirmStatusSubscriptionController
 {
     /**
      * Confirms the subscription when the token matches; anything else is a 404.
+     *
+     * @param  string  $subscription
+     * @param  string  $token
+     * @param  ConfirmStatusSubscription  $confirm
+     * @return RedirectResponse
      */
     public function __invoke(string $subscription, string $token, ConfirmStatusSubscription $confirm): RedirectResponse
     {

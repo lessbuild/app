@@ -66,6 +66,8 @@ class AccountInvitation extends Model
 
     /**
      * Whether the invitation can still be accepted: not accepted, not revoked and not expired.
+     *
+     * @return bool
      */
     public function isPending(): bool
     {
@@ -76,6 +78,7 @@ class AccountInvitation extends Model
      * Limits a query to invitations that can still be accepted.
      *
      * @param  Builder<self>  $query
+     * @return void
      */
     #[Scope]
     protected function pending(Builder $query): void
@@ -85,6 +88,9 @@ class AccountInvitation extends Model
 
     /**
      * The stored form of an invitation token. Only the hash is kept, so a database leak doesn't expose working links.
+     *
+     * @param  string  $token
+     * @return string
      */
     public static function hashToken(string $token): string
     {

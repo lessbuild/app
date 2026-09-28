@@ -14,6 +14,11 @@ final class DeleteMaintenanceWindow
 {
     /**
      * Deletes one of the account's maintenance windows.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  MaintenanceWindow  $window
+     * @return void
      */
     public function handle(Account $account, User $actor, MaintenanceWindow $window): void
     {

@@ -16,6 +16,12 @@ final class StoreProviderController
 {
     /**
      * Connects a new provider and suggests checking its connection.
+     *
+     * @param  Account  $account
+     * @param  ProviderRequest  $request
+     * @param  User  $user
+     * @param  SaveProvider  $save
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, ProviderRequest $request, #[CurrentUser] User $user, SaveProvider $save): RedirectResponse
     {

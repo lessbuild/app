@@ -14,6 +14,8 @@ enum AccountRole: string
 
     /**
      * The role's name as shown on the members page.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -28,6 +30,8 @@ enum AccountRole: string
 
     /**
      * One line explaining what someone with this role can do, shown when inviting or changing a member.
+     *
+     * @return string
      */
     public function description(): string
     {
@@ -62,13 +66,21 @@ enum AccountRole: string
 
     /**
      * Whether this role includes a permission. The account policies use this for every check.
+     *
+     * @param  AccountPermission  $permission
+     * @return bool
      */
     public function allows(AccountPermission $permission): bool
     {
         return in_array($permission, $this->permissions(), true);
     }
 
-    /** Roles an actor holding this role may assign to others. */
+    /**
+     * Roles an actor holding this role may assign to others.
+     *
+     * @param  AccountRole  $role
+     * @return bool
+     */
     public function canAssign(self $role): bool
     {
         return match ($this) {

@@ -16,6 +16,12 @@ final class StoreProjectController
 {
     /**
      * Creates a project and suggests turning services on.
+     *
+     * @param  Account  $account
+     * @param  ProjectRequest  $request
+     * @param  User  $user
+     * @param  CreateProject  $create
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, ProjectRequest $request, #[CurrentUser] User $user, CreateProject $create): RedirectResponse
     {

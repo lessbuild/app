@@ -22,11 +22,15 @@ final class RestoreWebsiteBackup implements ShouldQueue
 
     /**
      * One attempt: the restore script puts the website back as it was if it fails, and running it twice isn't safe.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * Restores of large websites can take up to an hour.
+     *
+     * @var int
      */
     public int $timeout = 3600;
 
@@ -39,6 +43,10 @@ final class RestoreWebsiteBackup implements ShouldQueue
 
     /**
      * Claims the restore and runs the restore script on the website's server, recording success or the script's error.
+     *
+     * @param  ServerShell  $shell
+     * @param  BackupScripts  $scripts
+     * @return void
      */
     public function handle(ServerShell $shell, BackupScripts $scripts): void
     {
@@ -64,6 +72,9 @@ final class RestoreWebsiteBackup implements ShouldQueue
 
     /**
      * Marks the restore failed with the reason.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

@@ -22,7 +22,13 @@ final class RollbackBuild
      */
     public function __construct(private readonly Entitlements $entitlements, private readonly Deployments $deployments) {}
 
-    /** Make an earlier succeeded release live again without rebuilding (its directory must still be on the server). */
+    /**
+     * Make an earlier succeeded release live again without rebuilding (its directory must still be on the server).
+     *
+     * @param  User  $actor
+     * @param  Build  $source
+     * @return Build
+     */
     public function handle(User $actor, Build $source): Build
     {
         Gate::forUser($actor)->authorize('deploy', $source->repository);

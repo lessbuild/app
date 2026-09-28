@@ -34,6 +34,9 @@ final class DeleteUser
     /**
      * Permanently delete a user: accounts only they belong to are deleted, shared accounts are left
      * (so those accounts' audit logs record it), and sign-in methods, history and sessions go with the user.
+     *
+     * @param  User  $user
+     * @return void
      */
     public function handle(User $user): void
     {

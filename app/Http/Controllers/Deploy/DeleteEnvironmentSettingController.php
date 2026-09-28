@@ -15,6 +15,14 @@ final class DeleteEnvironmentSettingController
 {
     /**
      * Removes one variable, process or resource from an environment; the server changes with the next deploy.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  string  $kind
+     * @param  string  $setting
+     * @param  DeleteEnvironmentSetting  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Environment $environment, string $kind, string $setting, DeleteEnvironmentSetting $delete): RedirectResponse
     {

@@ -33,6 +33,7 @@ final class StatusSubscriptionConfirmation extends Notification implements Shoul
     /**
      * Email only: subscribers are addresses, not users.
      *
+     * @param  object  $notifiable
      * @return list<string>
      */
     public function via(object $notifiable): array
@@ -42,6 +43,9 @@ final class StatusSubscriptionConfirmation extends Notification implements Shoul
 
     /**
      * Explains what they'll get and links to the confirmation, telling them to ignore it if they didn't ask.
+     *
+     * @param  object  $notifiable
+     * @return MailMessage
      */
     public function toMail(object $notifiable): MailMessage
     {

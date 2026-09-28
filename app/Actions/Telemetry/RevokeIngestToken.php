@@ -22,7 +22,13 @@ final class RevokeIngestToken
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Stop accepting a key. Requests that use it are refused from now on. */
+    /**
+     * Stop accepting a key. Requests that use it are refused from now on.
+     *
+     * @param  User  $actor
+     * @param  IngestToken  $token
+     * @return void
+     */
     public function handle(User $actor, IngestToken $token): void
     {
         DB::transaction(function () use ($actor, $token): void {

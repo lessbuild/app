@@ -16,16 +16,22 @@ final class ProcessMonitorCheck implements ShouldQueue
 
     /**
      * One attempt: a check is a measurement at a moment, and repeating it later would record the wrong time.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * How long a check may take, which covers the slowest check type.
+     *
+     * @var int
      */
     public int $timeout = MonitorQueue::TIMEOUT;
 
     /**
      * A check that times out is failed rather than retried, for the same reason.
+     *
+     * @var bool
      */
     public bool $failOnTimeout = true;
 
@@ -38,6 +44,9 @@ final class ProcessMonitorCheck implements ShouldQueue
 
     /**
      * Runs the check and records the result.
+     *
+     * @param  MonitorCheckRunner  $runner
+     * @return void
      */
     public function handle(MonitorCheckRunner $runner): void
     {
@@ -46,6 +55,9 @@ final class ProcessMonitorCheck implements ShouldQueue
 
     /**
      * Records that the checker was interrupted, so the check reads "unknown" instead of staying queued.
+     *
+     * @param  Throwable|null  $exception
+     * @return void
      */
     public function failed(?Throwable $exception): void
     {

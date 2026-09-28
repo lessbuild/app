@@ -8,6 +8,9 @@ final class TelemetryPayloadGuard
 {
     /**
      * Refuses NaN and infinite numbers anywhere in the payload.
+     *
+     * @param  mixed  $value
+     * @return void
      */
     public function assertFiniteNumbers(mixed $value): void
     {
@@ -22,6 +25,9 @@ final class TelemetryPayloadGuard
 
     /**
      * Counts objects, arrays, keys and values in the raw JSON without decoding it, refusing bodies with too many.
+     *
+     * @param  string  $body
+     * @return void
      */
     public function assertJsonComplexity(string $body): void
     {
@@ -59,6 +65,8 @@ final class TelemetryPayloadGuard
      * Refuses batches with more events (or OTLP spans, log records or metric data points) than allowed.
      *
      * @param  array<string, mixed>  $payload
+     * @param  string  $signal
+     * @return void
      */
     public function assertRecordCount(array $payload, string $signal): void
     {
@@ -107,6 +115,7 @@ final class TelemetryPayloadGuard
      * Refuses batches whose events, once normalised, would take more storage than allowed.
      *
      * @param  array<int, array<string, mixed>>  $events
+     * @return void
      */
     public function assertNormalizedSize(array $events): void
     {
@@ -121,6 +130,9 @@ final class TelemetryPayloadGuard
 
     /**
      * Refuses a count above the per-batch event limit.
+     *
+     * @param  int  $count
+     * @return void
      */
     private function assertCount(int $count): void
     {

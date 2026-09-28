@@ -31,6 +31,8 @@ class ProviderConnectionCheck extends Model
 
     /**
      * Each check records its own `checked_at`; rows are never updated.
+     *
+     * @var bool
      */
     public $timestamps = false;
 

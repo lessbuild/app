@@ -15,6 +15,9 @@ final class InboxQuery
     /**
      * The person's notifications, newest first and cursor-paginated, optionally only unread ones.
      *
+     * @param  User  $user
+     * @param  bool  $unreadOnly
+     * @param  int  $perPage
      * @return CursorPaginator<int, InboxItem> newest first
      */
     public function handle(User $user, bool $unreadOnly = false, int $perPage = 30): CursorPaginator
@@ -36,6 +39,9 @@ final class InboxQuery
 
     /**
      * How many are unread, for the badge in the shell.
+     *
+     * @param  User  $user
+     * @return int
      */
     public function unreadCount(User $user): int
     {

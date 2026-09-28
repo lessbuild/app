@@ -8,6 +8,12 @@ use App\Models\Website;
 
 interface WebsiteScript
 {
-    /** Shell commands for one website provisioning stage, ending with a progress report for `$step`. */
+    /**
+     * Shell commands for one website provisioning stage, ending with a progress report for `$step`.
+     *
+     * @param  int  $step
+     * @param  Website  $website
+     * @return string
+     */
     public function script(int $step, Website $website): string;
 }

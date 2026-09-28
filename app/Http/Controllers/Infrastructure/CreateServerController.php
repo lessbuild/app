@@ -22,6 +22,15 @@ final class CreateServerController
     /**
      * The new server form. The chosen provider's regions, sizes and images are read live; if that fails, the form says
      * so instead of breaking.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProvidersQuery  $providers
+     * @param  ServerProviderResolver  $resolver
+     * @param  ServerCatalog  $catalogs
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProvidersQuery $providers, ServerProviderResolver $resolver, ServerCatalog $catalogs): View
     {

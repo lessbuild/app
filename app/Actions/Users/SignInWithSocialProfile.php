@@ -27,6 +27,11 @@ final class SignInWithSocialProfile
     /**
      * Find the user behind a provider identity, or register a new one. An existing account is never
      * matched by email alone; its owner has to sign in and connect the provider from their settings.
+     *
+     * @param  SocialProvider  $provider
+     * @param  SocialProfile  $profile
+     * @param  bool  $registrationOpen
+     * @return SocialSignInResult
      */
     public function handle(SocialProvider $provider, SocialProfile $profile, bool $registrationOpen): SocialSignInResult
     {

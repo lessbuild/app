@@ -14,6 +14,8 @@ final class ProjectIncidentsQuery
     /**
      * The project's incidents, newest first: open and acknowledged ones by default, or resolved ones when asked.
      *
+     * @param  Project  $project
+     * @param  string  $status
      * @return list<Incident> open (or acknowledged) incidents first by default; resolved ones on request
      */
     public function handle(Project $project, string $status = 'open'): array
@@ -24,7 +26,13 @@ final class ProjectIncidentsQuery
         return array_values($query->latest('opened_at')->latest('id')->limit(100)->get()->all());
     }
 
-    /** An incident of this project (404 otherwise). */
+    /**
+     * An incident of this project (404 otherwise).
+     *
+     * @param  Project  $project
+     * @param  string|int  $id
+     * @return Incident
+     */
     public function find(Project $project, string|int $id): Incident
     {
         $incident = Incident::query()->where('project_id', $project->id)->with(['assignee', 'acknowledgedBy'])->findOrFail((int) $id);
@@ -36,6 +44,7 @@ final class ProjectIncidentsQuery
     /**
      * Members an incident can be assigned to: owners, admins and members who may use Monitoring, by name.
      *
+     * @param  Project  $project
      * @return list<User> members who can be assigned incidents: they work on projects and may use Monitoring
      */
     public function assignees(Project $project): array

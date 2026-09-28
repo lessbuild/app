@@ -45,7 +45,11 @@ class WebsiteBackup extends Model
 
     public const STATUS_FAILED = 'failed';
 
-    /** Completed with a snapshot restic can restore. */
+    /**
+     * Completed with a snapshot restic can restore.
+     *
+     * @return bool
+     */
     public function isRestorable(): bool
     {
         return $this->status === self::STATUS_SUCCEEDED && preg_match('/\A[a-f0-9]{8,64}\z/D', (string) $this->snapshot_id) === 1;

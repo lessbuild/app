@@ -22,11 +22,15 @@ final class ApplyLoadBalancer implements ShouldQueue
 
     /**
      * One attempt; a failed apply is shown so someone can fix it and try again.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * How long writing and reloading the proxy configuration may take.
+     *
+     * @var int
      */
     public int $timeout = 120;
 
@@ -40,6 +44,10 @@ final class ApplyLoadBalancer implements ShouldQueue
     /**
      * Applies the configuration on the active proxy server and marks the load balancer active, or failed with Caddy's
      * error.
+     *
+     * @param  ServerShell  $shell
+     * @param  LoadBalancerConfiguration  $configuration
+     * @return void
      */
     public function handle(ServerShell $shell, LoadBalancerConfiguration $configuration): void
     {
@@ -65,6 +73,9 @@ final class ApplyLoadBalancer implements ShouldQueue
 
     /**
      * Marks a still-pending load balancer failed with the reason.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

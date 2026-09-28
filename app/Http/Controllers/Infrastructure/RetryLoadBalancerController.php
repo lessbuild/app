@@ -15,6 +15,12 @@ final class RetryLoadBalancerController
 {
     /**
      * Tries a failed load-balancer change again.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  LoadBalancer  $loadBalancer
+     * @param  RetryLoadBalancer  $retry
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, RetryLoadBalancer $retry): RedirectResponse
     {

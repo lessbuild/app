@@ -11,6 +11,10 @@ final class WebsiteCaddyConfiguration
 {
     /**
      * The site for a PHP website served by PHP-FPM from the document root.
+     *
+     * @param  Website  $website
+     * @param  string  $documentRoot
+     * @return string
      */
     public function php(Website $website, string $documentRoot): string
     {
@@ -25,13 +29,22 @@ final class WebsiteCaddyConfiguration
 
     /**
      * The site for a website served by an app listening on a local port.
+     *
+     * @param  Website  $website
+     * @param  int  $port
+     * @return string
      */
     public function reverseProxy(Website $website, int $port): string
     {
         return $this->render($website, implode("\n", ['    encode zstd gzip', "    reverse_proxy 127.0.0.1:{$port}", $this->accessLog($website)]));
     }
 
-    /** IP addresses get plain HTTP (no certificate can be issued for them). */
+    /**
+     * IP addresses get plain HTTP (no certificate can be issued for them).
+     *
+     * @param  string  $hostname
+     * @return string
+     */
     public function siteAddress(string $hostname): string
     {
         if (filter_var($hostname, FILTER_VALIDATE_IP) === false) {
@@ -44,6 +57,10 @@ final class WebsiteCaddyConfiguration
     /**
      * The site block for the website's primary hostname and aliases, plus a permanent-redirect block for each redirect
      * domain.
+     *
+     * @param  Website  $website
+     * @param  string  $body
+     * @return string
      */
     private function render(Website $website, string $body): string
     {
@@ -61,6 +78,9 @@ final class WebsiteCaddyConfiguration
 
     /**
      * The site's JSON access log, rotated at 20 MiB and kept for a week.
+     *
+     * @param  Website  $website
+     * @return string
      */
     private function accessLog(Website $website): string
     {

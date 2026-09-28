@@ -31,11 +31,15 @@ class AlertDeliveryAttempt extends Model
 
     /**
      * Attempts are written once with their own `started_at` and `finished_at`, so the usual timestamps aren't kept.
+     *
+     * @var bool
      */
     public $timestamps = false;
 
     /**
      * Microsecond precision, so attempts made in the same second still order correctly.
+     *
+     * @var string|null
      */
     protected $dateFormat = 'Y-m-d H:i:s.u';
 

@@ -21,7 +21,13 @@ final class DeleteBackupDestination
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Remove a destination nothing uses. Its bucket isn't touched. */
+    /**
+     * Remove a destination nothing uses. Its bucket isn't touched.
+     *
+     * @param  User  $actor
+     * @param  BackupDestination  $destination
+     * @return void
+     */
     public function handle(User $actor, BackupDestination $destination): void
     {
         Gate::forUser($actor)->authorize('delete', $destination);

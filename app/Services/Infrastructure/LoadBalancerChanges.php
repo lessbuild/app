@@ -17,7 +17,9 @@ class LoadBalancerChanges
      * Runs a change on the locked load balancer, marks it pending and queues writing its configuration after commit.
      * Load balancers being removed can't change.
      *
+     * @param  LoadBalancer  $balancer
      * @param  (Closure(LoadBalancer): mixed)|null  $change
+     * @return LoadBalancer
      */
     public function apply(LoadBalancer $balancer, ?Closure $change = null): LoadBalancer
     {

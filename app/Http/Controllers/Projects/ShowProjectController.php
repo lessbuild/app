@@ -16,6 +16,13 @@ final class ShowProjectController
 {
     /**
      * The project overview: services, environments, the getting-started checklist and recent activity.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $query
+     * @param  ProjectChecklistQuery  $checklist
+     * @param  ProjectActivityQuery  $activity
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $query, ProjectChecklistQuery $checklist, ProjectActivityQuery $activity): View
     {

@@ -24,7 +24,16 @@ final class MonitorResults
         private readonly MaintenanceWindowState $maintenance,
     ) {}
 
-    /** Caller holds the source and monitor locks inside the observation transaction. */
+    /**
+     * Caller holds the source and monitor locks inside the observation transaction.
+     *
+     * @param  Monitor  $monitor
+     * @param  MonitorObservation  $result
+     * @param  CarbonImmutable  $now
+     * @param  string  $location
+     * @param  bool  $resetStreaks
+     * @return void
+     */
     public function record(Monitor $monitor, MonitorObservation $result, CarbonImmutable $now, string $location, bool $resetStreaks = false): void
     {
         $failures = $result->outcome === 'down' ? ($resetStreaks ? 0 : $monitor->failure_streak) + 1 : 0;

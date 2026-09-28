@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 final class ServiceObjectiveReport
 {
     /**
+     * @param  ServiceLevelObjective  $objective
+     * @param  CarbonImmutable|null  $until
      * @return array{
      *     from: CarbonImmutable,
      *     until: CarbonImmutable,
@@ -38,6 +40,9 @@ final class ServiceObjectiveReport
     }
 
     /**
+     * @param  ServiceLevelObjective  $objective
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return array{
      *     from: CarbonImmutable,
      *     until: CarbonImmutable,
@@ -105,6 +110,9 @@ final class ServiceObjectiveReport
 
     /**
      * A stored UTC time as Carbon, or null.
+     *
+     * @param  mixed  $value
+     * @return CarbonImmutable|null
      */
     private function timestamp(mixed $value): ?CarbonImmutable
     {

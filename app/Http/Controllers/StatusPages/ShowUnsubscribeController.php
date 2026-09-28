@@ -15,6 +15,10 @@ final class ShowUnsubscribeController
 {
     /**
      * The unsubscribe confirmation page, when the token matches.
+     *
+     * @param  string  $subscription
+     * @param  string  $token
+     * @return View
      */
     public function __invoke(string $subscription, string $token): View
     {

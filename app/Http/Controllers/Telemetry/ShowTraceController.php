@@ -18,6 +18,14 @@ final class ShowTraceController
 {
     /**
      * A trace's waterfall, up to 500 events. Unknown traces are a 404.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $trace
+     * @param  ProjectOverviewQuery  $overview
+     * @param  TraceTimeline  $timeline
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, string $trace, ProjectOverviewQuery $overview, TraceTimeline $timeline): View
     {

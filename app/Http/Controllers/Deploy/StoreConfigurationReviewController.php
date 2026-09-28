@@ -15,6 +15,12 @@ final class StoreConfigurationReviewController
 {
     /**
      * Opens a review of the posted configuration document.
+     *
+     * @param  ConfigurationRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  CreateConfigurationReview  $create
+     * @return RedirectResponse
      */
     public function __invoke(ConfigurationRequest $request, #[CurrentUser] User $user, Project $project, CreateConfigurationReview $create): RedirectResponse
     {

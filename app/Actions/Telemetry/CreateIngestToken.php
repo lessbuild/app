@@ -26,7 +26,15 @@ final class CreateIngestToken
      */
     public function __construct(private readonly IngestTokens $tokens, private readonly RecordAuditEntry $audit) {}
 
-    /** Create an ingest key for one environment. The secret is returned once; only its hash is kept. */
+    /**
+     * Create an ingest key for one environment. The secret is returned once; only its hash is kept.
+     *
+     * @param  User  $actor
+     * @param  Environment  $environment
+     * @param  string  $name
+     * @param  CarbonInterface|null  $expiresAt
+     * @return IssuedIngestToken
+     */
     public function handle(User $actor, Environment $environment, string $name, ?CarbonInterface $expiresAt = null): IssuedIngestToken
     {
         return DB::transaction(function () use ($actor, $environment, $name, $expiresAt): IssuedIngestToken {

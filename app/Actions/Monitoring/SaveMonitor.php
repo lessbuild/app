@@ -59,7 +59,11 @@ final class SaveMonitor
     /**
      * Create or change a monitor in one of the project's environments.
      *
+     * @param  Project  $project
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by MonitorRequest
+     * @param  Monitor|null  $monitor
+     * @return Monitor
      */
     public function handle(Project $project, User $actor, array $data, ?Monitor $monitor = null): Monitor
     {

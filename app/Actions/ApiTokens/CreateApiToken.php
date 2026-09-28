@@ -17,6 +17,11 @@ final class CreateApiToken
     /**
      * Creates an API token acting as the actor in the account. Write scopes bring their read scope with them, and only
      * the token's hash is stored; the plain token is returned once.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  CreateApiTokenData  $data
+     * @return NewApiToken
      */
     public function handle(User $actor, Account $account, CreateApiTokenData $data): NewApiToken
     {

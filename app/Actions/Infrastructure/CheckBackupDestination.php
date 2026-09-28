@@ -19,7 +19,13 @@ final class CheckBackupDestination
      */
     public function __construct(private readonly S3StorageProbe $probe) {}
 
-    /** Write, read and delete a test object. Returns the error (with any credentials blanked out), or null when it works. */
+    /**
+     * Write, read and delete a test object. Returns the error (with any credentials blanked out), or null when it works.
+     *
+     * @param  User  $actor
+     * @param  BackupDestination  $destination
+     * @return string|null
+     */
     public function handle(User $actor, BackupDestination $destination): ?string
     {
         Gate::forUser($actor)->authorize('update', $destination);

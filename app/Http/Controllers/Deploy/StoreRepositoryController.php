@@ -15,6 +15,12 @@ final class StoreRepositoryController
 {
     /**
      * Connects a repository to the project.
+     *
+     * @param  RepositoryRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveRepository  $save
+     * @return RedirectResponse
      */
     public function __invoke(RepositoryRequest $request, #[CurrentUser] User $user, Project $project, SaveRepository $save): RedirectResponse
     {

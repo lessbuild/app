@@ -14,6 +14,10 @@ final class PreflightCollectController
 {
     /**
      * Answers the browser's CORS preflight for the collection endpoint, allowing only the site's own origins.
+     *
+     * @param  Request  $request
+     * @param  string  $publicId
+     * @return JsonResponse
      */
     public function __invoke(Request $request, string $publicId): JsonResponse
     {

@@ -18,6 +18,10 @@ class InstallMysqlScript implements ServerScript
 
     /**
      * Shell script to install Mysql
+     *
+     * @param  int  $step
+     * @param  Server  $server
+     * @return string
      */
     public function script(int $step, Server $server): string
     {

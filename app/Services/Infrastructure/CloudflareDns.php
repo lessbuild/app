@@ -16,6 +16,9 @@ class CloudflareDns
     /**
      * Creates or updates the domain's A or AAAA record in the most specific Cloudflare zone the token can see,
      * unproxied, and remembers the zone and record IDs.
+     *
+     * @param  WebsiteDomain  $domain
+     * @return void
      */
     public function sync(WebsiteDomain $domain): void
     {
@@ -43,6 +46,9 @@ class CloudflareDns
 
     /**
      * Deletes the domain's record at Cloudflare, if we created one.
+     *
+     * @param  WebsiteDomain  $domain
+     * @return void
      */
     public function delete(WebsiteDomain $domain): void
     {
@@ -56,6 +62,10 @@ class CloudflareDns
 
     /**
      * The ID of the longest active zone the hostname falls in.
+     *
+     * @param  string  $token
+     * @param  string  $hostname
+     * @return string
      */
     private function zone(string $token, string $hostname): string
     {
@@ -77,6 +87,7 @@ class CloudflareDns
     /**
      * The zone and record IDs from a stored `zone:record` reference.
      *
+     * @param  string|null  $reference
      * @return array{string, string}|null
      */
     private function reference(?string $reference): ?array
@@ -86,6 +97,9 @@ class CloudflareDns
 
     /**
      * An HTTP client for the Cloudflare API with the token, short timeouts and two quick retries.
+     *
+     * @param  string  $token
+     * @return PendingRequest
      */
     private function client(string $token): PendingRequest
     {

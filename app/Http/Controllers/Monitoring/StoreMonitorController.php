@@ -15,6 +15,12 @@ final class StoreMonitorController
 {
     /**
      * Creates a monitor.
+     *
+     * @param  MonitorRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveMonitor  $save
+     * @return RedirectResponse
      */
     public function __invoke(MonitorRequest $request, #[CurrentUser] User $user, Project $project, SaveMonitor $save): RedirectResponse
     {

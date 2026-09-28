@@ -12,7 +12,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class ResumeServiceTier
 {
-    /** Undo a downgrade that hasn't happened yet. Returns false when nothing was scheduled. */
+    /**
+     * Undo a downgrade that hasn't happened yet. Returns false when nothing was scheduled.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  string  $service
+     * @return bool
+     */
     public function handle(User $actor, Account $account, string $service): bool
     {
         Gate::forUser($actor)->authorize('manageBilling', $account);

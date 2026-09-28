@@ -16,6 +16,10 @@ final class MaintenanceWindowPolicy
 
     /**
      * Scheduling a maintenance window: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
@@ -24,6 +28,10 @@ final class MaintenanceWindowPolicy
 
     /**
      * Changing a window: the same people.
+     *
+     * @param  User  $user
+     * @param  MaintenanceWindow  $record
+     * @return bool
      */
     public function update(User $user, MaintenanceWindow $record): bool
     {
@@ -32,6 +40,10 @@ final class MaintenanceWindowPolicy
 
     /**
      * Deleting a window, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  MaintenanceWindow  $record
+     * @return bool
      */
     public function delete(User $user, MaintenanceWindow $record): bool
     {

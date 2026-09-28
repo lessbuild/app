@@ -58,6 +58,8 @@ class Incident extends Model
      * Limits a query to the account's incidents.
      *
      * @param  Builder<Incident>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -106,7 +108,11 @@ class Incident extends Model
         return $this->belongsTo(AlertRule::class)->withTrashed();
     }
 
-    /** What opened the incident: a monitor, or an alert rule on telemetry. */
+    /**
+     * What opened the incident: a monitor, or an alert rule on telemetry.
+     *
+     * @return Monitor|AlertRule|null
+     */
     public function source(): Monitor|AlertRule|null
     {
         return $this->monitor_id !== null ? $this->monitor : $this->alertRule;
@@ -144,6 +150,8 @@ class Incident extends Model
 
     /**
      * The status as people read it, with why a resolved incident closed (recovered, rule changed, monitor archived…).
+     *
+     * @return string
      */
     public function statusLabel(): string
     {

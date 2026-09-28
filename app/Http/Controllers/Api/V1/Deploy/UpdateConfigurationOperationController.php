@@ -20,6 +20,18 @@ final class UpdateConfigurationOperationController
 {
     /**
      * Cancels or retries the operation and returns the refreshed receipt (with the new operation's ID for retries).
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $project
+     * @param  string  $application
+     * @param  string  $operation
+     * @param  string  $action
+     * @param  DeployApiQuery  $query
+     * @param  ConfigurationQuery  $configuration
+     * @param  RetryConfigurationOperation  $retry
+     * @param  CancelConfigurationOperation  $cancel
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, string $application, string $operation, string $action, DeployApiQuery $query, ConfigurationQuery $configuration, RetryConfigurationOperation $retry, CancelConfigurationOperation $cancel): JsonResponse
     {

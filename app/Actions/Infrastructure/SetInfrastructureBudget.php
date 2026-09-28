@@ -11,7 +11,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class SetInfrastructureBudget
 {
-    /** Set (or clear, with null) the monthly budget in USD that the costs page compares server costs with. */
+    /**
+     * Set (or clear, with null) the monthly budget in USD that the costs page compares server costs with.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  float|null  $amount
+     * @return void
+     */
     public function handle(User $actor, Account $account, ?float $amount): void
     {
         Gate::forUser($actor)->authorize('manageCosts', [Server::class, $account]);

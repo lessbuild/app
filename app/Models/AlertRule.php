@@ -71,6 +71,8 @@ final class AlertRule extends Model
      * Limits a query to rules in the account's environments.
      *
      * @param  Builder<AlertRule>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -111,6 +113,8 @@ final class AlertRule extends Model
     /**
      * The threshold to compare against. Numeric-metric rules keep theirs in `numeric_threshold`, a double, since
      * resource metrics can be far larger or smaller than the other metrics' thresholds.
+     *
+     * @return float|null
      */
     public function thresholdValue(): ?float
     {
@@ -120,6 +124,8 @@ final class AlertRule extends Model
     /**
      * "≤" for rules that fire when a value drops (telemetry volume, or numeric rules set to less-than), "≥"
      * otherwise.
+     *
+     * @return string
      */
     public function comparisonLabel(): string
     {

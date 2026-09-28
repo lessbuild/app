@@ -26,6 +26,9 @@ final class ProbeMonitor
 
     /**
      * Runs the check for the monitor's type. Heartbeat and queue monitors aren't probed.
+     *
+     * @param  Monitor  $monitor
+     * @return MonitorObservation
      */
     public function probe(Monitor $monitor): MonitorObservation
     {

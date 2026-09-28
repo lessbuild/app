@@ -15,6 +15,13 @@ final class VerifyWebsiteBackupController
 {
     /**
      * Starts checking that a backup can be restored, without touching the live website.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  string  $backup
+     * @param  VerifyWebsiteBackup  $verify
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $backup, VerifyWebsiteBackup $verify): RedirectResponse
     {

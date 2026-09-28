@@ -20,6 +20,15 @@ final class ShowMetricsController
 {
     /**
      * The metric series list (redacted) and the collector profiles.
+     *
+     * @param  SearchMetricsRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  MetricSeriesQuery  $query
+     * @param  TelemetryRedactor  $redactor
+     * @param  MetricCollectorProfiles  $profiles
+     * @return View
      */
     public function __invoke(SearchMetricsRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, MetricSeriesQuery $query, TelemetryRedactor $redactor, MetricCollectorProfiles $profiles): View
     {

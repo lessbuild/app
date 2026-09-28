@@ -15,6 +15,12 @@ final class CreateStatusPageController
 {
     /**
      * The new status page form, with the account's monitors to show.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  StatusPagesQuery  $pages
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, StatusPagesQuery $pages): View
     {

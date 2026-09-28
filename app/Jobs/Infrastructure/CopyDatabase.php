@@ -22,11 +22,15 @@ final class CopyDatabase implements ShouldQueue
 
     /**
      * One attempt: a half-finished copy overwrites the target, so it isn't retried blindly.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * Copying a large database can take up to an hour.
+     *
+     * @var int
      */
     public int $timeout = 3600;
 
@@ -39,6 +43,10 @@ final class CopyDatabase implements ShouldQueue
 
     /**
      * Claims the copy, checks both websites are still on the same server, and runs it.
+     *
+     * @param  ServerShell  $shell
+     * @param  DatabaseCommands  $commands
+     * @return void
      */
     public function handle(ServerShell $shell, DatabaseCommands $commands): void
     {
@@ -64,6 +72,9 @@ final class CopyDatabase implements ShouldQueue
 
     /**
      * Marks the copy failed with the reason.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

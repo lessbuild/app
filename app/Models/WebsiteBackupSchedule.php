@@ -29,7 +29,12 @@ use Illuminate\Support\Carbon;
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class WebsiteBackupSchedule extends Model
 {
-    /** Whether a backup should be queued now: past today's time, not yet queued since, and on the right day. */
+    /**
+     * Whether a backup should be queued now: past today's time, not yet queued since, and on the right day.
+     *
+     * @param  CarbonImmutable  $now
+     * @return bool
+     */
     public function isDue(CarbonImmutable $now): bool
     {
         $scheduled = $now->setTimeFromTimeString($this->run_at);

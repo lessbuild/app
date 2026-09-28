@@ -14,6 +14,7 @@ final class ProjectMonitorsQuery
     /**
      * The project's monitors by name, with their environment.
      *
+     * @param  Project  $project
      * @return list<Monitor> the project's current monitors, with their environment
      */
     public function handle(Project $project): array
@@ -21,7 +22,14 @@ final class ProjectMonitorsQuery
         return array_values($this->scope($project)->with('environment')->orderBy('name')->orderBy('id')->get()->all());
     }
 
-    /** A monitor of this project (404 otherwise). Archived monitors only when asked for, e.g. to show their history. */
+    /**
+     * A monitor of this project (404 otherwise). Archived monitors only when asked for, e.g. to show their history.
+     *
+     * @param  Project  $project
+     * @param  string|int  $id
+     * @param  bool  $withArchived
+     * @return Monitor
+     */
     public function find(Project $project, string|int $id, bool $withArchived = false): Monitor
     {
         $query = $this->scope($project);
@@ -37,6 +45,7 @@ final class ProjectMonitorsQuery
     /**
      * Monitors of the project's environments.
      *
+     * @param  Project  $project
      * @return Builder<Monitor>
      */
     private function scope(Project $project): Builder

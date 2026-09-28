@@ -15,6 +15,7 @@ final class MetricSeriesQuery
     /**
      * The project's metric series matching the filters, most recently received first, 25 to a page.
      *
+     * @param  Project  $project
      * @param  array{q?: string, environment?: string, kind?: string, page?: int}  $filters
      * @return LengthAwarePaginator<int, MetricSeries>
      */
@@ -38,6 +39,10 @@ final class MetricSeriesQuery
 
     /**
      * One of the project's metric series; 404 otherwise.
+     *
+     * @param  Project  $project
+     * @param  string|int  $id
+     * @return MetricSeries
      */
     public function find(Project $project, int|string $id): MetricSeries
     {

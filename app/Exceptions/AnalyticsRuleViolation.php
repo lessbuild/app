@@ -10,6 +10,9 @@ final class AnalyticsRuleViolation extends RuleViolation
     /**
      * A site listed a domain that isn't a public hostname (an IP, `localhost`, or something with a path), which the
      * tracker could never report from.
+     *
+     * @param  string  $domain
+     * @return AnalyticsRuleViolation
      */
     public static function invalidDomain(string $domain): self
     {
@@ -18,6 +21,8 @@ final class AnalyticsRuleViolation extends RuleViolation
 
     /**
      * A site was pointed at an environment from a different project.
+     *
+     * @return AnalyticsRuleViolation
      */
     public static function environmentNotInProject(): self
     {

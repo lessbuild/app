@@ -16,6 +16,10 @@ final class AlertRulePolicy
     /**
      * Creating an alert rule: people who manage Monitoring in the project, with a verified email since rules send
      * alerts.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function create(User $user, Project $project): bool
     {
@@ -24,6 +28,10 @@ final class AlertRulePolicy
 
     /**
      * Changing a rule: the same people as create, while it isn't archived.
+     *
+     * @param  User  $user
+     * @param  AlertRule  $record
+     * @return bool
      */
     public function update(User $user, AlertRule $record): bool
     {
@@ -32,6 +40,10 @@ final class AlertRulePolicy
 
     /**
      * Archiving a rule, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  AlertRule  $record
+     * @return bool
      */
     public function delete(User $user, AlertRule $record): bool
     {

@@ -24,6 +24,12 @@ final class SendTestAlert
 
     /**
      * Queues a clearly-marked test alert to an enabled destination, if it hasn't changed since the page was opened.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  AlertDestination  $destination
+     * @param  int  $version
+     * @return AlertDelivery
      */
     public function handle(Account $account, User $actor, AlertDestination $destination, int $version): AlertDelivery
     {

@@ -16,6 +16,11 @@ final class ShowMaintenanceWindowsController
 {
     /**
      * Maintenance windows that ended in the last 30 days or haven't ended yet.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {

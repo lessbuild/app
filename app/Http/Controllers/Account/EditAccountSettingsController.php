@@ -14,6 +14,10 @@ final class EditAccountSettingsController
 {
     /**
      * The account settings page, with the danger zone only for people who may delete the account.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user): View
     {

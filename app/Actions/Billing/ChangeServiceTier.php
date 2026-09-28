@@ -37,7 +37,16 @@ final class ChangeServiceTier
         private readonly SubscriptionItems $items,
     ) {}
 
-    /** Move one service to another tier. Only that service's subscription item changes. */
+    /**
+     * Move one service to another tier. Only that service's subscription item changes.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  string  $service
+     * @param  string  $tierKey
+     * @param  string  $returnUrl
+     * @return PlanChange
+     */
     public function handle(User $actor, Account $account, string $service, string $tierKey, string $returnUrl): PlanChange
     {
         Gate::forUser($actor)->authorize('manageBilling', $account);
@@ -88,6 +97,15 @@ final class ChangeServiceTier
     /**
      * Moves the service to its free tier. With a live paid period, the change is scheduled for its end so nothing
      * already paid for is lost; otherwise the paid selection is removed now.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  BillingAccount  $billingAccount
+     * @param  BillingSelection|null  $selection
+     * @param  string  $service
+     * @param  string  $from
+     * @param  string  $to
+     * @return PlanChange
      */
     private function downgradeToFree(User $actor, Account $account, BillingAccount $billingAccount, ?BillingSelection $selection, string $service, string $from, string $to): PlanChange
     {

@@ -16,6 +16,13 @@ final class StoreBuildController
 {
     /**
      * Starts a deploy, of a given commit or the branch's latest.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Repository  $repository
+     * @param  DeployRepository  $deploy
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Repository $repository, DeployRepository $deploy): RedirectResponse
     {

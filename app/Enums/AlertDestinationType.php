@@ -15,6 +15,8 @@ enum AlertDestinationType: string
 
     /**
      * The destination type's name on the alert destination form.
+     *
+     * @return string
      */
     public function label(): string
     {

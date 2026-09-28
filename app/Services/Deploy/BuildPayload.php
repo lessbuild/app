@@ -20,6 +20,7 @@ final class BuildPayload
      * The repository's current payload: the website's `.env` and the repository subdirectory, plus, when it deploys to
      * an environment, the runtime settings, runtime and build variables, enabled processes and resources.
      *
+     * @param  Repository  $repository
      * @return array<string, mixed>
      */
     public function for(Repository $repository): array

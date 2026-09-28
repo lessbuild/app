@@ -19,7 +19,13 @@ final class RetryLoadBalancer
      */
     public function __construct(private readonly LoadBalancerChanges $changes, private readonly DeleteLoadBalancer $delete) {}
 
-    /** Write the configuration again, or try the removal again if that's what failed. */
+    /**
+     * Write the configuration again, or try the removal again if that's what failed.
+     *
+     * @param  User  $actor
+     * @param  LoadBalancer  $balancer
+     * @return void
+     */
     public function handle(User $actor, LoadBalancer $balancer): void
     {
         Gate::forUser($actor)->authorize('update', $balancer);

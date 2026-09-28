@@ -16,6 +16,12 @@ final class RenameAccountController
 {
     /**
      * Renames the account.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  RenameAccount  $rename
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, RenameAccount $rename): RedirectResponse
     {

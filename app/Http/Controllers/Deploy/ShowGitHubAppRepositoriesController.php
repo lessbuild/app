@@ -15,6 +15,11 @@ final class ShowGitHubAppRepositoriesController
 {
     /**
      * The repositories an installation of the GitHub App can reach. Other providers are a 404.
+     *
+     * @param  Account  $account
+     * @param  Provider  $provider
+     * @param  GitHubApp  $github
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, Provider $provider, GitHubApp $github): View
     {

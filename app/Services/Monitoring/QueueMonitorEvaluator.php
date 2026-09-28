@@ -23,7 +23,14 @@ final class QueueMonitorEvaluator
      */
     public function __construct(private readonly MonitorResults $results) {}
 
-    /** Caller holds source and monitor locks in a transaction. */
+    /**
+     * Caller holds source and monitor locks in a transaction.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
+     * @param  bool  $recordSnapshot
+     * @return void
+     */
     public function evaluate(Monitor $monitor, CarbonImmutable $now, bool $recordSnapshot = false): void
     {
         $state = $this->inspect($monitor, $now);
@@ -48,6 +55,8 @@ final class QueueMonitorEvaluator
      * over their thresholds, and jobs running too long each breach it; missing data leaves it unknown. Also returns when
      * it next needs looking at.
      *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
      * @return array{result: MonitorObservation, next: ?CarbonImmutable, snapshot: ?QueueSnapshot}
      */
     public function inspect(Monitor $monitor, CarbonImmutable $now): array
@@ -120,6 +129,8 @@ final class QueueMonitorEvaluator
      * The monitor's workers under its current configuration that are idle or busy and were seen within the worker
      * timeout.
      *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
      * @return Builder<QueueWorker>
      */
     public function liveWorkers(Monitor $monitor, CarbonImmutable $now): Builder
@@ -132,6 +143,10 @@ final class QueueMonitorEvaluator
     /**
      * Starts evaluation afresh after its settings change, giving collectors and workers until the shorter timeout to
      * report.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
+     * @return void
      */
     public function reset(Monitor $monitor, CarbonImmutable $now): void
     {

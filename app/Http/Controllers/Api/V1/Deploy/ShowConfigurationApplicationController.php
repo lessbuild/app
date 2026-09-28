@@ -18,6 +18,14 @@ final class ShowConfigurationApplicationController
 {
     /**
      * Returns the application's receipt.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $project
+     * @param  string  $application
+     * @param  DeployApiQuery  $query
+     * @param  ConfigurationQuery  $configuration
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $project, string $application, DeployApiQuery $query, ConfigurationQuery $configuration): JsonResponse
     {

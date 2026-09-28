@@ -23,6 +23,10 @@ final class ServerPolicy
 
     /**
      * Seeing a server: account members who may view projects and use Infrastructure.
+     *
+     * @param  User  $user
+     * @param  Server  $server
+     * @return bool
      */
     public function view(User $user, Server $server): bool
     {
@@ -31,13 +35,23 @@ final class ServerPolicy
 
     /**
      * Creating or importing a server: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
         return $this->allows($user, $this->accountIdOf($scope), AccountPermission::ManageSettings);
     }
 
-    /** Setting the account's infrastructure budget: owners and admins, with cost controls on the Deploy plan. */
+    /**
+     * Setting the account's infrastructure budget: owners and admins, with cost controls on the Deploy plan.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return Response
+     */
     public function manageCosts(User $user, Account|Project $scope): Response
     {
         $account = $scope instanceof Project ? $scope->account : $scope;
@@ -52,6 +66,10 @@ final class ServerPolicy
 
     /**
      * Changing a server's settings, firewall and services: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Server  $server
+     * @return bool
      */
     public function update(User $user, Server $server): bool
     {
@@ -60,6 +78,10 @@ final class ServerPolicy
 
     /**
      * Deleting a server, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  Server  $server
+     * @return bool
      */
     public function delete(User $user, Server $server): bool
     {
@@ -68,13 +90,23 @@ final class ServerPolicy
 
     /**
      * Running commands and scripts over SSH, allowed to the same people as update, since that is root access.
+     *
+     * @param  User  $user
+     * @param  Server  $server
+     * @return bool
      */
     public function runCommands(User $user, Server $server): bool
     {
         return $this->update($user, $server);
     }
 
-    /** A root shell: the same people who may run commands, on a server with a pinned host key. */
+    /**
+     * A root shell: the same people who may run commands, on a server with a pinned host key.
+     *
+     * @param  User  $user
+     * @param  Server  $server
+     * @return bool
+     */
     public function openTerminal(User $user, Server $server): bool
     {
         return $this->runCommands($user, $server);

@@ -16,6 +16,12 @@ final class DeleteProjectController
 {
     /**
      * Deletes the project once the person has typed its name exactly, after a recent password confirmation.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  DeleteProject  $delete
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, DeleteProject $delete): RedirectResponse
     {

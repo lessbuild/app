@@ -19,7 +19,15 @@ final class SaveGoal
      */
     public function __construct(private readonly RebuildSiteReports $rebuild) {}
 
-    /** Create or change a goal, then recount conversions (a changed definition starts a new goal version). */
+    /**
+     * Create or change a goal, then recount conversions (a changed definition starts a new goal version).
+     *
+     * @param  User  $actor
+     * @param  AnalyticsSite  $site
+     * @param  GoalDetails  $details
+     * @param  AnalyticsGoal|null  $goal
+     * @return AnalyticsGoal
+     */
     public function handle(User $actor, AnalyticsSite $site, GoalDetails $details, ?AnalyticsGoal $goal = null): AnalyticsGoal
     {
         Gate::forUser($actor)->authorize('update', $site);

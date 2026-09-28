@@ -22,11 +22,15 @@ final class PublishBuild implements ShouldQueue
 
     /**
      * Starting the deploy script can fail on a busy server, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 15;
 
@@ -41,6 +45,10 @@ final class PublishBuild implements ShouldQueue
      * Claims the build, names its release and uploads the deploy script to run in the background on the server. The
      * script reports its progress back; if uploading fails, the build is put back in the queue so the retry starts it
      * cleanly.
+     *
+     * @param  RemoteScriptRunner  $runner
+     * @param  DeploymentScript  $script
+     * @return void
      */
     public function handle(RemoteScriptRunner $runner, DeploymentScript $script): void
     {
@@ -77,6 +85,9 @@ final class PublishBuild implements ShouldQueue
 
     /**
      * Marks a build that never started as failed, with the reason.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

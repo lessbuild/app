@@ -16,6 +16,13 @@ final class RetryAlertDeliveryController
 {
     /**
      * Resends a delivery once the person confirms they understand it may arrive twice.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertDelivery  $delivery
+     * @param  RetryAlertDelivery  $retry
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AlertDelivery $delivery, RetryAlertDelivery $retry): RedirectResponse
     {

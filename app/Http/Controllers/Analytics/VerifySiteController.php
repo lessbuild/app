@@ -15,6 +15,12 @@ final class VerifySiteController
 {
     /**
      * Checks the site's hostnames against the project's verified domains and says what to do if none matches.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AnalyticsSite  $site
+     * @param  VerifySite  $verify
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, VerifySite $verify): RedirectResponse
     {

@@ -17,6 +17,13 @@ final class PromoteBuildController
     /**
      * Promotes a deploy's commit to another of the project's environments, saying whether it's running or waiting for
      * approval.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Build  $build
+     * @param  PromoteBuild  $promote
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Build $build, PromoteBuild $promote): RedirectResponse
     {

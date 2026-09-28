@@ -13,6 +13,7 @@ final class AlertDestinationsQuery
     /**
      * The account's alert destinations with their recipient and how many monitors use each.
      *
+     * @param  string  $accountId
      * @return list<AlertDestination>
      */
     public function handle(string $accountId): array
@@ -24,6 +25,11 @@ final class AlertDestinationsQuery
     /**
      * One of the account's destinations; 404 otherwise. Archived ones only when asked for, so their history can still be
      * shown.
+     *
+     * @param  string  $accountId
+     * @param  string|int  $id
+     * @param  bool  $withArchived
+     * @return AlertDestination
      */
     public function find(string $accountId, string|int $id, bool $withArchived = false): AlertDestination
     {
@@ -38,6 +44,7 @@ final class AlertDestinationsQuery
     /**
      * Members with a verified email, who can be chosen as an email destination's recipient.
      *
+     * @param  string  $accountId
      * @return list<User> verified members who can receive alert emails
      */
     public function recipients(string $accountId): array

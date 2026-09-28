@@ -18,6 +18,8 @@ final class CreateDatabaseUser
     /**
      * Add a MySQL login on the website's database with a generated password, returned once for the person to copy.
      *
+     * @param  User  $actor
+     * @param  Website  $website
      * @param  array{username: string, privilege: string, expires_in_days?: int|string|null}  $data
      * @return array{DatabaseUser, string}
      */

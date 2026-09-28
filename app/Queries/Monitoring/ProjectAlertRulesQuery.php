@@ -15,6 +15,7 @@ final class ProjectAlertRulesQuery
     /**
      * The project's alert rules, enabled first.
      *
+     * @param  Project  $project
      * @return list<AlertRule> the project's current rules, with their environment
      */
     public function handle(Project $project): array
@@ -23,7 +24,14 @@ final class ProjectAlertRulesQuery
             ->with('environment')->orderByDesc('enabled')->orderBy('name')->orderBy('id')->get()->all());
     }
 
-    /** A rule of this project (404 otherwise). Archived rules only when asked for, e.g. to show their history. */
+    /**
+     * A rule of this project (404 otherwise). Archived rules only when asked for, e.g. to show their history.
+     *
+     * @param  Project  $project
+     * @param  string|int  $id
+     * @param  bool  $withArchived
+     * @return AlertRule
+     */
     public function find(Project $project, string|int $id, bool $withArchived = false): AlertRule
     {
         $query = AlertRule::query()->whereIn('environment_id', $this->environments($project));
@@ -36,7 +44,13 @@ final class ProjectAlertRulesQuery
         return $rule;
     }
 
-    /** An objective of this project (404 otherwise). */
+    /**
+     * An objective of this project (404 otherwise).
+     *
+     * @param  Project  $project
+     * @param  string|int  $id
+     * @return ServiceLevelObjective
+     */
     public function objective(Project $project, string|int $id): ServiceLevelObjective
     {
         $objective = ServiceLevelObjective::query()->whereIn('environment_id', $this->environments($project))->whereKey((int) $id)->firstOrFail();
@@ -48,6 +62,7 @@ final class ProjectAlertRulesQuery
     /**
      * The project's SLOs, enabled first.
      *
+     * @param  Project  $project
      * @return list<ServiceLevelObjective>
      */
     public function objectives(Project $project): array
@@ -59,6 +74,7 @@ final class ProjectAlertRulesQuery
     /**
      * The IDs of the project's environments, as a subquery.
      *
+     * @param  Project  $project
      * @return Builder<Environment>
      */
     private function environments(Project $project): Builder

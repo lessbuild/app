@@ -16,6 +16,13 @@ final class ShowEventController
 {
     /**
      * One event's details, redacted.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  TelemetryEvent  $event
+     * @param  ProjectOverviewQuery  $overview
+     * @param  EventDetailsQuery  $details
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, TelemetryEvent $event, ProjectOverviewQuery $overview, EventDetailsQuery $details): View
     {

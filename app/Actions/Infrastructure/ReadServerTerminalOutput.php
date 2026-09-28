@@ -22,6 +22,10 @@ final class ReadServerTerminalOutput
     /**
      * Output after the browser's last sequence, and the session's state (so the page knows when it has closed).
      *
+     * @param  User  $actor
+     * @param  ServerTerminalSession  $terminal
+     * @param  string  $token
+     * @param  int  $after
      * @return array{status: string, reason: string|null, frames: list<array{sequence: int, data: string}>}
      */
     public function handle(User $actor, ServerTerminalSession $terminal, string $token, int $after): array

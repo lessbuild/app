@@ -16,6 +16,13 @@ final class RenameServerController
 {
     /**
      * Sets or clears the server's display name.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  RenameServer  $rename
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, RenameServer $rename): RedirectResponse
     {

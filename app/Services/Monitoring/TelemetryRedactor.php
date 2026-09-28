@@ -24,6 +24,11 @@ final class TelemetryRedactor
     /**
      * Redacts a value recursively: sensitive keys and OTLP attributes with sensitive names lose their values, strings
      * are scrubbed, and anything nested too deeply is replaced.
+     *
+     * @param  mixed  $value
+     * @param  string  $path
+     * @param  int  $depth
+     * @return mixed
      */
     private function value(mixed $value, string $path, int $depth): mixed
     {
@@ -59,6 +64,10 @@ final class TelemetryRedactor
 
     /**
      * Whether a key (compared without punctuation and case) or its path matches a configured sensitive name or path.
+     *
+     * @param  string  $key
+     * @param  string  $path
+     * @return bool
      */
     private function sensitive(string $key, string $path): bool
     {
@@ -82,6 +91,10 @@ final class TelemetryRedactor
     /**
      * Scrubs secrets from free text: bearer and basic credentials, ingest tokens, passwords in URLs, sensitive query
      * parameters, and `password=`/`token:`-style assignments.
+     *
+     * @param  string  $value
+     * @param  string  $path
+     * @return string
      */
     private function text(string $value, string $path): string
     {

@@ -50,6 +50,9 @@ final readonly class MonitorObservation
     /**
      * The sentence shown for a reason code on check history, incidents and alerts. Unknown codes read as "Awaiting a
      * check".
+     *
+     * @param  string|null  $reason
+     * @return string
      */
     public static function label(?string $reason): string
     {

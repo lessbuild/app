@@ -12,6 +12,7 @@ final class Hostname
      * lowercase ASCII hostname we store and verify. Returns null for anything that isn't a public DNS name: IPs, ports,
      * `localhost`, single-label names and malformed labels.
      *
+     * @param  string  $input
      * @return string|null the ASCII hostname, or null if it isn't a public hostname we can verify
      */
     public static function normalize(string $input): ?string
@@ -43,7 +44,12 @@ final class Hostname
         return $ascii;
     }
 
-    /** The name people recognise, for display. */
+    /**
+     * The name people recognise, for display.
+     *
+     * @param  string  $ascii
+     * @return string
+     */
     public static function display(string $ascii): string
     {
         $unicode = idn_to_utf8($ascii, IDNA_DEFAULT, INTL_IDNA_VARIANT_UTS46);
@@ -54,6 +60,9 @@ final class Hostname
     /**
      * What someone typed into a hostname field, without a leading `http://` or `https://` or trailing slashes, and
      * lowercased. Forms run this before validation; the Hostname rule then checks what's left.
+     *
+     * @param  mixed  $value
+     * @return string
      */
     public static function fromInput(mixed $value): string
     {

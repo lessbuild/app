@@ -13,6 +13,10 @@ final class MarkAllNotificationsReadController
 {
     /**
      * Marks the whole inbox read.
+     *
+     * @param  User  $user
+     * @param  MarkAllNotificationsRead  $markAll
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, MarkAllNotificationsRead $markAll): RedirectResponse
     {

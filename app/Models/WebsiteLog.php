@@ -25,6 +25,8 @@ class WebsiteLog extends Model
 {
     /**
      * Only the key is guarded: logs are written by jobs, never from request input.
+     *
+     * @var array<string>
      */
     protected $guarded = ['id'];
 

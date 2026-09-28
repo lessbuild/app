@@ -28,6 +28,8 @@ class ProviderHealthMonitor
      * threshold of failures in a row and recovers after one success; its creator is told about each change. Results are
      * dropped if the credential changed during the check, or automatic checks were turned off.
      *
+     * @param  Provider  $provider
+     * @param  bool  $automatic
      * @return array{successful: bool, message: string, http_status: int|null, recorded: bool}
      */
     public function check(Provider $provider, bool $automatic = false): array

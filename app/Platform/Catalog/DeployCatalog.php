@@ -10,6 +10,8 @@ final class DeployCatalog
     /**
      * Deployer's Free, Starter, Pro, Team and Business tiers with their website, preview, server and member limits and
      * feature flags.
+     *
+     * @return ServiceBilling
      */
     public static function billing(): ServiceBilling
     {
@@ -27,8 +29,17 @@ final class DeployCatalog
      * Builds a tier from Deployer's plan table, turning dollars into cents and the positional limits into entitlement
      * keys, so the table above stays readable.
      *
+     * @param  string  $key
+     * @param  string  $name
+     * @param  int  $dollars
+     * @param  string  $description
      * @param  list<string>  $features
+     * @param  int|null  $websites
+     * @param  int|null  $previews
+     * @param  int|null  $servers
+     * @param  int|null  $members
      * @param  list<string>  $flags
+     * @return Tier
      */
     private static function tier(string $key, string $name, int $dollars, string $description, array $features, ?int $websites, ?int $previews, ?int $servers, ?int $members, array $flags): Tier
     {

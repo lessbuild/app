@@ -13,6 +13,10 @@ final class BuildPolicy
 {
     /**
      * Seeing a deploy and its log: whoever may see its repository.
+     *
+     * @param  User  $user
+     * @param  Build  $build
+     * @return bool
      */
     public function view(User $user, Build $build): bool
     {
@@ -22,6 +26,10 @@ final class BuildPolicy
     /**
      * Approving or rejecting a deploy that waits for approval: someone who may deploy the repository, and not the person
      * who asked for the deploy.
+     *
+     * @param  User  $user
+     * @param  Build  $build
+     * @return Response
      */
     public function approve(User $user, Build $build): Response
     {

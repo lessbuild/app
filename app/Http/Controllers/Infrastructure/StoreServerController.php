@@ -17,6 +17,12 @@ final class StoreServerController
     /**
      * Creates a server, showing its root password once, or explaining that the provider failed and nothing was left
      * running.
+     *
+     * @param  ServerRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  CreateServer  $create
+     * @return RedirectResponse
      */
     public function __invoke(ServerRequest $request, #[CurrentUser] User $user, Project $project, CreateServer $create): RedirectResponse
     {

@@ -19,7 +19,13 @@ final class ArchiveServiceLevelObjective
      */
     public function __construct(private readonly MonitorChanges $changes) {}
 
-    /** Archive an objective. Burn-rate rules that use it stop finding data until they're changed. */
+    /**
+     * Archive an objective. Burn-rate rules that use it stop finding data until they're changed.
+     *
+     * @param  ServiceLevelObjective  $objective
+     * @param  User  $actor
+     * @return void
+     */
     public function handle(ServiceLevelObjective $objective, User $actor): void
     {
         DB::transaction(function () use ($objective, $actor): void {

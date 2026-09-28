@@ -16,6 +16,14 @@ final class UpdateStatusUpdateController
 {
     /**
      * Edits a posted update.
+     *
+     * @param  StatusUpdateRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  StatusPage  $page
+     * @param  string  $update
+     * @param  SaveStatusUpdate  $save
+     * @return RedirectResponse
      */
     public function __invoke(StatusUpdateRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, string $update, SaveStatusUpdate $save): RedirectResponse
     {

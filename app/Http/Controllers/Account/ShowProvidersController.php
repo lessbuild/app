@@ -18,6 +18,12 @@ final class ShowProvidersController
 {
     /**
      * The providers page, with the GitHub App option when it's configured.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  ProvidersQuery  $providers
+     * @param  GitHubApp  $github
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, ProvidersQuery $providers, GitHubApp $github): View
     {

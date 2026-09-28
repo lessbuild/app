@@ -16,6 +16,9 @@ final class AccountAuditLogQuery
     /**
      * The account's audit log, newest first and cursor-paginated, optionally narrowed to one project.
      *
+     * @param  Account  $account
+     * @param  string|null  $projectId
+     * @param  int  $perPage
      * @return CursorPaginator<int, AuditEntryView>
      */
     public function handle(Account $account, ?string $projectId = null, int $perPage = 50): CursorPaginator

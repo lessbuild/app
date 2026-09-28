@@ -15,6 +15,12 @@ final class RollbackBuildController
 {
     /**
      * Rolls back to a deploy's release and shows the rollback.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Build  $build
+     * @param  RollbackBuild  $rollback
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, RollbackBuild $rollback): RedirectResponse
     {

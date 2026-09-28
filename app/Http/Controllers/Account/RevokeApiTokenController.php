@@ -16,6 +16,12 @@ final class RevokeApiTokenController
 {
     /**
      * Revokes one of the account's API tokens; requests using it fail from now on.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  int  $token
+     * @param  RevokeApiToken  $revoke
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, int $token, RevokeApiToken $revoke): RedirectResponse
     {

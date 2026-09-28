@@ -16,6 +16,13 @@ final class StoreGoalController
 {
     /**
      * Creates a goal on a site.
+     *
+     * @param  GoalRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AnalyticsSite  $site
+     * @param  SaveGoal  $save
+     * @return RedirectResponse
      */
     public function __invoke(GoalRequest $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, SaveGoal $save): RedirectResponse
     {

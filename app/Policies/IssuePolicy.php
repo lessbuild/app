@@ -15,6 +15,10 @@ final class IssuePolicy
 
     /**
      * Resolving, snoozing, ignoring or assigning an issue: people who manage Monitoring in the issue's project.
+     *
+     * @param  User  $user
+     * @param  Issue  $record
+     * @return bool
      */
     public function update(User $user, Issue $record): bool
     {

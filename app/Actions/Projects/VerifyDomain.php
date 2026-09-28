@@ -21,7 +21,13 @@ final class VerifyDomain
      */
     public function __construct(private readonly DnsResolver $dns) {}
 
-    /** Look for the domain's TXT record. Returns whether the domain is verified afterwards. */
+    /**
+     * Look for the domain's TXT record. Returns whether the domain is verified afterwards.
+     *
+     * @param  User  $actor
+     * @param  Domain  $domain
+     * @return bool
+     */
     public function handle(User $actor, Domain $domain): bool
     {
         Gate::forUser($actor)->authorize('update', $domain->project);

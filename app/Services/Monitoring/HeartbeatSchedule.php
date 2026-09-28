@@ -13,6 +13,10 @@ final class HeartbeatSchedule
 {
     /**
      * When the next run is due after a moment: a fixed interval, or the next cron occurrence in the monitor's timezone.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $after
+     * @return CarbonImmutable
      */
     public function next(Monitor $monitor, CarbonImmutable $after): CarbonImmutable
     {
@@ -27,7 +31,14 @@ final class HeartbeatSchedule
         return $this->nextCron($monitor->heartbeat_cron ?? '', $monitor->heartbeat_timezone ?? '', $after);
     }
 
-    /** Uses Laravel's installed cron parser, including its DST transition behavior. */
+    /**
+     * Uses Laravel's installed cron parser, including its DST transition behavior.
+     *
+     * @param  string  $expression
+     * @param  string  $timezone
+     * @param  CarbonImmutable  $after
+     * @return CarbonImmutable
+     */
     public function nextCron(string $expression, string $timezone, CarbonImmutable $after): CarbonImmutable
     {
         $expression = trim($expression);
@@ -42,6 +53,10 @@ final class HeartbeatSchedule
 
     /**
      * Starts the schedule afresh from now, forgetting runs seen under the old one.
+     *
+     * @param  Monitor  $monitor
+     * @param  CarbonImmutable  $now
+     * @return void
      */
     public function reset(Monitor $monitor, CarbonImmutable $now): void
     {

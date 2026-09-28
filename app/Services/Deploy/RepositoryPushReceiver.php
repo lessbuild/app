@@ -23,6 +23,8 @@ final class RepositoryPushReceiver
     /**
      * Verify a Git host's webhook for a repository and act on it, answering with Deployer's statuses and HTTP codes.
      *
+     * @param  Repository  $repository
+     * @param  Request  $request
      * @return array{string, int} status and HTTP status code
      */
     public function handle(Repository $repository, Request $request): array

@@ -14,6 +14,12 @@ final class DeleteEnvironmentController
 {
     /**
      * Deletes one of the project's environments.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $environment
+     * @param  DeleteEnvironment  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $environment, DeleteEnvironment $delete): RedirectResponse
     {

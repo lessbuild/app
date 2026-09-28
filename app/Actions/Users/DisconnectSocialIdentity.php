@@ -11,7 +11,13 @@ use App\Models\User;
 
 final class DisconnectSocialIdentity
 {
-    /** Unlink a provider, as long as the user keeps at least one other way to sign in. Returns false when it wasn't linked. */
+    /**
+     * Unlink a provider, as long as the user keeps at least one other way to sign in. Returns false when it wasn't linked.
+     *
+     * @param  User  $user
+     * @param  SocialProvider  $provider
+     * @return bool
+     */
     public function handle(User $user, SocialProvider $provider): bool
     {
         $identity = $user->socialIdentities()->where('provider', $provider)->first();

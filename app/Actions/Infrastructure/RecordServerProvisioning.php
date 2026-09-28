@@ -24,7 +24,10 @@ final class RecordServerProvisioning
      * Record what a provisioning script reported: a finished stage, a failure, or its log. Reports from an older attempt
      * (a different token), and stage or failure reports once the server is no longer provisioning, are ignored.
      *
+     * @param  Server  $server
+     * @param  string  $attempt
      * @param  array{event: 'status', stage: int}|array{event: 'failed', message: string, exit_code: int|null}|array{event: 'log', log: string}  $report
+     * @return bool
      */
     public function handle(Server $server, string $attempt, array $report): bool
     {

@@ -18,6 +18,14 @@ final class ShowOverviewController
 {
     /**
      * The report page. Unknown day ranges fall back to 30 days, and filters are cut to their column lengths.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectSitesQuery  $sites
+     * @param  AnalyticsReportQuery  $report
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report): View
     {

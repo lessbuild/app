@@ -93,12 +93,18 @@ class Server extends Model
 
     public const FAILURE_REMOTE = 'remote';
 
-    /** The root password for this provisioning run; shown once, never stored except while a retry needs it. */
+    /**
+     * The root password for this provisioning run; shown once, never stored except while a retry needs it.
+     *
+     * @var string|null
+     */
     private ?string $provisioningRootPassword = null;
 
     /**
      * Gives each new server provisioning and initialisation tokens, so a job from an earlier attempt can tell it's
      * stale.
+     *
+     * @return void
      */
     protected static function booted(): void
     {
@@ -200,6 +206,8 @@ class Server extends Model
 
     /**
      * The name to show: the display name when set, else the provider's name.
+     *
+     * @return string
      */
     public function label(): string
     {
@@ -208,6 +216,8 @@ class Server extends Model
 
     /**
      * Whether the server is still being set up.
+     *
+     * @return bool
      */
     public function isProvisioning(): bool
     {
@@ -226,6 +236,8 @@ class Server extends Model
 
     /**
      * The root password handed to the provisioning script in this request only; it's never stored in this form.
+     *
+     * @return string|null
      */
     public function provisioningRootPassword(): ?string
     {
@@ -234,6 +246,9 @@ class Server extends Model
 
     /**
      * Hands the root password to the provisioning script for this request only.
+     *
+     * @param  string  $password
+     * @return void
      */
     public function setProvisioningRootPassword(string $password): void
     {

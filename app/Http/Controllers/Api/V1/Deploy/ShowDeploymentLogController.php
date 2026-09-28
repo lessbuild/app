@@ -16,6 +16,12 @@ final class ShowDeploymentLogController
 {
     /**
      * Returns the deploy's log, never cached.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @param  string  $build
+     * @param  DeployApiQuery  $query
+     * @return JsonResponse
      */
     public function __invoke(#[CurrentUser] User $user, #[TokenAccount] Account $account, string $build, DeployApiQuery $query): JsonResponse
     {

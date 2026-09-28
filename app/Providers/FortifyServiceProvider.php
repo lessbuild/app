@@ -31,6 +31,8 @@ final class FortifyServiceProvider extends ServiceProvider
      * Wires Fortify to our actions and auth views (offering the configured social providers on sign-in, register and
      * password confirmation), records sign-in activity, and sets the rate limits for sign-in, two-factor codes and
      * passkey assertions.
+     *
+     * @return void
      */
     public function boot(): void
     {

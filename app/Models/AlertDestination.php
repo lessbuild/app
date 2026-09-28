@@ -47,6 +47,8 @@ class AlertDestination extends Model
 
     /**
      * The endpoint and signing secret never leave the server in serialised form.
+     *
+     * @var list<string>
      */
     protected $hidden = ['endpoint_url', 'signing_secret'];
 
@@ -54,6 +56,8 @@ class AlertDestination extends Model
      * Limits a query to the account's destinations.
      *
      * @param  Builder<AlertDestination>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -124,6 +128,8 @@ class AlertDestination extends Model
     /**
      * Where alerts go, safe to show: the recipient's name for email, or only the host of a webhook URL (the full URL may
      * contain a token).
+     *
+     * @return string
      */
     public function targetLabel(): string
     {

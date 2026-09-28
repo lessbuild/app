@@ -47,6 +47,9 @@ final readonly class NormalizedEvent
     /**
      * The event as a row for `analytics_events`, for a bulk insert.
      *
+     * @param  int  $siteId
+     * @param  int  $batchId
+     * @param  CarbonImmutable  $receivedAt
      * @return array<string, mixed>
      */
     public function toDatabase(int $siteId, int $batchId, CarbonImmutable $receivedAt): array

@@ -13,6 +13,7 @@ final class ServicesInUseQuery
     /**
      * The services turned on in at least one of the account's projects, for billing.
      *
+     * @param  Account  $account
      * @return list<string> service keys enabled on at least one of the account's projects
      */
     public function handle(Account $account): array

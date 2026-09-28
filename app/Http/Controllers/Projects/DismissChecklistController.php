@@ -14,6 +14,11 @@ final class DismissChecklistController
 {
     /**
      * Hides the getting-started checklist.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  DismissChecklist  $dismiss
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, DismissChecklist $dismiss): RedirectResponse
     {

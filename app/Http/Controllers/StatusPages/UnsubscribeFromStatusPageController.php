@@ -13,6 +13,11 @@ final class UnsubscribeFromStatusPageController
 {
     /**
      * Unsubscribes when the token matches; anything else is a 404.
+     *
+     * @param  string  $subscription
+     * @param  string  $token
+     * @param  UnsubscribeFromStatusPage  $unsubscribe
+     * @return RedirectResponse
      */
     public function __invoke(string $subscription, string $token, UnsubscribeFromStatusPage $unsubscribe): RedirectResponse
     {

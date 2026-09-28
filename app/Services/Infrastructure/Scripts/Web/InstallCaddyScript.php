@@ -17,6 +17,10 @@ class InstallCaddyScript implements ServerScript
 
     /**
      * Shell script to run
+     *
+     * @param  int  $step
+     * @param  Server  $server
+     * @return string
      */
     public function script(int $step, Server $server): string
     {

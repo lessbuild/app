@@ -15,6 +15,8 @@ final class AnalyticsService implements PlatformService
 {
     /**
      * Stored on projects and billing items as `analytics`.
+     *
+     * @return string
      */
     public function key(): string
     {
@@ -23,6 +25,8 @@ final class AnalyticsService implements PlatformService
 
     /**
      * Shown as "Analytics".
+     *
+     * @return string
      */
     public function name(): string
     {
@@ -31,6 +35,8 @@ final class AnalyticsService implements PlatformService
 
     /**
      * Describes Analytics on the service cards.
+     *
+     * @return string
      */
     public function tagline(): string
     {
@@ -39,6 +45,8 @@ final class AnalyticsService implements PlatformService
 
     /**
      * A grid, standing for dashboards of numbers.
+     *
+     * @return string
      */
     public function icon(): string
     {
@@ -47,6 +55,9 @@ final class AnalyticsService implements PlatformService
 
     /**
      * The traffic overview, goals and the sites that send pageviews.
+     *
+     * @param  string  $projectId
+     * @return list<ServiceNavItem>
      */
     public function navItems(string $projectId): array
     {
@@ -59,6 +70,8 @@ final class AnalyticsService implements PlatformService
 
     /**
      * Analytics read and write.
+     *
+     * @return list<ApiScope>
      */
     public function apiScopes(): array
     {
@@ -67,6 +80,8 @@ final class AnalyticsService implements PlatformService
 
     /**
      * The Analytics catalogue: a free tier until paid plans are priced.
+     *
+     * @return ServiceBilling
      */
     public function billing(): ServiceBilling
     {

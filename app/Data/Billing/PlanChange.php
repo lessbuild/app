@@ -23,6 +23,8 @@ final readonly class PlanChange
 
     /**
      * The new tier applies now.
+     *
+     * @return PlanChange
      */
     public static function changed(): self
     {
@@ -31,19 +33,31 @@ final readonly class PlanChange
 
     /**
      * The account was already on that tier.
+     *
+     * @return PlanChange
      */
     public static function unchanged(): self
     {
         return new self('unchanged');
     }
 
-    /** The paid period runs out first; the change happens then. */
+    /**
+     * The paid period runs out first; the change happens then.
+     *
+     * @param  CarbonInterface  $at
+     * @return PlanChange
+     */
     public static function scheduled(CarbonInterface $at): self
     {
         return new self('scheduled', effectiveAt: $at);
     }
 
-    /** The first paid plan: send the person to Stripe Checkout; the webhook applies it. */
+    /**
+     * The first paid plan: send the person to Stripe Checkout; the webhook applies it.
+     *
+     * @param  string  $url
+     * @return PlanChange
+     */
     public static function checkout(string $url): self
     {
         return new self('checkout', $url);

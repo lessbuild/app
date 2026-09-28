@@ -17,6 +17,11 @@ final class ShowApiTokensController
 {
     /**
      * The API tokens page: the account's tokens and the form for new ones.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  AccountApiTokensQuery  $query
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, AccountApiTokensQuery $query): View
     {

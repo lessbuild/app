@@ -21,6 +21,9 @@ final class ProbeTcpMonitor
 
     /**
      * Resolves the host to a public address and opens a TCP connection to the port within what's left of the timeout.
+     *
+     * @param  Monitor  $monitor
+     * @return MonitorObservation
      */
     public function probe(Monitor $monitor): MonitorObservation
     {

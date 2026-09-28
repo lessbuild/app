@@ -15,6 +15,12 @@ final class StoreBackupDestinationController
 {
     /**
      * Adds a backup destination and suggests checking it.
+     *
+     * @param  BackupDestinationRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveBackupDestination  $save
+     * @return RedirectResponse
      */
     public function __invoke(BackupDestinationRequest $request, #[CurrentUser] User $user, Project $project, SaveBackupDestination $save): RedirectResponse
     {

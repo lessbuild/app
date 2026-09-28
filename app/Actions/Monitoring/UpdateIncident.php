@@ -28,7 +28,10 @@ final class UpdateIncident
     /**
      * Acknowledge an incident, change who is working on it, or add a note to its timeline.
      *
+     * @param  Incident  $incident
+     * @param  User  $actor
      * @param  array{action: string, version: int|string, assignee_id?: string|null, note?: string|null}  $data
+     * @return Incident
      */
     public function handle(Incident $incident, User $actor, array $data): Incident
     {

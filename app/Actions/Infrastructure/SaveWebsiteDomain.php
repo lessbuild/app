@@ -30,6 +30,9 @@ final class SaveWebsiteDomain
      * Add an alias or redirect to a website and apply it to Caddy. With a Cloudflare provider its DNS record is created too.
      * Returns the domain and, if something needs the user's attention, a warning.
      *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Website  $website
      * @param  array{hostname: string, type: string, redirect_url?: string|null, dns_provider_id?: int|string|null, is_temporary?: bool}  $data
      * @return array{WebsiteDomain, string|null}
      */

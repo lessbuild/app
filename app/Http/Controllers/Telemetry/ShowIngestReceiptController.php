@@ -14,6 +14,10 @@ final class ShowIngestReceiptController
 {
     /**
      * Returns a delivery's processing status, for deliveries to the key's own environment.
+     *
+     * @param  Request  $request
+     * @param  string  $receipt
+     * @return JsonResponse
      */
     public function __invoke(Request $request, string $receipt): JsonResponse
     {

@@ -16,6 +16,12 @@ final class RetryIngestReceiptController
     /**
      * Queues a failed delivery again from its kept payload (409 when there's nothing to retry). Usage already counted
      * isn't counted twice.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  IngestReceipt  $receipt
+     * @param  TelemetryQueue  $queue
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, IngestReceipt $receipt, TelemetryQueue $queue): RedirectResponse
     {

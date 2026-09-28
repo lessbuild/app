@@ -29,6 +29,9 @@ final class ProbeHttpMonitor
     /**
      * Requests the monitor's URL at its pinned public address, without redirects or proxies and reading at most the body
      * limit, then checks the status range, required text and duration. Bearer tokens are only sent over HTTPS.
+     *
+     * @param  Monitor  $monitor
+     * @return MonitorObservation
      */
     public function probe(Monitor $monitor): MonitorObservation
     {

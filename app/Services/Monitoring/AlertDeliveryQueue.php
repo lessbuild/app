@@ -34,6 +34,9 @@ final class AlertDeliveryQueue
     /**
      * Queues a delivery's job (delayed when it isn't due yet) inside the outbox transaction on the primary database
      * queue, and remembers the job's UUID.
+     *
+     * @param  AlertDelivery  $delivery
+     * @return void
      */
     public function dispatch(AlertDelivery $delivery): void
     {
@@ -56,7 +59,12 @@ final class AlertDeliveryQueue
         $delivery->forceFill(['queue_job_uuid' => $uuid])->save();
     }
 
-    /** All delivery mutations use account → project → environment → monitor → incident → destination → delivery. */
+    /**
+     * All delivery mutations use account → project → environment → monitor → incident → destination → delivery.
+     *
+     * @param  string  $id
+     * @return AlertDelivery|null
+     */
     public function lock(string $id): ?AlertDelivery
     {
         $hint = AlertDelivery::query()->find($id);
@@ -75,6 +83,9 @@ final class AlertDeliveryQueue
 
     /**
      * Whether the delivery's job is still on the queue.
+     *
+     * @param  AlertDelivery  $delivery
+     * @return bool
      */
     public function jobExists(AlertDelivery $delivery): bool
     {

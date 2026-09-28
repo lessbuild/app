@@ -10,6 +10,8 @@ final class InfrastructureCatalog
     /**
      * A single free "included" tier: Infrastructure isn't priced on its own yet, and the server limit lives on Deploy's
      * tiers.
+     *
+     * @return ServiceBilling
      */
     public static function billing(): ServiceBilling
     {

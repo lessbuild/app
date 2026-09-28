@@ -27,7 +27,11 @@ final class SaveDashboard
     /**
      * Create or change a dashboard and replace its widgets, in the order given. New dashboards count against `monitoring.dashboards.max`.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by DashboardRequest
+     * @param  Dashboard|null  $dashboard
+     * @return Dashboard
      */
     public function handle(Account $account, User $actor, array $data, ?Dashboard $dashboard = null): Dashboard
     {

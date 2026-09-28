@@ -14,22 +14,31 @@ class ManagedSsh extends Ssh
 {
     /**
      * The private key file written for this connection, deleted when it closes.
+     *
+     * @var string|null
      */
     private ?string $temporaryPrivateKey = null;
 
     /**
      * The known-hosts file holding the pinned host key, deleted when the connection closes.
+     *
+     * @var string|null
      */
     private ?string $temporaryKnownHosts = null;
 
     /**
      * The SSH port, kept separately so the interactive terminal can build its command safely.
+     *
+     * @var int|null
      */
     private ?int $managedPort = null;
 
     /**
      * Keep the port separately from Spatie's shell-fragment options so the
      * interactive transport can construct an argv-safe Process command.
+     *
+     * @param  int  $port
+     * @return ManagedSsh
      */
     public function usePort(int $port): self
     {
@@ -86,6 +95,7 @@ class ManagedSsh extends Ssh
      * terminate the remote process without a background or detached shell that
      * can consume the first frame and exit early.
      *
+     * @param  TerminalSize  $size
      * @return list<string> An argv-safe SSH command for Symfony Process.
      *
      * @throws RuntimeException If a pinned host and private key were not configured.
@@ -129,6 +139,10 @@ class ManagedSsh extends Ssh
     /**
      * Create the unstarted local process and retain its input outside the
      * Process object so a broker can append frames while it is running.
+     *
+     * @param  InputStream  $input
+     * @param  TerminalSize  $size
+     * @return Process
      */
     public function interactiveProcess(
         InputStream $input,
@@ -183,6 +197,8 @@ class ManagedSsh extends Ssh
 
     /**
      * Remove tracked temporary SSH credentials and host records when the client is destroyed.
+     *
+     * @return mixed
      */
     public function __destruct()
     {

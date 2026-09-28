@@ -34,6 +34,8 @@ final class AlertObservation
      * metric (numeric metrics, anomalies, log patterns, SLO burn, telemetry volume or freshness, or request error rate,
      * duration, exceptions and error logs from one grouped query). Too few samples is no data.
      *
+     * @param  AlertRule  $rule
+     * @param  CarbonImmutable  $until
      * @return array<string, mixed> state (warming, no_data, maintenance, breaching or healthy), value, samples, window and reason
      */
     public function measure(AlertRule $rule, CarbonImmutable $until): array
@@ -131,6 +133,7 @@ final class AlertObservation
     /**
      * The rule's environment's events, narrowed to its service when it has one.
      *
+     * @param  AlertRule  $rule
      * @return Builder<TelemetryEvent>
      */
     private function events(AlertRule $rule): Builder

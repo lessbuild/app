@@ -19,7 +19,15 @@ final class SendServerTerminalInput
      */
     public function __construct(private readonly TerminalFrames $frames) {}
 
-    /** Queue keystrokes for the shell and keep the session from going idle. */
+    /**
+     * Queue keystrokes for the shell and keep the session from going idle.
+     *
+     * @param  User  $actor
+     * @param  ServerTerminalSession  $terminal
+     * @param  string  $token
+     * @param  string  $input
+     * @return int
+     */
     public function handle(User $actor, ServerTerminalSession $terminal, string $token, string $input): int
     {
         Gate::forUser($actor)->authorize('use', $terminal);
@@ -32,6 +40,9 @@ final class SendServerTerminalInput
 
     /**
      * When the terminal closes if nothing more is typed: the idle timeout from now, but never past its time limit.
+     *
+     * @param  ServerTerminalSession  $terminal
+     * @return \Carbon\CarbonImmutable
      */
     private function idleUntil(ServerTerminalSession $terminal): \Carbon\CarbonImmutable
     {

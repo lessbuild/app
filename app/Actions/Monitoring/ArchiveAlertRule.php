@@ -30,7 +30,14 @@ final class ArchiveAlertRule
         private readonly RecordAuditEntry $audit,
     ) {}
 
-    /** Stop evaluating a rule and archive it; an open incident closes as "rule archived". */
+    /**
+     * Stop evaluating a rule and archive it; an open incident closes as "rule archived".
+     *
+     * @param  AlertRule  $rule
+     * @param  User  $actor
+     * @param  int  $version
+     * @return void
+     */
     public function handle(AlertRule $rule, User $actor, int $version): void
     {
         DB::transaction(function () use ($rule, $actor, $version): void {

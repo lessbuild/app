@@ -16,6 +16,13 @@ final class UpdateSiteController
 {
     /**
      * Saves a site's settings.
+     *
+     * @param  SiteRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AnalyticsSite  $site
+     * @param  SaveSite  $save
+     * @return RedirectResponse
      */
     public function __invoke(SiteRequest $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, SaveSite $save): RedirectResponse
     {

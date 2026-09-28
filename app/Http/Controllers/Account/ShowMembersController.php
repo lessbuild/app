@@ -23,6 +23,11 @@ final class ShowMembersController
 
     /**
      * The members page.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  MembersOverviewQuery  $query
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, MembersOverviewQuery $query): View
     {

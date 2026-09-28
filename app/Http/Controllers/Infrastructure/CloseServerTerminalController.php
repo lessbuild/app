@@ -17,6 +17,14 @@ final class CloseServerTerminalController
 {
     /**
      * Closes the terminal and forgets its browser token.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  ServerTerminalSession  $terminal
+     * @param  CloseServerTerminal  $close
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, ServerTerminalSession $terminal, CloseServerTerminal $close): RedirectResponse
     {

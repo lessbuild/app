@@ -17,6 +17,12 @@ final class CreateApiTokenController
 {
     /**
      * Creates an API token and flashes its secret for exactly one page view; only the hash is kept.
+     *
+     * @param  Account  $account
+     * @param  CreateApiTokenRequest  $request
+     * @param  User  $user
+     * @param  CreateApiToken  $create
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, CreateApiTokenRequest $request, #[CurrentUser] User $user, CreateApiToken $create): RedirectResponse
     {

@@ -17,6 +17,13 @@ final class ShowAlertRuleController
 {
     /**
      * An alert rule's page: its recent incidents, routing and escalation steps.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertRule  $rule
+     * @param  ProjectOverviewQuery  $overview
+     * @param  Entitlements  $entitlements
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, AlertRule $rule, ProjectOverviewQuery $overview, Entitlements $entitlements): View
     {

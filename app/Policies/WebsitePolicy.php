@@ -20,6 +20,10 @@ final class WebsitePolicy
 
     /**
      * Seeing a website: account members who may view projects and use Infrastructure.
+     *
+     * @param  User  $user
+     * @param  Website  $website
+     * @return bool
      */
     public function view(User $user, Website $website): bool
     {
@@ -28,6 +32,10 @@ final class WebsitePolicy
 
     /**
      * Adding a website: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
@@ -36,6 +44,10 @@ final class WebsitePolicy
 
     /**
      * Changing a website's settings, domains and environment variables: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Website  $website
+     * @return bool
      */
     public function update(User $user, Website $website): bool
     {
@@ -44,13 +56,23 @@ final class WebsitePolicy
 
     /**
      * Removing a website, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  Website  $website
+     * @return bool
      */
     public function delete(User $user, Website $website): bool
     {
         return $this->update($user, $website);
     }
 
-    /** Running and scheduling backups, and verifying them, needs managed backups on the Deploy plan. */
+    /**
+     * Running and scheduling backups, and verifying them, needs managed backups on the Deploy plan.
+     *
+     * @param  User  $user
+     * @param  Website  $website
+     * @return Response
+     */
     public function backUp(User $user, Website $website): Response
     {
         if (! $this->update($user, $website)) {
@@ -62,7 +84,13 @@ final class WebsitePolicy
             : Response::deny(__('Managed backups come with the Pro Deploy plan and above.'));
     }
 
-    /** Inspecting the database, adding database users and copying databases needs managed resources on the Deploy plan. */
+    /**
+     * Inspecting the database, adding database users and copying databases needs managed resources on the Deploy plan.
+     *
+     * @param  User  $user
+     * @param  Website  $website
+     * @return Response
+     */
     public function manageDatabase(User $user, Website $website): Response
     {
         if (! $this->update($user, $website)) {
@@ -74,7 +102,13 @@ final class WebsitePolicy
             : Response::deny(__('Database tools come with the Pro Deploy plan and above.'));
     }
 
-    /** Restoring works on any plan, so backups taken before a downgrade can still be used. */
+    /**
+     * Restoring works on any plan, so backups taken before a downgrade can still be used.
+     *
+     * @param  User  $user
+     * @param  Website  $website
+     * @return bool
+     */
     public function restore(User $user, Website $website): bool
     {
         return $this->update($user, $website);

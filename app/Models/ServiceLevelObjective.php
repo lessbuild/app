@@ -47,6 +47,8 @@ final class ServiceLevelObjective extends Model
      * Limits a query to SLOs in the account's environments.
      *
      * @param  Builder<ServiceLevelObjective>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -66,6 +68,8 @@ final class ServiceLevelObjective extends Model
 
     /**
      * "Latency" or "Availability".
+     *
+     * @return string
      */
     public function indicatorLabel(): string
     {
@@ -74,6 +78,8 @@ final class ServiceLevelObjective extends Model
 
     /**
      * Which traffic the SLO covers: its service and route, or all request traffic.
+     *
+     * @return string
      */
     public function scopeLabel(): string
     {
@@ -83,6 +89,8 @@ final class ServiceLevelObjective extends Model
 
     /**
      * The rolling window, such as "30-day rolling window".
+     *
+     * @return string
      */
     public function windowLabel(): string
     {
@@ -91,6 +99,8 @@ final class ServiceLevelObjective extends Model
 
     /**
      * Whether the SLO measures latency rather than availability.
+     *
+     * @return bool
      */
     public function isLatency(): bool
     {

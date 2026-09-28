@@ -15,6 +15,12 @@ final class RetryServerInitializationController
 {
     /**
      * Tries a failed server initialisation again.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  RetryServerInitialization  $retry
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, RetryServerInitialization $retry): RedirectResponse
     {

@@ -16,6 +16,12 @@ final class InspectServerImportController
 {
     /**
      * Inspects the server and shows what was found.
+     *
+     * @param  ServerImportRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  InspectServerImport  $inspect
+     * @return RedirectResponse
      */
     public function __invoke(ServerImportRequest $request, #[CurrentUser] User $user, Project $project, InspectServerImport $inspect): RedirectResponse
     {

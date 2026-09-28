@@ -15,6 +15,12 @@ final class ShowConfigurationController
 {
     /**
      * The configuration page, with the last plan when one was just made.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ConfigurationQuery  $configuration
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ConfigurationQuery $configuration): View
     {

@@ -13,6 +13,11 @@ final class OpenNotificationController
 {
     /**
      * Marks a notification read and goes where it points.
+     *
+     * @param  User  $user
+     * @param  string  $notification
+     * @param  OpenNotification  $open
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, string $notification, OpenNotification $open): RedirectResponse
     {

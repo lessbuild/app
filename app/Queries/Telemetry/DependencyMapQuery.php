@@ -23,6 +23,9 @@ final class DependencyMapQuery
     private const MAX_EVENTS = 20_000;
 
     /**
+     * @param  Project  $project
+     * @param  string  $range
+     * @param  string|null  $environmentId
      * @return array{
      *     from: CarbonImmutable,
      *     until: CarbonImmutable,
@@ -171,6 +174,7 @@ final class DependencyMapQuery
     /**
      * A service's counters before any spans are added.
      *
+     * @param  string  $name
      * @return array{name: string, span_count: int, error_count: int, duration_total: float, duration_count: int, last_seen: CarbonImmutable|null}
      */
     private function emptyService(string $name): array
@@ -181,6 +185,8 @@ final class DependencyMapQuery
     /**
      * A caller-to-callee edge's counters before any calls are added.
      *
+     * @param  string  $source
+     * @param  string  $target
      * @return array{source: string, target: string, calls: int, error_count: int, duration_total: float, duration_count: int, max_duration: float|null, trace_ids: array<string, bool>, last_seen: CarbonImmutable|null}
      */
     private function emptyEdge(string $source, string $target): array
@@ -190,6 +196,9 @@ final class DependencyMapQuery
 
     /**
      * The span's service, or "Unspecified service" so unnamed spans still group together.
+     *
+     * @param  string|null  $service
+     * @return string
      */
     private function serviceName(?string $service): string
     {
@@ -198,6 +207,10 @@ final class DependencyMapQuery
 
     /**
      * A key identifying a span within its trace, or null when either ID is missing.
+     *
+     * @param  string|null  $traceId
+     * @param  string|null  $spanId
+     * @return string|null
      */
     private function spanKey(?string $traceId, ?string $spanId): ?string
     {
@@ -206,6 +219,9 @@ final class DependencyMapQuery
 
     /**
      * Whether a span failed: error or critical severity, or a 5xx status.
+     *
+     * @param  TelemetryEvent  $event
+     * @return bool
      */
     private function isError(TelemetryEvent $event): bool
     {
@@ -214,6 +230,9 @@ final class DependencyMapQuery
 
     /**
      * The span's duration when it's a finite, non-negative number; otherwise null so it doesn't skew averages.
+     *
+     * @param  mixed  $duration
+     * @return float|null
      */
     private function validDuration(mixed $duration): ?float
     {
@@ -222,6 +241,10 @@ final class DependencyMapQuery
 
     /**
      * A share as a percentage with two decimals; 0 when there's nothing to divide by.
+     *
+     * @param  int  $part
+     * @param  int  $whole
+     * @return float
      */
     private function percentage(int $part, int $whole): float
     {
@@ -230,6 +253,10 @@ final class DependencyMapQuery
 
     /**
      * The later of two times, accepting the stored value as a string or Carbon.
+     *
+     * @param  CarbonImmutable|null  $current
+     * @param  mixed  $candidate
+     * @return CarbonImmutable|null
      */
     private function latest(?CarbonImmutable $current, mixed $candidate): ?CarbonImmutable
     {

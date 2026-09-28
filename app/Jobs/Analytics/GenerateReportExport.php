@@ -21,6 +21,8 @@ final class GenerateReportExport implements ShouldQueue
 
     /**
      * Two attempts, since building a large report can time out once.
+     *
+     * @var int
      */
     public int $tries = 2;
 
@@ -34,6 +36,9 @@ final class GenerateReportExport implements ShouldQueue
     /**
      * Runs the report with the export's filters and writes each metric and breakdown row to a CSV on the local disk.
      * Finished or expired exports are skipped.
+     *
+     * @param  AnalyticsReportQuery  $report
+     * @return void
      */
     public function handle(AnalyticsReportQuery $report): void
     {
@@ -84,6 +89,9 @@ final class GenerateReportExport implements ShouldQueue
 
     /**
      * Marks the export failed with the reason.
+     *
+     * @param  Throwable|null  $exception
+     * @return void
      */
     public function failed(?Throwable $exception): void
     {

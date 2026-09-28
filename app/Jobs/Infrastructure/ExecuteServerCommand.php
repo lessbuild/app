@@ -21,16 +21,22 @@ final class ExecuteServerCommand implements ShouldQueue
 
     /**
      * One attempt: commands aren't safe to repeat.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * The SSH command timeout plus room to record the result.
+     *
+     * @var int
      */
     public int $timeout;
 
     /**
      * A command that times out is failed, never run again.
+     *
+     * @var bool
      */
     public bool $failOnTimeout = true;
 
@@ -46,6 +52,9 @@ final class ExecuteServerCommand implements ShouldQueue
 
     /**
      * Claims the execution, runs the command over SSH on the active server and stores its exit code and output.
+     *
+     * @param  ServerShell  $shell
+     * @return void
      */
     public function handle(ServerShell $shell): void
     {
@@ -66,6 +75,9 @@ final class ExecuteServerCommand implements ShouldQueue
 
     /**
      * Records that the command couldn't be run, if it hadn't finished.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {
@@ -76,7 +88,11 @@ final class ExecuteServerCommand implements ShouldQueue
      * Stores the result, keeping the tail of long output. Only an execution still in one of `$from` is updated, so a
      * late failure can't overwrite a result.
      *
+     * @param  string  $status
+     * @param  string  $output
+     * @param  int|null  $exitCode
      * @param  list<string>  $from
+     * @return void
      */
     private function finish(string $status, string $output, ?int $exitCode, array $from = ['running']): void
     {

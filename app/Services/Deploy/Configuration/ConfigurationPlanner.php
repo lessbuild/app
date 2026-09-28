@@ -41,6 +41,9 @@ final class ConfigurationPlanner
      * break an invariant (a second or missing production environment, a type change of a resource, removing something
      * configuration doesn't own, planning while a deploy runs) are refused.
      *
+     * @param  Project  $project
+     * @param  User  $user
+     * @param  string  $yaml
      * @param  array<string, mixed>  $bindings
      * @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool}
      */
@@ -147,6 +150,12 @@ final class ConfigurationPlanner
      * under another name, is refused.
      *
      * @param  Collection<int, ConfigurationOwnership>  $ownerships
+     * @param  string  $slug
+     * @param  string  $kind
+     * @param  string  $name
+     * @param  Model|null  $current
+     * @param  bool  $adopt
+     * @return string
      */
     private function action(Collection $ownerships, string $slug, string $kind, string $name, ?Model $current, bool $adopt): string
     {
@@ -165,6 +174,9 @@ final class ConfigurationPlanner
     /**
      * Removing a whole environment: only one configuration owns (with everything in it), not production, and nothing running.
      *
+     * @param  Project  $project
+     * @param  string  $slug
+     * @param  Environment|null  $environment
      * @param  Collection<int, ConfigurationOwnership>  $ownerships
      * @return list<array<string, mixed>>
      */
@@ -202,6 +214,9 @@ final class ConfigurationPlanner
 
     /**
      * Refuses the plan with a message on `plan`.
+     *
+     * @param  string  $message
+     * @return never
      */
     private function invalid(string $message): never
     {

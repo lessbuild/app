@@ -14,6 +14,9 @@ final class DepartureQuery
     /**
      * Sorts the person's accounts by what deleting them would mean: accounts they're alone in get deleted, accounts
      * where they're the only owner block the deletion until someone else is made owner, and the rest they simply leave.
+     *
+     * @param  User  $user
+     * @return Departure
      */
     public function handle(User $user): Departure
     {

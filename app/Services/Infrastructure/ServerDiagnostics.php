@@ -53,6 +53,7 @@ BASH;
      * Runs the diagnostic and turns its answers into checks. Failures are thrown with their stage as a message prefix,
      * so the job can record where it failed.
      *
+     * @param  Server  $server
      * @return list<array{name: string, category: string, passed: bool, detail: string}>
      */
     public function run(Server $server): array
@@ -92,6 +93,7 @@ BASH;
     /**
      * Why diagnostics can't run on this server yet, as [stage, message], or null.
      *
+     * @param  Server  $server
      * @return array{string, string}|null
      */
     public function readiness(Server $server): ?array
@@ -107,6 +109,10 @@ BASH;
     /**
      * One check as the diagnostics tab shows it.
      *
+     * @param  string  $name
+     * @param  string  $category
+     * @param  bool  $passed
+     * @param  string  $detail
      * @return array{name: string, category: string, passed: bool, detail: string}
      */
     private function check(string $name, string $category, bool $passed, string $detail): array
@@ -118,6 +124,7 @@ BASH;
      * Reads the script's `key=value` lines strictly: every expected key exactly once, each value in its expected form,
      * and a bounded size. Anything else is treated as an invalid response rather than guessed at.
      *
+     * @param  string  $output
      * @return array{uid: int, architecture: string, php_version: string, storage_path: string, storage_writable: string, disk_percent: int, load_1m: float, memory_percent: int, process_count: int}
      */
     private function parse(string $output): array

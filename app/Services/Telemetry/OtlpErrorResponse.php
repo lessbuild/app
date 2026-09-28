@@ -17,6 +17,10 @@ final class OtlpErrorResponse
      * Renders errors on OTLP endpoints as `google.rpc.Status` JSON, which OTLP clients expect: validation errors as
      * BadRequest field violations (at most 20), other statuses with the matching gRPC code. Server errors never expose
      * their message.
+     *
+     * @param  Throwable  $exception
+     * @param  Request  $request
+     * @return JsonResponse|null
      */
     public function render(Throwable $exception, Request $request): ?JsonResponse
     {

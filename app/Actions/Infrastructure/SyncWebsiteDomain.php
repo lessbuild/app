@@ -18,7 +18,12 @@ final class SyncWebsiteDomain
      */
     public function __construct(private readonly CloudflareDns $cloudflare) {}
 
-    /** Point the domain's Cloudflare record at the website's server. Returns a warning if Cloudflare refused, or null. */
+    /**
+     * Point the domain's Cloudflare record at the website's server. Returns a warning if Cloudflare refused, or null.
+     *
+     * @param  WebsiteDomain  $domain
+     * @return string|null
+     */
     public function handle(WebsiteDomain $domain): ?string
     {
         try {

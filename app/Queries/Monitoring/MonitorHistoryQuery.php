@@ -12,6 +12,9 @@ final class MonitorHistoryQuery
     /**
      * A monitor's recent checks and incidents, plus its runs for heartbeat monitors, or its latest report and live
      * workers for queue monitors.
+     *
+     * @param  Monitor  $monitor
+     * @return MonitorHistory
      */
     public function handle(Monitor $monitor): MonitorHistory
     {

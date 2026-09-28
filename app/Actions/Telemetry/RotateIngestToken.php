@@ -26,7 +26,13 @@ final class RotateIngestToken
      */
     public function __construct(private readonly IngestTokens $tokens, private readonly RecordAuditEntry $audit) {}
 
-    /** Replace an active key with a new one (same name and expiry); the old one stops working at once. */
+    /**
+     * Replace an active key with a new one (same name and expiry); the old one stops working at once.
+     *
+     * @param  User  $actor
+     * @param  IngestToken  $token
+     * @return IssuedIngestToken
+     */
     public function handle(User $actor, IngestToken $token): IssuedIngestToken
     {
         return DB::transaction(function () use ($actor, $token): IssuedIngestToken {

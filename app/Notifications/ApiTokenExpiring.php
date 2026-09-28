@@ -19,6 +19,8 @@ final class ApiTokenExpiring extends InboxNotification
 
     /**
      * Which token expires, and how soon.
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -27,6 +29,8 @@ final class ApiTokenExpiring extends InboxNotification
 
     /**
      * What to do before it does.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -35,6 +39,8 @@ final class ApiTokenExpiring extends InboxNotification
 
     /**
      * The API tokens page.
+     *
+     * @return string
      */
     protected function url(): string
     {
@@ -43,6 +49,8 @@ final class ApiTokenExpiring extends InboxNotification
 
     /**
      * The token's account.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

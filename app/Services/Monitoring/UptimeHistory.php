@@ -25,6 +25,7 @@ final class UptimeHistory
      * one query.
      *
      * @param  iterable<Monitor>  $monitors
+     * @param  CarbonImmutable|null  $now
      * @return array<int, History> keyed by monitor ID
      */
     public function forMonitors(iterable $monitors, ?CarbonImmutable $now = null): array
@@ -78,6 +79,7 @@ final class UptimeHistory
      * totals. Uptime counts passed and failed checks only.
      *
      * @param  array<string, array{up: int, down: int, unknown: int}>  $counts
+     * @param  CarbonImmutable  $start
      * @return History
      */
     private function summarise(array $counts, CarbonImmutable $start): array
@@ -124,6 +126,7 @@ final class UptimeHistory
      * One day's counts as a sentence for the bar's tooltip.
      *
      * @param  array{up: int, down: int, unknown: int}  $count
+     * @return string
      */
     private function summary(array $count): string
     {

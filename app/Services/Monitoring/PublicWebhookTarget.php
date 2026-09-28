@@ -20,6 +20,10 @@ final class PublicWebhookTarget
     /**
      * The endpoint's host when the URL is a plain HTTPS address on port 443, without credentials or a fragment, and on
      * the provider's own host and path for Slack, Teams, PagerDuty and Discord. Null otherwise.
+     *
+     * @param  string  $url
+     * @param  AlertDestinationType  $type
+     * @return string|null
      */
     public function host(string $url, AlertDestinationType $type): ?string
     {
@@ -61,6 +65,8 @@ final class PublicWebhookTarget
      * The endpoint's host and the address to connect to, or why it can't be used: invalid, not resolvable, or resolving
      * to any non-public address.
      *
+     * @param  string  $url
+     * @param  AlertDestinationType  $type
      * @return array{host: ?string, address: ?string, error: ?string}
      */
     public function resolve(string $url, AlertDestinationType $type): array
@@ -85,6 +91,9 @@ final class PublicWebhookTarget
     /**
      * Whether an address is on the public internet: not private, loopback, link-local, carrier-grade NAT, documentation,
      * multicast or reserved (IPv4), and in global unicast space but not documentation or transition ranges (IPv6).
+     *
+     * @param  string  $address
+     * @return bool
      */
     public function isPublic(string $address): bool
     {

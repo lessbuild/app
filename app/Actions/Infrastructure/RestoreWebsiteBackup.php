@@ -23,7 +23,13 @@ final class RestoreWebsiteBackup
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Put a completed backup back over the live website, one restore at a time. */
+    /**
+     * Put a completed backup back over the live website, one restore at a time.
+     *
+     * @param  User  $actor
+     * @param  WebsiteBackup  $backup
+     * @return BackupRestore
+     */
     public function handle(User $actor, WebsiteBackup $backup): BackupRestore
     {
         Gate::forUser($actor)->authorize('restore', $backup->website);

@@ -21,6 +21,9 @@ final class PlanConfiguration
     /**
      * What applying a configuration document would change. Nothing is written.
      *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  string  $document
      * @param  array<string, mixed>  $bindings
      * @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool}
      */

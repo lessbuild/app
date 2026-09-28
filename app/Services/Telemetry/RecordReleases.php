@@ -13,7 +13,13 @@ use UnexpectedValueException;
 
 final class RecordReleases
 {
-    /** The caller holds the application lock within its transaction. */
+    /**
+     * The caller holds the application lock within its transaction.
+     *
+     * @param  string  $projectId
+     * @param  ReleaseIdentity  $identity
+     * @return Release
+     */
     public function resolve(string $projectId, ReleaseIdentity $identity): Release
     {
         return Release::query()->firstOrCreate([
@@ -27,7 +33,10 @@ final class RecordReleases
      * Group once per receipt so repeated spans do not perform per-event release queries.
      * All changes share the worker's event/usage transaction and roll back on failure.
      *
+     * @param  Environment  $environment
      * @param  array<int, mixed>  $payload  the stored batch: a list of {identity_id, event}
+     * @param  IngestSource  $source
+     * @param  CarbonImmutable  $receivedAt
      * @return array<int, int> Payload position to release ID.
      */
     public function record(Environment $environment, array $payload, IngestSource $source, CarbonImmutable $receivedAt): array

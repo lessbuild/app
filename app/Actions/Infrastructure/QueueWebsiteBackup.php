@@ -20,6 +20,12 @@ final class QueueWebsiteBackup
     /**
      * Queue a backup now (`$actor` set) or for a schedule. Returns null when one is already queued or running for the
      * website, since two at once would fight over the restic repository.
+     *
+     * @param  Website  $website
+     * @param  BackupDestination  $destination
+     * @param  User|null  $actor
+     * @param  WebsiteBackupSchedule|null  $schedule
+     * @return WebsiteBackup|null
      */
     public function handle(Website $website, BackupDestination $destination, ?User $actor = null, ?WebsiteBackupSchedule $schedule = null): ?WebsiteBackup
     {

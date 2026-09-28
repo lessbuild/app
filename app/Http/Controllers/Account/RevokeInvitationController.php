@@ -15,6 +15,12 @@ final class RevokeInvitationController
 {
     /**
      * Withdraws a pending invitation.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  string  $invitation
+     * @param  RevokeInvitation  $revoke
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $invitation, RevokeInvitation $revoke): RedirectResponse
     {

@@ -17,6 +17,13 @@ final class ConfirmWithProviderController
 {
     /**
      * Starts a provider sign-in to confirm identity instead of typing a password.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  SocialProvider  $provider
+     * @param  SocialSignInGateway  $gateway
+     * @param  ProviderIntents  $intents
+     * @return Response
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, SocialProvider $provider, SocialSignInGateway $gateway, ProviderIntents $intents): Response
     {

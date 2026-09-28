@@ -13,12 +13,15 @@ class Runner
 {
     /**
      * The server to run the command on
+     *
+     * @var Server
      */
     protected Server $server;
 
     /**
      * Sets the server to run the command on
      *
+     * @param  Server  $server
      * @return $this
      */
     public function server(Server $server): Runner
@@ -31,6 +34,8 @@ class Runner
     /**
      * Create an SSH connection
      *
+     * @param  bool  $logOutput
+     * @return ManagedSsh
      *
      * @throws Exception
      */

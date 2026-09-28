@@ -14,7 +14,10 @@ final class UpdateDeploymentControls
      * Lock an environment against deploys (with a reason), or limit deploys to a weekly window. Pushes that arrive while
      * blocked wait and deploy once allowed.
      *
+     * @param  User  $actor
+     * @param  Environment  $environment
      * @param  array{locked: bool, lock_reason: string|null, window: bool, days: list<int>, start: string|null, end: string|null, timezone: string|null}  $data
+     * @return void
      */
     public function handle(User $actor, Environment $environment, array $data): void
     {

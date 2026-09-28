@@ -13,23 +13,38 @@ use App\Platform\Catalog\ServiceBilling;
  */
 interface PlatformService
 {
-    /** Stable identifier stored in the database, e.g. `deploy`. */
+    /**
+     * Stable identifier stored in the database, e.g. `deploy`.
+     *
+     * @return string
+     */
     public function key(): string;
 
     /**
      * The service's product name, as the sidebar, billing and enable pages show it.
+     *
+     * @return string
      */
     public function name(): string;
 
-    /** One sentence for enable pages and the overview's service cards. */
+    /**
+     * One sentence for enable pages and the overview's service cards.
+     *
+     * @return string
+     */
     public function tagline(): string;
 
-    /** Icon name in the Signal icon sprite. */
+    /**
+     * Icon name in the Signal icon sprite.
+     *
+     * @return string
+     */
     public function icon(): string;
 
     /**
      * The service's pages inside a project, in sidebar order. The first is the landing page the service card links to.
      *
+     * @param  string  $projectId
      * @return list<ServiceNavItem> the service's pages inside a project, first one is its landing page
      */
     public function navItems(string $projectId): array;
@@ -41,6 +56,10 @@ interface PlatformService
      */
     public function apiScopes(): array;
 
-    /** Tiers, add-ons and meters this service sells. */
+    /**
+     * Tiers, add-ons and meters this service sells.
+     *
+     * @return ServiceBilling
+     */
     public function billing(): ServiceBilling;
 }

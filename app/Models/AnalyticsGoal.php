@@ -29,6 +29,8 @@ class AnalyticsGoal extends Model
 {
     /**
      * Stored in `analytics_goals`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_goals';
 
@@ -52,6 +54,8 @@ class AnalyticsGoal extends Model
     /**
      * Records a version of the goal's definition when it's created and each time its kind or match changes (closing
      * the previous one), so its definition can be looked up for any point in time.
+     *
+     * @return void
      */
     protected static function booted(): void
     {
@@ -112,6 +116,9 @@ class AnalyticsGoal extends Model
     /**
      * The goal's definition in effect at a moment: the version whose period includes it. Null before the goal existed.
      * Callers that check many events should eager-load `versions`.
+     *
+     * @param  mixed  $at
+     * @return AnalyticsGoalVersion|null
      */
     public function versionAt(mixed $at): ?AnalyticsGoalVersion
     {
@@ -125,6 +132,9 @@ class AnalyticsGoal extends Model
      * Whether the event completes the goal as it was defined when the event happened, so editing a goal doesn't rewrite
      * history. Event goals match a custom event's name; path goals match a pageview's path exactly or by prefix. Goals
      * without recorded versions use their current definition.
+     *
+     * @param  AnalyticsEvent  $event
+     * @return bool
      */
     public function isCompletedBy(AnalyticsEvent $event): bool
     {

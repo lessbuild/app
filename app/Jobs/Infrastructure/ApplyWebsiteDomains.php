@@ -21,16 +21,22 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
 
     /**
      * Seconds during which another apply for the same website isn't queued, so several quick domain changes apply once.
+     *
+     * @var int
      */
     public int $uniqueFor = 120;
 
     /**
      * Reloading Caddy can fail briefly, so it gets three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 10;
 
@@ -43,6 +49,8 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
 
     /**
      * One apply per website at a time.
+     *
+     * @return string
      */
     public function uniqueId(): string
     {
@@ -52,6 +60,10 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
     /**
      * Writes the site configuration, validates the whole Caddyfile, and reloads. Validation first means a bad domain
      * can't take down other websites on the server.
+     *
+     * @param  ServerShell  $shell
+     * @param  WebsiteCaddyConfiguration  $caddy
+     * @return void
      */
     public function handle(ServerShell $shell, WebsiteCaddyConfiguration $caddy): void
     {

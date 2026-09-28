@@ -13,6 +13,11 @@ final class Hostname implements ValidationRule
     /**
      * Accepts a bare host (a DNS name, `localhost` or an IP address) with an optional port, and rejects anything that
      * would make it a URL: a scheme-less path, query, fragment or credentials.
+     *
+     * @param  string  $attribute
+     * @param  mixed  $value
+     * @param  Closure  $fail
+     * @return void
      */
     public function validate(string $attribute, mixed $value, Closure $fail): void
     {

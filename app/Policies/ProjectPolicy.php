@@ -18,37 +18,75 @@ final class ProjectPolicy
 {
     use ChecksAccountRole;
 
-    /** Creating a project in the account. */
+    /**
+     * Creating a project in the account.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return bool
+     */
     public function create(User $user, Account $account): bool
     {
         return $this->allows($user, $account->id, AccountPermission::ManageProjects);
     }
 
-    /** Opening the project's overview, settings and activity. */
+    /**
+     * Opening the project's overview, settings and activity.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
+     */
     public function view(User $user, Project $project): bool
     {
         return $this->allows($user, $project->account_id, AccountPermission::ViewProjects);
     }
 
-    /** Changing the project's details, environments and domains. */
+    /**
+     * Changing the project's details, environments and domains.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
+     */
     public function update(User $user, Project $project): bool
     {
         return $this->allows($user, $project->account_id, AccountPermission::ManageProjects);
     }
 
-    /** Deleting the project, which the same people who manage it may do. */
+    /**
+     * Deleting the project, which the same people who manage it may do.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
+     */
     public function delete(User $user, Project $project): bool
     {
         return $this->update($user, $project);
     }
 
-    /** See a service's pages inside the project. */
+    /**
+     * See a service's pages inside the project.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $service
+     * @return bool
+     */
     public function useService(User $user, Project $project, string $service): bool
     {
         return $this->allows($user, $project->account_id, AccountPermission::ViewProjects, $service);
     }
 
-    /** Turn a service on or off, or change its settings. */
+    /**
+     * Turn a service on or off, or change its settings.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $service
+     * @return bool
+     */
     public function manageService(User $user, Project $project, string $service): bool
     {
         return $this->allows($user, $project->account_id, AccountPermission::ManageProjects, $service);
@@ -57,6 +95,10 @@ final class ProjectPolicy
     /**
      * Deploy configuration of the project (documents, reviews and their deploys). A separate ability because route
      * middleware can't pass the literal service name to manageService.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @return bool
      */
     public function manageDeploy(User $user, Project $project): bool
     {

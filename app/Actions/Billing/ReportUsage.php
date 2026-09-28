@@ -19,7 +19,11 @@ final class ReportUsage
      */
     public function __construct(private readonly PaymentProvider $provider, private readonly ServiceRegistry $services) {}
 
-    /** Send usage not yet reported to Stripe meters (for meters that bill usage). Returns how many buckets were sent. */
+    /**
+     * Send usage not yet reported to Stripe meters (for meters that bill usage). Returns how many buckets were sent.
+     *
+     * @return int
+     */
     public function handle(): int
     {
         if (! $this->provider->available()) {

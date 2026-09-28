@@ -48,6 +48,8 @@ final class Release extends Model
      * Limits a query to releases of the account's projects.
      *
      * @param  Builder<Release>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -87,6 +89,8 @@ final class Release extends Model
 
     /**
      * The release's service as people read it: "namespace / service", or "Unspecified service".
+     *
+     * @return string
      */
     public function serviceLabel(): string
     {

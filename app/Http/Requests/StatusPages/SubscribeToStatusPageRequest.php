@@ -21,6 +21,8 @@ final class SubscribeToStatusPageRequest extends FormRequest
 
     /**
      * The address, trimmed and lowercased so the same person can't subscribe twice with different casing.
+     *
+     * @return string
      */
     public function email(): string
     {

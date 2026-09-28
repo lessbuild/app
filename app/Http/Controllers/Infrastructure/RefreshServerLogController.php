@@ -15,6 +15,13 @@ final class RefreshServerLogController
 {
     /**
      * Fetches a fresh copy of one of the server's logs, for active servers.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $type
+     * @param  RefreshServerLog  $refresh
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $type, RefreshServerLog $refresh): RedirectResponse
     {

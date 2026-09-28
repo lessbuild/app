@@ -19,6 +19,12 @@ final class IngestOtlpController
     /**
      * Converts an OTLP export into events and stores them. Without an `X-Beacon-Batch` header, identical content is what
      * makes a resend a duplicate.
+     *
+     * @param  StoreOtlpRequest  $request
+     * @param  string  $signal
+     * @param  TelemetryPayloadMapper  $mapper
+     * @param  TelemetryIngestor  $ingestor
+     * @return JsonResponse
      */
     public function __invoke(StoreOtlpRequest $request, string $signal, TelemetryPayloadMapper $mapper, TelemetryIngestor $ingestor): JsonResponse
     {

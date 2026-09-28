@@ -15,6 +15,12 @@ final class CreateRepositoryController
 {
     /**
      * The form for connecting a repository to the project.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  RepositoryFormQuery  $form
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, RepositoryFormQuery $form): View
     {

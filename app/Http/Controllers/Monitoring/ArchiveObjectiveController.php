@@ -15,6 +15,12 @@ final class ArchiveObjectiveController
 {
     /**
      * Archives an SLO.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ServiceLevelObjective  $objective
+     * @param  ArchiveServiceLevelObjective  $archive
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ArchiveServiceLevelObjective $archive): RedirectResponse
     {

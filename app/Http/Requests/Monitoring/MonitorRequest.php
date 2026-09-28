@@ -107,6 +107,9 @@ final class MonitorRequest extends FormRequest
      * future occurrence, hostnames and URLs are public (bearer tokens need HTTPS), DNS expectations parse, HEAD checks
      * don't look for body text, and a secret isn't both replaced and cleared.
      *
+     * @param  PublicHttpTarget  $targets
+     * @param  DnsRecordSet  $sets
+     * @param  HeartbeatSchedule  $schedules
      * @return array<callable(Validator): void>
      */
     public function after(PublicHttpTarget $targets, DnsRecordSet $sets, HeartbeatSchedule $schedules): array
@@ -182,6 +185,8 @@ final class MonitorRequest extends FormRequest
 
     /**
      * The monitor type: from the form, else the monitor being edited, else HTTP.
+     *
+     * @return mixed
      */
     private function checkType(): mixed
     {
@@ -190,6 +195,8 @@ final class MonitorRequest extends FormRequest
 
     /**
      * The project in the URL.
+     *
+     * @return Project
      */
     public function project(): Project
     {
@@ -199,7 +206,11 @@ final class MonitorRequest extends FormRequest
         return $project;
     }
 
-    /** The monitor being changed, or null when creating one. */
+    /**
+     * The monitor being changed, or null when creating one.
+     *
+     * @return Monitor|null
+     */
     public function monitor(): ?Monitor
     {
         $monitor = $this->route('monitor');

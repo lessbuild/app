@@ -21,16 +21,22 @@ final class ManageDatabaseUser implements ShouldQueue
 
     /**
      * MySQL changes can fail while the server is busy, so they get three tries.
+     *
+     * @var int
      */
     public int $tries = 3;
 
     /**
      * Seconds between tries.
+     *
+     * @var int
      */
     public int $backoff = 30;
 
     /**
      * How long a user change may take.
+     *
+     * @var int
      */
     public int $timeout = 120;
 
@@ -44,6 +50,10 @@ final class ManageDatabaseUser implements ShouldQueue
 
     /**
      * Runs the change when the user is still waiting for it, then marks it active or deletes it.
+     *
+     * @param  ServerShell  $shell
+     * @param  DatabaseCommands  $commands
+     * @return void
      */
     public function handle(ServerShell $shell, DatabaseCommands $commands): void
     {
@@ -66,6 +76,9 @@ final class ManageDatabaseUser implements ShouldQueue
 
     /**
      * Marks the user failed with MySQL's error.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

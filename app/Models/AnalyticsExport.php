@@ -24,6 +24,8 @@ class AnalyticsExport extends Model
 {
     /**
      * Stored in `analytics_exports`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_exports';
 

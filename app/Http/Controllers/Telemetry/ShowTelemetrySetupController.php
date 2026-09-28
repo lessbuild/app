@@ -22,6 +22,14 @@ final class ShowTelemetrySetupController
     /**
      * The setup page: keys per environment, collection health and code for the chosen stack, plus a just-issued key
      * shown once.
+     *
+     * @param  IntegrationSetupRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  CollectionHealthQuery  $health
+     * @param  IntegrationSetupGuide  $guide
+     * @return View
      */
     public function __invoke(IntegrationSetupRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, CollectionHealthQuery $health, IntegrationSetupGuide $guide): View
     {

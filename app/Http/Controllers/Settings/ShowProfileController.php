@@ -12,6 +12,9 @@ final class ShowProfileController
 {
     /**
      * The profile page.
+     *
+     * @param  User  $user
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user): View
     {

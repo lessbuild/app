@@ -19,6 +19,14 @@ final class ShowIssueController
 {
     /**
      * An issue's page: its latest occurrences and timeline, redacted, and who it can be assigned to.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Issue  $issue
+     * @param  ProjectOverviewQuery  $overview
+     * @param  TelemetryRedactor  $redactor
+     * @param  ProjectIncidentsQuery  $members
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Issue $issue, ProjectOverviewQuery $overview, TelemetryRedactor $redactor, ProjectIncidentsQuery $members): View
     {

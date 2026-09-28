@@ -53,6 +53,8 @@ class AlertDelivery extends Model
 
     /**
      * The payload and queue bookkeeping never leave the server in serialised form.
+     *
+     * @var list<string>
      */
     protected $hidden = ['payload', 'processing_token', 'queue_job_uuid'];
 
@@ -60,6 +62,8 @@ class AlertDelivery extends Model
      * Limits a query to the account's deliveries.
      *
      * @param  Builder<AlertDelivery>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void

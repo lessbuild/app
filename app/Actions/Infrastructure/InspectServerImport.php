@@ -30,6 +30,8 @@ final class InspectServerImport
      * Look at an existing server over SSH, without changing it, and keep the findings for 30 minutes. Returns the
      * assessment and the one-time token that confirms it.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array{name: string, type: string, public_ip: string, ssh_port: int|string, ssh_private_key: string}  $data
      * @return array{ServerImportAssessment, string}
      */

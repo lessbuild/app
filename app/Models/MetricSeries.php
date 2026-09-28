@@ -50,6 +50,8 @@ final class MetricSeries extends Model
      * Limits a query to series in the account's environments.
      *
      * @param  Builder<MetricSeries>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -79,6 +81,8 @@ final class MetricSeries extends Model
 
     /**
      * Whether a per-second rate makes sense: only monotonic sums (counters) with a known temporality.
+     *
+     * @return bool
      */
     public function supportsRate(): bool
     {

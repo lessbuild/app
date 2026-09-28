@@ -24,7 +24,15 @@ final class RotateAlertDestinationSecret
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Replace a signed webhook's signing key. Deliveries still queued are cancelled, since they were signed for the old key. */
+    /**
+     * Replace a signed webhook's signing key. Deliveries still queued are cancelled, since they were signed for the old key.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  AlertDestination  $destination
+     * @param  int  $version
+     * @return AlertDestination
+     */
     public function handle(Account $account, User $actor, AlertDestination $destination, int $version): AlertDestination
     {
         return DB::transaction(function () use ($account, $actor, $destination, $version): AlertDestination {

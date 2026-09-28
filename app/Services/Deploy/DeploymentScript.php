@@ -26,6 +26,9 @@ final class DeploymentScript
     /**
      * The bash script for a build: output goes to a log uploaded every five seconds, each stage runs in order, and any
      * failure restores the previous release, uploads the log and reports the exit code.
+     *
+     * @param  Build  $build
+     * @return string
      */
     public function render(Build $build): string
     {

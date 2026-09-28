@@ -16,7 +16,11 @@ final class RecordIssueOccurrence
     /**
      * Called inside the processing transaction with the application's row locked.
      *
+     * @param  Environment  $environment
      * @param  array<string, mixed>  $event
+     * @param  TelemetryEvent  $record
+     * @param  CarbonImmutable  $receivedAt
+     * @return void
      */
     public function record(Environment $environment, array $event, TelemetryEvent $record, CarbonImmutable $receivedAt): void
     {

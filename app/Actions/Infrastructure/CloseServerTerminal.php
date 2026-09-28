@@ -19,7 +19,13 @@ final class CloseServerTerminal
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Close the terminal; the broker sees it and hangs up the shell. */
+    /**
+     * Close the terminal; the broker sees it and hangs up the shell.
+     *
+     * @param  User  $actor
+     * @param  ServerTerminalSession  $terminal
+     * @return void
+     */
     public function handle(User $actor, ServerTerminalSession $terminal): void
     {
         Gate::forUser($actor)->authorize('use', $terminal);

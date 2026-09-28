@@ -17,6 +17,9 @@ final class LogPatternAlertObservation
      * Counts events in the rule's environment (and service) whose text matches the pattern within the window, breaching
      * at the threshold.
      *
+     * @param  AlertRule  $rule
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return array{state: string, value: float|null, samples: int, reason: string|null}
      */
     public function measure(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array

@@ -26,6 +26,9 @@ final class DeploymentMarkers
     /**
      * Records the build as a deployment of its environment, once (keyed by build ID), with its revision as the version
      * and its repository as the service. Null for builds without an environment.
+     *
+     * @param  Build  $build
+     * @return Deployment|null
      */
     public function record(Build $build): ?Deployment
     {

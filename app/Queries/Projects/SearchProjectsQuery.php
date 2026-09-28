@@ -16,6 +16,9 @@ final class SearchProjectsQuery
     /**
      * Projects whose name or slug contains the term, for the command palette.
      *
+     * @param  Account  $account
+     * @param  string  $term
+     * @param  int  $limit
      * @return list<SearchResult> projects whose name or slug matches
      */
     public function projects(Account $account, string $term, int $limit = 6): array
@@ -36,6 +39,9 @@ final class SearchProjectsQuery
      * Domains whose hostname contains the term. Internationalised terms are converted to their ASCII form first, which
      * is how hostnames are stored.
      *
+     * @param  Account  $account
+     * @param  string  $term
+     * @param  int  $limit
      * @return list<SearchResult> domains whose hostname matches, in the account's projects
      */
     public function domains(Account $account, string $term, int $limit = 6): array

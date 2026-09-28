@@ -20,6 +20,14 @@ final class ShowIssuesController
 {
     /**
      * The issues list, 20 to a page, with titles redacted.
+     *
+     * @param  SearchIssuesRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  IssuesQuery  $search
+     * @param  TelemetryRedactor  $redactor
+     * @return View
      */
     public function __invoke(SearchIssuesRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, IssuesQuery $search, TelemetryRedactor $redactor): View
     {

@@ -31,6 +31,9 @@ final class TelemetrySummaryQuery
      * The account's telemetry for a range compared with the range before: totals, request duration and error rate, a
      * breakdown by event type, and a trend split into buckets. Everything is counted in one grouped query.
      *
+     * @param  Account  $account
+     * @param  string  $range
+     * @param  CarbonImmutable|null  $now
      * @return Summary
      */
     public function handle(Account $account, string $range, ?CarbonImmutable $now = null): array
@@ -96,6 +99,9 @@ final class TelemetrySummaryQuery
     /**
      * The account's events inside a window.
      *
+     * @param  Account  $account
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return Builder<TelemetryEvent>
      */
     public function events(Account $account, CarbonImmutable $from, CarbonImmutable $until): Builder
@@ -131,6 +137,10 @@ final class TelemetrySummaryQuery
     /**
      * The change from the previous range as a percentage, or null when either side is missing or the previous one is
      * zero.
+     *
+     * @param  int|float|null  $current
+     * @param  int|float|null  $previous
+     * @return float|null
      */
     private function change(int|float|null $current, int|float|null $previous): ?float
     {

@@ -11,7 +11,14 @@ use Illuminate\Support\Facades\Gate;
 
 final class SaveIssueDigestPreference
 {
-    /** Turn the daily issue digest on or off for someone in an account they belong to. */
+    /**
+     * Turn the daily issue digest on or off for someone in an account they belong to.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  bool  $enabled
+     * @return void
+     */
     public function handle(Account $account, User $user, bool $enabled): void
     {
         Gate::forUser($user)->authorize('view', $account);

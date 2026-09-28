@@ -18,6 +18,13 @@ final class StoreServerAlertRuleController
 {
     /**
      * Adds an alert rule for this server or every server.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  SaveServerAlertRule  $save
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, SaveServerAlertRule $save): RedirectResponse
     {

@@ -13,7 +13,12 @@ final class DatabaseCommands
 {
     private const GRANTS = ['read' => 'SELECT, SHOW VIEW', 'write' => 'SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES', 'admin' => 'ALL PRIVILEGES'];
 
-    /** Prints `size_bytes=`, `active_connections=` and one `table=` line per table (first 500). */
+    /**
+     * Prints `size_bytes=`, `active_connections=` and one `table=` line per table (first 500).
+     *
+     * @param  Website  $website
+     * @return string
+     */
     public function inspect(Website $website): string
     {
         $database = $this->identifier($website->databaseIdentifier());
@@ -26,6 +31,9 @@ final class DatabaseCommands
 
     /**
      * Creates or updates an extra database user with the grants for its privilege on the website's database only.
+     *
+     * @param  DatabaseUser  $user
+     * @return string
      */
     public function applyUser(DatabaseUser $user): string
     {
@@ -41,13 +49,22 @@ final class DatabaseCommands
 
     /**
      * Drops an extra database user.
+     *
+     * @param  DatabaseUser  $user
+     * @return string
      */
     public function removeUser(DatabaseUser $user): string
     {
         return $this->mysql($user->website, "DROP USER IF EXISTS '{$this->identifier($user->username)}'@'localhost'; FLUSH PRIVILEGES;");
     }
 
-    /** Replace the target's tables with a consistent dump of the source's. Both must be on the same server. */
+    /**
+     * Replace the target's tables with a consistent dump of the source's. Both must be on the same server.
+     *
+     * @param  Website  $source
+     * @param  Website  $target
+     * @return string
+     */
     public function copy(Website $source, Website $target): string
     {
         $password = $this->rootPassword($source);
@@ -60,6 +77,10 @@ final class DatabaseCommands
 
     /**
      * A MySQL command over the local socket as root, with the password in the environment rather than the command line.
+     *
+     * @param  Website  $website
+     * @param  string  $sql
+     * @return string
      */
     private function mysql(Website $website, string $sql): string
     {
@@ -68,6 +89,9 @@ final class DatabaseCommands
 
     /**
      * The server's MySQL root password; throws when none is stored.
+     *
+     * @param  Website  $website
+     * @return string
      */
     private function rootPassword(Website $website): string
     {
@@ -76,6 +100,9 @@ final class DatabaseCommands
 
     /**
      * Checks a database or user name is a plain identifier before it goes into SQL.
+     *
+     * @param  string  $value
+     * @return string
      */
     private function identifier(string $value): string
     {

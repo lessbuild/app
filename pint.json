@@ -8,6 +8,7 @@
             "import_classes": true,
             "import_constants": false,
             "import_functions": false
-        }
+        },
+        "no_superfluous_phpdoc_tags": false
     }
 }

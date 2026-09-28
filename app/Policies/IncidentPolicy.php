@@ -15,6 +15,10 @@ final class IncidentPolicy
 
     /**
      * Acknowledging, assigning, resolving or annotating an incident: people who manage Monitoring in the incident's project.
+     *
+     * @param  User  $user
+     * @param  Incident  $record
+     * @return bool
      */
     public function update(User $user, Incident $record): bool
     {

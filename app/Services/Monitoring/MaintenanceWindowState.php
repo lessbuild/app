@@ -11,6 +11,10 @@ final class MaintenanceWindowState
 {
     /**
      * The account's maintenance window in effect at a moment, if any.
+     *
+     * @param  string  $accountId
+     * @param  CarbonImmutable  $at
+     * @return MaintenanceWindow|null
      */
     public function activeForAccountId(string $accountId, CarbonImmutable $at): ?MaintenanceWindow
     {
@@ -20,6 +24,10 @@ final class MaintenanceWindowState
 
     /**
      * Whether one is in effect.
+     *
+     * @param  string  $accountId
+     * @param  CarbonImmutable  $at
+     * @return bool
      */
     public function isActiveForAccountId(string $accountId, CarbonImmutable $at): bool
     {

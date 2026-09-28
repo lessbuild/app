@@ -15,6 +15,13 @@ final class DeleteServerCommandController
 {
     /**
      * Deletes a finished command from the history; queued or running ones stay.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  string  $execution
+     * @param  DeleteServerCommand  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, string $execution, DeleteServerCommand $delete): RedirectResponse
     {

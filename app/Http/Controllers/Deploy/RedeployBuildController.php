@@ -15,6 +15,12 @@ final class RedeployBuildController
 {
     /**
      * Deploys a finished deploy's commit again and shows the new deploy.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Build  $build
+     * @param  RedeployBuild  $redeploy
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, RedeployBuild $redeploy): RedirectResponse
     {

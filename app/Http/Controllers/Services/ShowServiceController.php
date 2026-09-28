@@ -17,6 +17,13 @@ final class ShowServiceController
 {
     /**
      * A service's account-wide page: which projects use it.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  string  $service
+     * @param  ServiceRegistry  $services
+     * @param  ServiceProjectsQuery  $query
+     * @return View
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $service, ServiceRegistry $services, ServiceProjectsQuery $query): View
     {

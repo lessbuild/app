@@ -25,6 +25,12 @@ final class PromoteBuild
     /**
      * Ship a succeeded build's exact commit to a later environment of the same project (staging to production, say),
      * through that environment's repository for the same Git source. Its approval, locks and windows apply.
+     *
+     * @param  User  $actor
+     * @param  Build  $source
+     * @param  Environment  $target
+     * @param  string|null  $note
+     * @return Build
      */
     public function handle(User $actor, Build $source, Environment $target, ?string $note = null): Build
     {

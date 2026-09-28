@@ -36,6 +36,8 @@ final readonly class ServerCost
 
     /**
      * How the cost splits across projects: all to one project, shared between several, or not attributed to any.
+     *
+     * @return string
      */
     public function attribution(): string
     {

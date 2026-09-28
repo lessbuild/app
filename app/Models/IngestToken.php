@@ -64,6 +64,7 @@ final class IngestToken extends Model
      * Limits a query to tokens that aren't revoked or expired.
      *
      * @param  Builder<IngestToken>  $query
+     * @return void
      */
     #[Scope]
     protected function active(Builder $query): void
@@ -74,6 +75,8 @@ final class IngestToken extends Model
 
     /**
      * `active`, `expired` or `revoked`.
+     *
+     * @return string
      */
     public function status(): string
     {
@@ -86,6 +89,8 @@ final class IngestToken extends Model
 
     /**
      * Plain columns; dates come back as Carbon.
+     *
+     * @return array<string, string>
      */
     protected function casts(): array
     {

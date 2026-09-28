@@ -15,6 +15,12 @@ final class DeleteBackupDestinationController
 {
     /**
      * Removes a backup destination.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  BackupDestination  $backupDestination
+     * @param  DeleteBackupDestination  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, BackupDestination $backupDestination, DeleteBackupDestination $delete): RedirectResponse
     {

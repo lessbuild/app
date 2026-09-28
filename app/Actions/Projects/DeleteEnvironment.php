@@ -15,6 +15,10 @@ final class DeleteEnvironment
 {
     /**
      * Deletes an environment. The production environment can't be deleted.
+     *
+     * @param  User  $actor
+     * @param  Environment  $environment
+     * @return void
      */
     public function handle(User $actor, Environment $environment): void
     {

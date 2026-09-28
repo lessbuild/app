@@ -55,6 +55,8 @@ final class IssueActivity extends Model
 
     /**
      * The activity as a line on the timeline.
+     *
+     * @return string
      */
     public function label(): string
     {

@@ -36,6 +36,11 @@ final class IntegrationSetupGuide
     /**
      * The environment variables that point any OpenTelemetry SDK at our OTLP/HTTP endpoints, with a placeholder where
      * the environment's token goes.
+     *
+     * @param  string  $tracesEndpoint
+     * @param  string  $logsEndpoint
+     * @param  string  $metricsEndpoint
+     * @return string
      */
     public function openTelemetryConfiguration(string $tracesEndpoint, string $logsEndpoint, string $metricsEndpoint): string
     {
@@ -54,6 +59,9 @@ final class IntegrationSetupGuide
      * pointed at the ingest endpoint, and how to confirm the event arrived. Unknown stacks throw, since the request
      * validates the choice first.
      *
+     * @param  string  $stack
+     * @param  string  $ingestEndpoint
+     * @param  string  $receiptEndpoint
      * @return array{key: string, label: string, install: string, token: string, code: string, verification: string, receipt_endpoint: string}
      */
     public function for(string $stack, string $ingestEndpoint, string $receiptEndpoint): array

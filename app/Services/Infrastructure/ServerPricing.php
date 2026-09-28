@@ -58,7 +58,11 @@ class ServerPricing
      * The monthly price of a size from the provider's size catalog: Hetzner's gross price for the server's location (or
      * the first listed), Vultr's and DigitalOcean's monthly cost. Null when the size isn't listed.
      *
+     * @param  ProviderType  $type
      * @param  list<array<string, mixed>>  $sizes
+     * @param  string  $size
+     * @param  string|null  $region
+     * @return float|null
      */
     public function price(ProviderType $type, array $sizes, string $size, ?string $region): ?float
     {

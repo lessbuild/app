@@ -16,6 +16,13 @@ final class UpdateStatusPageController
 {
     /**
      * Saves a status page.
+     *
+     * @param  StatusPageRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  StatusPage  $page
+     * @param  SaveStatusPage  $save
+     * @return RedirectResponse
      */
     public function __invoke(StatusPageRequest $request, #[CurrentUser] User $user, Project $project, StatusPage $page, SaveStatusPage $save): RedirectResponse
     {

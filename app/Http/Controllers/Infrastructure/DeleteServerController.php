@@ -15,6 +15,12 @@ final class DeleteServerController
 {
     /**
      * Deletes a server.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  DeleteServer  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, DeleteServer $delete): RedirectResponse
     {

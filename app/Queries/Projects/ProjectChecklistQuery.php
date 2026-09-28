@@ -15,6 +15,8 @@ final class ProjectChecklistQuery
      * The getting-started steps for a new project: create it, turn on a service, add a domain, and invite a teammate
      * (for people who can).
      *
+     * @param  Project  $project
+     * @param  User  $viewer
      * @return list<ChecklistStep> empty once it's dismissed, complete, or the viewer can't act on it
      */
     public function handle(Project $project, User $viewer): array

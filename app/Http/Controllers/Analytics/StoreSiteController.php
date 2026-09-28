@@ -15,6 +15,12 @@ final class StoreSiteController
 {
     /**
      * Adds an analytics site and shows its tracking snippet.
+     *
+     * @param  SiteRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  SaveSite  $save
+     * @return RedirectResponse
      */
     public function __invoke(SiteRequest $request, #[CurrentUser] User $user, Project $project, SaveSite $save): RedirectResponse
     {

@@ -15,6 +15,12 @@ final class DeleteLoadBalancerController
 {
     /**
      * Starts removing a load balancer.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  LoadBalancer  $loadBalancer
+     * @param  DeleteLoadBalancer  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, DeleteLoadBalancer $delete): RedirectResponse
     {

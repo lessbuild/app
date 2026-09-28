@@ -24,7 +24,15 @@ final class RetryAlertDelivery
      */
     public function __construct(private readonly AlertDeliveryQueue $queue, private readonly AlertDeliveryRunner $runner) {}
 
-    /** Start a failed delivery over, with a fresh set of attempts. */
+    /**
+     * Start a failed delivery over, with a fresh set of attempts.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  AlertDelivery  $delivery
+     * @param  int  $generation
+     * @return void
+     */
     public function handle(Account $account, User $actor, AlertDelivery $delivery, int $generation): void
     {
         DB::transaction(function () use ($account, $actor, $delivery, $generation): void {

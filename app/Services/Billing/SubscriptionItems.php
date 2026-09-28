@@ -23,6 +23,11 @@ final class SubscriptionItems
 
     /**
      * The `service:kind:item` reference stored on a subscription item.
+     *
+     * @param  string  $service
+     * @param  SelectionKind  $kind
+     * @param  string  $itemKey
+     * @return string
      */
     public static function reference(string $service, SelectionKind $kind, string $itemKey): string
     {
@@ -32,6 +37,7 @@ final class SubscriptionItems
     /**
      * Splits a reference back into service, kind and item, or null when it isn't one of ours.
      *
+     * @param  string  $reference
      * @return array{0: string, 1: SelectionKind, 2: string}|null
      */
     public static function parse(string $reference): ?array
@@ -46,6 +52,7 @@ final class SubscriptionItems
      * The line items the account should be paying for: each selection with a price (imported selections keep their
      * original price).
      *
+     * @param  string  $accountId
      * @return list<LineItem> every selection that is billed (including ones running out at period end)
      */
     public function desired(string $accountId): array
@@ -61,7 +68,12 @@ final class SubscriptionItems
         return $items;
     }
 
-    /** Push the selections to the live subscription; cancels it when nothing is billed any more. */
+    /**
+     * Push the selections to the live subscription; cancels it when nothing is billed any more.
+     *
+     * @param  BillingAccount  $billing
+     * @return void
+     */
     public function sync(BillingAccount $billing): void
     {
         if (! $billing->hasLiveSubscription() || $billing->stripe_subscription_id === null) {
@@ -84,7 +96,9 @@ final class SubscriptionItems
     /**
      * Stores the provider's item ID on each selection, so later changes update items in place.
      *
+     * @param  string  $accountId
      * @param  array<string, string>  $itemIds
+     * @return void
      */
     public function storeItemIds(string $accountId, array $itemIds): void
     {

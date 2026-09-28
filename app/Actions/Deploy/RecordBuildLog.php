@@ -8,7 +8,13 @@ use App\Models\Build;
 
 final class RecordBuildLog
 {
-    /** The latest tail of the deployment log (signed callback, every few seconds while it runs). */
+    /**
+     * The latest tail of the deployment log (signed callback, every few seconds while it runs).
+     *
+     * @param  Build  $build
+     * @param  string  $log
+     * @return void
+     */
     public function handle(Build $build, string $log): void
     {
         $log = mb_substr(str_replace("\0", '', $log), -max(1, (int) config('deploy.deployment_log_max_characters')));

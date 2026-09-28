@@ -44,7 +44,11 @@ final class SaveAlertRule
     /**
      * Create or change an alert rule on one of the project's environments.
      *
+     * @param  Project  $project
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by AlertRuleRequest
+     * @param  AlertRule|null  $rule
+     * @return AlertRule
      */
     public function handle(Project $project, User $actor, array $data, ?AlertRule $rule = null): AlertRule
     {

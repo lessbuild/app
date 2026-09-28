@@ -23,7 +23,9 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
     /**
      * Validates the profile form (the email must stay unique) and saves it.
      *
+     * @param  User  $user
      * @param  array<string, string>  $input
+     * @return void
      */
     public function update(User $user, array $input): void
     {

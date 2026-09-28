@@ -119,7 +119,11 @@ class Repository extends Model
         return $this->hasMany(RepositoryWebhookDelivery::class);
     }
 
-    /** Whether a deploy can start: a Git provider that hosts the URL, and a live website on an active server. */
+    /**
+     * Whether a deploy can start: a Git provider that hosts the URL, and a live website on an active server.
+     *
+     * @return bool
+     */
     public function isDeploymentReady(): bool
     {
         $this->loadMissing(['provider', 'website.server']);
@@ -131,7 +135,12 @@ class Repository extends Model
             && $this->website->server?->provisioning_status === Server::STATUS_ACTIVE;
     }
 
-    /** The provider's page for a full commit hash, or null. */
+    /**
+     * The provider's page for a full commit hash, or null.
+     *
+     * @param  string|null  $revision
+     * @return string|null
+     */
     public function revisionUrl(?string $revision): ?string
     {
         if (! is_string($revision) || preg_match('/\A[0-9a-f]{40,64}\z/D', $revision) !== 1) {
@@ -144,6 +153,8 @@ class Repository extends Model
 
     /**
      * The subdirectory to deploy, as a safe relative path (`.` for the repository root).
+     *
+     * @return string
      */
     public function deploymentRoot(): string
     {

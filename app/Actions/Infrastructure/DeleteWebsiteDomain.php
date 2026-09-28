@@ -25,7 +25,14 @@ final class DeleteWebsiteDomain
      */
     public function __construct(private readonly CloudflareDns $cloudflare, private readonly RecordAuditEntry $audit) {}
 
-    /** Remove an alias or redirect (and its Cloudflare record). The primary domain changes with the website's URL instead. */
+    /**
+     * Remove an alias or redirect (and its Cloudflare record). The primary domain changes with the website's URL instead.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  WebsiteDomain  $domain
+     * @return void
+     */
     public function handle(Account $account, User $actor, WebsiteDomain $domain): void
     {
         Gate::forUser($actor)->authorize('update', $domain->website);

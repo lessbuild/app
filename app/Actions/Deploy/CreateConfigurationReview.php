@@ -22,7 +22,11 @@ final class CreateConfigurationReview
     /**
      * Freeze a document's plan for 15 minutes so its requester can apply exactly that.
      *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @param  string  $document
      * @param  array<string, mixed>  $bindings
+     * @return ConfigurationReview
      */
     public function handle(User $actor, Project $project, string $document, array $bindings): ConfigurationReview
     {

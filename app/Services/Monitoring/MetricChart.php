@@ -25,6 +25,10 @@ final class MetricChart
      * A series' points over a window for charting (the latest ones when there are too many), as values or per-second
      * rates, positioned on the chart and marked for anomalies.
      *
+     * @param  MetricSeries  $series
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @param  string  $mode
      * @return array<string, mixed>
      */
     public function read(MetricSeries $series, CarbonImmutable $from, CarbonImmutable $until, string $mode): array
@@ -66,6 +70,10 @@ final class MetricChart
      * One sample's value, or its rate from the previous sample (delta series use their own interval). Resets, gaps and
      * invalid times give no value with the reason.
      *
+     * @param  MetricSeries  $series
+     * @param  MetricSample  $sample
+     * @param  MetricSample|null  $previous
+     * @param  string  $mode
      * @return array{value: float|null, state: string}
      */
     public function reading(MetricSeries $series, MetricSample $sample, ?MetricSample $previous, string $mode): array

@@ -17,6 +17,12 @@ final class ShowAlertRulesController
 {
     /**
      * The project's alert rules.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectAlertRulesQuery  $rules
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectAlertRulesQuery $rules): View
     {

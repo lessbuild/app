@@ -13,6 +13,7 @@ final class ObservationText
      * What a monitor checked, from the snapshot taken when an incident opened.
      *
      * @param  array<string, mixed>  $snapshot
+     * @return string
      */
     public static function configuration(array $snapshot): string
     {
@@ -62,6 +63,10 @@ final class ObservationText
 
     /**
      * Prints a scalar snapshot value, or the placeholder when the value is missing or isn't printable.
+     *
+     * @param  mixed  $value
+     * @param  string  $default
+     * @return string
      */
     private static function text(mixed $value, string $default = '—'): string
     {

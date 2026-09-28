@@ -19,6 +19,11 @@ final class NativeTcpConnector implements TcpConnector
     /**
      * Opens and immediately closes a TCP connection to a public address, without sending anything. Refuses non-public
      * addresses.
+     *
+     * @param  string  $address
+     * @param  int  $port
+     * @param  int  $timeoutMilliseconds
+     * @return bool
      */
     public function connect(string $address, int $port, int $timeoutMilliseconds): bool
     {

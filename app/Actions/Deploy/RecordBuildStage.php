@@ -18,7 +18,13 @@ final class RecordBuildStage
      */
     public function __construct(private readonly RepositoryDeploymentPlan $plan, private readonly FinishBuild $finish) {}
 
-    /** A stage of the deployment script finished (signed callback). The last one makes the build live. */
+    /**
+     * A stage of the deployment script finished (signed callback). The last one makes the build live.
+     *
+     * @param  Build  $build
+     * @param  int  $stage
+     * @return void
+     */
     public function handle(Build $build, int $stage): void
     {
         $final = DB::transaction(function () use ($build, $stage): bool {

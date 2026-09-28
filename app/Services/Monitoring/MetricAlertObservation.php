@@ -22,6 +22,9 @@ final class MetricAlertObservation
      * Computes the rule's aggregation (last, mean, min, max or rate) over the window and compares it with the threshold.
      * Unknown when samples are missing, invalid, too few, stale, or a rate lacks a recent baseline.
      *
+     * @param  AlertRule  $rule
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
      * @return array{state: string, value: float|null, samples: int, reason: string|null}
      */
     public function measure(AlertRule $rule, CarbonImmutable $from, CarbonImmutable $until): array

@@ -21,7 +21,14 @@ final class DeleteStatusPage
      */
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
-    /** Delete a status page with its updates and subscribers. Its public address stops working at once; monitors aren't affected. */
+    /**
+     * Delete a status page with its updates and subscribers. Its public address stops working at once; monitors aren't affected.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  StatusPage  $page
+     * @return void
+     */
     public function handle(Account $account, User $actor, StatusPage $page): void
     {
         DB::transaction(function () use ($account, $actor, $page): void {

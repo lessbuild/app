@@ -29,6 +29,10 @@ final class RecordHeartbeat
     /**
      * Record a start, success or failure signal from a heartbeat run (the public heartbeat API).
      *
+     * @param  int  $monitorId
+     * @param  string  $tokenHash
+     * @param  string  $runId
+     * @param  string  $signal
      * @return array{run_id: string, signal: string, replayed: bool, received_at: string}
      */
     public function handle(int $monitorId, string $tokenHash, string $runId, string $signal): array
@@ -94,6 +98,9 @@ final class RecordHeartbeat
     /**
      * What the job gets back: the run ID, the signal, whether it was a replay, and when it was recorded.
      *
+     * @param  HeartbeatRun  $run
+     * @param  string  $signal
+     * @param  bool  $replayed
      * @return array{run_id: string, signal: string, replayed: bool, received_at: string}
      */
     private function receipt(HeartbeatRun $run, string $signal, bool $replayed): array

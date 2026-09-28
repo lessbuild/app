@@ -9,6 +9,9 @@ final class ProjectRuleViolation extends RuleViolation
 {
     /**
      * The service key doesn't match any registered platform service.
+     *
+     * @param  string  $service
+     * @return ProjectRuleViolation
      */
     public static function unknownService(string $service): self
     {
@@ -17,6 +20,8 @@ final class ProjectRuleViolation extends RuleViolation
 
     /**
      * Someone tried to create a second production environment or delete the one every project has.
+     *
+     * @return ProjectRuleViolation
      */
     public static function productionIsFixed(): self
     {
@@ -25,6 +30,8 @@ final class ProjectRuleViolation extends RuleViolation
 
     /**
      * Environment names are unique within a project.
+     *
+     * @return ProjectRuleViolation
      */
     public static function environmentNameTaken(): self
     {
@@ -33,6 +40,8 @@ final class ProjectRuleViolation extends RuleViolation
 
     /**
      * A domain being added isn't a public hostname.
+     *
+     * @return ProjectRuleViolation
      */
     public static function invalidHostname(): self
     {
@@ -41,6 +50,8 @@ final class ProjectRuleViolation extends RuleViolation
 
     /**
      * The project already lists this domain.
+     *
+     * @return ProjectRuleViolation
      */
     public static function domainAlreadyAdded(): self
     {
@@ -49,6 +60,8 @@ final class ProjectRuleViolation extends RuleViolation
 
     /**
      * Another project proved ownership of this domain first; a domain can only be verified in one project at a time.
+     *
+     * @return ProjectRuleViolation
      */
     public static function domainVerifiedElsewhere(): self
     {
@@ -57,6 +70,8 @@ final class ProjectRuleViolation extends RuleViolation
 
     /**
      * A domain was pointed at an environment from a different project.
+     *
+     * @return ProjectRuleViolation
      */
     public static function environmentNotInProject(): self
     {

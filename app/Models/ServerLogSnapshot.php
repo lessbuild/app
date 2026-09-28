@@ -37,6 +37,8 @@ class ServerLogSnapshot extends Model
 
     /**
      * Only the key is guarded: snapshots are written by the log job, never from request input.
+     *
+     * @var array<string>
      */
     protected $guarded = ['id'];
 

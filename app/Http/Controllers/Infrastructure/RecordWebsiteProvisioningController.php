@@ -14,6 +14,12 @@ final class RecordWebsiteProvisioningController
 {
     /**
      * Records a website setup script's report.
+     *
+     * @param  Request  $request
+     * @param  string  $websiteId
+     * @param  string  $event
+     * @param  RecordWebsiteProvisioning  $record
+     * @return Response
      */
     public function __invoke(Request $request, string $websiteId, string $event, RecordWebsiteProvisioning $record): Response
     {

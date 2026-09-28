@@ -23,6 +23,9 @@ class RemoteScriptRunner
      * Uploads the script (retrying the upload), then runs it detached as root with its output to a log and its process
      * ID in a file. Returns the process ID and script path.
      *
+     * @param  Server  $server
+     * @param  string  $script
+     * @param  string  $name
      * @return array{id: int, path: string}
      */
     public function start(Server $server, string $script, string $name): array

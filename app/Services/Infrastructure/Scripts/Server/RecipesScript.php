@@ -17,6 +17,10 @@ class RecipesScript implements ServerScript
 
     /**
      * Script to run
+     *
+     * @param  int  $step
+     * @param  Server  $server
+     * @return string
      */
     public function script(int $step, Server $server): string
     {

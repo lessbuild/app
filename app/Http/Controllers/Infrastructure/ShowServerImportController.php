@@ -15,6 +15,12 @@ final class ShowServerImportController
 {
     /**
      * The import review page, for the person who ran the inspection.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  string  $assessment
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, string $assessment, ProjectOverviewQuery $overview): View
     {

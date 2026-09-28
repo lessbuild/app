@@ -22,6 +22,8 @@ final class ConfigurationBindings
      * account, checking each fits (a repository on the placement's website, a secret in a compatible scope). Any problem
      * is one generic error, so bindings can't be used to probe other records.
      *
+     * @param  Project  $project
+     * @param  User  $user
      * @param  array<string, mixed>  $document
      * @param  array<string, mixed>  $bindings
      * @return array{placements: array<string, array{website_id: int, resource_fingerprint?: string}>, secrets: array<string, array{variable_id: int, version: int}>, repositories: array<string, array{repository_id: int, fingerprint: string}>}
@@ -84,6 +86,9 @@ final class ConfigurationBindings
      * The ID bound to a name, or 0 when there's none.
      *
      * @param  array<string, mixed>  $bindings
+     * @param  string  $kind
+     * @param  string  $name
+     * @return int
      */
     private function id(array $bindings, string $kind, string $name): int
     {
@@ -95,6 +100,8 @@ final class ConfigurationBindings
 
     /**
      * Refuses the bindings without saying which one failed.
+     *
+     * @return never
      */
     private function invalid(): never
     {

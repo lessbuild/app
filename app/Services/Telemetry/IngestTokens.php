@@ -13,7 +13,15 @@ use Illuminate\Support\Str;
 /** Issues ingest keys: `bcn_` plus 64 random characters, stored as a SHA-256 hash (public contract from the Monitor app). */
 final class IngestTokens
 {
-    /** Called in a transaction holding the project and environment locks. */
+    /**
+     * Called in a transaction holding the project and environment locks.
+     *
+     * @param  Environment  $environment
+     * @param  User  $creator
+     * @param  string  $name
+     * @param  CarbonInterface|null  $expiresAt
+     * @return IssuedIngestToken
+     */
     public function issue(Environment $environment, User $creator, string $name, ?CarbonInterface $expiresAt = null): IssuedIngestToken
     {
         $secret = 'bcn_'.Str::random(64);

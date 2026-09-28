@@ -19,6 +19,13 @@ final class IssueTemporaryDomainController
     /**
      * Adds a random temporary hostname to the website, through the chosen Cloudflare provider. 404 when no temporary
      * base domain is configured.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  SaveWebsiteDomain  $save
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Website $website, SaveWebsiteDomain $save): RedirectResponse
     {

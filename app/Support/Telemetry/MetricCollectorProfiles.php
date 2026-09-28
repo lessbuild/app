@@ -15,6 +15,7 @@ final class MetricCollectorProfiles
      * token read from `BEACON_INGEST_TOKEN`. The requirements text states the permissions and caveats a person needs
      * before running it.
      *
+     * @param  string  $metricsEndpoint
      * @return array<string, array{label: string, receiver: string, stability: string, requirements: string, yaml: string}>
      */
     public function all(string $metricsEndpoint): array
@@ -537,6 +538,11 @@ YAML, $exporter, 'redis'),
     /**
      * Joins a receiver block with the shared exporter and a metrics pipeline wiring one to the other, so each profile
      * only has to describe its receiver.
+     *
+     * @param  string  $receiver
+     * @param  string  $exporter
+     * @param  string  $receiverName
+     * @return string
      */
     private function configuration(string $receiver, string $exporter, string $receiverName): string
     {

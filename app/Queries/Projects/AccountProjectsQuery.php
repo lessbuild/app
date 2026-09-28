@@ -21,6 +21,7 @@ final class AccountProjectsQuery
     /**
      * The account's projects by name, with their enabled services in registry order and environment count.
      *
+     * @param  Account  $account
      * @return list<ProjectCard>
      */
     public function handle(Account $account): array

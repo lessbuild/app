@@ -117,6 +117,9 @@ class Project extends Model
 
     /**
      * Whether a service is turned on in the project.
+     *
+     * @param  string  $service
+     * @return bool
      */
     public function hasService(string $service): bool
     {

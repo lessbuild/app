@@ -31,6 +31,11 @@ class ServerImportAssessment extends Model
     /**
      * Whether this person may use the assessment to import the server: they made it for this account, it hasn't been
      * used or expired, and the token matches.
+     *
+     * @param  User  $user
+     * @param  string  $accountId
+     * @param  string  $token
+     * @return bool
      */
     public function isUsableBy(User $user, string $accountId, string $token): bool
     {

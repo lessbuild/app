@@ -18,6 +18,8 @@ class AnalyticsGoalConversion extends Model
 {
     /**
      * Stored in `analytics_goal_conversions`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_goal_conversions';
 

@@ -50,7 +50,10 @@ final class CreateServer
      * goes in as user data. If the provider refuses, whatever was created is removed and the server is marked failed.
      * The one-time root password is on the returned model (`provisioningRootPassword()`).
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string}  $data
+     * @return Server
      */
     public function handle(Account $account, User $actor, array $data): Server
     {
@@ -115,6 +118,11 @@ final class CreateServer
      * Deletes what was already created at the provider (the server, and an SSH key we added) after creation failed
      * part-way, so nothing is left running and billing. Errors here are reported rather than thrown, so the original
      * failure is what the person sees.
+     *
+     * @param  Server  $server
+     * @param  ServerProvider|null  $client
+     * @param  string|int|null  $identifier
+     * @return void
      */
     private function cleanUp(Server $server, ?ServerProvider $client, int|string|null $identifier): void
     {

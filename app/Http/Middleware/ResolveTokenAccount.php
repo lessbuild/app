@@ -24,6 +24,10 @@ final class ResolveTokenAccount
     /**
      * Puts the token's account on the request, or refuses with 403 once the creator has left or lost the right to use
      * tokens.
+     *
+     * @param  Request  $request
+     * @param  Closure  $next
+     * @return Response
      */
     public function handle(Request $request, Closure $next): Response
     {

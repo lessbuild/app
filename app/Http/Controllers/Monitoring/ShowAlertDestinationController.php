@@ -16,6 +16,13 @@ final class ShowAlertDestinationController
 {
     /**
      * A destination's page with its recent deliveries, and a newly issued secret when there is one.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  AlertDestination  $destination
+     * @param  ProjectOverviewQuery  $overview
+     * @param  AlertDestinationsQuery  $destinations
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, AlertDestination $destination, ProjectOverviewQuery $overview, AlertDestinationsQuery $destinations): View
     {

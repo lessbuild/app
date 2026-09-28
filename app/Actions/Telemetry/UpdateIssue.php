@@ -28,7 +28,10 @@ final class UpdateIssue
     /**
      * Resolve, reopen, snooze, ignore or assign an issue. A new occurrence reopens a resolved issue.
      *
+     * @param  Issue  $issue
+     * @param  User  $actor
      * @param  array{action: string, version: int|string, assignee_id?: string|null, snooze_minutes?: int|string, note?: string|null}  $data
+     * @return Issue
      */
     public function handle(Issue $issue, User $actor, array $data): Issue
     {

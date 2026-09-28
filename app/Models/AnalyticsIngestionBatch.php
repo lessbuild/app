@@ -23,6 +23,8 @@ class AnalyticsIngestionBatch extends Model
 {
     /**
      * Stored in `analytics_ingestion_batches`.
+     *
+     * @var string|null
      */
     protected $table = 'analytics_ingestion_batches';
 

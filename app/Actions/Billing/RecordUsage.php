@@ -10,7 +10,15 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordUsage
 {
-    /** Add usage of a meter (e.g. `monitoring.events`) to the account's hourly bucket. Cheap enough to call per batch. */
+    /**
+     * Add usage of a meter (e.g. `monitoring.events`) to the account's hourly bucket. Cheap enough to call per batch.
+     *
+     * @param  string  $accountId
+     * @param  string  $meter
+     * @param  int  $quantity
+     * @param  CarbonInterface|null  $at
+     * @return void
+     */
     public function handle(string $accountId, string $meter, int $quantity, ?CarbonInterface $at = null): void
     {
         if ($quantity <= 0) {

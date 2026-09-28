@@ -16,6 +16,12 @@ trait ChecksAccountRole
     /**
      * Whether the person is a member of the account whose role grants the permission and, when a service is named,
      * whose membership isn't limited to other services. People outside the account are always refused.
+     *
+     * @param  User  $user
+     * @param  string  $accountId
+     * @param  AccountPermission  $permission
+     * @param  string|null  $service
+     * @return bool
      */
     private function allows(User $user, string $accountId, AccountPermission $permission, ?string $service = null): bool
     {
@@ -27,6 +33,9 @@ trait ChecksAccountRole
     /**
      * The account an ability is checked in. Create abilities receive the account or, from project pages, the project
      * (account-wide records such as servers are listed there too); other abilities pass the record's account ID.
+     *
+     * @param  Account|Project|string  $scope
+     * @return string
      */
     private function accountIdOf(Account|Project|string $scope): string
     {

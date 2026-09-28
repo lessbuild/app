@@ -20,7 +20,14 @@ final class OpenBillingPortal
      */
     public function __construct(private readonly PaymentProvider $provider) {}
 
-    /** Stripe's portal for payment methods, billing details and receipts. */
+    /**
+     * Stripe's portal for payment methods, billing details and receipts.
+     *
+     * @param  User  $actor
+     * @param  Account  $account
+     * @param  string  $returnUrl
+     * @return string
+     */
     public function handle(User $actor, Account $account, string $returnUrl): string
     {
         Gate::forUser($actor)->authorize('manageBilling', $account);

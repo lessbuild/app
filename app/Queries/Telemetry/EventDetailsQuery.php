@@ -23,6 +23,7 @@ final class EventDetailsQuery
      * The event redacted, as a trace record, with its attributes and payload as pretty JSON, and the release it belongs
      * to.
      *
+     * @param  TelemetryEvent  $event
      * @return array{record: TraceRecord, attributesJson: string, payloadJson: string, release: Release|null}
      */
     public function handle(TelemetryEvent $event): array

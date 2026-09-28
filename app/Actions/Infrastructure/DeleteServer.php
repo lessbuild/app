@@ -27,6 +27,11 @@ final class DeleteServer
     /**
      * Delete the cloud server and the SSH key we registered for it, then the record. Imported servers are only forgotten;
      * nothing on them is touched. If the provider refuses, nothing is deleted and the error is shown.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Server  $server
+     * @return void
      */
     public function handle(Account $account, User $actor, Server $server): void
     {

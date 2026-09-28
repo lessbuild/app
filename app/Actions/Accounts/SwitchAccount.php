@@ -12,6 +12,10 @@ final class SwitchAccount
 {
     /**
      * Makes the account the person's current one, if they belong to it.
+     *
+     * @param  User  $user
+     * @param  Account  $account
+     * @return void
      */
     public function handle(User $user, Account $account): void
     {

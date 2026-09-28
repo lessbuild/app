@@ -13,6 +13,10 @@ final class RedirectToProviderController
 {
     /**
      * Sends a guest to the provider's sign-in page.
+     *
+     * @param  SocialProvider  $provider
+     * @param  SocialSignInGateway  $gateway
+     * @return Response
      */
     public function __invoke(SocialProvider $provider, SocialSignInGateway $gateway): Response
     {

@@ -19,6 +19,10 @@ final class DeleteGoal
 
     /**
      * Deletes the goal and rebuilds the site's visits, conversions and totals so it disappears from past reports too.
+     *
+     * @param  User  $actor
+     * @param  AnalyticsGoal  $goal
+     * @return void
      */
     public function handle(User $actor, AnalyticsGoal $goal): void
     {

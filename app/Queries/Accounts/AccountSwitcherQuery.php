@@ -11,6 +11,7 @@ final class AccountSwitcherQuery
     /**
      * The accounts the person belongs to, by name, for the account switcher in the shell.
      *
+     * @param  User  $user
      * @return list<array{id: string, name: string}>
      */
     public function handle(User $user): array

@@ -26,7 +26,11 @@ final class SaveServiceLevelObjective
     /**
      * Create or change a service level objective: an availability or latency target over a rolling window.
      *
+     * @param  Project  $project
+     * @param  User  $actor
      * @param  array<string, mixed>  $data  validated by ServiceLevelObjectiveRequest
+     * @param  ServiceLevelObjective|null  $objective
+     * @return ServiceLevelObjective
      */
     public function handle(Project $project, User $actor, array $data, ?ServiceLevelObjective $objective = null): ServiceLevelObjective
     {

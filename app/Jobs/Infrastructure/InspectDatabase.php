@@ -22,11 +22,15 @@ final class InspectDatabase implements ShouldQueue
 
     /**
      * One attempt; someone can run another inspection.
+     *
+     * @var int
      */
     public int $tries = 1;
 
     /**
      * Listing tables of a large database can take a few minutes.
+     *
+     * @var int
      */
     public int $timeout = 300;
 
@@ -40,6 +44,10 @@ final class InspectDatabase implements ShouldQueue
     /**
      * Claims the snapshot, runs the inspection on the server, stores what it reports, and removes the website's
      * snapshots older than 30 days.
+     *
+     * @param  ServerShell  $shell
+     * @param  DatabaseCommands  $commands
+     * @return void
      */
     public function handle(ServerShell $shell, DatabaseCommands $commands): void
     {
@@ -68,6 +76,9 @@ final class InspectDatabase implements ShouldQueue
 
     /**
      * Marks the snapshot failed.
+     *
+     * @param  Throwable  $exception
+     * @return void
      */
     public function failed(Throwable $exception): void
     {

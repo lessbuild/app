@@ -18,6 +18,14 @@ final class ExportObjectiveController
 {
     /**
      * Downloads the report, never cached.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ServiceLevelObjective  $objective
+     * @param  ServiceObjectiveReport  $reports
+     * @param  ServiceObjectiveReportExporter  $exporter
+     * @param  Entitlements  $entitlements
+     * @return Response
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ServiceLevelObjective $objective, ServiceObjectiveReport $reports, ServiceObjectiveReportExporter $exporter, Entitlements $entitlements): Response
     {

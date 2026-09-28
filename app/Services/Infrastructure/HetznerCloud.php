@@ -216,7 +216,6 @@ class HetznerCloud implements ServerProvider
      *
      * @param  string|null  $status  Provider server status.
      * @param  string|null  $publicIp  Public address reported by the provider.
-     * @return string One of the shared cloud readiness values.
      * @return 'ready'|'not_ready'|'unknown'
      */
     private function readiness(?string $status, ?string $publicIp): string

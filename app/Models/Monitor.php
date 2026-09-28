@@ -88,6 +88,8 @@ class Monitor extends Model
 
     /**
      * Targets, credentials and job token hashes never leave the server in serialised form.
+     *
+     * @var list<string>
      */
     protected $hidden = ['request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_token_hash', 'queue_token_hash'];
 
@@ -95,6 +97,8 @@ class Monitor extends Model
      * Limits a query to monitors in the account's environments.
      *
      * @param  Builder<Monitor>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -175,6 +179,8 @@ class Monitor extends Model
     /**
      * What the monitor watches, safe to show: the queue, the heartbeat schedule, the host and port, or a URL cut down to
      * its scheme, host and port, since paths and queries can hold tokens.
+     *
+     * @return string
      */
     public function targetLabel(): string
     {
@@ -223,6 +229,8 @@ class Monitor extends Model
 
     /**
      * The monitor type as people read it.
+     *
+     * @return string
      */
     public function typeLabel(): string
     {
@@ -239,6 +247,8 @@ class Monitor extends Model
     /**
      * The monitor's state for lists and status pages: archived, paused, unknown when its latest result is missing or
      * overdue, or up or down from that result.
+     *
+     * @return string
      */
     public function healthLabel(): string
     {

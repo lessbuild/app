@@ -8,7 +8,13 @@ use App\Models\User;
 
 final class OpenNotification
 {
-    /** Mark one of the user's notifications read and return where it points (always a path on this app). */
+    /**
+     * Mark one of the user's notifications read and return where it points (always a path on this app).
+     *
+     * @param  User  $user
+     * @param  string  $id
+     * @return string
+     */
     public function handle(User $user, string $id): string
     {
         $notification = $user->notifications()->findOrFail($id);

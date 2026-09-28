@@ -13,6 +13,10 @@ final class ExportPersonalDataController
 {
     /**
      * Downloads everything stored about the person as JSON, never cached.
+     *
+     * @param  User  $user
+     * @param  PersonalDataExportQuery  $query
+     * @return StreamedResponse
      */
     public function __invoke(#[CurrentUser] User $user, PersonalDataExportQuery $query): StreamedResponse
     {

@@ -16,6 +16,10 @@ final class StatusPagePolicy
 
     /**
      * Creating a status page: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
@@ -24,6 +28,10 @@ final class StatusPagePolicy
 
     /**
      * Changing a status page or posting an update: the same people.
+     *
+     * @param  User  $user
+     * @param  StatusPage  $record
+     * @return bool
      */
     public function update(User $user, StatusPage $record): bool
     {
@@ -32,6 +40,10 @@ final class StatusPagePolicy
 
     /**
      * Deleting a status page, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  StatusPage  $record
+     * @return bool
      */
     public function delete(User $user, StatusPage $record): bool
     {

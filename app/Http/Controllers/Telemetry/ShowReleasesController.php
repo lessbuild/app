@@ -19,6 +19,12 @@ final class ShowReleasesController
 {
     /**
      * The project's releases, searchable by version or service, and its latest deployments.
+     *
+     * @param  SearchReleasesRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(SearchReleasesRequest $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {

@@ -17,6 +17,12 @@ final class ShowBackupsController
 {
     /**
      * The backups page: destinations, recent backups and when backups, restores and verifications last succeeded.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  BackupsQuery  $backups
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, BackupsQuery $backups): View
     {

@@ -16,6 +16,13 @@ final class UpdateServerMonthlyCostController
 {
     /**
      * Sets a server's monthly cost by hand, for servers whose provider doesn't report one.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  SetServerMonthlyCost  $set
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, SetServerMonthlyCost $set): RedirectResponse
     {

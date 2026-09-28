@@ -25,6 +25,13 @@ final class UpdateMemberServicesController
 
     /**
      * Sets which services a member may use: all of them, or the ones ticked.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  string  $membership
+     * @param  SetServiceAccess  $setAccess
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, string $membership, SetServiceAccess $setAccess): RedirectResponse
     {

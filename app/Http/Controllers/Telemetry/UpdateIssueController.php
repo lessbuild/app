@@ -16,6 +16,13 @@ final class UpdateIssueController
 {
     /**
      * Resolves, reopens, snoozes, ignores, assigns or annotates an issue.
+     *
+     * @param  UpdateIssueRequest  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Issue  $issue
+     * @param  UpdateIssue  $update
+     * @return RedirectResponse
      */
     public function __invoke(UpdateIssueRequest $request, #[CurrentUser] User $user, Project $project, Issue $issue, UpdateIssue $update): RedirectResponse
     {

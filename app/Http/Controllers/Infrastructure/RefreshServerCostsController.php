@@ -14,6 +14,11 @@ final class RefreshServerCostsController
 {
     /**
      * Looks up current prices for the account's servers.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  RefreshServerCosts  $refresh
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, RefreshServerCosts $refresh): RedirectResponse
     {

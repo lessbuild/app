@@ -26,7 +26,11 @@ final class SaveLoadBalancer
      * Add a load balancer on a Caddy server in the account, or change its hostname, health path or website. Its server
      * can't change (the old one would keep serving); delete it and add another instead.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array{hostname: string, health_path: string, server_id?: int|string, website_id?: int|string|null}  $data
+     * @param  LoadBalancer|null  $balancer
+     * @return LoadBalancer
      */
     public function handle(Account $account, User $actor, array $data, ?LoadBalancer $balancer = null): LoadBalancer
     {

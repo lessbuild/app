@@ -26,6 +26,8 @@ final class InviteMemberRequest extends FormRequest
 
     /**
      * The invitation to send.
+     *
+     * @return InviteMemberData
      */
     public function toData(): InviteMemberData
     {

@@ -16,6 +16,13 @@ final class ShowIncidentsController
 {
     /**
      * The project's open incidents, or resolved ones with `?status=resolved`.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @param  ProjectIncidentsQuery  $incidents
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectIncidentsQuery $incidents): View
     {

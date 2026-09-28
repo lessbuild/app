@@ -15,6 +15,12 @@ final class RunServerDiagnosticsController
 {
     /**
      * Starts a diagnostic run and opens the diagnostics tab.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Server  $server
+     * @param  RunServerDiagnostics  $diagnose
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Server $server, RunServerDiagnostics $diagnose): RedirectResponse
     {

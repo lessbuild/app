@@ -23,6 +23,12 @@ final class FinishBuild
     /**
      * Mark an active build succeeded, failed or canceled. A live build becomes a Monitoring deployment marker; then a push
      * that arrived while it ran is deployed. Returns false when the build had already finished.
+     *
+     * @param  Build  $build
+     * @param  string  $status
+     * @param  string|null  $message
+     * @param  string|null  $log
+     * @return bool
      */
     public function handle(Build $build, string $status, ?string $message = null, ?string $log = null): bool
     {
@@ -61,6 +67,9 @@ final class FinishBuild
     /**
      * Deploys the push that arrived while this deploy was running, if the repository can deploy now, and clears it so it
      * isn't deployed twice.
+     *
+     * @param  int  $repositoryId
+     * @return void
      */
     private function deployPendingPush(int $repositoryId): void
     {

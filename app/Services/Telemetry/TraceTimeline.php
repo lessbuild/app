@@ -107,6 +107,7 @@ final class TraceTimeline
      *
      * @param  array<int, int|null>  $parents
      * @param  array<int, list<string>>  $notes
+     * @return void
      */
     private function breakCycles(array &$parents, array &$notes): void
     {

@@ -18,6 +18,8 @@ final class RoleChanged extends InboxNotification
 
     /**
      * "You are now … in …".
+     *
+     * @return string
      */
     protected function title(): string
     {
@@ -26,6 +28,8 @@ final class RoleChanged extends InboxNotification
 
     /**
      * Who made the change.
+     *
+     * @return string
      */
     protected function body(): string
     {
@@ -34,6 +38,8 @@ final class RoleChanged extends InboxNotification
 
     /**
      * The members page, where they can see their role.
+     *
+     * @return string
      */
     protected function url(): string
     {
@@ -42,6 +48,8 @@ final class RoleChanged extends InboxNotification
 
     /**
      * The account the role is in.
+     *
+     * @return string
      */
     protected function accountId(): string
     {

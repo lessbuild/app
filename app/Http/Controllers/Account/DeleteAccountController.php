@@ -17,6 +17,12 @@ final class DeleteAccountController
 {
     /**
      * Deletes the account once the person has typed its name exactly, after a recent password confirmation.
+     *
+     * @param  Account  $account
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  DeleteAccount  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, DeleteAccount $delete): RedirectResponse
     {

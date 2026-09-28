@@ -17,6 +17,11 @@ final class ShowLoadBalancersController
 {
     /**
      * The load balancers page, offering servers with Caddy as proxies.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  ProjectOverviewQuery  $overview
+     * @return View
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {

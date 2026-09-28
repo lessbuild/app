@@ -33,7 +33,11 @@ final class UpdateWebsite
      * Change a website. A new server, URL or .env (or a failed website) sets it up again; moving servers keeps the old copy
      * until the new one is active, then removes it. Changing what the health check looks at resets its state.
      *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Website  $website
      * @param  array<string, mixed>  $data  validated by WebsiteRequest
+     * @return Website
      */
     public function handle(Account $account, User $actor, Website $website, array $data): Website
     {

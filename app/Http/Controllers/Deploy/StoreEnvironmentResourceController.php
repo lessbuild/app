@@ -16,6 +16,13 @@ final class StoreEnvironmentResourceController
 {
     /**
      * Adds or changes a resource (database, cache or object storage) on an environment.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Environment  $environment
+     * @param  SaveEnvironmentResource  $save
+     * @return RedirectResponse
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, SaveEnvironmentResource $save): RedirectResponse
     {

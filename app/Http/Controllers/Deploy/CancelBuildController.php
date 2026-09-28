@@ -15,6 +15,12 @@ final class CancelBuildController
 {
     /**
      * Cancels a deploy that hasn't finished.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Build  $build
+     * @param  CancelBuild  $cancel
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Build $build, CancelBuild $cancel): RedirectResponse
     {

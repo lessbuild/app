@@ -17,6 +17,12 @@ final class ShowSecurityController
 {
     /**
      * The security page. Recovery codes are shown only right after they're created.
+     *
+     * @param  Request  $request
+     * @param  User  $user
+     * @param  SecuritySettingsQuery  $query
+     * @param  SocialSignInGateway  $gateway
+     * @return View
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, SecuritySettingsQuery $query, SocialSignInGateway $gateway): View
     {

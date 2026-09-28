@@ -16,6 +16,7 @@ final class IngestIdentity
      * representation preserves equivalent attribute ordering and numeric timestamps.
      *
      * @param  list<array<string, mixed>>  $events
+     * @param  IngestContext  $context
      * @return list<array<string, mixed>>
      */
     public function fingerprintEvents(array $events, IngestContext $context): array
@@ -37,6 +38,7 @@ final class IngestIdentity
      * JSON with object keys sorted at every level, so equal data always encodes the same way.
      *
      * @param  array<mixed>  $value
+     * @return string
      */
     public function canonical(array $value): string
     {
@@ -71,7 +73,10 @@ final class IngestIdentity
      * Refuses a batch or event that reuses an identity with different content, which would otherwise be silently dropped
      * as a duplicate.
      *
+     * @param  string|null  $stored
      * @param  list<string>  $fingerprints
+     * @param  string  $field
+     * @return void
      */
     public function assertMatches(?string $stored, array $fingerprints, string $field): void
     {
@@ -89,6 +94,9 @@ final class IngestIdentity
     /**
      * The keys a batch's receipt is found by: its ID when the client named the batch, else each content fingerprint.
      *
+     * @param  string  $environmentId
+     * @param  string  $batchId
+     * @param  IngestContext  $context
      * @param  list<string>  $fingerprints
      * @return list<string>
      */
@@ -108,7 +116,12 @@ final class IngestIdentity
      * An event's deduplication key: its ID (or position) within the batch or, for unnamed batches, within the
      * environment and source.
      *
+     * @param  string  $environmentId
+     * @param  string  $batchId
+     * @param  IngestContext  $context
      * @param  array<string, mixed>  $event
+     * @param  int  $index
+     * @return string
      */
     public function eventKey(string $environmentId, string $batchId, IngestContext $context, array $event, int $index): string
     {

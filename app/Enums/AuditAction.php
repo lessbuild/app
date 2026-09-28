@@ -85,6 +85,7 @@ enum AuditAction: string
      * print as "?" so an old entry with less context still reads.
      *
      * @param  array<string, mixed>  $context
+     * @return string
      */
     public function describe(array $context): string
     {

@@ -11,7 +11,13 @@ use Illuminate\Support\Facades\Gate;
 
 final class DeleteProject
 {
-    /** Delete a project with its environments and enabled services. Services clean up their own data from ProjectDeleted. */
+    /**
+     * Delete a project with its environments and enabled services. Services clean up their own data from ProjectDeleted.
+     *
+     * @param  User  $actor
+     * @param  Project  $project
+     * @return void
+     */
     public function handle(User $actor, Project $project): void
     {
         Gate::forUser($actor)->authorize('delete', $project);

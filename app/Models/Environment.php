@@ -74,6 +74,8 @@ class Environment extends Model
      * Limits a query to environments of the account's projects.
      *
      * @param  Builder<Environment>  $query
+     * @param  Account  $account
+     * @return void
      */
     #[Scope]
     protected function forAccount(Builder $query, Account $account): void
@@ -151,7 +153,12 @@ class Environment extends Model
         return $this->hasMany(EnvironmentResource::class);
     }
 
-    /** Why a deploy can't start now (locked, or outside the deployment window), or null. */
+    /**
+     * Why a deploy can't start now (locked, or outside the deployment window), or null.
+     *
+     * @param  \Carbon\CarbonInterface|null  $at
+     * @return string|null
+     */
     public function deploymentBlockReason(?\Carbon\CarbonInterface $at = null): ?string
     {
         if ($this->deployment_locked_at !== null) {

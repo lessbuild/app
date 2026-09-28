@@ -13,6 +13,8 @@ final class StoreQueueSnapshotRequest extends FormRequest
 {
     /**
      * Allowed once the queue key middleware has identified the monitor.
+     *
+     * @return bool
      */
     public function authorize(): bool
     {

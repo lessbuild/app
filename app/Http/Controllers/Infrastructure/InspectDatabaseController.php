@@ -15,6 +15,12 @@ final class InspectDatabaseController
 {
     /**
      * Starts a database inspection, unless one is already running.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  RequestDatabaseInspection  $inspect
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, RequestDatabaseInspection $inspect): RedirectResponse
     {

@@ -16,6 +16,11 @@ final class OpenBillingPortalController
 {
     /**
      * Sends the person to the payment provider's billing portal, or back with the reason when it's unavailable.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  OpenBillingPortal  $portal
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, OpenBillingPortal $portal): RedirectResponse
     {

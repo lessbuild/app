@@ -14,7 +14,14 @@ use Illuminate\Support\Facades\DB;
 /** Shared steps for changing a monitor: locking, authorising, version checks and cancelling pending checks. */
 final class MonitorChanges
 {
-    /** Lock the project and the environment (in that order). The caller has authorised the change against the record's policy. */
+    /**
+     * Lock the project and the environment (in that order). The caller has authorised the change against the record's policy.
+     *
+     * @param  Project  $project
+     * @param  User  $actor
+     * @param  string  $environmentId
+     * @return Environment
+     */
     public function lockScope(Project $project, User $actor, string $environmentId): Environment
     {
         $project = Project::query()->lockForUpdate()->findOrFail($project->id);
@@ -24,6 +31,10 @@ final class MonitorChanges
 
     /**
      * Refuses a change when the monitor changed since the form was opened.
+     *
+     * @param  Monitor  $monitor
+     * @param  int  $version
+     * @return void
      */
     public function version(Monitor $monitor, int $version): void
     {
@@ -33,6 +44,9 @@ final class MonitorChanges
     /**
      * Cancels the monitor's queued and running checks and unstarted jobs (and open heartbeat runs), because they would
      * test the old settings.
+     *
+     * @param  Monitor  $monitor
+     * @return void
      */
     public function cancelChecks(Monitor $monitor): void
     {

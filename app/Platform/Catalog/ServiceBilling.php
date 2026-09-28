@@ -22,6 +22,8 @@ final readonly class ServiceBilling
 
     /**
      * The tier a project is on until someone chooses another: the first, which is free.
+     *
+     * @return Tier
      */
     public function defaultTier(): Tier
     {
@@ -30,6 +32,9 @@ final readonly class ServiceBilling
 
     /**
      * Finds a tier by key, or null when the service doesn't sell one with that key.
+     *
+     * @param  string  $key
+     * @return Tier|null
      */
     public function tier(string $key): ?Tier
     {
@@ -44,6 +49,9 @@ final readonly class ServiceBilling
 
     /**
      * Finds an add-on by key, or null when the service doesn't sell one with that key.
+     *
+     * @param  string  $key
+     * @return AddOn|null
      */
     public function addOn(string $key): ?AddOn
     {

@@ -15,6 +15,13 @@ final class DeleteDatabaseUserController
 {
     /**
      * Starts removing an extra database user.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  Website  $website
+     * @param  string  $databaseUser
+     * @param  RemoveDatabaseUser  $remove
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, Website $website, string $databaseUser, RemoveDatabaseUser $remove): RedirectResponse
     {

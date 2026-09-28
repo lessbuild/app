@@ -23,6 +23,11 @@ final class DeleteDashboard
 
     /**
      * Deletes one of the account's dashboards and records it.
+     *
+     * @param  Account  $account
+     * @param  User  $actor
+     * @param  Dashboard  $dashboard
+     * @return void
      */
     public function handle(Account $account, User $actor, Dashboard $dashboard): void
     {

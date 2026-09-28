@@ -31,7 +31,10 @@ final class ImportWebsite
     /**
      * Adopt an application already in /var/www/{slug} on an app server, without touching its files, proxy or database.
      *
+     * @param  Account  $account
+     * @param  User  $actor
      * @param  array{server_id: int|string, name: string, url: string, deployment_slug: string, description?: string|null}  $data
+     * @return Website
      */
     public function handle(Account $account, User $actor, array $data): Website
     {

@@ -23,7 +23,10 @@ final class SaveEnvironmentProcess
     /**
      * Add or change a worker or the scheduler (always one replica). Deploys (re)start them as systemd units.
      *
+     * @param  User  $actor
+     * @param  Environment  $environment
      * @param  array{name: string, type: string, command: string, replicas: int, restart_policy: string, restart_delay_seconds: int, is_enabled: bool}  $data
+     * @return EnvironmentProcess
      */
     public function handle(User $actor, Environment $environment, array $data): EnvironmentProcess
     {

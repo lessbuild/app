@@ -15,6 +15,12 @@ final class ResumePlanController
 {
     /**
      * Cancels a scheduled downgrade, so the paid tier carries on.
+     *
+     * @param  Account  $account
+     * @param  User  $user
+     * @param  string  $service
+     * @param  ResumeServiceTier  $resume
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, string $service, ResumeServiceTier $resume): RedirectResponse
     {

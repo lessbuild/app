@@ -15,6 +15,8 @@ final class ProjectActivityQuery
      * The latest entries of a project's activity for its overview page. Addresses and devices are left out; the full
      * audit log shows them to people allowed to see it.
      *
+     * @param  string  $projectId
+     * @param  int  $limit
      * @return list<AuditEntryView>
      */
     public function handle(string $projectId, int $limit = 8): array

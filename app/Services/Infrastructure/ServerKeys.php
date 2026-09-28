@@ -12,6 +12,9 @@ class ServerKeys
 {
     /**
      * The OpenSSH public key for a private key.
+     *
+     * @param  string  $privateKey
+     * @return string
      */
     public function publicKeyOf(string $privateKey): string
     {
@@ -20,6 +23,9 @@ class ServerKeys
 
     /**
      * Whether the text is an unencrypted private key phpseclib can read.
+     *
+     * @param  string  $privateKey
+     * @return bool
      */
     public function isPrivateKey(string $privateKey): bool
     {

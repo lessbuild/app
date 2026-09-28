@@ -20,6 +20,11 @@ class ServerShell
     /**
      * Runs a command as root and returns its output and exit code. Output is only logged when asked, since it can
      * contain secrets.
+     *
+     * @param  Server  $server
+     * @param  string  $command
+     * @param  bool  $logOutput
+     * @return ShellResult
      */
     public function run(Server $server, string $command, bool $logOutput = false): ShellResult
     {

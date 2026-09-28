@@ -9,6 +9,8 @@ final class AccountRuleViolation extends RuleViolation
 {
     /**
      * The change would leave the account without an owner, whether by demotion or removal.
+     *
+     * @return AccountRuleViolation
      */
     public static function lastOwner(): self
     {
@@ -18,6 +20,8 @@ final class AccountRuleViolation extends RuleViolation
     /**
      * The actor's role doesn't outrank the member's role (or the role being given), so they can't change, remove or
      * restrict that member.
+     *
+     * @return AccountRuleViolation
      */
     public static function cannotAssign(): self
     {
@@ -26,6 +30,8 @@ final class AccountRuleViolation extends RuleViolation
 
     /**
      * The invited email already belongs to a member of the account.
+     *
+     * @return AccountRuleViolation
      */
     public static function alreadyMember(): self
     {
@@ -34,6 +40,8 @@ final class AccountRuleViolation extends RuleViolation
 
     /**
      * The invitation was revoked, has expired or was already accepted.
+     *
+     * @return AccountRuleViolation
      */
     public static function invitationUnavailable(): self
     {
@@ -42,6 +50,8 @@ final class AccountRuleViolation extends RuleViolation
 
     /**
      * The signed-in person's email doesn't match the one the invitation was sent to.
+     *
+     * @return AccountRuleViolation
      */
     public static function invitationForSomeoneElse(): self
     {

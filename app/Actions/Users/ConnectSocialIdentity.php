@@ -14,7 +14,14 @@ use Illuminate\Database\UniqueConstraintViolationException;
 
 final class ConnectSocialIdentity
 {
-    /** Link a provider account to a signed-in user so they can sign in with it. Returns false when it was already linked. */
+    /**
+     * Link a provider account to a signed-in user so they can sign in with it. Returns false when it was already linked.
+     *
+     * @param  User  $user
+     * @param  SocialProvider  $provider
+     * @param  SocialProfile  $profile
+     * @return bool
+     */
     public function handle(User $user, SocialProvider $provider, SocialProfile $profile): bool
     {
         if ($profile->verifiedEmail === null) {

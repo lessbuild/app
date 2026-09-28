@@ -26,6 +26,10 @@ final class TelemetryUsage
 
     /**
      * Events counted for the account from the start of the month up to the moment given.
+     *
+     * @param  Account  $account
+     * @param  CarbonImmutable|null  $at
+     * @return int
      */
     public function eventsThisMonth(Account $account, ?CarbonImmutable $at = null): int
     {
@@ -37,13 +41,25 @@ final class TelemetryUsage
             ->sum('event_count');
     }
 
-    /** The monthly allowance; null means unlimited. */
+    /**
+     * The monthly allowance; null means unlimited.
+     *
+     * @param  Account  $account
+     * @return int|null
+     */
     public function eventLimit(Account $account): ?int
     {
         return $this->entitlements->for($account)->limit('monitoring.events.monthly');
     }
 
-    /** Whether a batch received at `$receivedAt` still fits in that month's allowance. */
+    /**
+     * Whether a batch received at `$receivedAt` still fits in that month's allowance.
+     *
+     * @param  Account  $account
+     * @param  int  $events
+     * @param  CarbonImmutable  $receivedAt
+     * @return bool
+     */
     public function canAccept(Account $account, int $events, CarbonImmutable $receivedAt): bool
     {
         $limit = $this->eventLimit($account);

@@ -16,6 +16,10 @@ final class DashboardPolicy
 
     /**
      * Creating a metrics dashboard: people who manage the account's settings.
+     *
+     * @param  User  $user
+     * @param  Account|Project  $scope
+     * @return bool
      */
     public function create(User $user, Account|Project $scope): bool
     {
@@ -24,6 +28,10 @@ final class DashboardPolicy
 
     /**
      * Changing a dashboard: the same people.
+     *
+     * @param  User  $user
+     * @param  Dashboard  $record
+     * @return bool
      */
     public function update(User $user, Dashboard $record): bool
     {
@@ -32,6 +40,10 @@ final class DashboardPolicy
 
     /**
      * Deleting a dashboard, allowed to the same people as update.
+     *
+     * @param  User  $user
+     * @param  Dashboard  $record
+     * @return bool
      */
     public function delete(User $user, Dashboard $record): bool
     {

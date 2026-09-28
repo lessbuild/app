@@ -15,6 +15,13 @@ final class DeleteLoadBalancerNodeController
 {
     /**
      * Takes a server out from behind a load balancer.
+     *
+     * @param  User  $user
+     * @param  Project  $project
+     * @param  LoadBalancer  $loadBalancer
+     * @param  string  $node
+     * @param  DeleteLoadBalancerNode  $delete
+     * @return RedirectResponse
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, LoadBalancer $loadBalancer, string $node, DeleteLoadBalancerNode $delete): RedirectResponse
     {

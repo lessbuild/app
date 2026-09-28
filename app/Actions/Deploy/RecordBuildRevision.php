@@ -10,7 +10,14 @@ use Illuminate\Support\Facades\DB;
 
 final class RecordBuildRevision
 {
-    /** The commit the script checked out (signed callback). A build asked for a specific commit must get exactly that one. */
+    /**
+     * The commit the script checked out (signed callback). A build asked for a specific commit must get exactly that one.
+     *
+     * @param  Build  $build
+     * @param  string  $revision
+     * @param  string|null  $commitMessage
+     * @return void
+     */
     public function handle(Build $build, string $revision, ?string $commitMessage): void
     {
         DB::transaction(function () use ($build, $revision, $commitMessage): void {

@@ -15,6 +15,8 @@ final class RecentSignInsQuery
     /**
      * The person's latest sign-in attempts, newest first, with a readable device.
      *
+     * @param  User  $user
+     * @param  int  $limit
      * @return list<SignInSummary>
      */
     public function handle(User $user, int $limit = 25): array
