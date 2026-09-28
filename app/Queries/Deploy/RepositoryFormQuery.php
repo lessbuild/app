@@ -5,12 +5,16 @@ declare(strict_types=1);
 namespace App\Queries\Deploy;
 
 use App\Enums\ProviderType;
+use App\Models\Preview;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Website;
 use Illuminate\Database\Eloquent\Collection;
 
-/** The choices on the repository form: the account's Git providers and websites, and the project's environments. */
+/**
+ * The choices on the repository form: the account's Git providers and websites, and the project's environments. Previews'
+ * own websites and environments aren't offered.
+ */
 final class RepositoryFormQuery
 {
     /**
@@ -24,8 +28,8 @@ final class RepositoryFormQuery
     {
         return [
             'providers' => Provider::query()->where('account_id', $project->account_id)->whereIn('type', [ProviderType::GitHub, ProviderType::GitLab, ProviderType::Bitbucket])->orderBy('name')->get(),
-            'websites' => Website::query()->where('account_id', $project->account_id)->orderBy('name')->get(),
-            'environments' => $project->environments()->orderBy('name')->get(),
+            'websites' => Website::query()->where('account_id', $project->account_id)->whereNotIn('id', Preview::query()->whereNotNull('website_id')->select('website_id'))->orderBy('name')->get(),
+            'environments' => $project->environments()->whereDoesntHave('preview')->orderBy('name')->get(),
         ];
     }
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Actions\Infrastructure;
 
+use App\Events\Infrastructure\WebsiteProvisioned;
+use App\Events\Infrastructure\WebsiteProvisioningFailed;
 use App\Jobs\Infrastructure\ApplyWebsiteDomains;
 use App\Jobs\Infrastructure\RemoveWebsitePlacement;
 use App\Models\Website;
@@ -16,7 +18,8 @@ final class RecordWebsiteProvisioning
 {
     /**
      * Record what a website's setup script reported. Stale attempts are ignored. When the last stage finishes the website
-     * goes live, its domains are applied, and a copy left on a previous server is removed.
+     * goes live, its domains are applied, a copy left on a previous server is removed, and WebsiteProvisioned fires (or
+     * WebsiteProvisioningFailed on failure) after commit.
      *
      * @param  Website  $website
      * @param  string  $attempt
@@ -40,6 +43,7 @@ final class RecordWebsiteProvisioning
             }
             if ($report['event'] === 'failed') {
                 $locked->forceFill(['provisioning_status' => Website::STATUS_FAILED, 'provisioning_error' => Str::limit($report['message'].($report['exit_code'] !== null ? " (exit code {$report['exit_code']})" : ''), 2000)])->save();
+                DB::afterCommit(fn () => WebsiteProvisioningFailed::dispatch($locked));
 
                 return true;
             }
@@ -49,6 +53,7 @@ final class RecordWebsiteProvisioning
             $locked->setup_stage = max($locked->setup_stage, $report['stage']);
             if ($report['stage'] === WebsiteProvisioner::finalStage()) {
                 $locked->forceFill(['provisioning_status' => Website::STATUS_ACTIVE, 'provisioned_at' => CarbonImmutable::now('UTC'), 'provisioning_error' => null]);
+                DB::afterCommit(fn () => WebsiteProvisioned::dispatch($locked));
                 if ($locked->previous_server_id !== null) {
                     RemoveWebsitePlacement::dispatch($locked->id, $locked->previous_server_id, $locked->deployment_slug)->afterCommit();
                 }

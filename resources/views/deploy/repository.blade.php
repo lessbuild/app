@@ -84,6 +84,19 @@
                 <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save repository') }}</x-signal.ui.button></div>
             </form>
         </x-signal.ui.settings-section>
+        @unless ($repository->preview)
+        <x-signal.ui.settings-section id="previews" :title="__('Pull-request previews')" :description="__('Each pull request into :branch gets its own website on :server, deployed from its branch. Push deploys must be on for the webhook to arrive; forks don’t get previews.', ['branch' => $repository->branch, 'server' => $repository->website->server?->label() ?? __('the website’s server')])">
+            <form method="POST" action="{{ route('deploy.repositories.previews', [$project, $repository->id]) }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
+                @csrf
+                @method('PUT')
+                <div class="sm:col-span-2"><x-signal.ui.checkbox name="previews_enabled" value="1" :checked="$repository->previews_enabled">{{ __('Make previews of pull requests') }}</x-signal.ui.checkbox></div>
+                <x-signal.ui.input-field name="preview_domain" :label="__('Preview domain')" :value="old('preview_domain', $repository->preview_domain)" placeholder="preview.example.com" maxlength="200" :description="__('Previews are served at pr-12-:project.<domain>; point wildcard DNS (*.<domain>) at the server.', ['project' => $project->slug])" />
+                <x-signal.ui.input-field name="preview_ttl_hours" type="number" min="1" max="720" :label="__('Close after (hours without changes)')" :value="old('preview_ttl_hours', $repository->preview_ttl_hours)" required />
+                <div class="sm:col-span-2"><x-signal.ui.textarea-field name="preview_initialization_command" :label="__('Set-up command (optional)')" rows="2" :value="old('preview_initialization_command', $repository->preview_initialization_command)" :description="__('Runs once on each new preview after its first deploy, e.g. php artisan migrate --seed.')" /></div>
+                <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save preview settings') }}</x-signal.ui.button></div>
+            </form>
+        </x-signal.ui.settings-section>
+        @endunless
         <x-signal.ui.settings-section :title="__('Remove this repository')" :description="__('Deploys stop; the website keeps its current release and the history stays.')">
             <div class="p-4 sm:p-6">
                 <x-signal.ui.button variant="danger" data-modal-trigger="delete-repository">{{ __('Remove repository') }}</x-signal.ui.button>

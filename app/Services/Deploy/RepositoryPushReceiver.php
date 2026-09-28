@@ -4,23 +4,28 @@ declare(strict_types=1);
 
 namespace App\Services\Deploy;
 
+use App\Actions\Deploy\HandlePullRequestWebhook;
 use App\Actions\Deploy\HandleRepositoryWebhook;
 use App\Exceptions\InvalidRepositoryWebhook;
 use App\Models\Repository;
 use Illuminate\Http\Request;
 
-/** The HTTP side of a Git host's push webhook: verify it, then hand the push to HandleRepositoryWebhook. */
+/**
+ * The HTTP side of a Git host's repository webhook: verify it, then hand a push to HandleRepositoryWebhook and a pull
+ * request to HandlePullRequestWebhook.
+ */
 final class RepositoryPushReceiver
 {
     /**
      * Create a new RepositoryPushReceiver instance.
      *
-     * Receives push webhooks for a repository.
+     * Receives webhooks for a repository.
      *
      * @param  RepositoryWebhookVerifier  $verifier  Checks the signature and reads the event.
-     * @param  HandleRepositoryWebhook  $handle  Turns the push into a deploy.
+     * @param  HandleRepositoryWebhook  $handle  Turns a push into a deploy.
+     * @param  HandlePullRequestWebhook  $pullRequests  Turns a pull request into a preview.
      */
-    public function __construct(private readonly RepositoryWebhookVerifier $verifier, private readonly HandleRepositoryWebhook $handle) {}
+    public function __construct(private readonly RepositoryWebhookVerifier $verifier, private readonly HandleRepositoryWebhook $handle, private readonly HandlePullRequestWebhook $pullRequests) {}
 
     /**
      * Verify a Git host's webhook for a repository and act on it, answering with Deployer's statuses and HTTP codes.
@@ -39,6 +44,11 @@ final class RepositoryPushReceiver
             return [match ($code) {
                 404 => 'not_found', 413 => 'payload_too_large', 422 => 'invalid_payload', default => 'unauthorized'
             }, $code];
+        }
+        if ($webhook->isPreviewEvent()) {
+            $status = $this->pullRequests->handle($repository, $webhook);
+
+            return [$status, in_array($status, ['provisioning', 'deploying'], true) ? 202 : 200];
         }
         if (! $webhook->isPush) {
             return ['event_ignored', 200];

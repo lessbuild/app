@@ -13,7 +13,8 @@ use Illuminate\Contracts\View\View;
 final class ShowDeployEnvironmentsController
 {
     /**
-     * Show the project's environments with how many variables, workers and resources each has.
+     * Show the project's environments with how many variables, workers and resources each has, leaving out previews'
+     * own environments.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -24,7 +25,7 @@ final class ShowDeployEnvironmentsController
     {
         return view('deploy.environments', [
             'overview' => $overview->handle($project, $user),
-            'environments' => $project->environments()->withCount(['variables', 'processes', 'resources'])->orderBy('name')->get(),
+            'environments' => $project->environments()->whereDoesntHave('preview')->withCount(['variables', 'processes', 'resources'])->orderBy('name')->get(),
         ]);
     }
 }

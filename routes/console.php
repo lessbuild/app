@@ -18,6 +18,7 @@ use App\Models\Build;
 use App\Models\ConfigurationApplication;
 use App\Models\ConfigurationOperation;
 use App\Models\DatabaseUser;
+use App\Models\Preview;
 use App\Models\Provider;
 use App\Models\Repository;
 use App\Models\Server;
@@ -31,6 +32,7 @@ use App\Services\Billing\Entitlements;
 use App\Services\Deploy\Configuration\ConfigurationOperations;
 use App\Services\Deploy\DeploymentObserver;
 use App\Services\Deploy\Deployments;
+use App\Services\Deploy\Previews;
 use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Infrastructure\ServerPricing;
 use App\Services\Monitoring\AlertDeliveryRunner;
@@ -387,3 +389,20 @@ Artisan::command('configuration:dispatch', function (ConfigurationOperations $op
     return 0;
 })->purpose('Start configuration deploys whose gates have cleared, and bring configuration results up to date');
 Schedule::command('configuration:dispatch')->everyMinute()->withoutOverlapping(5)->onOneServer();
+
+Artisan::command('previews:expire', function (Previews $previews): int {
+    $expired = 0;
+    Preview::query()->with('sourceRepository')->where('status', '!=', Preview::STATUS_CLOSED)->orderBy('id')->each(function (Preview $preview) use ($previews, &$expired): void {
+        if ($preview->expiresAt()->isPast()) {
+            $previews->close($preview);
+            $expired++;
+        }
+    });
+    // A cleanup whose worker died would otherwise wait forever; failing it lets someone retry.
+    $stalled = Preview::query()->whereIn('cleanup_status', [Preview::CLEANUP_QUEUED, Preview::CLEANUP_RUNNING])->where('updated_at', '<', now()->subMinutes(30))
+        ->update(['cleanup_status' => Preview::CLEANUP_FAILED, 'cleanup_error' => 'The cleanup stopped before it finished.']);
+    $this->info("Closed {$expired} expired previews; {$stalled} stalled cleanups can be retried.");
+
+    return 0;
+})->purpose('Close previews past their lifetime, and fail preview cleanups that stopped');
+Schedule::command('previews:expire')->hourly()->withoutOverlapping(30)->onOneServer();

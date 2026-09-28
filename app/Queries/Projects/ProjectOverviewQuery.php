@@ -8,6 +8,7 @@ use App\Data\Projects\ProjectOverview;
 use App\Data\Projects\ServiceCard;
 use App\Enums\EnvironmentKind;
 use App\Models\Environment;
+use App\Models\Preview;
 use App\Models\Project;
 use App\Models\User;
 use App\Platform\PlatformService;
@@ -41,7 +42,8 @@ final class ProjectOverviewQuery
 
         return new ProjectOverview(
             project: $project,
-            environments: array_values($project->environments()->get()
+            // Closed previews' environments are history; they'd crowd every environment list.
+            environments: array_values($project->environments()->whereDoesntHave('preview', fn ($query) => $query->where('status', Preview::STATUS_CLOSED))->get()
                 ->sortBy([fn (Environment $a, Environment $b): int => $kinds[$a->kind->value] <=> $kinds[$b->kind->value], fn (Environment $a, Environment $b): int => strcasecmp($a->name, $b->name)])
                 ->all()),
             services: array_map(fn (PlatformService $service): ServiceCard => new ServiceCard(

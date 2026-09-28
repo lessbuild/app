@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Deploy;
 
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -71,6 +72,67 @@ class GitHubApp
         }
 
         return $list;
+    }
+
+    /**
+     * Create a check run on a commit showing a preview's state: in progress, or completed as a success (ready),
+     * failure (failed) or cancelled (closed).
+     *
+     * @param  string  $installationId
+     * @param  string  $repository  owner/name
+     * @param  string  $revision
+     * @param  string  $status  the preview's status
+     * @param  string  $summary
+     * @param  string  $detailsUrl
+     * @return void
+     */
+    public function createCheck(string $installationId, string $repository, string $revision, string $status, string $summary, string $detailsUrl): void
+    {
+        $conclusion = match ($status) {
+            'ready' => 'success',
+            'failed' => 'failure',
+            'closed' => 'cancelled',
+            default => null,
+        };
+        $name = config('app.name').' preview';
+        $this->client($installationId)->post("https://api.github.com/repos/{$repository}/check-runs", [
+            'name' => $name, 'head_sha' => $revision, 'details_url' => $detailsUrl, 'output' => ['title' => $name, 'summary' => $summary],
+            ...($conclusion === null ? ['status' => 'in_progress'] : ['status' => 'completed', 'conclusion' => $conclusion]),
+        ])->throw();
+    }
+
+    /**
+     * Update the pull request's preview comment (found by a hidden marker among its first 100 comments), or add one.
+     *
+     * @param  string  $installationId
+     * @param  string  $repository  owner/name
+     * @param  int  $number
+     * @param  string  $body  Markdown
+     * @return void
+     */
+    public function upsertPullRequestComment(string $installationId, string $repository, int $number, string $body): void
+    {
+        $client = $this->client($installationId);
+        $marker = '<!-- buildpusher-preview -->';
+        $comments = $client->get("https://api.github.com/repos/{$repository}/issues/{$number}/comments", ['per_page' => 100])->throw()->json();
+        $existing = collect(is_array($comments) ? $comments : [])->first(fn (mixed $comment): bool => is_array($comment) && str_contains((string) ($comment['body'] ?? ''), $marker));
+        $payload = ['body' => $marker."\n".$body];
+        if (is_array($existing) && isset($existing['id'])) {
+            $client->patch("https://api.github.com/repos/{$repository}/issues/comments/".(int) $existing['id'], $payload)->throw();
+        } else {
+            $client->post("https://api.github.com/repos/{$repository}/issues/{$number}/comments", $payload)->throw();
+        }
+    }
+
+    /**
+     * Make an HTTP client that calls GitHub's API as the installation.
+     *
+     * @param  string  $installationId
+     * @return PendingRequest
+     */
+    private function client(string $installationId): PendingRequest
+    {
+        return Http::acceptJson()->withToken($this->installationToken($installationId))->withHeader('X-GitHub-Api-Version', '2026-03-10');
     }
 
     /**

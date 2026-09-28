@@ -36,7 +36,7 @@ final class ShowRepositoryController
             'tabs' => $tabs,
             'tab' => PageTabs::current($request->query('tab'), $tabs),
             'overview' => $overview->handle($project, $user),
-            'repository' => $repository->load(['website.server', 'environment', 'provider']),
+            'repository' => $repository->load(['website.server', 'environment', 'provider', 'preview']),
             'builds' => $repository->builds()->with(['requester'])->latest('id')->limit(30)->get(),
             'deliveries' => $repository->webhookDeliveries()->latest('id')->limit(10)->get(),
             'canDeploy' => $user->can('deploy', $repository),

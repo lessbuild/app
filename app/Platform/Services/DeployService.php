@@ -54,7 +54,7 @@ final class DeployService implements PlatformService
     }
 
     /**
-     * Get the service's pages: repositories (with their builds), environment deploy settings, and configuration
+     * Get the service's pages: repositories (with their builds), environment deploy settings, previews, and configuration
      * documents.
      *
      * @param  string  $projectId
@@ -65,6 +65,7 @@ final class DeployService implements PlatformService
         return [
             new ServiceNavItem(__('Repositories'), route('deploy.repositories', $projectId), 'deploy.repositories*|deploy.builds*'),
             new ServiceNavItem(__('Environments'), route('deploy.environments', $projectId), 'deploy.environments*'),
+            new ServiceNavItem(__('Previews'), route('deploy.previews', $projectId), 'deploy.previews*'),
             new ServiceNavItem(__('Configuration'), route('deploy.configuration', $projectId), 'deploy.configuration*'),
         ];
     }

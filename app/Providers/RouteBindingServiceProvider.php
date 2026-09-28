@@ -23,6 +23,7 @@ use App\Models\LoadBalancer;
 use App\Models\MaintenanceWindow;
 use App\Models\MetricSeries;
 use App\Models\Monitor;
+use App\Models\Preview;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Release;
@@ -70,6 +71,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
         'site' => [AnalyticsSite::class, 'project', ['analytics.*']],
         'repository' => [Repository::class, 'project', ['deploy.*']],
         'build' => [Build::class, 'repository', ['deploy.*']],
+        'preview' => [Preview::class, 'project', ['deploy.*']],
         'environment' => [Environment::class, 'project', ['deploy.*']],
         'review' => [ConfigurationReview::class, 'project', ['deploy.*']],
         'application' => [ConfigurationApplication::class, 'review', ['deploy.*']],

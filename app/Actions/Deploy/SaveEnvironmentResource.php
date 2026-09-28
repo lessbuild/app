@@ -46,8 +46,7 @@ final class SaveEnvironmentResource
                     'DB_CONNECTION' => 'mysql', 'DB_HOST' => '127.0.0.1', 'DB_PORT' => '3306', 'DB_DATABASE' => $website->databaseIdentifier(),
                     'DB_USERNAME' => $website->databaseIdentifier(), 'DB_PASSWORD' => (string) $website->database_password,
                 ],
-                'redis' => ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => '6379'],
-                'valkey' => ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => (string) (16379 + crc32($environment->id) % 10000), 'VALKEY_HOST' => '127.0.0.1', 'VALKEY_PORT' => (string) (16379 + crc32($environment->id) % 10000)],
+                'redis', 'valkey' => EnvironmentResource::managedCache($environment->id, $data['type'], $data['name'])['variables'],
                 default => throw ValidationException::withMessages(['type' => __('Only MySQL, Redis and Valkey can be managed; describe other services with their variables.')]),
             };
         } else {
@@ -64,7 +63,7 @@ final class SaveEnvironmentResource
         $resource = $environment->resources()->where('name', $data['name'])->first() ?? new EnvironmentResource;
         $resource->forceFill([
             'environment_id' => $environment->id, 'name' => $data['name'], 'type' => $data['type'], 'is_managed' => $data['is_managed'], 'status' => 'ready',
-            'configuration' => ['variables' => $variables, 'container_name' => $data['is_managed'] && $data['type'] === 'valkey' ? 'buildpusher-valkey-'.strtolower($environment->id).'-'.str($data['name'])->slug() : null],
+            'configuration' => ['variables' => $variables, 'container_name' => $data['is_managed'] && $data['type'] === 'valkey' ? EnvironmentResource::managedCache($environment->id, 'valkey', $data['name'])['container_name'] : null],
         ])->save();
 
         return $resource;

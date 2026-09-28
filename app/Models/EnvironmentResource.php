@@ -41,9 +41,27 @@ class EnvironmentResource extends Model
     }
 
     /**
+     * Get the configuration of a managed Redis (the server's shared one) or Valkey (a container of the environment's
+     * own on a port derived from its ID).
+     *
+     * @param  string  $environmentId
+     * @param  string  $type  redis or valkey
+     * @param  string  $name
+     * @return array{variables: array<string, string>, container_name: string|null}
+     */
+    public static function managedCache(string $environmentId, string $type, string $name): array
+    {
+        $port = (string) (16379 + crc32($environmentId) % 10000);
+
+        return $type === 'valkey'
+            ? ['variables' => ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => $port, 'VALKEY_HOST' => '127.0.0.1', 'VALKEY_PORT' => $port], 'container_name' => 'buildpusher-valkey-'.strtolower($environmentId).'-'.str($name)->slug()]
+            : ['variables' => ['REDIS_HOST' => '127.0.0.1', 'REDIS_PORT' => '6379'], 'container_name' => null];
+    }
+
+    /**
      * Get the attributes that should be cast.
      *
-     * Encrypts `configuration`, which can hold credentials.
+     * Reads `is_managed` as a boolean and encrypts the configuration.
      *
      * @return array<string, string>
      */

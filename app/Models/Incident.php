@@ -97,7 +97,6 @@ class Incident extends Model
         return $this->belongsTo(Monitor::class)->withTrashed();
     }
 
-    /** What opened the incident. Telemetry alert rules join monitors as sources with Monitoring part 3. */
     /**
      * Get the alert rule that opened it, including archived ones.
      *

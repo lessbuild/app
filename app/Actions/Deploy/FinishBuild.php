@@ -8,6 +8,7 @@ use App\Models\Build;
 use App\Models\Repository;
 use App\Services\Deploy\DeploymentMarkers;
 use App\Services\Deploy\Deployments;
+use App\Services\Deploy\Previews;
 use Illuminate\Support\Facades\DB;
 
 final class FinishBuild
@@ -19,12 +20,14 @@ final class FinishBuild
      *
      * @param  DeploymentMarkers  $markers  Records the deploy on the environment's Monitoring timeline.
      * @param  Deployments  $deployments  Rolls back automatically when needed and queues pushes that arrived during the deploy.
+     * @param  Previews  $previews  Moves a preview on when one of its deploys finishes.
      */
-    public function __construct(private readonly DeploymentMarkers $markers, private readonly Deployments $deployments) {}
+    public function __construct(private readonly DeploymentMarkers $markers, private readonly Deployments $deployments, private readonly Previews $previews) {}
 
     /**
      * Mark an active build succeeded, failed or canceled. A live build becomes a Monitoring deployment marker; then a push
-     * that arrived while it ran is deployed. Returns false when the build had already finished.
+     * that arrived while it ran is deployed, and a preview's deploy moves the preview on. Returns false when the build had
+     * already finished.
      *
      * @param  Build  $build
      * @param  string  $status
@@ -61,6 +64,7 @@ final class FinishBuild
                 $this->deployments->rollBackAutomatically($finishedBuild);
             }
             $this->deployPendingPush($build->repository_id);
+            $this->previews->buildFinished($finishedBuild);
         }
 
         return $finished;

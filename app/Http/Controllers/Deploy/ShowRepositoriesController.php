@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowRepositoriesController
 {
     /**
-     * Show the project's repositories with each one's latest deploy.
+     * Show the project's repositories with each one's latest deploy. Previews' own repositories are on the previews page.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -24,7 +24,7 @@ final class ShowRepositoriesController
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview): View
     {
-        $repositories = Repository::query()->where('project_id', $project->id)->with(['website', 'environment'])->orderBy('name')->get();
+        $repositories = Repository::query()->where('project_id', $project->id)->whereDoesntHave('preview')->with(['website', 'environment'])->orderBy('name')->get();
 
         return view('deploy.repositories', [
             'overview' => $overview->handle($project, $user),

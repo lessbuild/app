@@ -6,8 +6,10 @@ namespace App\Actions\Infrastructure;
 
 use App\Actions\Audit\RecordAuditEntry;
 use App\Enums\AuditAction;
+use App\Exceptions\StateConflict;
 use App\Jobs\Infrastructure\RemoveWebsitePlacement;
 use App\Models\Account;
+use App\Models\Preview;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Infrastructure\WebsiteHealthChecks;
@@ -27,7 +29,8 @@ final class DeleteWebsite
     public function __construct(private readonly WebsiteHealthChecks $health, private readonly RecordAuditEntry $audit) {}
 
     /**
-     * Delete a website: it disappears at once, and its files, Caddy site and database are removed from its servers in the background.
+     * Delete a website: it disappears at once, and its files, Caddy site and database are removed from its servers in
+     * the background. An open preview's website goes with its preview instead.
      *
      * @param  Account  $account
      * @param  User  $actor
@@ -39,6 +42,7 @@ final class DeleteWebsite
         DB::transaction(function () use ($account, $actor, $website): void {
             Gate::forUser($actor)->authorize('delete', $website);
             $locked = Website::query()->where('account_id', $account->id)->lockForUpdate()->findOrFail($website->id);
+            StateConflict::unless(! Preview::query()->where('website_id', $locked->id)->where('status', '!=', Preview::STATUS_CLOSED)->exists(), __('This website belongs to an open preview. Close the preview instead.'));
             $locked->delete();
             $this->health->sync($locked, $actor);
             // The stale copy first, so a failure never takes down the live one before the deletion can finish.

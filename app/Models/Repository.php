@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Carbon;
 
@@ -41,6 +42,10 @@ use Illuminate\Support\Carbon;
  * @property bool $webhook_pending a push arrived while a deploy was running; it deploys when that finishes
  * @property string|null $webhook_pending_revision
  * @property string|null $webhook_pending_commit_message
+ * @property bool $previews_enabled pull requests into the branch get their own preview
+ * @property string|null $preview_domain previews are served at `pr-{number}-{project}.{domain}`
+ * @property int $preview_ttl_hours a preview closes this long after its last activity
+ * @property string|null $preview_initialization_command runs once on each preview, after its first deploy
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -50,6 +55,7 @@ use Illuminate\Support\Carbon;
  * @property-read Website $website
  * @property-read Environment|null $environment
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Build> $builds
+ * @property-read Preview|null $preview the preview this repository deploys, when it's a preview's own repository
  */
 #[Hidden(['webhook_secret'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
@@ -120,6 +126,26 @@ class Repository extends Model
     }
 
     /**
+     * Get the previews of this repository's pull requests.
+     *
+     * @return HasMany<Preview, $this>
+     */
+    public function previews(): HasMany
+    {
+        return $this->hasMany(Preview::class, 'source_repository_id');
+    }
+
+    /**
+     * Get the preview this repository deploys, when it's a preview's own repository.
+     *
+     * @return HasOne<Preview, $this>
+     */
+    public function preview(): HasOne
+    {
+        return $this->hasOne(Preview::class);
+    }
+
+    /**
      * Determine whether a deploy can start: a Git provider that hosts the URL, and a live website on an active server.
      *
      * @return bool
@@ -173,6 +199,7 @@ class Repository extends Model
         return [
             'auto_deploy_include_paths' => 'array', 'auto_deploy_exclude_paths' => 'array', 'webhook_secret' => 'encrypted',
             'webhook_enabled' => 'boolean', 'webhook_pending' => 'boolean', 'webhook_last_received_at' => 'immutable_datetime',
+            'previews_enabled' => 'boolean', 'preview_ttl_hours' => 'integer',
         ];
     }
 }

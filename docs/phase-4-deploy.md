@@ -108,6 +108,29 @@ The parts, in dependency order:
   - v2 environments don't store a placement. It's used to check the deploy repository and to fill managed database variables.
   - Anyone with Deploy access (members and above) can manage configuration; Deployer allowed workspace managers.
 
+## Previews (part 5)
+
+- **Settings live on the source repository** (Deployer kept them on the project and guessed which environment a pull request belonged to). A repository's previews are on or off, with a wildcard domain (`pr-{number}-{project}.{domain}`, whose DNS points at the server), a lifetime in hours since the last activity (1–720, default 72) and an optional initialisation command (e.g. `php artisan migrate --seed`). They need `deploy.previews`; owners and admins change them.
+- **Pull requests:** the repository webhook (and the GitHub App webhook) also receives pull/merge-request events. Deliveries are deduplicated like pushes.
+  - Opening or updating a pull request into the repository's branch creates or updates its preview. Forks, other target branches and events that don't say where they come from are refused (Deployer's trust policy).
+  - Closing or merging closes the preview.
+- **A preview is its own stack**, made without an actor:
+  - a website on the source website's server, which counts against `deploy.websites.max`;
+  - a `preview` environment copying the source environment's runtime, processes (with `deploy.workers`) and managed Redis/Valkey (with `deploy.resources`);
+  - a repository on the pull request's branch, with the webhook off.
+  - Open previews count against `deploy.previews.max`, checked under an account lock so concurrent webhooks can't overshoot.
+- **Configuration:** the preview website's `.env` holds only preview-owned values: its own `APP_KEY`, `APP_URL`, `APP_ENV=preview` and its own database, plus the source environment's non-secret runtime variables. Secrets aren't copied. Someone with Deploy management rights can approve chosen runtime secrets for the preview's current revision. The approval stores variable IDs and versions, never values. It lapses when the revision changes or a secret changes version.
+- **Lifecycle:**
+  - The preview deploys when its website is ready. A newer revision that arrives mid-deploy follows when the deploy finishes.
+  - The status is `provisioning` → `deploying` → `ready` or `failed` → `closed`.
+  - The initialisation command runs in the post-deployment stage of each build until one succeeds; a marker file on the server makes it run once.
+  - GitHub App repositories get a check run on the revision and one pull-request comment, updated as the preview changes.
+- **Closing:** a pull request closing, the lifetime running out (`previews:expire`, hourly), the source repository being deleted, or someone pressing Close.
+  - Once no deploy is running, a cleanup job stops the preview's process units, removes its Valkey containers and volumes, and deletes its website (files, Caddy site, database). Then it deletes the preview environment and repository.
+  - A failed cleanup shows its error and can be retried.
+  - Deleting any website now also stops its `buildpusher-{slug}-*` units, which were left running before.
+- Deploy → Previews lists the project's previews, open ones first, with expiry, cleanup state and secret approval. Preview repositories and environments are hidden from the Repositories and Environments lists.
+
 ## Public contracts kept
 
 - Build callback URLs and their signed parameters.

@@ -206,7 +206,6 @@ class RepositoryWebhookVerifier
         return $deliveryId;
     }
 
-    /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     /**
      * Read a GitHub push: whether it's a push, whether it's to the repository's branch (not a branch deletion), and
      * the new revision, commit message and changed paths.
@@ -214,7 +213,7 @@ class RepositoryWebhookVerifier
      * @param  Request  $request
      * @param  array<mixed>  $payload
      * @param  string  $branch
-     * @return list<mixed>
+     * @return array{bool, bool, ?string, ?string, list<string>|null}
      */
     private function githubEvent(Request $request, array $payload, string $branch): array
     {
@@ -233,14 +232,13 @@ class RepositoryWebhookVerifier
         ];
     }
 
-    /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     /**
      * Read a GitLab push the same way, taking the message from the commit that matches the new revision.
      *
      * @param  Request  $request
      * @param  array<mixed>  $payload
      * @param  string  $branch
-     * @return list<mixed>
+     * @return array{bool, bool, ?string, ?string, list<string>|null}
      */
     private function gitLabEvent(Request $request, array $payload, string $branch): array
     {
@@ -262,14 +260,13 @@ class RepositoryWebhookVerifier
         ];
     }
 
-    /** @return array{bool, bool, ?string, ?string, list<string>|null} */
     /**
      * Read a Bitbucket push the same way. Bitbucket doesn't list changed paths, so path filters can't apply.
      *
      * @param  Request  $request
      * @param  array<mixed>  $payload
      * @param  string  $branch
-     * @return list<mixed>
+     * @return array{bool, bool, ?string, ?string, list<string>|null}
      */
     private function bitbucketEvent(Request $request, array $payload, string $branch): array
     {
@@ -289,14 +286,13 @@ class RepositoryWebhookVerifier
         ];
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     /**
      * Read a GitHub pull-request event: opened, reopened and synchronised pull requests update a preview; closed ones
      * end it.
      *
      * @param  Request  $request
      * @param  array<mixed>  $payload
-     * @return list<mixed>
+     * @return array{'updated'|'closed'|null, ?int, ?string, ?string, ?string, ?string, ?bool, ?string}
      */
     private function githubPreviewEvent(Request $request, array $payload): array
     {
@@ -328,14 +324,13 @@ class RepositoryWebhookVerifier
         );
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     /**
      * Read a GitLab merge-request event: open, reopen, update and approval changes update a preview; close and merge
      * end it.
      *
      * @param  Request  $request
      * @param  array<mixed>  $payload
-     * @return list<mixed>
+     * @return array{'updated'|'closed'|null, ?int, ?string, ?string, ?string, ?string, ?bool, ?string}
      */
     private function gitLabPreviewEvent(Request $request, array $payload): array
     {
@@ -361,13 +356,12 @@ class RepositoryWebhookVerifier
         );
     }
 
-    /** @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string} */
     /**
      * Read a Bitbucket pull-request event: created and updated update a preview; fulfilled and rejected end it.
      *
      * @param  Request  $request
      * @param  array<mixed>  $payload
-     * @return list<mixed>
+     * @return array{'updated'|'closed'|null, ?int, ?string, ?string, ?string, ?string, ?bool, ?string}
      */
     private function bitbucketPreviewEvent(Request $request, array $payload): array
     {
@@ -406,7 +400,7 @@ class RepositoryWebhookVerifier
      * @param  mixed  $targetBranch
      * @param  bool|null  $isFork
      * @param  mixed  $targetRepository
-     * @return array{?string, ?int, ?string, ?string, ?string, ?string, ?bool, ?string}
+     * @return array{'updated'|'closed'|null, ?int, ?string, ?string, ?string, ?string, ?bool, ?string}
      */
     private function previewPayload(
         mixed $action,
@@ -418,7 +412,7 @@ class RepositoryWebhookVerifier
         ?bool $isFork,
         mixed $targetRepository,
     ): array {
-        if (! is_string($action) || ! is_numeric($number) || (int) $number < 1) {
+        if (($action !== 'updated' && $action !== 'closed') || ! is_numeric($number) || (int) $number < 1) {
             return [null, null, null, null, null, null, null, null];
         }
 

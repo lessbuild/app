@@ -14,6 +14,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 /**
  * @property string $id
@@ -153,6 +154,16 @@ class Environment extends Model
     public function resources(): HasMany
     {
         return $this->hasMany(EnvironmentResource::class);
+    }
+
+    /**
+     * Get the preview this environment belongs to, when it's a preview's own environment.
+     *
+     * @return HasOne<Preview, $this>
+     */
+    public function preview(): HasOne
+    {
+        return $this->hasOne(Preview::class);
     }
 
     /**
