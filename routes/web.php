@@ -289,6 +289,9 @@ use App\Http\Controllers\Settings\ShowSessionsController;
 use App\Http\Controllers\Settings\SignOutBrowserController;
 use App\Http\Controllers\Settings\SignOutOtherBrowsersController;
 use App\Http\Controllers\Settings\UpdateNotificationSettingsController;
+use App\Http\Controllers\Site\ShowFeaturesController;
+use App\Http\Controllers\Site\ShowHomeController;
+use App\Http\Controllers\Site\ShowPricingController;
 use App\Http\Controllers\StatusPages\ConfirmStatusSubscriptionController;
 use App\Http\Controllers\StatusPages\RedirectLegacyStatusPageController;
 use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
@@ -318,7 +321,10 @@ use App\Http\Controllers\Telemetry\UpdateIssueController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
 use Illuminate\Support\Facades\Route;
 
-Route::redirect('/', '/dashboard');
+// The public site: guests see the home page; signed-in people go to their dashboard.
+Route::get('/', ShowHomeController::class)->name('home');
+Route::get('/features/{service}', ShowFeaturesController::class)->where('service', '[a-z]+')->name('features');
+Route::get('/pricing', ShowPricingController::class)->name('pricing');
 
 Route::get('/_gallery', ComponentGalleryController::class)->name('gallery');
 

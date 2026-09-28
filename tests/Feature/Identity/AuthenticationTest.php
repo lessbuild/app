@@ -64,7 +64,8 @@ final class AuthenticationTest extends TestCase
 
     public function test_guests_are_sent_to_sign_in(): void
     {
-        $this->get('/')->assertRedirect('/dashboard');
+        // Guests see the public home page at /; the app itself asks them to sign in.
+        $this->get('/')->assertOk()->assertSee(route('login'));
         $this->get('/dashboard')->assertRedirect('/login');
     }
 

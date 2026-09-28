@@ -39,6 +39,6 @@ The parts:
 ## Public site (part 3)
 
 - Guests get a home page at `/` (signed-in people still go to their dashboard). It covers the four services and how they fit together, adapted from the old marketing configuration (`app/config/marketing.php`).
-- `/services/{deploy|infrastructure|monitoring|analytics}`: each service's capabilities, workflows and guardrails.
+- `/features/{deploy|infrastructure|monitoring|analytics}` (`/services/…` is the signed-in service page): each service's capabilities, workflows and guardrails.
 - `/pricing` is built from the billing catalogue, so it always matches what can be bought: each service's tiers, limits, add-ons and meters. Prices are the catalogue's (the owner's pricing decisions change the catalogue, not the page).
 - Public pages use the Signal components, are cached publicly for five minutes, and are indexed (`robots` allows them; the app stays `noindex`).
