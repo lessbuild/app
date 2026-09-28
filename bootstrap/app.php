@@ -53,6 +53,10 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
+        // Reported errors also go to the platform's own Monitoring once `platform:self-monitor` has set it up.
+        $exceptions->report(function (Throwable $exception): void {
+            app(App\Services\Admin\SelfMonitoring::class)->report($exception);
+        });
         // OTLP clients expect google.rpc.Status bodies.
         $exceptions->render((new OtlpErrorResponse)->render(...));
         $exceptions->dontFlash(['endpoint_url', 'signing_secret', 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected']);

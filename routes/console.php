@@ -33,6 +33,7 @@ use App\Models\WebsiteBackupSchedule;
 use App\Models\WebsiteDomain;
 use App\Services\Admin\PlatformAdmins;
 use App\Services\Admin\PlatformBackups;
+use App\Services\Admin\SelfMonitoring;
 use App\Services\Admin\SystemHealth;
 use App\Services\Billing\Entitlements;
 use App\Services\Deploy\Automation;
@@ -580,3 +581,20 @@ Artisan::command('platform:backups', function (): void {
     $this->table(['ID', 'File', 'Status', 'Size', 'Local', 'Off-site', 'When'], App\Models\PlatformBackup::query()->latest('id')->limit(30)->get()
         ->map(fn (App\Models\PlatformBackup $backup): array => [$backup->id, $backup->file, $backup->status, $backup->size !== null ? number_format($backup->size / 1024, 1).' KB' : '—', $backup->isLocal() ? 'yes' : 'no', $backup->isOffsite() ? 'yes' : 'no', (string) $backup->created_at])->all());
 })->purpose('List recent platform database backups');
+
+// BuildPusher watching itself: an uptime check, a scheduler heartbeat and its own exceptions, in an operations account.
+Artisan::command('platform:self-monitor {email? : The admin who owns it and gets the alerts (the first admin by default)}', function (SelfMonitoring $monitoring): int {
+    $email = is_string($this->argument('email')) ? strtolower(trim($this->argument('email'))) : null;
+    $owner = User::query()->where('is_platform_admin', true)->when($email !== null, fn ($query) => $query->where('email', $email))->whereNotNull('email_verified_at')->orderBy('created_at')->first();
+    if ($owner === null) {
+        $this->error('Needs a platform admin with a verified email. Grant one with php artisan platform:admin <email> --grant.');
+
+        return 1;
+    }
+    $settings = $monitoring->setUp($owner);
+    $this->info("Self-monitoring is set up in the operations account, alerting {$owner->email}.");
+    $this->line('Project: '.route('projects.show', $settings['project_id']));
+
+    return 0;
+})->purpose('Monitor the platform with its own Monitoring: uptime, the scheduler and its exceptions');
+Schedule::call(fn () => app(SelfMonitoring::class)->beat(app(App\Actions\Monitoring\RecordHeartbeat::class)))->everyMinute()->name('platform:self-monitor-heartbeat')->withoutOverlapping(5);

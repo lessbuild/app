@@ -36,8 +36,9 @@ final class SystemHealth
      *
      * @param  Migrator  $migrator  Knows which migrations have run.
      * @param  PlatformBackups  $backups  Knows when the database was last backed up, and whether off-site.
+     * @param  SelfMonitoring  $selfMonitoring  Knows whether the platform watches itself.
      */
-    public function __construct(private readonly Migrator $migrator, private readonly PlatformBackups $backups) {}
+    public function __construct(private readonly Migrator $migrator, private readonly PlatformBackups $backups, private readonly SelfMonitoring $selfMonitoring) {}
 
     /**
      * Run every check.
@@ -68,6 +69,7 @@ final class SystemHealth
             new HealthCheck('Failed jobs', 'processes', $failed === 0, $failed === null ? 'Unavailable' : trans_choice(':count failed job|:count failed jobs', $failed)),
             new HealthCheck('Mail', 'connectivity', ! $production || ! in_array($mailer, ['log', 'array'], true), $production && in_array($mailer, ['log', 'array'], true) ? "The {$mailer} mailer sends nothing" : $mailer),
             $this->backups(),
+            new HealthCheck('Self-monitoring', 'processes', ! app()->isProduction() || $this->selfMonitoring->settings() !== null, $this->selfMonitoring->settings() !== null ? 'Uptime, the scheduler and exceptions are watched in the operations account' : 'Not set up: run php artisan platform:self-monitor'),
             new HealthCheck('Stripe', 'connectivity', ! $production || (filled(config('services.stripe.secret')) && filled(config('services.stripe.webhook_secret'))), filled(config('services.stripe.secret')) ? 'Keys set' : 'Keys missing: paid plans can’t be bought'),
         ];
     }
