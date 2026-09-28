@@ -17,6 +17,7 @@
                 <a @if ($commitUrl) href="{{ $commitUrl }}" target="_blank" rel="noopener" @endif class="font-mono text-sm text-primary">{{ $build->shortRevision() }}</a>
             @endif
             <span class="text-sm text-ink">{{ $build->commit_message }}</span>
+            <x-signal.ui.button :href="route('deploy.builds.compare', [$project, $build->id])" variant="quiet" size="sm" class="ml-auto">{{ __('Compare') }}</x-signal.ui.button>
         </div>
         <dl class="grid gap-4 text-sm sm:grid-cols-4">
             <div><dt class="text-xs text-muted">{{ __('Started by') }}</dt><dd class="mt-1">{{ $build->requester?->name ?? __('A push') }} · {{ __(ucfirst($build->trigger_source)) }}</dd></div>

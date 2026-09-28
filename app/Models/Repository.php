@@ -178,6 +178,29 @@ class Repository extends Model
     }
 
     /**
+     * Build the provider's page comparing two full commit hashes (what changed from the first to the second), or null.
+     *
+     * @param  string|null  $from
+     * @param  string|null  $to
+     * @return string|null
+     */
+    public function compareUrl(?string $from, ?string $to): ?string
+    {
+        foreach ([$from, $to] as $revision) {
+            if (! is_string($revision) || preg_match('/\A[0-9a-f]{40,64}\z/D', $revision) !== 1) {
+                return null;
+            }
+        }
+        $path = 'https://'.preg_replace('/\.git\z/i', '', $this->url);
+
+        return match ($this->provider?->type) {
+            \App\Enums\ProviderType::GitLab => "{$path}/-/compare/{$from}...{$to}",
+            \App\Enums\ProviderType::Bitbucket => "{$path}/branches/compare/{$to}%0D{$from}",
+            default => "{$path}/compare/{$from}...{$to}",
+        };
+    }
+
+    /**
      * Get the subdirectory to deploy, as a safe relative path (`.` for the repository root).
      *
      * @return string
