@@ -18,7 +18,7 @@ final class SearchTest extends TestCase
 
     public function test_search_finds_projects_domains_and_members_in_the_current_account_only(): void
     {
-        $owner = User::factory()->create(['name' => 'Olive Owner']);
+        $owner = User::factory()->create(['name' => 'Olive Owner', 'email' => 'olive@example.com']);
         $account = Account::factory()->withMember($owner)->create();
         $shop = Project::factory()->for($account)->create(['name' => 'Storefront']);
         (new Domain)->forceFill(['project_id' => $shop->id, 'hostname' => 'store.example.com', 'verification_token' => 'x'])->save();
