@@ -11,6 +11,10 @@
         <x-signal.ui.input-field name="password_confirmation" :label="__('Confirm password')" type="password" autocomplete="new-password" required :restore="false" />
         <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">{{ __('Create account') }}</x-signal.ui.button>
     </form>
+    <p class="text-center text-xs leading-5 text-muted">{!! __('By creating an account you agree to the :terms and :privacy.', [
+        'terms' => '<a href="'.e(route('legal', 'terms')).'" class="font-semibold text-primary hover:underline">'.e(__('terms of service')).'</a>',
+        'privacy' => '<a href="'.e(route('legal', 'privacy')).'" class="font-semibold text-primary hover:underline">'.e(__('privacy policy')).'</a>',
+    ]) !!}</p>
     <div class="mt-5">@include('auth.partials.social-sign-in')</div>
 
     <x-slot:footer>

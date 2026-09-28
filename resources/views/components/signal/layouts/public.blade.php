@@ -69,6 +69,8 @@
                         <a href="{{ route('pricing') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Pricing') }}</a>
                         <a href="{{ route('docs.api') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('API reference') }}</a>
                         <a href="{{ route('platform.status') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Status') }}</a>
+                        <a href="{{ route('legal', 'privacy') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Privacy') }}</a>
+                        <a href="{{ route('legal', 'terms') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Terms') }}</a>
                     </nav>
                 </div>
             </div>

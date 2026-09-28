@@ -45,4 +45,13 @@ final class PublicSiteTest extends TestCase
         }
         $page->assertSee('$19')->assertSee('Free')->assertSee('id="monitoring"', false);
     }
+
+    public function test_the_privacy_policy_and_terms_are_public_and_linked_from_sign_up(): void
+    {
+        $this->get('/privacy')->assertOk()->assertHeader('Cache-Control', 'max-age=300, public')->assertSee('Privacy policy')->assertSee('sets no cookies')->assertSee(config('legal.contact_email'))->assertSee(route('legal', 'terms'));
+        $this->get('/terms')->assertOk()->assertSee('Terms of service')->assertSee('Acceptable use');
+        $this->get('/legal')->assertNotFound();
+        $this->get('/register')->assertOk()->assertSee(route('legal', 'terms'))->assertSee(route('legal', 'privacy'));
+        $this->get('/pricing')->assertSee(route('legal', 'privacy'));
+    }
 }
