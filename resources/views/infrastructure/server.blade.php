@@ -19,7 +19,17 @@
             @endif
         </div>
         @if ($server->isProvisioning())
+            {{-- Setup moves on in the background; reload so the page follows it. --}}
+            @push('head')<meta http-equiv="refresh" content="15">@endpush
             <x-signal.ui.progress :value="$server->setup_stage" :max="$finalStage" :label="__('Provisioning progress')" />
+        @endif
+        @if ($server->provisioning_status === 'waiting_for_ip')
+            <p class="text-sm text-muted">
+                {{ __('Waiting for the provider to start the server and give it an address, then for SSH to answer. This usually takes a minute or two; we keep checking for up to twenty minutes.') }}
+                @if ($server->provisioning_error)
+                    <span class="block mt-1">{{ __('Latest check: :reason', ['reason' => $server->provisioning_error]) }}</span>
+                @endif
+            </p>
         @endif
         @if ($server->provisioning_status === 'failed')
             <p class="text-sm text-danger">{{ $server->provisioning_error }}</p>

@@ -195,7 +195,8 @@ class Vultr implements ServerProvider
             throw new RuntimeException('Vultr returned an incomplete instance response.');
         }
 
-        $publicIp = is_scalar($server['main_ip'] ?? null) ? (string) $server['main_ip'] : null;
+        // Vultr reports 0.0.0.0 until the instance has its address.
+        $publicIp = is_scalar($server['main_ip'] ?? null) && ! in_array((string) $server['main_ip'], ['', '0.0.0.0'], true) ? (string) $server['main_ip'] : null;
         $providerStatus = is_scalar($server['power_status'] ?? ($server['status'] ?? null))
             ? (string) ($server['power_status'] ?? $server['status'])
             : null;

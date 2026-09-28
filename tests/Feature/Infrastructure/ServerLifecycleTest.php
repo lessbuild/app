@@ -137,6 +137,33 @@ final class ServerLifecycleTest extends TestCase
         $this->assertSame(Server::STATUS_PROVISIONING, $this->reload($server)->provisioning_status);
     }
 
+    public function test_initialisation_waits_for_a_running_server_with_a_real_address_and_says_why(): void
+    {
+        $server = Server::factory()->provisioning(Server::STATUS_QUEUED)->create(['account_id' => $this->project->account_id, 'provider_id' => $this->provider->id, 'public_ip' => null]);
+        $job = new \App\Jobs\Infrastructure\InitialiseServer($server->id, (string) $server->initialization_token);
+        $this->assertTrue($job->retryUntil() > now()->addMinutes(15));
+
+        // Booting with an address already assigned, then ready but with a placeholder address: keep waiting either way.
+        foreach ([['203.0.113.50', 'not_ready', 'The provider is still starting the server.'], ['0.0.0.0', 'ready', 'The provider hasn’t given the server a public IP yet.']] as [$ip, $readiness, $reason]) {
+            [$this->cloud->publicIp, $this->cloud->readiness] = [$ip, $readiness];
+            try {
+                $job->handle(app(\App\Services\Infrastructure\ServerProviderResolver::class), app(\App\Services\Infrastructure\SshHostIdentity::class));
+                $this->fail('Should keep waiting.');
+            } catch (RuntimeException $exception) {
+                $this->assertSame($reason, $exception->getMessage());
+            }
+            $server->refresh();
+            $this->assertSame([Server::STATUS_WAITING_FOR_IP, $reason, null], [$server->provisioning_status, $server->provisioning_error, $server->public_ip]);
+        }
+        $this->actingAs($this->owner)->get("{$this->base}/{$server->id}")->assertOk()
+            ->assertSee('Latest check: The provider hasn’t given the server a public IP yet.')->assertSee('http-equiv="refresh"', false);
+
+        [$this->cloud->publicIp, $this->cloud->readiness] = ['203.0.113.50', 'ready'];
+        $job->handle(app(\App\Services\Infrastructure\ServerProviderResolver::class), app(\App\Services\Infrastructure\SshHostIdentity::class));
+        $server->refresh();
+        $this->assertSame([Server::STATUS_PROVISIONING, null, '203.0.113.50'], [$server->provisioning_status, $server->provisioning_error, $server->public_ip]);
+    }
+
     public function test_deleting_a_server_removes_it_at_the_provider_first(): void
     {
         $server = Server::factory()->create(['account_id' => $this->project->account_id, 'provider_id' => $this->provider->id, 'identifier' => 'cloud-9', 'ssh_fingerprint' => 'key-9']);

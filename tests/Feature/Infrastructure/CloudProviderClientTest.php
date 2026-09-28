@@ -84,4 +84,18 @@ final class CloudProviderClientTest extends TestCase
             && $request['user_data'] === base64_encode('#cloud-config')
             && $request->header('Authorization')[0] === 'Bearer vultr-secret');
     }
+
+    public function test_vultr_reports_no_ip_while_the_instance_has_its_placeholder_address(): void
+    {
+        Http::preventStrayRequests();
+        Http::fake(['https://api.vultr.com/v2/instances/abc' => Http::response(['instance' => [
+            'id' => 'abc', 'hostname' => 'web', 'region' => 'ewr', 'plan' => 'vc2-1c-1gb', 'os_id' => 2284,
+            'main_ip' => '0.0.0.0', 'internal_ip' => '', 'status' => 'pending', 'power_status' => 'running',
+        ]])]);
+
+        $server = (new Vultr('vultr-secret'))->server('abc');
+
+        $this->assertNull($server->publicIp);
+        $this->assertNotSame('ready', $server->readiness);
+    }
 }

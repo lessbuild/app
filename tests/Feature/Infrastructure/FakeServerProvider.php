@@ -27,6 +27,9 @@ final class FakeServerProvider implements ServerProvider
 
     public ?string $publicIp = '203.0.113.50';
 
+    /** @var 'ready'|'not_ready'|'unknown'|null What the provider reports; null works it out from the IP. */
+    public ?string $readiness = null;
+
     public function name(): string
     {
         return 'Fake Cloud';
@@ -56,7 +59,7 @@ final class FakeServerProvider implements ServerProvider
 
     public function server(int|string $identifier): CloudServerData
     {
-        return new CloudServerData((string) $identifier, 'web-1', 'fra1', 's-1', 'ubuntu', $this->publicIp, '10.0.0.5', 'active', $this->publicIp === null ? 'not_ready' : 'ready');
+        return new CloudServerData((string) $identifier, 'web-1', 'fra1', 's-1', 'ubuntu', $this->publicIp, '10.0.0.5', 'active', $this->readiness ?? ($this->publicIp === null ? 'not_ready' : 'ready'));
     }
 
     public function deleteServer(int|string $identifier): bool
