@@ -6,9 +6,34 @@
             @if ($limit !== null)
                 <span class="text-sm text-muted">{{ __(':used of :limit websites on your plan', ['used' => $websites->count(), 'limit' => $limit]) }}</span>
             @endif
-            <x-signal.ui.button :href="route('infrastructure.websites.create', [$project, 'import' => 1])" variant="secondary">{{ __('Import a website') }}</x-signal.ui.button>
-            <x-signal.ui.button :href="route('infrastructure.websites.create', $project)" variant="primary">{{ __('Create a website') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('infrastructure.websites.create', [$project, 'import' => 1])" variant="secondary" data-modal-trigger="import-website" :data-modal-history-url="route('infrastructure.websites', [$project, 'dialog' => 'import-website'])">{{ __('Import a website') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('infrastructure.websites.create', $project)" variant="primary" data-modal-trigger="create-website" :data-modal-history-url="route('infrastructure.websites', [$project, 'dialog' => 'create-website'])">{{ __('Create a website') }}</x-signal.ui.button>
         </div>
+
+        @if ($hosts->isEmpty())
+            @foreach (['create-website' => __('Create a website'), 'import-website' => __('Import a website')] as $id => $title)
+                <x-signal.overlays.modal :id="$id" :title="$title">
+                    <x-signal.ui.empty-state icon="server" :title="__('No app servers ready')" :description="__('Websites need an active app server with MySQL. Create one first.')">
+                        <x-slot:action><x-signal.ui.button :href="route('infrastructure.servers.create', $project)" variant="primary">{{ __('Create a server') }}</x-signal.ui.button></x-slot:action>
+                    </x-signal.ui.empty-state>
+                </x-signal.overlays.modal>
+            @endforeach
+        @else
+            <x-signal.overlays.form-modal id="create-website" :title="__('Create a website')" :description="__('We set up the Caddy site, a MySQL database and user, and the .env file.')" :action="route('infrastructure.websites.store', $project)" :submit="__('Create website')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                @include('infrastructure._website-fields', ['website' => null])
+            </x-signal.overlays.form-modal>
+            <x-signal.overlays.form-modal id="import-website" :title="__('Import a website')" :description="__('Adopt an application already in /var/www on an app server. Its files, Caddy site and database are left as they are.')" :action="route('infrastructure.websites.import', $project)" :submit="__('Import website')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                <x-signal.ui.input-field id="import-name" name="name" :label="__('Name')" maxlength="255" required />
+                <x-signal.ui.select-field id="import-server" name="server_id" :label="__('Server')" required>
+                    @foreach ($hosts as $host)
+                        <option value="{{ $host->id }}" @selected((int) old('server_id') === $host->id)>{{ $host->label() }} · {{ $host->public_ip }}</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.input-field id="import-url" name="url" :label="__('Domain')" maxlength="255" placeholder="shop.example.com" required />
+                <x-signal.ui.input-field id="import-slug" name="deployment_slug" :label="__('Directory in /var/www')" maxlength="32" placeholder="shop" :description="__('Lowercase letters, numbers and dashes.')" required />
+                <div class="sm:col-span-2"><x-signal.ui.textarea-field id="import-description" name="description" :label="__('Description')" rows="2" maxlength="2000" /></div>
+            </x-signal.overlays.form-modal>
+        @endif
     @endif
 
     @if ($websites->isEmpty())

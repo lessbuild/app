@@ -190,22 +190,26 @@
                     </ul>
                 @endif
                 @if ($canManageDatabase)
-                    <form method="POST" action="{{ route('infrastructure.websites.database.users.store', [$project, $website->id]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
-                        @csrf
-                        <x-signal.ui.input-field id="database-username" name="username" :label="__('Username')" placeholder="reporting" maxlength="32" required />
-                        <x-signal.ui.select-field id="database-privilege" name="privilege" :label="__('Access')">
-                            @foreach (\App\Models\DatabaseUser::PRIVILEGES as $key => $label)
-                                <option value="{{ $key }}" @selected(old('privilege') === $key)>{{ __($label) }}</option>
-                            @endforeach
-                        </x-signal.ui.select-field>
-                        <x-signal.ui.select-field id="database-expiry" name="expires_in_days" :label="__('Expires')">
-                            <option value="">{{ __('Never') }}</option>
-                            @foreach ([1, 7, 30, 90] as $days)
-                                <option value="{{ $days }}" @selected((string) old('expires_in_days') === (string) $days)>{{ trans_choice('In :count day|In :count days', $days) }}</option>
-                            @endforeach
-                        </x-signal.ui.select-field>
-                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add user') }}</x-signal.ui.button></div>
-                    </form>
+                    <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-database-user'])" variant="secondary" size="sm" data-modal-trigger="add-database-user">{{ __('Add a database user') }}</x-signal.ui.button></div>
+                    <x-signal.overlays.modal id="add-database-user" :title="__('Add a database user')" :description="__('For reporting tools and one-off access. The password is shown once; the user can expire by itself.')">
+                        <form method="POST" action="{{ route('infrastructure.websites.database.users.store', [$project, $website->id]) }}" class="grid items-start gap-4 sm:grid-cols-3">
+                            @csrf
+                            <input type="hidden" name="_modal" value="add-database-user">
+                            <x-signal.ui.input-field id="database-username" name="username" :label="__('Username')" placeholder="reporting" maxlength="32" required />
+                            <x-signal.ui.select-field id="database-privilege" name="privilege" :label="__('Access')">
+                                @foreach (\App\Models\DatabaseUser::PRIVILEGES as $key => $label)
+                                    <option value="{{ $key }}" @selected(old('privilege') === $key)>{{ __($label) }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.select-field id="database-expiry" name="expires_in_days" :label="__('Expires')">
+                                <option value="">{{ __('Never') }}</option>
+                                @foreach ([1, 7, 30, 90] as $days)
+                                    <option value="{{ $days }}" @selected((string) old('expires_in_days') === (string) $days)>{{ trans_choice('In :count day|In :count days', $days) }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <div class="flex justify-end sm:col-span-3"><x-signal.ui.button type="submit" variant="primary">{{ __('Add user') }}</x-signal.ui.button></div>
+                        </form>
+                    </x-signal.overlays.modal>
                 @endif
             </div>
 
@@ -269,26 +273,30 @@
                         </x-signal.ui.select-field>
                         <div><x-signal.ui.button type="submit" variant="secondary" :disabled="$website->provisioning_status !== 'active'">{{ __('Back up now') }}</x-signal.ui.button></div>
                     </form>
-                    <form method="POST" action="{{ route('infrastructure.websites.backup-schedules.store', [$project, $website->id]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-2">
-                        @csrf
-                        <x-signal.ui.select-field id="schedule-destination" name="backup_destination_id" :label="__('Schedule backups to')">
-                            @foreach ($backupDestinations as $destination)
-                                <option value="{{ $destination->id }}">{{ $destination->name }}</option>
-                            @endforeach
-                        </x-signal.ui.select-field>
-                        <x-signal.ui.select-field id="schedule-frequency" name="frequency" :label="__('How often')">
-                            <option value="daily">{{ __('Every day') }}</option>
-                            <option value="weekly" @selected(old('frequency') === 'weekly')>{{ __('Every week') }}</option>
-                        </x-signal.ui.select-field>
-                        <x-signal.ui.select-field id="schedule-weekday" name="weekday" :label="__('Day (weekly)')">
-                            @foreach ([0, 1, 2, 3, 4, 5, 6] as $day)
-                                <option value="{{ $day }}" @selected((string) old('weekday', '0') === (string) $day)>{{ \Carbon\CarbonImmutable::now()->startOfWeek(\Carbon\CarbonInterface::SUNDAY)->addDays($day)->dayName }}</option>
-                            @endforeach
-                        </x-signal.ui.select-field>
-                        <x-signal.ui.input-field id="schedule-time" name="run_at" type="time" :label="__('Time (UTC)')" value="02:00" required />
-                        <x-signal.ui.input-field id="schedule-retention" name="retention_count" type="number" min="1" max="365" :label="__('Snapshots to keep')" value="14" required />
-                        <div class="self-end"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save schedule') }}</x-signal.ui.button></div>
-                    </form>
+                    <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-backup-schedule'])" variant="secondary" size="sm" data-modal-trigger="add-backup-schedule">{{ __('Schedule backups') }}</x-signal.ui.button></div>
+                    <x-signal.overlays.modal id="add-backup-schedule" :title="__('Schedule backups')" :description="__('Back the database and files up on a cron schedule, keeping as many copies as you choose.')">
+                        <form method="POST" action="{{ route('infrastructure.websites.backup-schedules.store', [$project, $website->id]) }}" class="grid items-start gap-4 sm:grid-cols-2">
+                            @csrf
+                            <input type="hidden" name="_modal" value="add-backup-schedule">
+                            <x-signal.ui.select-field id="schedule-destination" name="backup_destination_id" :label="__('Schedule backups to')">
+                                @foreach ($backupDestinations as $destination)
+                                    <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.select-field id="schedule-frequency" name="frequency" :label="__('How often')">
+                                <option value="daily">{{ __('Every day') }}</option>
+                                <option value="weekly" @selected(old('frequency') === 'weekly')>{{ __('Every week') }}</option>
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.select-field id="schedule-weekday" name="weekday" :label="__('Day (weekly)')">
+                                @foreach ([0, 1, 2, 3, 4, 5, 6] as $day)
+                                    <option value="{{ $day }}" @selected((string) old('weekday', '0') === (string) $day)>{{ \Carbon\CarbonImmutable::now()->startOfWeek(\Carbon\CarbonInterface::SUNDAY)->addDays($day)->dayName }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.input-field id="schedule-time" name="run_at" type="time" :label="__('Time (UTC)')" value="02:00" required />
+                            <x-signal.ui.input-field id="schedule-retention" name="retention_count" type="number" min="1" max="365" :label="__('Snapshots to keep')" value="14" required />
+                            <div class="flex justify-end self-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Save schedule') }}</x-signal.ui.button></div>
+                        </form>
+                    </x-signal.overlays.modal>
                 </div>
             @endif
 

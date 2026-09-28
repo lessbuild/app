@@ -65,7 +65,7 @@ final class ProjectSetupQuery
         return new SetupStep('provider', __('Connect a cloud provider'), __('Add a DigitalOcean, Hetzner Cloud or Vultr token so servers can be created in your own account. Already have a server? You can import it instead.'),
             $provider !== null || $imported ? SetupStep::DONE : SetupStep::TODO,
             $provider !== null ? $this->text(':name is connected.', ['name' => $provider->name]) : ($imported ? $this->text('Using an imported server.') : null),
-            __('Add a provider'), route('account.providers'), 'layers');
+            __('Add a provider'), route('account.providers', ['dialog' => 'add-provider']), 'layers');
     }
 
     /**
@@ -99,7 +99,7 @@ final class ProjectSetupQuery
     {
         $active = $websites->firstWhere('provisioning_status', Website::STATUS_ACTIVE);
         $pending = $websites->first();
-        [$label, $url] = $this->serviceAction($project, 'infrastructure', __('Add a website'), fn (): string => route('infrastructure.websites.create', $project));
+        [$label, $url] = $this->serviceAction($project, 'infrastructure', __('Add a website'), fn (): string => route('infrastructure.websites', [$project, 'dialog' => 'create-website']));
 
         return match (true) {
             $active !== null => new SetupStep('website', __('Add a website'), __('A website on the server, with its domain and certificate.'), SetupStep::DONE, __(':website is live.', ['website' => $active->name]), __('Open it'), route('infrastructure.websites.show', [$project, $active->id]), 'globe'),

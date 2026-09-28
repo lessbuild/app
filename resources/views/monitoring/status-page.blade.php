@@ -38,13 +38,12 @@
     </x-signal.ui.card>
 
     @if ($canManage)
-        <x-signal.ui.settings-section :title="__('Post an update')" :description="$page->published ? __('Shown on the page at once and emailed to confirmed subscribers.') : __('Saved now; shown and emailed once the page is published.')">
-            <form method="POST" action="{{ route('monitoring.status-pages.updates.store', [$project, $page->id]) }}" class="grid items-start gap-4 p-4 sm:grid-cols-2 sm:p-6">
-                @csrf
-                @include('monitoring._status-update-fields', ['update' => null])
-                <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Post update') }}</x-signal.ui.button></div>
-            </form>
-        </x-signal.ui.settings-section>
+        <x-slot:actions>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'post-status-update'])" variant="primary" data-modal-trigger="post-status-update">{{ __('Post an update') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.form-modal id="post-status-update" :title="__('Post an update')" :description="$page->published ? __('Shown on the page at once and emailed to confirmed subscribers.') : __('Saved now; shown and emailed once the page is published.')" :action="route('monitoring.status-pages.updates.store', [$project, $page->id])" :submit="__('Post update')" form-class="grid items-start gap-4 sm:grid-cols-2">
+            @include('monitoring._status-update-fields', ['update' => null])
+        </x-signal.overlays.form-modal>
     @endif
 
     <x-signal.ui.card class="overflow-hidden">

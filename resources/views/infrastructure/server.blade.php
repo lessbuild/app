@@ -128,23 +128,27 @@
                     </ul>
                 @endif
                 @if ($canManage)
-                    <form method="POST" action="{{ route('infrastructure.servers.alerts.store', [$project, $server->id]) }}" class="grid items-end gap-3 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
-                        @csrf
-                        <x-signal.ui.input-field name="name" :label="__('Name')" placeholder="Disk almost full" maxlength="120" required />
-                        <x-signal.ui.select-field name="metric" :label="__('Metric')">
-                            @foreach (\App\Models\ServerAlertRule::METRICS as $key => $label)
-                                <option value="{{ $key }}">{{ __($label) }}</option>
-                            @endforeach
-                        </x-signal.ui.select-field>
-                        <div class="flex gap-2">
-                            <x-signal.ui.select-field name="operator" :label="__('When')"><option value="gte">≥</option><option value="lte">≤</option></x-signal.ui.select-field>
-                            <x-signal.ui.input-field name="threshold" type="number" step="0.01" :label="__('Threshold')" value="90" required />
-                        </div>
-                        <x-signal.ui.input-field name="consecutive_breaches" type="number" min="1" max="20" :label="__('Readings in a row')" value="3" required />
-                        <x-signal.ui.input-field name="cooldown_minutes" type="number" min="5" max="1440" :label="__('Quiet for (minutes)')" value="60" required />
-                        <x-signal.ui.select-field name="scope" :label="__('Applies to')"><option value="server">{{ __('This server') }}</option><option value="account">{{ __('Every server') }}</option></x-signal.ui.select-field>
-                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Add alert') }}</x-signal.ui.button></div>
-                    </form>
+                    <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-server-alert'])" variant="secondary" size="sm" data-modal-trigger="add-server-alert">{{ __('Add an alert') }}</x-signal.ui.button></div>
+                    <x-signal.overlays.modal id="add-server-alert" :title="__('Add an alert')" :description="__('Get told when CPU, memory, disk or load stays above a threshold.')">
+                        <form method="POST" action="{{ route('infrastructure.servers.alerts.store', [$project, $server->id]) }}" class="grid items-end gap-3 sm:grid-cols-3">
+                            @csrf
+                            <input type="hidden" name="_modal" value="add-server-alert">
+                            <x-signal.ui.input-field name="name" :label="__('Name')" placeholder="Disk almost full" maxlength="120" required />
+                            <x-signal.ui.select-field name="metric" :label="__('Metric')">
+                                @foreach (\App\Models\ServerAlertRule::METRICS as $key => $label)
+                                    <option value="{{ $key }}">{{ __($label) }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <div class="flex gap-2">
+                                <x-signal.ui.select-field name="operator" :label="__('When')"><option value="gte">≥</option><option value="lte">≤</option></x-signal.ui.select-field>
+                                <x-signal.ui.input-field name="threshold" type="number" step="0.01" :label="__('Threshold')" value="90" required />
+                            </div>
+                            <x-signal.ui.input-field name="consecutive_breaches" type="number" min="1" max="20" :label="__('Readings in a row')" value="3" required />
+                            <x-signal.ui.input-field name="cooldown_minutes" type="number" min="5" max="1440" :label="__('Quiet for (minutes)')" value="60" required />
+                            <x-signal.ui.select-field name="scope" :label="__('Applies to')"><option value="server">{{ __('This server') }}</option><option value="account">{{ __('Every server') }}</option></x-signal.ui.select-field>
+                            <div class="flex justify-end sm:col-span-3"><x-signal.ui.button type="submit" variant="primary">{{ __('Add alert') }}</x-signal.ui.button></div>
+                        </form>
+                    </x-signal.overlays.modal>
                 @endif
             </div>
         </x-signal.ui.settings-section>

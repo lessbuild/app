@@ -3,8 +3,11 @@
 <x-signal.layouts.project :overview="$overview" :title="__('Status pages')" :description="__('Public pages that show customers how your services are doing. They belong to :account and can show monitors from any of its projects.', ['account' => $project->account->name])">
     @if ($canManage)
         <div class="flex justify-end">
-            <x-signal.ui.button :href="route('monitoring.status-pages.create', $project)" variant="primary">{{ __('Add a status page') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.status-pages.create', $project)" variant="primary" data-modal-trigger="add-status-page" :data-modal-history-url="route('monitoring.status-pages', [$project, 'dialog' => 'add-status-page'])">{{ __('Add a status page') }}</x-signal.ui.button>
         </div>
+        <x-signal.overlays.form-modal id="add-status-page" :title="__('Add a status page')" :description="__('Only choose monitors you’re happy to show publicly. Addresses, keys and settings never appear on the page.')" :action="route('monitoring.status-pages.store', $project)" :submit="__('Add status page')" form-class="grid gap-6">
+            @include('monitoring._status-page-fields', ['page' => null])
+        </x-signal.overlays.form-modal>
     @endif
 
     @if ($pages->isEmpty())

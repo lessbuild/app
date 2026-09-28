@@ -132,16 +132,20 @@
                 </div>
             @endforeach
             @if ($canManage)
-                <form method="POST" action="{{ route('deploy.environments.processes.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
-                    @csrf
-                    <x-signal.ui.input-field id="process-name" name="name" :label="__('Name')" placeholder="queue" maxlength="60" required />
-                    <x-signal.ui.select-field id="process-type" name="type" :label="__('Type')"><option value="worker">{{ __('Worker') }}</option><option value="scheduler">{{ __('Scheduler') }}</option></x-signal.ui.select-field>
-                    <x-signal.ui.input-field id="process-replicas" name="replicas" type="number" min="1" max="20" :label="__('Replicas')" value="1" required />
-                    <div class="sm:col-span-3"><x-signal.ui.input-field id="process-command" name="command" :label="__('Command')" placeholder="php artisan queue:work --tries=3" maxlength="2000" required /></div>
-                    <x-signal.ui.select-field id="process-restart" name="restart_policy" :label="__('Restart')"><option value="always">{{ __('Always') }}</option><option value="on-failure">{{ __('On failure') }}</option></x-signal.ui.select-field>
-                    <x-signal.ui.input-field id="process-delay" name="restart_delay_seconds" type="number" min="0" max="300" :label="__('Restart delay (s)')" value="5" required />
-                    <div class="self-end"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save process') }}</x-signal.ui.button></div>
-                </form>
+                <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-worker'])" variant="secondary" data-modal-trigger="add-worker">{{ __('Add a worker') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-worker" :title="__('Add a worker')" :description="__('A queue worker or scheduler that runs beside the app and restarts if it stops.')">
+                    <form method="POST" action="{{ route('deploy.environments.processes.store', [$project, $environment]) }}" class="grid items-start gap-4 sm:grid-cols-3">
+                        @csrf
+                        <input type="hidden" name="_modal" value="add-worker">
+                        <x-signal.ui.input-field id="process-name" name="name" :label="__('Name')" placeholder="queue" maxlength="60" required />
+                        <x-signal.ui.select-field id="process-type" name="type" :label="__('Type')"><option value="worker">{{ __('Worker') }}</option><option value="scheduler">{{ __('Scheduler') }}</option></x-signal.ui.select-field>
+                        <x-signal.ui.input-field id="process-replicas" name="replicas" type="number" min="1" max="20" :label="__('Replicas')" value="1" required />
+                        <div class="sm:col-span-3"><x-signal.ui.input-field id="process-command" name="command" :label="__('Command')" placeholder="php artisan queue:work --tries=3" maxlength="2000" required /></div>
+                        <x-signal.ui.select-field id="process-restart" name="restart_policy" :label="__('Restart')"><option value="always">{{ __('Always') }}</option><option value="on-failure">{{ __('On failure') }}</option></x-signal.ui.select-field>
+                        <x-signal.ui.input-field id="process-delay" name="restart_delay_seconds" type="number" min="0" max="300" :label="__('Restart delay (s)')" value="5" required />
+                        <div class="flex justify-end self-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Save process') }}</x-signal.ui.button></div>
+                    </form>
+                </x-signal.overlays.modal>
             @endif
         </div>
     </x-signal.ui.settings-section>
@@ -159,18 +163,22 @@
                 </div>
             @endforeach
             @if ($canManage)
-                <form method="POST" action="{{ route('deploy.environments.resources.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-2">
-                    @csrf
-                    <x-signal.ui.input-field id="resource-name" name="name" :label="__('Name')" placeholder="cache" maxlength="60" required />
-                    <x-signal.ui.select-field id="resource-type" name="type" :label="__('Type')">
-                        @foreach (\App\Models\EnvironmentResource::TYPES as $value => $label)
-                            <option value="{{ $value }}">{{ $label }}</option>
-                        @endforeach
-                    </x-signal.ui.select-field>
-                    <div class="sm:col-span-2"><x-signal.ui.checkbox id="resource-managed" name="is_managed" value="1">{{ __('Managed (MySQL uses the website’s database; Redis and Valkey run on the server)') }}</x-signal.ui.checkbox></div>
-                    <div class="sm:col-span-2"><x-signal.ui.textarea-field id="resource-variables" name="variables" :label="__('Variables for an external service')" rows="3" :description="__('KEY=value lines, e.g. AWS_BUCKET=assets.')" /></div>
-                    <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save resource') }}</x-signal.ui.button></div>
-                </form>
+                <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-resource'])" variant="secondary" data-modal-trigger="add-resource">{{ __('Add a resource') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-resource" :title="__('Add a resource')" :description="__('A database, cache or other service this environment uses.')">
+                    <form method="POST" action="{{ route('deploy.environments.resources.store', [$project, $environment]) }}" class="grid items-start gap-4 sm:grid-cols-2">
+                        @csrf
+                        <input type="hidden" name="_modal" value="add-resource">
+                        <x-signal.ui.input-field id="resource-name" name="name" :label="__('Name')" placeholder="cache" maxlength="60" required />
+                        <x-signal.ui.select-field id="resource-type" name="type" :label="__('Type')">
+                            @foreach (\App\Models\EnvironmentResource::TYPES as $value => $label)
+                                <option value="{{ $value }}">{{ $label }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <div class="sm:col-span-2"><x-signal.ui.checkbox id="resource-managed" name="is_managed" value="1">{{ __('Managed (MySQL uses the website’s database; Redis and Valkey run on the server)') }}</x-signal.ui.checkbox></div>
+                        <div class="sm:col-span-2"><x-signal.ui.textarea-field id="resource-variables" name="variables" :label="__('Variables for an external service')" rows="3" :description="__('KEY=value lines, e.g. AWS_BUCKET=assets.')" /></div>
+                        <div class="flex justify-end sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save resource') }}</x-signal.ui.button></div>
+                    </form>
+                </x-signal.overlays.modal>
             @endif
         </div>
     </x-signal.ui.settings-section>
@@ -219,13 +227,17 @@
                 </div>
             @endforeach
             @if ($canManage && $plan['scheduled'])
-                <form method="POST" action="{{ route('deploy.environments.deployment-schedules.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
-                    @csrf
-                    <x-signal.ui.input-field id="deploy-schedule-name" name="name" :label="__('Name')" placeholder="Nightly" maxlength="100" required />
-                    <x-signal.ui.input-field id="deploy-schedule-cron" name="cron_expression" :label="__('Cron')" placeholder="0 3 * * *" maxlength="100" required />
-                    <x-signal.ui.input-field id="deploy-schedule-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
-                    <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add scheduled deploy') }}</x-signal.ui.button></div>
-                </form>
+                <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-deploy-schedule'])" variant="secondary" data-modal-trigger="add-deploy-schedule">{{ __('Add a deploy schedule') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-deploy-schedule" :title="__('Add a deploy schedule')" :description="__('Deploy the latest commit on a cron schedule, in the environment’s time zone.')">
+                    <form method="POST" action="{{ route('deploy.environments.deployment-schedules.store', [$project, $environment]) }}" class="grid items-start gap-4 sm:grid-cols-3">
+                        @csrf
+                        <input type="hidden" name="_modal" value="add-deploy-schedule">
+                        <x-signal.ui.input-field id="deploy-schedule-name" name="name" :label="__('Name')" placeholder="Nightly" maxlength="100" required />
+                        <x-signal.ui.input-field id="deploy-schedule-cron" name="cron_expression" :label="__('Cron')" placeholder="0 3 * * *" maxlength="100" required />
+                        <x-signal.ui.input-field id="deploy-schedule-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
+                        <div class="flex justify-end sm:col-span-3"><x-signal.ui.button type="submit" variant="primary">{{ __('Add scheduled deploy') }}</x-signal.ui.button></div>
+                    </form>
+                </x-signal.overlays.modal>
             @elseif (! $plan['scheduled'])
                 <p class="text-sm text-muted">{{ __('Scheduled deploys and tasks come with the Pro Deploy plan and above.') }}</p>
             @endif
@@ -244,14 +256,18 @@
                 </div>
             @endforeach
             @if ($canManage && $plan['scaling'])
-                <form method="POST" action="{{ route('deploy.environments.scaling-schedules.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-4">
-                    @csrf
-                    <x-signal.ui.input-field id="scaling-schedule-name" name="name" :label="__('Name')" placeholder="Weekday mornings" maxlength="100" required />
-                    <x-signal.ui.input-field id="scaling-schedule-replicas" name="replicas" type="number" :min="$environment->minimum_replicas" :max="$environment->maximum_replicas" :label="__('Replicas')" :value="$environment->maximum_replicas" required />
-                    <x-signal.ui.input-field id="scaling-schedule-cron" name="cron_expression" :label="__('Cron')" placeholder="0 8 * * 1-5" maxlength="100" required />
-                    <x-signal.ui.input-field id="scaling-schedule-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
-                    <div class="sm:col-span-4"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add scaling schedule') }}</x-signal.ui.button></div>
-                </form>
+                <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-scaling-schedule'])" variant="secondary" data-modal-trigger="add-scaling-schedule">{{ __('Add a scaling schedule') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-scaling-schedule" :title="__('Add a scaling schedule')" :description="__('Change how many copies run at set times.')">
+                    <form method="POST" action="{{ route('deploy.environments.scaling-schedules.store', [$project, $environment]) }}" class="grid items-start gap-4 sm:grid-cols-4">
+                        @csrf
+                        <input type="hidden" name="_modal" value="add-scaling-schedule">
+                        <x-signal.ui.input-field id="scaling-schedule-name" name="name" :label="__('Name')" placeholder="Weekday mornings" maxlength="100" required />
+                        <x-signal.ui.input-field id="scaling-schedule-replicas" name="replicas" type="number" :min="$environment->minimum_replicas" :max="$environment->maximum_replicas" :label="__('Replicas')" :value="$environment->maximum_replicas" required />
+                        <x-signal.ui.input-field id="scaling-schedule-cron" name="cron_expression" :label="__('Cron')" placeholder="0 8 * * 1-5" maxlength="100" required />
+                        <x-signal.ui.input-field id="scaling-schedule-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
+                        <div class="flex justify-end sm:col-span-4"><x-signal.ui.button type="submit" variant="primary">{{ __('Add scaling schedule') }}</x-signal.ui.button></div>
+                    </form>
+                </x-signal.overlays.modal>
             @elseif (! $plan['scaling'])
                 <p class="text-sm text-muted">{{ __('Scaling comes with the Business Deploy plan and above.') }}</p>
             @endif
@@ -287,24 +303,28 @@
                 @if ($taskWebsites->isEmpty())
                     <p class="text-sm text-muted">{{ __('Connect a repository that deploys this environment to a website before adding tasks.') }}</p>
                 @else
-                    <form method="POST" action="{{ route('deploy.environments.tasks.store', [$project, $environment]) }}" class="grid items-start gap-4 rounded-panel border border-line bg-surface-muted p-4 sm:grid-cols-3">
-                        @csrf
-                        <x-signal.ui.input-field id="task-name" name="name" :label="__('Name')" placeholder="Prune reports" maxlength="100" required />
-                        <x-signal.ui.select-field id="task-website" name="website_id" :label="__('Runs in')">
-                            @foreach ($taskWebsites as $website)
-                                <option value="{{ $website->id }}">{{ $website->name }}</option>
-                            @endforeach
-                        </x-signal.ui.select-field>
-                        <x-signal.ui.input-field id="task-timeout" name="timeout_seconds" type="number" min="10" max="3600" :label="__('Timeout (seconds)')" value="300" required />
-                        <div class="sm:col-span-3"><x-signal.ui.input-field id="task-command" name="command" :label="__('Command')" placeholder="php artisan reports:prune" maxlength="2000" required /></div>
-                        <x-signal.ui.input-field id="task-cron" name="cron_expression" :label="__('Cron')" placeholder="*/15 * * * *" maxlength="100" required />
-                        <x-signal.ui.input-field id="task-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
-                        <div class="grid gap-2 self-end">
-                            <x-signal.ui.checkbox id="task-overlap" name="without_overlapping" value="1" :checked="true">{{ __('Skip while the last run is going') }}</x-signal.ui.checkbox>
-                            <x-signal.ui.checkbox id="task-alert" name="alert_on_failure" value="1" :checked="true">{{ __('Tell us when it fails') }}</x-signal.ui.checkbox>
-                        </div>
-                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add task') }}</x-signal.ui.button></div>
-                    </form>
+                    <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-task'])" variant="secondary" data-modal-trigger="add-task">{{ __('Add a scheduled task') }}</x-signal.ui.button></div>
+                    <x-signal.overlays.modal id="add-task" :title="__('Add a scheduled task')" :description="__('A command that runs on a cron schedule, with its output kept.')">
+                        <form method="POST" action="{{ route('deploy.environments.tasks.store', [$project, $environment]) }}" class="grid items-start gap-4 sm:grid-cols-3">
+                            @csrf
+                            <input type="hidden" name="_modal" value="add-task">
+                            <x-signal.ui.input-field id="task-name" name="name" :label="__('Name')" placeholder="Prune reports" maxlength="100" required />
+                            <x-signal.ui.select-field id="task-website" name="website_id" :label="__('Runs in')">
+                                @foreach ($taskWebsites as $website)
+                                    <option value="{{ $website->id }}">{{ $website->name }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.input-field id="task-timeout" name="timeout_seconds" type="number" min="10" max="3600" :label="__('Timeout (seconds)')" value="300" required />
+                            <div class="sm:col-span-3"><x-signal.ui.input-field id="task-command" name="command" :label="__('Command')" placeholder="php artisan reports:prune" maxlength="2000" required /></div>
+                            <x-signal.ui.input-field id="task-cron" name="cron_expression" :label="__('Cron')" placeholder="*/15 * * * *" maxlength="100" required />
+                            <x-signal.ui.input-field id="task-timezone" name="timezone" :label="__('Time zone')" value="UTC" maxlength="64" required />
+                            <div class="grid gap-2 self-end">
+                                <x-signal.ui.checkbox id="task-overlap" name="without_overlapping" value="1" :checked="true">{{ __('Skip while the last run is going') }}</x-signal.ui.checkbox>
+                                <x-signal.ui.checkbox id="task-alert" name="alert_on_failure" value="1" :checked="true">{{ __('Tell us when it fails') }}</x-signal.ui.checkbox>
+                            </div>
+                            <div class="flex justify-end sm:col-span-3"><x-signal.ui.button type="submit" variant="primary">{{ __('Add task') }}</x-signal.ui.button></div>
+                        </form>
+                    </x-signal.overlays.modal>
                 @endif
             @endif
         </div>

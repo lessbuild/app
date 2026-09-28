@@ -17,7 +17,8 @@ use Illuminate\Contracts\View\View;
 final class ShowWebsitesController
 {
     /**
-     * Show the account's websites and the plan's website limit.
+     * Show the account's websites and the plan's website limit, with the servers and environments the create and
+     * import modals offer to people who can add websites.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -28,11 +29,15 @@ final class ShowWebsitesController
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, WebsitesQuery $websites, Entitlements $entitlements): View
     {
+        $canManage = $user->can('create', [Website::class, $project]);
+
         return view('infrastructure.websites', [
             'overview' => $overview->handle($project, $user),
             'websites' => $websites->handle($project->account_id),
             'limit' => $entitlements->for($project->account)->limit('deploy.websites.max'),
-            'canManage' => $user->can('create', [Website::class, $project]),
+            'canManage' => $canManage,
+            'hosts' => $canManage ? $websites->hosts($project->account_id) : collect(),
+            'environments' => $canManage ? $websites->environments($project->account) : collect(),
         ]);
     }
 }

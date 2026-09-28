@@ -4,7 +4,9 @@
     @endif
 
     @if ($providers->isEmpty())
-        <x-signal.ui.empty-state icon="server" :title="__('No providers yet')" :description="__('Connect DigitalOcean, Hetzner Cloud or Vultr to create servers.')" />
+        <x-signal.ui.empty-state icon="server" :title="__('No providers yet')" :description="__('Connect DigitalOcean, Hetzner Cloud or Vultr to create servers.')">
+            <x-slot:action><x-signal.ui.button :href="route('account.providers', ['dialog' => 'add-provider'])" variant="primary" data-modal-trigger="add-provider">{{ __('Connect a provider') }}</x-signal.ui.button></x-slot:action>
+        </x-signal.ui.empty-state>
     @else
         <x-signal.ui.card class="overflow-hidden">
             <ul class="divide-y divide-line" aria-label="{{ __('Providers') }}">
@@ -27,11 +29,10 @@
         </x-signal.ui.settings-section>
     @endif
 
-    <x-signal.ui.settings-section :title="__('Connect a provider')" :description="__('Use an API token scoped to what we need. We check it straight away and then on a schedule.')">
-        <form method="POST" action="{{ route('account.providers.store') }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
-            @csrf
-            @include('account._provider-fields', ['provider' => null])
-            <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Connect provider') }}</x-signal.ui.button></div>
-        </form>
-    </x-signal.ui.settings-section>
+    <x-slot:actions>
+        <x-signal.ui.button :href="route('account.providers', ['dialog' => 'add-provider'])" variant="primary" data-modal-trigger="add-provider">{{ __('Connect a provider') }}</x-signal.ui.button>
+    </x-slot:actions>
+    <x-signal.overlays.form-modal id="add-provider" :title="__('Connect a provider')" :description="__('Use an API token scoped to what we need. We check it straight away and then on a schedule.')" :action="route('account.providers.store')" :submit="__('Connect provider')" form-class="grid items-start gap-5 sm:grid-cols-2">
+        @include('account._provider-fields', ['provider' => null])
+    </x-signal.overlays.form-modal>
 </x-signal.layouts.account>

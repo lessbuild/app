@@ -41,12 +41,11 @@
     @endif
 
     @if ($canManage)
-        <x-signal.ui.settings-section :title="__('Schedule maintenance')" :description="__('Times are in UTC.')">
-            <form method="POST" action="{{ route('monitoring.maintenance.store', $project) }}" class="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
-                @csrf
-                @include('monitoring._maintenance-fields', ['window' => null])
-                <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Schedule') }}</x-signal.ui.button></div>
-            </form>
-        </x-signal.ui.settings-section>
+        <x-slot:actions>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'schedule-maintenance'])" variant="primary" data-modal-trigger="schedule-maintenance">{{ __('Schedule maintenance') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.form-modal id="schedule-maintenance" :title="__('Schedule maintenance')" :description="__('Times are in UTC.')" :action="route('monitoring.maintenance.store', $project)" :submit="__('Schedule')" form-class="grid gap-4 sm:grid-cols-2">
+            @include('monitoring._maintenance-fields', ['window' => null])
+        </x-signal.overlays.form-modal>
     @endif
 </x-signal.layouts.project>

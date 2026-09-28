@@ -46,6 +46,30 @@ final class QuickActionModalsTest extends TestCase
         $this->assertSame('Shop', $this->owner->currentAccount?->projects()->value('name'));
     }
 
+    public function test_create_and_add_forms_across_the_app_open_in_modals(): void
+    {
+        $project = \App\Models\Project::factory()->for($this->owner->currentAccount ?? Account::factory()->create())->withServices(['infrastructure', 'deploy', 'monitoring', 'analytics'])->create();
+        $base = "/projects/{$project->id}";
+        foreach ([
+            '/account/providers' => 'add-provider',
+            '/account/recipes' => 'new-recipe',
+            "{$base}/infrastructure/servers" => 'import-server',
+            "{$base}/infrastructure/websites" => 'create-website',
+            "{$base}/monitoring/status-pages" => 'add-status-page',
+            "{$base}/monitoring/dashboards" => 'add-dashboard',
+            "{$base}/monitoring/maintenance" => 'schedule-maintenance',
+            "{$base}/monitoring/alerts" => 'add-destination',
+        ] as $url => $id) {
+            $page = $this->actingAs($this->owner)->get($url)->assertOk()->assertSee('data-modal-trigger="'.$id.'"', false);
+            $this->assertModal($page, $id, open: false);
+            $this->assertModal($this->actingAs($this->owner)->get($url.'?dialog='.$id)->assertOk(), $id, open: true);
+        }
+
+        // A failed submit reopens the modal it came from, with the error.
+        $page = $this->actingAs($this->owner)->from('/account/recipes')->followingRedirects()->post('/account/recipes', ['_modal' => 'new-recipe', 'name' => ''])->assertOk();
+        $this->assertModal($page, 'new-recipe', open: true);
+    }
+
     /**
      * Assert a modal is on the page, and whether it opens as the page loads.
      *

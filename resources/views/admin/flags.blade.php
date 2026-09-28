@@ -26,12 +26,9 @@
         <x-signal.ui.empty-state icon="filter" :title="__('No flags yet')" :description="__('Add one below when code needs a switch.')" />
     @endforelse
 
-    <x-signal.ui.settings-section :title="__('New flag')" :description="__('New flags start off.')">
-        <form method="POST" action="{{ route('admin.flags.store') }}" class="grid items-start gap-4 p-4 sm:grid-cols-2 sm:p-6">
-            @csrf
-            <x-signal.ui.input-field name="key" :label="__('Key')" placeholder="deploy.new-scheduler" maxlength="60" required />
-            <x-signal.ui.input-field name="description" :label="__('What it switches')" maxlength="255" required />
-            <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Add flag') }}</x-signal.ui.button></div>
-        </form>
-    </x-signal.ui.settings-section>
+    <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'new-flag'])" variant="secondary" data-modal-trigger="new-flag">{{ __('New flag') }}</x-signal.ui.button></div>
+    <x-signal.overlays.form-modal id="new-flag" :title="__('New flag')" :description="__('New flags start off.')" :action="route('admin.flags.store')" :submit="__('Add flag')" form-class="grid items-start gap-4 sm:grid-cols-2">
+        <x-signal.ui.input-field name="key" :label="__('Key')" placeholder="deploy.new-scheduler" maxlength="60" required />
+        <x-signal.ui.input-field name="description" :label="__('What it switches')" maxlength="255" required />
+    </x-signal.overlays.form-modal>
 </x-signal.layouts.admin>

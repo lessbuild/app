@@ -8,8 +8,12 @@
             @if ($limit !== null)
                 <span class="text-sm text-muted">{{ __(':used of :limit dashboards on your plan', ['used' => $dashboards->count(), 'limit' => $limit]) }}</span>
             @endif
-            <x-signal.ui.button :href="route('monitoring.dashboards.create', $project)" variant="primary">{{ __('Add a dashboard') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.dashboards.create', $project)" variant="primary" data-modal-trigger="add-dashboard" :data-modal-history-url="route('monitoring.dashboards', [$project, 'dialog' => 'add-dashboard'])">{{ __('Add a dashboard') }}</x-signal.ui.button>
         </div>
+        <x-signal.overlays.form-modal id="add-dashboard" :title="__('Add a dashboard')" :description="__('Dashboards cover every project in the account.')" :action="route('monitoring.dashboards.store', $project)" :submit="__('Add dashboard')" form-class="grid gap-6">
+            @error('plan')<x-signal.ui.alert tone="warning" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+            @include('monitoring._dashboard-fields', ['dashboard' => null])
+        </x-signal.overlays.form-modal>
     @endif
 
     @if ($dashboards->isEmpty())

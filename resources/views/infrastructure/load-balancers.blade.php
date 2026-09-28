@@ -58,19 +58,21 @@
                     @endif
                 </div>
                 @unless ($balancer->isRemoving())
-                    <x-signal.ui.disclosure :title="__('Add a node')">
-                        <form method="POST" action="{{ route('infrastructure.load-balancers.nodes.store', [$project, $balancer->id]) }}" class="grid items-start gap-4 sm:grid-cols-3">
-                            @csrf
-                            <x-signal.ui.select-field :id="'node-server-'.$balancer->id" name="server_id" :label="__('Server')">
-                                @foreach ($servers->where('id', '!=', $balancer->server_id)->whereNotIn('id', $balancer->nodes->pluck('server_id')) as $server)
-                                    <option value="{{ $server->id }}">{{ $server->label() }}</option>
-                                @endforeach
-                            </x-signal.ui.select-field>
-                            <x-signal.ui.input-field :id="'node-port-'.$balancer->id" name="upstream_port" type="number" min="1" max="65535" :label="__('Port')" value="80" required />
-                            <x-signal.ui.input-field :id="'node-weight-'.$balancer->id" name="weight" type="number" min="1" max="10" :label="__('Weight')" value="1" required />
-                            <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add node') }}</x-signal.ui.button></div>
-                        </form>
-                    </x-signal.ui.disclosure>
+                    <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-node-'.$balancer->id])" variant="secondary" size="sm" data-modal-trigger="add-node-{{ $balancer->id }}">{{ __('Add a node') }}</x-signal.ui.button></div>
+                    <x-signal.overlays.modal :id="'add-node-'.$balancer->id" :title="__('Add a node to :balancer', ['balancer' => $balancer->hostname])" :description="__('Traffic is shared between nodes by weight.')">
+                    <form method="POST" action="{{ route('infrastructure.load-balancers.nodes.store', [$project, $balancer->id]) }}" class="grid items-start gap-4 sm:grid-cols-3">
+                        @csrf
+                        <input type="hidden" name="_modal" value="add-node-{{ $balancer->id }}">
+                        <x-signal.ui.select-field :id="'node-server-'.$balancer->id" name="server_id" :label="__('Server')">
+                            @foreach ($servers->where('id', '!=', $balancer->server_id)->whereNotIn('id', $balancer->nodes->pluck('server_id')) as $server)
+                                <option value="{{ $server->id }}">{{ $server->label() }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.input-field :id="'node-port-'.$balancer->id" name="upstream_port" type="number" min="1" max="65535" :label="__('Port')" value="80" required />
+                        <x-signal.ui.input-field :id="'node-weight-'.$balancer->id" name="weight" type="number" min="1" max="10" :label="__('Weight')" value="1" required />
+                        <div class="flex justify-end sm:col-span-3"><x-signal.ui.button type="submit" variant="primary">{{ __('Add node') }}</x-signal.ui.button></div>
+                    </form>
+                    </x-signal.overlays.modal>
                     <x-signal.ui.disclosure :title="__('Edit')">
                         <form method="POST" action="{{ route('infrastructure.load-balancers.update', [$project, $balancer->id]) }}" class="grid items-start gap-4 sm:grid-cols-3">
                             @csrf
@@ -85,9 +87,13 @@
     @endforeach
 
     @if ($canCreate)
-        <x-signal.ui.settings-section :title="__('Add a load balancer')" :description="__('Point the hostname’s DNS at the proxy server; Caddy gets its certificate. Nodes are reached over HTTP on their public address.')">
-            <form method="POST" action="{{ route('infrastructure.load-balancers.store', $project) }}" class="grid items-start gap-4 p-4 sm:grid-cols-3 sm:p-6">
+        <x-slot:actions>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-load-balancer'])" variant="primary" data-modal-trigger="add-load-balancer">{{ __('Add a load balancer') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.modal id="add-load-balancer" :title="__('Add a load balancer')" :description="__('Point the hostname’s DNS at the proxy server; Caddy gets its certificate. Nodes are reached over HTTP on their public address.')">
+            <form method="POST" action="{{ route('infrastructure.load-balancers.store', $project) }}" class="grid items-start gap-4 sm:grid-cols-3">
                 @csrf
+                <input type="hidden" name="_modal" value="add-load-balancer">
                 <x-signal.ui.select-field id="balancer-server" name="server_id" :label="__('Proxy server')">
                     @forelse ($proxyServers as $server)
                         <option value="{{ $server->id }}" @selected((int) old('server_id') === $server->id)>{{ $server->label() }} ({{ $server->type->label() }})</option>
@@ -96,9 +102,9 @@
                     @endforelse
                 </x-signal.ui.select-field>
                 @include('infrastructure._load-balancer-fields', ['balancer' => null])
-                <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="primary" :disabled="$proxyServers->isEmpty()">{{ __('Add load balancer') }}</x-signal.ui.button></div>
+                <div class="flex justify-end sm:col-span-3"><x-signal.ui.button type="submit" variant="primary" :disabled="$proxyServers->isEmpty()">{{ __('Add load balancer') }}</x-signal.ui.button></div>
             </form>
-        </x-signal.ui.settings-section>
+        </x-signal.overlays.modal>
     @elseif ($canManage)
         <x-signal.ui.alert tone="info">{{ __('Load balancers come with the Business Deploy plan and above.') }}</x-signal.ui.alert>
     @endif

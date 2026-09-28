@@ -39,21 +39,20 @@
     @endif
 
     @if ($canRecord)
-        <x-signal.ui.settings-section :title="__('Record a deployment')" :description="__('Marks when a version went live so you can compare errors and latency before and after. Pipelines can call POST /api/v1/deployments instead.')">
-            <form method="POST" action="{{ route('monitoring.deployments.store', $project) }}" class="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
-                @csrf
-                <input type="hidden" name="deployment_id" value="{{ old('deployment_id', $deploymentId) }}">
-                <x-signal.ui.select-field name="environment_id" :label="__('Environment')" required>
-                    @foreach ($overview->environments as $environment)
-                        <option value="{{ $environment->id }}" @selected(old('environment_id') === $environment->id)>{{ $environment->name }}</option>
-                    @endforeach
-                </x-signal.ui.select-field>
-                <x-signal.ui.input-field name="version" :label="__('Version')" maxlength="128" required />
-                <x-signal.ui.input-field name="service" :label="__('Service (optional)')" maxlength="100" />
-                <x-signal.ui.input-field name="commit_sha" :label="__('Commit (optional)')" maxlength="64" />
-                <x-signal.ui.textarea-field name="note" :label="__('Note (optional)')" rows="2" maxlength="1000" />
-                <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Record deployment') }}</x-signal.ui.button></div>
-            </form>
-        </x-signal.ui.settings-section>
+        <x-slot:actions>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'record-deployment'])" variant="primary" data-modal-trigger="record-deployment">{{ __('Record a deployment') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.form-modal id="record-deployment" :title="__('Record a deployment')" :description="__('Marks when a version went live so you can compare errors and latency before and after. Pipelines can call POST /api/v1/deployments instead.')" :action="route('monitoring.deployments.store', $project)" :submit="__('Record deployment')" form-class="grid gap-4 sm:grid-cols-2">
+            <input type="hidden" name="deployment_id" value="{{ old('deployment_id', $deploymentId) }}">
+            <x-signal.ui.select-field name="environment_id" :label="__('Environment')" required>
+                @foreach ($overview->environments as $environment)
+                    <option value="{{ $environment->id }}" @selected(old('environment_id') === $environment->id)>{{ $environment->name }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
+            <x-signal.ui.input-field name="version" :label="__('Version')" maxlength="128" required />
+            <x-signal.ui.input-field name="service" :label="__('Service (optional)')" maxlength="100" />
+            <x-signal.ui.input-field name="commit_sha" :label="__('Commit (optional)')" maxlength="64" />
+            <x-signal.ui.textarea-field name="note" :label="__('Note (optional)')" rows="2" maxlength="1000" />
+        </x-signal.overlays.form-modal>
     @endif
 </x-signal.layouts.project>

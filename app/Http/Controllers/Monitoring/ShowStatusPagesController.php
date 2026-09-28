@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowStatusPagesController
 {
     /**
-     * Show the account's status pages.
+     * Show the account's status pages, with the monitors the Add a status page modal offers to people who can add one.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -26,10 +26,13 @@ final class ShowStatusPagesController
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, StatusPagesQuery $pages): View
     {
+        $canManage = $user->can('create', [StatusPage::class, $project]);
+
         return view('monitoring.status-pages', [
             'overview' => $overview->handle($project, $user),
             'pages' => $pages->handle($project->account_id),
-            'canManage' => $user->can('create', [StatusPage::class, $project]),
+            'canManage' => $canManage,
+            'monitors' => $canManage ? $pages->monitors($project->account) : collect(),
         ]);
     }
 }

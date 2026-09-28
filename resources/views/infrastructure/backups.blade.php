@@ -50,18 +50,20 @@
             @endforelse
 
             @if ($canManage)
-                <x-signal.ui.disclosure :title="__('Add a destination')" :open="$destinations->isEmpty() || $errors->any()">
-                    <form method="POST" action="{{ route('infrastructure.backups.destinations.store', $project) }}" class="grid items-start gap-4 sm:grid-cols-2">
-                        @csrf
-                        @include('infrastructure._backup-destination-fields', ['destination' => null])
-                        <ul class="grid gap-1 text-xs text-muted sm:col-span-2">
-                            @foreach ($presets as $preset)
-                                <li><span class="font-bold">{{ $preset['name'] }}:</span> {{ $preset['description'] }} <span class="font-mono">{{ $preset['endpoint'] }}</span></li>
-                            @endforeach
-                        </ul>
-                        <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Add destination') }}</x-signal.ui.button></div>
-                    </form>
-                </x-signal.ui.disclosure>
+                <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-backup-destination'])" :variant="$destinations->isEmpty() ? 'primary' : 'secondary'" data-modal-trigger="add-backup-destination">{{ __('Add a destination') }}</x-signal.ui.button></div>
+                <x-signal.overlays.modal id="add-backup-destination" :title="__('Add a backup destination')" :description="__('S3-compatible storage you own. We check we can write to it before saving.')">
+                <form method="POST" action="{{ route('infrastructure.backups.destinations.store', $project) }}" class="grid items-start gap-4 sm:grid-cols-2">
+                    @csrf
+                    <input type="hidden" name="_modal" value="add-backup-destination">
+                    @include('infrastructure._backup-destination-fields', ['destination' => null])
+                    <ul class="grid gap-1 text-xs text-muted sm:col-span-2">
+                        @foreach ($presets as $preset)
+                            <li><span class="font-bold">{{ $preset['name'] }}:</span> {{ $preset['description'] }} <span class="font-mono">{{ $preset['endpoint'] }}</span></li>
+                        @endforeach
+                    </ul>
+                    <div class="flex justify-end sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Add destination') }}</x-signal.ui.button></div>
+                </form>
+                </x-signal.overlays.modal>
             @endif
         </div>
     </x-signal.ui.settings-section>

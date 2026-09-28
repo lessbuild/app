@@ -22,12 +22,11 @@
     @endif
 
     @if ($canManage)
-        <x-signal.ui.settings-section :title="__('Add a destination')" :description="__('Account admins manage destinations. Pick which monitors use one on each monitor’s settings.')">
-            <form method="POST" action="{{ route('monitoring.destinations.store', $project) }}" class="grid gap-5 p-4 sm:p-6">
-                @csrf
-                @include('monitoring._destination-fields', ['destination' => null])
-                <div><x-signal.ui.button type="submit" variant="primary">{{ __('Add destination') }}</x-signal.ui.button></div>
-            </form>
-        </x-signal.ui.settings-section>
+        <x-slot:actions>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-destination'])" variant="primary" data-modal-trigger="add-destination">{{ __('Add a destination') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.form-modal id="add-destination" :title="__('Add a destination')" :description="__('Account admins manage destinations. Pick which monitors use one on each monitor’s settings.')" :action="route('monitoring.destinations.store', $project)" :submit="__('Add destination')" form-class="grid gap-5">
+            @include('monitoring._destination-fields', ['destination' => null])
+        </x-signal.overlays.form-modal>
     @endif
 </x-signal.layouts.project>

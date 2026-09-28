@@ -27,12 +27,11 @@
     @endif
 
     @if ($canCreate)
-        <x-signal.ui.settings-section :title="__('New recipe')" :description="__('Each save keeps a revision, so you can see what changed and who changed it.')">
-            <form method="POST" action="{{ route('account.recipes.store') }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
-                @csrf
-                @include('recipes._fields')
-                <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save recipe') }}</x-signal.ui.button></div>
-            </form>
-        </x-signal.ui.settings-section>
+        <x-slot:actions>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'new-recipe'])" variant="primary" data-modal-trigger="new-recipe">{{ __('New recipe') }}</x-signal.ui.button>
+        </x-slot:actions>
+        <x-signal.overlays.form-modal id="new-recipe" :title="__('New recipe')" :description="__('Each save keeps a revision, so you can see what changed and who changed it.')" :action="route('account.recipes.store')" :submit="__('Save recipe')" form-class="grid items-start gap-5 sm:grid-cols-2">
+            @include('recipes._fields')
+        </x-signal.overlays.form-modal>
     @endif
 </x-signal.layouts.account>
