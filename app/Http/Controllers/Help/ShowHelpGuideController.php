@@ -16,14 +16,15 @@ final class ShowHelpGuideController
      */
     public function __invoke(string $guide): Response
     {
-        $copy = config('help.guides.'.$guide);
-        abort_unless(is_array($copy), 404);
+        /** @var array<string, array{group: string, title: string, summary: string, steps: list<array{string, string}>}> $guides */
+        $guides = (array) config('help.guides');
+        $copy = $guides[$guide] ?? abort(404);
 
         return response()->view('help.guide', [
             'slug' => $guide,
             'guide' => $copy,
             'group' => config('help.groups.'.$copy['group']),
-            'related' => collect(config('help.guides'))->filter(fn (array $other, string $key): bool => $other['group'] === $copy['group'] && $key !== $guide),
+            'related' => collect($guides)->filter(fn (array $other, string $key): bool => $other['group'] === $copy['group'] && $key !== $guide),
         ])->header('Cache-Control', 'public, max-age=300');
     }
 }

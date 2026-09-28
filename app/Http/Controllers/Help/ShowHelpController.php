@@ -15,7 +15,10 @@ final class ShowHelpController
      */
     public function __invoke(): Response
     {
-        return response()->view('help.index', ['groups' => config('help.groups'), 'guides' => collect(config('help.guides'))->groupBy('group', preserveKeys: true)])
+        /** @var array<string, array{group: string, title: string, summary: string, steps: list<array{string, string}>}> $guides */
+        $guides = (array) config('help.guides');
+
+        return response()->view('help.index', ['groups' => config('help.groups'), 'guides' => collect($guides)->groupBy('group', preserveKeys: true)])
             ->header('Cache-Control', 'public, max-age=300');
     }
 }
