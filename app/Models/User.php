@@ -44,6 +44,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     use HasFactory, HasUlids, Notifiable, PasskeyAuthenticatable, TwoFactorAuthenticatable;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Hashes `password` when it's set.
      *
      * @return array<string, string>
@@ -58,7 +60,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * The person's memberships.
+     * Get the person's memberships.
      *
      * @return HasMany<Membership, $this>
      */
@@ -68,7 +70,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * The accounts they belong to.
+     * Get the accounts they belong to.
      *
      * @return BelongsToMany<Account, $this>
      */
@@ -78,7 +80,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * The account they're working in (`current_account_id`).
+     * Get the account they're working in (`current_account_id`).
      *
      * @return BelongsTo<Account, $this>
      */
@@ -88,7 +90,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Provider accounts connected to them.
+     * Get the provider accounts connected to the user.
      *
      * @return HasMany<SocialIdentity, $this>
      */
@@ -98,7 +100,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
     }
 
     /**
-     * Their membership in an account, or null.
+     * Get the user's membership in an account, or null.
      *
      * @param  Account  $account
      * @return Membership|null

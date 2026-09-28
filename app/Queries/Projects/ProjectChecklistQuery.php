@@ -12,8 +12,8 @@ use App\Models\User;
 final class ProjectChecklistQuery
 {
     /**
-     * The getting-started steps for a new project: create it, turn on a service, add a domain, and invite a teammate
-     * (for people who can).
+     * Build the getting-started steps for a new project: create it, turn on a service, add a domain, and invite a
+     * teammate (for people who can).
      *
      * @param  Project  $project
      * @param  User  $viewer

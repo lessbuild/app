@@ -11,6 +11,8 @@ use Illuminate\Validation\ValidationException;
 final class ConfigurationReviews
 {
     /**
+     * Create a new ConfigurationReviews instance.
+     *
      * Checks reviews are still current.
      *
      * @param  ConfigurationPlanner  $planner  Plans the review's document again.
@@ -18,7 +20,8 @@ final class ConfigurationReviews
     public function __construct(private readonly ConfigurationPlanner $planner) {}
 
     /**
-     * The review's plan, if the review is unapplied, unexpired, and nothing it depends on changed since.
+     * Plan the review again and return the plan, if the review is unapplied, unexpired, and nothing it depends on
+     * changed since.
      *
      * @param  ConfigurationReview  $review
      * @return array{version: int, project_id: string, changes: list<array<string, mixed>>, fingerprint: string, omitted_objects: string, apply_available: bool}

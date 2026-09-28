@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class RemoveDomainController
 {
     /**
-     * Removes a domain from the project.
+     * Remove a domain from the project.
      *
      * @param  User  $user
      * @param  Project  $project

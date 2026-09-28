@@ -31,7 +31,7 @@ final class IngestPayload extends Model
     use HasFactory;
 
     /**
-     * The receipt the payload was kept for.
+     * Get the receipt the payload was kept for.
      *
      * @return BelongsTo<IngestReceipt, $this>
      */
@@ -41,6 +41,8 @@ final class IngestPayload extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `payload`, the raw telemetry kept until it's processed.
      *
      * @return array<string, string>

@@ -26,6 +26,8 @@ use Illuminate\Validation\ValidationException;
 final class ConfirmServerImport
 {
     /**
+     * Create a new ConfirmServerImport instance.
+     *
      * Imports a server that has been inspected.
      *
      * @param  Entitlements  $entitlements  Checks the plan's server limit.

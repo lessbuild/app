@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 interface SocialSignInGateway
 {
     /**
-     * Whether sign-in with the provider is set up in this environment.
+     * Determine whether sign-in with the provider is set up in this environment.
      *
      * @param  SocialProvider  $provider
      * @return bool
@@ -20,7 +20,7 @@ interface SocialSignInGateway
     public function configured(SocialProvider $provider): bool;
 
     /**
-     * Sends the person to the provider to approve signing in.
+     * Send the person to the provider to approve signing in.
      *
      * @param  SocialProvider  $provider
      * @return RedirectResponse
@@ -28,8 +28,8 @@ interface SocialSignInGateway
     public function redirect(SocialProvider $provider): RedirectResponse;
 
     /**
-     * The person's profile once the provider sends them back. Throws SocialSignInFailed when the provider refused or
-     * returned something unusable.
+     * Read the person's profile once the provider sends them back. Throws SocialSignInFailed when the provider refused
+     * or returned something unusable.
      *
      * @param  SocialProvider  $provider
      * @return SocialProfile

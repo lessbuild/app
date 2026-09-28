@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class CreateConfigurationReview
 {
     /**
+     * Create a new CreateConfigurationReview instance.
+     *
      * Opens a review of a configuration document.
      *
      * @param  ConfigurationPlanner  $planner  Works out the changes the review will show.

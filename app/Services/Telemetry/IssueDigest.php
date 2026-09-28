@@ -28,6 +28,8 @@ use DateTimeInterface;
 final class IssueDigest
 {
     /**
+     * Create a new IssueDigest instance.
+     *
      * Builds and sends issue digests.
      *
      * @param  TelemetryRedactor  $redactor  Redacts issue titles and locations.
@@ -37,8 +39,8 @@ final class IssueDigest
     public function __construct(private readonly TelemetryRedactor $redactor, private readonly EmailDeliveryLedger $ledger, private readonly Entitlements $entitlements) {}
 
     /**
-     * The account's digest for a period: open, critical and snoozed counts, and the issues first seen or resolved in it.
-     * `active` is false when there's nothing to say.
+     * Build the account's digest for a period: open, critical and snoozed counts, and the issues first seen or
+     * resolved in it. `active` is false when there's nothing to say.
      *
      * @param  Account  $account
      * @param  CarbonImmutable  $from
@@ -67,7 +69,7 @@ final class IssueDigest
     }
 
     /**
-     * Emails the digest for the period to everyone who wants it, in accounts whose plan includes it and that have
+     * Email the digest for the period to everyone who wants it, in accounts whose plan includes it and that have
      * something to report, once per person and period.
      *
      * @param  CarbonImmutable  $from
@@ -104,7 +106,7 @@ final class IssueDigest
     }
 
     /**
-     * Whether a member gets the digest: their own choice, or by default only owners.
+     * Determine whether a member gets the digest: their own choice, or by default only owners.
      *
      * @param  Account  $account
      * @param  User  $user
@@ -118,8 +120,8 @@ final class IssueDigest
     }
 
     /**
-     * The members who get the digest: owners unless they turned it off, and others who turned it on, as long as they can
-     * use Monitoring, aren't viewers, and have a verified email.
+     * Get the members who get the digest: owners unless they turned it off, and others who turned it on, as long as
+     * they can use Monitoring, aren't viewers, and have a verified email.
      *
      * @param  Account  $account
      * @return list<User>
@@ -139,7 +141,7 @@ final class IssueDigest
     }
 
     /**
-     * The ten latest, with titles redacted.
+     * Get the ten latest issues, with titles redacted.
      *
      * @param  \Illuminate\Database\Eloquent\Builder<Issue>  $query
      * @param  string  $column

@@ -11,7 +11,8 @@ use Illuminate\Validation\Rule;
 final class IncidentRequest extends FormRequest
 {
     /**
-     * What to do to the incident (acknowledge, note or assign), its version, and the assignee or note the action needs.
+     * Get the validation rules: what to do to the incident (acknowledge, note or assign), its version, and the
+     * assignee or note the action needs.
      *
      * @return array<string, array<mixed>>
      */
@@ -26,7 +27,7 @@ final class IncidentRequest extends FormRequest
     }
 
     /**
-     * The validated action with an assignee only when one was sent (null unassigns).
+     * Get the validated action with an assignee only when one was sent (null unassigns).
      *
      * @return array{action: string, version: int, assignee_id?: string|null, note?: string|null}
      */

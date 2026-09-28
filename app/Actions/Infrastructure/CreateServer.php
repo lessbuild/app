@@ -29,6 +29,8 @@ use Throwable;
 final class CreateServer
 {
     /**
+     * Create a new CreateServer instance.
+     *
      * Creates a server at a cloud provider and starts provisioning it.
      *
      * @param  Entitlements  $entitlements  Checks the plan's server limit.
@@ -115,7 +117,7 @@ final class CreateServer
     }
 
     /**
-     * Deletes what was already created at the provider (the server, and an SSH key we added) after creation failed
+     * Delete what was already created at the provider (the server, and an SSH key we added) after creation failed
      * part-way, so nothing is left running and billing. Errors here are reported rather than thrown, so the original
      * failure is what the person sees.
      *

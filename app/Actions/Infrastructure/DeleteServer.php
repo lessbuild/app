@@ -17,6 +17,8 @@ use RuntimeException;
 final class DeleteServer
 {
     /**
+     * Create a new DeleteServer instance.
+     *
      * Deletes a server, at the provider too when we created it.
      *
      * @param  ServerProviderResolver  $providers  Deletes it at the provider.

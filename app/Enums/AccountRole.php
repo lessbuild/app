@@ -13,7 +13,7 @@ enum AccountRole: string
     case Viewer = 'viewer';
 
     /**
-     * The role's name as shown on the members page.
+     * Get the role's name as shown on the members page.
      *
      * @return string
      */
@@ -29,7 +29,7 @@ enum AccountRole: string
     }
 
     /**
-     * One line explaining what someone with this role can do, shown when inviting or changing a member.
+     * Describe in one line what someone with this role can do, shown when inviting or changing a member.
      *
      * @return string
      */
@@ -45,7 +45,8 @@ enum AccountRole: string
     }
 
     /**
-     * Everything this role may do in the account. Owners hold every permission; the other roles hold fixed subsets.
+     * Get everything this role may do in the account. Owners hold every permission; the other roles hold fixed
+     * subsets.
      *
      * @return list<AccountPermission>
      */
@@ -65,7 +66,7 @@ enum AccountRole: string
     }
 
     /**
-     * Whether this role includes a permission. The account policies use this for every check.
+     * Determine whether this role includes a permission. The account policies use this for every check.
      *
      * @param  AccountPermission  $permission
      * @return bool
@@ -76,7 +77,7 @@ enum AccountRole: string
     }
 
     /**
-     * Roles an actor holding this role may assign to others.
+     * Determine whether an actor holding this role may assign the given role to others.
      *
      * @param  AccountRole  $role
      * @return bool

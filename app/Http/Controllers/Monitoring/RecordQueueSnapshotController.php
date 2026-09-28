@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 final class RecordQueueSnapshotController
 {
     /**
-     * Records the report for the monitor the middleware authenticated and returns its receipt, never cached.
+     * Record the report for the monitor the middleware authenticated and returns its receipt, never cached.
      *
      * @param  StoreQueueSnapshotRequest  $request
      * @param  RecordQueueSnapshot  $snapshots

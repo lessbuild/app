@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
 final class RevokeIngestToken
 {
     /**
+     * Create a new RevokeIngestToken instance.
+     *
      * Revokes an ingest token.
      *
      * @param  RecordAuditEntry  $audit  Records the revocation.

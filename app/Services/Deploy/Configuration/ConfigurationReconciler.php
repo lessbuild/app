@@ -29,6 +29,8 @@ use Illuminate\Validation\ValidationException;
 final class ConfigurationReconciler
 {
     /**
+     * Create a new ConfigurationReconciler instance.
+     *
      * Applies reviewed documents.
      *
      * @param  ConfigurationDocument  $documents  Parses the reviewed document again.
@@ -38,7 +40,7 @@ final class ConfigurationReconciler
     public function __construct(private readonly ConfigurationDocument $documents, private readonly ConfigurationBindings $bindings, private readonly BuildPayload $payload) {}
 
     /**
-     * Applies every environment in the document, then deletes the environments it removes along with their ownership.
+     * Apply every environment in the document, then deletes the environments it removes along with their ownership.
      *
      * @param  ConfigurationReview  $review
      * @param  ConfigurationApplication  $application
@@ -63,7 +65,7 @@ final class ConfigurationReconciler
     }
 
     /**
-     * Creates or updates one environment and its processes, resources and variables, claims each as owned, removes what
+     * Create or updates one environment and its processes, resources and variables, claims each as owned, removes what
      * the document removes, and adds a deploy operation unless the latest one had the same intent.
      *
      * @param  ConfigurationReview  $review
@@ -137,8 +139,8 @@ final class ConfigurationReconciler
     }
 
     /**
-     * A resource's configuration: connection details for managed databases and caches (a per-environment port for
-     * Valkey), or the bound secret values for external ones.
+     * Build a resource's configuration: connection details for managed databases and caches (a per-environment port
+     * for Valkey), or the bound secret values for external ones.
      *
      * @param  Environment  $environment
      * @param  Website  $website
@@ -169,7 +171,7 @@ final class ConfigurationReconciler
     }
 
     /**
-     * Copies a bound secret into the environment as a secret variable with the review's scope, adding a version when its
+     * Copy a bound secret into the environment as a secret variable with the review's scope, adding a version when its
      * value or scope changes.
      *
      * @param  Environment  $environment
@@ -196,8 +198,8 @@ final class ConfigurationReconciler
     }
 
     /**
-     * The secret a binding refers to, at the reviewed version and in a compatible scope; a validation error when it
-     * changed or disappeared since the review.
+     * Find the secret a binding refers to, at the reviewed version and in a compatible scope; a validation error when
+     * it changed or disappeared since the review.
      *
      * @param  array{variable_id: int, version: int}  $binding
      * @param  list<string>  $scopes
@@ -213,7 +215,7 @@ final class ConfigurationReconciler
     }
 
     /**
-     * Records that configuration owns an object, under its logical name.
+     * Record that configuration owns an object, under its logical name.
      *
      * @param  ConfigurationReview  $review
      * @param  string  $slug

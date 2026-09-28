@@ -28,6 +28,8 @@ final class SwitchRelease implements ShouldQueue
     public int $tries = 1;
 
     /**
+     * Create a new SwitchRelease instance.
+     *
      * Makes an already-built release live again, for rollbacks and redeploys of a build whose release is still on the
      * server.
      *
@@ -36,7 +38,7 @@ final class SwitchRelease implements ShouldQueue
     public function __construct(public readonly int $buildId) {}
 
     /**
-     * Claims the build, points the website at its release and finishes the deploy as succeeded, or as failed with the
+     * Claim the build, points the website at its release and finishes the deploy as succeeded, or as failed with the
      * server's error.
      *
      * @param  RemoteDeployments  $remote

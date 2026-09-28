@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteWebsite
 {
     /**
+     * Create a new DeleteWebsite instance.
+     *
      * Deletes a website and cleans it off its server.
      *
      * @param  WebsiteHealthChecks  $health  Removes its health monitor.

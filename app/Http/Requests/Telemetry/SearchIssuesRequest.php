@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 final class SearchIssuesRequest extends FormRequest
 {
     /**
-     * The query string.
+     * Get the query string to validate.
      *
      * @return array<string, mixed>
      */
@@ -39,7 +39,7 @@ final class SearchIssuesRequest extends FormRequest
     }
 
     /**
-     * The validated filters with empty ones dropped, over defaults of open issues assigned to anyone.
+     * Get the validated filters with empty ones dropped, over defaults of open issues assigned to anyone.
      *
      * @return array<string, mixed>
      */

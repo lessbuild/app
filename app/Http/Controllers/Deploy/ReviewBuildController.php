@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ReviewBuildController
 {
     /**
-     * Approves or rejects a deploy waiting for approval.
+     * Approve or rejects a deploy waiting for approval.
      *
      * @param  Request  $request
      * @param  User  $user

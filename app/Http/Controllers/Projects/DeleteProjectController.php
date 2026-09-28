@@ -15,7 +15,7 @@ use Illuminate\Validation\ValidationException;
 final class DeleteProjectController
 {
     /**
-     * Deletes the project once the person has typed its name exactly, after a recent password confirmation.
+     * Delete the project once the person has typed its name exactly, after a recent password confirmation.
      *
      * @param  Request  $request
      * @param  User  $user

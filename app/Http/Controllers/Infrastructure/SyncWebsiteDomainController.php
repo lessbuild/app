@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class SyncWebsiteDomainController
 {
     /**
-     * Points a managed domain's DNS record at the website's server again.
+     * Point a managed domain's DNS record at the website's server again.
      *
      * @param  Project  $project
      * @param  Website  $website

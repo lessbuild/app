@@ -7,6 +7,8 @@ namespace App\Platform\Catalog;
 final readonly class Tier
 {
     /**
+     * Create a new Tier instance.
+     *
      * One plan of a service.
      *
      * @param  string  $key  Stable identifier stored on billing items, e.g. `pro`.
@@ -28,8 +30,8 @@ final readonly class Tier
     ) {}
 
     /**
-     * Whether the tier costs nothing, so choosing it needs no checkout. An unpriced tier (null) isn't free; it just
-     * isn't on sale.
+     * Determine whether the tier costs nothing, so choosing it needs no checkout. An unpriced tier (null) isn't free;
+     * it just isn't on sale.
      *
      * @return bool
      */

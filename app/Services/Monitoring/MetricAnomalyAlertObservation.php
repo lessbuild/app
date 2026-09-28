@@ -13,6 +13,8 @@ use Carbon\CarbonImmutable;
 final class MetricAnomalyAlertObservation
 {
     /**
+     * Create a new MetricAnomalyAlertObservation instance.
+     *
      * Measures metric anomaly alert rules.
      *
      * @param  MetricAnomalyDetector  $detector  Scores the series' points.
@@ -20,7 +22,7 @@ final class MetricAnomalyAlertObservation
     public function __construct(private readonly MetricAnomalyDetector $detector) {}
 
     /**
-     * Scores the latest sample in the window against the series' recent history, breaching when it's anomalous at the
+     * Score the latest sample in the window against the series' recent history, breaching when it's anomalous at the
      * rule's threshold. Unknown while there are too few valid samples or the baseline is still warming up.
      *
      * @param  AlertRule  $rule

@@ -20,7 +20,7 @@ enum ApiScope: string
     case AnalyticsWrite = 'analytics:write';
 
     /**
-     * The part of the platform the scope covers, as shown on the token form.
+     * Get the part of the platform the scope covers, as shown on the token form.
      *
      * @return string
      */
@@ -37,7 +37,7 @@ enum ApiScope: string
     }
 
     /**
-     * How the scope reads on the token form and token list, such as "Deploy: read and write".
+     * Describe how the scope reads on the token form and token list, such as "Deploy: read and write".
      *
      * @return string
      */

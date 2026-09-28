@@ -17,8 +17,10 @@ final class StatusSubscriptionConfirmation extends Notification implements Shoul
     use Queueable;
 
     /**
-     * Asks someone who subscribed to a status page to confirm their address, so nobody can subscribe someone else. Sent
-     * after the transaction commits.
+     * Create a new StatusSubscriptionConfirmation instance.
+     *
+     * Asks someone who subscribed to a status page to confirm their address, so nobody can subscribe someone else.
+     * Sent after the transaction commits.
      *
      * @param  StatusSubscription  $subscription  The unconfirmed subscription.
      * @param  string  $token  The plain confirmation token for the link; only its hash is stored.
@@ -42,7 +44,7 @@ final class StatusSubscriptionConfirmation extends Notification implements Shoul
     }
 
     /**
-     * Explains what they'll get and links to the confirmation, telling them to ignore it if they didn't ask.
+     * Explain what they'll get and links to the confirmation, telling them to ignore it if they didn't ask.
      *
      * @param  object  $notifiable
      * @return MailMessage

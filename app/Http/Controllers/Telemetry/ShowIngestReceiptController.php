@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 final class ShowIngestReceiptController
 {
     /**
-     * Returns a delivery's processing status, for deliveries to the key's own environment.
+     * Return a delivery's processing status, for deliveries to the key's own environment.
      *
      * @param  Request  $request
      * @param  string  $receipt

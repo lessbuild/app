@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\URL;
 final class ProvisioningCallbackUrl
 {
     /**
-     * The URL a server's provisioning script reports finished stages to.
+     * Build the URL a server's provisioning script reports finished stages to.
      *
      * @param  Server  $server
      * @return string
@@ -24,7 +24,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL it reports failure to.
+     * Build the URL it reports failure to.
      *
      * @param  Server  $server
      * @return string
@@ -35,7 +35,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL it uploads its log to.
+     * Build the URL it uploads its log to.
      *
      * @param  Server  $server
      * @return string
@@ -46,7 +46,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL a website's setup script reports finished stages to.
+     * Build the URL a website's setup script reports finished stages to.
      *
      * @param  Website  $website
      * @return string
@@ -57,7 +57,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL it reports failure to.
+     * Build the URL it reports failure to.
      *
      * @param  Website  $website
      * @return string
@@ -68,7 +68,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL it uploads its log to.
+     * Build the URL it uploads its log to.
      *
      * @param  Website  $website
      * @return string
@@ -79,6 +79,8 @@ final class ProvisioningCallbackUrl
     }
 
     /**
+     * Build the URL a deploy script reports finished stages to.
+     *
      * Deployment callbacks keep Deployer's URLs (`/builds/{build}/deployment/callback/{event}`), a public contract.
      *
      * @param  Build  $build
@@ -90,7 +92,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL a deploy script reports failure to.
+     * Build the URL a deploy script reports failure to.
      *
      * @param  Build  $build
      * @return string
@@ -101,7 +103,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL it uploads its log to.
+     * Build the URL it uploads its log to.
      *
      * @param  Build  $build
      * @return string
@@ -112,7 +114,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * The URL it reports the deployed commit to.
+     * Build the URL it reports the deployed commit to.
      *
      * @param  Build  $build
      * @return string
@@ -123,7 +125,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * A signed URL for a deploy callback route, expiring after the configured time.
+     * Sign a URL for a deploy callback route, expiring after the configured time.
      *
      * @param  string  $route
      * @param  Build  $build
@@ -135,7 +137,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * A signed URL for a website callback, carrying its provisioning attempt so reports from an earlier attempt are
+     * Sign a URL for a website callback, carrying its provisioning attempt so reports from an earlier attempt are
      * ignored.
      *
      * @param  string  $event
@@ -152,7 +154,7 @@ final class ProvisioningCallbackUrl
     }
 
     /**
-     * A signed URL for a server callback, carrying its provisioning attempt so reports from an earlier attempt are
+     * Sign a URL for a server callback, carrying its provisioning attempt so reports from an earlier attempt are
      * ignored.
      *
      * @param  string  $event

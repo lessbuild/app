@@ -14,6 +14,8 @@ use Throwable;
 class ServerPricing
 {
     /**
+     * Create a new ServerPricing instance.
+     *
      * Prices servers.
      *
      * @param  ServerProviderResolver  $providers  Talks to each server's provider.
@@ -55,8 +57,8 @@ class ServerPricing
     }
 
     /**
-     * The monthly price of a size from the provider's size catalog: Hetzner's gross price for the server's location (or
-     * the first listed), Vultr's and DigitalOcean's monthly cost. Null when the size isn't listed.
+     * Look up the monthly price of a size in the provider's size catalog: Hetzner's gross price for the server's
+     * location (or the first listed), Vultr's and DigitalOcean's monthly cost. Null when the size isn't listed.
      *
      * @param  ProviderType  $type
      * @param  list<array<string, mixed>>  $sizes

@@ -11,7 +11,7 @@ use App\Models\Environment;
 interface TelemetryIngestor
 {
     /**
-     * Stores a batch of already-mapped events for an environment. Validates sizes, fingerprints errors into issues and
+     * Store a batch of already-mapped events for an environment. Validates sizes, fingerprints errors into issues and
      * writes the rows; `$batchId` identifies the batch in the result so the caller can report what was accepted.
      *
      * @param  Environment  $environment

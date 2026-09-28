@@ -7,6 +7,8 @@ namespace App\Data\Projects;
 final readonly class ProjectDetails
 {
     /**
+     * Create a new ProjectDetails instance.
+     *
      * The editable details of a project.
      *
      * @param  string  $name  The project's name.

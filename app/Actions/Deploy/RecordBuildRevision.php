@@ -11,7 +11,8 @@ use Illuminate\Support\Facades\DB;
 final class RecordBuildRevision
 {
     /**
-     * The commit the script checked out (signed callback). A build asked for a specific commit must get exactly that one.
+     * Record the commit the script checked out (signed callback). A build asked for a specific commit must get exactly
+     * that one. A build asked for a specific commit must get exactly that one.
      *
      * @param  Build  $build
      * @param  string  $revision

@@ -43,7 +43,7 @@ class ServerLogSnapshot extends Model
     protected $guarded = ['id'];
 
     /**
-     * The server the log is from.
+     * Get the server the log is from.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -53,6 +53,8 @@ class ServerLogSnapshot extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -14,6 +14,8 @@ use Laravel\Fortify\Contracts\UpdatesUserProfileInformation;
 final class UpdateUserProfileInformation implements UpdatesUserProfileInformation
 {
     /**
+     * Create a new UpdateUserProfileInformation instance.
+     *
      * Fortify's profile adapter.
      *
      * @param  UpdateProfile  $updateProfile  Saves the change.
@@ -21,7 +23,7 @@ final class UpdateUserProfileInformation implements UpdatesUserProfileInformatio
     public function __construct(private readonly UpdateProfile $updateProfile) {}
 
     /**
-     * Validates the profile form (the email must stay unique) and saves it.
+     * Validate the profile form (the email must stay unique) and saves it.
      *
      * @param  User  $user
      * @param  array<string, string>  $input

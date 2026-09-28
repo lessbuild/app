@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 final class AddDomainController
 {
     /**
-     * Adds a domain to the project and shows the TXT record to publish.
+     * Add a domain to the project and shows the TXT record to publish.
      *
      * @param  Request  $request
      * @param  User  $user

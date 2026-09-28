@@ -14,8 +14,8 @@ use Illuminate\Support\Facades\Gate;
 final class ServiceProjectsQuery
 {
     /**
-     * The account's projects for a service's enable page, those with the service on first, with whether the viewer may
-     * turn it on or off in each.
+     * Get the account's projects for a service's enable page, those with the service on first, with whether the viewer
+     * may turn it on or off in each.
      *
      * @param  Account  $account
      * @param  string  $service

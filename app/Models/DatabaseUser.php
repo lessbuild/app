@@ -36,7 +36,7 @@ class DatabaseUser extends Model
     public const PRIVILEGES = ['read' => 'Read only', 'write' => 'Read and write', 'admin' => 'Full access'];
 
     /**
-     * The website whose database the user can reach.
+     * Get the website whose database the user can reach.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -46,6 +46,8 @@ class DatabaseUser extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `password`.
      *
      * @return array<string, string>

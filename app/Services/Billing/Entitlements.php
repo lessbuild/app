@@ -19,6 +19,8 @@ use App\Queries\Projects\ServicesInUseQuery;
 final class Entitlements
 {
     /**
+     * Create a new Entitlements instance.
+     *
      * Works out what accounts may do from their billing selections.
      *
      * @param  ServiceRegistry  $services  The services and their catalogues.
@@ -30,8 +32,8 @@ final class Entitlements
     ) {}
 
     /**
-     * The account's entitlements: each chosen tier (or the free tier of a service in use), the most generous limit where
-     * tiers overlap, every feature they turn on, and add-on units added to limits.
+     * Work out the account's entitlements: each chosen tier (or the free tier of a service in use), the most generous
+     * limit where tiers overlap, every feature they turn on, and add-on units added to limits.
      *
      * @param  Account  $account
      * @return AccountEntitlements
@@ -76,7 +78,7 @@ final class Entitlements
     }
 
     /**
-     * The larger of two limits, where null means unlimited.
+     * Pick the larger of two limits, where null means unlimited.
      *
      * @param  int|null  $a
      * @param  int|null  $b
@@ -88,7 +90,7 @@ final class Entitlements
     }
 
     /**
-     * The tier that applies to a service, even if the account doesn't use it yet.
+     * Get the tier that applies to a service, even if the account doesn't use it yet.
      *
      * @param  Account  $account
      * @param  string  $service

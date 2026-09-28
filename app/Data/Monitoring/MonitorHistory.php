@@ -14,6 +14,8 @@ use App\Models\QueueWorker;
 final readonly class MonitorHistory
 {
     /**
+     * Create a new MonitorHistory instance.
+     *
      * A monitor's recent history for its detail page.
      *
      * @param  list<MonitorCheck>  $checks  newest first

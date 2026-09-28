@@ -15,6 +15,8 @@ final readonly class ServiceTierChanged
     use Dispatchable;
 
     /**
+     * Create a new ServiceTierChanged instance.
+     *
      * An account moved to another tier of a service, now or at the end of the paid period. Recorded in the audit log.
      *
      * @param  Account  $account  The account whose plan changed.

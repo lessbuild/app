@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowDashboardsController
 {
     /**
-     * The dashboards page and the plan's dashboard limit.
+     * Show the dashboards page and the plan's dashboard limit.
      *
      * @param  User  $user
      * @param  Project  $project

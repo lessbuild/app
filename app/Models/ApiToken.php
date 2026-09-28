@@ -38,7 +38,7 @@ class ApiToken extends PersonalAccessToken
     protected $fillable = [];
 
     /**
-     * The account the token acts in.
+     * Get the account the token acts in.
      *
      * @return BelongsTo<Account, $this>
      */

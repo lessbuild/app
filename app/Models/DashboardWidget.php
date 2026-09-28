@@ -25,7 +25,7 @@ use Illuminate\Support\Carbon;
 class DashboardWidget extends Model
 {
     /**
-     * The dashboard the widget is on.
+     * Get the dashboard the widget is on.
      *
      * @return BelongsTo<Dashboard, $this>
      */
@@ -35,6 +35,8 @@ class DashboardWidget extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `configuration` as JSON.
      *
      * @return array<string, string>

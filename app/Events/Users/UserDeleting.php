@@ -13,8 +13,10 @@ final readonly class UserDeleting
     use Dispatchable;
 
     /**
-     * A person is about to be deleted, inside the deletion transaction, after their memberships were resolved. The audit
-     * subscriber uses it to forget their personal security log.
+     * Create a new UserDeleting instance.
+     *
+     * A person is about to be deleted, inside the deletion transaction, after their memberships were resolved. The
+     * audit subscriber uses it to forget their personal security log.
      *
      * @param  User  $user  The person being deleted.
      */

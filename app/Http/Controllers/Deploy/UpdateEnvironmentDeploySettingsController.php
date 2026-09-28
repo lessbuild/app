@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class UpdateEnvironmentDeploySettingsController
 {
     /**
-     * Saves how an environment's deploys run: strategy, observation, runtime, commands and scaling.
+     * Save how an environment's deploys run: strategy, observation, runtime, commands and scaling.
      *
      * @param  Request  $request
      * @param  User  $user

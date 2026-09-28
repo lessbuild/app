@@ -22,6 +22,8 @@ use App\Services\Monitoring\TelemetryRedactor;
 final class DashboardReportQuery
 {
     /**
+     * Create a new DashboardReportQuery instance.
+     *
      * Fills in a metrics dashboard's widgets.
      *
      * @param  TelemetrySummaryQuery  $summaries  Telemetry totals for the telemetry and event-mix widgets.
@@ -35,7 +37,8 @@ final class DashboardReportQuery
     ) {}
 
     /**
-     * Each widget with the data it shows. The telemetry summary is computed once and shared by the widgets that need it.
+     * Fill in each widget with the data it shows. The telemetry summary is computed once and shared by the widgets
+     * that need it.
      *
      * @param  Dashboard  $dashboard
      * @return list<array{type: string, label: string, data: array<string, mixed>}>

@@ -10,6 +10,8 @@ use App\Models\User;
 final class RedeployBuild
 {
     /**
+     * Create a new RedeployBuild instance.
+     *
      * Deploys a finished build's commit again.
      *
      * @param  DeployRepository  $deploy  Queues the new deploy the same way a manual deploy is queued.

@@ -21,6 +21,8 @@ use Throwable;
 final class AlertNotificationTransport
 {
     /**
+     * Create a new AlertNotificationTransport instance.
+     *
      * Delivers alerts to their destinations.
      *
      * @param  PublicWebhookTarget  $targets  Checks and resolves webhook endpoints.
@@ -28,7 +30,7 @@ final class AlertNotificationTransport
     public function __construct(private readonly PublicWebhookTarget $targets) {}
 
     /**
-     * Sends one alert. Email goes through the monitoring mailer. Webhook-style destinations are posted to the address
+     * Send one alert. Email goes through the monitoring mailer. Webhook-style destinations are posted to the address
      * checked when resolving (pinned, so DNS can't change underneath), over HTTPS only, without redirects or proxies,
      * reading at most 16 KiB of response; generic webhooks are signed. Each provider's answer is judged by its own
      * success rule, and failures are sorted into retryable, uncertain and rejected.
@@ -148,8 +150,8 @@ final class AlertNotificationTransport
     }
 
     /**
-     * Whether the monitoring mailer is SMTP with a timeout of at most 15 seconds, so a slow mail server can't hold a
-     * worker.
+     * Determine whether the monitoring mailer is SMTP with a timeout of at most 15 seconds, so a slow mail server
+     * can't hold a worker.
      *
      * @return bool
      */
@@ -174,7 +176,8 @@ final class AlertNotificationTransport
     }
 
     /**
-     * The alert as a Slack message: plain text (so titles can't inject formatting) and a button to the incident.
+     * Format the alert as a Slack message: plain text (so titles can't inject formatting) and a button to the
+     * incident.
      *
      * @param  string  $id
      * @param  array<string, mixed>  $payload
@@ -198,7 +201,7 @@ final class AlertNotificationTransport
     }
 
     /**
-     * The alert as a Teams message card, green for recoveries and red otherwise.
+     * Format the alert as a Teams message card, green for recoveries and red otherwise.
      *
      * @param  string  $id
      * @param  array<string, mixed>  $payload
@@ -227,7 +230,7 @@ final class AlertNotificationTransport
     }
 
     /**
-     * The alert as a PagerDuty event: triggering, or resolving on recovery, deduplicated per incident.
+     * Format the alert as a PagerDuty event: triggering, or resolving on recovery, deduplicated per incident.
      *
      * @param  string  $id
      * @param  string  $routingKey
@@ -252,7 +255,7 @@ final class AlertNotificationTransport
     }
 
     /**
-     * The alert as a Discord embed with mentions disabled, so titles can't ping anyone.
+     * Format the alert as a Discord embed with mentions disabled, so titles can't ping anyone.
      *
      * @param  string  $id
      * @param  array<string, mixed>  $payload

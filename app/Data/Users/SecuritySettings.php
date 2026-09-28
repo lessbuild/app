@@ -9,6 +9,8 @@ use App\Enums\TwoFactorState;
 final readonly class SecuritySettings
 {
     /**
+     * Create a new SecuritySettings instance.
+     *
      * Everything the security settings page shows about the signed-in person's sign-in methods.
      *
      * @param  bool  $hasPassword  False for people who only ever signed in with a provider or passkey; the page offers

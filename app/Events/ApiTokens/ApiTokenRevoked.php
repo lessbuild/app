@@ -13,6 +13,8 @@ final readonly class ApiTokenRevoked
     use Dispatchable;
 
     /**
+     * Create a new ApiTokenRevoked instance.
+     *
      * An API token was revoked and stops working immediately. Recorded in the audit log.
      *
      * @param  ApiToken  $token  The revoked token.

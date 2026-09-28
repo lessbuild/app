@@ -13,6 +13,8 @@ final readonly class ServiceDisabled
     use Dispatchable;
 
     /**
+     * Create a new ServiceDisabled instance.
+     *
      * A service was turned off in a project. Recorded in the project's activity.
      *
      * @param  Project  $project  The project.

@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class CollectEventsRequest extends FormRequest
 {
     /**
-     * Refuses bodies over 32 KiB before anything is parsed.
+     * Refuse bodies over 32 KiB before anything is parsed.
      *
      * @return void
      */
@@ -19,7 +19,7 @@ final class CollectEventsRequest extends FormRequest
     }
 
     /**
-     * Always allowed: the collection endpoint is public, and the site and origin are checked by the controller.
+     * Allow the request; the collection endpoint is public, and the site and origin are checked by the controller.
      *
      * @return bool
      */
@@ -29,8 +29,8 @@ final class CollectEventsRequest extends FormRequest
     }
 
     /**
-     * One to twenty events with their IDs, types, paths and optional attribution, device and session fields, each cut to
-     * its column's length. The client's timestamp is accepted but ignored.
+     * Get the validation rules: one to twenty events with their IDs, types, paths and optional attribution, device and
+     * session fields, each cut to its column's length. The client's timestamp is accepted but ignored.
      *
      * @return array<string, mixed>
      */

@@ -14,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveEnvironmentProcess
 {
     /**
+     * Create a new SaveEnvironmentProcess instance.
+     *
      * Adds or changes an environment's long-running process, within the plan.
      *
      * @param  Entitlements  $entitlements  Checks the plan includes worker processes.

@@ -16,6 +16,8 @@ use Illuminate\Support\Str;
 final class RetryWebsiteProvisioning
 {
     /**
+     * Create a new RetryWebsiteProvisioning instance.
+     *
      * Starts a failed website's provisioning again.
      *
      * @param  WebsiteServers  $servers  Checks its server can still host websites.

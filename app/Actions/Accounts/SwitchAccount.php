@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Gate;
 final class SwitchAccount
 {
     /**
-     * Makes the account the person's current one, if they belong to it.
+     * Make the account the person's current one, if they belong to it.
      *
      * @param  User  $user
      * @param  Account  $account

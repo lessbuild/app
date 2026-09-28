@@ -16,7 +16,7 @@ class UpdateDependenciesScript implements ServerScript
     public const IDENTIFIER = 'initialised-server';
 
     /**
-     * Shell script to run
+     * Render the stage that updates the system's packages and adds the PHP package repository.
      *
      * @param  int  $step
      * @param  Server  $server

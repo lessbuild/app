@@ -21,6 +21,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveAlertDestination
 {
     /**
+     * Create a new SaveAlertDestination instance.
+     *
      * Creates or changes an alert destination.
      *
      * @param  PublicWebhookTarget  $targets  Checks a webhook URL points at a public host.

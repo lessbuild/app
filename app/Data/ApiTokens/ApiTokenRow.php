@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final readonly class ApiTokenRow
 {
     /**
+     * Create a new ApiTokenRow instance.
+     *
      * One token on the API tokens page.
      *
      * @param  int  $id  The token's ID, used to revoke it.

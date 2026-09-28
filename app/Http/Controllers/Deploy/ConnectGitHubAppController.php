@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 final class ConnectGitHubAppController
 {
     /**
-     * Redirects to GitHub's install page with a fresh state, whose hash waits in the session for the callback. 503 when
+     * Redirect to GitHub's install page with a fresh state, whose hash waits in the session for the callback. 503 when
      * the App isn't configured.
      *
      * @param  Request  $request

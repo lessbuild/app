@@ -10,7 +10,7 @@ use App\Contracts\DnsResolver;
 final class SystemDnsResolver implements DnsResolver
 {
     /**
-     * The TXT strings the system resolver returns for the name; none when the lookup fails.
+     * Look up the TXT strings the system resolver returns for the name; none when the lookup fails.
      *
      * @param  string  $name
      * @return list<string>

@@ -7,6 +7,8 @@ namespace App\Notifications;
 final class RemovedFromAccount extends InboxNotification
 {
     /**
+     * Create a new RemovedFromAccount instance.
+     *
      * Tells someone they were removed from an account. There's no account link, since they can't open it any more.
      *
      * @param  string  $accountName  The account's name.
@@ -15,7 +17,7 @@ final class RemovedFromAccount extends InboxNotification
     public function __construct(private readonly string $accountName, private readonly string $actorName) {}
 
     /**
-     * Which account they were removed from.
+     * Get the headline, naming the account they were removed from.
      *
      * @return string
      */
@@ -25,7 +27,7 @@ final class RemovedFromAccount extends InboxNotification
     }
 
     /**
-     * Who removed them.
+     * Say who removed them.
      *
      * @return string
      */
@@ -35,7 +37,7 @@ final class RemovedFromAccount extends InboxNotification
     }
 
     /**
-     * Their dashboard, since the account's pages are closed to them now.
+     * Get the person's dashboard address, since the account's pages are closed to them now.
      *
      * @return string
      */

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class PlanConfigurationController
 {
     /**
-     * Plans the posted configuration document and shows the plan on the configuration page, keeping what was typed.
+     * Plan the posted configuration document and show the plan on the configuration page, keeping what was typed.
      *
      * @param  ConfigurationRequest  $request
      * @param  User  $user

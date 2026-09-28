@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class MarkAllNotificationsReadController
 {
     /**
-     * Marks the whole inbox read.
+     * Mark the whole inbox read.
      *
      * @param  User  $user
      * @param  MarkAllNotificationsRead  $markAll

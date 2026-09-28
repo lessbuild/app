@@ -12,7 +12,7 @@ use Illuminate\Contracts\View\View;
 final class ShowPrivacyController
 {
     /**
-     * The privacy page: data export, and what deleting the person would do to their accounts.
+     * Show the privacy page: data export, and what deleting the person would do to their accounts.
      *
      * @param  User  $user
      * @param  DepartureQuery  $departure

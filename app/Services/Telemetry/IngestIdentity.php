@@ -12,8 +12,11 @@ use LogicException;
 final class IngestIdentity
 {
     /**
-     * OTLP content identities come only from the server-side mapper. Its canonical
-     * representation preserves equivalent attribute ordering and numeric timestamps.
+     * Pick the parts of each event that identify it for deduplication: JSON events as sent, OTLP events by their
+     * server-generated IDs.
+     *
+     * OTLP content identities come only from the server-side mapper. Its canonical representation preserves equivalent
+     * attribute ordering and numeric timestamps.
      *
      * @param  list<array<string, mixed>>  $events
      * @param  IngestContext  $context
@@ -35,7 +38,7 @@ final class IngestIdentity
     }
 
     /**
-     * JSON with object keys sorted at every level, so equal data always encodes the same way.
+     * Encode JSON with object keys sorted at every level, so equal data always encodes the same way.
      *
      * @param  array<mixed>  $value
      * @return string
@@ -46,8 +49,8 @@ final class IngestIdentity
     }
 
     /**
-     * Keyed fingerprints of a value under the current and previous app keys, so a batch sent before a key rotation is
-     * still recognised after it.
+     * Fingerprint a value under the current and previous app keys, so a batch sent before a key rotation is still
+     * recognised after it.
      *
      * @param  array<mixed>  $value
      * @return list<string>
@@ -70,8 +73,8 @@ final class IngestIdentity
     }
 
     /**
-     * Refuses a batch or event that reuses an identity with different content, which would otherwise be silently dropped
-     * as a duplicate.
+     * Refuse a batch or event that reuses an identity with different content, which would otherwise be silently
+     * dropped as a duplicate.
      *
      * @param  string|null  $stored
      * @param  list<string>  $fingerprints
@@ -92,7 +95,8 @@ final class IngestIdentity
     }
 
     /**
-     * The keys a batch's receipt is found by: its ID when the client named the batch, else each content fingerprint.
+     * Build the keys a batch's receipt is found by: its ID when the client named the batch, else each content
+     * fingerprint.
      *
      * @param  string  $environmentId
      * @param  string  $batchId
@@ -113,7 +117,7 @@ final class IngestIdentity
     }
 
     /**
-     * An event's deduplication key: its ID (or position) within the batch or, for unnamed batches, within the
+     * Build an event's deduplication key: its ID (or position) within the batch or, for unnamed batches, within the
      * environment and source.
      *
      * @param  string  $environmentId
@@ -133,7 +137,7 @@ final class IngestIdentity
     }
 
     /**
-     * Sorts object keys recursively, leaving lists in order.
+     * Sort object keys recursively, leaving lists in order.
      *
      * @param  array<mixed>  $value
      * @return array<mixed>

@@ -13,7 +13,7 @@ use Illuminate\Contracts\View\View;
 final class ShowDeployEnvironmentsController
 {
     /**
-     * The project's environments with how many variables, workers and resources each has.
+     * Show the project's environments with how many variables, workers and resources each has.
      *
      * @param  User  $user
      * @param  Project  $project

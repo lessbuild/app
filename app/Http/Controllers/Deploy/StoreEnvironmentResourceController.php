@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreEnvironmentResourceController
 {
     /**
-     * Adds or changes a resource (database, cache or object storage) on an environment.
+     * Add or changes a resource (database, cache or object storage) on an environment.
      *
      * @param  Request  $request
      * @param  User  $user

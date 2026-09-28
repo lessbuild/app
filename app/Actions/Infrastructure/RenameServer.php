@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Gate;
 final class RenameServer
 {
     /**
+     * Create a new RenameServer instance.
+     *
      * Changes a server's display name.
      *
      * @param  RecordAuditEntry  $audit  Records it.

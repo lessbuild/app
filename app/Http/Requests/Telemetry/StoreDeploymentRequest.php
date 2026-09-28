@@ -12,7 +12,7 @@ use Illuminate\Foundation\Http\FormRequest;
 class StoreDeploymentRequest extends FormRequest
 {
     /**
-     * The JSON body for API calls, the form fields otherwise.
+     * Get the data to validate: the JSON body for API calls, the form fields otherwise.
      *
      * @return array<string, mixed>
      */
@@ -22,8 +22,8 @@ class StoreDeploymentRequest extends FormRequest
     }
 
     /**
-     * A deployment report: a UUID to deduplicate retries, release labels that are safe to store, an optional commit and
-     * note, and an ISO 8601 time between 2000 and five minutes from now.
+     * Get the validation rules for a deployment report: a UUID to deduplicate retries, release labels that are safe to
+     * store, an optional commit and note, and an ISO 8601 time between 2000 and five minutes from now.
      *
      * @return array<string, array<mixed>>
      */
@@ -60,7 +60,7 @@ class StoreDeploymentRequest extends FormRequest
     }
 
     /**
-     * Messages that say how to fix each field, since pipelines read them.
+     * Get messages that say how to fix each field, since pipelines read them.
      *
      * @return array<string, string>
      */
@@ -77,7 +77,7 @@ class StoreDeploymentRequest extends FormRequest
     }
 
     /**
-     * The validated report with every optional field as a string or null.
+     * Get the validated report with every optional field as a string or null.
      *
      * @return array{deployment_id: string, version: string, service?: string|null, service_namespace?: string|null, commit_sha?: string|null, note?: string|null, deployed_at?: string|null}
      */

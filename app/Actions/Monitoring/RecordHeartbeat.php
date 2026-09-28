@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 final class RecordHeartbeat
 {
     /**
+     * Create a new RecordHeartbeat instance.
+     *
      * Records a start, success or failure ping from a job a heartbeat monitor watches.
      *
      * @param  MonitorQueue  $queue  Locks the monitor and checks it still accepts pings.
@@ -96,7 +98,7 @@ final class RecordHeartbeat
     }
 
     /**
-     * What the job gets back: the run ID, the signal, whether it was a replay, and when it was recorded.
+     * Build what the job gets back: the run ID, the signal, whether it was a replay, and when it was recorded.
      *
      * @param  HeartbeatRun  $run
      * @param  string  $signal

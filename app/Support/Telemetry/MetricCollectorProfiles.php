@@ -10,10 +10,10 @@ use Illuminate\Support\Str;
 final class MetricCollectorProfiles
 {
     /**
-     * Ready-to-paste OpenTelemetry Collector configurations, one per system people commonly monitor (hosts, containers,
-     * databases, brokers, web servers, AWS services), each exporting metrics to this project's endpoint with the ingest
-     * token read from `BEACON_INGEST_TOKEN`. The requirements text states the permissions and caveats a person needs
-     * before running it.
+     * Build ready-to-paste OpenTelemetry Collector configurations, one per system people commonly monitor (hosts,
+     * containers, databases, brokers, web servers, AWS services), each exporting metrics to this project's endpoint
+     * with the ingest token read from `BEACON_INGEST_TOKEN`. The requirements text states the permissions and caveats
+     * a person needs before running it.
      *
      * @param  string  $metricsEndpoint
      * @return array<string, array{label: string, receiver: string, stability: string, requirements: string, yaml: string}>
@@ -536,7 +536,7 @@ YAML, $exporter, 'redis'),
     }
 
     /**
-     * Joins a receiver block with the shared exporter and a metrics pipeline wiring one to the other, so each profile
+     * Join a receiver block with the shared exporter and a metrics pipeline wiring one to the other, so each profile
      * only has to describe its receiver.
      *
      * @param  string  $receiver

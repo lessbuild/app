@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteProviderController
 {
     /**
-     * Disconnects a provider from the account.
+     * Disconnect a provider from the account.
      *
      * @param  Account  $account
      * @param  User  $user

@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowUnsubscribeController
 {
     /**
-     * The unsubscribe confirmation page, when the token matches.
+     * Show the unsubscribe confirmation page, when the token matches.
      *
      * @param  string  $subscription
      * @param  string  $token

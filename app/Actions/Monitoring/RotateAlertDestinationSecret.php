@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
 final class RotateAlertDestinationSecret
 {
     /**
+     * Create a new RotateAlertDestinationSecret instance.
+     *
      * Replaces a webhook destination's signing secret.
      *
      * @param  RecordAuditEntry  $audit  Records the rotation (never the secret).

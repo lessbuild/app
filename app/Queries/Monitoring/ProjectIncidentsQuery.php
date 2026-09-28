@@ -12,7 +12,7 @@ use App\Models\User;
 final class ProjectIncidentsQuery
 {
     /**
-     * The project's incidents, newest first: open and acknowledged ones by default, or resolved ones when asked.
+     * Get the project's incidents, newest first: open and acknowledged ones by default, or resolved ones when asked.
      *
      * @param  Project  $project
      * @param  string  $status
@@ -27,7 +27,7 @@ final class ProjectIncidentsQuery
     }
 
     /**
-     * An incident of this project (404 otherwise).
+     * Find an incident of this project (404 otherwise).
      *
      * @param  Project  $project
      * @param  string|int  $id
@@ -42,7 +42,7 @@ final class ProjectIncidentsQuery
     }
 
     /**
-     * Members an incident can be assigned to: owners, admins and members who may use Monitoring, by name.
+     * Get the members an incident can be assigned to: owners, admins and members who may use Monitoring, by name.
      *
      * @param  Project  $project
      * @return list<User> members who can be assigned incidents: they work on projects and may use Monitoring

@@ -20,8 +20,8 @@ use Illuminate\Support\Facades\Crypt;
 final class ShowTelemetrySetupController
 {
     /**
-     * The setup page: keys per environment, collection health and code for the chosen stack, plus a just-issued key
-     * shown once.
+     * Show the setup page: keys per environment, collection health and code for the chosen stack, plus a just-issued
+     * key shown once.
      *
      * @param  IntegrationSetupRequest  $request
      * @param  User  $user

@@ -15,6 +15,8 @@ use LogicException;
 final class AlertDeliveryQueue
 {
     /**
+     * Create a new AlertDeliveryQueue instance.
+     *
      * Queues alert delivery jobs.
      *
      * @param  IncidentLocks  $incidents  Locks a delivery's incident with it.
@@ -32,7 +34,7 @@ final class AlertDeliveryQueue
     public const BACKOFF = [30, 120, 600, 1800];
 
     /**
-     * Queues a delivery's job (delayed when it isn't due yet) inside the outbox transaction on the primary database
+     * Queue a delivery's job (delayed when it isn't due yet) inside the outbox transaction on the primary database
      * queue, and remembers the job's UUID.
      *
      * @param  AlertDelivery  $delivery
@@ -60,7 +62,10 @@ final class AlertDeliveryQueue
     }
 
     /**
-     * All delivery mutations use account → project → environment → monitor → incident → destination → delivery.
+     * Lock a delivery with its account, incident and destination, or return null when it's gone.
+     *
+     * All delivery mutations use account → project → environment → monitor → incident → destination →
+     * delivery.
      *
      * @param  string  $id
      * @return AlertDelivery|null
@@ -82,7 +87,7 @@ final class AlertDeliveryQueue
     }
 
     /**
-     * Whether the delivery's job is still on the queue.
+     * Determine whether the delivery's job is still on the queue.
      *
      * @param  AlertDelivery  $delivery
      * @return bool

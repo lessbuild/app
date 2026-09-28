@@ -38,7 +38,7 @@ class MaintenanceWindow extends Model
     use HasFactory;
 
     /**
-     * Limits a query to the account's windows in effect at a moment.
+     * Limit a query to the account's windows in effect at a moment.
      *
      * @param  Builder<MaintenanceWindow>  $query
      * @param  Account  $account
@@ -52,7 +52,7 @@ class MaintenanceWindow extends Model
     }
 
     /**
-     * The account the window belongs to.
+     * Get the account the window belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -62,7 +62,7 @@ class MaintenanceWindow extends Model
     }
 
     /**
-     * Who scheduled it (`created_by`).
+     * Get the person who scheduled the window (`created_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -72,6 +72,8 @@ class MaintenanceWindow extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

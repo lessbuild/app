@@ -16,7 +16,7 @@ class InstallNodeScript implements ServerScript
     public const IDENTIFIER = 'installed-node';
 
     /**
-     * Shell script to run
+     * Render the stage that installs Node.js and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

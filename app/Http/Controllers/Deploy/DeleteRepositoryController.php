@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteRepositoryController
 {
     /**
-     * Disconnects a repository. Its website keeps the release it's running.
+     * Disconnect a repository. Its website keeps the release it's running.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -16,21 +16,21 @@ interface TerminalConnection
     public function write(string $input): void;
 
     /**
-     * Output the shell produced since the last read ('' when there's none).
+     * Take the output the shell produced since the last read ('' when there's none).
      *
      * @return string
      */
     public function read(): string;
 
     /**
-     * Whether the shell is still running (false once the person types `exit` or the connection drops).
+     * Determine whether the shell is still running (false once the person types `exit` or the connection drops).
      *
      * @return bool
      */
     public function isRunning(): bool;
 
     /**
-     * Ends the shell and the connection under it. Safe to call more than once.
+     * End the shell and the connection under it. Safe to call more than once.
      *
      * @return void
      */

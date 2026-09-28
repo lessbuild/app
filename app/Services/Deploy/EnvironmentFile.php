@@ -7,8 +7,8 @@ namespace App\Services\Deploy;
 class EnvironmentFile
 {
     /**
-     * Sets variables in `.env` text: each valid key replaces any existing line for it and is appended, double-quoted and
-     * escaped.
+     * Set variables in `.env` text: each valid key replaces any existing line for it and is appended, double-quoted
+     * and escaped.
      *
      * @param  string  $base
      * @param  array<string, scalar|null>  $variables

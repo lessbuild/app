@@ -27,6 +27,8 @@ final class GenerateReportExport implements ShouldQueue
     public int $tries = 2;
 
     /**
+     * Create a new GenerateReportExport instance.
+     *
      * Builds the CSV for an analytics report export.
      *
      * @param  int  $exportId  The requested export.
@@ -34,7 +36,7 @@ final class GenerateReportExport implements ShouldQueue
     public function __construct(public int $exportId) {}
 
     /**
-     * Runs the report with the export's filters and writes each metric and breakdown row to a CSV on the local disk.
+     * Run the report with the export's filters and writes each metric and breakdown row to a CSV on the local disk.
      * Finished or expired exports are skipped.
      *
      * @param  AnalyticsReportQuery  $report
@@ -88,7 +90,7 @@ final class GenerateReportExport implements ShouldQueue
     }
 
     /**
-     * Marks the export failed with the reason.
+     * Mark the export failed with the reason.
      *
      * @param  Throwable|null  $exception
      * @return void

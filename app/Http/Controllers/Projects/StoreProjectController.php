@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreProjectController
 {
     /**
-     * Creates a project and suggests turning services on.
+     * Create a project and suggests turning services on.
      *
      * @param  Account  $account
      * @param  ProjectRequest  $request

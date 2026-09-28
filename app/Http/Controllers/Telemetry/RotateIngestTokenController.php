@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Crypt;
 final class RotateIngestTokenController
 {
     /**
-     * Replaces an ingest key. The new secret rides to the setup page encrypted in the flash, so it's shown once and
+     * Replace an ingest key. The new secret rides to the setup page encrypted in the flash, so it's shown once and
      * never stored in plain text in the session.
      *
      * @param  User  $user

@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 final class ShowNotificationsController
 {
     /**
-     * The inbox, all or unread only.
+     * Show the inbox, all or unread only.
      *
      * @param  Request  $request
      * @param  User  $user

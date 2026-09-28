@@ -15,7 +15,7 @@ final class ProviderPolicy
     use ChecksAccountRole;
 
     /**
-     * Providers of the person's current account.
+     * Determine whether the user can see the providers of their current account.
      *
      * @param  User  $user
      * @return bool
@@ -26,7 +26,8 @@ final class ProviderPolicy
     }
 
     /**
-     * Connecting a new provider to the current account, allowed to the same people as viewAny.
+     * Determine whether the user can connect a new provider to the current account, which the same people as viewAny
+     * can.
      *
      * @param  User  $user
      * @return bool
@@ -37,7 +38,7 @@ final class ProviderPolicy
     }
 
     /**
-     * Seeing a provider's details: the account's settings managers.
+     * Determine whether the user can see a provider's details: the account's settings managers.
      *
      * @param  User  $user
      * @param  Provider  $provider
@@ -49,7 +50,7 @@ final class ProviderPolicy
     }
 
     /**
-     * Replacing a provider's credential or renaming it, allowed to the same people as view.
+     * Determine whether the user can replace a provider's credential or rename it, which the same people as view can.
      *
      * @param  User  $user
      * @param  Provider  $provider
@@ -61,7 +62,7 @@ final class ProviderPolicy
     }
 
     /**
-     * Disconnecting a provider, allowed to the same people as view.
+     * Determine whether the user can disconnect a provider, which the same people as view can.
      *
      * @param  User  $user
      * @param  Provider  $provider

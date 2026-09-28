@@ -34,7 +34,7 @@ final class AlertEscalation extends Model
     use HasFactory;
 
     /**
-     * The rule whose incidents escalate.
+     * Get the rule whose incidents escalate.
      *
      * @return BelongsTo<AlertRule, $this>
      */
@@ -44,7 +44,7 @@ final class AlertEscalation extends Model
     }
 
     /**
-     * Who is notified at this step.
+     * Get the destination notified at this step.
      *
      * @return BelongsTo<AlertDestination, $this>
      */
@@ -54,6 +54,8 @@ final class AlertEscalation extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

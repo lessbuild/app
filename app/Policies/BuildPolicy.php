@@ -12,7 +12,7 @@ use Illuminate\Auth\Access\Response;
 final class BuildPolicy
 {
     /**
-     * Seeing a deploy and its log: whoever may see its repository.
+     * Determine whether the user can see a deploy and its log: whoever may see its repository.
      *
      * @param  User  $user
      * @param  Build  $build
@@ -24,8 +24,8 @@ final class BuildPolicy
     }
 
     /**
-     * Approving or rejecting a deploy that waits for approval: someone who may deploy the repository, and not the person
-     * who asked for the deploy.
+     * Determine whether the user can approve or reject a deploy that waits for approval: someone who may deploy the
+     * repository, and not the person who asked for the deploy.
      *
      * @param  User  $user
      * @param  Build  $build

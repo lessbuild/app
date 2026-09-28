@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateMaintenanceWindowController
 {
     /**
-     * Saves a maintenance window.
+     * Save a maintenance window.
      *
      * @param  MaintenanceWindowRequest  $request
      * @param  User  $user

@@ -28,6 +28,8 @@ use Illuminate\Validation\ValidationException;
 final class ConfigurationPlanner
 {
     /**
+     * Create a new ConfigurationPlanner instance.
+     *
      * Plans configuration documents.
      *
      * @param  ConfigurationDocument  $documents  Parses and validates the document.
@@ -37,9 +39,9 @@ final class ConfigurationPlanner
     public function __construct(private readonly ConfigurationDocument $documents, private readonly ConfigurationBindings $bindings, private readonly Entitlements $entitlements) {}
 
     /**
-     * The changes applying the document would make, with a keyed fingerprint of everything it read. Documents that would
-     * break an invariant (a second or missing production environment, a type change of a resource, removing something
-     * configuration doesn't own, planning while a deploy runs) are refused.
+     * Work out the changes applying the document would make, with a keyed fingerprint of everything it read. Documents
+     * that would break an invariant (a second or missing production environment, a type change of a resource, removing
+     * something configuration doesn't own, planning while a deploy runs) are refused.
      *
      * @param  Project  $project
      * @param  User  $user
@@ -145,9 +147,9 @@ final class ConfigurationPlanner
     }
 
     /**
-     * What applying would do to one object: update what configuration owns, create what's missing, adopt what exists
-     * when the document says so, or require adoption. Ownership that no longer matches its target, or a target owned
-     * under another name, is refused.
+     * Decide what applying would do to one object: update what configuration owns, create what's missing, adopt what
+     * exists when the document says so, or require adoption. Ownership that no longer matches its target, or a target
+     * owned under another name, is refused.
      *
      * @param  Collection<int, ConfigurationOwnership>  $ownerships
      * @param  string  $slug
@@ -172,7 +174,8 @@ final class ConfigurationPlanner
     }
 
     /**
-     * Removing a whole environment: only one configuration owns (with everything in it), not production, and nothing running.
+     * Plan removing a whole environment: only one configuration owns (with everything in it), not production, and
+     * nothing running.
      *
      * @param  Project  $project
      * @param  string  $slug
@@ -213,7 +216,7 @@ final class ConfigurationPlanner
     }
 
     /**
-     * Refuses the plan with a message on `plan`.
+     * Refuse the plan with a message on `plan`.
      *
      * @param  string  $message
      * @return never

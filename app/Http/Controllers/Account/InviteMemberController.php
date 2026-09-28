@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class InviteMemberController
 {
     /**
-     * Sends an invitation to join the account.
+     * Send an invitation to join the account.
      *
      * @param  Account  $account
      * @param  InviteMemberRequest  $request

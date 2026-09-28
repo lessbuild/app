@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowAlertRulesController
 {
     /**
-     * The project's alert rules.
+     * Show the project's alert rules.
      *
      * @param  User  $user
      * @param  Project  $project

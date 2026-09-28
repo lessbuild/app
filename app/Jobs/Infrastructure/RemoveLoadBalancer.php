@@ -34,6 +34,8 @@ final class RemoveLoadBalancer implements ShouldQueue
     public int $timeout = 120;
 
     /**
+     * Create a new RemoveLoadBalancer instance.
+     *
      * Removes a load balancer's proxy configuration from its server and then the load balancer.
      *
      * @param  int  $loadBalancerId  The load balancer being removed.
@@ -41,7 +43,7 @@ final class RemoveLoadBalancer implements ShouldQueue
     public function __construct(public readonly int $loadBalancerId) {}
 
     /**
-     * Removes the configuration and deletes the record once the server confirms.
+     * Remove the configuration and deletes the record once the server confirms.
      *
      * @param  ServerShell  $shell
      * @param  LoadBalancerConfiguration  $configuration
@@ -69,7 +71,7 @@ final class RemoveLoadBalancer implements ShouldQueue
     }
 
     /**
-     * Marks the removal failed with the server's error, keeping the record so it can be retried.
+     * Mark the removal failed with the server's error, keeping the record so it can be retried.
      *
      * @param  Throwable  $exception
      * @return void

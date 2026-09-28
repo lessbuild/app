@@ -7,6 +7,8 @@ namespace App\Data\Projects;
 final readonly class ChecklistStep
 {
     /**
+     * Create a new ChecklistStep instance.
+     *
      * One step of a new project's getting-started checklist.
      *
      * @param  string  $label  What the step is.

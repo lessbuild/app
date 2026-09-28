@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteBackupDestinationController
 {
     /**
-     * Removes a backup destination.
+     * Remove a backup destination.
      *
      * @param  User  $user
      * @param  Project  $project

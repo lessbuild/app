@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowObjectiveController
 {
     /**
-     * An SLO's page: its report, and its burn rate and export when the plan includes them.
+     * Show an SLO's page: its report, and its burn rate and export when the plan includes them.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 final class StatusUpdateRequest extends FormRequest
 {
     /**
-     * An update's kind, status, severity, text and times.
+     * Get the validation rules: an update's kind, status, severity, text and times.
      *
      * @return array<string, array<mixed>>
      */
@@ -34,7 +34,7 @@ final class StatusUpdateRequest extends FormRequest
     }
 
     /**
-     * Adds a check that the status belongs to the kind of update (maintenance and incidents have different statuses).
+     * Add a check that the status belongs to the kind of update (maintenance and incidents have different statuses).
      *
      * @param  Validator  $validator
      * @return void

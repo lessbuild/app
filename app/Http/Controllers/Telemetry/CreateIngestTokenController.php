@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Crypt;
 final class CreateIngestTokenController
 {
     /**
-     * Creates an ingest key for one of the project's environments, optionally expiring, and shows it once.
+     * Create an ingest key for one of the project's environments, optionally expiring, and shows it once.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -10,6 +10,8 @@ use App\Models\Provider;
 final class ProviderConnectionChanged extends InboxNotification
 {
     /**
+     * Create a new ProviderConnectionChanged instance.
+     *
      * Tells whoever connected a cloud or source-control provider that it stopped accepting the stored credential, or
      * accepts it again.
      *
@@ -20,7 +22,7 @@ final class ProviderConnectionChanged extends InboxNotification
     public function __construct(private readonly Provider $provider, private readonly bool $failed, private readonly string $detail) {}
 
     /**
-     * Names the provider and whether it connects.
+     * Get the headline, naming the provider and whether it connects.
      *
      * @return string
      */
@@ -32,7 +34,7 @@ final class ProviderConnectionChanged extends InboxNotification
     }
 
     /**
-     * The provider's error, or that it accepts the credential again.
+     * Give the provider's error, or say it accepts the credential again.
      *
      * @return string
      */
@@ -42,7 +44,7 @@ final class ProviderConnectionChanged extends InboxNotification
     }
 
     /**
-     * The provider's page, where the credential can be replaced.
+     * Get the provider's page, where the credential can be replaced.
      *
      * @return string
      */
@@ -52,7 +54,7 @@ final class ProviderConnectionChanged extends InboxNotification
     }
 
     /**
-     * The provider's account.
+     * Get the provider's account.
      *
      * @return string
      */

@@ -11,7 +11,7 @@ use App\Models\Project;
 final class ServicesInUseQuery
 {
     /**
-     * The services turned on in at least one of the account's projects, for billing.
+     * Get the services turned on in at least one of the account's projects, for billing.
      *
      * @param  Account  $account
      * @return list<string> service keys enabled on at least one of the account's projects

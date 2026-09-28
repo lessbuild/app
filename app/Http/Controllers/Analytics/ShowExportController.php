@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowExportController
 {
     /**
-     * An export's page, which shows its progress and the download link.
+     * Show an export's page, which shows its progress and the download link.
      *
      * @param  User  $user
      * @param  Project  $project

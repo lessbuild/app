@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final readonly class SignInSummary
 {
     /**
+     * Create a new SignInSummary instance.
+     *
      * One sign-in attempt on the sign-in activity list.
      *
      * @param  bool  $succeeded  Whether the attempt signed the person in.

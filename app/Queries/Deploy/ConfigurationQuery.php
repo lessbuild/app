@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Collection;
 final class ConfigurationQuery
 {
     /**
+     * Create a new ConfigurationQuery instance.
+     *
      * Reads for the configuration pages and API.
      *
      * @param  ConfigurationOperations  $operations  Brings an application's operations up to date before they're reported.
@@ -25,8 +27,8 @@ final class ConfigurationQuery
     public function __construct(private readonly ConfigurationOperations $operations) {}
 
     /**
-     * What the configuration page shows: the websites and repositories a document can bind to, the secret variables it
-     * can reference, and the latest reviews.
+     * Get what the configuration page shows: the websites and repositories a document can bind to, the secret
+     * variables it can reference, and the latest reviews.
      *
      * @param  Project  $project
      * @return array{websites: Collection<int, Website>, repositories: Collection<int, Repository>, secrets: Collection<int, EnvironmentVariable>, reviews: Collection<int, ConfigurationReview>}
@@ -42,8 +44,8 @@ final class ConfigurationQuery
     }
 
     /**
-     * An application's status and its operations, in the shape the Deployer API returns. Operations are refreshed first,
-     * so finished deploys are reflected.
+     * Build an application's status and its operations, in the shape the Deployer API returns. Operations are
+     * refreshed first, so finished deploys are reflected.
      *
      * @param  ConfigurationApplication  $application
      * @return array<string, mixed> Deployer's receipt: the application's status and its operations.

@@ -12,7 +12,7 @@ enum CollectionHealthState: string
     case NoToken = 'no_token';
 
     /**
-     * The state's name as the telemetry setup page shows it.
+     * Get the state's name as the telemetry setup page shows it.
      *
      * @return string
      */
@@ -27,8 +27,8 @@ enum CollectionHealthState: string
     }
 
     /**
-     * The badge colour for the state: green while events arrive, amber when they've gone quiet, red when there's no
-     * token to send with.
+     * Get the badge colour for the state: green while events arrive, amber when they've gone quiet, red when there's
+     * no token to send with.
      *
      * @return string
      */

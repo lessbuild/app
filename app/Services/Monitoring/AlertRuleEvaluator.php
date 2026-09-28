@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 final class AlertRuleEvaluator
 {
     /**
+     * Create a new AlertRuleEvaluator instance.
+     *
      * Evaluates alert rules.
      *
      * @param  AlertObservation  $observations  Measures each rule.
@@ -31,7 +33,7 @@ final class AlertRuleEvaluator
     ) {}
 
     /**
-     * Evaluates up to `$limit` due rules in projects with Monitoring on, and returns how many were evaluated.
+     * Evaluate up to `$limit` due rules in projects with Monitoring on, and returns how many were evaluated.
      *
      * @param  int  $limit
      * @return int
@@ -48,9 +50,9 @@ final class AlertRuleEvaluator
     }
 
     /**
-     * Evaluates one rule for the minute that just ended, under lock: during maintenance it only records that; otherwise
-     * it counts consecutive breaches and recoveries, opens an incident (and alerts) after enough breaches and closes it
-     * after enough recoveries.
+     * Evaluate one rule for the minute that just ended, under lock: during maintenance it only records that; otherwise
+     * it counts consecutive breaches and recoveries, opens an incident (and alerts) after enough breaches and closes
+     * it after enough recoveries.
      *
      * @param  AlertRule  $candidate
      * @param  CarbonImmutable  $now

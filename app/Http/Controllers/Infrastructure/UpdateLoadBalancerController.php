@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateLoadBalancerController
 {
     /**
-     * Saves a load balancer.
+     * Save a load balancer.
      *
      * @param  LoadBalancerRequest  $request
      * @param  User  $user

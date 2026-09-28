@@ -14,6 +14,8 @@ use Laravel\Passkeys\Passkey;
 final class PersonalDataExportQuery
 {
     /**
+     * Create a new PersonalDataExportQuery instance.
+     *
      * Collects everything stored about a person for their data export.
      *
      * @param  PersonalAuditTrailQuery  $auditTrail  Their own activity.
@@ -21,7 +23,8 @@ final class PersonalDataExportQuery
     public function __construct(private readonly PersonalAuditTrailQuery $auditTrail) {}
 
     /**
-     * Their profile, memberships, connected providers, passkeys, API tokens (never secrets), sign-ins and activity.
+     * Collect everything stored about the person: their profile, memberships, connected providers, passkeys, API
+     * tokens (never secrets), sign-ins and activity.
      *
      * @param  User  $user
      * @return array<string, mixed>

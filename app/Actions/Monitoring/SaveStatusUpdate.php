@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Notification;
 final class SaveStatusUpdate
 {
     /**
+     * Create a new SaveStatusUpdate instance.
+     *
      * Posts or edits an incident or maintenance update on a status page.
      *
      * @param  RecordAuditEntry  $audit  Records it.

@@ -14,7 +14,7 @@ final class IngestTokenPolicy
     use ManagesMonitoring;
 
     /**
-     * Creating a telemetry ingest token: people who manage Monitoring in the project.
+     * Determine whether the user can create a telemetry ingest token: people who manage Monitoring in the project.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -26,7 +26,7 @@ final class IngestTokenPolicy
     }
 
     /**
-     * Changing a token: the same people.
+     * Determine whether the user can change a token: the same people.
      *
      * @param  User  $user
      * @param  IngestToken  $record
@@ -38,7 +38,7 @@ final class IngestTokenPolicy
     }
 
     /**
-     * Revoking a token, allowed to the same people as update.
+     * Determine whether the user can revoke a token, which the same people as update can.
      *
      * @param  User  $user
      * @param  IngestToken  $record

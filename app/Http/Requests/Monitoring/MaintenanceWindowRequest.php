@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class MaintenanceWindowRequest extends FormRequest
 {
     /**
-     * A window's name, reason, and start and end times, the end after the start.
+     * Get the validation rules: a window's name, reason, and start and end times, the end after the start.
      *
      * @return array<string, array<mixed>>
      */

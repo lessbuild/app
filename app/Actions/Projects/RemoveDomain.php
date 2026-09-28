@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 final class RemoveDomain
 {
     /**
-     * Removes a domain from the project.
+     * Remove a domain from the project.
      *
      * @param  User  $actor
      * @param  Domain  $domain

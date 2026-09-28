@@ -30,7 +30,7 @@ class EnabledService extends Model
     protected $table = 'project_services';
 
     /**
-     * The project the service is on in.
+     * Get the project the service is on in.
      *
      * @return BelongsTo<Project, $this>
      */

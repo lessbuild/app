@@ -16,6 +16,8 @@ use App\Models\User;
 final readonly class Shell
 {
     /**
+     * Create a new Shell instance.
+     *
      * Everything the signed-in layout's navigation needs.
      *
      * @param  User  $user  The signed-in person.

@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreAlertDestinationController
 {
     /**
-     * Adds a destination, showing a webhook's signing secret once.
+     * Add a destination, showing a webhook's signing secret once.
      *
      * @param  AlertDestinationRequest  $request
      * @param  User  $user

@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteEnvironment
 {
     /**
-     * Deletes an environment. The production environment can't be deleted.
+     * Delete an environment. The production environment can't be deleted.
      *
      * @param  User  $actor
      * @param  Environment  $environment

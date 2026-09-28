@@ -38,7 +38,7 @@ class ServerCommandExecution extends Model
     public const FINISHED = ['succeeded', 'failed', 'canceled'];
 
     /**
-     * The server the command ran on.
+     * Get the server the command ran on.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -48,7 +48,7 @@ class ServerCommandExecution extends Model
     }
 
     /**
-     * Who ran it.
+     * Get the person who ran the command.
      *
      * @return BelongsTo<User, $this>
      */
@@ -58,7 +58,7 @@ class ServerCommandExecution extends Model
     }
 
     /**
-     * Whether the command has finished, successfully or not.
+     * Determine whether the command has finished, successfully or not.
      *
      * @return bool
      */
@@ -68,7 +68,7 @@ class ServerCommandExecution extends Model
     }
 
     /**
-     * How long it ran; null until it has started and finished.
+     * Get how long the command ran; null until it has started and finished.
      *
      * @return int|null
      */
@@ -78,6 +78,8 @@ class ServerCommandExecution extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the command and its output.
      *
      * @return array<string, string>

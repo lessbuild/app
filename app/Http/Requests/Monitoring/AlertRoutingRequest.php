@@ -9,7 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final class AlertRoutingRequest extends FormRequest
 {
     /**
-     * Up to five destinations, whether to alert on opening and on recovery, and the rule's version.
+     * Get the validation rules: up to five destinations, whether to alert on opening and on recovery, and the rule's
+     * version.
      *
      * @return array<string, array<mixed>>
      */
@@ -24,7 +25,7 @@ final class AlertRoutingRequest extends FormRequest
     }
 
     /**
-     * The routing with IDs as integers and flags as booleans.
+     * Get the routing with IDs as integers and flags as booleans.
      *
      * @return array{version: int, destinations: list<int>, opened: bool, recovered: bool}
      */

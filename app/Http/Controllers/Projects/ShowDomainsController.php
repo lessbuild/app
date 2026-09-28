@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowDomainsController
 {
     /**
-     * The project's domains page.
+     * Show the project's domains page.
      *
      * @param  User  $user
      * @param  Project  $project

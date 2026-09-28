@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateWebsiteController
 {
     /**
-     * Saves a website, saying when the change means it's being set up again.
+     * Save a website, saying when the change means it's being set up again.
      *
      * @param  WebsiteRequest  $request
      * @param  User  $user

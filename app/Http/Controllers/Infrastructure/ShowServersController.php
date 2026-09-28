@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowServersController
 {
     /**
-     * The account's servers and the plan's server limit.
+     * Show the account's servers and the plan's server limit.
      *
      * @param  User  $user
      * @param  Project  $project

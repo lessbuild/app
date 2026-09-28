@@ -18,7 +18,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class AuthorizeCurrentAccount
 {
     /**
-     * Authorises the ability against the current account, passing class names and route parameters listed after it.
+     * Authorise the ability against the current account, passing class names and route parameters listed after it.
      * People without a current account get a 404.
      *
      * @param  Request  $request

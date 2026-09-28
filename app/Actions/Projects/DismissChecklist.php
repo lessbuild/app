@@ -11,7 +11,7 @@ use Illuminate\Support\Facades\Gate;
 final class DismissChecklist
 {
     /**
-     * Hides the getting-started checklist for everyone on the project.
+     * Hide the getting-started checklist for everyone on the project.
      *
      * @param  User  $actor
      * @param  Project  $project

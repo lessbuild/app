@@ -41,6 +41,8 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Create a new ApplyWebsiteDomains instance.
+     *
      * Writes a website's domains into its Caddy site and reloads Caddy.
      *
      * @param  int  $websiteId  The website.
@@ -48,7 +50,7 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
     public function __construct(public readonly int $websiteId) {}
 
     /**
-     * One apply per website at a time.
+     * Get the job's unique ID, so there's one apply per website at a time.
      *
      * @return string
      */
@@ -58,7 +60,7 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Writes the site configuration, validates the whole Caddyfile, and reloads. Validation first means a bad domain
+     * Write the site configuration, validates the whole Caddyfile, and reloads. Validation first means a bad domain
      * can't take down other websites on the server.
      *
      * @param  ServerShell  $shell

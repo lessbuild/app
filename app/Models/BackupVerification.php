@@ -37,7 +37,7 @@ class BackupVerification extends Model
     public const STAGES = ['preflight', 'restore', 'integrity', 'smoke', 'cleanup'];
 
     /**
-     * The backup being checked.
+     * Get the backup being checked.
      *
      * @return BelongsTo<WebsiteBackup, $this>
      */
@@ -47,6 +47,8 @@ class BackupVerification extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

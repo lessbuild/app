@@ -47,7 +47,7 @@ class ServerMetric extends Model
     protected $guarded = ['id'];
 
     /**
-     * The server that was sampled.
+     * Get the server that was sampled.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -57,6 +57,8 @@ class ServerMetric extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

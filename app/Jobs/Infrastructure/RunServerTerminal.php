@@ -40,8 +40,10 @@ final class RunServerTerminal implements ShouldQueue
     public int $timeout;
 
     /**
-     * Holds a troubleshooting terminal open for as long as the session lasts, on the terminal queue so it doesn't block
-     * other jobs.
+     * Create a new RunServerTerminal instance.
+     *
+     * Holds a troubleshooting terminal open for as long as the session lasts, on the terminal queue so it doesn't
+     * block other jobs.
      *
      * @param  string  $sessionId  The session waiting to connect.
      */
@@ -52,7 +54,7 @@ final class RunServerTerminal implements ShouldQueue
     }
 
     /**
-     * Opens the shell, marks the session connected, relays until it ends, and records why it ended.
+     * Open the shell, marks the session connected, relays until it ends, and records why it ended.
      *
      * @param  ServerTerminal  $terminals
      * @param  TerminalFrames  $frames
@@ -80,7 +82,7 @@ final class RunServerTerminal implements ShouldQueue
     }
 
     /**
-     * Closes the session as failed when the worker itself stopped.
+     * Close the session as failed when the worker itself stopped.
      *
      * @param  Throwable  $exception
      * @return void
@@ -94,7 +96,7 @@ final class RunServerTerminal implements ShouldQueue
     }
 
     /**
-     * Moves keystrokes to the shell and output to the browser until the session is closed, expires or the shell exits,
+     * Move keystrokes to the shell and output to the browser until the session is closed, expires or the shell exits,
      * heartbeating every five seconds so a dead worker can be noticed.
      *
      * @param  ServerTerminalSession  $session
@@ -133,7 +135,7 @@ final class RunServerTerminal implements ShouldQueue
     }
 
     /**
-     * Closes the session with a status and short reason, unless it's already closed.
+     * Close the session with a status and short reason, unless it's already closed.
      *
      * @param  ServerTerminalSession  $session
      * @param  string  $status

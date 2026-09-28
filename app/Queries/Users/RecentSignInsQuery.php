@@ -13,7 +13,7 @@ use Carbon\CarbonImmutable;
 final class RecentSignInsQuery
 {
     /**
-     * The person's latest sign-in attempts, newest first, with a readable device.
+     * Get the person's latest sign-in attempts, newest first, with a readable device.
      *
      * @param  User  $user
      * @param  int  $limit

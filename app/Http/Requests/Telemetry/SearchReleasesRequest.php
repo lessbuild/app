@@ -14,7 +14,7 @@ final class SearchReleasesRequest extends FormRequest
     public const WINDOWS = [15 => '15 minutes', 60 => '1 hour', 360 => '6 hours', 1440 => '24 hours'];
 
     /**
-     * The query string.
+     * Get the query string to validate.
      *
      * @return array<string, mixed>
      */
@@ -24,7 +24,8 @@ final class SearchReleasesRequest extends FormRequest
     }
 
     /**
-     * The release pages' search, environment, baseline, range, comparison window and the page numbers of each list.
+     * Get the validation rules for the release pages' search, environment, baseline, range, comparison window and the
+     * page numbers of each list.
      *
      * @return array<string, array<mixed>>
      */
@@ -44,7 +45,7 @@ final class SearchReleasesRequest extends FormRequest
     }
 
     /**
-     * The validated filters with empty ones dropped, over defaults of the last day and a 60-minute window.
+     * Get the validated filters with empty ones dropped, over defaults of the last day and a 60-minute window.
      *
      * @return array<string, mixed>
      */

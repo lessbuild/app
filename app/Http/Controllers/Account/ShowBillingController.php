@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class ShowBillingController
 {
     /**
-     * The billing page: plans, usage, invoices, and a message after returning from checkout.
+     * Show the billing page: plans, usage, invoices, and a message after returning from checkout.
      *
      * @param  Account  $account
      * @param  Request  $request

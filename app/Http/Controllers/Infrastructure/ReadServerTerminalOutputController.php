@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class ReadServerTerminalOutputController
 {
     /**
-     * Returns the terminal's output after the browser's cursor, never cached.
+     * Return the terminal's output after the browser's cursor, never cached.
      *
      * @param  Request  $request
      * @param  User  $user

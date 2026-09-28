@@ -12,7 +12,8 @@ use InvalidArgumentException;
 final class HeartbeatSchedule
 {
     /**
-     * When the next run is due after a moment: a fixed interval, or the next cron occurrence in the monitor's timezone.
+     * Work out when the next run is due after a moment: a fixed interval, or the next cron occurrence in the monitor's
+     * timezone.
      *
      * @param  Monitor  $monitor
      * @param  CarbonImmutable  $after
@@ -32,7 +33,7 @@ final class HeartbeatSchedule
     }
 
     /**
-     * Uses Laravel's installed cron parser, including its DST transition behavior.
+     * Use Laravel's installed cron parser, including its DST transition behavior.
      *
      * @param  string  $expression
      * @param  string  $timezone
@@ -52,7 +53,7 @@ final class HeartbeatSchedule
     }
 
     /**
-     * Starts the schedule afresh from now, forgetting runs seen under the old one.
+     * Start the schedule afresh from now, forgetting runs seen under the old one.
      *
      * @param  Monitor  $monitor
      * @param  CarbonImmutable  $now

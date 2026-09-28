@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class InspectServerImportController
 {
     /**
-     * Inspects the server and shows what was found.
+     * Inspect the server and shows what was found.
      *
      * @param  ServerImportRequest  $request
      * @param  User  $user

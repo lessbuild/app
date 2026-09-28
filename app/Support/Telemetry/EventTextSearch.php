@@ -12,9 +12,9 @@ use Illuminate\Support\Facades\DB;
 final class EventTextSearch
 {
     /**
-     * Narrows a telemetry query to events whose name, route, service, trace or span ID, or message text contains
-     * `$text`. It reads the message fields out of the JSON payload with each database's own operators, and escapes LIKE
-     * wildcards so a search for `100%` means the literal text.
+     * Narrow a telemetry query to events whose name, route, service, trace or span ID, or message text contains
+     * `$text`. It reads the message fields out of the JSON payload with each database's own operators, and escapes
+     * LIKE wildcards so a search for `100%` means the literal text.
      *
      * @param  Builder<TelemetryEvent>  $query
      * @param  string  $text

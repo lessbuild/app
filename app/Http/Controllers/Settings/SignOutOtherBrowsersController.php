@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 final class SignOutOtherBrowsersController
 {
     /**
-     * Signs out every browser except this one.
+     * Sign out every browser except this one.
      *
      * @param  Request  $request
      * @param  User  $user

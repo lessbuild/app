@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class RevokeApiTokenController
 {
     /**
-     * Revokes one of the account's API tokens; requests using it fail from now on.
+     * Revoke one of the account's API tokens; requests using it fail from now on.
      *
      * @param  Account  $account
      * @param  User  $user

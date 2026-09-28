@@ -11,7 +11,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 final class GitHubAppWebhookVerifier
 {
     /**
-     * Checks size (413), signature (401) and JSON (422), then returns a ping or the installation and lowercased
+     * Check size (413), signature (401) and JSON (422), then returns a ping or the installation and lowercased
      * repository name.
      *
      * @param  string  $raw

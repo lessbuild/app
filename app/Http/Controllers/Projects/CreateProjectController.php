@@ -13,7 +13,7 @@ use Illuminate\Contracts\View\View;
 final class CreateProjectController
 {
     /**
-     * The new project form.
+     * Show the new project form.
      *
      * @param  Account  $account
      * @param  User  $user

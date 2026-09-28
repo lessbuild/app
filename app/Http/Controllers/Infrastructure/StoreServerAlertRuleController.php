@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class StoreServerAlertRuleController
 {
     /**
-     * Adds an alert rule for this server or every server.
+     * Add an alert rule for this server or every server.
      *
      * @param  Request  $request
      * @param  User  $user

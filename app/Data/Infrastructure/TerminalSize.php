@@ -21,6 +21,8 @@ final readonly class TerminalSize
     public const MAX_ROWS = 100;
 
     /**
+     * Create a new TerminalSize instance.
+     *
      * Refuses sizes outside the limits instead of clamping them, since callers have already validated or clamped.
      *
      * @param  int  $columns  Characters per line.

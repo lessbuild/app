@@ -59,7 +59,7 @@ class AlertDelivery extends Model
     protected $hidden = ['payload', 'processing_token', 'queue_job_uuid'];
 
     /**
-     * Limits a query to the account's deliveries.
+     * Limit a query to the account's deliveries.
      *
      * @param  Builder<AlertDelivery>  $query
      * @param  Account  $account
@@ -72,7 +72,7 @@ class AlertDelivery extends Model
     }
 
     /**
-     * The account the delivery belongs to.
+     * Get the account the delivery belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -82,7 +82,7 @@ class AlertDelivery extends Model
     }
 
     /**
-     * Where the alert is going, including archived destinations so history still reads.
+     * Get the destination the alert is going to, including archived destinations so history still reads.
      *
      * @return BelongsTo<AlertDestination, $this>
      */
@@ -92,7 +92,7 @@ class AlertDelivery extends Model
     }
 
     /**
-     * The incident the alert is about.
+     * Get the incident the alert is about.
      *
      * @return BelongsTo<Incident, $this>
      */
@@ -102,7 +102,7 @@ class AlertDelivery extends Model
     }
 
     /**
-     * Each try at sending.
+     * Get each try at sending.
      *
      * @return HasMany<AlertDeliveryAttempt, $this>
      */
@@ -112,6 +112,8 @@ class AlertDelivery extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `payload` (it can contain incident details) and reads `status` as an AlertDeliveryStatus.
      *
      * @return array<string, string>

@@ -28,7 +28,7 @@ final class TelemetryQueue
     public const BACKOFF = [5, 30, 120, 300];
 
     /**
-     * Queues processing for a receipt inside the transaction that stored it, and remembers the job's UUID (on the
+     * Queue processing for a receipt inside the transaction that stored it, and remembers the job's UUID (on the
      * database queue) so a lost job can be noticed and replaced.
      *
      * @param  IngestReceipt  $receipt
@@ -60,8 +60,8 @@ final class TelemetryQueue
     }
 
     /**
-     * The telemetry queue connection, which must be the primary database's jobs table with a long enough reservation (or
-     * sync in tests), so jobs commit with their receipts.
+     * Get the telemetry queue connection, which must be the primary database's jobs table with a long enough
+     * reservation (or sync in tests), so jobs commit with their receipts.
      *
      * @return string
      */
@@ -108,7 +108,7 @@ final class TelemetryQueue
     }
 
     /**
-     * Queues a receipt again under a new generation: a failed one when someone asks, or (during recovery) a stuck one
+     * Queue a receipt again under a new generation: a failed one when someone asks, or (during recovery) a stuck one
      * whose job is gone. Receipts without a kept payload, or past their attempts, are marked failed instead.
      *
      * @param  string  $receiptId
@@ -166,7 +166,7 @@ final class TelemetryQueue
     }
 
     /**
-     * Requeues up to `$limit` receipts that are due but have no job, and returns how many.
+     * Requeue up to `$limit` receipts that are due but have no job, and returns how many.
      *
      * @param  int  $limit
      * @return int
@@ -186,7 +186,7 @@ final class TelemetryQueue
     }
 
     /**
-     * Marks the receipt failed with an error code.
+     * Mark the receipt failed with an error code.
      *
      * @param  IngestReceipt  $receipt
      * @param  string  $code

@@ -16,7 +16,7 @@ class InstallCaddyScript implements ServerScript
     public const IDENTIFIER = 'installed-caddy';
 
     /**
-     * Shell script to run
+     * Render the stage that installs Caddy, sets it to load each website's site file, and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

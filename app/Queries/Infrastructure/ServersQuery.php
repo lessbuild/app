@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 final class ServersQuery
 {
     /**
-     * The account's servers by name, with their provider.
+     * Get the account's servers by name, with their provider.
      *
      * @param  string  $accountId
      * @return Collection<int, Server>
@@ -21,7 +21,7 @@ final class ServersQuery
     }
 
     /**
-     * One of the account's servers with its provider and creator; 404 otherwise.
+     * Find one of the account's servers with its provider and creator; 404 otherwise.
      *
      * @param  string  $accountId
      * @param  string|int  $id

@@ -15,7 +15,7 @@ final class DashboardPolicy
     use ManagesMonitoring;
 
     /**
-     * Creating a metrics dashboard: people who manage the account's settings.
+     * Determine whether the user can create a metrics dashboard: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -27,7 +27,7 @@ final class DashboardPolicy
     }
 
     /**
-     * Changing a dashboard: the same people.
+     * Determine whether the user can change a dashboard: the same people.
      *
      * @param  User  $user
      * @param  Dashboard  $record
@@ -39,7 +39,7 @@ final class DashboardPolicy
     }
 
     /**
-     * Deleting a dashboard, allowed to the same people as update.
+     * Determine whether the user can delete a dashboard, which the same people as update can.
      *
      * @param  User  $user
      * @param  Dashboard  $record

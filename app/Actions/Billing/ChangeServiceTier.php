@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\Gate;
 final class ChangeServiceTier
 {
     /**
+     * Create a new ChangeServiceTier instance.
+     *
      * Moves an account to another tier of a service.
      *
      * @param  ServiceRegistry  $services  Finds the service's catalogue.
@@ -95,7 +97,7 @@ final class ChangeServiceTier
     }
 
     /**
-     * Moves the service to its free tier. With a live paid period, the change is scheduled for its end so nothing
+     * Move the service to its free tier. With a live paid period, the change is scheduled for its end so nothing
      * already paid for is lost; otherwise the paid selection is removed now.
      *
      * @param  User  $actor

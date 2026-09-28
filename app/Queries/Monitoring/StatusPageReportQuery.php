@@ -28,6 +28,8 @@ final class StatusPageReportQuery
     public const HISTORY_DAYS = 30;
 
     /**
+     * Create a new StatusPageReportQuery instance.
+     *
      * Builds what a public status page shows.
      *
      * @param  UptimeHistory  $history  Daily uptime for each component's monitor.
@@ -35,8 +37,9 @@ final class StatusPageReportQuery
     public function __construct(private readonly UptimeHistory $history) {}
 
     /**
-     * The page's overall state, each component's state and 30-day history, open and recent incidents, and its posted
-     * updates split into active, upcoming maintenance and past. Archived monitors are left off.
+     * Build what the status page shows: its overall state, each component's state and 30-day history, open and recent
+     * incidents, and its posted updates split into active, upcoming maintenance and past. Archived monitors are left
+     * off.
      *
      * @param  StatusPage  $page
      * @param  CarbonImmutable|null  $now
@@ -90,7 +93,7 @@ final class StatusPageReportQuery
     }
 
     /**
-     * The words shown for a state.
+     * Get the words shown for a state.
      *
      * @param  string  $state
      * @return string
@@ -126,8 +129,8 @@ final class StatusPageReportQuery
     }
 
     /**
-     * The page's headline state: a major outage when a component is down or a critical incident is posted, degraded for
-     * any other trouble, maintenance while maintenance is in progress, operational otherwise.
+     * Decide the page's headline state: a major outage when a component is down or a critical incident is posted,
+     * degraded for any other trouble, maintenance while maintenance is in progress, operational otherwise.
      *
      * @param  list<array{state: string}>  $components
      * @param  \Illuminate\Support\Collection<int, StatusUpdate>  $activeUpdates

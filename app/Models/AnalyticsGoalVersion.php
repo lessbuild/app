@@ -34,6 +34,8 @@ class AnalyticsGoalVersion extends Model
     protected $fillable = ['goal_id', 'kind', 'match_type', 'match_value', 'effective_from', 'effective_to'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -44,7 +46,7 @@ class AnalyticsGoalVersion extends Model
     }
 
     /**
-     * The goal this is a definition of.
+     * Get the goal this is a definition of.
      *
      * @return BelongsTo<AnalyticsGoal, $this>
      */

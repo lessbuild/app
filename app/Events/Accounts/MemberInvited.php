@@ -13,6 +13,8 @@ final readonly class MemberInvited
     use Dispatchable;
 
     /**
+     * Create a new MemberInvited instance.
+     *
      * Someone was invited to join the account. Recorded in the audit log; the invitation email is sent by the action.
      *
      * @param  AccountInvitation  $invitation  The new invitation.

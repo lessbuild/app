@@ -15,7 +15,7 @@ class ActivateReleaseScript extends BuildProvisioningScript
     public const IDENTIFIER = 'activated-release';
 
     /**
-     * The script to run
+     * Render the stage that switches the `current` symlink to the new release and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build

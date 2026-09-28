@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class VerifySiteController
 {
     /**
-     * Checks the site's hostnames against the project's verified domains and says what to do if none matches.
+     * Check the site's hostnames against the project's verified domains and says what to do if none matches.
      *
      * @param  User  $user
      * @param  Project  $project

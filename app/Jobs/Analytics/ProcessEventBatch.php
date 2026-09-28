@@ -28,6 +28,8 @@ final class ProcessEventBatch implements ShouldQueue
     public int $tries = 3;
 
     /**
+     * Create a new ProcessEventBatch instance.
+     *
      * Folds a batch of collected analytics events into the site's visits, goal conversions and report aggregates.
      *
      * @param  int  $batchId  The ingestion batch.
@@ -35,7 +37,7 @@ final class ProcessEventBatch implements ShouldQueue
     public function __construct(public int $batchId) {}
 
     /**
-     * Rebuilds everything the batch touches in one transaction, marks it processed, and moves the site's "last
+     * Rebuild everything the batch touches in one transaction, marks it processed, and moves the site's "last
      * processed" time forward.
      *
      * @param  RebuildSiteVisits  $rebuildSiteVisits
@@ -72,7 +74,7 @@ final class ProcessEventBatch implements ShouldQueue
     }
 
     /**
-     * Marks the batch failed with the reason.
+     * Mark the batch failed with the reason.
      *
      * @param  Throwable|null  $exception
      * @return void

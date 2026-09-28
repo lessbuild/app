@@ -19,8 +19,8 @@ final class BackupScripts
     private const INSTALL_RESTIC = 'if ! command -v restic >/dev/null 2>&1; then apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq restic; fi';
 
     /**
-     * The backup script: dumps the database, copies `.env` and shared storage into a private staging directory, backs
-     * them up with restic (creating the repository the first time) tagged with the website, and keeps the last N
+     * Render the backup script: dump the database, copy `.env` and shared storage into a private staging directory,
+     * back them up with restic (creating the repository the first time) tagged with the website, and keep the last N
      * snapshots.
      *
      * @param  WebsiteBackup  $backup
@@ -57,9 +57,9 @@ final class BackupScripts
     }
 
     /**
-     * The restore script: restores the snapshot to a staging directory, puts the site in maintenance, saves the current
-     * database, `.env` and storage, swaps in the restored ones, rebuilds caches and checks health. Any failure puts the
-     * saved state back.
+     * Render the restore script: restore the snapshot to a staging directory, put the site in maintenance, save the
+     * current database, `.env` and storage, swap in the restored ones, rebuild caches and check health. Any failure
+     * puts the saved state back.
      *
      * @param  BackupRestore  $restore
      * @return string
@@ -121,7 +121,7 @@ final class BackupScripts
     }
 
     /**
-     * Prints BP_FAILURE_STAGE, BP_INTEGRITY_STATUS, BP_SMOKE_STATUS and BP_CLEANUP_STATUS markers as it goes.
+     * Print BP_FAILURE_STAGE, BP_INTEGRITY_STATUS, BP_SMOKE_STATUS and BP_CLEANUP_STATUS markers as it goes.
      *
      * @param  BackupVerification  $verification
      * @return string
@@ -191,7 +191,7 @@ final class BackupScripts
     }
 
     /**
-     * The server's MySQL root password; throws when none is stored.
+     * Get the server's MySQL root password; throws when none is stored.
      *
      * @param  WebsiteBackup  $backup
      * @return string

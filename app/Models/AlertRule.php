@@ -68,7 +68,7 @@ final class AlertRule extends Model
     use HasFactory, SoftDeletes;
 
     /**
-     * Limits a query to rules in the account's environments.
+     * Limit a query to rules in the account's environments.
      *
      * @param  Builder<AlertRule>  $query
      * @param  Account  $account
@@ -81,7 +81,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * The environment whose telemetry the rule watches.
+     * Get the environment whose telemetry the rule watches.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -91,7 +91,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * The SLO a burn-rate rule watches.
+     * Get the SLO a burn-rate rule watches.
      *
      * @return BelongsTo<ServiceLevelObjective, $this>
      */
@@ -101,7 +101,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * The metric series a numeric or anomaly rule watches.
+     * Get the metric series a numeric or anomaly rule watches.
      *
      * @return BelongsTo<MetricSeries, $this>
      */
@@ -111,7 +111,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * The threshold to compare against. Numeric-metric rules keep theirs in `numeric_threshold`, a double, since
+     * Get the threshold to compare against. Numeric-metric rules keep theirs in `numeric_threshold`, a double, since
      * resource metrics can be far larger or smaller than the other metrics' thresholds.
      *
      * @return float|null
@@ -122,8 +122,8 @@ final class AlertRule extends Model
     }
 
     /**
-     * "≤" for rules that fire when a value drops (telemetry volume, or numeric rules set to less-than), "≥"
-     * otherwise.
+     * Get the comparison sign: "≤" for rules that fire when a value drops (telemetry volume, or numeric rules set to
+     * less-than), "≥" otherwise.
      *
      * @return string
      */
@@ -134,7 +134,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * Incidents the rule has opened.
+     * Get the incidents the rule has opened.
      *
      * @return HasMany<Incident, $this>
      */
@@ -144,7 +144,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * Where the rule sends alerts.
+     * Get the destinations the rule sends alerts to.
      *
      * @return BelongsToMany<AlertDestination, $this>
      */
@@ -154,7 +154,7 @@ final class AlertRule extends Model
     }
 
     /**
-     * Who is notified, and when, while an incident stays open.
+     * Get who is notified, and when, while an incident stays open.
      *
      * @return HasMany<AlertEscalation, $this>
      */
@@ -164,8 +164,8 @@ final class AlertRule extends Model
     }
 
     /**
-     * The rule's settings as they were when an incident opened, stored on the incident so later edits don't change what
-     * the incident says it was checking.
+     * Capture the rule's settings as they are when an incident opens, stored on the incident so later edits don't
+     * change what the incident says it was checking.
      *
      * @return array<string, mixed>
      */
@@ -190,6 +190,8 @@ final class AlertRule extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `metric` as an AlertMetric and `observation` as JSON.
      *
      * @return array<string, string>

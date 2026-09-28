@@ -16,7 +16,7 @@ class InstallComposerScript implements ServerScript
     public const IDENTIFIER = 'installed-composer';
 
     /**
-     * Shell script to run
+     * Render the stage that installs Composer and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

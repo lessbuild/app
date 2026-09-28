@@ -36,7 +36,7 @@ use Illuminate\Support\Carbon;
 class ConfigurationReview extends Model
 {
     /**
-     * The project the configuration belongs to.
+     * Get the project the configuration belongs to.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -46,7 +46,7 @@ class ConfigurationReview extends Model
     }
 
     /**
-     * Who asked for the review (`requested_by`).
+     * Get the person who asked for the review (`requested_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -56,7 +56,7 @@ class ConfigurationReview extends Model
     }
 
     /**
-     * The application created when the review was applied.
+     * Get the application created when the review was applied.
      *
      * @return HasOne<ConfigurationApplication, $this>
      */
@@ -66,6 +66,8 @@ class ConfigurationReview extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the document and its bindings (they can contain secrets); reads `summary` as JSON.
      *
      * @return array<string, string>

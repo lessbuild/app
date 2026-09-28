@@ -12,6 +12,8 @@ use Throwable;
 final class ProbeTcpMonitor
 {
     /**
+     * Create a new ProbeTcpMonitor instance.
+     *
      * Runs TCP monitors.
      *
      * @param  PublicHttpTarget  $targets  Checks the host is public and resolves it.
@@ -20,7 +22,7 @@ final class ProbeTcpMonitor
     public function __construct(private readonly PublicHttpTarget $targets, private readonly TcpConnector $connector) {}
 
     /**
-     * Resolves the host to a public address and opens a TCP connection to the port within what's left of the timeout.
+     * Resolve the host to a public address and opens a TCP connection to the port within what's left of the timeout.
      *
      * @param  Monitor  $monitor
      * @return MonitorObservation

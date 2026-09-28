@@ -18,7 +18,7 @@ use Illuminate\Support\Str;
 final class ShowReleasesController
 {
     /**
-     * The project's releases, searchable by version or service, and its latest deployments.
+     * Show the project's releases, searchable by version or service, and its latest deployments.
      *
      * @param  SearchReleasesRequest  $request
      * @param  User  $user

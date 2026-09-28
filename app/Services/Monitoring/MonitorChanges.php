@@ -30,7 +30,7 @@ final class MonitorChanges
     }
 
     /**
-     * Refuses a change when the monitor changed since the form was opened.
+     * Refuse a change when the monitor changed since the form was opened.
      *
      * @param  Monitor  $monitor
      * @param  int  $version
@@ -42,7 +42,7 @@ final class MonitorChanges
     }
 
     /**
-     * Cancels the monitor's queued and running checks and unstarted jobs (and open heartbeat runs), because they would
+     * Cancel the monitor's queued and running checks and unstarted jobs (and open heartbeat runs), because they would
      * test the old settings.
      *
      * @param  Monitor  $monitor

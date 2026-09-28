@@ -14,7 +14,7 @@ use Illuminate\Support\Facades\DB;
 class LoadBalancerChanges
 {
     /**
-     * Runs a change on the locked load balancer, marks it pending and queues writing its configuration after commit.
+     * Run a change on the locked load balancer, marks it pending and queues writing its configuration after commit.
      * Load balancers being removed can't change.
      *
      * @param  LoadBalancer  $balancer

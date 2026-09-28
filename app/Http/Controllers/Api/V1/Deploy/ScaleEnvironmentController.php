@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ScaleEnvironmentController
 {
     /**
-     * Sets the replica count, validated against the environment's minimum and maximum (202).
+     * Set the replica count, validated against the environment's minimum and maximum (202).
      *
      * @param  Request  $request
      * @param  User  $user

@@ -53,6 +53,8 @@ final readonly class TraceRecord
     public bool $hasWarning;
 
     /**
+     * Create a new TraceRecord instance.
+     *
      * Works out the timing and state of one event in a trace waterfall.
      *
      * @param  TelemetryEvent  $event  The stored telemetry event.
@@ -87,7 +89,8 @@ final readonly class TraceRecord
     }
 
     /**
-     * How far after `$origin` (normally the trace's first event) this event started, for placing it on the waterfall.
+     * Measure how far after `$origin` (normally the trace's first event) this event started, for placing it on the
+     * waterfall.
      *
      * @param  TraceRecord  $origin
      * @return float
@@ -99,7 +102,7 @@ final readonly class TraceRecord
     }
 
     /**
-     * What to call the event on the waterfall: its name, else its route, else "Unnamed" and its type.
+     * Get what to call the event on the waterfall: its name, else its route, else "Unnamed" and its type.
      *
      * @return string
      */
@@ -111,7 +114,7 @@ final readonly class TraceRecord
     }
 
     /**
-     * The service that emitted the event, or "Unspecified service".
+     * Get the service that emitted the event, or "Unspecified service".
      *
      * @return string
      */
@@ -121,7 +124,7 @@ final readonly class TraceRecord
     }
 
     /**
-     * The waterfall colour: red for errors, amber for warnings, accent for spans and neutral for other events.
+     * Get the waterfall colour: red for errors, amber for warnings, accent for spans and neutral for other events.
      *
      * @return string
      */
@@ -131,7 +134,7 @@ final readonly class TraceRecord
     }
 
     /**
-     * The duration formatted for display.
+     * Format the duration for display.
      *
      * @return string
      */
@@ -141,7 +144,7 @@ final readonly class TraceRecord
     }
 
     /**
-     * Formats milliseconds with up to six decimals and no trailing zeros, or "Not reported" when unknown.
+     * Format milliseconds with up to six decimals and no trailing zeros, or "Not reported" when unknown.
      *
      * @param  float|null  $milliseconds
      * @return string

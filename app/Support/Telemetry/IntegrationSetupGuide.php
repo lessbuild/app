@@ -24,7 +24,7 @@ final class IntegrationSetupGuide
     ];
 
     /**
-     * The languages and frameworks the setup page offers, keyed by the value used in `?stack=`.
+     * Get the languages and frameworks the setup page offers, keyed by the value used in `?stack=`.
      *
      * @return array<string, string>
      */
@@ -34,8 +34,8 @@ final class IntegrationSetupGuide
     }
 
     /**
-     * The environment variables that point any OpenTelemetry SDK at our OTLP/HTTP endpoints, with a placeholder where
-     * the environment's token goes.
+     * Build the environment variables that point any OpenTelemetry SDK at our OTLP/HTTP endpoints, with a placeholder
+     * where the environment's token goes.
      *
      * @param  string  $tracesEndpoint
      * @param  string  $logsEndpoint
@@ -55,9 +55,9 @@ final class IntegrationSetupGuide
     }
 
     /**
-     * The setup instructions for one stack: how to install, where to keep the token, a connection-test snippet already
-     * pointed at the ingest endpoint, and how to confirm the event arrived. Unknown stacks throw, since the request
-     * validates the choice first.
+     * Build the setup instructions for one stack: how to install, where to keep the token, a connection-test snippet
+     * already pointed at the ingest endpoint, and how to confirm the event arrived. Unknown stacks throw, since the
+     * request validates the choice first.
      *
      * @param  string  $stack
      * @param  string  $ingestEndpoint
@@ -94,7 +94,7 @@ final class IntegrationSetupGuide
     }
 
     /**
-     * The stack-neutral instructions: a cURL request that sends one log event.
+     * Get the stack-neutral instructions: a cURL request that sends one log event.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -126,7 +126,7 @@ BASH,
     }
 
     /**
-     * Sends the test event with Laravel's HTTP client, reading the token from config.
+     * Send the test event with Laravel's HTTP client, reading the token from config.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -159,7 +159,7 @@ PHP,
     }
 
     /**
-     * Sends the test event with the `fetch` built into Node.js 18 and later.
+     * Send the test event with the `fetch` built into Node.js 18 and later.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -199,7 +199,7 @@ JAVASCRIPT,
     }
 
     /**
-     * Sends the test event with `requests`.
+     * Send the test event with `requests`.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -240,7 +240,7 @@ PYTHON,
     }
 
     /**
-     * Sends the test event with `net/http` from Go's standard library.
+     * Send the test event with `net/http` from Go's standard library.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -282,7 +282,7 @@ GO,
     }
 
     /**
-     * Sends the test event with the `HttpClient` in Java 17 and later.
+     * Send the test event with the `HttpClient` in Java 17 and later.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -316,7 +316,7 @@ JAVA,
     }
 
     /**
-     * Sends the test event with `HttpClient` and `System.Net.Http.Json`.
+     * Send the test event with `HttpClient` and `System.Net.Http.Json`.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -359,7 +359,7 @@ CSHARP,
     }
 
     /**
-     * Sends the test event with `Net::HTTP` from Ruby's standard library.
+     * Send the test event with `Net::HTTP` from Ruby's standard library.
      *
      * @return array{install: string, token: string, code: string}
      */
@@ -401,7 +401,7 @@ RUBY,
     }
 
     /**
-     * Sends the test event with the cURL extension, for PHP apps that don't use a framework.
+     * Send the test event with the cURL extension, for PHP apps that don't use a framework.
      *
      * @return array{install: string, token: string, code: string}
      */

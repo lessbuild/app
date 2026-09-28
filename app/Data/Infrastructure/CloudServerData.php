@@ -13,6 +13,8 @@ final readonly class CloudServerData
     public const READINESS_UNKNOWN = 'unknown';
 
     /**
+     * Create a new CloudServerData instance.
+     *
      * Capture cloud instance fields in the common provider-independent format.
      *
      * @param  int|string  $identifier  Native provider instance ID.

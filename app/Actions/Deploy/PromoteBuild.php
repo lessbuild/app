@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 final class PromoteBuild
 {
     /**
+     * Create a new PromoteBuild instance.
+     *
      * Deploys a build's commit to a higher environment.
      *
      * @param  Deployments  $deployments  Queues the promotion, or says why it can't be queued now.

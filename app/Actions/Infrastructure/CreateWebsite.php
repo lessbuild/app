@@ -22,6 +22,8 @@ use Illuminate\Validation\ValidationException;
 final class CreateWebsite
 {
     /**
+     * Create a new CreateWebsite instance.
+     *
      * Creates a website on a server and starts provisioning it.
      *
      * @param  Entitlements  $entitlements  Checks the plan's website limit.

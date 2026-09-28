@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowServerImportController
 {
     /**
-     * The import review page, for the person who ran the inspection.
+     * Show the import review page, for the person who ran the inspection.
      *
      * @param  User  $user
      * @param  Project  $project

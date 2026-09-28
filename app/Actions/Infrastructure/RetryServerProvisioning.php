@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class RetryServerProvisioning
 {
     /**
+     * Create a new RetryServerProvisioning instance.
+     *
      * Starts a failed server's provisioning again from where it stopped.
      *
      * @param  ServerProvisioningPlan  $plan  The provisioning steps, to find where to resume.

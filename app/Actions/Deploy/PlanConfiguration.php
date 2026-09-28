@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Gate;
 final class PlanConfiguration
 {
     /**
+     * Create a new PlanConfiguration instance.
+     *
      * Previews what a configuration document would change.
      *
      * @param  ConfigurationPlanner  $planner  Compares the document with the current configuration.
@@ -19,7 +21,7 @@ final class PlanConfiguration
     public function __construct(private readonly ConfigurationPlanner $planner) {}
 
     /**
-     * What applying a configuration document would change. Nothing is written.
+     * Work out what applying a configuration document would change. Nothing is written. Nothing is written.
      *
      * @param  User  $actor
      * @param  Project  $project

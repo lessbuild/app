@@ -15,7 +15,7 @@ use Illuminate\Support\Collection;
 class RebuildSiteVisits
 {
     /**
-     * Rebuilds visits from events: for the whole site, or only the visits of the visitors and sessions a batch touched.
+     * Rebuild visits from events: for the whole site, or only the visits of the visitors and sessions a batch touched.
      * Old visits in scope are deleted and replaced.
      *
      * @param  AnalyticsSite  $site
@@ -93,7 +93,7 @@ class RebuildSiteVisits
     }
 
     /**
-     * Inserts rebuilt visits in one statement.
+     * Insert rebuilt visits in one statement.
      *
      * @param  array<string, array<string, mixed>>  $visits
      * @return void
@@ -106,7 +106,7 @@ class RebuildSiteVisits
     }
 
     /**
-     * A stable key for a visit: who it belongs to, when it started, and the local day.
+     * Build a stable key for a visit: who it belongs to, when it started, and the local day.
      *
      * @param  string  $identity
      * @param  CarbonImmutable  $occurredAt
@@ -119,7 +119,7 @@ class RebuildSiteVisits
     }
 
     /**
-     * Groups events into visits: a new visit starts on a new local day or after 30 minutes without activity. Each visit
+     * Group events into visits: a new visit starts on a new local day or after 30 minutes without activity. Each visit
      * keeps its landing and exit pages, where it came from (from its first pageview), its pageview count and its goal
      * completions.
      *

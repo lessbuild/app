@@ -9,6 +9,8 @@ use SensitiveParameter;
 final readonly class RegisterUserData
 {
     /**
+     * Create a new RegisterUserData instance.
+     *
      * The details a new person registers with.
      *
      * @param  string  $name  Their name.

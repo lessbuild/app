@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 final class RecordIssueOccurrence
 {
     /**
+     * Group an exception event into its issue by fingerprint, creating the issue or counting another occurrence (and
+     * reopening it if it was resolved).
+     *
      * Called inside the processing transaction with the application's row locked.
      *
      * @param  Environment  $environment

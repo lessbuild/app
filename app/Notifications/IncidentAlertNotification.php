@@ -13,8 +13,10 @@ use Illuminate\Notifications\Notification;
 final class IncidentAlertNotification extends Notification
 {
     /**
-     * The email for a monitoring incident alert (or a test alert) sent to an email destination. Delivery and retries are
-     * handled by the alert delivery runner, so this isn't queued.
+     * Create a new IncidentAlertNotification instance.
+     *
+     * The email for a monitoring incident alert (or a test alert) sent to an email destination. Delivery and retries
+     * are handled by the alert delivery runner, so this isn't queued.
      *
      * @param  string  $deliveryId  The delivery's ID, printed in the email so a recipient can quote it.
      * @param  array<string, mixed>  $payload
@@ -22,7 +24,8 @@ final class IncidentAlertNotification extends Notification
     public function __construct(public readonly string $deliveryId, public readonly array $payload) {}
 
     /**
-     * Email; other destination types are delivered by their own transports.
+     * Get the notification's delivery channels: email only; other destination types are delivered by their own
+     * transports.
      *
      * @param  object  $notifiable
      * @return list<string>
@@ -33,8 +36,8 @@ final class IncidentAlertNotification extends Notification
     }
 
     /**
-     * The event and incident title, where it happened, the monitor's latest observation with its details, and a link to
-     * the incident. Sent through the monitoring mailer when one is configured.
+     * Build the email: the event and incident title, where it happened, the monitor's latest observation with its
+     * details, and a link to the incident. Sent through the monitoring mailer when one is configured.
      *
      * @param  object  $notifiable
      * @return MailMessage
@@ -75,7 +78,7 @@ final class IncidentAlertNotification extends Notification
     }
 
     /**
-     * A payload value as text, or the default when it's missing or not scalar.
+     * Read a payload value as text, or return the default when it's missing or not scalar.
      *
      * @param  string  $key
      * @param  string  $default

@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class CloseServerTerminal
 {
     /**
+     * Create a new CloseServerTerminal instance.
+     *
      * Closes a troubleshooting terminal.
      *
      * @param  RecordAuditEntry  $audit  Records it.

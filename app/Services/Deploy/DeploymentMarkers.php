@@ -17,6 +17,8 @@ use Carbon\CarbonImmutable;
 final class DeploymentMarkers
 {
     /**
+     * Create a new DeploymentMarkers instance.
+     *
      * Records live builds on Monitoring's timeline.
      *
      * @param  RecordReleases  $releases  Finds or creates the release.
@@ -24,7 +26,7 @@ final class DeploymentMarkers
     public function __construct(private readonly RecordReleases $releases) {}
 
     /**
-     * Records the build as a deployment of its environment, once (keyed by build ID), with its revision as the version
+     * Record the build as a deployment of its environment, once (keyed by build ID), with its revision as the version
      * and its repository as the service. Null for builds without an environment.
      *
      * @param  Build  $build

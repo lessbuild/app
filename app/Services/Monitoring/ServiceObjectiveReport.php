@@ -13,6 +13,8 @@ use Illuminate\Database\Eloquent\Builder;
 final class ServiceObjectiveReport
 {
     /**
+     * Report on an SLO over its rolling window ending at `$until` (now by default).
+     *
      * @param  ServiceLevelObjective  $objective
      * @param  CarbonImmutable|null  $until
      * @return array{
@@ -40,6 +42,9 @@ final class ServiceObjectiveReport
     }
 
     /**
+     * Report on an SLO over a period: matching requests, how many were good, bad or unknown, compliance against the
+     * target, the error budget left and the burn rate.
+     *
      * @param  ServiceLevelObjective  $objective
      * @param  CarbonImmutable  $from
      * @param  CarbonImmutable  $until
@@ -109,7 +114,7 @@ final class ServiceObjectiveReport
     }
 
     /**
-     * A stored UTC time as Carbon, or null.
+     * Parse a stored UTC time as Carbon, or return null.
      *
      * @param  mixed  $value
      * @return CarbonImmutable|null

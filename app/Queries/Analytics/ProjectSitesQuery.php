@@ -10,7 +10,7 @@ use App\Models\Project;
 final class ProjectSitesQuery
 {
     /**
-     * The project's analytics sites by name.
+     * Get the project's analytics sites by name.
      *
      * @param  Project  $project
      * @return list<AnalyticsSite>
@@ -21,7 +21,7 @@ final class ProjectSitesQuery
     }
 
     /**
-     * The site picked in the URL, or the project's first site; null when it has none.
+     * Get the site picked in the URL, or the project's first site; null when it has none.
      *
      * @param  Project  $project
      * @param  mixed  $id
@@ -35,7 +35,7 @@ final class ProjectSitesQuery
     }
 
     /**
-     * A site of this project (404 otherwise).
+     * Find a site of this project (404 otherwise).
      *
      * @param  Project  $project
      * @param  string|int  $id

@@ -16,7 +16,7 @@ use Illuminate\Support\Str;
 final class CreateEnvironment
 {
     /**
-     * Adds a non-production environment to the project. Its slug comes from the name and must be unique in the project.
+     * Add a non-production environment to the project. Its slug comes from the name and must be unique in the project.
      *
      * @param  User  $actor
      * @param  Project  $project

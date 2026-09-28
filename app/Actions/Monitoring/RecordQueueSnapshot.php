@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\DB;
 final class RecordQueueSnapshot
 {
     /**
+     * Create a new RecordQueueSnapshot instance.
+     *
      * Records a queue report sent by a queue monitor's collector.
      *
      * @param  MonitorQueue  $queue  Locks the monitor and checks it still accepts reports.
@@ -22,7 +24,7 @@ final class RecordQueueSnapshot
     public function __construct(private readonly MonitorQueue $queue, private readonly QueueMonitorEvaluator $evaluation) {}
 
     /**
-     * Stores a queue report after checking the monitor's key. Resending a snapshot ID with the same payload returns the
+     * Store a queue report after checking the monitor's key. Resending a snapshot ID with the same payload returns the
      * original receipt; reusing it for a different payload, or sending a second snapshot for the same moment, is a
      * conflict. Reports older than the latest are stored but not applied.
      *
@@ -75,8 +77,8 @@ final class RecordQueueSnapshot
     }
 
     /**
-     * What the collector gets back: the snapshot ID, whether it was a replay, whether it was applied, and when it
-     * arrived.
+     * Build what the collector gets back: the snapshot ID, whether it was a replay, whether it was applied, and when
+     * it arrived.
      *
      * @param  QueueSnapshot  $snapshot
      * @param  bool  $replayed

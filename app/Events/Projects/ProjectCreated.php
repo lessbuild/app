@@ -13,6 +13,8 @@ final readonly class ProjectCreated
     use Dispatchable;
 
     /**
+     * Create a new ProjectCreated instance.
+     *
      * A project was created with its production environment. Recorded in the audit log.
      *
      * @param  Project  $project  The new project.

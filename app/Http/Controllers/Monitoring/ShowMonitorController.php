@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowMonitorController
 {
     /**
-     * A monitor's page with its history, and a newly issued key when there is one.
+     * Show a monitor's page with its history, and a newly issued key when there is one.
      *
      * @param  User  $user
      * @param  Project  $project

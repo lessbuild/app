@@ -13,6 +13,8 @@ final readonly class ServiceEnabled
     use Dispatchable;
 
     /**
+     * Create a new ServiceEnabled instance.
+     *
      * A service was turned on in a project. Recorded in the project's activity.
      *
      * @param  Project  $project  The project.

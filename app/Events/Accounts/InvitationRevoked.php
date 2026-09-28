@@ -13,6 +13,8 @@ final readonly class InvitationRevoked
     use Dispatchable;
 
     /**
+     * Create a new InvitationRevoked instance.
+     *
      * A pending invitation was withdrawn before it was accepted. Recorded in the audit log.
      *
      * @param  AccountInvitation  $invitation  The revoked invitation.

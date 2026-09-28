@@ -18,6 +18,8 @@ use App\Models\Website;
 class WebsiteHealthChecks
 {
     /**
+     * Create a new WebsiteHealthChecks instance.
+     *
      * Keeps websites' health monitors in step.
      *
      * @param  SaveMonitor  $save  Creates or updates the monitor.
@@ -26,7 +28,7 @@ class WebsiteHealthChecks
     public function __construct(private readonly SaveMonitor $save, private readonly ArchiveMonitor $archive) {}
 
     /**
-     * Creates or updates the website's health monitor from its settings when the check is on and its project has
+     * Create or updates the website's health monitor from its settings when the check is on and its project has
      * Monitoring, or archives it otherwise. A monitor in another environment is replaced.
      *
      * @param  Website  $website

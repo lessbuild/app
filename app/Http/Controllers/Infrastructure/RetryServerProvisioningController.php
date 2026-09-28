@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RetryServerProvisioningController
 {
     /**
-     * Provisions a failed server's remaining stages, showing a new root password once when one was issued.
+     * Provision a failed server's remaining stages, showing a new root password once when one was issued.
      *
      * @param  User  $user
      * @param  Project  $project

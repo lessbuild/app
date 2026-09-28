@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class RefreshServerCosts
 {
     /**
+     * Create a new RefreshServerCosts instance.
+     *
      * Updates servers' monthly costs from their providers' price lists.
      *
      * @param  ServerPricing  $pricing  Looks up each server's price.

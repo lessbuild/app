@@ -8,8 +8,8 @@ namespace App\Data\Infrastructure;
 final readonly class WebsiteAttributes
 {
     /**
-     * The website columns a create or update form sets, trimmed and cast, with the defaults new websites get (five
-     * releases kept, health monitoring every five minutes, alert after three failures).
+     * Build the website columns a create or update form sets, trimmed and cast, with the defaults new websites get
+     * (five releases kept, health monitoring every five minutes, alert after three failures).
      *
      * @param  array<string, mixed>  $data
      * @return array<string, mixed>

@@ -15,7 +15,7 @@ use Illuminate\Support\Str;
 final class AcceptEventBatch
 {
     /**
-     * Stores a batch of collected events and queues it for processing once the transaction commits. Events the site
+     * Store a batch of collected events and queues it for processing once the transaction commits. Events the site
      * already sent (same event ID) are ignored, so a resent batch doesn't count twice.
      *
      * @param  AnalyticsSite  $site

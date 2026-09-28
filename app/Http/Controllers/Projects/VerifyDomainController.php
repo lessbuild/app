@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class VerifyDomainController
 {
     /**
-     * Looks for the domain's TXT record now and says whether it was found.
+     * Look for the domain's TXT record now and says whether it was found.
      *
      * @param  User  $user
      * @param  Project  $project

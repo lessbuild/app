@@ -14,7 +14,8 @@ use Illuminate\Validation\ValidationException;
 final class ConfigurationRequest extends FormRequest
 {
     /**
-     * The document text (at most 50,000 characters) and bindings, which must be present even if empty.
+     * Get the validation rules: the document text (at most 50,000 characters) and bindings, which must be present even
+     * if empty.
      *
      * @return array<string, array<mixed>>
      */
@@ -24,7 +25,7 @@ final class ConfigurationRequest extends FormRequest
     }
 
     /**
-     * The configuration document as posted.
+     * Get the configuration document as posted.
      *
      * @return string
      */
@@ -34,8 +35,8 @@ final class ConfigurationRequest extends FormRequest
     }
 
     /**
-     * The bindings as an array, decoded from JSON text when the page sent them that way. Anything but a JSON object
-     * (including a non-empty list) is a validation error.
+     * Get the bindings as an array, decoded from JSON text when the page sent them that way. Anything but a JSON
+     * object (including a non-empty list) is a validation error.
      *
      * @return array<string, mixed>
      */

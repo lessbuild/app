@@ -29,6 +29,8 @@ final class ProcessQueuedTelemetry implements ShouldQueue
     public int $timeout = TelemetryQueue::TIMEOUT;
 
     /**
+     * Create a new ProcessQueuedTelemetry instance.
+     *
      * Processes a telemetry batch that was accepted for later processing.
      *
      * @param  string  $receiptId  The receipt the batch was stored under.
@@ -37,7 +39,7 @@ final class ProcessQueuedTelemetry implements ShouldQueue
     public function __construct(public readonly string $receiptId, public readonly int $generation) {}
 
     /**
-     * Seconds to wait between attempts, growing each time.
+     * Get the seconds to wait between attempts, growing each time.
      *
      * @return list<int>
      */
@@ -47,7 +49,7 @@ final class ProcessQueuedTelemetry implements ShouldQueue
     }
 
     /**
-     * Processes the batch. When the processor asks to wait, the job goes back on the queue for that many seconds.
+     * Process the batch. When the processor asks to wait, the job goes back on the queue for that many seconds.
      *
      * @param  ProcessTelemetryReceipt  $processor
      * @return void
@@ -62,7 +64,7 @@ final class ProcessQueuedTelemetry implements ShouldQueue
     }
 
     /**
-     * Marks the receipt failed once attempts run out.
+     * Mark the receipt failed once attempts run out.
      *
      * @param  Throwable|null  $exception
      * @return void

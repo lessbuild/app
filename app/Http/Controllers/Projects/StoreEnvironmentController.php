@@ -18,7 +18,7 @@ use Illuminate\Validation\ValidationException;
 final class StoreEnvironmentController
 {
     /**
-     * Adds an environment to the project. Rule violations are shown on the environment form rather than the project's
+     * Add an environment to the project. Rule violations are shown on the environment form rather than the project's
      * own fields.
      *
      * @param  Request  $request

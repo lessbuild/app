@@ -20,8 +20,8 @@ use Throwable;
 final class CreateServerController
 {
     /**
-     * The new server form. The chosen provider's regions, sizes and images are read live; if that fails, the form says
-     * so instead of breaking.
+     * Show the new server form. The chosen provider's regions, sizes and images are read live; if that fails, the form
+     * says so instead of breaking.
      *
      * @param  Request  $request
      * @param  User  $user

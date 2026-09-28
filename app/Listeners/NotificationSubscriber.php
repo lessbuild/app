@@ -16,7 +16,7 @@ use Illuminate\Events\Dispatcher;
 final class NotificationSubscriber
 {
     /**
-     * The account events that can affect someone other than the person acting.
+     * Register the account events that can affect someone other than the person acting.
      *
      * @param  Dispatcher  $events
      * @return array<class-string, string>
@@ -31,7 +31,7 @@ final class NotificationSubscriber
     }
 
     /**
-     * Tells a member their role changed, unless they changed it themselves.
+     * Tell a member their role changed, unless they changed it themselves.
      *
      * @param  MemberRoleChanged  $event
      * @return void
@@ -46,7 +46,7 @@ final class NotificationSubscriber
     }
 
     /**
-     * Tells a person they were removed from an account; nothing is sent when they left on their own.
+     * Tell a person they were removed from an account; nothing is sent when they left on their own.
      *
      * @param  MemberRemoved  $event
      * @return void
@@ -59,7 +59,7 @@ final class NotificationSubscriber
     }
 
     /**
-     * Tells whoever sent an invitation that it was accepted, if they're still around and didn't accept it themselves.
+     * Tell whoever sent an invitation that it was accepted, if they're still around and didn't accept it themselves.
      *
      * @param  InvitationAccepted  $event
      * @return void

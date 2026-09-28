@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class DismissChecklistController
 {
     /**
-     * Hides the getting-started checklist.
+     * Hide the getting-started checklist.
      *
      * @param  User  $user
      * @param  Project  $project

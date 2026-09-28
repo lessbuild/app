@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class BrowserSession
 {
     /**
+     * Create a new BrowserSession instance.
+     *
      * One signed-in browser on the sessions list.
      *
      * @param  string  $id  The session ID, used to sign that browser out.

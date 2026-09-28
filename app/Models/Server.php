@@ -101,7 +101,7 @@ class Server extends Model
     private ?string $provisioningRootPassword = null;
 
     /**
-     * Gives each new server provisioning and initialisation tokens, so a job from an earlier attempt can tell it's
+     * Give each new server provisioning and initialisation tokens, so a job from an earlier attempt can tell it's
      * stale.
      *
      * @return void
@@ -115,7 +115,7 @@ class Server extends Model
     }
 
     /**
-     * The account the server belongs to.
+     * Get the account the server belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -125,7 +125,7 @@ class Server extends Model
     }
 
     /**
-     * Who created or imported it (`created_by`).
+     * Get the person who created or imported the server (`created_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -135,7 +135,7 @@ class Server extends Model
     }
 
     /**
-     * The cloud provider it runs on, including disconnected ones.
+     * Get the cloud provider it runs on, including disconnected ones.
      *
      * @return BelongsTo<Provider, $this>
      */
@@ -145,7 +145,7 @@ class Server extends Model
     }
 
     /**
-     * Its latest copy of each log.
+     * Get the server's latest copy of each log.
      *
      * @return HasMany<ServerLogSnapshot, $this>
      */
@@ -155,7 +155,7 @@ class Server extends Model
     }
 
     /**
-     * Websites on the server.
+     * Get the websites on the server.
      *
      * @return HasMany<Website, $this>
      */
@@ -165,7 +165,7 @@ class Server extends Model
     }
 
     /**
-     * Troubleshooting terminals opened on it.
+     * Get the troubleshooting terminals opened on the server.
      *
      * @return HasMany<ServerTerminalSession, $this>
      */
@@ -175,7 +175,7 @@ class Server extends Model
     }
 
     /**
-     * Commands run on it from the server page.
+     * Get the commands run on the server from its page.
      *
      * @return HasMany<ServerCommandExecution, $this>
      */
@@ -185,7 +185,7 @@ class Server extends Model
     }
 
     /**
-     * Its resource samples.
+     * Get the server's resource samples.
      *
      * @return HasMany<ServerMetric, $this>
      */
@@ -195,7 +195,7 @@ class Server extends Model
     }
 
     /**
-     * Its latest diagnostic run.
+     * Get the server's latest diagnostic run.
      *
      * @return HasOne<ServerDiagnosticSnapshot, $this>
      */
@@ -205,7 +205,7 @@ class Server extends Model
     }
 
     /**
-     * The name to show: the display name when set, else the provider's name.
+     * Get the name to show: the display name when set, else the provider's name.
      *
      * @return string
      */
@@ -215,7 +215,7 @@ class Server extends Model
     }
 
     /**
-     * Whether the server is still being set up.
+     * Determine whether the server is still being set up.
      *
      * @return bool
      */
@@ -225,7 +225,7 @@ class Server extends Model
     }
 
     /**
-     * The recipes chosen when the server was created, which provisioning installs.
+     * Get the recipes chosen when the server was created, which provisioning installs.
      *
      * @return list<array{name: string, description: string|null, script: string}>
      */
@@ -235,7 +235,7 @@ class Server extends Model
     }
 
     /**
-     * The root password handed to the provisioning script in this request only; it's never stored in this form.
+     * Get the root password handed to the provisioning script in this request only; it's never stored in this form.
      *
      * @return string|null
      */
@@ -245,7 +245,7 @@ class Server extends Model
     }
 
     /**
-     * Hands the root password to the provisioning script for this request only.
+     * Hand the root password to the provisioning script for this request only.
      *
      * @param  string  $password
      * @return void
@@ -256,6 +256,8 @@ class Server extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the root and MySQL passwords, SSH keys, pinned host key and recipe snapshot, and reads `type` as a
      * ServerType.
      *

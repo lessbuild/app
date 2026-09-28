@@ -10,7 +10,7 @@ use Symfony\Component\Process\Process;
 class SshHostIdentity
 {
     /**
-     * Reads the server's SSH host key, preferring Ed25519, then ECDSA, then RSA, and fingerprints it, so later
+     * Read the server's SSH host key, preferring Ed25519, then ECDSA, then RSA, and fingerprints it, so later
      * connections can check they reach the same server.
      *
      * @param  string  $host

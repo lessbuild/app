@@ -17,8 +17,8 @@ trait ManagesMonitoring
     use ChecksAccountRole;
 
     /**
-     * Whether the person may manage Monitoring in the project. A missing project (a record whose project was deleted) is
-     * refused.
+     * Determine whether the person may manage Monitoring in the project. A missing project (a record whose project was
+     * deleted) is refused.
      *
      * @param  User  $user
      * @param  Project|null  $project
@@ -30,7 +30,7 @@ trait ManagesMonitoring
     }
 
     /**
-     * Archived records can be looked at, not changed.
+     * Determine whether a record can still be changed. Archived records can be looked at, not changed.
      *
      * @param  Model  $record
      * @return bool
@@ -41,8 +41,8 @@ trait ManagesMonitoring
     }
 
     /**
-     * Whether the person may manage the settings of the account, for Monitoring records that belong to the account
-     * rather than one project (destinations, dashboards, status pages).
+     * Determine whether the person may manage the settings of the account, for Monitoring records that belong to the
+     * account rather than one project (destinations, dashboards, status pages).
      *
      * @param  User  $user
      * @param  Account|Project|string  $scope

@@ -45,7 +45,7 @@ class BackupDestination extends Model
     use HasFactory;
 
     /**
-     * Backup schedules that write here.
+     * Get the backup schedules that write here.
      *
      * @return HasMany<WebsiteBackupSchedule, $this>
      */
@@ -55,7 +55,7 @@ class BackupDestination extends Model
     }
 
     /**
-     * Backups stored here.
+     * Get the backups stored here.
      *
      * @return HasMany<WebsiteBackup, $this>
      */
@@ -65,6 +65,8 @@ class BackupDestination extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the access key, secret key and restic repository password.
      *
      * @return array<string, string>

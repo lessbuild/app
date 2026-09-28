@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ShowIncidentsController
 {
     /**
-     * The project's open incidents, or resolved ones with `?status=resolved`.
+     * Show the project's open incidents, or resolved ones with `?status=resolved`.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteLoadBalancerController
 {
     /**
-     * Starts removing a load balancer.
+     * Start removing a load balancer.
      *
      * @param  User  $user
      * @param  Project  $project

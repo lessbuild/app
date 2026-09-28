@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class EditDashboardController
 {
     /**
-     * The dashboard form, filled in.
+     * Show the dashboard form, filled in.
      *
      * @param  User  $user
      * @param  Project  $project

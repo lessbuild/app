@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RollbackBuildController
 {
     /**
-     * Rolls back to a deploy's release and shows the rollback.
+     * Roll back to a deploy's release and shows the rollback.
      *
      * @param  User  $user
      * @param  Project  $project

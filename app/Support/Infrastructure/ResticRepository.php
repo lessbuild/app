@@ -12,8 +12,8 @@ use RuntimeException;
 final class ResticRepository
 {
     /**
-     * The restic repository URL for one website's backups inside a destination bucket. It refuses endpoints that aren't
-     * HTTPS and bucket names or prefixes with characters that could escape the shell command they're used in.
+     * Build the restic repository URL for one website's backups inside a destination bucket. It refuses endpoints that
+     * aren't HTTPS and bucket names or prefixes with characters that could escape the shell command they're used in.
      *
      * @param  BackupDestination  $destination
      * @param  Website  $website
@@ -37,7 +37,7 @@ final class ResticRepository
     }
 
     /**
-     * `KEY='value' …` to put before each restic command.
+     * Build the `KEY='value' …` assignments to put before each restic command.
      *
      * @param  BackupDestination  $destination
      * @param  Website  $website

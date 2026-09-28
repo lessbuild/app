@@ -8,6 +8,8 @@ namespace App\Data\Deploy;
 final readonly class GitHubAppWebhook
 {
     /**
+     * Create a new GitHubAppWebhook instance.
+     *
      * A verified webhook delivery from the GitHub App.
      *
      * @param  bool  $isPing  Whether it's GitHub's ping after the App is set up, which needs no action.

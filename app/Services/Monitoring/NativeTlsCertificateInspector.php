@@ -12,6 +12,8 @@ use Throwable;
 final class NativeTlsCertificateInspector implements TlsCertificateInspector
 {
     /**
+     * Create a new NativeTlsCertificateInspector instance.
+     *
      * Inspects TLS certificates with curl.
      *
      * @param  PublicHttpTarget  $targets  Checks the hostname.
@@ -20,7 +22,7 @@ final class NativeTlsCertificateInspector implements TlsCertificateInspector
     public function __construct(private readonly PublicHttpTarget $targets, private readonly PublicWebhookTarget $addresses) {}
 
     /**
-     * Opens a TLS connection only (no HTTP request is sent) to the pinned public address, verifying the certificate
+     * Open a TLS connection only (no HTTP request is sent) to the pinned public address, verifying the certificate
      * chain and hostname, and reads the leaf certificate.
      *
      * @param  string  $hostname

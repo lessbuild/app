@@ -16,7 +16,8 @@ final class RepositoryPolicy
     use ChecksAccountRole;
 
     /**
-     * Seeing a repository and its deploys: account members who may view projects and use Deploy.
+     * Determine whether the user can see a repository and its deploys: account members who may view projects and use
+     * Deploy.
      *
      * @param  User  $user
      * @param  Repository  $repository
@@ -28,7 +29,8 @@ final class RepositoryPolicy
     }
 
     /**
-     * Connecting a repository to a project: members who may manage projects and use Deploy.
+     * Determine whether the user can connect a repository to a project: members who may manage projects and use
+     * Deploy.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -40,7 +42,7 @@ final class RepositoryPolicy
     }
 
     /**
-     * Changing a repository's branch, commands and webhook: the same people as create.
+     * Determine whether the user can change a repository's branch, commands and webhook: the same people as create.
      *
      * @param  User  $user
      * @param  Repository  $repository
@@ -52,7 +54,7 @@ final class RepositoryPolicy
     }
 
     /**
-     * Disconnecting a repository, allowed to the same people as update.
+     * Determine whether the user can disconnect a repository, which the same people as update can.
      *
      * @param  User  $user
      * @param  Repository  $repository
@@ -64,7 +66,7 @@ final class RepositoryPolicy
     }
 
     /**
-     * Deploying, redeploying, rolling back and canceling.
+     * Determine whether the user can deploy, redeploy, roll back and cancel the repository's deploys.
      *
      * @param  User  $user
      * @param  Repository  $repository

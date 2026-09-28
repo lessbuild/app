@@ -38,6 +38,8 @@ class BillingAccount extends Model
     protected $keyType = 'string';
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -48,7 +50,7 @@ class BillingAccount extends Model
     }
 
     /**
-     * The account's billing row, created (without Stripe) on first use.
+     * Get the account's billing row, creating it (without Stripe) on first use.
      *
      * @param  string  $accountId
      * @return BillingAccount
@@ -65,7 +67,8 @@ class BillingAccount extends Model
     }
 
     /**
-     * Whether there's a subscription still billing (active, trialing or past due) that changes must be synced to.
+     * Determine whether there's a subscription still billing (active, trialing or past due) that changes must be
+     * synced to.
      *
      * @return bool
      */

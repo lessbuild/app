@@ -10,7 +10,7 @@ use Illuminate\Validation\Rules\Password;
 trait PasswordValidationRules
 {
     /**
-     * The rules every new password must pass: the app's default password policy, confirmed.
+     * Get the rules every new password must pass: the app's default password policy, confirmed.
      *
      * @return array<int, Rule|array<mixed>|string|Password>
      */

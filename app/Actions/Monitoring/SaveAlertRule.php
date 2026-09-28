@@ -27,6 +27,8 @@ final class SaveAlertRule
     public const CONDITIONS = ['metric', 'service', 'match_text', 'threshold', 'window_minutes', 'minimum_samples', 'trigger_checks', 'recovery_checks', 'metric_series_id', 'numeric_threshold', 'aggregation', 'comparison', 'freshness_seconds', 'service_level_objective_id'];
 
     /**
+     * Create a new SaveAlertRule instance.
+     *
      * Creates or changes an alert rule.
      *
      * @param  TelemetryRedactor  $redactor  Redacts the name and match text.

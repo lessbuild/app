@@ -13,7 +13,7 @@ use Illuminate\Http\Response;
 final class RecordWebsiteProvisioningController
 {
     /**
-     * Records a website setup script's report.
+     * Record a website setup script's report.
      *
      * @param  Request  $request
      * @param  string  $websiteId

@@ -10,6 +10,8 @@ use App\Models\Monitor;
 final class ProbeMonitor
 {
     /**
+     * Create a new ProbeMonitor instance.
+     *
      * Runs the check for any monitor type.
      *
      * @param  ProbeHttpMonitor  $http  HTTP checks.
@@ -25,7 +27,7 @@ final class ProbeMonitor
     ) {}
 
     /**
-     * Runs the check for the monitor's type. Heartbeat and queue monitors aren't probed.
+     * Run the check for the monitor's type. Heartbeat and queue monitors aren't probed.
      *
      * @param  Monitor  $monitor
      * @return MonitorObservation

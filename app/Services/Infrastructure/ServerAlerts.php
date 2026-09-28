@@ -16,9 +16,9 @@ use Illuminate\Support\Facades\Notification;
 class ServerAlerts
 {
     /**
-     * Checks a new reading against the account's enabled rules for the server (and for every server). A rule trips after
-     * its consecutive breaches, outside its cooldown, and recovers on the first reading back in range; owners and admins
-     * are told about both.
+     * Check a new reading against the account's enabled rules for the server (and for every server). A rule trips
+     * after its consecutive breaches, outside its cooldown, and recovers on the first reading back in range; owners
+     * and admins are told about both.
      *
      * @param  ServerMetric  $metric
      * @return void

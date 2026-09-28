@@ -26,7 +26,7 @@ final class DeviceLabel
     ];
 
     /**
-     * A short description of a browser session ("Firefox on macOS") for the sessions and sign-in activity lists. It only
+     * Describe a browser session briefly ("Firefox on macOS") for the sessions and sign-in activity lists. It only
      * needs to be recognisable, so it checks a few well-known markers instead of parsing the user agent fully.
      *
      * @param  string|null  $userAgent
@@ -48,8 +48,8 @@ final class DeviceLabel
     }
 
     /**
-     * The label of the first needle found in the haystack. Order matters: Edge and Opera also claim to be Chrome and
-     * Safari, so they're listed first.
+     * Find the label of the first needle found in the haystack. Order matters: Edge and Opera also claim to be Chrome
+     * and Safari, so they're listed first.
      *
      * @param  array<string, string>  $needles
      * @param  string  $haystack

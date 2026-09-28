@@ -15,6 +15,8 @@ use Throwable;
 class DeploymentObserver
 {
     /**
+     * Create a new DeploymentObserver instance.
+     *
      * Observes deploys after they go live.
      *
      * @param  Factory  $http  Requests the health URL.
@@ -23,7 +25,7 @@ class DeploymentObserver
     public function __construct(private readonly Factory $http, private readonly Deployments $deployments) {}
 
     /**
-     * Checks the website's health once for an observed build: a newer live build supersedes it, a failed check fails it
+     * Check the website's health once for an observed build: a newer live build supersedes it, a failed check fails it
      * (and may roll back), and a healthy check past the deadline passes it.
      *
      * @param  Build  $build
@@ -54,7 +56,7 @@ class DeploymentObserver
     }
 
     /**
-     * Records the observation's outcome.
+     * Record the observation's outcome.
      *
      * @param  Build  $build
      * @param  string  $status

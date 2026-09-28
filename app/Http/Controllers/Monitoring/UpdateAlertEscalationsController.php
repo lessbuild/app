@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateAlertEscalationsController
 {
     /**
-     * Saves a rule's escalation steps.
+     * Save a rule's escalation steps.
      *
      * @param  AlertEscalationsRequest  $request
      * @param  User  $user

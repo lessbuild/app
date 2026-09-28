@@ -8,9 +8,9 @@ namespace App\Support;
 final class PageTabs
 {
     /**
-     * The tab a page opens on: the `?tab=` value when it names one of the page's tabs, otherwise the first tab. Pages
-     * render every panel and switch between them in the browser, so this only decides which panel is visible on first
-     * load.
+     * Pick the tab a page opens on: the `?tab=` value when it names one of the page's tabs, otherwise the first tab.
+     * Pages render every panel and switch between them in the browser, so this only decides which panel is visible on
+     * first load.
      *
      * @param  mixed  $requested
      * @param  array<string, mixed>  $tabs  key => label, in display order

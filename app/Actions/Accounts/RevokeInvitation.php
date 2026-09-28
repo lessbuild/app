@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 final class RevokeInvitation
 {
     /**
-     * Withdraws a pending invitation; one already accepted, revoked or expired is left alone.
+     * Withdraw a pending invitation; one already accepted, revoked or expired is left alone.
      *
      * @param  User  $actor
      * @param  AccountInvitation  $invitation

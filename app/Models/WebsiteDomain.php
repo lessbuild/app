@@ -41,7 +41,7 @@ class WebsiteDomain extends Model
     public const TYPES = ['primary', 'alias', 'redirect'];
 
     /**
-     * The website the domain serves.
+     * Get the website the domain serves.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -51,7 +51,7 @@ class WebsiteDomain extends Model
     }
 
     /**
-     * The DNS provider its records are managed through (`dns_provider_id`), if any.
+     * Get the DNS provider its records are managed through (`dns_provider_id`), if any.
      *
      * @return BelongsTo<Provider, $this>
      */
@@ -61,6 +61,8 @@ class WebsiteDomain extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowConfigurationReviewController
 {
     /**
-     * A configuration review. Only the person who asked for it may apply it.
+     * Show a configuration review. Only the person who asked for it may apply it.
      *
      * @param  User  $user
      * @param  Project  $project

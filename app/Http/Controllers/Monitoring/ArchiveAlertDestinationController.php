@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ArchiveAlertDestinationController
 {
     /**
-     * Archives a destination, if it hasn't changed since the page was opened.
+     * Archive a destination, if it hasn't changed since the page was opened.
      *
      * @param  Request  $request
      * @param  User  $user

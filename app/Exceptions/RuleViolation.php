@@ -14,8 +14,10 @@ use DomainException;
 abstract class RuleViolation extends DomainException
 {
     /**
-     * Subclasses build these through named constructors (`AccountRuleViolation::lastOwner()`), so each rule's message is
-     * written once.
+     * Create a new RuleViolation instance.
+     *
+     * Subclasses build these through named constructors (`AccountRuleViolation::lastOwner()`), so each rule's message
+     * is written once.
      *
      * @param  string  $field  The form field the message belongs to.
      * @param  string  $message  The explanation shown to the person, already translated.

@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowConfigurationController
 {
     /**
-     * The configuration page, with the last plan when one was just made.
+     * Show the configuration page, with the last plan when one was just made.
      *
      * @param  User  $user
      * @param  Project  $project

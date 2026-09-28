@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class RefreshServerCostsController
 {
     /**
-     * Looks up current prices for the account's servers.
+     * Look up current prices for the account's servers.
      *
      * @param  User  $user
      * @param  Project  $project

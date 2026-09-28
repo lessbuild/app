@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreSiteController
 {
     /**
-     * Adds an analytics site and shows its tracking snippet.
+     * Add an analytics site and shows its tracking snippet.
      *
      * @param  SiteRequest  $request
      * @param  User  $user

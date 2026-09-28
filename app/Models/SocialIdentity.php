@@ -26,6 +26,8 @@ class SocialIdentity extends Model
     use HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `provider` as a SocialProvider.
      *
      * @return array<string, string>
@@ -39,7 +41,7 @@ class SocialIdentity extends Model
     }
 
     /**
-     * The person the provider account is connected to.
+     * Get the person the provider account is connected to.
      *
      * @return BelongsTo<User, $this>
      */

@@ -36,7 +36,7 @@ use Illuminate\Support\Carbon;
 class LoadBalancer extends Model
 {
     /**
-     * The server running the proxy.
+     * Get the server running the proxy.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -46,7 +46,7 @@ class LoadBalancer extends Model
     }
 
     /**
-     * The website it balances.
+     * Get the website it balances.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -56,7 +56,7 @@ class LoadBalancer extends Model
     }
 
     /**
-     * The servers traffic is spread across.
+     * Get the servers traffic is spread across.
      *
      * @return HasMany<LoadBalancerNode, $this>
      */
@@ -66,7 +66,7 @@ class LoadBalancer extends Model
     }
 
     /**
-     * Whether removal has started or failed, when the load balancer can't be changed.
+     * Determine whether removal has started or failed, when the load balancer can't be changed.
      *
      * @return bool
      */
@@ -76,6 +76,8 @@ class LoadBalancer extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class ProjectAlertRulesQuery
 {
     /**
-     * The project's alert rules, enabled first.
+     * Get the project's alert rules, enabled first.
      *
      * @param  Project  $project
      * @return list<AlertRule> the project's current rules, with their environment
@@ -25,7 +25,7 @@ final class ProjectAlertRulesQuery
     }
 
     /**
-     * A rule of this project (404 otherwise). Archived rules only when asked for, e.g. to show their history.
+     * Find a rule of this project (404 otherwise). Archived rules only when asked for, e.g. to show their history.
      *
      * @param  Project  $project
      * @param  string|int  $id
@@ -45,7 +45,7 @@ final class ProjectAlertRulesQuery
     }
 
     /**
-     * An objective of this project (404 otherwise).
+     * Find an objective of this project (404 otherwise).
      *
      * @param  Project  $project
      * @param  string|int  $id
@@ -60,7 +60,7 @@ final class ProjectAlertRulesQuery
     }
 
     /**
-     * The project's SLOs, enabled first.
+     * Get the project's SLOs, enabled first.
      *
      * @param  Project  $project
      * @return list<ServiceLevelObjective>
@@ -72,7 +72,7 @@ final class ProjectAlertRulesQuery
     }
 
     /**
-     * The IDs of the project's environments, as a subquery.
+     * Query the IDs of the project's environments, as a subquery.
      *
      * @param  Project  $project
      * @return Builder<Environment>

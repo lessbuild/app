@@ -34,6 +34,8 @@ class AnalyticsVisit extends Model
     protected $fillable = ['site_id', 'visit_key', 'visitor_hash', 'session_id', 'started_at', 'last_seen_at', 'landing_path', 'exit_path', 'entry_referrer_host', 'entry_utm_source', 'entry_utm_medium', 'entry_utm_campaign', 'pageviews', 'conversion_count'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -44,7 +46,7 @@ class AnalyticsVisit extends Model
     }
 
     /**
-     * The site the visit was on.
+     * Get the site the visit was on.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */

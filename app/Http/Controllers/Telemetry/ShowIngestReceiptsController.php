@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowIngestReceiptsController
 {
     /**
-     * An environment's recent deliveries, optionally by status.
+     * Show an environment's recent deliveries, optionally by status.
      *
      * @param  SearchIngestReceiptsRequest  $request
      * @param  User  $user

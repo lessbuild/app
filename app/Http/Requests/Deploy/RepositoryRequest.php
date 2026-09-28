@@ -9,8 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final class RepositoryRequest extends FormRequest
 {
     /**
-     * A repository's settings. The URL must look like `host/owner/repo`, the branch must be a valid Git ref name, and
-     * the deployment root must be a relative path that doesn't climb out with `..`.
+     * Get the validation rules for a repository's settings. The URL must look like `host/owner/repo`, the branch must
+     * be a valid Git ref name, and the deployment root must be a relative path that doesn't climb out with `..`.
      *
      * @return array<string, array<mixed>>
      */
@@ -32,7 +32,7 @@ final class RepositoryRequest extends FormRequest
     }
 
     /**
-     * The validated settings, with the automatic-deploy path filters split into lists, one pattern per line.
+     * Get the validated settings, with the automatic-deploy path filters split into lists, one pattern per line.
      *
      * @return array{name: string, provider_id: int|string, url: string, branch: string, website_id: int|string, environment_id?: string|null, deployment_root?: string|null, build_commands?: string|null, post_deployment_commands?: string|null, auto_deploy_include_paths?: list<string>, auto_deploy_exclude_paths?: list<string>}
      */
@@ -46,7 +46,7 @@ final class RepositoryRequest extends FormRequest
     }
 
     /**
-     * Normalises the repository URL (`https://`, `git@host:`, a `.git` suffix and trailing slashes all come off,
+     * Normalise the repository URL (`https://`, `git@host:`, a `.git` suffix and trailing slashes all come off,
      * lowercased) and trims slashes from the deployment root before validation.
      *
      * @return void

@@ -46,7 +46,7 @@ final class Deployment extends Model
     use HasFactory;
 
     /**
-     * Limits a query to deployments in the account's environments whose release also belongs to the account.
+     * Limit a query to deployments in the account's environments whose release also belongs to the account.
      *
      * @param  Builder<Deployment>  $query
      * @param  Account  $account
@@ -60,7 +60,7 @@ final class Deployment extends Model
     }
 
     /**
-     * The environment deployed to.
+     * Get the environment deployed to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -70,7 +70,7 @@ final class Deployment extends Model
     }
 
     /**
-     * The release deployed.
+     * Get the release deployed.
      *
      * @return BelongsTo<Release, $this>
      */
@@ -80,7 +80,7 @@ final class Deployment extends Model
     }
 
     /**
-     * Who reported the deployment (`actor_id`), when a person did.
+     * Get the person who reported the deployment (`actor_id`), when a person did.
      *
      * @return BelongsTo<User, $this>
      */
@@ -90,7 +90,7 @@ final class Deployment extends Model
     }
 
     /**
-     * The ingest token that reported it, when a pipeline did.
+     * Get the ingest token that reported it, when a pipeline did.
      *
      * @return BelongsTo<IngestToken, $this>
      */
@@ -100,6 +100,8 @@ final class Deployment extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

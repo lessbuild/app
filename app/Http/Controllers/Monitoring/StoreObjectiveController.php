@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreObjectiveController
 {
     /**
-     * Creates an SLO.
+     * Create an SLO.
      *
      * @param  ServiceLevelObjectiveRequest  $request
      * @param  User  $user

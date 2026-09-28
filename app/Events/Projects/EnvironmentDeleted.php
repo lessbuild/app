@@ -13,6 +13,8 @@ final readonly class EnvironmentDeleted
     use Dispatchable;
 
     /**
+     * Create a new EnvironmentDeleted instance.
+     *
      * An environment was deleted. It's gone when this fires, so the name is carried separately.
      *
      * @param  Project  $project  The project it belonged to.

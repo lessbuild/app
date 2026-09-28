@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ShowSessionsController
 {
     /**
-     * The sessions page: signed-in browsers and recent sign-ins.
+     * Show the sessions page: signed-in browsers and recent sign-ins.
      *
      * @param  Request  $request
      * @param  User  $user

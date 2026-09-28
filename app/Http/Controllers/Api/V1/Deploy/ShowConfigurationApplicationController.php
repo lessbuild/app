@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 final class ShowConfigurationApplicationController
 {
     /**
-     * Returns the application's receipt.
+     * Return the application's receipt.
      *
      * @param  User  $user
      * @param  Account  $account

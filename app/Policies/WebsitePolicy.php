@@ -19,7 +19,7 @@ final class WebsitePolicy
     use ChecksAccountRole;
 
     /**
-     * Seeing a website: account members who may view projects and use Infrastructure.
+     * Determine whether the user can see a website: account members who may view projects and use Infrastructure.
      *
      * @param  User  $user
      * @param  Website  $website
@@ -31,7 +31,7 @@ final class WebsitePolicy
     }
 
     /**
-     * Adding a website: people who manage the account's settings.
+     * Determine whether the user can add a website: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -43,7 +43,8 @@ final class WebsitePolicy
     }
 
     /**
-     * Changing a website's settings, domains and environment variables: people who manage the account's settings.
+     * Determine whether the user can change a website's settings, domains and environment variables: people who manage
+     * the account's settings.
      *
      * @param  User  $user
      * @param  Website  $website
@@ -55,7 +56,7 @@ final class WebsitePolicy
     }
 
     /**
-     * Removing a website, allowed to the same people as update.
+     * Determine whether the user can remove a website, which the same people as update can.
      *
      * @param  User  $user
      * @param  Website  $website
@@ -67,7 +68,8 @@ final class WebsitePolicy
     }
 
     /**
-     * Running and scheduling backups, and verifying them, needs managed backups on the Deploy plan.
+     * Determine whether the user can run, schedule and verify backups, which also needs managed backups on the Deploy
+     * plan.
      *
      * @param  User  $user
      * @param  Website  $website
@@ -85,7 +87,8 @@ final class WebsitePolicy
     }
 
     /**
-     * Inspecting the database, adding database users and copying databases needs managed resources on the Deploy plan.
+     * Determine whether the user can inspect the database, add database users and copy databases, which also needs
+     * managed resources on the Deploy plan.
      *
      * @param  User  $user
      * @param  Website  $website
@@ -103,7 +106,8 @@ final class WebsitePolicy
     }
 
     /**
-     * Restoring works on any plan, so backups taken before a downgrade can still be used.
+     * Determine whether the user can restore a backup. Restoring works on any plan, so backups taken before a
+     * downgrade can still be used.
      *
      * @param  User  $user
      * @param  Website  $website

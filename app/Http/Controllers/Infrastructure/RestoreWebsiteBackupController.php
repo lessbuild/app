@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RestoreWebsiteBackupController
 {
     /**
-     * Starts restoring a website from a backup; a failed restore puts the website back as it was.
+     * Start restoring a website from a backup; a failed restore puts the website back as it was.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -12,7 +12,7 @@ enum IssueStatus: string
     case Ignored = 'ignored';
 
     /**
-     * The status as shown on the issues list and issue page.
+     * Get the status as shown on the issues list and issue page.
      *
      * @return string
      */
@@ -22,7 +22,7 @@ enum IssueStatus: string
     }
 
     /**
-     * The badge colour for the status.
+     * Get the badge colour for the status.
      *
      * @return string
      */

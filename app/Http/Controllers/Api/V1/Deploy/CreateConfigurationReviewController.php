@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 final class CreateConfigurationReviewController
 {
     /**
-     * Creates the review and returns its plan and expiry (201).
+     * Create the review and returns its plan and expiry (201).
      *
      * @param  ConfigurationRequest  $request
      * @param  User  $user

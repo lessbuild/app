@@ -15,7 +15,7 @@ final class StatusPagePolicy
     use ManagesMonitoring;
 
     /**
-     * Creating a status page: people who manage the account's settings.
+     * Determine whether the user can create a status page: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -27,7 +27,7 @@ final class StatusPagePolicy
     }
 
     /**
-     * Changing a status page or posting an update: the same people.
+     * Determine whether the user can change a status page or post an update: the same people.
      *
      * @param  User  $user
      * @param  StatusPage  $record
@@ -39,7 +39,7 @@ final class StatusPagePolicy
     }
 
     /**
-     * Deleting a status page, allowed to the same people as update.
+     * Determine whether the user can delete a status page, which the same people as update can.
      *
      * @param  User  $user
      * @param  StatusPage  $record

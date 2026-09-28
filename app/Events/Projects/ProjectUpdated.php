@@ -13,6 +13,8 @@ final readonly class ProjectUpdated
     use Dispatchable;
 
     /**
+     * Create a new ProjectUpdated instance.
+     *
      * A project's name or description changed. Recorded in the project's activity.
      *
      * @param  Project  $project  The project, already carrying the change.

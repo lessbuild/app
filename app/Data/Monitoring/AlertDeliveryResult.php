@@ -9,6 +9,8 @@ use App\Enums\AlertDeliveryStatus;
 final readonly class AlertDeliveryResult
 {
     /**
+     * Create a new AlertDeliveryResult instance.
+     *
      * What happened when an alert was handed to a destination.
      *
      * @param  AlertDeliveryStatus  $status  Accepted, failed, or uncertain (it may have arrived).

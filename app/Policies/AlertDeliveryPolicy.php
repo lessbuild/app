@@ -14,7 +14,7 @@ final class AlertDeliveryPolicy
     use ManagesMonitoring;
 
     /**
-     * Retrying a failed or uncertain delivery: the account's settings managers.
+     * Determine whether the user can retry a failed or uncertain delivery. The account's settings managers can.
      *
      * @param  User  $user
      * @param  AlertDelivery  $record

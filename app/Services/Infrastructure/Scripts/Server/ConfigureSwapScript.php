@@ -16,7 +16,7 @@ class ConfigureSwapScript implements ServerScript
     public const IDENTIFIER = 'configured-swap';
 
     /**
-     * Shell script to run
+     * Render the stage that adds a swap file and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

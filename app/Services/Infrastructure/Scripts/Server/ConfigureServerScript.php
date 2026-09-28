@@ -18,7 +18,7 @@ class ConfigureServerScript implements ServerScript
     public const IDENTIFIER = 'configured-server';
 
     /**
-     * Shell script to run
+     * Render the stage that hardens SSH, sets up the firewall and the root login, and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

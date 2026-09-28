@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowConfigurationApplicationController
 {
     /**
-     * An applied configuration's progress. Only the person who asked for the review may retry its operations.
+     * Show an applied configuration's progress. Only the person who asked for the review may retry its operations.
      *
      * @param  User  $user
      * @param  Project  $project

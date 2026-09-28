@@ -23,7 +23,7 @@ final class ProviderIntents
     private const TTL_SECONDS = 600;
 
     /**
-     * Remembers that this browser started connecting or confirming with a provider, for whom and when.
+     * Remember that this browser started connecting or confirming with a provider, for whom and when.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -37,7 +37,7 @@ final class ProviderIntents
     }
 
     /**
-     * Takes the remembered intent out of the session (so it can only be used once) and says whether it matches this
+     * Take the remembered intent out of the session (so it can only be used once) and says whether it matches this
      * person and provider and is still fresh. Null when nothing was started.
      *
      * @param  Request  $request

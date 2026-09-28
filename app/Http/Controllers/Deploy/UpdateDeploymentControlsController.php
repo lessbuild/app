@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class UpdateDeploymentControlsController
 {
     /**
-     * Locks or unlocks deploys to an environment and sets the window deploys may run in.
+     * Lock or unlocks deploys to an environment and sets the window deploys may run in.
      *
      * @param  Request  $request
      * @param  User  $user

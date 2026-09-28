@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreStatusUpdateController
 {
     /**
-     * Posts an update; subscribers are emailed when the page is published.
+     * Post an update; subscribers are emailed when the page is published.
      *
      * @param  StatusUpdateRequest  $request
      * @param  User  $user

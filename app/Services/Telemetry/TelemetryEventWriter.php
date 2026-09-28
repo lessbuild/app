@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 final class TelemetryEventWriter
 {
     /**
+     * Create a new TelemetryEventWriter instance.
+     *
      * Writes processed telemetry events.
      *
      * @param  TelemetryRedactor  $redactor  Removes secrets from events before they're stored.
@@ -24,7 +26,7 @@ final class TelemetryEventWriter
     ) {}
 
     /**
-     * Stores one event under its deduplication key, linked to its release, and records exceptions against their issue.
+     * Store one event under its deduplication key, linked to its release, and records exceptions against their issue.
      *
      * @param  Environment  $environment
      * @param  array<string, mixed>  $event
@@ -52,8 +54,8 @@ final class TelemetryEventWriter
     }
 
     /**
-     * The event's columns: indexed text cut to its column length, severity defaulting to info, and the event's own time
-     * (or when it arrived).
+     * Build the event's columns: indexed text cut to its column length, severity defaulting to info, and the event's
+     * own time (or when it arrived).
      *
      * @param  Environment  $environment
      * @param  array<string, mixed>  $event
@@ -83,7 +85,7 @@ final class TelemetryEventWriter
     }
 
     /**
-     * Cuts text to an indexed column's length.
+     * Cut text to an indexed column's length.
      *
      * @param  string|null  $value
      * @param  int  $limit
@@ -95,7 +97,7 @@ final class TelemetryEventWriter
     }
 
     /**
-     * Redacts an event and drops the fields only used for deduplication. When a name, title, route or service is too
+     * Redact an event and drops the fields only used for deduplication. When a name, title, route or service is too
      * long for its column, the full value is kept in the payload under `_beacon.indexed_fields`, so nothing the client
      * sent is lost.
      *

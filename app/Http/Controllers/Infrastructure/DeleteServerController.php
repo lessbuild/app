@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteServerController
 {
     /**
-     * Deletes a server.
+     * Delete a server.
      *
      * @param  User  $user
      * @param  Project  $project

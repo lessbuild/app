@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteEnvironmentController
 {
     /**
-     * Deletes one of the project's environments.
+     * Delete one of the project's environments.
      *
      * @param  User  $user
      * @param  Project  $project

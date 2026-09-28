@@ -44,7 +44,7 @@ class ConfigurationOperation extends Model
     public const FINISHED = ['succeeded', 'failed', 'canceled'];
 
     /**
-     * The application that started the operation.
+     * Get the application that started the operation.
      *
      * @return BelongsTo<ConfigurationApplication, $this>
      */
@@ -54,7 +54,7 @@ class ConfigurationOperation extends Model
     }
 
     /**
-     * The deploy it started, if any.
+     * Get the deploy it started, if any.
      *
      * @return BelongsTo<Build, $this>
      */
@@ -64,7 +64,7 @@ class ConfigurationOperation extends Model
     }
 
     /**
-     * The operation this one retries (`retry_of_operation_id`).
+     * Get the operation this one retries (`retry_of_operation_id`).
      *
      * @return HasOne<ConfigurationOperation, $this>
      */
@@ -74,6 +74,8 @@ class ConfigurationOperation extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `payload`, which can carry variable values.
      *
      * @return array<string, string>

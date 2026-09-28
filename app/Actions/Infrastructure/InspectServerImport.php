@@ -19,6 +19,8 @@ use Throwable;
 final class InspectServerImport
 {
     /**
+     * Create a new InspectServerImport instance.
+     *
      * Inspects a server someone wants to import.
      *
      * @param  Entitlements  $entitlements  Checks the plan's server limit before anything connects.

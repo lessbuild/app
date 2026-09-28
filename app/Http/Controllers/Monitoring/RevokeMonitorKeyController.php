@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class RevokeMonitorKeyController
 {
     /**
-     * Revokes the monitor's key and pauses it.
+     * Revoke the monitor's key and pauses it.
      *
      * @param  Request  $request
      * @param  User  $user

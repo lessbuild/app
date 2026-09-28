@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 final class RecordAuditEntry
 {
     /**
+     * Create a new RecordAuditEntry instance.
+     *
      * Writes audit entries.
      *
      * @param  RequestOrigin  $origin  Where the current request came from.
@@ -20,7 +22,7 @@ final class RecordAuditEntry
     public function __construct(private readonly RequestOrigin $origin) {}
 
     /**
-     * Stores an entry with the actor's name and email copied in (so it still reads after they leave), the request's IP
+     * Store an entry with the actor's name and email copied in (so it still reads after they leave), the request's IP
      * and user agent, and the account and project it belongs to. Entries without an account are the person's own
      * security log.
      *

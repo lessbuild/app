@@ -21,6 +21,8 @@ class WebsiteProvisioner
     public const STAGES = [AddWebsiteToCaddyScript::class, CreateMysqlDatabaseScript::class, WriteEnvFileScript::class];
 
     /**
+     * Create a new WebsiteProvisioner instance.
+     *
      * Provisions websites.
      *
      * @param  RemoteScriptRunner  $runner  Uploads and starts the script on the server.
@@ -28,7 +30,7 @@ class WebsiteProvisioner
     public function __construct(private readonly RemoteScriptRunner $runner) {}
 
     /**
-     * Starts provisioning the website on its server in the background.
+     * Start provisioning the website on its server in the background.
      *
      * @param  Website  $website
      * @return void
@@ -40,7 +42,7 @@ class WebsiteProvisioner
     }
 
     /**
-     * The provisioning script: logging and failure reporting, then each stage.
+     * Render the provisioning script: logging and failure reporting, then each stage.
      *
      * @param  Website  $website
      * @return string
@@ -82,7 +84,7 @@ class WebsiteProvisioner
     }
 
     /**
-     * The number of stages, which is the last progress value the script reports.
+     * Count the stages, which is the last progress value the script reports.
      *
      * @return int
      */

@@ -8,8 +8,8 @@ namespace App\Exceptions;
 final class AnalyticsRuleViolation extends RuleViolation
 {
     /**
-     * A site listed a domain that isn't a public hostname (an IP, `localhost`, or something with a path), which the
-     * tracker could never report from.
+     * Build the violation for a site that lists a domain that isn't a public hostname (an IP, `localhost`, or
+     * something with a path), which the tracker could never report from.
      *
      * @param  string  $domain
      * @return AnalyticsRuleViolation
@@ -20,7 +20,7 @@ final class AnalyticsRuleViolation extends RuleViolation
     }
 
     /**
-     * A site was pointed at an environment from a different project.
+     * Build the violation for a site pointed at an environment from a different project.
      *
      * @return AnalyticsRuleViolation
      */

@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 final class ResolveTokenAccount
 {
     /**
+     * Create a new ResolveTokenAccount instance.
+     *
      * Connects an API token to the account it acts in.
      *
      * @param  TokenAccountQuery  $query  Checks the token's creator still may use API tokens there.
@@ -22,7 +24,7 @@ final class ResolveTokenAccount
     public function __construct(private readonly TokenAccountQuery $query) {}
 
     /**
-     * Puts the token's account on the request, or refuses with 403 once the creator has left or lost the right to use
+     * Put the token's account on the request, or refuses with 403 once the creator has left or lost the right to use
      * tokens.
      *
      * @param  Request  $request

@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class GoalRequest extends FormRequest
 {
     /**
-     * A goal's name, kind (path or event), match type and value, and whether it's active.
+     * Get the validation rules: a goal's name, kind (path or event), match type and value, and whether it's active.
      *
      * @return array<string, mixed>
      */
@@ -26,7 +26,7 @@ final class GoalRequest extends FormRequest
     }
 
     /**
-     * The goal's settings.
+     * Build the goal's settings.
      *
      * @return GoalDetails
      */

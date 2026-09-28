@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowDependencyMapController
 {
     /**
-     * The dependency map for a range, optionally for one of the project's environments.
+     * Show the dependency map for a range, optionally for one of the project's environments.
      *
      * @param  SearchDependencyMapRequest  $request
      * @param  User  $user

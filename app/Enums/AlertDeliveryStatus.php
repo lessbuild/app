@@ -15,7 +15,8 @@ enum AlertDeliveryStatus: string
     case Cancelled = 'cancelled';
 
     /**
-     * Whether the delivery is still in flight (queued, sending or waiting to retry), so it can't be retried by hand yet.
+     * Determine whether the delivery is still in flight (queued, sending or waiting to retry), so it can't be retried
+     * by hand yet.
      *
      * @return bool
      */
@@ -25,8 +26,8 @@ enum AlertDeliveryStatus: string
     }
 
     /**
-     * Whether someone may resend it by hand: it failed, or the provider's answer was ambiguous and it may not have
-     * arrived.
+     * Determine whether someone may resend it by hand: it failed, or the provider's answer was ambiguous and it may
+     * not have arrived.
      *
      * @return bool
      */
@@ -36,7 +37,7 @@ enum AlertDeliveryStatus: string
     }
 
     /**
-     * The status as the delivery history shows it.
+     * Get the status as the delivery history shows it.
      *
      * @return string
      */

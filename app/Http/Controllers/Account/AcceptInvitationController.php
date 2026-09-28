@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class AcceptInvitationController
 {
     /**
-     * Joins the invitation's account as the signed-in person and takes them to its dashboard.
+     * Join the invitation's account as the signed-in person and takes them to its dashboard.
      *
      * @param  User  $user
      * @param  string  $token

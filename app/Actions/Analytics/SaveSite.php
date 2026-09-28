@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 final class SaveSite
 {
     /**
+     * Create a new SaveSite instance.
+     *
      * Creates or changes an analytics site.
      *
      * @param  VerifySite  $verify  Verifies it once its domains are saved.

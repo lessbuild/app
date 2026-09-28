@@ -8,6 +8,8 @@ namespace App\Platform\Catalog;
 final readonly class ServiceBilling
 {
     /**
+     * Create a new ServiceBilling instance.
+     *
      * Builds a service's catalogue. The first tier is the one every project starts on.
      *
      * @param  list<Tier>  $tiers
@@ -21,7 +23,7 @@ final readonly class ServiceBilling
     ) {}
 
     /**
-     * The tier a project is on until someone chooses another: the first, which is free.
+     * Get the tier a project is on until someone chooses another: the first, which is free.
      *
      * @return Tier
      */
@@ -31,7 +33,7 @@ final readonly class ServiceBilling
     }
 
     /**
-     * Finds a tier by key, or null when the service doesn't sell one with that key.
+     * Find a tier by key, or null when the service doesn't sell one with that key.
      *
      * @param  string  $key
      * @return Tier|null
@@ -48,7 +50,7 @@ final readonly class ServiceBilling
     }
 
     /**
-     * Finds an add-on by key, or null when the service doesn't sell one with that key.
+     * Find an add-on by key, or null when the service doesn't sell one with that key.
      *
      * @param  string  $key
      * @return AddOn|null

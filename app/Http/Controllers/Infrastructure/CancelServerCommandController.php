@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class CancelServerCommandController
 {
     /**
-     * Cancels a queued command; one that already started can't be.
+     * Cancel a queued command; one that already started can't be.
      *
      * @param  User  $user
      * @param  Project  $project

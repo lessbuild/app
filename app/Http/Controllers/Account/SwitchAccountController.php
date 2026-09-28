@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class SwitchAccountController
 {
     /**
-     * Switches the person's current account. Accounts they don't belong to look like they don't exist.
+     * Switch the person's current account. Accounts they don't belong to look like they don't exist.
      *
      * @param  User  $user
      * @param  Account  $account

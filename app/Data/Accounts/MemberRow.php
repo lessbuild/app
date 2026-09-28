@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final readonly class MemberRow
 {
     /**
+     * Create a new MemberRow instance.
+     *
      * One member on the members page.
      *
      * @param  string  $membershipId  The membership's ID, used by the change-role and remove forms.

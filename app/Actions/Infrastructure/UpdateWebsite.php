@@ -21,6 +21,8 @@ use Illuminate\Validation\ValidationException;
 final class UpdateWebsite
 {
     /**
+     * Create a new UpdateWebsite instance.
+     *
      * Changes a website's settings, possibly moving it to another server.
      *
      * @param  WebsiteServers  $servers  Checks the new server can host websites.

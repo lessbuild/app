@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\DB;
 final class HandleRepositoryWebhook
 {
     /**
+     * Create a new HandleRepositoryWebhook instance.
+     *
      * Turns a verified push into a deploy when it should cause one.
      *
      * @param  Deployments  $deployments  Queues the deploy, or says why it can't be queued now.

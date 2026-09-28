@@ -13,6 +13,8 @@ final readonly class SocialIdentityConnected
     use Dispatchable;
 
     /**
+     * Create a new SocialIdentityConnected instance.
+     *
      * Someone connected a sign-in provider account. Recorded in their personal security log.
      *
      * @param  User  $user  The person.

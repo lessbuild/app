@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowMonitorsController
 {
     /**
-     * The project's monitors.
+     * Show the project's monitors.
      *
      * @param  User  $user
      * @param  Project  $project

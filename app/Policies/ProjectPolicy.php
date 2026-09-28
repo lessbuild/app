@@ -19,7 +19,7 @@ final class ProjectPolicy
     use ChecksAccountRole;
 
     /**
-     * Creating a project in the account.
+     * Determine whether the user can create a project in the account.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -31,7 +31,7 @@ final class ProjectPolicy
     }
 
     /**
-     * Opening the project's overview, settings and activity.
+     * Determine whether the user can open the project's overview, settings and activity.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -43,7 +43,7 @@ final class ProjectPolicy
     }
 
     /**
-     * Changing the project's details, environments and domains.
+     * Determine whether the user can change the project's details, environments and domains.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -55,7 +55,7 @@ final class ProjectPolicy
     }
 
     /**
-     * Deleting the project, which the same people who manage it may do.
+     * Determine whether the user can delete the project, which the same people who manage it can.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -67,7 +67,7 @@ final class ProjectPolicy
     }
 
     /**
-     * See a service's pages inside the project.
+     * Determine whether the person may see a service's pages inside the project.
      *
      * @param  User  $user
      * @param  Project  $project

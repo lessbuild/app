@@ -17,6 +17,8 @@ use LogicException;
 final class DeploymentScript
 {
     /**
+     * Create a new DeploymentScript instance.
+     *
      * Renders the whole deploy script.
      *
      * @param  RepositoryDeploymentPlan  $plan  The stages in order.
@@ -24,8 +26,8 @@ final class DeploymentScript
     public function __construct(private readonly RepositoryDeploymentPlan $plan) {}
 
     /**
-     * The bash script for a build: output goes to a log uploaded every five seconds, each stage runs in order, and any
-     * failure restores the previous release, uploads the log and reports the exit code.
+     * Render the bash script for a build: output goes to a log uploaded every five seconds, each stage runs in order,
+     * and any failure restores the previous release, uploads the log and reports the exit code.
      *
      * @param  Build  $build
      * @return string

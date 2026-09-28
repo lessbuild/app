@@ -16,6 +16,8 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
     public const IDENTIFIER = 'configured-web-runtime';
 
     /**
+     * Create a new ConfigureWebRuntimeScript instance.
+     *
      * Bind the shared Caddy renderer while retaining a direct-construction fallback for script tests and callers.
      *
      * @param  WebsiteCaddyConfiguration|null  $caddy  Renderer for complete website routing configurations.

@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class NormalizedEvent
 {
     /**
+     * Create a new NormalizedEvent instance.
+     *
      * One pageview or custom event, cleaned up and ready to store.
      *
      * @param  string  $eventId  The client's ID for the event, so a resent batch doesn't count twice.
@@ -45,7 +47,7 @@ final readonly class NormalizedEvent
     ) {}
 
     /**
-     * The event as a row for `analytics_events`, for a bulk insert.
+     * Convert the event to a row for `analytics_events`, for a bulk insert.
      *
      * @param  int  $siteId
      * @param  int  $batchId

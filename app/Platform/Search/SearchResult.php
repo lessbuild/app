@@ -7,6 +7,8 @@ namespace App\Platform\Search;
 final readonly class SearchResult
 {
     /**
+     * Create a new SearchResult instance.
+     *
      * One row in the command palette's search results.
      *
      * @param  string  $title  The main text, such as a project name.

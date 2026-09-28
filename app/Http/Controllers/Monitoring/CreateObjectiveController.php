@@ -13,7 +13,7 @@ use Illuminate\Contracts\View\View;
 final class CreateObjectiveController
 {
     /**
-     * The new SLO form.
+     * Show the new SLO form.
      *
      * @param  User  $user
      * @param  Project  $project

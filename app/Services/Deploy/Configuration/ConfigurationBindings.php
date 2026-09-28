@@ -18,9 +18,9 @@ use Illuminate\Validation\ValidationException;
 final class ConfigurationBindings
 {
     /**
-     * Resolves the document's placements, repositories and secrets to records the person may use in the project's
-     * account, checking each fits (a repository on the placement's website, a secret in a compatible scope). Any problem
-     * is one generic error, so bindings can't be used to probe other records.
+     * Resolve the document's placements, repositories and secrets to records the person may use in the project's
+     * account, checking each fits (a repository on the placement's website, a secret in a compatible scope). Any
+     * problem is one generic error, so bindings can't be used to probe other records.
      *
      * @param  Project  $project
      * @param  User  $user
@@ -83,7 +83,7 @@ final class ConfigurationBindings
     }
 
     /**
-     * The ID bound to a name, or 0 when there's none.
+     * Get the ID bound to a name, or 0 when there's none.
      *
      * @param  array<string, mixed>  $bindings
      * @param  string  $kind
@@ -99,7 +99,7 @@ final class ConfigurationBindings
     }
 
     /**
-     * Refuses the bindings without saying which one failed.
+     * Refuse the bindings without saying which one failed.
      *
      * @return never
      */

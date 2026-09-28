@@ -12,7 +12,7 @@ use Illuminate\Validation\Validator;
 final class StoreQueueSnapshotRequest extends FormRequest
 {
     /**
-     * Allowed once the queue key middleware has identified the monitor.
+     * Allow the request once the queue key middleware has identified the monitor.
      *
      * @return bool
      */
@@ -22,7 +22,7 @@ final class StoreQueueSnapshotRequest extends FormRequest
     }
 
     /**
-     * The JSON body, which the middleware decoded.
+     * Get the JSON body to validate, which the middleware decoded.
      *
      * @return array<string, mixed>
      */
@@ -32,7 +32,8 @@ final class StoreQueueSnapshotRequest extends FormRequest
     }
 
     /**
-     * A snapshot UUID, a UTC sample time, and the queue metrics as strict integers (only `pending` is required).
+     * Get the validation rules: a snapshot UUID, a UTC sample time, and the queue metrics as strict integers (only
+     * `pending` is required).
      *
      * @return array<string, array<mixed>>
      */
@@ -48,7 +49,7 @@ final class StoreQueueSnapshotRequest extends FormRequest
     }
 
     /**
-     * Refuses fields beyond the documented ones (so job payloads and credentials are never stored), sample times before
+     * Refuse fields beyond the documented ones (so job payloads and credentials are never stored), sample times before
      * 2000 or more than 30 seconds ahead, and a positive oldest wait on an empty queue.
      *
      * @return array<callable(Validator): void>

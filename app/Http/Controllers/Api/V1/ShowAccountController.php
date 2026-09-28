@@ -11,7 +11,7 @@ use Illuminate\Http\Request;
 final class ShowAccountController
 {
     /**
-     * `GET /api/v1/account`: the account the token acts in.
+     * Return the account the token acts in (`GET /api/v1/account`).
      *
      * @param  Request  $request
      * @return JsonResponse

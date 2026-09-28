@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 final class RevokeApiToken
 {
     /**
-     * People who manage the account's tokens may revoke any of them; anyone may revoke their own.
+     * Revoke an API token. People who manage the account's tokens may revoke any of them; anyone may revoke their own.
      *
      * @param  User  $actor
      * @param  ApiToken  $token

@@ -16,6 +16,8 @@ final class AccountInvitationNotification extends Notification implements Should
     use Queueable;
 
     /**
+     * Create a new AccountInvitationNotification instance.
+     *
      * The email inviting someone to join an account. Queued, since sending mail shouldn't hold up the invite form.
      *
      * @param  AccountInvitation  $invitation  The invitation being sent.
@@ -28,7 +30,7 @@ final class AccountInvitationNotification extends Notification implements Should
     ) {}
 
     /**
-     * Invitations go by email only: the invitee may not have a user here yet.
+     * Get the notification's delivery channels: email only, since the invitee may not have a user here yet.
      *
      * @param  object  $notifiable
      * @return list<string>
@@ -39,7 +41,7 @@ final class AccountInvitationNotification extends Notification implements Should
     }
 
     /**
-     * Says who invited them, to which account and role, links to the invitation page and says when it expires.
+     * Say who invited them, to which account and role, links to the invitation page and says when it expires.
      *
      * @param  object  $notifiable
      * @return MailMessage

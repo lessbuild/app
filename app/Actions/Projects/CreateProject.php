@@ -52,7 +52,7 @@ final class CreateProject
     }
 
     /**
-     * A URL slug from the project's name, numbered when the account already has it.
+     * Make a URL slug from the project's name, numbered when the account already has it.
      *
      * @param  Account  $account
      * @param  string  $name

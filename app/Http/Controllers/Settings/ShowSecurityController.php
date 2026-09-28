@@ -16,7 +16,7 @@ use Laravel\Fortify\Fortify;
 final class ShowSecurityController
 {
     /**
-     * The security page. Recovery codes are shown only right after they're created.
+     * Show the security page. Recovery codes are shown only right after they're created.
      *
      * @param  Request  $request
      * @param  User  $user

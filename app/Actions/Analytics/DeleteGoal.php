@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteGoal
 {
     /**
+     * Create a new DeleteGoal instance.
+     *
      * Deletes a goal.
      *
      * @param  RebuildSiteReports  $rebuild  Recounts the site's history without it.
@@ -18,7 +20,7 @@ final class DeleteGoal
     public function __construct(private readonly RebuildSiteReports $rebuild) {}
 
     /**
-     * Deletes the goal and rebuilds the site's visits, conversions and totals so it disappears from past reports too.
+     * Delete the goal and rebuilds the site's visits, conversions and totals so it disappears from past reports too.
      *
      * @param  User  $actor
      * @param  AnalyticsGoal  $goal

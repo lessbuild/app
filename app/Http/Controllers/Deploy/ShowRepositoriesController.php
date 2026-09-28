@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowRepositoriesController
 {
     /**
-     * The project's repositories with each one's latest deploy.
+     * Show the project's repositories with each one's latest deploy.
      *
      * @param  User  $user
      * @param  Project  $project

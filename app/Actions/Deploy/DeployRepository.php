@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 final class DeployRepository
 {
     /**
+     * Create a new DeployRepository instance.
+     *
      * Starts a deploy of a repository by hand or through the API.
      *
      * @param  Deployments  $deployments  Queues the deploy, or says why it can't be queued now.

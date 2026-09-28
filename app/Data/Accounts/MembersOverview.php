@@ -9,6 +9,8 @@ use App\Enums\AccountRole;
 final readonly class MembersOverview
 {
     /**
+     * Create a new MembersOverview instance.
+     *
      * Everything the members page shows.
      *
      * @param  ?AccountRole  $viewerRole  The viewer's own role in the account.

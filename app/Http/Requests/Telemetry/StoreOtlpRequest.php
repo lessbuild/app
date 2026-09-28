@@ -12,7 +12,7 @@ use Illuminate\Validation\Validator;
 final class StoreOtlpRequest extends FormRequest
 {
     /**
-     * Always allowed: the ingest key was checked by middleware.
+     * Allow the request; the ingest key was checked by middleware.
      *
      * @return bool
      */
@@ -22,7 +22,7 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * The decoded JSON body.
+     * Get the decoded JSON body to validate.
      *
      * @return array<string, mixed>
      */
@@ -43,9 +43,9 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * The structure of an OTLP/JSON export for the signal in the URL: resources, scopes and records as lists, IDs as hex
-     * of the right length, attribute lists capped per record, and every value a valid OTLP value. Spans must have start
-     * and end times; metrics are checked per data-point family.
+     * Get the validation rules for the structure of an OTLP/JSON export for the signal in the URL: resources, scopes
+     * and records as lists, IDs as hex of the right length, attribute lists capped per record, and every value a valid
+     * OTLP value. Spans must have start and end times; metrics are checked per data-point family.
      *
      * @return array<string, array<int, mixed>>
      */
@@ -95,7 +95,7 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * Checks what rules can't express: the optional batch header, timestamps as unsigned 64-bit nanoseconds, spans that
+     * Check what rules can't express: the optional batch header, timestamps as unsigned 64-bit nanoseconds, spans that
      * don't end before they start, integer enum fields, log severity numbers, and at most one data family per metric.
      *
      * @return array<int, callable>
@@ -127,7 +127,8 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * Rules for a trace or span ID: hex of exactly `$length` characters and not all zeros, required for spans.
+     * Build the rules for a trace or span ID: hex of exactly `$length` characters and not all zeros, required for
+     * spans.
      *
      * @param  int  $length
      * @param  bool  $required
@@ -139,7 +140,7 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * Checks one record's timestamps and enum fields for its signal; metric data points are checked recursively as
+     * Check one record's timestamps and enum fields for its signal; metric data points are checked recursively as
      * "points".
      *
      * @param  Validator  $validator
@@ -209,7 +210,7 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * The JSON keys for resources, scopes and records of the signal in the URL; unknown signals are a 404.
+     * Get the JSON keys for resources, scopes and records of the signal in the URL; unknown signals are a 404.
      *
      * @return array{string, string, string}
      */
@@ -224,8 +225,8 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * Rules for an attribute list: at most the configured number of attributes, each with a key of at most 256
-     * characters and a valid OTLP value.
+     * Build the rules for an attribute list: at most the configured number of attributes, each with a key of at most
+     * 256 characters and a valid OTLP value.
      *
      * @param  string  $path
      * @return array<string, array<int, mixed>>
@@ -241,7 +242,7 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * A validation rule that fails for anything that isn't a valid OTLP `AnyValue`.
+     * Build a validation rule that fails for anything that isn't a valid OTLP `AnyValue`.
      *
      * @return Closure
      */
@@ -255,8 +256,9 @@ final class StoreOtlpRequest extends FormRequest
     }
 
     /**
-     * Whether a value is a valid OTLP `AnyValue`: null, or an object with at most one typed field whose content fits the
-     * type. Arrays and key-value lists are checked recursively, and key-value lists share the attribute limit.
+     * Determine whether a value is a valid OTLP `AnyValue`: null, or an object with at most one typed field whose
+     * content fits the type. Arrays and key-value lists are checked recursively, and key-value lists share the
+     * attribute limit.
      *
      * @param  mixed  $value
      * @return bool

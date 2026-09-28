@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Gate;
 final class RetryLoadBalancer
 {
     /**
+     * Create a new RetryLoadBalancer instance.
+     *
      * Tries a failed load-balancer change again.
      *
      * @param  LoadBalancerChanges  $changes  Re-applies the configuration.

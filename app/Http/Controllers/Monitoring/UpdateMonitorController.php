@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateMonitorController
 {
     /**
-     * Saves a monitor.
+     * Save a monitor.
      *
      * @param  MonitorRequest  $request
      * @param  User  $user

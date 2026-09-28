@@ -11,7 +11,7 @@ use Illuminate\Contracts\View\View;
 final class ShowProfileController
 {
     /**
-     * The profile page.
+     * Show the profile page.
      *
      * @param  User  $user
      * @return View

@@ -8,7 +8,7 @@ namespace App\Exceptions;
 final class BillingRuleViolation extends RuleViolation
 {
     /**
-     * The requested tier isn't in the service's billing catalogue.
+     * Build the violation for a tier that isn't in the service's billing catalogue.
      *
      * @return BillingRuleViolation
      */
@@ -18,7 +18,7 @@ final class BillingRuleViolation extends RuleViolation
     }
 
     /**
-     * The tier exists in the catalogue but has no price yet, so it can't be chosen.
+     * Build the violation for a tier that exists in the catalogue but has no price yet, so it can't be chosen.
      *
      * @return BillingRuleViolation
      */
@@ -28,7 +28,8 @@ final class BillingRuleViolation extends RuleViolation
     }
 
     /**
-     * No payment provider is configured in this environment, so only free tiers can be chosen.
+     * Build the violation for when no payment provider is configured in this environment, so only free tiers can be
+     * chosen.
      *
      * @return BillingRuleViolation
      */

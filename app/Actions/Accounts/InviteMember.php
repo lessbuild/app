@@ -20,6 +20,8 @@ use Illuminate\Support\Str;
 final class InviteMember
 {
     /**
+     * Create a new InviteMember instance.
+     *
      * Invites someone to the account, within the plan's member limit.
      *
      * @param  Entitlements  $entitlements  Checks the account's member limit.

@@ -90,7 +90,7 @@ class Website extends Model
     public const HEALTH_FAILURE_THRESHOLDS = [1, 2, 3, 5, 10];
 
     /**
-     * Gives each new website a provisioning token and a directory slug made from its name (at most 32 characters,
+     * Give each new website a provisioning token and a directory slug made from its name (at most 32 characters,
      * unique in the account), and adds its URL as its primary domain once it's created.
      *
      * @return void
@@ -124,7 +124,7 @@ class Website extends Model
     }
 
     /**
-     * The account the website belongs to.
+     * Get the account the website belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -134,7 +134,7 @@ class Website extends Model
     }
 
     /**
-     * Who created it (`created_by`).
+     * Get the person who created the website (`created_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -144,7 +144,7 @@ class Website extends Model
     }
 
     /**
-     * The server it runs on.
+     * Get the server it runs on.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -154,7 +154,7 @@ class Website extends Model
     }
 
     /**
-     * The server it moved from, until its files there are cleaned up (`previous_server_id`).
+     * Get the server it moved from, until its files there are cleaned up (`previous_server_id`).
      *
      * @return BelongsTo<Server, $this>
      */
@@ -164,7 +164,7 @@ class Website extends Model
     }
 
     /**
-     * The project environment it serves, if any.
+     * Get the project environment it serves, if any.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -174,7 +174,7 @@ class Website extends Model
     }
 
     /**
-     * The monitor that checks its health URL (`health_monitor_id`).
+     * Get the monitor that checks its health URL (`health_monitor_id`).
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -184,7 +184,7 @@ class Website extends Model
     }
 
     /**
-     * Its domains.
+     * Get the website's domains.
      *
      * @return HasMany<WebsiteDomain, $this>
      */
@@ -194,7 +194,7 @@ class Website extends Model
     }
 
     /**
-     * Its provisioning and deploy logs.
+     * Get the website's provisioning and deploy logs.
      *
      * @return HasMany<WebsiteLog, $this>
      */
@@ -204,7 +204,7 @@ class Website extends Model
     }
 
     /**
-     * When it's backed up, and where to.
+     * Get when the website is backed up, and where to.
      *
      * @return HasMany<WebsiteBackupSchedule, $this>
      */
@@ -214,7 +214,7 @@ class Website extends Model
     }
 
     /**
-     * Its backups.
+     * Get the website's backups.
      *
      * @return HasMany<WebsiteBackup, $this>
      */
@@ -224,7 +224,7 @@ class Website extends Model
     }
 
     /**
-     * Inspections of its database.
+     * Get the inspections of the website's database.
      *
      * @return HasMany<DatabaseSnapshot, $this>
      */
@@ -234,7 +234,7 @@ class Website extends Model
     }
 
     /**
-     * Extra users on its database.
+     * Get the extra users on the website's database.
      *
      * @return HasMany<DatabaseUser, $this>
      */
@@ -244,7 +244,7 @@ class Website extends Model
     }
 
     /**
-     * The MySQL database and user name: the directory slug with hyphens as underscores.
+     * Get the MySQL database and user name: the directory slug with hyphens as underscores.
      *
      * @return string
      */
@@ -254,7 +254,7 @@ class Website extends Model
     }
 
     /**
-     * Where a release phase lives on the server. Deploy adds the repository's subdirectory.
+     * Get where a release phase lives on the server. Deploy adds the repository's subdirectory.
      *
      * @param  string  $phase
      * @return string
@@ -265,7 +265,7 @@ class Website extends Model
     }
 
     /**
-     * Whether the website is still being set up.
+     * Determine whether the website is still being set up.
      *
      * @return bool
      */
@@ -275,6 +275,8 @@ class Website extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the `.env` file and the database password.
      *
      * @return array<string, string>

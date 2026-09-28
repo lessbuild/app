@@ -15,6 +15,8 @@ use Illuminate\Contracts\View\View;
 final class ShowMembersController
 {
     /**
+     * Create a new ShowMembersController instance.
+     *
      * Shows the members page.
      *
      * @param  ServiceRegistry  $services  The services a member's access can be limited to.
@@ -22,7 +24,7 @@ final class ShowMembersController
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * The members page.
+     * Show the members page.
      *
      * @param  Account  $account
      * @param  User  $user

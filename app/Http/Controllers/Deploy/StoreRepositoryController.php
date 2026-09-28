@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreRepositoryController
 {
     /**
-     * Connects a repository to the project.
+     * Connect a repository to the project.
      *
      * @param  RepositoryRequest  $request
      * @param  User  $user

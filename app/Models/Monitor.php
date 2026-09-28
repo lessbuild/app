@@ -94,7 +94,7 @@ class Monitor extends Model
     protected $hidden = ['request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_token_hash', 'queue_token_hash'];
 
     /**
-     * Limits a query to monitors in the account's environments.
+     * Limit a query to monitors in the account's environments.
      *
      * @param  Builder<Monitor>  $query
      * @param  Account  $account
@@ -107,7 +107,7 @@ class Monitor extends Model
     }
 
     /**
-     * The environment the monitor belongs to.
+     * Get the environment the monitor belongs to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -117,7 +117,7 @@ class Monitor extends Model
     }
 
     /**
-     * Its scheduled and finished checks.
+     * Get the monitor's scheduled and finished checks.
      *
      * @return HasMany<MonitorCheck, $this>
      */
@@ -127,7 +127,7 @@ class Monitor extends Model
     }
 
     /**
-     * Pings from the job a heartbeat monitor watches.
+     * Get the pings from the job a heartbeat monitor watches.
      *
      * @return HasMany<HeartbeatRun, $this>
      */
@@ -137,7 +137,7 @@ class Monitor extends Model
     }
 
     /**
-     * Reports from the queue a queue monitor watches.
+     * Get the reports from the queue a queue monitor watches.
      *
      * @return HasMany<QueueSnapshot, $this>
      */
@@ -147,7 +147,7 @@ class Monitor extends Model
     }
 
     /**
-     * Workers seen by a queue monitor.
+     * Get the workers seen by a queue monitor.
      *
      * @return HasMany<QueueWorker, $this>
      */
@@ -157,7 +157,7 @@ class Monitor extends Model
     }
 
     /**
-     * Incidents the monitor has opened.
+     * Get the incidents the monitor has opened.
      *
      * @return HasMany<Incident, $this>
      */
@@ -167,7 +167,7 @@ class Monitor extends Model
     }
 
     /**
-     * Where the monitor sends alerts.
+     * Get the destinations the monitor sends alerts to.
      *
      * @return BelongsToMany<AlertDestination, $this>
      */
@@ -177,8 +177,8 @@ class Monitor extends Model
     }
 
     /**
-     * What the monitor watches, safe to show: the queue, the heartbeat schedule, the host and port, or a URL cut down to
-     * its scheme, host and port, since paths and queries can hold tokens.
+     * Describe what the monitor watches, safe to show: the queue, the heartbeat schedule, the host and port, or a URL
+     * cut down to its scheme, host and port, since paths and queries can hold tokens.
      *
      * @return string
      */
@@ -205,7 +205,8 @@ class Monitor extends Model
     }
 
     /**
-     * The queue thresholds, with defaults for anything not stored. Required values are always ints; a null maximum is off.
+     * Get the queue thresholds, with defaults for anything not stored. Required values are always ints; a null maximum
+     * is off.
      *
      * @return array{report_timeout_seconds: int, worker_timeout_seconds: int, minimum_workers: int, max_runtime_seconds: int|null, max_pending: int|null, max_delayed: int|null, max_reserved: int|null, max_failed: int|null, max_oldest_wait_seconds: int|null}
      */
@@ -228,7 +229,7 @@ class Monitor extends Model
     }
 
     /**
-     * The monitor type as people read it.
+     * Get the monitor type as people read it.
      *
      * @return string
      */
@@ -245,8 +246,8 @@ class Monitor extends Model
     }
 
     /**
-     * The monitor's state for lists and status pages: archived, paused, unknown when its latest result is missing or
-     * overdue, or up or down from that result.
+     * Describe the monitor's state for lists and status pages: archived, paused, unknown when its latest result is
+     * missing or overdue, or up or down from that result.
      *
      * @return string
      */
@@ -273,8 +274,8 @@ class Monitor extends Model
     }
 
     /**
-     * The monitor's settings as they were when an incident opened, stored on the incident. Only the fields that matter
-     * for the monitor's type are kept, and never its secrets.
+     * Capture the monitor's settings as they are when an incident opens, to store on the incident. Only the fields
+     * that matter for the monitor's type are kept, and never its secrets.
      *
      * @return array<string, mixed>
      */
@@ -299,6 +300,8 @@ class Monitor extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the target and credentials (URL, bearer token, expected body text, hostname, expected DNS answers) and
      * reads the queue settings and latest observation as JSON.
      *

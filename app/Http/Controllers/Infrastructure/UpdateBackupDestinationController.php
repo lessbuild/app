@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateBackupDestinationController
 {
     /**
-     * Saves a backup destination.
+     * Save a backup destination.
      *
      * @param  BackupDestinationRequest  $request
      * @param  User  $user

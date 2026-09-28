@@ -17,6 +17,8 @@ class HetznerCloud implements ServerProvider
     private const API = 'https://api.hetzner.cloud/v1';
 
     /**
+     * Create a new HetznerCloud instance.
+     *
      * Configure a Hetzner Cloud adapter for one API credential.
      *
      * @param  string  $token  The bearer token used for provider requests.

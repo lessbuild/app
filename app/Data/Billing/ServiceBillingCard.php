@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final readonly class ServiceBillingCard
 {
     /**
+     * Create a new ServiceBillingCard instance.
+     *
      * One service on the billing page.
      *
      * @param  string  $key  The service's key.

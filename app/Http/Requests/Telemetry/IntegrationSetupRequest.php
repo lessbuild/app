@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 final class IntegrationSetupRequest extends FormRequest
 {
     /**
-     * An optional stack, one of those the setup guide knows.
+     * Get the validation rules: an optional stack, one of those the setup guide knows.
      *
      * @return array<string, array<mixed>>
      */
@@ -23,7 +23,7 @@ final class IntegrationSetupRequest extends FormRequest
     }
 
     /**
-     * The chosen stack, or the stack-neutral default.
+     * Get the chosen stack, or the stack-neutral default.
      *
      * @return string
      */

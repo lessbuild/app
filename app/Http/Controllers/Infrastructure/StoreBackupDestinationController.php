@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreBackupDestinationController
 {
     /**
-     * Adds a backup destination and suggests checking it.
+     * Add a backup destination and suggests checking it.
      *
      * @param  BackupDestinationRequest  $request
      * @param  User  $user

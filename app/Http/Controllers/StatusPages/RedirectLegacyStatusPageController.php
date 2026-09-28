@@ -10,7 +10,7 @@ use Illuminate\Http\RedirectResponse;
 final class RedirectLegacyStatusPageController
 {
     /**
-     * Permanently redirects the old address to the new one.
+     * Permanently redirect the old address to the new one.
      *
      * @param  string  $product
      * @param  string  $slug

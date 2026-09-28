@@ -56,6 +56,8 @@ class Environment extends Model
     use HasFactory, HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `kind` as an EnvironmentKind and the deployment window days as JSON.
      *
      * @return array<string, string>
@@ -71,7 +73,7 @@ class Environment extends Model
     }
 
     /**
-     * Limits a query to environments of the account's projects.
+     * Limit a query to environments of the account's projects.
      *
      * @param  Builder<Environment>  $query
      * @param  Account  $account
@@ -84,7 +86,7 @@ class Environment extends Model
     }
 
     /**
-     * The project the environment belongs to.
+     * Get the project the environment belongs to.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -94,7 +96,7 @@ class Environment extends Model
     }
 
     /**
-     * Keys that send telemetry to the environment.
+     * Get the keys that send telemetry to the environment.
      *
      * @return HasMany<IngestToken, $this>
      */
@@ -104,7 +106,7 @@ class Environment extends Model
     }
 
     /**
-     * Releases reported as deployed here.
+     * Get the releases reported as deployed here.
      *
      * @return HasMany<Deployment, $this>
      */
@@ -114,7 +116,7 @@ class Environment extends Model
     }
 
     /**
-     * Repositories that deploy to this environment.
+     * Get the repositories that deploy to this environment.
      *
      * @return HasMany<Repository, $this>
      */
@@ -124,7 +126,7 @@ class Environment extends Model
     }
 
     /**
-     * Its deploy environment variables.
+     * Get the environment's deploy environment variables.
      *
      * @return HasMany<EnvironmentVariable, $this>
      */
@@ -134,7 +136,7 @@ class Environment extends Model
     }
 
     /**
-     * Its long-running processes (workers, schedulers).
+     * Get the environment's long-running processes (workers, schedulers).
      *
      * @return HasMany<EnvironmentProcess, $this>
      */
@@ -144,7 +146,7 @@ class Environment extends Model
     }
 
     /**
-     * Its attached resources (databases, caches).
+     * Get the environment's attached resources (databases, caches).
      *
      * @return HasMany<EnvironmentResource, $this>
      */
@@ -154,7 +156,7 @@ class Environment extends Model
     }
 
     /**
-     * Why a deploy can't start now (locked, or outside the deployment window), or null.
+     * Explain why a deploy can't start now (locked, or outside the deployment window), or return null.
      *
      * @param  \Carbon\CarbonInterface|null  $at
      * @return string|null

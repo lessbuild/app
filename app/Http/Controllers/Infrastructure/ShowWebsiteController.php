@@ -23,7 +23,7 @@ use Illuminate\Http\Request;
 final class ShowWebsiteController
 {
     /**
-     * A website's page, in tabs: overview, domains, database, backups, and settings for people who may change it.
+     * Show a website's page, in tabs: overview, domains, database, backups, and settings for people who may change it.
      *
      * @param  Request  $request
      * @param  User  $user

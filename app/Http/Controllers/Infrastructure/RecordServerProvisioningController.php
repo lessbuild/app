@@ -16,7 +16,7 @@ use Illuminate\Http\Response;
 final class RecordServerProvisioningController
 {
     /**
-     * Records a provisioning script's report for the attempt named in the URL.
+     * Record a provisioning script's report for the attempt named in the URL.
      *
      * @param  Request  $request
      * @param  string  $serverId

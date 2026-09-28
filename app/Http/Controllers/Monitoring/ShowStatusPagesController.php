@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowStatusPagesController
 {
     /**
-     * The account's status pages.
+     * Show the account's status pages.
      *
      * @param  User  $user
      * @param  Project  $project

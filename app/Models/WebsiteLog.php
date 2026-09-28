@@ -31,7 +31,7 @@ class WebsiteLog extends Model
     protected $guarded = ['id'];
 
     /**
-     * The website the log is about.
+     * Get the website the log is about.
      *
      * @return BelongsTo<Website, $this>
      */

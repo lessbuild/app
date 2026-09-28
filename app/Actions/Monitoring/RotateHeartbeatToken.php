@@ -16,6 +16,8 @@ use Illuminate\Support\Str;
 final class RotateHeartbeatToken
 {
     /**
+     * Create a new RotateHeartbeatToken instance.
+     *
      * Replaces a heartbeat monitor's key.
      *
      * @param  MonitorQueue  $queue  Locks the monitor.

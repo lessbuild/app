@@ -12,7 +12,7 @@ use Illuminate\Support\Collection;
 class ServerCatalog
 {
     /**
-     * The provider's regions, sizes and images for the server form.
+     * Get the provider's regions, sizes and images for the server form.
      *
      * @param  Provider  $provider
      * @param  ServerProvider  $client
@@ -126,7 +126,7 @@ class ServerCatalog
     }
 
     /**
-     * Drops entries without an ID or label and sorts the rest naturally by label.
+     * Drop entries without an ID or label and sorts the rest naturally by label.
      *
      * @param  Collection<array-key, array{id: string, label: string}>  $items
      * @return list<array{id: string, label: string}>

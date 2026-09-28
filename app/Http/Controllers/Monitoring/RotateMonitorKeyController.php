@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class RotateMonitorKeyController
 {
     /**
-     * Issues a new key and shows it once.
+     * Issue a new key and show it once.
      *
      * @param  Request  $request
      * @param  User  $user

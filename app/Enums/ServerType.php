@@ -15,7 +15,7 @@ enum ServerType: string
     case LoadBalancer = 'load-balancer';
 
     /**
-     * The server type's name as shown on server forms and lists.
+     * Get the server type's name as shown on server forms and lists.
      *
      * @return string
      */
@@ -32,7 +32,8 @@ enum ServerType: string
     }
 
     /**
-     * Website provisioning creates a local MySQL database, so only full app servers host websites.
+     * Determine whether servers of this type can host websites. Website provisioning creates a local MySQL database,
+     * so only full app servers can.
      *
      * @return bool
      */
@@ -42,8 +43,8 @@ enum ServerType: string
     }
 
     /**
-     * The software provisioning installs for this type of server. Also decides which servers can front a load balancer:
-     * those with Caddy.
+     * Get the software provisioning installs for this type of server. Also decides which servers can front a load
+     * balancer: those with Caddy.
      *
      * @return list<string>
      */

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreDashboardController
 {
     /**
-     * Creates a dashboard.
+     * Create a dashboard.
      *
      * @param  DashboardRequest  $request
      * @param  User  $user

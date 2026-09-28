@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 final class ReceiveRepositoryWebhookController
 {
     /**
-     * Hands a push webhook to its repository, answering with Deployer's status codes; unknown repositories get a 404.
+     * Hand a push webhook to its repository, answering with Deployer's status codes; unknown repositories get a 404.
      *
      * @param  Request  $request
      * @param  string  $repository

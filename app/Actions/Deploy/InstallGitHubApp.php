@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 final class InstallGitHubApp
 {
     /**
+     * Create a new InstallGitHubApp instance.
+     *
      * Connects an installation of the GitHub App to the account.
      *
      * @param  GitHubApp  $github  Lists the repositories the installation can reach.
@@ -22,8 +24,8 @@ final class InstallGitHubApp
     public function __construct(private readonly GitHubApp $github) {}
 
     /**
-     * GitHub sent the person back after installing the App: record the installation as a GitHub provider of the account.
-     * `$state` must match the hash kept in their session when they left, so an installation can't be attached by a link.
+     * Record the installation GitHub sent the person back with as a GitHub provider of the account. `$state` must
+     * match the hash kept in their session when they left, so an installation can't be attached by a link.
      *
      * @param  User  $actor
      * @param  Account  $account

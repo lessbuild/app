@@ -37,6 +37,8 @@ class AnalyticsExport extends Model
     protected $fillable = ['site_id', 'requested_by', 'token_hash', 'status', 'filters', 'file_path', 'expires_at', 'completed_at', 'failure_message'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `filters` as JSON.
      *
      * @return array<string, string>
@@ -47,7 +49,7 @@ class AnalyticsExport extends Model
     }
 
     /**
-     * The site being exported.
+     * Get the site being exported.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */
@@ -57,7 +59,7 @@ class AnalyticsExport extends Model
     }
 
     /**
-     * Who asked for the export (`requested_by`).
+     * Get the person who asked for the export (`requested_by`).
      *
      * @return BelongsTo<User, $this>
      */

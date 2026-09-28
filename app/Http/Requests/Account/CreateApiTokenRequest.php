@@ -14,7 +14,7 @@ final class CreateApiTokenRequest extends FormRequest
     public const EXPIRY_CHOICES = ['30', '90', '365', 'never'];
 
     /**
-     * A name, at least one scope, and one of the offered expiry choices.
+     * Get the validation rules: a name, at least one scope, and one of the offered expiry choices.
      *
      * @return array<string, mixed>
      */
@@ -29,7 +29,7 @@ final class CreateApiTokenRequest extends FormRequest
     }
 
     /**
-     * The token to create; "never" becomes no expiry.
+     * Build the token to create; "never" becomes no expiry.
      *
      * @return CreateApiTokenData
      */

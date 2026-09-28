@@ -14,6 +14,8 @@ use UnexpectedValueException;
 final class RecordReleases
 {
     /**
+     * Find or create the project's release for an identity.
+     *
      * The caller holds the application lock within its transaction.
      *
      * @param  string  $projectId

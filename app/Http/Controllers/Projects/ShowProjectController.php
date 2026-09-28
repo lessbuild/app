@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowProjectController
 {
     /**
-     * The project overview: services, environments, the getting-started checklist and recent activity.
+     * Show the project overview: services, environments, the getting-started checklist and recent activity.
      *
      * @param  User  $user
      * @param  Project  $project

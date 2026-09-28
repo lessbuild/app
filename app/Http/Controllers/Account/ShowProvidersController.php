@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowProvidersController
 {
     /**
-     * The providers page, with the GitHub App option when it's configured.
+     * Show the providers page, with the GitHub App option when it's configured.
      *
      * @param  Account  $account
      * @param  User  $user

@@ -12,6 +12,8 @@ use Carbon\CarbonImmutable;
 final class MonitorResults
 {
     /**
+     * Create a new MonitorResults instance.
+     *
      * Turns monitor observations into health, incidents and alerts.
      *
      * @param  IncidentLifecycle  $incidents  Closes incidents on recovery.
@@ -25,6 +27,9 @@ final class MonitorResults
     ) {}
 
     /**
+     * Record a monitor result: update its health and streaks, then open, update or close its incident (holding back
+     * new incidents during maintenance).
+     *
      * Caller holds the source and monitor locks inside the observation transaction.
      *
      * @param  Monitor  $monitor

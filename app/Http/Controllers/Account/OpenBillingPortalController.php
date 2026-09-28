@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class OpenBillingPortalController
 {
     /**
-     * Sends the person to the payment provider's billing portal, or back with the reason when it's unavailable.
+     * Send the person to the payment provider's billing portal, or back with the reason when it's unavailable.
      *
      * @param  Account  $account
      * @param  User  $user

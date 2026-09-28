@@ -27,6 +27,8 @@ use Laravel\Fortify\Features;
 final class HandleProviderCallbackController
 {
     /**
+     * Create a new HandleProviderCallbackController instance.
+     *
      * Finishes provider sign-ins, connections and confirmations.
      *
      * @param  SocialSignInGateway  $gateway  Reads the person's profile from the provider.
@@ -44,7 +46,7 @@ final class HandleProviderCallbackController
     ) {}
 
     /**
-     * Handles the provider's redirect back: signs guests in or up, or finishes what a signed-in person started.
+     * Handle the provider's redirect back: signs guests in or up, or finishes what a signed-in person started.
      *
      * @param  Request  $request
      * @param  SocialProvider  $provider
@@ -58,7 +60,7 @@ final class HandleProviderCallbackController
     }
 
     /**
-     * Signs a guest in (or up) from the provider's profile. People with two-factor authentication are handed to
+     * Sign a guest in (or up) from the provider's profile. People with two-factor authentication are handed to
      * Fortify's challenge, exactly like a password sign-in; failures go back to the sign-in page with the reason.
      *
      * @param  Request  $request
@@ -100,7 +102,7 @@ final class HandleProviderCallbackController
     }
 
     /**
-     * Finishes the flow this browser started for a signed-in person: confirming identity (only with the provider account
+     * Finish the flow this browser started for a signed-in person: confirming identity (only with the provider account
      * they connected) or connecting a provider. Expired or foreign flows are refused.
      *
      * @param  Request  $request

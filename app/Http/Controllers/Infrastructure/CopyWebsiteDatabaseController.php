@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class CopyWebsiteDatabaseController
 {
     /**
-     * Copies this website's database over another website's on the same server, once the person has typed the
+     * Copy this website's database over another website's on the same server, once the person has typed the
      * confirmation.
      *
      * @param  Request  $request

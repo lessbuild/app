@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class InvoiceSummary
 {
     /**
+     * Create a new InvoiceSummary instance.
+     *
      * One invoice on the billing page.
      *
      * @param  string  $number  The invoice number.

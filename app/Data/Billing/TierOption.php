@@ -9,6 +9,8 @@ use App\Platform\Catalog\Tier;
 final readonly class TierOption
 {
     /**
+     * Create a new TierOption instance.
+     *
      * One tier a service's plan picker offers.
      *
      * @param  Tier  $tier  The tier.

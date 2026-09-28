@@ -15,6 +15,8 @@ use Illuminate\Database\Eloquent\Builder;
 final class AlertObservation
 {
     /**
+     * Create a new AlertObservation instance.
+     *
      * Measures alert rules.
      *
      * @param  MetricAlertObservation  $metrics  Measures numeric metric rules.
@@ -30,9 +32,9 @@ final class AlertObservation
     ) {}
 
     /**
-     * Measures a rule over the window ending at `$until`: warming until the rule has watched a full window, then by
-     * metric (numeric metrics, anomalies, log patterns, SLO burn, telemetry volume or freshness, or request error rate,
-     * duration, exceptions and error logs from one grouped query). Too few samples is no data.
+     * Measure a rule over the window ending at `$until`: warming until the rule has watched a full window, then by
+     * metric (numeric metrics, anomalies, log patterns, SLO burn, telemetry volume or freshness, or request error
+     * rate, duration, exceptions and error logs from one grouped query). Too few samples is no data.
      *
      * @param  AlertRule  $rule
      * @param  CarbonImmutable  $until
@@ -131,7 +133,7 @@ final class AlertObservation
     }
 
     /**
-     * The rule's environment's events, narrowed to its service when it has one.
+     * Query the rule's environment's events, narrowed to its service when it has one.
      *
      * @param  AlertRule  $rule
      * @return Builder<TelemetryEvent>

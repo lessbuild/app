@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreServerCommandController
 {
     /**
-     * Queues a command and shows its output as it runs.
+     * Queue a command and shows its output as it runs.
      *
      * @param  Request  $request
      * @param  User  $user

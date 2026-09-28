@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\DB;
 final class DatabaseTelemetryIngestor implements TelemetryIngestor
 {
     /**
+     * Create a new DatabaseTelemetryIngestor instance.
+     *
      * Accepts telemetry batches into the database.
      *
      * @param  TelemetryEventWriter  $writer  Prepares events for storage.
@@ -35,7 +37,7 @@ final class DatabaseTelemetryIngestor implements TelemetryIngestor
     ) {}
 
     /**
-     * Accepts a batch: a repeat of a batch already received returns its original receipt (and a changed payload under
+     * Accept a batch: a repeat of a batch already received returns its original receipt (and a changed payload under
      * the same identity is refused); otherwise events already stored are counted as duplicates, the rest are kept with
      * the receipt and queued for processing. The key and the project's Monitoring are checked again under lock.
      *

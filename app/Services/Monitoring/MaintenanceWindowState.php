@@ -10,7 +10,7 @@ use Carbon\CarbonImmutable;
 final class MaintenanceWindowState
 {
     /**
-     * The account's maintenance window in effect at a moment, if any.
+     * Find the account's maintenance window in effect at a moment, if any.
      *
      * @param  string  $accountId
      * @param  CarbonImmutable  $at
@@ -23,7 +23,7 @@ final class MaintenanceWindowState
     }
 
     /**
-     * Whether one is in effect.
+     * Determine whether one is in effect.
      *
      * @param  string  $accountId
      * @param  CarbonImmutable  $at

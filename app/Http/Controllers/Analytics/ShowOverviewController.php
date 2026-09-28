@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ShowOverviewController
 {
     /**
-     * The report page. Unknown day ranges fall back to 30 days, and filters are cut to their column lengths.
+     * Show the report page. Unknown day ranges fall back to 30 days, and filters are cut to their column lengths.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -9,7 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final class AlertEscalationsRequest extends FormRequest
 {
     /**
-     * Up to ten steps, each a destination and a delay in minutes (up to a week), and the rule's version.
+     * Get the validation rules: up to ten steps, each a destination and a delay in minutes (up to a week), and the
+     * rule's version.
      *
      * @return array<string, array<mixed>>
      */
@@ -25,7 +26,7 @@ final class AlertEscalationsRequest extends FormRequest
     }
 
     /**
-     * The steps with IDs and delays as integers; blank fields become null.
+     * Get the steps with IDs and delays as integers; blank fields become null.
      *
      * @return array{version: int, escalations: list<array{destination_id: int|null, delay_minutes: int|null}>}
      */

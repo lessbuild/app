@@ -36,6 +36,8 @@ final class RunServerProvisioning implements ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Create a new RunServerProvisioning instance.
+     *
      * Starts the provisioning script on a server that has its IP and host key.
      *
      * @param  int  $serverId  The server.
@@ -44,7 +46,7 @@ final class RunServerProvisioning implements ShouldQueue
     public function __construct(public readonly int $serverId, public readonly string $attempt) {}
 
     /**
-     * Claims the attempt, hands the one-time root password to the script and starts it in the background. The stored
+     * Claim the attempt, hands the one-time root password to the script and starts it in the background. The stored
      * password is cleared once the script has it; on failure the attempt is put back so the retry starts cleanly.
      *
      * @param  RemoteScriptRunner  $runner
@@ -74,7 +76,7 @@ final class RunServerProvisioning implements ShouldQueue
     }
 
     /**
-     * Marks provisioning failed at the remote phase and clears the password.
+     * Mark provisioning failed at the remote phase and clears the password.
      *
      * @param  Throwable  $exception
      * @return void
@@ -88,7 +90,7 @@ final class RunServerProvisioning implements ShouldQueue
     }
 
     /**
-     * The server, only while it's still on this provisioning attempt.
+     * Query the server, only while it's still on this provisioning attempt.
      *
      * @return Builder<Server>
      */

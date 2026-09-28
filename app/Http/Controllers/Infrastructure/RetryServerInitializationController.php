@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RetryServerInitializationController
 {
     /**
-     * Tries a failed server initialisation again.
+     * Try a failed server initialisation again.
      *
      * @param  User  $user
      * @param  Project  $project

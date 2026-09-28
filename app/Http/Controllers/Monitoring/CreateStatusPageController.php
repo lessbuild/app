@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class CreateStatusPageController
 {
     /**
-     * The new status page form, with the account's monitors to show.
+     * Show the new status page form, with the account's monitors to show.
      *
      * @param  User  $user
      * @param  Project  $project

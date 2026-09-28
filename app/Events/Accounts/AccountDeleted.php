@@ -13,8 +13,10 @@ final readonly class AccountDeleted
     use Dispatchable;
 
     /**
-     * An account and everything in it was deleted. The account is gone by the time this fires, so it carries the ID and
-     * name instead.
+     * Create a new AccountDeleted instance.
+     *
+     * An account and everything in it was deleted. The account is gone by the time this fires, so it carries the ID
+     * and name instead.
      *
      * @param  string  $accountId  The deleted account's ID.
      * @param  string  $name  Its name, for the record.

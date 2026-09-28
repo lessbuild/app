@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowIncidentController
 {
     /**
-     * An incident's page: its timeline and who it can be assigned to.
+     * Show an incident's page: its timeline and who it can be assigned to.
      *
      * @param  User  $user
      * @param  Project  $project

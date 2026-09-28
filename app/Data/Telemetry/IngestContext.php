@@ -9,6 +9,8 @@ use App\Enums\IngestSource;
 final readonly class IngestContext
 {
     /**
+     * Create a new IngestContext instance.
+     *
      * How a telemetry batch reached us, which decides how it is deduplicated and recorded.
      *
      * @param  IngestSource  $source  Our JSON events or one of the OTLP signals.

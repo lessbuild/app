@@ -12,6 +12,8 @@ use RuntimeException;
 class RemoteDeployments
 {
     /**
+     * Create a new RemoteDeployments instance.
+     *
      * Controls deploys running on servers.
      *
      * @param  ServerShell  $shell  Runs commands on the website's server.

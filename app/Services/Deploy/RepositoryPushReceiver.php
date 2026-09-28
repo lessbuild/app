@@ -13,6 +13,8 @@ use Illuminate\Http\Request;
 final class RepositoryPushReceiver
 {
     /**
+     * Create a new RepositoryPushReceiver instance.
+     *
      * Receives push webhooks for a repository.
      *
      * @param  RepositoryWebhookVerifier  $verifier  Checks the signature and reads the event.

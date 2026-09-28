@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 final class SetServerMonthlyCost
 {
     /**
-     * Enter what an imported server costs (its provider isn't one we can ask); null forgets it.
+     * Record what an imported server costs (its provider isn't one we can ask); null forgets it.
      *
      * @param  User  $actor
      * @param  Server  $server

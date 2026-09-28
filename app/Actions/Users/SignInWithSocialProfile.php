@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
 final class SignInWithSocialProfile
 {
     /**
+     * Create a new SignInWithSocialProfile instance.
+     *
      * Signs in, links or registers someone coming back from a provider.
      *
      * @param  RegisterUser  $registerUser  Registers people new to the platform.

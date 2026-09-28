@@ -34,6 +34,8 @@ final class FetchServerLog implements ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Create a new FetchServerLog instance.
+     *
      * Refreshes the stored copy of one of a server's logs.
      *
      * @param  int  $serverId  The server.
@@ -42,7 +44,7 @@ final class FetchServerLog implements ShouldQueue
     public function __construct(public readonly int $serverId, public readonly string $type) {}
 
     /**
-     * Reads the log's tail from an active server into its snapshot.
+     * Read the log's tail from an active server into its snapshot.
      *
      * @param  ServerLogs  $logs
      * @return void
@@ -64,7 +66,7 @@ final class FetchServerLog implements ShouldQueue
     }
 
     /**
-     * Marks the snapshot failed with the reason.
+     * Mark the snapshot failed with the reason.
      *
      * @param  Throwable  $exception
      * @return void

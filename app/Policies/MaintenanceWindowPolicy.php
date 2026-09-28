@@ -15,7 +15,7 @@ final class MaintenanceWindowPolicy
     use ManagesMonitoring;
 
     /**
-     * Scheduling a maintenance window: people who manage the account's settings.
+     * Determine whether the user can schedule a maintenance window: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -27,7 +27,7 @@ final class MaintenanceWindowPolicy
     }
 
     /**
-     * Changing a window: the same people.
+     * Determine whether the user can change a window: the same people.
      *
      * @param  User  $user
      * @param  MaintenanceWindow  $record
@@ -39,7 +39,7 @@ final class MaintenanceWindowPolicy
     }
 
     /**
-     * Deleting a window, allowed to the same people as update.
+     * Determine whether the user can delete a window, which the same people as update can.
      *
      * @param  User  $user
      * @param  MaintenanceWindow  $record

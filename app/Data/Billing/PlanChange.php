@@ -9,6 +9,8 @@ use Carbon\CarbonInterface;
 final readonly class PlanChange
 {
     /**
+     * Create a new PlanChange instance.
+     *
      * Use the named constructors, which say what happened.
      *
      * @param  string  $outcome  `changed`, `unchanged`, `scheduled` or `checkout`.
@@ -22,7 +24,7 @@ final readonly class PlanChange
     ) {}
 
     /**
-     * The new tier applies now.
+     * Build the outcome for a tier change that applies now.
      *
      * @return PlanChange
      */
@@ -32,7 +34,7 @@ final readonly class PlanChange
     }
 
     /**
-     * The account was already on that tier.
+     * Build the outcome for a request that changed nothing, because the account was already on that tier.
      *
      * @return PlanChange
      */
@@ -42,7 +44,7 @@ final readonly class PlanChange
     }
 
     /**
-     * The paid period runs out first; the change happens then.
+     * Build the outcome for a change that waits until the paid period runs out.
      *
      * @param  CarbonInterface  $at
      * @return PlanChange
@@ -53,7 +55,7 @@ final readonly class PlanChange
     }
 
     /**
-     * The first paid plan: send the person to Stripe Checkout; the webhook applies it.
+     * Build the outcome for a first paid plan: send the person to Stripe Checkout; the webhook applies it.
      *
      * @param  string  $url
      * @return PlanChange

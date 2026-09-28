@@ -7,6 +7,8 @@ namespace App\Data\Monitoring;
 final readonly class MonitorObservation
 {
     /**
+     * Create a new MonitorObservation instance.
+     *
      * The result of one monitor check, before it's stored.
      *
      * @param  string  $outcome  `up`, `down` or `unknown`.
@@ -32,8 +34,8 @@ final readonly class MonitorObservation
     ) {}
 
     /**
-     * The observation as stored on the check and snapshotted onto incidents. Evidence is left out on purpose: it may
-     * hold record values, so it only goes into the encrypted check history.
+     * Convert the observation to what's stored on the check and snapshotted onto incidents. Evidence is left out on
+     * purpose: it may hold record values, so it only goes into the encrypted check history.
      *
      * @return array<string, mixed>
      */
@@ -48,8 +50,8 @@ final readonly class MonitorObservation
     }
 
     /**
-     * The sentence shown for a reason code on check history, incidents and alerts. Unknown codes read as "Awaiting a
-     * check".
+     * Get the sentence shown for a reason code on check history, incidents and alerts. Unknown codes read as "Awaiting
+     * a check".
      *
      * @param  string|null  $reason
      * @return string

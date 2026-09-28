@@ -11,7 +11,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final class LoadBalancerRequest extends FormRequest
 {
     /**
-     * A load balancer's hostname, health check path, proxy server (only when creating) and website.
+     * Get the validation rules: a load balancer's hostname, health check path, proxy server (only when creating) and
+     * website.
      *
      * @return array<string, array<mixed>>
      */
@@ -26,7 +27,7 @@ final class LoadBalancerRequest extends FormRequest
     }
 
     /**
-     * The validated load balancer.
+     * Get the validated load balancer.
      *
      * @return array{hostname: string, health_path: string, server_id?: int|string, website_id?: int|string|null}
      */
@@ -37,7 +38,7 @@ final class LoadBalancerRequest extends FormRequest
     }
 
     /**
-     * Cleans the typed hostname before validation.
+     * Clean the typed hostname before validation.
      *
      * @return void
      */

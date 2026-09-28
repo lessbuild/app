@@ -55,7 +55,7 @@ class Incident extends Model
     use HasFactory;
 
     /**
-     * Limits a query to the account's incidents.
+     * Limit a query to the account's incidents.
      *
      * @param  Builder<Incident>  $query
      * @param  Account  $account
@@ -68,7 +68,7 @@ class Incident extends Model
     }
 
     /**
-     * The account the incident belongs to.
+     * Get the account the incident belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -78,7 +78,7 @@ class Incident extends Model
     }
 
     /**
-     * The project it happened in.
+     * Get the project it happened in.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -88,7 +88,7 @@ class Incident extends Model
     }
 
     /**
-     * The monitor that opened it, including archived ones.
+     * Get the monitor that opened it, including archived ones.
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -99,7 +99,7 @@ class Incident extends Model
 
     /** What opened the incident. Telemetry alert rules join monitors as sources with Monitoring part 3. */
     /**
-     * The alert rule that opened it, including archived ones.
+     * Get the alert rule that opened it, including archived ones.
      *
      * @return BelongsTo<AlertRule, $this>
      */
@@ -109,7 +109,7 @@ class Incident extends Model
     }
 
     /**
-     * What opened the incident: a monitor, or an alert rule on telemetry.
+     * Get what opened the incident: a monitor, or an alert rule on telemetry.
      *
      * @return Monitor|AlertRule|null
      */
@@ -119,7 +119,7 @@ class Incident extends Model
     }
 
     /**
-     * Who acknowledged it (`acknowledged_by`).
+     * Get the person who acknowledged the incident (`acknowledged_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -129,7 +129,7 @@ class Incident extends Model
     }
 
     /**
-     * Who is working on it (`assignee_id`).
+     * Get the person working on the incident (`assignee_id`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -139,7 +139,7 @@ class Incident extends Model
     }
 
     /**
-     * Its timeline: opening, acknowledgements, notes, assignments and closure.
+     * Get the incident's timeline: opening, acknowledgements, notes, assignments and closure.
      *
      * @return HasMany<IncidentActivity, $this>
      */
@@ -149,7 +149,8 @@ class Incident extends Model
     }
 
     /**
-     * The status as people read it, with why a resolved incident closed (recovered, rule changed, monitor archived…).
+     * Describe the status as people read it, with why a resolved incident closed (recovered, rule changed, monitor
+     * archived…).
      *
      * @return string
      */
@@ -170,6 +171,8 @@ class Incident extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads the rule snapshot and the opening and latest observations as JSON.
      *
      * @return array<string, string>

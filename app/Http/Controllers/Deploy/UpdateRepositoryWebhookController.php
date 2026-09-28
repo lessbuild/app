@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class UpdateRepositoryWebhookController
 {
     /**
-     * Turns push deploys on (showing the new webhook secret once) or off.
+     * Turn push deploys on (showing the new webhook secret once) or off.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -11,6 +11,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 final class BuildAwaitingApproval extends InboxNotification
 {
     /**
+     * Create a new BuildAwaitingApproval instance.
+     *
      * A deploy to an environment that requires approval is waiting for someone to approve or reject it. Sent to the
      * members who may approve it.
      *
@@ -19,7 +21,7 @@ final class BuildAwaitingApproval extends InboxNotification
     public function __construct(private readonly Build $build) {}
 
     /**
-     * By email, since a deploy may be waiting on it, and in the inbox.
+     * Get the notification's delivery channels: email, since a deploy may be waiting on it, and the inbox.
      *
      * @param  object  $notifiable
      * @return list<string>
@@ -30,7 +32,7 @@ final class BuildAwaitingApproval extends InboxNotification
     }
 
     /**
-     * The title and body, with a link to review the deploy.
+     * Build the email: the title and body, with a link to review the deploy.
      *
      * @param  object  $notifiable
      * @return MailMessage
@@ -41,7 +43,7 @@ final class BuildAwaitingApproval extends InboxNotification
     }
 
     /**
-     * Names the deploy and the environment it's for.
+     * Get the headline, naming the deploy and the environment it's for.
      *
      * @return string
      */
@@ -51,7 +53,7 @@ final class BuildAwaitingApproval extends InboxNotification
     }
 
     /**
-     * Who asked for it and what: a promotion from another environment, or a deploy of a repository.
+     * Say who asked for it and what: a promotion from another environment, or a deploy of a repository.
      *
      * @return string
      */
@@ -65,7 +67,7 @@ final class BuildAwaitingApproval extends InboxNotification
     }
 
     /**
-     * The deploy's page, where it can be approved or rejected.
+     * Get the deploy's page, where it can be approved or rejected.
      *
      * @return string
      */
@@ -75,7 +77,7 @@ final class BuildAwaitingApproval extends InboxNotification
     }
 
     /**
-     * The account of the website being deployed to.
+     * Get the account of the website being deployed to.
      *
      * @return string
      */

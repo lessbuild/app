@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class RetryAlertDeliveryController
 {
     /**
-     * Resends a delivery once the person confirms they understand it may arrive twice.
+     * Resend a delivery once the person confirms they understand it may arrive twice.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RedeployBuildController
 {
     /**
-     * Deploys a finished deploy's commit again and shows the new deploy.
+     * Deploy a finished deploy's commit again and shows the new deploy.
      *
      * @param  User  $user
      * @param  Project  $project

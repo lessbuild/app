@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
 class WebsiteBackupSchedule extends Model
 {
     /**
-     * Whether a backup should be queued now: past today's time, not yet queued since, and on the right day.
+     * Determine whether a backup should be queued now: past today's time, not yet queued since, and on the right day.
      *
      * @param  CarbonImmutable  $now
      * @return bool
@@ -46,7 +46,7 @@ class WebsiteBackupSchedule extends Model
     }
 
     /**
-     * The website backed up.
+     * Get the website backed up.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -56,7 +56,7 @@ class WebsiteBackupSchedule extends Model
     }
 
     /**
-     * Where the backups go.
+     * Get the destination the backups go to.
      *
      * @return BelongsTo<BackupDestination, $this>
      */
@@ -66,6 +66,8 @@ class WebsiteBackupSchedule extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

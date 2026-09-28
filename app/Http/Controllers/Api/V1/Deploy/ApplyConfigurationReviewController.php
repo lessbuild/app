@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 final class ApplyConfigurationReviewController
 {
     /**
-     * Applies the review and returns the application's receipt.
+     * Apply the review and returns the application's receipt.
      *
      * @param  User  $user
      * @param  Account  $account

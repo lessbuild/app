@@ -24,6 +24,8 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
     public int $uniqueFor = 240;
 
     /**
+     * Create a new CollectServerMetrics instance.
+     *
      * Samples an active server's load, CPU, memory, disk, network and process counts.
      *
      * @param  int  $serverId  The server.
@@ -31,7 +33,7 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
     public function __construct(public readonly int $serverId) {}
 
     /**
-     * One collection per server at a time.
+     * Get the job's unique ID, so there's one collection per server at a time.
      *
      * @return string
      */
@@ -41,7 +43,7 @@ final class CollectServerMetrics implements ShouldBeUnique, ShouldQueue
     }
 
     /**
-     * Collects a sample if the server is still active.
+     * Collect a sample if the server is still active.
      *
      * @param  ServerMetricsCollector  $collector
      * @return void

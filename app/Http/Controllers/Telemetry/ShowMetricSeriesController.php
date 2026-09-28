@@ -20,8 +20,8 @@ use Illuminate\Contracts\View\View;
 final class ShowMetricSeriesController
 {
     /**
-     * A metric series chart over the last hour, day or week. Asking for a rate on a series that isn't a counter is a
-     * 422.
+     * Show a metric series chart over the last hour, day or week. Asking for a rate on a series that isn't a counter
+     * is a 422.
      *
      * @param  SearchMetricsRequest  $request
      * @param  User  $user

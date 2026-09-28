@@ -29,7 +29,7 @@ use Illuminate\Support\Carbon;
 class RepositoryWebhookDelivery extends Model
 {
     /**
-     * The repository the delivery was for.
+     * Get the repository the delivery was for.
      *
      * @return BelongsTo<Repository, $this>
      */
@@ -39,7 +39,7 @@ class RepositoryWebhookDelivery extends Model
     }
 
     /**
-     * The deploy it started, if any.
+     * Get the deploy it started, if any.
      *
      * @return BelongsTo<Build, $this>
      */
@@ -49,6 +49,8 @@ class RepositoryWebhookDelivery extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `changed_paths` as a JSON list.
      *
      * @return array<string, string>

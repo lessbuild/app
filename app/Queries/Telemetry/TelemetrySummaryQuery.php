@@ -28,8 +28,8 @@ final class TelemetrySummaryQuery
     public const TYPES = ['request', 'query', 'job', 'exception', 'log', 'metric', 'other'];
 
     /**
-     * The account's telemetry for a range compared with the range before: totals, request duration and error rate, a
-     * breakdown by event type, and a trend split into buckets. Everything is counted in one grouped query.
+     * Summarise the account's telemetry for a range compared with the range before: totals, request duration and error
+     * rate, a breakdown by event type, and a trend split into buckets. Everything is counted in one grouped query.
      *
      * @param  Account  $account
      * @param  string  $range
@@ -97,7 +97,7 @@ final class TelemetrySummaryQuery
     }
 
     /**
-     * The account's events inside a window.
+     * Query the account's events inside a window.
      *
      * @param  Account  $account
      * @param  CarbonImmutable  $from
@@ -113,7 +113,7 @@ final class TelemetrySummaryQuery
     }
 
     /**
-     * Adds up grouped rows into event and request counts, average request duration and error rate.
+     * Add up grouped rows into event and request counts, average request duration and error rate.
      *
      * @param  Collection<int, stdClass>  $rows
      * @return Totals
@@ -135,8 +135,8 @@ final class TelemetrySummaryQuery
     }
 
     /**
-     * The change from the previous range as a percentage, or null when either side is missing or the previous one is
-     * zero.
+     * Calculate the change from the previous range as a percentage, or null when either side is missing or the
+     * previous one is zero.
      *
      * @param  int|float|null  $current
      * @param  int|float|null  $previous

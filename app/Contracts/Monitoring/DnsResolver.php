@@ -7,7 +7,7 @@ namespace App\Contracts\Monitoring;
 interface DnsResolver
 {
     /**
-     * Resolves a hostname to every address it points at, so checks can refuse private or reserved addresses before
+     * Resolve a hostname to every address it points at, so checks can refuse private or reserved addresses before
      * connecting.
      *
      * @param  string  $hostname

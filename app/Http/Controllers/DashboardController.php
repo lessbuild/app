@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class DashboardController
 {
     /**
-     * The dashboard: the current account's projects, and whether the person may create one.
+     * Show the dashboard: the current account's projects, and whether the person may create one.
      *
      * @param  User  $user
      * @param  AccountProjectsQuery  $projects

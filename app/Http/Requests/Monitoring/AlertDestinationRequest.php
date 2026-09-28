@@ -18,8 +18,9 @@ use Illuminate\Validation\Rule;
 final class AlertDestinationRequest extends FormRequest
 {
     /**
-     * A destination's settings for its type: a verified member for email, a public HTTPS endpoint on port 443 for
-     * webhooks and chat tools, and a routing key for PagerDuty. An existing destination's type can't change.
+     * Get the validation rules for a destination's settings for its type: a verified member for email, a public HTTPS
+     * endpoint on port 443 for webhooks and chat tools, and a routing key for PagerDuty. An existing destination's
+     * type can't change.
      *
      * @param  PublicWebhookTarget  $targets
      * @return array<string, array<mixed>>
@@ -53,7 +54,7 @@ final class AlertDestinationRequest extends FormRequest
     }
 
     /**
-     * The project in the URL.
+     * Get the project in the URL.
      *
      * @return Project
      */
@@ -66,7 +67,7 @@ final class AlertDestinationRequest extends FormRequest
     }
 
     /**
-     * The destination being edited, or null when creating one.
+     * Get the destination being edited, or null when creating one.
      *
      * @return AlertDestination|null
      */

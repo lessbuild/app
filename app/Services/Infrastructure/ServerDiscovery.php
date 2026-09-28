@@ -10,6 +10,8 @@ use RuntimeException;
 class ServerDiscovery
 {
     /**
+     * Create a new ServerDiscovery instance.
+     *
      * Bind SSH identity verification and command execution for server discovery.
      *
      * @param  SshHostIdentity  $hostIdentity  Validates the server's SSH host identity.
@@ -18,7 +20,7 @@ class ServerDiscovery
     public function __construct(private readonly SshHostIdentity $hostIdentity, private readonly Runner $runner) {}
 
     /**
-     * Pins the server's host key, then runs a read-only script to learn its OS, architecture, resources and installed
+     * Pin the server's host key, then runs a read-only script to learn its OS, architecture, resources and installed
      * services. Refuses servers without direct root access, non-Ubuntu or unsupported releases, and unsupported
      * architectures, and warns about existing services, another platform's marker, and little disk or memory.
      *

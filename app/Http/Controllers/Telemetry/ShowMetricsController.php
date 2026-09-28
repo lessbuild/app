@@ -19,7 +19,7 @@ use Illuminate\Contracts\View\View;
 final class ShowMetricsController
 {
     /**
-     * The metric series list (redacted) and the collector profiles.
+     * Show the metric series list (redacted) and the collector profiles.
      *
      * @param  SearchMetricsRequest  $request
      * @param  User  $user

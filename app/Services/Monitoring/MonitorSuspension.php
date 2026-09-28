@@ -10,6 +10,8 @@ use App\Models\Monitor;
 final class MonitorSuspension
 {
     /**
+     * Pause a heartbeat monitor, cancelling its open runs, and revoke its key when asked.
+     *
      * Caller holds the source and monitor locks in a transaction.
      *
      * @param  Monitor  $monitor
@@ -25,6 +27,8 @@ final class MonitorSuspension
     }
 
     /**
+     * Pause a queue monitor and revoke its key when asked.
+     *
      * Caller holds the source and monitor locks in a transaction.
      *
      * @param  Monitor  $monitor
@@ -37,7 +41,7 @@ final class MonitorSuspension
     }
 
     /**
-     * Disables the monitor and resets its health and configuration revision, so any signal still in flight is ignored,
+     * Disable the monitor and resets its health and configuration revision, so any signal still in flight is ignored,
      * and notes it on the open incident.
      *
      * @param  Monitor  $monitor

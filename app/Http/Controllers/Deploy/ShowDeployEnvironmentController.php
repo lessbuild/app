@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class ShowDeployEnvironmentController
 {
     /**
-     * An environment's deploy settings, in tabs: controls, how deploys run, variables, workers and resources.
+     * Show an environment's deploy settings, in tabs: controls, how deploys run, variables, workers and resources.
      *
      * @param  Request  $request
      * @param  User  $user

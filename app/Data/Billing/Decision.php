@@ -7,6 +7,8 @@ namespace App\Data\Billing;
 final readonly class Decision
 {
     /**
+     * Create a new Decision instance.
+     *
      * The answer to "may the account have one more of these?".
      *
      * @param  bool  $allowed  Whether it may.

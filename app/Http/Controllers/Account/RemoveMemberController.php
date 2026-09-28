@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RemoveMemberController
 {
     /**
-     * Removes a member, or lets someone leave. People who left are taken to their dashboard, since the account's pages
+     * Remove a member, or lets someone leave. People who left are taken to their dashboard, since the account's pages
      * are closed to them now.
      *
      * @param  Account  $account

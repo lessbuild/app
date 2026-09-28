@@ -14,7 +14,7 @@ enum AlertDestinationType: string
     case Discord = 'discord';
 
     /**
-     * The destination type's name on the alert destination form.
+     * Get the destination type's name on the alert destination form.
      *
      * @return string
      */

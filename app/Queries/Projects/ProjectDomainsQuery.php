@@ -12,7 +12,7 @@ use Carbon\CarbonImmutable;
 final class ProjectDomainsQuery
 {
     /**
-     * The project's domains with the TXT record that verifies each.
+     * Get the project's domains with the TXT record that verifies each.
      *
      * @param  Project  $project
      * @return list<DomainRow> unverified first, then alphabetical

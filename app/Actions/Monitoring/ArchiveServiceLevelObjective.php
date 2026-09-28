@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class ArchiveServiceLevelObjective
 {
     /**
+     * Create a new ArchiveServiceLevelObjective instance.
+     *
      * Archives an SLO.
      *
      * @param  MonitorChanges  $changes  Locks the configuration while it changes.

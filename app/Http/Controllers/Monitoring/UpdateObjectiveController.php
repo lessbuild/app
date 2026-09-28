@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateObjectiveController
 {
     /**
-     * Saves an SLO.
+     * Save an SLO.
      *
      * @param  ServiceLevelObjectiveRequest  $request
      * @param  User  $user

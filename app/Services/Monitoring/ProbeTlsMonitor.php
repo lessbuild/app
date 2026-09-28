@@ -13,6 +13,8 @@ use Throwable;
 final class ProbeTlsMonitor
 {
     /**
+     * Create a new ProbeTlsMonitor instance.
+     *
      * Runs TLS monitors.
      *
      * @param  PublicHttpTarget  $targets  Checks the host is public and resolves it.
@@ -21,7 +23,7 @@ final class ProbeTlsMonitor
     public function __construct(private readonly PublicHttpTarget $targets, private readonly TlsCertificateInspector $inspector) {}
 
     /**
-     * Connects to the host, verifies its certificate and reports whether it's valid, not yet valid, expired or expiring
+     * Connect to the host, verifies its certificate and reports whether it's valid, not yet valid, expired or expiring
      * within the warning period, with its dates and fingerprint.
      *
      * @param  Monitor  $monitor

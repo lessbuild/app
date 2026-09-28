@@ -36,6 +36,8 @@ class Project extends Model
     use HasFactory, HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -46,7 +48,7 @@ class Project extends Model
     }
 
     /**
-     * The account the project belongs to.
+     * Get the account the project belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -56,7 +58,7 @@ class Project extends Model
     }
 
     /**
-     * Configuration documents reviewed for the project.
+     * Get the configuration documents reviewed for the project.
      *
      * @return HasMany<ConfigurationReview, $this>
      */
@@ -66,7 +68,7 @@ class Project extends Model
     }
 
     /**
-     * The project's environments.
+     * Get the project's environments.
      *
      * @return HasMany<Environment, $this>
      */
@@ -76,7 +78,7 @@ class Project extends Model
     }
 
     /**
-     * The project's domains.
+     * Get the project's domains.
      *
      * @return HasMany<Domain, $this>
      */
@@ -86,7 +88,7 @@ class Project extends Model
     }
 
     /**
-     * Analytics sites in the project.
+     * Get the analytics sites in the project.
      *
      * @return HasMany<AnalyticsSite, $this>
      */
@@ -96,7 +98,7 @@ class Project extends Model
     }
 
     /**
-     * Releases seen in the project's telemetry.
+     * Get the releases seen in the project's telemetry.
      *
      * @return HasMany<Release, $this>
      */
@@ -106,7 +108,7 @@ class Project extends Model
     }
 
     /**
-     * The services turned on in the project.
+     * Get the services turned on in the project.
      *
      * @return HasMany<EnabledService, $this>
      */
@@ -116,7 +118,7 @@ class Project extends Model
     }
 
     /**
-     * Whether a service is turned on in the project.
+     * Determine whether a service is turned on in the project.
      *
      * @param  string  $service
      * @return bool

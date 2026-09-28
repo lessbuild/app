@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 final class DeleteUser
 {
     /**
+     * Create a new DeleteUser instance.
+     *
      * Deleting a person resolves every account they belong to first.
      *
      * @param  DepartureQuery  $departure  Works out which accounts are deleted, left or blocking.

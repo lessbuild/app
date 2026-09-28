@@ -20,6 +20,8 @@ final class SshTerminalConnection implements TerminalConnection
     private string $buffer = '';
 
     /**
+     * Create a new SshTerminalConnection instance.
+     *
      * Wraps an SSH process that hasn't been started yet.
      *
      * @param  Process  $process  The `ssh -tt` process.
@@ -29,7 +31,7 @@ final class SshTerminalConnection implements TerminalConnection
     public function __construct(private readonly Process $process, private readonly InputStream $input, private readonly Closure $release) {}
 
     /**
-     * Starts the shell, collecting everything it prints into the buffer.
+     * Start the shell, collecting everything it prints into the buffer.
      *
      * @return void
      */
@@ -41,7 +43,7 @@ final class SshTerminalConnection implements TerminalConnection
     }
 
     /**
-     * Sends keystrokes to the shell.
+     * Send keystrokes to the shell.
      *
      * @param  string  $input
      * @return void
@@ -52,7 +54,7 @@ final class SshTerminalConnection implements TerminalConnection
     }
 
     /**
-     * Takes the output collected since the last read. Polling the process lets it deliver pending output, and the
+     * Take the output collected since the last read. Polling the process lets it deliver pending output, and the
      * process's own copy is cleared so a long session doesn't grow without bound.
      *
      * @return string
@@ -68,7 +70,7 @@ final class SshTerminalConnection implements TerminalConnection
     }
 
     /**
-     * Whether the shell is still running.
+     * Determine whether the shell is still running.
      *
      * @return bool
      */
@@ -78,7 +80,7 @@ final class SshTerminalConnection implements TerminalConnection
     }
 
     /**
-     * Closes the shell's input, stops it if it's still running (allowing three seconds), and always releases the
+     * Close the shell's input, stops it if it's still running (allowing three seconds), and always releases the
      * connection's temporary files.
      *
      * @return void

@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Gate;
 final class RotateIngestToken
 {
     /**
+     * Create a new RotateIngestToken instance.
+     *
      * Replaces an ingest token's secret.
      *
      * @param  IngestTokens  $tokens  Issues the replacement.

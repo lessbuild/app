@@ -13,6 +13,8 @@ use App\Models\BillingAccount;
 final class InvoicesQuery
 {
     /**
+     * Create a new InvoicesQuery instance.
+     *
      * Reads the account's invoices from the payment provider.
      *
      * @param  PaymentProvider  $provider  The payment provider.
@@ -20,8 +22,8 @@ final class InvoicesQuery
     public function __construct(private readonly PaymentProvider $provider) {}
 
     /**
-     * The account's recent invoices, or an empty list before it has a customer. When the provider can't be reached,
-     * null, so the page can say so instead of showing none.
+     * Get the account's recent invoices, or an empty list before it has a customer. When the provider can't be
+     * reached, null, so the page can say so instead of showing none.
      *
      * @param  Account  $account
      * @return list<InvoiceSummary>|null null when invoices can't be loaded right now

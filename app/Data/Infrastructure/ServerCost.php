@@ -16,6 +16,8 @@ final readonly class ServerCost
     public const UNALLOCATED = 'unallocated';
 
     /**
+     * Create a new ServerCost instance.
+     *
      * One server's line on the costs page.
      *
      * @param  Server  $server  The server.
@@ -35,7 +37,8 @@ final readonly class ServerCost
     ) {}
 
     /**
-     * How the cost splits across projects: all to one project, shared between several, or not attributed to any.
+     * Describe how the cost splits across projects: all to one project, shared between several, or not attributed to
+     * any.
      *
      * @return string
      */

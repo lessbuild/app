@@ -17,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveProvider
 {
     /**
+     * Create a new SaveProvider instance.
+     *
      * Connects or changes a provider.
      *
      * @param  RecordAuditEntry  $audit  Records the change (never the token).

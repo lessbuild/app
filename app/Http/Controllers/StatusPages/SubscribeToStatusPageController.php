@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class SubscribeToStatusPageController
 {
     /**
-     * Subscribes an email address and sends the confirmation email.
+     * Subscribe an email address and sends the confirmation email.
      *
      * @param  SubscribeToStatusPageRequest  $request
      * @param  string  $slug

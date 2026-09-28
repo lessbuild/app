@@ -35,6 +35,8 @@ final class CreateWebsiteBackup implements ShouldQueue
     public int $timeout = 3600;
 
     /**
+     * Create a new CreateWebsiteBackup instance.
+     *
      * Takes a restic snapshot of a website's files and database.
      *
      * @param  int  $backupId  The queued backup.
@@ -42,7 +44,7 @@ final class CreateWebsiteBackup implements ShouldQueue
     public function __construct(public readonly int $backupId) {}
 
     /**
-     * Claims the backup, runs the backup script, and stores the snapshot ID and size restic reports. On failure the
+     * Claim the backup, runs the backup script, and stores the snapshot ID and size restic reports. On failure the
      * backup is put back in the queue so the retry can claim it.
      *
      * @param  ServerShell  $shell
@@ -80,7 +82,7 @@ final class CreateWebsiteBackup implements ShouldQueue
     }
 
     /**
-     * Marks the backup failed once attempts run out.
+     * Mark the backup failed once attempts run out.
      *
      * @param  Throwable  $exception
      * @return void

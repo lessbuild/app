@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 final class ApplyEndedSelections
 {
     /**
+     * Create a new ApplyEndedSelections instance.
+     *
      * Ends paid selections whose paid period ran out after a downgrade.
      *
      * @param  SubscriptionItems  $items  Syncs the subscription once they're removed.

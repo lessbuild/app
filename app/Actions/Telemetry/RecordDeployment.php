@@ -21,6 +21,8 @@ use LogicException;
 final class RecordDeployment
 {
     /**
+     * Create a new RecordDeployment instance.
+     *
      * Records a deployment reported by a pipeline.
      *
      * @param  RecordReleases  $releases  Finds or creates the release deployed.
@@ -93,8 +95,8 @@ final class RecordDeployment
     }
 
     /**
-     * HMACs of the request under the current and previous app keys, so a retried report is recognised even after a key
-     * rotation without storing the request itself.
+     * Fingerprint the request with HMACs under the current and previous app keys, so a retried report is recognised
+     * even after a key rotation without storing the request itself.
      *
      * @param  list<mixed>  $payload
      * @return list<string>

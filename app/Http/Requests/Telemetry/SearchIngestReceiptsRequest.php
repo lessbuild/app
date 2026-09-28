@@ -11,7 +11,7 @@ use Illuminate\Validation\Rule;
 final class SearchIngestReceiptsRequest extends FormRequest
 {
     /**
-     * Always allowed: the route's middleware already checked access to the project.
+     * Allow the request; the route's middleware already checked access to the project.
      *
      * @return bool
      */
@@ -21,7 +21,7 @@ final class SearchIngestReceiptsRequest extends FormRequest
     }
 
     /**
-     * The query string.
+     * Get the query string to validate.
      *
      * @return array<string, mixed>
      */
@@ -31,7 +31,7 @@ final class SearchIngestReceiptsRequest extends FormRequest
     }
 
     /**
-     * An optional status and page number.
+     * Get the validation rules: an optional status and page number.
      *
      * @return array<string, array<mixed>>
      */

@@ -18,6 +18,8 @@ use Symfony\Component\HttpFoundation\Response;
 final class ProjectContext
 {
     /**
+     * Create a new ProjectContext instance.
+     *
      * Scopes project routes to the people who may see them.
      *
      * @param  SwitchAccount  $switchAccount  Switches to the project's account when it isn't the current one.
@@ -25,7 +27,7 @@ final class ProjectContext
     public function __construct(private readonly SwitchAccount $switchAccount) {}
 
     /**
-     * 404s people who may not see the project, and makes its account current when it isn't.
+     * Scope the request to its project: 404 people who may not see it, and make its account current when it isn't.
      *
      * @param  Request  $request
      * @param  Closure  $next

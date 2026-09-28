@@ -53,7 +53,7 @@ class StatusUpdate extends Model
     public const SEVERITIES = ['minor', 'major', 'critical'];
 
     /**
-     * The page the update is posted on.
+     * Get the page the update is posted on.
      *
      * @return BelongsTo<StatusPage, $this>
      */
@@ -63,7 +63,7 @@ class StatusUpdate extends Model
     }
 
     /**
-     * Who posted it (`created_by`).
+     * Get the person who posted the update (`created_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -73,7 +73,7 @@ class StatusUpdate extends Model
     }
 
     /**
-     * Whether the incident is resolved or the maintenance completed.
+     * Determine whether the incident is resolved or the maintenance completed.
      *
      * @return bool
      */
@@ -83,7 +83,7 @@ class StatusUpdate extends Model
     }
 
     /**
-     * The status as people read it.
+     * Get the status as people read it.
      *
      * @return string
      */
@@ -93,6 +93,8 @@ class StatusUpdate extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

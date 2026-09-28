@@ -27,7 +27,7 @@ use Illuminate\Support\Carbon;
 class LoadBalancerNode extends Model
 {
     /**
-     * The load balancer the node belongs to.
+     * Get the load balancer the node belongs to.
      *
      * @return BelongsTo<LoadBalancer, $this>
      */
@@ -37,7 +37,7 @@ class LoadBalancerNode extends Model
     }
 
     /**
-     * The server that receives traffic.
+     * Get the server that receives traffic.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -47,6 +47,8 @@ class LoadBalancerNode extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

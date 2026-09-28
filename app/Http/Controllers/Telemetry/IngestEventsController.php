@@ -16,7 +16,7 @@ use Illuminate\Http\JsonResponse;
 final class IngestEventsController
 {
     /**
-     * Stores (or queues) a batch of JSON events for the environment the key belongs to, and returns what was accepted.
+     * Store (or queues) a batch of JSON events for the environment the key belongs to, and returns what was accepted.
      *
      * @param  StoreTelemetryRequest  $request
      * @param  TelemetryIngestor  $ingestor

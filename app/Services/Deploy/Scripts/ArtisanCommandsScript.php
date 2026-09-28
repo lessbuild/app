@@ -15,7 +15,8 @@ class ArtisanCommandsScript extends BuildProvisioningScript
     public const IDENTIFIER = 'run-artisan-commands';
 
     /**
-     * The script to run
+     * Render the stage that runs a Laravel release's artisan commands (storage link, caches and migrations, and a
+     * Horizon restart) and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build

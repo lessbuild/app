@@ -13,6 +13,8 @@ use Throwable;
 final class CheckBackupDestination
 {
     /**
+     * Create a new CheckBackupDestination instance.
+     *
      * Checks that a backup destination's bucket can be written.
      *
      * @param  S3StorageProbe  $probe  Writes, reads and deletes a small test object.

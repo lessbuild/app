@@ -15,6 +15,8 @@ use Illuminate\Http\RedirectResponse;
 final class EnableProjectServiceController
 {
     /**
+     * Create a new EnableProjectServiceController instance.
+     *
      * Turns services on in projects.
      *
      * @param  ServiceRegistry  $services  Looks up the service in the URL.
@@ -22,7 +24,7 @@ final class EnableProjectServiceController
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * Turns a service on in the project and opens it.
+     * Turn a service on in the project and opens it.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -39,7 +41,7 @@ final class EnableProjectServiceController
     }
 
     /**
-     * The service named in the URL; unknown keys are a 404.
+     * Find the service named in the URL; unknown keys are a 404.
      *
      * @param  string  $key
      * @return PlatformService

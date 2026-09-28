@@ -12,6 +12,8 @@ use Illuminate\Validation\ValidationException;
 final class ReplaceEnvironmentVariables
 {
     /**
+     * Create a new ReplaceEnvironmentVariables instance.
+     *
      * Replaces an environment's variables from pasted `.env` text.
      *
      * @param  SaveEnvironmentVariable  $save  Saves each variable, keeping its history.

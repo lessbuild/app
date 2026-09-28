@@ -13,7 +13,8 @@ use Illuminate\Validation\ValidationException;
 final class WebsiteServers
 {
     /**
-     * The account's server with this ID if it can host websites; otherwise a validation error on `server_id`.
+     * Find the account's server with this ID if it can host websites; otherwise throw a validation error on
+     * `server_id`.
      *
      * @param  Account  $account
      * @param  int  $serverId

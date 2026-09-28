@@ -16,6 +16,8 @@ class InstallDependenciesScript extends BuildProvisioningScript
     public const IDENTIFIER = 'installed-repository-dependencies';
 
     /**
+     * Create a new InstallDependenciesScript instance.
+     *
      * Installs the release's dependencies.
      *
      * @param  ManagedResourceScript  $resources  Renders managed-resource setup the dependencies step needs.
@@ -23,7 +25,8 @@ class InstallDependenciesScript extends BuildProvisioningScript
     public function __construct(private readonly ManagedResourceScript $resources = new ManagedResourceScript) {}
 
     /**
-     * The script to run
+     * Render the stage that prepares managed resources, installs the release's dependencies for its runtime and runs
+     * its build command, and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build

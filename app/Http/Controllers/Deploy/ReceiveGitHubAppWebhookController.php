@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ReceiveGitHubAppWebhookController
 {
     /**
-     * Verifies a GitHub App webhook, answers pings, and hands pushes to the repository connected through that
+     * Verify a GitHub App webhook, answers pings, and hands pushes to the repository connected through that
      * installation.
      *
      * @param  Request  $request

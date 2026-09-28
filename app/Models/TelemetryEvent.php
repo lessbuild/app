@@ -71,7 +71,7 @@ final class TelemetryEvent extends Model
     use HasFactory;
 
     /**
-     * Limits a query to events in the account's environments.
+     * Limit a query to events in the account's environments.
      *
      * @param  Builder<TelemetryEvent>  $query
      * @param  Account  $account
@@ -84,7 +84,7 @@ final class TelemetryEvent extends Model
     }
 
     /**
-     * Selects only the columns lists and waterfalls need, plus the OTLP signal read out of the payload, so the payload
+     * Select only the columns lists and waterfalls need, plus the OTLP signal read out of the payload, so the payload
      * itself isn't loaded.
      *
      * @param  Builder<TelemetryEvent>  $query
@@ -102,7 +102,7 @@ final class TelemetryEvent extends Model
     }
 
     /**
-     * The environment that sent the event.
+     * Get the environment that sent the event.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -112,7 +112,7 @@ final class TelemetryEvent extends Model
     }
 
     /**
-     * The issue an exception event was grouped into.
+     * Get the issue an exception event was grouped into.
      *
      * @return BelongsTo<Issue, $this>
      */
@@ -122,7 +122,7 @@ final class TelemetryEvent extends Model
     }
 
     /**
-     * The release that sent it.
+     * Get the release that sent it.
      *
      * @return BelongsTo<Release, $this>
      */
@@ -132,6 +132,8 @@ final class TelemetryEvent extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `attributes` and `payload` as JSON.
      *
      * @return array<string, string>

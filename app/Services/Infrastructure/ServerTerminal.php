@@ -15,6 +15,8 @@ use Throwable;
 class ServerTerminal
 {
     /**
+     * Create a new ServerTerminal instance.
+     *
      * Opens interactive shells on servers.
      *
      * @param  Runner  $runner  Builds the SSH client with the server's key and pinned host key.
@@ -22,7 +24,7 @@ class ServerTerminal
     public function __construct(private readonly Runner $runner) {}
 
     /**
-     * Opens a root shell with a pseudo-terminal of the given size on an active server with a pinned host key. The
+     * Open a root shell with a pseudo-terminal of the given size on an active server with a pinned host key. The
      * connection buffers output until it's read, and closing it stops the shell and removes the temporary key files.
      *
      * @param  Server  $server

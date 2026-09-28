@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateIssueController
 {
     /**
-     * Resolves, reopens, snoozes, ignores, assigns or annotates an issue.
+     * Resolve, reopen, snooze, ignore, assign or annotate an issue.
      *
      * @param  UpdateIssueRequest  $request
      * @param  User  $user

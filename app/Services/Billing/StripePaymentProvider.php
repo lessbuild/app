@@ -30,6 +30,8 @@ final class StripePaymentProvider implements PaymentProvider
     private const REFERENCES = 'buildpusher_references';
 
     /**
+     * Create a new StripePaymentProvider instance.
+     *
      * Talks to Stripe.
      *
      * @param  StripeClient  $stripe  The Stripe client, with the secret key.
@@ -38,7 +40,7 @@ final class StripePaymentProvider implements PaymentProvider
     public function __construct(private readonly StripeClient $stripe, private readonly ?string $webhookSecret) {}
 
     /**
-     * Stripe is configured, so paid tiers can be bought.
+     * Report that Stripe is configured, so paid tiers can be bought.
      *
      * @return bool
      */
@@ -48,7 +50,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Creates the Stripe customer, tagged with the account's ID.
+     * Create the Stripe customer, tagged with the account's ID.
      *
      * @param  string  $accountId
      * @param  string  $name
@@ -65,8 +67,8 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * A Checkout session for a new subscription with these items, tagged with the account and the price-to-reference
-     * map.
+     * Create a Checkout session for a new subscription with these items, tagged with the account and the
+     * price-to-reference map.
      *
      * @param  string  $customerId
      * @param  string  $accountId
@@ -89,8 +91,8 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Makes the subscription's items match, updating a service's item in place when it changes tier, adding and removing
-     * others, with prorations.
+     * Make the subscription's items match, updating a service's item in place when it changes tier, adding and
+     * removing others, with prorations.
      *
      * @param  string  $subscriptionId
      * @param  list<LineItem>  $items
@@ -131,7 +133,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * The subscription's current status, period end and item IDs.
+     * Get the subscription's current status, period end and item IDs.
      *
      * @param  string  $subscriptionId
      * @return SubscriptionState
@@ -142,7 +144,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Cancels the subscription now, prorated.
+     * Cancel the subscription now, prorated.
      *
      * @param  string  $subscriptionId
      * @return void
@@ -153,7 +155,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * A billing portal session that returns to the given page.
+     * Create a billing portal session that returns to the given page.
      *
      * @param  string  $customerId
      * @param  string  $returnUrl
@@ -165,7 +167,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * The customer's latest invoices.
+     * Get the customer's latest invoices.
      *
      * @param  string  $customerId
      * @param  int  $limit
@@ -191,7 +193,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Sends a meter event; Stripe drops repeats with the same identifier.
+     * Send a meter event; Stripe drops repeats with the same identifier.
      *
      * @param  string  $customerId
      * @param  string  $eventName
@@ -211,7 +213,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Checks the signature with the endpoint secret and parses the event. A missing secret refuses everything.
+     * Check the signature with the endpoint secret and parses the event. A missing secret refuses everything.
      *
      * @param  string  $payload
      * @param  string  $signature
@@ -233,7 +235,8 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * A service's tier occupies one item whichever tier it is; each add-on has its own.
+     * Get the item slot a reference occupies: a service's tier has one item whichever tier it is; each add-on has its
+     * own.
      *
      * @param  string  $reference
      * @return string
@@ -246,7 +249,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * The subscription metadata mapping each price to its reference, since Checkout can't put metadata on items.
+     * Build the subscription metadata mapping each price to its reference, since Checkout can't put metadata on items.
      *
      * @param  list<LineItem>  $items
      * @return string
@@ -262,7 +265,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * The subscription's item IDs by reference, from each item's metadata or else the price map.
+     * Get the subscription's item IDs by reference, from each item's metadata or else the price map.
      *
      * @param  Subscription  $subscription
      * @return array<string, string> reference => item id
@@ -283,7 +286,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * The subscription as a SubscriptionState.
+     * Convert the subscription to a SubscriptionState.
      *
      * @param  Subscription  $subscription
      * @return SubscriptionState
@@ -300,7 +303,7 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Runs a Stripe request, reporting failures and turning them into PaymentProviderUnavailable with a message that's
+     * Run a Stripe request, reporting failures and turning them into PaymentProviderUnavailable with a message that's
      * safe to show.
      *
      * @param  Closure(): T  $request

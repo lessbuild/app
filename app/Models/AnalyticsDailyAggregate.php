@@ -32,6 +32,8 @@ class AnalyticsDailyAggregate extends Model
     protected $fillable = ['site_id', 'local_date', 'dimension', 'dimension_value', 'pageviews', 'visits', 'visitors', 'conversions', 'converted_visits', 'bounce_eligible', 'bounces'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -42,7 +44,7 @@ class AnalyticsDailyAggregate extends Model
     }
 
     /**
-     * The site the totals belong to.
+     * Get the site the totals belong to.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */

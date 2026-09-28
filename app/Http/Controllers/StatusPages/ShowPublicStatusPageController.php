@@ -12,7 +12,7 @@ use Illuminate\Http\Response;
 final class ShowPublicStatusPageController
 {
     /**
-     * The published status page, never cached by shared caches since it carries a CSRF token and flash messages.
+     * Show the published status page, never cached by shared caches since it carries a CSRF token and flash messages.
      *
      * @param  string  $slug
      * @param  StatusPageReportQuery  $report

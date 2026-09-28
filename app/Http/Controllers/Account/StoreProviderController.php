@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreProviderController
 {
     /**
-     * Connects a new provider and suggests checking its connection.
+     * Connect a new provider and suggests checking its connection.
      *
      * @param  Account  $account
      * @param  ProviderRequest  $request

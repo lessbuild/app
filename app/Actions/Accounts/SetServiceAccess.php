@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 final class SetServiceAccess
 {
     /**
+     * Create a new SetServiceAccess instance.
+     *
      * Limits which services a member may use.
      *
      * @param  ServiceRegistry  $services  The service keys a membership may be limited to.
@@ -22,7 +24,7 @@ final class SetServiceAccess
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * Sets the services a member may use (null for all of them). Owners and admins always have every service, unknown
+     * Set the services a member may use (null for all of them). Owners and admins always have every service, unknown
      * keys are dropped, and nothing is recorded when the list doesn't change.
      *
      * @param  User  $actor

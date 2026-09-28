@@ -56,7 +56,7 @@ class Provider extends Model
     public const FAILURE_THRESHOLDS = [1, 2, 3, 5];
 
     /**
-     * The account the provider is connected to.
+     * Get the account the provider is connected to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -66,7 +66,7 @@ class Provider extends Model
     }
 
     /**
-     * Who connected it (`created_by`), who is told when the connection breaks.
+     * Get the person who connected the provider (`created_by`), who is told when the connection breaks.
      *
      * @return BelongsTo<User, $this>
      */
@@ -76,7 +76,7 @@ class Provider extends Model
     }
 
     /**
-     * Servers created or imported through it.
+     * Get the servers created or imported through the provider.
      *
      * @return HasMany<Server, $this>
      */
@@ -86,7 +86,7 @@ class Provider extends Model
     }
 
     /**
-     * Its credential checks.
+     * Get the provider's credential checks.
      *
      * @return HasMany<ProviderConnectionCheck, $this>
      */
@@ -96,7 +96,8 @@ class Provider extends Model
     }
 
     /**
-     * Whether anything still depends on the provider (servers or repositories), which blocks disconnecting it.
+     * Determine whether anything still depends on the provider (servers or repositories), which blocks disconnecting
+     * it.
      *
      * @return bool
      */
@@ -106,7 +107,7 @@ class Provider extends Model
     }
 
     /**
-     * Repositories cloned through it.
+     * Get the repositories cloned through the provider.
      *
      * @return HasMany<Repository, $this>
      */
@@ -116,7 +117,8 @@ class Provider extends Model
     }
 
     /**
-     * A GitHub App installation (credential_type `app`, external_id the installation ID) rather than a token.
+     * Determine whether this is a GitHub App installation (credential_type `app`, external_id the installation ID)
+     * rather than a token.
      *
      * @return bool
      */
@@ -126,7 +128,7 @@ class Provider extends Model
     }
 
     /**
-     * Whether a repository URL (`host/owner/name`) is on this provider's Git host.
+     * Determine whether a repository URL (`host/owner/name`) is on this provider's Git host.
      *
      * @param  string  $url
      * @return bool
@@ -139,6 +141,8 @@ class Provider extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `token` and reads `type` as a ProviderType.
      *
      * @return array<string, string>

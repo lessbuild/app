@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class SearchController
 {
     /**
-     * The command palette's search: projects, domains and members of the current account matching at least two typed
+     * Search for the command palette: projects, domains and members of the current account matching at least two typed
      * characters, grouped, with empty groups left out.
      *
      * @param  Request  $request

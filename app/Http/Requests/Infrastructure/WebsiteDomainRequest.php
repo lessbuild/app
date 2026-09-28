@@ -12,8 +12,8 @@ use Illuminate\Validation\Rule;
 final class WebsiteDomainRequest extends FormRequest
 {
     /**
-     * A domain for a website: a hostname no website or domain uses yet, alias or redirect (with its target), and an
-     * optional DNS provider.
+     * Get the validation rules for a website's domain: a hostname no website or domain uses yet, alias or redirect
+     * (with its target), and an optional DNS provider.
      *
      * @return array<string, array<mixed>>
      */
@@ -28,7 +28,7 @@ final class WebsiteDomainRequest extends FormRequest
     }
 
     /**
-     * The validated domain with the DNS provider as an integer or null.
+     * Get the validated domain with the DNS provider as an integer or null.
      *
      * @return array{hostname: string, type: string, redirect_url: string|null, dns_provider_id: int|null}
      */
@@ -41,7 +41,7 @@ final class WebsiteDomainRequest extends FormRequest
     }
 
     /**
-     * Cleans the typed hostname before validation.
+     * Clean the typed hostname before validation.
      *
      * @return void
      */

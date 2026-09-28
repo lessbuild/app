@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class CancelConfigurationOperation
 {
     /**
+     * Create a new CancelConfigurationOperation instance.
+     *
      * Cancels a configuration operation that hasn't finished.
      *
      * @param  ConfigurationOperations  $operations  Cancels it and refreshes its application's status.

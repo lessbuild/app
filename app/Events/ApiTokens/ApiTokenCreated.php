@@ -13,6 +13,8 @@ final readonly class ApiTokenCreated
     use Dispatchable;
 
     /**
+     * Create a new ApiTokenCreated instance.
+     *
      * An API token was created. Recorded in the audit log (never with its secret).
      *
      * @param  ApiToken  $token  The new token.

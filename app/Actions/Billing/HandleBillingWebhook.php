@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\DB;
 final class HandleBillingWebhook
 {
     /**
+     * Create a new HandleBillingWebhook instance.
+     *
      * Applies payment-provider webhooks to the account's billing.
      *
      * @param  PaymentProvider  $provider  Reads the subscription a checkout created.
@@ -53,7 +55,7 @@ final class HandleBillingWebhook
     }
 
     /**
-     * Records the subscription a checkout created and turns its items into the account's selections. Returns false when
+     * Record the subscription a checkout created and turns its items into the account's selections. Returns false when
      * the event can't be matched to an account.
      *
      * @param  array<string, mixed>  $session
@@ -107,7 +109,7 @@ final class HandleBillingWebhook
     }
 
     /**
-     * Copies the subscription's status and period end.
+     * Copy the subscription's status and period end.
      *
      * @param  array<string, mixed>  $subscription
      * @return bool
@@ -127,7 +129,7 @@ final class HandleBillingWebhook
     }
 
     /**
-     * Clears the subscription and every selection, putting each service back on its free tier.
+     * Clear the subscription and every selection, putting each service back on its free tier.
      *
      * @param  array<string, mixed>  $subscription
      * @return bool
@@ -158,7 +160,7 @@ final class HandleBillingWebhook
     }
 
     /**
-     * The billing record for a subscription in a webhook, or null when it isn't ours.
+     * Find the billing record for a subscription in a webhook, or null when it isn't ours.
      *
      * @param  array<string, mixed>  $subscription
      * @return BillingAccount|null
@@ -171,7 +173,8 @@ final class HandleBillingWebhook
     }
 
     /**
-     * Newer Stripe API versions put the period on each item; older ones on the subscription.
+     * Read the subscription's period end. Newer Stripe API versions put the period on each item; older ones on the
+     * subscription.
      *
      * @param  array<string, mixed>  $subscription
      * @return CarbonImmutable|null

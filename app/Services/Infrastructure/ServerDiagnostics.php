@@ -43,6 +43,8 @@ BASH;
     private const KEYS = ['bp_diag_version', 'uid', 'architecture', 'php_version', 'storage_path', 'storage_writable', 'disk_percent', 'load_1m', 'memory_percent', 'process_count'];
 
     /**
+     * Create a new ServerDiagnostics instance.
+     *
      * Diagnoses servers.
      *
      * @param  ServerShell  $shell  Runs the read-only diagnostic script.
@@ -50,7 +52,7 @@ BASH;
     public function __construct(private readonly ServerShell $shell) {}
 
     /**
-     * Runs the diagnostic and turns its answers into checks. Failures are thrown with their stage as a message prefix,
+     * Run the diagnostic and turns its answers into checks. Failures are thrown with their stage as a message prefix,
      * so the job can record where it failed.
      *
      * @param  Server  $server
@@ -91,7 +93,7 @@ BASH;
     }
 
     /**
-     * Why diagnostics can't run on this server yet, as [stage, message], or null.
+     * Explain why diagnostics can't run on this server yet, as [stage, message], or return null.
      *
      * @param  Server  $server
      * @return array{string, string}|null
@@ -107,7 +109,7 @@ BASH;
     }
 
     /**
-     * One check as the diagnostics tab shows it.
+     * Format one check as the diagnostics tab shows it.
      *
      * @param  string  $name
      * @param  string  $category
@@ -121,7 +123,7 @@ BASH;
     }
 
     /**
-     * Reads the script's `key=value` lines strictly: every expected key exactly once, each value in its expected form,
+     * Read the script's `key=value` lines strictly: every expected key exactly once, each value in its expected form,
      * and a bounded size. Anything else is treated as an invalid response rather than guessed at.
      *
      * @param  string  $output

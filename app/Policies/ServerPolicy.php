@@ -22,7 +22,7 @@ final class ServerPolicy
     use ChecksAccountRole;
 
     /**
-     * Seeing a server: account members who may view projects and use Infrastructure.
+     * Determine whether the user can see a server: account members who may view projects and use Infrastructure.
      *
      * @param  User  $user
      * @param  Server  $server
@@ -34,7 +34,7 @@ final class ServerPolicy
     }
 
     /**
-     * Creating or importing a server: people who manage the account's settings.
+     * Determine whether the user can create or import a server: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -46,7 +46,8 @@ final class ServerPolicy
     }
 
     /**
-     * Setting the account's infrastructure budget: owners and admins, with cost controls on the Deploy plan.
+     * Determine whether the user can set the account's infrastructure budget: owners and admins, with cost controls on
+     * the Deploy plan.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -65,7 +66,8 @@ final class ServerPolicy
     }
 
     /**
-     * Changing a server's settings, firewall and services: people who manage the account's settings.
+     * Determine whether the user can change a server's settings, firewall and services: people who manage the
+     * account's settings.
      *
      * @param  User  $user
      * @param  Server  $server
@@ -77,7 +79,7 @@ final class ServerPolicy
     }
 
     /**
-     * Deleting a server, allowed to the same people as update.
+     * Determine whether the user can delete a server, which the same people as update can.
      *
      * @param  User  $user
      * @param  Server  $server
@@ -89,7 +91,8 @@ final class ServerPolicy
     }
 
     /**
-     * Running commands and scripts over SSH, allowed to the same people as update, since that is root access.
+     * Determine whether the user can run commands and scripts over SSH, which the same people as update can, since
+     * that is root access.
      *
      * @param  User  $user
      * @param  Server  $server
@@ -101,7 +104,8 @@ final class ServerPolicy
     }
 
     /**
-     * A root shell: the same people who may run commands, on a server with a pinned host key.
+     * Determine whether the user can open a root shell: the same people who may run commands, on a server with a
+     * pinned host key.
      *
      * @param  User  $user
      * @param  Server  $server

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Collection;
 final class DashboardsQuery
 {
     /**
-     * The account's dashboards with their widget count and creator.
+     * Get the account's dashboards with their widget count and creator.
      *
      * @param  string  $accountId
      * @return Collection<int, Dashboard>
@@ -21,7 +21,7 @@ final class DashboardsQuery
     }
 
     /**
-     * One of the account's dashboards with its widgets; 404 otherwise.
+     * Find one of the account's dashboards with its widgets; 404 otherwise.
      *
      * @param  string  $accountId
      * @param  string|int  $id

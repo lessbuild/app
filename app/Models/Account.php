@@ -33,7 +33,7 @@ class Account extends Model
     use HasFactory, HasUlids;
 
     /**
-     * The account's projects.
+     * Get the account's projects.
      *
      * @return HasMany<Project, $this>
      */
@@ -43,7 +43,7 @@ class Account extends Model
     }
 
     /**
-     * Who belongs to the account and with which role.
+     * Get who belongs to the account and with which role.
      *
      * @return HasMany<Membership, $this>
      */
@@ -53,7 +53,7 @@ class Account extends Model
     }
 
     /**
-     * The people who belong to the account, through their memberships.
+     * Get the people who belong to the account, through their memberships.
      *
      * @return BelongsToMany<User, $this>
      */
@@ -63,7 +63,7 @@ class Account extends Model
     }
 
     /**
-     * Invitations sent from the account, pending or not.
+     * Get the invitations sent from the account, pending or not.
      *
      * @return HasMany<AccountInvitation, $this>
      */
@@ -73,6 +73,8 @@ class Account extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -83,7 +85,7 @@ class Account extends Model
     }
 
     /**
-     * The person's role in the account, or null when they aren't a member.
+     * Get the person's role in the account, or null when they aren't a member.
      *
      * @param  User  $user
      * @return AccountRole|null
@@ -94,7 +96,7 @@ class Account extends Model
     }
 
     /**
-     * How many owners the account has, which must never drop to zero.
+     * Count the account's owners, which must never drop to zero.
      *
      * @return int
      */

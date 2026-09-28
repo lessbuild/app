@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreWebsiteDomainController
 {
     /**
-     * Adds a domain to a website, with a notice when its DNS couldn't be set up.
+     * Add a domain to a website, with a notice when its DNS couldn't be set up.
      *
      * @param  WebsiteDomainRequest  $request
      * @param  User  $user

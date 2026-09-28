@@ -52,7 +52,7 @@ class AnalyticsSite extends Model
     protected $fillable = ['name', 'domains', 'excluded_paths', 'timezone', 'collection_enabled', 'collection_paused_at', 'last_event_at', 'last_processed_at'];
 
     /**
-     * Gives each new site a random public ID for its tracker snippet, so the internal ID isn't exposed.
+     * Give each new site a random public ID for its tracker snippet, so the internal ID isn't exposed.
      *
      * @return void
      */
@@ -64,6 +64,8 @@ class AnalyticsSite extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `domains` and `excluded_paths` as JSON lists.
      *
      * @return array<string, string>
@@ -82,7 +84,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * The project the site belongs to.
+     * Get the project the site belongs to.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -92,7 +94,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Everything the site has sent.
+     * Get everything the site has sent.
      *
      * @return HasMany<AnalyticsEvent, $this>
      */
@@ -102,7 +104,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * The site's goals.
+     * Get the site's goals.
      *
      * @return HasMany<AnalyticsGoal, $this>
      */
@@ -112,7 +114,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Goal completions on the site.
+     * Get the goal completions on the site.
      *
      * @return HasMany<AnalyticsGoalConversion, $this>
      */
@@ -122,7 +124,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Batches the site has sent.
+     * Get the batches the site has sent.
      *
      * @return HasMany<AnalyticsIngestionBatch, $this>
      */
@@ -132,7 +134,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Visits reconstructed from the site's events.
+     * Get the visits reconstructed from the site's events.
      *
      * @return HasMany<AnalyticsVisit, $this>
      */
@@ -142,8 +144,8 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Whether one of the site's hostnames was matched to a verified domain of its project, proving the project controls
-     * the website.
+     * Determine whether one of the site's hostnames was matched to a verified domain of its project, proving the
+     * project controls the website.
      *
      * @return bool
      */
@@ -153,7 +155,7 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Whether events are accepted: collection is on, not paused, and the site is verified.
+     * Determine whether events are accepted: collection is on, not paused, and the site is verified.
      *
      * @return bool
      */
@@ -163,7 +165,8 @@ class AnalyticsSite extends Model
     }
 
     /**
-     * Whether a page path matches one of the site's excluded patterns (such as `/admin/*`) and shouldn't be recorded.
+     * Determine whether a page path matches one of the site's excluded patterns (such as `/admin/*`) and shouldn't be
+     * recorded.
      *
      * @param  string  $path
      * @return bool

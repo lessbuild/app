@@ -35,8 +35,10 @@ final class RemoveWebsitePlacement implements ShouldQueue
     public int $backoff = 10;
 
     /**
-     * Cleans a website off a server it no longer runs on (after a move or deletion): its Caddy site, files, database and
-     * database users.
+     * Create a new RemoveWebsitePlacement instance.
+     *
+     * Cleans a website off a server it no longer runs on (after a move or deletion): its Caddy site, files, database
+     * and database users.
      *
      * @param  int  $websiteId  The website, which may be deleted by now.
      * @param  int  $serverId  The server it was on.
@@ -45,7 +47,7 @@ final class RemoveWebsitePlacement implements ShouldQueue
     public function __construct(public readonly int $websiteId, public readonly int $serverId, public readonly string $slug) {}
 
     /**
-     * Removes everything the website had on the server and clears the pending cleanup. A server that no longer exists
+     * Remove everything the website had on the server and clears the pending cleanup. A server that no longer exists
      * has nothing to clean.
      *
      * @param  ServerShell  $shell
@@ -73,7 +75,7 @@ final class RemoveWebsitePlacement implements ShouldQueue
     }
 
     /**
-     * Records why cleanup failed, so the website page can show it.
+     * Record why cleanup failed, so the website page can show it.
      *
      * @param  Throwable  $exception
      * @return void

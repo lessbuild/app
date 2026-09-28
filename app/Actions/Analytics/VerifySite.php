@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Gate;
 final class VerifySite
 {
     /**
+     * Create a new VerifySite instance.
+     *
      * Checks that a site's hostnames belong to its project.
      *
      * @param  VerifiedHostnamesQuery  $verified  The project's verified domains.
@@ -19,8 +21,8 @@ final class VerifySite
     public function __construct(private readonly VerifiedHostnamesQuery $verified) {}
 
     /**
-     * A site may collect once one of its hostnames is a verified domain of its project, or a subdomain of one,
-     * so nobody can point a tracker at a website they don't control. Returns whether it is verified.
+     * Verify the site so it may collect: one of its hostnames must be a verified domain of its project, or a subdomain
+     * of one, so nobody can point a tracker at a website they don't control. Returns whether it is verified.
      *
      * @param  User  $actor
      * @param  AnalyticsSite  $site

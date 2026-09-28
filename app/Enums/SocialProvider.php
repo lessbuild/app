@@ -11,7 +11,7 @@ enum SocialProvider: string
     case Bitbucket = 'bitbucket';
 
     /**
-     * The provider's name for sign-in buttons and connected-account lists.
+     * Get the provider's name for sign-in buttons and connected-account lists.
      *
      * @return string
      */

@@ -19,7 +19,7 @@ final class ConfirmedEmailGitlabProvider extends GitlabProvider
     protected $scopes = ['read_user'];
 
     /**
-     * Reads the profile from GitLab's v4 API, dropping the email unless GitLab says it's confirmed.
+     * Read the profile from GitLab's v4 API, dropping the email unless GitLab says it's confirmed.
      *
      * @param  string  $token
      * @return array<string, mixed>

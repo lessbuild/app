@@ -19,8 +19,8 @@ final class LoadBalancerPolicy
     use ChecksAccountRole;
 
     /**
-     * Creating a load balancer: the account's settings managers, on a Deploy plan with high availability. The denial
-     * says which plan is needed.
+     * Determine whether the user can create a load balancer: the account's settings managers, on a Deploy plan with
+     * high availability. The denial says which plan is needed.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -39,7 +39,7 @@ final class LoadBalancerPolicy
     }
 
     /**
-     * Changing and removing the account's load balancers (works on any plan).
+     * Determine whether the user can change and remove the account's load balancers (on any plan).
      *
      * @param  User  $user
      * @param  Project  $project
@@ -51,7 +51,8 @@ final class LoadBalancerPolicy
     }
 
     /**
-     * Changing one of the account's load balancers: the account's settings managers, on any plan.
+     * Determine whether the user can change one of the account's load balancers: the account's settings managers, on
+     * any plan.
      *
      * @param  User  $user
      * @param  LoadBalancer  $balancer
@@ -63,7 +64,7 @@ final class LoadBalancerPolicy
     }
 
     /**
-     * Removing a load balancer, allowed to the same people as update.
+     * Determine whether the user can remove a load balancer, which the same people as update can.
      *
      * @param  User  $user
      * @param  LoadBalancer  $balancer

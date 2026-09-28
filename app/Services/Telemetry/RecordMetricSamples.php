@@ -11,6 +11,8 @@ use Carbon\CarbonImmutable;
 final class RecordMetricSamples
 {
     /**
+     * Store a batch's metric points, creating each series the first time it's seen and each sample once per time.
+     *
      * Called inside the receipt transaction with application/environment locks held.
      *
      * @param  Environment  $environment

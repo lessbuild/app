@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class PasskeySummary
 {
     /**
+     * Create a new PasskeySummary instance.
+     *
      * One passkey on the security page.
      *
      * @param  int  $id  The passkey's ID, used to rename or delete it.

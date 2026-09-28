@@ -16,7 +16,7 @@ class CloneRepositoryScript extends BuildProvisioningScript
     public const IDENTIFIER = 'cloned-repository';
 
     /**
-     * The script to run
+     * Render the stage that clones the repository into the setup directory and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build

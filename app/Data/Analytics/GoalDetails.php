@@ -7,6 +7,8 @@ namespace App\Data\Analytics;
 final readonly class GoalDetails
 {
     /**
+     * Create a new GoalDetails instance.
+     *
      * The settings of an analytics goal.
      *
      * @param  string  $name  The goal's name.

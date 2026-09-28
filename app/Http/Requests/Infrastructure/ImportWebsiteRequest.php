@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 final class ImportWebsiteRequest extends FormRequest
 {
     /**
-     * An existing website to adopt: its server, name, unused hostname and directory slug.
+     * Get the validation rules for an existing website to adopt: its server, name, unused hostname and directory slug.
      *
      * @return array<string, array<mixed>>
      */
@@ -28,7 +28,7 @@ final class ImportWebsiteRequest extends FormRequest
     }
 
     /**
-     * The validated website with the server ID as an integer.
+     * Get the validated website with the server ID as an integer.
      *
      * @return array{server_id: int, name: string, url: string, deployment_slug: string, description: string|null}
      */
@@ -41,7 +41,7 @@ final class ImportWebsiteRequest extends FormRequest
     }
 
     /**
-     * Cleans the typed hostname before validation.
+     * Clean the typed hostname before validation.
      *
      * @return void
      */

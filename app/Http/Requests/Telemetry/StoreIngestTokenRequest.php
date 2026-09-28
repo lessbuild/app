@@ -9,7 +9,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class StoreIngestTokenRequest extends FormRequest
 {
     /**
-     * A key's name and optional lifetime of up to a year.
+     * Get the validation rules: a key's name and optional lifetime of up to a year.
      *
      * @return array<string, array<mixed>>
      */

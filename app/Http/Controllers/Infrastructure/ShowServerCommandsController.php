@@ -18,7 +18,7 @@ use Illuminate\Validation\Rule;
 final class ShowServerCommandsController
 {
     /**
-     * The server's command runner and history, optionally filtered by status, with one command's output open.
+     * Show the server's command runner and history, optionally filtered by status, with one command's output open.
      *
      * @param  Request  $request
      * @param  User  $user

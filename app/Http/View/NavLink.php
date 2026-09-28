@@ -7,6 +7,8 @@ namespace App\Http\View;
 final readonly class NavLink
 {
     /**
+     * Create a new NavLink instance.
+     *
      * One link in the shell's navigation.
      *
      * @param  string  $label  The link text.

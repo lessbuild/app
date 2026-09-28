@@ -12,6 +12,8 @@ use Carbon\CarbonImmutable;
 final class MetricAlertObservation
 {
     /**
+     * Create a new MetricAlertObservation instance.
+     *
      * Measures numeric metric alert rules.
      *
      * @param  MetricChart  $charts  Reads the series over the rule's window.
@@ -19,8 +21,8 @@ final class MetricAlertObservation
     public function __construct(private readonly MetricChart $charts) {}
 
     /**
-     * Computes the rule's aggregation (last, mean, min, max or rate) over the window and compares it with the threshold.
-     * Unknown when samples are missing, invalid, too few, stale, or a rate lacks a recent baseline.
+     * Compute the rule's aggregation (last, mean, min, max or rate) over the window and compares it with the
+     * threshold. Unknown when samples are missing, invalid, too few, stale, or a rate lacks a recent baseline.
      *
      * @param  AlertRule  $rule
      * @param  CarbonImmutable  $from

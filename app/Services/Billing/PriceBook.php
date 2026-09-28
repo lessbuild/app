@@ -12,6 +12,8 @@ use Illuminate\Contracts\Config\Repository;
 final class PriceBook
 {
     /**
+     * Create a new PriceBook instance.
+     *
      * Reads prices from config/billing.php.
      *
      * @param  Repository  $config  The configuration.
@@ -19,7 +21,7 @@ final class PriceBook
     public function __construct(private readonly Repository $config) {}
 
     /**
-     * The Stripe price for a catalogue item, or null when it hasn't been set (which keeps it off sale).
+     * Get the Stripe price for a catalogue item, or null when it hasn't been set (which keeps it off sale).
      *
      * @param  string  $service
      * @param  SelectionKind  $kind
@@ -34,7 +36,7 @@ final class PriceBook
     }
 
     /**
-     * Free tiers are always available; paid ones need an amount and a Stripe price.
+     * Determine whether a tier can be chosen: free tiers always can; paid ones need an amount and a Stripe price.
      *
      * @param  string  $service
      * @param  Tier  $tier
@@ -46,7 +48,7 @@ final class PriceBook
     }
 
     /**
-     * The currency prices are in.
+     * Get the currency prices are in.
      *
      * @return string
      */

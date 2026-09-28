@@ -13,6 +13,8 @@ final readonly class AccountCreated
     use Dispatchable;
 
     /**
+     * Create a new AccountCreated instance.
+     *
      * An account was created, either at registration or by someone adding another account. Recorded in the account's
      * audit log.
      *

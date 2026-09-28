@@ -19,7 +19,7 @@ final class ReceiveMonitorSignal
     public const MAX_BYTES = 2048;
 
     /**
-     * For heartbeat and queue signals, insists on uncompressed JSON of at most 2 KiB and three levels deep, and hands
+     * Decode heartbeat and queue signals: insist on uncompressed JSON of at most 2 KiB and three levels deep, and hand
      * the decoded object to the request.
      *
      * @param  Request  $request

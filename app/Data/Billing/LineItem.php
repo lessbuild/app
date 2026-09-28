@@ -7,6 +7,8 @@ namespace App\Data\Billing;
 final readonly class LineItem
 {
     /**
+     * Create a new LineItem instance.
+     *
      * One item on the subscription: a tier, add-on or meter with its price.
      *
      * @param  string  $reference  `service:kind:item`, stored as Stripe item metadata so webhooks can map items back.

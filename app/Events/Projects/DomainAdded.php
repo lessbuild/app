@@ -13,6 +13,8 @@ final readonly class DomainAdded
     use Dispatchable;
 
     /**
+     * Create a new DomainAdded instance.
+     *
      * A domain was added to a project, unverified. Recorded in the project's activity.
      *
      * @param  Domain  $domain  The new domain.

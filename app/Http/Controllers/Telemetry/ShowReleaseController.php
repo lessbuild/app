@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowReleaseController
 {
     /**
-     * A release's metrics over a range, optionally in one of the project's environments.
+     * Show a release's metrics over a range, optionally in one of the project's environments.
      *
      * @param  SearchReleasesRequest  $request
      * @param  User  $user

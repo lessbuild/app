@@ -38,7 +38,7 @@ final class TelemetryEventIdentity extends Model
     use HasFactory;
 
     /**
-     * The stored event this identity points to.
+     * Get the stored event this identity points to.
      *
      * @return BelongsTo<TelemetryEvent, $this>
      */
@@ -48,7 +48,7 @@ final class TelemetryEventIdentity extends Model
     }
 
     /**
-     * The batch it arrived in.
+     * Get the batch it arrived in.
      *
      * @return BelongsTo<IngestReceipt, $this>
      */
@@ -58,7 +58,7 @@ final class TelemetryEventIdentity extends Model
     }
 
     /**
-     * The environment it was sent to.
+     * Get the environment it was sent to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -68,6 +68,8 @@ final class TelemetryEventIdentity extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

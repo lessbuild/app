@@ -32,7 +32,7 @@ final class SearchEventsRequest extends FormRequest
     }
 
     /**
-     * The query string.
+     * Get the query string to validate.
      *
      * @return array<string, mixed>
      */
@@ -68,7 +68,7 @@ final class SearchEventsRequest extends FormRequest
     }
 
     /**
-     * The validated filters with empty ones dropped, over defaults of the last day, newest first.
+     * Get the validated filters with empty ones dropped, over defaults of the last day, newest first.
      *
      * @return array<string, mixed>
      */

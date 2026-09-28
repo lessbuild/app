@@ -19,6 +19,8 @@ use LogicException;
 final class SaveStatusPage
 {
     /**
+     * Create a new SaveStatusPage instance.
+     *
      * Creates or changes a status page.
      *
      * @param  RecordAuditEntry  $audit  Records the change.
@@ -80,8 +82,8 @@ final class SaveStatusPage
     }
 
     /**
-     * The page's URL slug: the one asked for, the one it already has, or one made from its name with a random suffix,
-     * since slugs are shared by every account.
+     * Pick the page's URL slug: the one asked for, the one it already has, or one made from its name with a random
+     * suffix, since slugs are shared by every account.
      *
      * @param  StatusPage  $page
      * @param  array<string, mixed>  $data

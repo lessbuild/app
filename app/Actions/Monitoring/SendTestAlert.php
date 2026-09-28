@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
 final class SendTestAlert
 {
     /**
+     * Create a new SendTestAlert instance.
+     *
      * Sends a test alert to a destination.
      *
      * @param  AlertDispatcher  $alerts  Queues the delivery.
@@ -23,7 +25,7 @@ final class SendTestAlert
     public function __construct(private readonly AlertDispatcher $alerts) {}
 
     /**
-     * Queues a clearly-marked test alert to an enabled destination, if it hasn't changed since the page was opened.
+     * Queue a clearly-marked test alert to an enabled destination, if it hasn't changed since the page was opened.
      *
      * @param  Account  $account
      * @param  User  $actor

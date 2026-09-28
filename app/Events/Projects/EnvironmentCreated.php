@@ -13,6 +13,8 @@ final readonly class EnvironmentCreated
     use Dispatchable;
 
     /**
+     * Create a new EnvironmentCreated instance.
+     *
      * An environment was added to a project. Recorded in the project's activity.
      *
      * @param  Environment  $environment  The new environment.

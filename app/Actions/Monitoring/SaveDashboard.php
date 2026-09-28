@@ -17,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveDashboard
 {
     /**
+     * Create a new SaveDashboard instance.
+     *
      * Creates or changes a dashboard, within the plan.
      *
      * @param  Entitlements  $entitlements  Checks how many dashboards the plan allows.

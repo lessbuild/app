@@ -13,8 +13,8 @@ use Illuminate\Validation\Rule;
 final class ProviderRequest extends FormRequest
 {
     /**
-     * A provider's name, description, type, credential (required when connecting, optional when editing) and
-     * connection-check settings.
+     * Get the validation rules: a provider's name, description, type, credential (required when connecting, optional
+     * when editing) and connection-check settings.
      *
      * @return array<string, array<mixed>>
      */

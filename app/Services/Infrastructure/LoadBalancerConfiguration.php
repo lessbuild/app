@@ -12,7 +12,8 @@ use RuntimeException;
 final class LoadBalancerConfiguration
 {
     /**
-     * Least-connections proxying to enabled, active nodes (repeated by weight), with active health checks; a 503 page without any.
+     * Render the load balancer's Caddy site: least-connections proxying to enabled, active nodes (repeated by weight),
+     * with active health checks; a 503 page without any.
      *
      * @param  LoadBalancer  $balancer
      * @return string
@@ -42,7 +43,8 @@ final class LoadBalancerConfiguration
     }
 
     /**
-     * The script that writes the load balancer's site, formats it, validates the whole configuration and reloads Caddy.
+     * Render the script that writes the load balancer's site, formats it, validates the whole configuration and
+     * reloads Caddy.
      *
      * @param  LoadBalancer  $balancer
      * @return string
@@ -55,7 +57,7 @@ final class LoadBalancerConfiguration
     }
 
     /**
-     * The script that removes the site, validates and reloads Caddy.
+     * Render the script that removes the site, validates and reloads Caddy.
      *
      * @param  int  $balancerId
      * @return string
@@ -66,7 +68,7 @@ final class LoadBalancerConfiguration
     }
 
     /**
-     * Where the load balancer's site is written.
+     * Get where the load balancer's site is written.
      *
      * @param  int  $balancerId
      * @return string

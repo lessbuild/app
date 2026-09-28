@@ -16,7 +16,7 @@ enum SignInMethod: string
     case Remembered = 'remembered';
 
     /**
-     * The sign-in method for a social provider; their values are the same.
+     * Get the sign-in method for a social provider; their values are the same.
      *
      * @param  SocialProvider  $provider
      * @return SignInMethod
@@ -27,7 +27,7 @@ enum SignInMethod: string
     }
 
     /**
-     * How the method is named in sign-in activity.
+     * Get how the method is named in sign-in activity.
      *
      * @return string
      */

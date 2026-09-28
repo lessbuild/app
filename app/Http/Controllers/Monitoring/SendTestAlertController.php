@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class SendTestAlertController
 {
     /**
-     * Queues a test alert; its outcome appears in the delivery history.
+     * Queue a test alert; its outcome appears in the delivery history.
      *
      * @param  Request  $request
      * @param  User  $user

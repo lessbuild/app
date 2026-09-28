@@ -30,7 +30,7 @@ final class QueueMonitorSettings
     ];
 
     /**
-     * Keeps only the known queue-monitor settings, as integers, with missing ones as null (meaning "no limit"). Range
+     * Keep only the known queue-monitor settings, as integers, with missing ones as null (meaning "no limit"). Range
      * checks happen in the form request against LIMITS.
      *
      * @param  array<string, mixed>  $settings

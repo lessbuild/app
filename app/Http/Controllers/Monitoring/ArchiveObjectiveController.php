@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class ArchiveObjectiveController
 {
     /**
-     * Archives an SLO.
+     * Archive an SLO.
      *
      * @param  User  $user
      * @param  Project  $project

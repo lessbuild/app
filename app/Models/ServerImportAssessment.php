@@ -29,8 +29,8 @@ use Illuminate\Support\Carbon;
 class ServerImportAssessment extends Model
 {
     /**
-     * Whether this person may use the assessment to import the server: they made it for this account, it hasn't been
-     * used or expired, and the token matches.
+     * Determine whether this person may use the assessment to import the server: they made it for this account, it
+     * hasn't been used or expired, and the token matches.
      *
      * @param  User  $user
      * @param  string  $accountId
@@ -44,6 +44,8 @@ class ServerImportAssessment extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the connection details and the assessment report.
      *
      * @return array<string, string>

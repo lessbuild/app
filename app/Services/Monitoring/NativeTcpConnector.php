@@ -10,6 +10,8 @@ use InvalidArgumentException;
 final class NativeTcpConnector implements TcpConnector
 {
     /**
+     * Create a new NativeTcpConnector instance.
+     *
      * Opens TCP connections for TCP monitors.
      *
      * @param  PublicWebhookTarget  $addresses  Refuses addresses that aren't public.
@@ -17,7 +19,7 @@ final class NativeTcpConnector implements TcpConnector
     public function __construct(private readonly PublicWebhookTarget $addresses) {}
 
     /**
-     * Opens and immediately closes a TCP connection to a public address, without sending anything. Refuses non-public
+     * Open and immediately closes a TCP connection to a public address, without sending anything. Refuses non-public
      * addresses.
      *
      * @param  string  $address

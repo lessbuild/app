@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
 class DatabaseClone extends Model
 {
     /**
-     * The website whose database is copied, including deleted ones so history reads.
+     * Get the website whose database is copied, including deleted ones so history reads.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -40,7 +40,7 @@ class DatabaseClone extends Model
     }
 
     /**
-     * The website whose database is overwritten.
+     * Get the website whose database is overwritten.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -50,6 +50,8 @@ class DatabaseClone extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

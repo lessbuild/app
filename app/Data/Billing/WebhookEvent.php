@@ -7,6 +7,8 @@ namespace App\Data\Billing;
 final readonly class WebhookEvent
 {
     /**
+     * Create a new WebhookEvent instance.
+     *
      * A verified payment-provider webhook.
      *
      * @param  string  $id  The event's ID, recorded so a redelivered event is handled once.

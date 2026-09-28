@@ -17,7 +17,7 @@ use Illuminate\Http\Response;
 final class ExportObjectiveController
 {
     /**
-     * Downloads the report, never cached.
+     * Download the report, never cached.
      *
      * @param  User  $user
      * @param  Project  $project

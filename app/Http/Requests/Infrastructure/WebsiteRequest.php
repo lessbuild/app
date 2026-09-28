@@ -15,8 +15,8 @@ use Illuminate\Validation\Rule;
 final class WebsiteRequest extends FormRequest
 {
     /**
-     * A website's settings. Its hostname must not be used by another website or domain (its own primary domain
-     * excepted), and the health check path must be an absolute path.
+     * Get the validation rules for a website's settings. Its hostname must not be used by another website or domain
+     * (its own primary domain excepted), and the health check path must be an absolute path.
      *
      * @return array<string, array<mixed>>
      */
@@ -43,7 +43,7 @@ final class WebsiteRequest extends FormRequest
     }
 
     /**
-     * Cleans the typed hostname and makes the health check path start with `/`.
+     * Clean the typed hostname and makes the health check path start with `/`.
      *
      * @return void
      */

@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class UpdateNotificationSettingsController
 {
     /**
-     * Turns the issue digest on or off.
+     * Turn the issue digest on or off.
      *
      * @param  Account  $account
      * @param  Request  $request

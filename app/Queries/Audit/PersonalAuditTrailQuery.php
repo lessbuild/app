@@ -10,7 +10,7 @@ use App\Models\User;
 final class PersonalAuditTrailQuery
 {
     /**
-     * Everything the person did, oldest first, for their personal data export.
+     * Get everything the person did, oldest first, for their personal data export.
      *
      * @param  User  $user
      * @return list<array{at: string, action: string, description: string, account_id: string|null, ip_address: string|null}>

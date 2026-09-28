@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RevokeInvitationController
 {
     /**
-     * Withdraws a pending invitation.
+     * Withdraw a pending invitation.
      *
      * @param  Account  $account
      * @param  User  $user

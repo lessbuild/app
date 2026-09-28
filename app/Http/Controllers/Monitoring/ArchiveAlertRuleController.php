@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ArchiveAlertRuleController
 {
     /**
-     * Archives an alert rule, if it hasn't changed since the page was opened.
+     * Archive an alert rule, if it hasn't changed since the page was opened.
      *
      * @param  Request  $request
      * @param  User  $user

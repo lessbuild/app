@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class ApplyConfigurationReview
 {
     /**
+     * Create a new ApplyConfigurationReview instance.
+     *
      * Applies an approved configuration review.
      *
      * @param  ConfigurationReviews  $reviews  Checks the review still matches the current configuration.

@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class UnsubscribeFromStatusPageController
 {
     /**
-     * Unsubscribes when the token matches; anything else is a 404.
+     * Unsubscribe when the token matches; anything else is a 404.
      *
      * @param  string  $subscription
      * @param  string  $token

@@ -81,7 +81,7 @@ enum AuditAction: string
     case StatusUpdateChanged = 'status_update.changed';
 
     /**
-     * A sentence describing the entry for the audit log, filled in from the context recorded with it. Missing values
+     * Describe the entry in a sentence for the audit log, filled in from the context recorded with it. Missing values
      * print as "?" so an old entry with less context still reads.
      *
      * @param  array<string, mixed>  $context

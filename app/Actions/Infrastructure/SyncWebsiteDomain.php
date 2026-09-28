@@ -12,6 +12,8 @@ use Throwable;
 final class SyncWebsiteDomain
 {
     /**
+     * Create a new SyncWebsiteDomain instance.
+     *
      * Points a website domain's DNS at its server.
      *
      * @param  CloudflareDns  $cloudflare  Creates or updates the record at Cloudflare.

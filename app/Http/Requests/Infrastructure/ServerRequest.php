@@ -12,7 +12,8 @@ use Illuminate\Validation\Rule;
 final class ServerRequest extends FormRequest
 {
     /**
-     * A new server's provider, type, name (a valid hostname label) and the provider's region, size and image.
+     * Get the validation rules: a new server's provider, type, name (a valid hostname label) and the provider's
+     * region, size and image.
      *
      * @return array<string, array<mixed>>
      */
@@ -29,7 +30,7 @@ final class ServerRequest extends FormRequest
     }
 
     /**
-     * The validated details with the provider ID as an integer.
+     * Get the validated details with the provider ID as an integer.
      *
      * @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string}
      */

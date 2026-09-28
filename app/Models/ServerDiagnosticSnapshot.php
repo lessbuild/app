@@ -34,7 +34,7 @@ use Illuminate\Support\Carbon;
 class ServerDiagnosticSnapshot extends Model
 {
     /**
-     * The server that was diagnosed.
+     * Get the server that was diagnosed.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -44,8 +44,8 @@ class ServerDiagnosticSnapshot extends Model
     }
 
     /**
-     * Whether a run is under way and its lease hasn't lapsed; a lapsed lease means the worker died and a new run may
-     * start.
+     * Determine whether a run is under way and its lease hasn't lapsed; a lapsed lease means the worker died and a new
+     * run may start.
      *
      * @return bool
      */
@@ -55,6 +55,8 @@ class ServerDiagnosticSnapshot extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `checks` as JSON.
      *
      * @return array<string, string>

@@ -16,7 +16,8 @@ class EndScript implements ServerScript
     public const IDENTIFIER = 'finished-provisioning';
 
     /**
-     * Base Script
+     * Render the final stage: turn on automatic system updates, mark the server as managed, and report that
+     * provisioning finished.
      *
      * @param  int  $step
      * @param  Server  $server

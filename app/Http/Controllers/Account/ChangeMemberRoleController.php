@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class ChangeMemberRoleController
 {
     /**
-     * Changes a member's role from the members page.
+     * Change a member's role from the members page.
      *
      * @param  Account  $account
      * @param  Request  $request

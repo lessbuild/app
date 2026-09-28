@@ -11,7 +11,7 @@ use Illuminate\Validation\Validator;
 final class StoreQueueWorkerRequest extends FormRequest
 {
     /**
-     * Allowed once the queue key middleware has identified the monitor.
+     * Allow the request once the queue key middleware has identified the monitor.
      *
      * @return bool
      */
@@ -21,7 +21,7 @@ final class StoreQueueWorkerRequest extends FormRequest
     }
 
     /**
-     * The JSON body, which the middleware decoded.
+     * Get the JSON body to validate, which the middleware decoded.
      *
      * @return array<string, mixed>
      */
@@ -31,7 +31,8 @@ final class StoreQueueWorkerRequest extends FormRequest
     }
 
     /**
-     * A worker UUID, an increasing sequence number, its status, and a job UUID exactly when it's busy.
+     * Get the validation rules: a worker UUID, an increasing sequence number, its status, and a job UUID exactly when
+     * it's busy.
      *
      * @return array<string, array<mixed>>
      */
@@ -43,7 +44,7 @@ final class StoreQueueWorkerRequest extends FormRequest
     }
 
     /**
-     * Refuses any other field; times are assigned on receipt.
+     * Refuse any other field; times are assigned on receipt.
      *
      * @return array<callable(Validator): void>
      */
@@ -57,7 +58,7 @@ final class StoreQueueWorkerRequest extends FormRequest
     }
 
     /**
-     * The validated heartbeat with the job ID only when there is one.
+     * Get the validated heartbeat with the job ID only when there is one.
      *
      * @return array{worker_id: string, sequence: int, status: string, job_id?: ?string}
      */

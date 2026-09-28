@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class OpenServerTerminal
 {
     /**
+     * Create a new OpenServerTerminal instance.
+     *
      * Opens a troubleshooting terminal on a server.
      *
      * @param  RecordAuditEntry  $audit  Records it.

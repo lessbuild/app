@@ -14,7 +14,8 @@ use Illuminate\Validation\Rule;
 final class ServerImportRequest extends FormRequest
 {
     /**
-     * An existing server to inspect: its name, type, address, SSH port and an unencrypted private key.
+     * Get the validation rules for an existing server to inspect: its name, type, address, SSH port and an unencrypted
+     * private key.
      *
      * @return array<string, array<mixed>>
      */
@@ -34,7 +35,7 @@ final class ServerImportRequest extends FormRequest
     }
 
     /**
-     * The validated details with the port as an integer.
+     * Get the validated details with the port as an integer.
      *
      * @return array{name: string, type: string, public_ip: string, ssh_port: int, ssh_private_key: string}
      */

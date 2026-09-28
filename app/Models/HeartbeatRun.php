@@ -35,7 +35,7 @@ class HeartbeatRun extends Model
     use HasFactory;
 
     /**
-     * The heartbeat monitor the run reported to, including archived monitors.
+     * Get the heartbeat monitor the run reported to, including archived monitors.
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -45,6 +45,8 @@ class HeartbeatRun extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

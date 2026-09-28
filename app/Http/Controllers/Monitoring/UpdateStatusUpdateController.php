@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateStatusUpdateController
 {
     /**
-     * Edits a posted update.
+     * Edit a posted update.
      *
      * @param  StatusUpdateRequest  $request
      * @param  User  $user

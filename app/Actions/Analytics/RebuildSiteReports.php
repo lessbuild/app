@@ -9,6 +9,8 @@ use App\Models\AnalyticsSite;
 final class RebuildSiteReports
 {
     /**
+     * Create a new RebuildSiteReports instance.
+     *
      * Rebuilds everything derived from a site's events, in dependency order.
      *
      * @param  RebuildSiteVisits  $visits  Rebuilds visits first.

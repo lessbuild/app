@@ -10,7 +10,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final class SiteRequest extends FormRequest
 {
     /**
-     * A site's name, domains and excluded paths (one per line or comma-separated), timezone and environment.
+     * Get the validation rules: a site's name, domains and excluded paths (one per line or comma-separated), timezone
+     * and environment.
      *
      * @return array<string, mixed>
      */
@@ -26,7 +27,7 @@ final class SiteRequest extends FormRequest
     }
 
     /**
-     * The site's settings with domains and excluded paths as lists.
+     * Build the site's settings with domains and excluded paths as lists.
      *
      * @return SiteDetails
      */
@@ -42,7 +43,7 @@ final class SiteRequest extends FormRequest
     }
 
     /**
-     * Splits text on new lines and commas, dropping blanks.
+     * Split text on new lines and commas, dropping blanks.
      *
      * @param  string  $value
      * @return list<string> one per line or comma

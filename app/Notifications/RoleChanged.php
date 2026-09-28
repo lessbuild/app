@@ -7,6 +7,8 @@ namespace App\Notifications;
 final class RoleChanged extends InboxNotification
 {
     /**
+     * Create a new RoleChanged instance.
+     *
      * Tells a member their role in an account changed.
      *
      * @param  string  $accountId  The account, for the inbox.
@@ -17,7 +19,7 @@ final class RoleChanged extends InboxNotification
     public function __construct(private readonly string $accountId, private readonly string $accountName, private readonly string $role, private readonly string $actorName) {}
 
     /**
-     * "You are now … in …".
+     * Get the headline: "You are now … in …".
      *
      * @return string
      */
@@ -27,7 +29,7 @@ final class RoleChanged extends InboxNotification
     }
 
     /**
-     * Who made the change.
+     * Say who made the change.
      *
      * @return string
      */
@@ -37,7 +39,7 @@ final class RoleChanged extends InboxNotification
     }
 
     /**
-     * The members page, where they can see their role.
+     * Get the members page, where they can see their role.
      *
      * @return string
      */
@@ -47,7 +49,7 @@ final class RoleChanged extends InboxNotification
     }
 
     /**
-     * The account the role is in.
+     * Get the account the role is in.
      *
      * @return string
      */

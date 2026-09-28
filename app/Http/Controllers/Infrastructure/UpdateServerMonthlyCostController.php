@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class UpdateServerMonthlyCostController
 {
     /**
-     * Sets a server's monthly cost by hand, for servers whose provider doesn't report one.
+     * Set a server's monthly cost by hand, for servers whose provider doesn't report one.
      *
      * @param  Request  $request
      * @param  User  $user

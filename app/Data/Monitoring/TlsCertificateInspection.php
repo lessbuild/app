@@ -7,6 +7,8 @@ namespace App\Data\Monitoring;
 final readonly class TlsCertificateInspection
 {
     /**
+     * Create a new TlsCertificateInspection instance.
+     *
      * What a TLS check learned about a certificate, or why it couldn't learn it.
      *
      * @param  ?string  $error  A reason code when the certificate couldn't be read or verified.
@@ -24,8 +26,8 @@ final readonly class TlsCertificateInspection
     ) {}
 
     /**
-     * The result for a failed connection: network and TLS errors mean the target failed, anything else means the checker
-     * itself had a problem.
+     * Build the result for a failed connection: network and TLS errors mean the target failed, anything else means the
+     * checker itself had a problem.
      *
      * @param  int  $errorCode
      * @return TlsCertificateInspection

@@ -14,7 +14,7 @@ use Illuminate\Http\Request;
 final class UpdateInfrastructureBudgetController
 {
     /**
-     * Sets or clears the account's monthly infrastructure budget.
+     * Set or clears the account's monthly infrastructure budget.
      *
      * @param  Request  $request
      * @param  User  $user

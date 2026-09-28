@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class VerifyWebsiteBackupController
 {
     /**
-     * Starts checking that a backup can be restored, without touching the live website.
+     * Start checking that a backup can be restored, without touching the live website.
      *
      * @param  User  $user
      * @param  Project  $project

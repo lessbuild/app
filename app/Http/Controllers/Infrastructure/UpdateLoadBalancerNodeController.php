@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateLoadBalancerNodeController
 {
     /**
-     * Saves a node's port, weight and whether it receives traffic.
+     * Save a node's port, weight and whether it receives traffic.
      *
      * @param  LoadBalancerNodeRequest  $request
      * @param  User  $user

@@ -16,7 +16,11 @@ class SshKeyPair
      */
     private readonly PrivateKey $key;
 
-    /** Create a new 4096-bit RSA key pair for managed SSH access. */
+    /**
+     * Create a new SshKeyPair instance.
+     *
+     * Create a new 4096-bit RSA key pair for managed SSH access.
+     */
     public function __construct()
     {
         $this->key = RSA::createKey(4096);

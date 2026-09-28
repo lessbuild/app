@@ -17,7 +17,8 @@ class InstallMysqlScript implements ServerScript
     public const IDENTIFIER = 'installed-mysql';
 
     /**
-     * Shell script to install Mysql
+     * Render the stage that installs MySQL with the server's root password, listening on localhost only, and reports
+     * progress.
      *
      * @param  int  $step
      * @param  Server  $server

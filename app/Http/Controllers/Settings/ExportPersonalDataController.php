@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class ExportPersonalDataController
 {
     /**
-     * Downloads everything stored about the person as JSON, never cached.
+     * Download everything stored about the person as JSON, never cached.
      *
      * @param  User  $user
      * @param  PersonalDataExportQuery  $query

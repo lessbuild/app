@@ -27,6 +27,8 @@ class Membership extends Model
     use HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `role` as an AccountRole and `service_access` as a JSON list (null means every service).
      *
      * @return array<string, string>
@@ -37,8 +39,8 @@ class Membership extends Model
     }
 
     /**
-     * Whether the member can be assigned incidents and issues: they work on projects (an owner, admin or member, not
-     * billing or viewer) and may use Monitoring.
+     * Determine whether the member can be assigned incidents and issues: they work on projects (an owner, admin or
+     * member, not billing or viewer) and may use Monitoring.
      *
      * @return bool
      */
@@ -48,7 +50,8 @@ class Membership extends Model
     }
 
     /**
-     * Owners and admins always reach every service; others may be limited to a list.
+     * Determine whether the member may use a service. Owners and admins always reach every service; others may be
+     * limited to a list.
      *
      * @param  string  $service
      * @return bool
@@ -61,7 +64,7 @@ class Membership extends Model
     }
 
     /**
-     * The account the membership is in.
+     * Get the account the membership is in.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -71,7 +74,7 @@ class Membership extends Model
     }
 
     /**
-     * The member.
+     * Get the member.
      *
      * @return BelongsTo<User, $this>
      */
@@ -81,7 +84,7 @@ class Membership extends Model
     }
 
     /**
-     * Whether the member's role grants the permission.
+     * Determine whether the member's role grants the permission.
      *
      * @param  AccountPermission  $permission
      * @return bool

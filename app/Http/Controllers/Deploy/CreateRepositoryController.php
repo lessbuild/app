@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class CreateRepositoryController
 {
     /**
-     * The form for connecting a repository to the project.
+     * Show the form for connecting a repository to the project.
      *
      * @param  User  $user
      * @param  Project  $project

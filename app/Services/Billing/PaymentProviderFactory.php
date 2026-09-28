@@ -11,7 +11,7 @@ use Stripe\StripeClient;
 final class PaymentProviderFactory
 {
     /**
-     * Stripe when STRIPE_SECRET is set; otherwise a provider that only allows free tiers.
+     * Make the payment provider: Stripe when STRIPE_SECRET is set; otherwise a provider that only allows free tiers.
      *
      * @param  Repository  $config
      * @return PaymentProvider

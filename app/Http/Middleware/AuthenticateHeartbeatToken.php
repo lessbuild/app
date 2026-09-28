@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 final class AuthenticateHeartbeatToken
 {
     /**
+     * Create a new AuthenticateHeartbeatToken instance.
+     *
      * Authenticates heartbeat pings.
      *
      * @param  MonitorQueue  $queue  Checks the monitor still accepts pings.
@@ -23,8 +25,8 @@ final class AuthenticateHeartbeatToken
     public function __construct(private readonly MonitorQueue $queue, private readonly ThrottleRequests $throttle) {}
 
     /**
-     * Finds the heartbeat monitor in the URL and checks the bearer key against its hash, then passes the monitor and key
-     * hash on as request attributes. Wrong keys and unavailable monitors get the same 401.
+     * Find the heartbeat monitor in the URL and checks the bearer key against its hash, then passes the monitor and
+     * key hash on as request attributes. Wrong keys and unavailable monitors get the same 401.
      *
      * @param  Request  $request
      * @param  Closure(Request): Response  $next

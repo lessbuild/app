@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class BillingOverview
 {
     /**
+     * Create a new BillingOverview instance.
+     *
      * Everything the billing page shows.
      *
      * @param  list<ServiceBillingCard>  $services

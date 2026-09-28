@@ -36,6 +36,8 @@ class AnalyticsIngestionBatch extends Model
     protected $fillable = ['site_id', 'batch_id', 'event_count', 'status', 'accepted_at', 'processed_at', 'failure_message'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -46,7 +48,7 @@ class AnalyticsIngestionBatch extends Model
     }
 
     /**
-     * The site that sent the batch.
+     * Get the site that sent the batch.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */
@@ -56,7 +58,7 @@ class AnalyticsIngestionBatch extends Model
     }
 
     /**
-     * The events in the batch.
+     * Get the events in the batch.
      *
      * @return HasMany<AnalyticsEvent, $this>
      */

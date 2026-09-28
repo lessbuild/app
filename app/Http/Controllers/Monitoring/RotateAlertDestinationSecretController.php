@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class RotateAlertDestinationSecretController
 {
     /**
-     * Issues a new signing secret and shows it once.
+     * Issue a new signing secret and show it once.
      *
      * @param  Request  $request
      * @param  User  $user

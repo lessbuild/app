@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class OpenNotificationController
 {
     /**
-     * Marks a notification read and goes where it points.
+     * Mark a notification read and goes where it points.
      *
      * @param  User  $user
      * @param  string  $notification

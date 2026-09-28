@@ -12,9 +12,9 @@ use Illuminate\Support\Str;
 final class CollectionRequest
 {
     /**
-     * Whether a collection request may be counted for this site: its `Origin` must be one of the site's domains.
-     * Requests without an Origin (server-side or no-cors beacons) are allowed, since browsers always send one from
-     * pages.
+     * Determine whether a collection request may be counted for this site: its `Origin` must be one of the site's
+     * domains. Requests without an Origin (server-side or no-cors beacons) are allowed, since browsers always send one
+     * from pages.
      *
      * @param  string|null  $origin
      * @param  AnalyticsSite  $site
@@ -31,7 +31,7 @@ final class CollectionRequest
     }
 
     /**
-     * A cheap user-agent check that keeps crawlers and headless browsers out of the numbers.
+     * Determine whether the user agent is a crawler or headless browser, cheaply, to keep them out of the numbers.
      *
      * @param  string|null  $userAgent
      * @return bool
@@ -42,8 +42,8 @@ final class CollectionRequest
     }
 
     /**
-     * The hostname a pageview reported, lowercased and cut to 255 characters, or null when it's empty or has characters
-     * a hostname can't.
+     * Clean the hostname a pageview reported: lowercased and cut to 255 characters, or null when it's empty or has
+     * characters a hostname can't.
      *
      * @param  mixed  $host
      * @return string|null
@@ -56,7 +56,7 @@ final class CollectionRequest
     }
 
     /**
-     * Trims an untrusted string field and cuts it to the column's length; empty values become null.
+     * Trim an untrusted string field and cuts it to the column's length; empty values become null.
      *
      * @param  mixed  $value
      * @param  int  $length
@@ -70,7 +70,7 @@ final class CollectionRequest
     }
 
     /**
-     * Custom events may carry a name only; nothing else a site sends is stored.
+     * Keep only a custom event's name; nothing else a site sends is stored.
      *
      * @param  mixed  $properties
      * @return array{name?: string}
@@ -83,8 +83,8 @@ final class CollectionRequest
     }
 
     /**
-     * The CORS headers for the collection endpoint. They echo the caller's Origin because the tracker runs on customers'
-     * own domains; the origin is checked against the site separately.
+     * Build the CORS headers for the collection endpoint. They echo the caller's Origin because the tracker runs on
+     * customers' own domains; the origin is checked against the site separately.
      *
      * @param  Request  $request
      * @return array<string, string>

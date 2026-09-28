@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreMaintenanceWindowController
 {
     /**
-     * Schedules a maintenance window.
+     * Schedule a maintenance window.
      *
      * @param  MaintenanceWindowRequest  $request
      * @param  User  $user

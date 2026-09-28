@@ -42,6 +42,8 @@ class AnalyticsGoal extends Model
     protected $fillable = ['site_id', 'name', 'kind', 'match_type', 'match_value', 'active'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -52,8 +54,8 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * Records a version of the goal's definition when it's created and each time its kind or match changes (closing
-     * the previous one), so its definition can be looked up for any point in time.
+     * Record a version of the goal's definition when it's created and each time its kind or match changes (closing the
+     * previous one), so its definition can be looked up for any point in time.
      *
      * @return void
      */
@@ -84,7 +86,7 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * The site the goal is measured on.
+     * Get the site the goal is measured on.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */
@@ -94,7 +96,7 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * The goal's definitions over time.
+     * Get the goal's definitions over time.
      *
      * @return HasMany<AnalyticsGoalVersion, $this>
      */
@@ -104,7 +106,7 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * Visits that completed the goal.
+     * Get the visits that completed the goal.
      *
      * @return HasMany<AnalyticsGoalConversion, $this>
      */
@@ -114,8 +116,8 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * The goal's definition in effect at a moment: the version whose period includes it. Null before the goal existed.
-     * Callers that check many events should eager-load `versions`.
+     * Get the goal's definition in effect at a moment: the version whose period includes it. Null before the goal
+     * existed. Callers that check many events should eager-load `versions`.
      *
      * @param  mixed  $at
      * @return AnalyticsGoalVersion|null
@@ -129,9 +131,9 @@ class AnalyticsGoal extends Model
     }
 
     /**
-     * Whether the event completes the goal as it was defined when the event happened, so editing a goal doesn't rewrite
-     * history. Event goals match a custom event's name; path goals match a pageview's path exactly or by prefix. Goals
-     * without recorded versions use their current definition.
+     * Determine whether the event completes the goal as it was defined when the event happened, so editing a goal
+     * doesn't rewrite history. Event goals match a custom event's name; path goals match a pageview's path exactly or
+     * by prefix. Goals without recorded versions use their current definition.
      *
      * @param  AnalyticsEvent  $event
      * @return bool

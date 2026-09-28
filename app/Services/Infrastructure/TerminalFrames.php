@@ -13,7 +13,7 @@ use RuntimeException;
 class TerminalFrames
 {
     /**
-     * Queues keystrokes for the terminal's worker with the next input sequence number, which is returned.
+     * Queue keystrokes for the terminal's worker with the next input sequence number, which is returned.
      *
      * @param  ServerTerminalSession  $session
      * @param  string  $input
@@ -46,7 +46,7 @@ class TerminalFrames
     }
 
     /**
-     * Queues output for the browser in frames of the configured size. When too much output is waiting because the
+     * Queue output for the browser in frames of the configured size. When too much output is waiting because the
      * browser stopped collecting it, the terminal is ended instead.
      *
      * @param  ServerTerminalSession  $session
@@ -75,7 +75,7 @@ class TerminalFrames
     }
 
     /**
-     * Output after `$after`; frames up to `$after` have reached the browser and are deleted.
+     * Take the output after `$after`; frames up to `$after` have reached the browser and are deleted.
      *
      * @param  ServerTerminalSession  $session
      * @param  int  $after
@@ -92,7 +92,7 @@ class TerminalFrames
     }
 
     /**
-     * Stores one frame.
+     * Store one frame.
      *
      * @param  ServerTerminalSession  $session
      * @param  string  $direction

@@ -18,7 +18,7 @@ use Symfony\Component\Yaml\Yaml;
 final class ConfigurationDocument
 {
     /**
-     * Parses a version 2 document of at most 50 KB, refusing YAML aliases and deep nesting before anything expands, and
+     * Parse a version 2 document of at most 50 KB, refusing YAML aliases and deep nesting before anything expands, and
      * validates its shape and every name, runtime, process and resource rule.
      *
      * @param  string  $yaml
@@ -102,9 +102,9 @@ final class ConfigurationDocument
     }
 
     /**
-     * Validates one environment: names, adoption flags, removals that don't also appear as desired objects, runtime
-     * requirements per type, single-replica schedulers, and managed resources (no variable references, no managed object
-     * storage, at most one managed Valkey).
+     * Validate one environment: names, adoption flags, removals that don't also appear as desired objects, runtime
+     * requirements per type, single-replica schedulers, and managed resources (no variable references, no managed
+     * object storage, at most one managed Valkey).
      *
      * @param  mixed  $slug
      * @param  array<string, mixed>  $environment
@@ -157,7 +157,7 @@ final class ConfigurationDocument
     }
 
     /**
-     * Validates a name: lowercase slugs for objects, upper-case keys for variables.
+     * Validate a name: lowercase slugs for objects, upper-case keys for variables.
      *
      * @param  mixed  $name
      * @param  bool  $variable
@@ -172,7 +172,7 @@ final class ConfigurationDocument
     }
 
     /**
-     * Validates an `adopt` flag is a boolean.
+     * Validate an `adopt` flag is a boolean.
      *
      * @param  array<mixed>  $settings
      * @return void
@@ -206,7 +206,7 @@ final class ConfigurationDocument
     }
 
     /**
-     * Refuses the document with a fixed message that never echoes its content.
+     * Refuse the document with a fixed message that never echoes its content.
      *
      * @return never
      */

@@ -24,7 +24,7 @@ use Illuminate\Support\Collection;
 final class RebuildGoalConversions
 {
     /**
-     * Rebuilds the goal conversions for the events a batch touched, or for the whole site when no batch is given (after
+     * Rebuild the goal conversions for the events a batch touched, or for the whole site when no batch is given (after
      * a goal changes). Existing conversions in scope are replaced.
      *
      * @param  AnalyticsSite  $site
@@ -81,8 +81,8 @@ final class RebuildGoalConversions
     }
 
     /**
-     * The events to recount: the whole site's countable events, or, for a batch, every countable event of the visitors
-     * and sessions the batch contains, since a new event can change their earlier visits.
+     * Get the events to recount: the whole site's countable events, or, for a batch, every countable event of the
+     * visitors and sessions the batch contains, since a new event can change their earlier visits.
      *
      * @param  AnalyticsSite  $site
      * @param  AnalyticsIngestionBatch|null  $batch
@@ -130,7 +130,7 @@ final class RebuildGoalConversions
     }
 
     /**
-     * The visit an event happened in: same visitor or session, same local day, and within the visit's time span.
+     * Find the visit an event happened in: same visitor or session, same local day, and within the visit's time span.
      *
      * @param  AnalyticsEvent  $event
      * @param  Collection<int, AnalyticsVisit>  $visits

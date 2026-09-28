@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteServerAlertRuleController
 {
     /**
-     * Removes a server alert rule.
+     * Remove a server alert rule.
      *
      * @param  User  $user
      * @param  Project  $project

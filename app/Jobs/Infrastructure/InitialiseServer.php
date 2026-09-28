@@ -39,6 +39,8 @@ final class InitialiseServer implements ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Create a new InitialiseServer instance.
+     *
      * Waits for a newly created cloud server's public IP and records its SSH host key.
      *
      * @param  int  $serverId  The server.
@@ -47,7 +49,7 @@ final class InitialiseServer implements ShouldQueue
     public function __construct(public readonly int $serverId, public readonly string $attempt) {}
 
     /**
-     * Asks the provider for the server's addresses, pins its SSH host key, and moves it on to provisioning. Throws (and
+     * Ask the provider for the server's addresses, pins its SSH host key, and moves it on to provisioning. Throws (and
      * so retries) while the IP isn't there yet.
      *
      * @param  ServerProviderResolver  $providers
@@ -77,7 +79,7 @@ final class InitialiseServer implements ShouldQueue
     }
 
     /**
-     * Marks the server failed at initialisation once retries run out.
+     * Mark the server failed at initialisation once retries run out.
      *
      * @param  Throwable  $exception
      * @return void
@@ -91,7 +93,7 @@ final class InitialiseServer implements ShouldQueue
     }
 
     /**
-     * The server, only while it's still on this initialisation attempt.
+     * Query the server, only while it's still on this initialisation attempt.
      *
      * @return Builder<Server>
      */

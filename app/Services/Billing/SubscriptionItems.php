@@ -14,6 +14,8 @@ use App\Models\BillingSelection;
 final class SubscriptionItems
 {
     /**
+     * Create a new SubscriptionItems instance.
+     *
      * Keeps the subscription's items in step with the account's selections.
      *
      * @param  PriceBook  $prices  The price for each selection.
@@ -22,7 +24,7 @@ final class SubscriptionItems
     public function __construct(private readonly PriceBook $prices, private readonly PaymentProvider $provider) {}
 
     /**
-     * The `service:kind:item` reference stored on a subscription item.
+     * Build the `service:kind:item` reference stored on a subscription item.
      *
      * @param  string  $service
      * @param  SelectionKind  $kind
@@ -35,7 +37,7 @@ final class SubscriptionItems
     }
 
     /**
-     * Splits a reference back into service, kind and item, or null when it isn't one of ours.
+     * Split a reference back into service, kind and item, or null when it isn't one of ours.
      *
      * @param  string  $reference
      * @return array{0: string, 1: SelectionKind, 2: string}|null
@@ -49,7 +51,7 @@ final class SubscriptionItems
     }
 
     /**
-     * The line items the account should be paying for: each selection with a price (imported selections keep their
+     * Get the line items the account should be paying for: each selection with a price (imported selections keep their
      * original price).
      *
      * @param  string  $accountId
@@ -94,7 +96,7 @@ final class SubscriptionItems
     }
 
     /**
-     * Stores the provider's item ID on each selection, so later changes update items in place.
+     * Store the provider's item ID on each selection, so later changes update items in place.
      *
      * @param  string  $accountId
      * @param  array<string, string>  $itemIds

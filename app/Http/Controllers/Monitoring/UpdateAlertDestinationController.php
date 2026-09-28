@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateAlertDestinationController
 {
     /**
-     * Saves a destination.
+     * Save a destination.
      *
      * @param  AlertDestinationRequest  $request
      * @param  User  $user

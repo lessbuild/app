@@ -12,6 +12,8 @@ final readonly class ProjectDeleted
     use Dispatchable;
 
     /**
+     * Create a new ProjectDeleted instance.
+     *
      * A project was deleted. It's gone when this fires, so the event carries plain values.
      *
      * @param  string  $projectId  The deleted project's ID.

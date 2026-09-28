@@ -47,7 +47,7 @@ class Dashboard extends Model
     ];
 
     /**
-     * The account the dashboard belongs to.
+     * Get the account the dashboard belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -57,7 +57,7 @@ class Dashboard extends Model
     }
 
     /**
-     * Who created it (`created_by`).
+     * Get the person who created the dashboard (`created_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -67,7 +67,7 @@ class Dashboard extends Model
     }
 
     /**
-     * The widgets on it, in display order.
+     * Get the widgets on it, in display order.
      *
      * @return HasMany<DashboardWidget, $this>
      */

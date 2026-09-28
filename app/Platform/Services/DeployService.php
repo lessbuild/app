@@ -14,7 +14,7 @@ use App\Platform\ServiceNavItem;
 final class DeployService implements PlatformService
 {
     /**
-     * Stored on projects and billing items as `deploy`.
+     * Get the service's key, stored on projects and billing items as `deploy`.
      *
      * @return string
      */
@@ -24,7 +24,7 @@ final class DeployService implements PlatformService
     }
 
     /**
-     * Shown as "Deploy".
+     * Get the service's name, shown as "Deploy".
      *
      * @return string
      */
@@ -34,7 +34,7 @@ final class DeployService implements PlatformService
     }
 
     /**
-     * Describes Deploy on the service cards.
+     * Describe Deploy on the service cards.
      *
      * @return string
      */
@@ -44,7 +44,7 @@ final class DeployService implements PlatformService
     }
 
     /**
-     * An upload cloud, standing for releases.
+     * Get the service's icon: an upload cloud, standing for releases.
      *
      * @return string
      */
@@ -54,7 +54,8 @@ final class DeployService implements PlatformService
     }
 
     /**
-     * Repositories (with their builds), environment deploy settings, and configuration documents.
+     * Get the service's pages: repositories (with their builds), environment deploy settings, and configuration
+     * documents.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -79,7 +80,7 @@ final class DeployService implements PlatformService
     }
 
     /**
-     * Deployer's tiers, carried over unchanged.
+     * Get Deployer's tiers, carried over unchanged.
      *
      * @return ServiceBilling
      */

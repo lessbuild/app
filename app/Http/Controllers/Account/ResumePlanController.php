@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class ResumePlanController
 {
     /**
-     * Cancels a scheduled downgrade, so the paid tier carries on.
+     * Cancel a scheduled downgrade, so the paid tier carries on.
      *
      * @param  Account  $account
      * @param  User  $user

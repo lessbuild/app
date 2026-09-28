@@ -13,7 +13,7 @@ use RuntimeException;
 class ServerProviderResolver
 {
     /**
-     * The API client for a provider's stored credential.
+     * Make the API client for a provider's stored credential.
      *
      * @param  Provider  $provider
      * @return ServerProvider
@@ -24,7 +24,7 @@ class ServerProviderResolver
     }
 
     /**
-     * The API client for a provider type and token; types that don't host servers throw.
+     * Make the API client for a provider type and token; types that don't host servers throw.
      *
      * @param  ProviderType  $type
      * @param  string  $token

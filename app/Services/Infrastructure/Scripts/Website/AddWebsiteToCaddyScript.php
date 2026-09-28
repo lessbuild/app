@@ -10,6 +10,8 @@ use App\Services\Infrastructure\WebsiteCaddyConfiguration;
 final class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
 {
     /**
+     * Create a new AddWebsiteToCaddyScript instance.
+     *
      * Adds a website's site to Caddy.
      *
      * @param  WebsiteCaddyConfiguration  $caddy  Renders the site block.
@@ -17,7 +19,7 @@ final class AddWebsiteToCaddyScript extends WebsiteProvisioningScript
     public function __construct(private readonly WebsiteCaddyConfiguration $caddy) {}
 
     /**
-     * Writes the website's Caddy site and access log, validates the whole configuration and reloads Caddy.
+     * Write the website's Caddy site and access log, validates the whole configuration and reloads Caddy.
      *
      * @param  int  $step
      * @param  Website  $website

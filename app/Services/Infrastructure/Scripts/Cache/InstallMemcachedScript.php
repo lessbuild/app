@@ -16,7 +16,7 @@ class InstallMemcachedScript implements ServerScript
     public const IDENTIFIER = 'installed-memcached';
 
     /**
-     * Shell script to run
+     * Render the stage that installs Memcached and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

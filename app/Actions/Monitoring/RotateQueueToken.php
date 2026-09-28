@@ -16,6 +16,8 @@ use Illuminate\Support\Str;
 final class RotateQueueToken
 {
     /**
+     * Create a new RotateQueueToken instance.
+     *
      * Replaces a queue monitor's key.
      *
      * @param  MonitorQueue  $queue  Locks the monitor.

@@ -13,6 +13,8 @@ use RuntimeException;
 class RemoteScriptRunner
 {
     /**
+     * Create a new RemoteScriptRunner instance.
+     *
      * Starts scripts on servers.
      *
      * @param  Runner  $runner  Builds the SSH client.
@@ -20,7 +22,7 @@ class RemoteScriptRunner
     public function __construct(private readonly Runner $runner) {}
 
     /**
-     * Uploads the script (retrying the upload), then runs it detached as root with its output to a log and its process
+     * Upload the script (retrying the upload), then runs it detached as root with its output to a log and its process
      * ID in a file. Returns the process ID and script path.
      *
      * @param  Server  $server

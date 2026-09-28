@@ -14,7 +14,7 @@ use App\Platform\ServiceNavItem;
 final class InfrastructureService implements PlatformService
 {
     /**
-     * Stored on projects and billing items as `infrastructure`.
+     * Get the service's key, stored on projects and billing items as `infrastructure`.
      *
      * @return string
      */
@@ -24,7 +24,7 @@ final class InfrastructureService implements PlatformService
     }
 
     /**
-     * Shown as "Infrastructure".
+     * Get the service's name, shown as "Infrastructure".
      *
      * @return string
      */
@@ -34,7 +34,7 @@ final class InfrastructureService implements PlatformService
     }
 
     /**
-     * Describes Infrastructure on the service cards.
+     * Describe Infrastructure on the service cards.
      *
      * @return string
      */
@@ -44,7 +44,7 @@ final class InfrastructureService implements PlatformService
     }
 
     /**
-     * A server.
+     * Get the service's icon: a server.
      *
      * @return string
      */
@@ -54,7 +54,7 @@ final class InfrastructureService implements PlatformService
     }
 
     /**
-     * Servers (and imports), websites, load balancers, backups and costs.
+     * Get the service's pages: servers (and imports), websites, load balancers, backups and costs.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -71,7 +71,7 @@ final class InfrastructureService implements PlatformService
     }
 
     /**
-     * Infrastructure read and write.
+     * Get the service's API scopes: Infrastructure read and write.
      *
      * @return list<ApiScope>
      */
@@ -81,7 +81,7 @@ final class InfrastructureService implements PlatformService
     }
 
     /**
-     * A single included tier; server limits come from the Deploy plan for now.
+     * Get the service's catalogue: a single included tier; server limits come from the Deploy plan for now.
      *
      * @return ServiceBilling
      */

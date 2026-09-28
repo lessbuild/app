@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class CreateWebsiteController
 {
     /**
-     * The new website form, or the import form with `?import=1`.
+     * Show the new website form, or the import form with `?import=1`.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RerunServerCommandController
 {
     /**
-     * Queues a past command again and shows its output as it runs.
+     * Queue a past command again and shows its output as it runs.
      *
      * @param  User  $user
      * @param  Project  $project

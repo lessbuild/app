@@ -13,8 +13,8 @@ use Illuminate\Validation\Rule;
 final class StatusPageRequest extends FormRequest
 {
     /**
-     * A page's name, public slug (unique, and not the reserved `subscriptions`), description, whether it's published,
-     * and up to 25 monitors to show.
+     * Get the validation rules: a page's name, public slug (unique, and not the reserved `subscriptions`),
+     * description, whether it's published, and up to 25 monitors to show.
      *
      * @return array<string, array<mixed>>
      */
@@ -34,7 +34,7 @@ final class StatusPageRequest extends FormRequest
     }
 
     /**
-     * Messages for the slug's format, uniqueness and reserved names.
+     * Get the messages for the slug's format, uniqueness and reserved names.
      *
      * @return array<string, string>
      */
@@ -44,7 +44,7 @@ final class StatusPageRequest extends FormRequest
     }
 
     /**
-     * Slugifies what was typed as the slug, treating an empty result as none.
+     * Slugify what was typed as the slug, treating an empty result as none.
      *
      * @return void
      */

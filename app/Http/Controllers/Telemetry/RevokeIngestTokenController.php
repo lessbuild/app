@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RevokeIngestTokenController
 {
     /**
-     * Revokes an ingest key.
+     * Revoke an ingest key.
      *
      * @param  User  $user
      * @param  Project  $project

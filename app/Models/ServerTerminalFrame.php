@@ -29,7 +29,7 @@ class ServerTerminalFrame extends Model
     public const UPDATED_AT = null;
 
     /**
-     * The terminal the frame belongs to.
+     * Get the terminal the frame belongs to.
      *
      * @return BelongsTo<ServerTerminalSession, $this>
      */
@@ -39,6 +39,8 @@ class ServerTerminalFrame extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `payload`, the keystrokes or output it carries.
      *
      * @return array<string, string>

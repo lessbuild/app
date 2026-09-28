@@ -46,7 +46,7 @@ class WebsiteBackup extends Model
     public const STATUS_FAILED = 'failed';
 
     /**
-     * Completed with a snapshot restic can restore.
+     * Determine whether the backup completed with a snapshot restic can restore.
      *
      * @return bool
      */
@@ -56,7 +56,7 @@ class WebsiteBackup extends Model
     }
 
     /**
-     * The website backed up, including deleted ones.
+     * Get the website backed up, including deleted ones.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -66,7 +66,7 @@ class WebsiteBackup extends Model
     }
 
     /**
-     * Where the backup is stored.
+     * Get the destination the backup is stored in.
      *
      * @return BelongsTo<BackupDestination, $this>
      */
@@ -76,7 +76,7 @@ class WebsiteBackup extends Model
     }
 
     /**
-     * The schedule that made it, if any.
+     * Get the schedule that made it, if any.
      *
      * @return BelongsTo<WebsiteBackupSchedule, $this>
      */
@@ -86,7 +86,7 @@ class WebsiteBackup extends Model
     }
 
     /**
-     * Restores from this backup.
+     * Get the restores made from this backup.
      *
      * @return HasMany<BackupRestore, $this>
      */
@@ -96,7 +96,7 @@ class WebsiteBackup extends Model
     }
 
     /**
-     * Checks that it can be restored.
+     * Get the checks that this backup can be restored.
      *
      * @return HasMany<BackupVerification, $this>
      */
@@ -106,6 +106,8 @@ class WebsiteBackup extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

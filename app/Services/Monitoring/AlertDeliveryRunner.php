@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
 final class AlertDeliveryRunner
 {
     /**
+     * Create a new AlertDeliveryRunner instance.
+     *
      * Sends alert deliveries.
      *
      * @param  AlertDeliveryQueue  $queue  Locks deliveries and queues their jobs.
@@ -26,7 +28,7 @@ final class AlertDeliveryRunner
     public function __construct(private readonly AlertDeliveryQueue $queue, private readonly AlertNotificationTransport $transport) {}
 
     /**
-     * Sends one delivery attempt: claims it under lock (skipping stale generations and deliveries not yet due,
+     * Send one delivery attempt: claims it under lock (skipping stale generations and deliveries not yet due,
      * cancelling ones no longer wanted, holding a recovery until its opening alert is out, failing ones past their
      * attempt limit), sends outside the transaction, then records the result if the claim still holds.
      *
@@ -100,7 +102,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Settles a delivery whose worker died: unstarted ones fail, and one that was sending is retried for webhooks
+     * Settle a delivery whose worker died: unstarted ones fail, and one that was sending is retried for webhooks
      * (receivers can deduplicate) or marked uncertain for others.
      *
      * @param  string  $id
@@ -127,7 +129,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Settles or requeues up to `$limit` due deliveries whose jobs have gone missing, and returns how many.
+     * Settle or requeues up to `$limit` due deliveries whose jobs have gone missing, and returns how many.
      *
      * @param  int  $limit
      * @return int
@@ -161,7 +163,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Why a delivery should no longer be sent, or null when it still should.
+     * Explain why a delivery should no longer be sent, or return null when it still should.
      *
      * @param  AlertDelivery  $delivery
      * @return string|null
@@ -204,7 +206,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Records an attempt's result: retryable results are retried with backoff (or the destination's Retry-After) until
+     * Record an attempt's result: retryable results are retried with backoff (or the destination's Retry-After) until
      * the attempt limit, anything else is final.
      *
      * @param  AlertDelivery  $delivery
@@ -237,7 +239,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Ends a delivery in a final status with its error code.
+     * End a delivery in a final status with its error code.
      *
      * @param  AlertDelivery  $delivery
      * @param  AlertDeliveryStatus  $status
@@ -254,7 +256,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Queues the delivery again under a new generation, so any older job for it does nothing.
+     * Queue the delivery again under a new generation, so any older job for it does nothing.
      *
      * @param  AlertDelivery  $delivery
      * @return void

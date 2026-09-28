@@ -11,7 +11,7 @@ use Illuminate\Validation\Validator;
 final class StoreHeartbeatRequest extends FormRequest
 {
     /**
-     * Allowed once the heartbeat key middleware has identified the monitor.
+     * Allow the request once the heartbeat key middleware has identified the monitor.
      *
      * @return bool
      */
@@ -21,7 +21,7 @@ final class StoreHeartbeatRequest extends FormRequest
     }
 
     /**
-     * The JSON body, which the middleware decoded.
+     * Get the JSON body to validate, which the middleware decoded.
      *
      * @return array<string, mixed>
      */
@@ -31,7 +31,7 @@ final class StoreHeartbeatRequest extends FormRequest
     }
 
     /**
-     * A run UUID and the signal: start, success or failure.
+     * Get the validation rules: a run UUID and the signal (start, success or failure).
      *
      * @return array<string, array<mixed>>
      */
@@ -41,7 +41,7 @@ final class StoreHeartbeatRequest extends FormRequest
     }
 
     /**
-     * Refuses any other field; times are assigned on receipt.
+     * Refuse any other field; times are assigned on receipt.
      *
      * @return array<callable(Validator): void>
      */

@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class SubscribeToStatusPageRequest extends FormRequest
 {
     /**
-     * A single email address.
+     * Get the validation rules: a single email address.
      *
      * @return array<string, array<mixed>>
      */
@@ -20,7 +20,7 @@ final class SubscribeToStatusPageRequest extends FormRequest
     }
 
     /**
-     * The address, trimmed and lowercased so the same person can't subscribe twice with different casing.
+     * Get the address, trimmed and lowercased so the same person can't subscribe twice with different casing.
      *
      * @return string
      */

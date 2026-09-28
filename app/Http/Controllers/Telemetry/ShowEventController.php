@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowEventController
 {
     /**
-     * One event's details, redacted.
+     * Show one event's details, redacted.
      *
      * @param  User  $user
      * @param  Project  $project

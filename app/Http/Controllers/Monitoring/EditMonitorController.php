@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class EditMonitorController
 {
     /**
-     * The monitor form, filled in, with its current alert routing.
+     * Show the monitor form, filled in, with its current alert routing.
      *
      * @param  User  $user
      * @param  Project  $project

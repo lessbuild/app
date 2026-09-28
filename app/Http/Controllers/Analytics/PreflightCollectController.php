@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 final class PreflightCollectController
 {
     /**
-     * Answers the browser's CORS preflight for the collection endpoint, allowing only the site's own origins.
+     * Answer the browser's CORS preflight for the collection endpoint, allowing only the site's own origins.
      *
      * @param  Request  $request
      * @param  string  $publicId

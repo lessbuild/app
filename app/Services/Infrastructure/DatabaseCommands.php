@@ -14,7 +14,7 @@ final class DatabaseCommands
     private const GRANTS = ['read' => 'SELECT, SHOW VIEW', 'write' => 'SELECT, INSERT, UPDATE, DELETE, CREATE TEMPORARY TABLES', 'admin' => 'ALL PRIVILEGES'];
 
     /**
-     * Prints `size_bytes=`, `active_connections=` and one `table=` line per table (first 500).
+     * Print `size_bytes=`, `active_connections=` and one `table=` line per table (first 500).
      *
      * @param  Website  $website
      * @return string
@@ -30,7 +30,7 @@ final class DatabaseCommands
     }
 
     /**
-     * Creates or updates an extra database user with the grants for its privilege on the website's database only.
+     * Create or updates an extra database user with the grants for its privilege on the website's database only.
      *
      * @param  DatabaseUser  $user
      * @return string
@@ -48,7 +48,7 @@ final class DatabaseCommands
     }
 
     /**
-     * Drops an extra database user.
+     * Drop an extra database user.
      *
      * @param  DatabaseUser  $user
      * @return string
@@ -76,7 +76,8 @@ final class DatabaseCommands
     }
 
     /**
-     * A MySQL command over the local socket as root, with the password in the environment rather than the command line.
+     * Build a MySQL command over the local socket as root, with the password in the environment rather than the
+     * command line.
      *
      * @param  Website  $website
      * @param  string  $sql
@@ -88,7 +89,7 @@ final class DatabaseCommands
     }
 
     /**
-     * The server's MySQL root password; throws when none is stored.
+     * Get the server's MySQL root password; throws when none is stored.
      *
      * @param  Website  $website
      * @return string
@@ -99,7 +100,7 @@ final class DatabaseCommands
     }
 
     /**
-     * Checks a database or user name is a plain identifier before it goes into SQL.
+     * Check a database or user name is a plain identifier before it goes into SQL.
      *
      * @param  string  $value
      * @return string

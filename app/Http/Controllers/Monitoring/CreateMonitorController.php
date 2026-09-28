@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class CreateMonitorController
 {
     /**
-     * The new monitor form for the chosen check type (HTTP by default), with the account's destinations.
+     * Show the new monitor form for the chosen check type (HTTP by default), with the account's destinations.
      *
      * @param  Request  $request
      * @param  User  $user

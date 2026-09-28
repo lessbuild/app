@@ -12,6 +12,8 @@ final readonly class PasswordChanged
     use Dispatchable;
 
     /**
+     * Create a new PasswordChanged instance.
+     *
      * Someone changed or set their password. Recorded in their personal security log.
      *
      * @param  User  $user  The person.

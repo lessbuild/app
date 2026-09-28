@@ -12,7 +12,7 @@ use App\Platform\Search\SearchResult;
 final class SearchMembersQuery
 {
     /**
-     * Members whose name or email contains the term, for the command palette.
+     * Find members whose name or email contains the term, for the command palette.
      *
      * @param  Account  $account
      * @param  string  $term

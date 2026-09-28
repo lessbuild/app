@@ -12,6 +12,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 final class ServerAlertChanged extends InboxNotification
 {
     /**
+     * Create a new ServerAlertChanged instance.
+     *
      * A server alert rule tripped or recovered. Sent to the account's owners and admins.
      *
      * @param  ServerAlertRule  $rule  The rule that changed state.
@@ -22,7 +24,7 @@ final class ServerAlertChanged extends InboxNotification
     public function __construct(private readonly ServerAlertRule $rule, private readonly Server $server, private readonly float $value, private readonly bool $tripped) {}
 
     /**
-     * By email so someone hears about it away from the app, and in the inbox.
+     * Get the notification's delivery channels: email, so someone hears about it away from the app, and the inbox.
      *
      * @param  object  $notifiable
      * @return list<string>
@@ -33,7 +35,7 @@ final class ServerAlertChanged extends InboxNotification
     }
 
     /**
-     * The title and body, with a link to the server.
+     * Build the email: the title and body, with a link to the server.
      *
      * @param  object  $notifiable
      * @return MailMessage
@@ -44,7 +46,7 @@ final class ServerAlertChanged extends InboxNotification
     }
 
     /**
-     * Names the rule and server, and says "recovered" when it's back.
+     * Get the headline, naming the rule and server, and saying "recovered" when it's back.
      *
      * @return string
      */
@@ -56,7 +58,7 @@ final class ServerAlertChanged extends InboxNotification
     }
 
     /**
-     * The metric's value against the threshold, or the value it's back to.
+     * Describe the metric's value against the threshold, or the value it's back to.
      *
      * @return string
      */
@@ -71,7 +73,7 @@ final class ServerAlertChanged extends InboxNotification
     }
 
     /**
-     * The server's page in the first project with Infrastructure on; servers belong to the account, not a project.
+     * Get the server's page in the first project with Infrastructure on; servers belong to the account, not a project.
      *
      * @return string
      */
@@ -83,7 +85,7 @@ final class ServerAlertChanged extends InboxNotification
     }
 
     /**
-     * The server's account, so the inbox shows it in the right account.
+     * Get the server's account, so the inbox shows it in the right account.
      *
      * @return string
      */

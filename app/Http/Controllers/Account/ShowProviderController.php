@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowProviderController
 {
     /**
-     * One provider's page: its recent connection checks, its servers, and its settings.
+     * Show one provider's page: its recent connection checks, its servers, and its settings.
      *
      * @param  Account  $account
      * @param  User  $user

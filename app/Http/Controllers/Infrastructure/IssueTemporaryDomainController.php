@@ -17,7 +17,7 @@ use Illuminate\Support\Str;
 final class IssueTemporaryDomainController
 {
     /**
-     * Adds a random temporary hostname to the website, through the chosen Cloudflare provider. 404 when no temporary
+     * Add a random temporary hostname to the website, through the chosen Cloudflare provider. 404 when no temporary
      * base domain is configured.
      *
      * @param  Request  $request

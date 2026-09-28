@@ -13,7 +13,7 @@ use Illuminate\Notifications\DatabaseNotification;
 final class InboxQuery
 {
     /**
-     * The person's notifications, newest first and cursor-paginated, optionally only unread ones.
+     * Get the person's notifications, newest first and cursor-paginated, optionally only unread ones.
      *
      * @param  User  $user
      * @param  bool  $unreadOnly
@@ -38,7 +38,7 @@ final class InboxQuery
     }
 
     /**
-     * How many are unread, for the badge in the shell.
+     * Count the person's unread notifications, for the badge in the shell.
      *
      * @param  User  $user
      * @return int

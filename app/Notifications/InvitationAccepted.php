@@ -7,6 +7,8 @@ namespace App\Notifications;
 final class InvitationAccepted extends InboxNotification
 {
     /**
+     * Create a new InvitationAccepted instance.
+     *
      * Tells whoever sent an invitation that it was accepted.
      *
      * @param  string  $accountId  The account they joined.
@@ -16,7 +18,7 @@ final class InvitationAccepted extends InboxNotification
     public function __construct(private readonly string $accountId, private readonly string $accountName, private readonly string $memberName) {}
 
     /**
-     * Who joined which account.
+     * Get the headline: who joined which account.
      *
      * @return string
      */
@@ -26,7 +28,7 @@ final class InvitationAccepted extends InboxNotification
     }
 
     /**
-     * That it was their invitation.
+     * Say that it was their invitation.
      *
      * @return string
      */
@@ -36,7 +38,7 @@ final class InvitationAccepted extends InboxNotification
     }
 
     /**
-     * The members page.
+     * Get the members page.
      *
      * @return string
      */
@@ -46,7 +48,7 @@ final class InvitationAccepted extends InboxNotification
     }
 
     /**
-     * The account that gained a member.
+     * Get the account that gained a member.
      *
      * @return string
      */

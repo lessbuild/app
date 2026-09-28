@@ -14,8 +14,8 @@ final class AlertRulePolicy
     use ManagesMonitoring;
 
     /**
-     * Creating an alert rule: people who manage Monitoring in the project, with a verified email since rules send
-     * alerts.
+     * Determine whether the user can create an alert rule: people who manage Monitoring in the project, with a
+     * verified email since rules send alerts.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -27,7 +27,7 @@ final class AlertRulePolicy
     }
 
     /**
-     * Changing a rule: the same people as create, while it isn't archived.
+     * Determine whether the user can change a rule: the same people as create, while it isn't archived.
      *
      * @param  User  $user
      * @param  AlertRule  $record
@@ -39,7 +39,7 @@ final class AlertRulePolicy
     }
 
     /**
-     * Archiving a rule, allowed to the same people as update.
+     * Determine whether the user can archive a rule, which the same people as update can.
      *
      * @param  User  $user
      * @param  AlertRule  $record

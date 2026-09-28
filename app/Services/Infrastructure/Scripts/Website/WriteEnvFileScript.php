@@ -9,7 +9,7 @@ use App\Models\Website;
 final class WriteEnvFileScript extends WebsiteProvisioningScript
 {
     /**
-     * Writes the website's `.env` file, passing its contents base64-encoded so nothing in them is interpreted by the
+     * Write the website's `.env` file, passing its contents base64-encoded so nothing in them is interpreted by the
      * shell.
      *
      * @param  int  $step

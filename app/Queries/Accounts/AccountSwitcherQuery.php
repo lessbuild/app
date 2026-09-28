@@ -9,7 +9,7 @@ use App\Models\User;
 final class AccountSwitcherQuery
 {
     /**
-     * The accounts the person belongs to, by name, for the account switcher in the shell.
+     * Get the accounts the person belongs to, by name, for the account switcher in the shell.
      *
      * @param  User  $user
      * @return list<array{id: string, name: string}>

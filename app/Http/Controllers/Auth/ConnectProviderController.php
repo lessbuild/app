@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class ConnectProviderController
 {
     /**
-     * Starts connecting a provider account to the signed-in person.
+     * Start connecting a provider account to the signed-in person.
      *
      * @param  Request  $request
      * @param  User  $user

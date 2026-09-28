@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreMonitorController
 {
     /**
-     * Creates a monitor.
+     * Create a monitor.
      *
      * @param  MonitorRequest  $request
      * @param  User  $user

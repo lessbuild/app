@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteBackupScheduleController
 {
     /**
-     * Removes one of a website's backup schedules.
+     * Remove one of a website's backup schedules.
      *
      * @param  User  $user
      * @param  Project  $project

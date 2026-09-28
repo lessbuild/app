@@ -14,7 +14,7 @@ use Illuminate\Http\JsonResponse;
 final class RecordDeploymentApiController
 {
     /**
-     * Records a deployment reported by a pipeline with the environment's key.
+     * Record a deployment reported by a pipeline with the environment's key.
      *
      * @param  StoreDeploymentApiRequest  $request
      * @param  RecordDeployment  $record

@@ -60,7 +60,7 @@ class Repository extends Model
     use HasFactory, SoftDeletes;
 
     /**
-     * The project the repository belongs to.
+     * Get the project the repository belongs to.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -70,7 +70,7 @@ class Repository extends Model
     }
 
     /**
-     * The Git provider it's cloned through.
+     * Get the Git provider it's cloned through.
      *
      * @return BelongsTo<Provider, $this>
      */
@@ -80,7 +80,7 @@ class Repository extends Model
     }
 
     /**
-     * The website it deploys to, including deleted ones.
+     * Get the website it deploys to, including deleted ones.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -90,7 +90,7 @@ class Repository extends Model
     }
 
     /**
-     * The environment its deploys are for, if any.
+     * Get the environment its deploys are for, if any.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -100,7 +100,7 @@ class Repository extends Model
     }
 
     /**
-     * Its deploys.
+     * Get the repository's deploys.
      *
      * @return HasMany<Build, $this>
      */
@@ -110,7 +110,7 @@ class Repository extends Model
     }
 
     /**
-     * Pushes and pull-request events received for it.
+     * Get the pushes and pull-request events received for the repository.
      *
      * @return HasMany<RepositoryWebhookDelivery, $this>
      */
@@ -120,7 +120,7 @@ class Repository extends Model
     }
 
     /**
-     * Whether a deploy can start: a Git provider that hosts the URL, and a live website on an active server.
+     * Determine whether a deploy can start: a Git provider that hosts the URL, and a live website on an active server.
      *
      * @return bool
      */
@@ -136,7 +136,7 @@ class Repository extends Model
     }
 
     /**
-     * The provider's page for a full commit hash, or null.
+     * Build the provider's page URL for a full commit hash, or null.
      *
      * @param  string|null  $revision
      * @return string|null
@@ -152,7 +152,7 @@ class Repository extends Model
     }
 
     /**
-     * The subdirectory to deploy, as a safe relative path (`.` for the repository root).
+     * Get the subdirectory to deploy, as a safe relative path (`.` for the repository root).
      *
      * @return string
      */
@@ -162,6 +162,8 @@ class Repository extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `webhook_secret` and reads the automatic-deploy path filters as JSON lists.
      *
      * @return array<string, string>

@@ -11,7 +11,7 @@ final class TelemetryRedactor
     public const REPLACEMENT = '[REDACTED]';
 
     /**
-     * Replaces secrets anywhere in an event before it's stored or shown.
+     * Replace secrets anywhere in an event before it's stored or shown.
      *
      * @param  array<string, mixed>  $event
      * @return array<string, mixed>
@@ -22,7 +22,7 @@ final class TelemetryRedactor
     }
 
     /**
-     * Redacts a value recursively: sensitive keys and OTLP attributes with sensitive names lose their values, strings
+     * Redact a value recursively: sensitive keys and OTLP attributes with sensitive names lose their values, strings
      * are scrubbed, and anything nested too deeply is replaced.
      *
      * @param  mixed  $value
@@ -63,7 +63,8 @@ final class TelemetryRedactor
     }
 
     /**
-     * Whether a key (compared without punctuation and case) or its path matches a configured sensitive name or path.
+     * Determine whether a key (compared without punctuation and case) or its path matches a configured sensitive name
+     * or path.
      *
      * @param  string  $key
      * @param  string  $path
@@ -89,7 +90,7 @@ final class TelemetryRedactor
     }
 
     /**
-     * Scrubs secrets from free text: bearer and basic credentials, ingest tokens, passwords in URLs, sensitive query
+     * Scrub secrets from free text: bearer and basic credentials, ingest tokens, passwords in URLs, sensitive query
      * parameters, and `password=`/`token:`-style assignments.
      *
      * @param  string  $value

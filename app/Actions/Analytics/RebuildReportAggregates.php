@@ -17,7 +17,7 @@ use Illuminate\Support\Collection;
 final class RebuildReportAggregates
 {
     /**
-     * Rebuilds the daily totals that long-range reports read, for the days a batch touched or every day the site has
+     * Rebuild the daily totals that long-range reports read, for the days a batch touched or every day the site has
      * data. Each day gets an overall row plus rows per page, device, browser, system, source and campaign.
      *
      * @param  AnalyticsSite  $site
@@ -76,7 +76,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * Every local day with countable events or visits.
+     * Get every local day with countable events or visits.
      *
      * @param  AnalyticsSite  $site
      * @return Collection<int, string>
@@ -93,7 +93,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * The countable events on the given local days.
+     * Get the countable events on the given local days.
      *
      * @param  AnalyticsSite  $site
      * @param  Collection<int, string>  $dates
@@ -116,7 +116,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * Visits that started on the given local days.
+     * Get the visits that started on the given local days.
      *
      * @param  AnalyticsSite  $site
      * @param  Collection<int, string>  $dates
@@ -134,7 +134,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * Visits grouped by who they belong to, for matching events to visits.
+     * Group visits by who they belong to, for matching events to visits.
      *
      * @param  Collection<int, AnalyticsVisit>  $visits
      * @return Collection<string, Collection<int, AnalyticsVisit>> keyed by session or visitor
@@ -145,7 +145,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * The visits the events happened in.
+     * Get the visits the events happened in.
      *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
@@ -161,7 +161,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * The events that happened in the visits.
+     * Get the events that happened in the visits.
      *
      * @param  Collection<int, AnalyticsEvent>  $events
      * @param  Collection<int, AnalyticsVisit>  $visits
@@ -176,7 +176,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * The visit an event happened in, or null.
+     * Find the visit an event happened in, or null.
      *
      * @param  AnalyticsEvent  $event
      * @param  Collection<string, Collection<int, AnalyticsVisit>>  $visitMap
@@ -191,8 +191,8 @@ final class RebuildReportAggregates
     }
 
     /**
-     * One aggregate row: pageviews, visits, visitors, goal completions, converted visits, and bounces among visits that
-     * ended at least 30 minutes ago.
+     * Build one aggregate row: pageviews, visits, visitors, goal completions, converted visits, and bounces among
+     * visits that ended at least 30 minutes ago.
      *
      * @param  AnalyticsSite  $site
      * @param  string  $date
@@ -233,7 +233,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * A time's date in the site's timezone.
+     * Get a time's date in the site's timezone.
      *
      * @param  mixed  $value
      * @param  string  $timezone
@@ -245,7 +245,7 @@ final class RebuildReportAggregates
     }
 
     /**
-     * Where a visit came from, labelled the same way the report labels sources.
+     * Label where a visit came from, the same way the report labels sources.
      *
      * @param  AnalyticsVisit  $visit
      * @return string

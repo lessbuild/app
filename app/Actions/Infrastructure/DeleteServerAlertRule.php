@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteServerAlertRule
 {
     /**
-     * Deletes one of the account's server alert rules.
+     * Delete one of the account's server alert rules.
      *
      * @param  Account  $account
      * @param  User  $actor

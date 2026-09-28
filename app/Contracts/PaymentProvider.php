@@ -16,14 +16,14 @@ use Carbon\CarbonInterface;
 interface PaymentProvider
 {
     /**
-     * False when this environment has no payment provider configured; paid tiers can't be bought then.
+     * Determine whether this environment has a payment provider configured; paid tiers can't be bought without one.
      *
      * @return bool
      */
     public function available(): bool;
 
     /**
-     * Creates the provider-side customer for an account and returns its ID. The account ID is stored on the customer as
+     * Create the provider-side customer for an account and returns its ID. The account ID is stored on the customer as
      * metadata so webhooks can be traced back.
      *
      * @param  string  $accountId
@@ -36,7 +36,7 @@ interface PaymentProvider
     public function createCustomer(string $accountId, string $name, string $email): string;
 
     /**
-     * A hosted checkout that creates the subscription with these items.
+     * Create a hosted checkout that creates the subscription with these items.
      *
      * @param  string  $customerId
      * @param  string  $accountId
@@ -57,7 +57,7 @@ interface PaymentProvider
     public function syncSubscription(string $subscriptionId, array $items): SubscriptionState;
 
     /**
-     * The subscription's current state as the provider sees it (status, period and items), used to reconcile after
+     * Get the subscription's current state as the provider sees it (status, period and items), used to reconcile after
      * checkout and webhooks.
      *
      * @param  string  $subscriptionId
@@ -66,7 +66,7 @@ interface PaymentProvider
     public function subscription(string $subscriptionId): SubscriptionState;
 
     /**
-     * Cancels the subscription now, prorated. Used when an account's selections no longer bill anything, since a
+     * Cancel the subscription now, prorated. Used when an account's selections no longer bill anything, since a
      * subscription can't be left with zero items.
      *
      * @param  string  $subscriptionId
@@ -75,8 +75,8 @@ interface PaymentProvider
     public function cancelSubscription(string $subscriptionId): void;
 
     /**
-     * A one-time link to the provider's hosted billing portal, where the customer manages payment methods and invoices,
-     * returning to `$returnUrl` when they're done.
+     * Create a one-time link to the provider's hosted billing portal, where the customer manages payment methods and
+     * invoices, returning to `$returnUrl` when they're done.
      *
      * @param  string  $customerId
      * @param  string  $returnUrl
@@ -85,7 +85,7 @@ interface PaymentProvider
     public function portalUrl(string $customerId, string $returnUrl): string;
 
     /**
-     * The customer's most recent invoices, for the billing page.
+     * Get the customer's most recent invoices, for the billing page.
      *
      * @param  string  $customerId
      * @param  int  $limit
@@ -94,8 +94,8 @@ interface PaymentProvider
     public function invoices(string $customerId, int $limit = 12): array;
 
     /**
-     * Reports metered usage (for example monitoring checks or analytics events) against a meter. `$idempotencyKey` makes
-     * repeats of the same report harmless, so a retried job never bills twice.
+     * Report metered usage (for example monitoring checks or analytics events) against a meter. `$idempotencyKey`
+     * makes repeats of the same report harmless, so a retried job never bills twice.
      *
      * @param  string  $customerId
      * @param  string  $eventName
@@ -107,7 +107,7 @@ interface PaymentProvider
     public function reportUsage(string $customerId, string $eventName, int $quantity, CarbonInterface $at, string $idempotencyKey): void;
 
     /**
-     * Checks a webhook's signature against the configured secret and parses it. Anything unsigned or tampered with
+     * Check a webhook's signature against the configured secret and parses it. Anything unsigned or tampered with
      * throws, so the handler only ever sees genuine events.
      *
      * @param  string  $payload

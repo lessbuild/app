@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class CancelBuild
 {
     /**
+     * Create a new CancelBuild instance.
+     *
      * Cancels a deploy that hasn't finished.
      *
      * @param  FinishBuild  $finish  Marks the deploy canceled.

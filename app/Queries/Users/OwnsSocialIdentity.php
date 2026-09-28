@@ -11,7 +11,7 @@ use App\Models\User;
 final class OwnsSocialIdentity
 {
     /**
-     * Whether the provider account is already connected to this person.
+     * Determine whether the provider account is already connected to this person.
      *
      * @param  User  $user
      * @param  SocialProvider  $provider

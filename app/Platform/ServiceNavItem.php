@@ -7,6 +7,8 @@ namespace App\Platform;
 final readonly class ServiceNavItem
 {
     /**
+     * Create a new ServiceNavItem instance.
+     *
      * One link in a service's section of the project sidebar.
      *
      * @param  string  $label  The link text.

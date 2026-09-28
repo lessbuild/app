@@ -30,6 +30,8 @@ class AccountInvitation extends Model
     use HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `role` as an AccountRole.
      *
      * @return array<string, string>
@@ -45,7 +47,7 @@ class AccountInvitation extends Model
     }
 
     /**
-     * The account the invitation is to.
+     * Get the account the invitation is to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -55,7 +57,7 @@ class AccountInvitation extends Model
     }
 
     /**
-     * Who sent the invitation (`invited_by_id`).
+     * Get the person who sent the invitation (`invited_by_id`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -65,7 +67,7 @@ class AccountInvitation extends Model
     }
 
     /**
-     * Whether the invitation can still be accepted: not accepted, not revoked and not expired.
+     * Determine whether the invitation can still be accepted: not accepted, not revoked and not expired.
      *
      * @return bool
      */
@@ -75,7 +77,7 @@ class AccountInvitation extends Model
     }
 
     /**
-     * Limits a query to invitations that can still be accepted.
+     * Limit a query to invitations that can still be accepted.
      *
      * @param  Builder<self>  $query
      * @return void
@@ -87,7 +89,8 @@ class AccountInvitation extends Model
     }
 
     /**
-     * The stored form of an invitation token. Only the hash is kept, so a database leak doesn't expose working links.
+     * Hash an invitation token into its stored form. Only the hash is kept, so a database leak doesn't expose working
+     * links.
      *
      * @param  string  $token
      * @return string

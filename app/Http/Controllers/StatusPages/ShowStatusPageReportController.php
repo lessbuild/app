@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
 final class ShowStatusPageReportController
 {
     /**
-     * The published page's report as JSON: overall state, components and the latest updates.
+     * Return the published page's report as JSON: overall state, components and the latest updates.
      *
      * @param  string  $slug
      * @param  StatusPageReportQuery  $query

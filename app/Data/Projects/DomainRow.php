@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class DomainRow
 {
     /**
+     * Create a new DomainRow instance.
+     *
      * One domain on a project's domains page, with what's needed to verify it.
      *
      * @param  string  $id  The domain's ID.

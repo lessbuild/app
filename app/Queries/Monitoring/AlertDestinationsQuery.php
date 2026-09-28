@@ -11,7 +11,7 @@ use App\Models\User;
 final class AlertDestinationsQuery
 {
     /**
-     * The account's alert destinations with their recipient and how many monitors use each.
+     * Get the account's alert destinations with their recipient and how many monitors use each.
      *
      * @param  string  $accountId
      * @return list<AlertDestination>
@@ -23,8 +23,8 @@ final class AlertDestinationsQuery
     }
 
     /**
-     * One of the account's destinations; 404 otherwise. Archived ones only when asked for, so their history can still be
-     * shown.
+     * Find one of the account's destinations; 404 otherwise. Archived ones only when asked for, so their history can
+     * still be shown.
      *
      * @param  string  $accountId
      * @param  string|int  $id
@@ -42,7 +42,7 @@ final class AlertDestinationsQuery
     }
 
     /**
-     * Members with a verified email, who can be chosen as an email destination's recipient.
+     * Get the members with a verified email, who can be chosen as an email destination's recipient.
      *
      * @param  string  $accountId
      * @return list<User> verified members who can receive alert emails

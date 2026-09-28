@@ -18,6 +18,8 @@ use Illuminate\Http\Request;
 final class ShellComposer
 {
     /**
+     * Create a new ShellComposer instance.
+     *
      * Builds the navigation shell around signed-in pages.
      *
      * @param  Request  $request  The route decides which section and link are current.
@@ -35,7 +37,7 @@ final class ShellComposer
     ) {}
 
     /**
-     * Gives the layout its shell: switchers, primary and section navigation, account links and the unread count. Guests
+     * Give the layout its shell: switchers, primary and section navigation, account links and the unread count. Guests
      * get nothing.
      *
      * @param  View  $view
@@ -69,8 +71,8 @@ final class ShellComposer
     }
 
     /**
-     * Row one: Projects and each service the person may use. Inside a project a service opens that project's service;
-     * elsewhere, the service across the account.
+     * Build row one of the navigation: Projects and each service the person may use. Inside a project a service opens
+     * that project's service; elsewhere, the service across the account.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -97,8 +99,8 @@ final class ShellComposer
     }
 
     /**
-     * Row two: the current service's pages inside a project, the project's own pages, account pages, or personal
-     * settings, depending on where the person is.
+     * Build row two of the navigation: the current service's pages inside a project, the project's own pages, account
+     * pages, or personal settings, depending on where the person is.
      *
      * @param  User  $user
      * @param  Account|null  $account
@@ -147,7 +149,8 @@ final class ShellComposer
     }
 
     /**
-     * The service whose pages are showing: the generic {service} pages, or a service's own routes (e.g. analytics.*).
+     * Work out which service's pages are showing: the generic {service} pages, or a service's own routes (e.g.
+     * analytics.*).
      *
      * @return string|null
      */
@@ -167,7 +170,7 @@ final class ShellComposer
     }
 
     /**
-     * The account pages the person may open, for the user menu and the account section.
+     * Build the links to the account pages the person may open, for the user menu and the account section.
      *
      * @param  User  $user
      * @param  Account  $account

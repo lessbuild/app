@@ -253,7 +253,7 @@ final class ArchitectureTest extends TestCase
     }
 
     /**
-     * Whether a docblock says something in prose: at least one line that isn't a tag or blank.
+     * Whether a docblock says something in prose before its tags.
      */
     private function explains(string|false $docblock): bool
     {
@@ -262,7 +262,11 @@ final class ArchitectureTest extends TestCase
         }
         foreach (preg_split('/\R/', $docblock) ?: [] as $line) {
             $text = trim((string) preg_replace('#^\s*/?\*+/?|\*/\s*$#', '', $line));
-            if ($text !== '' && ! str_starts_with($text, '@')) {
+            if (str_starts_with($text, '@')) {
+                // Only the text before the first tag is prose; later lines continue the tags.
+                return false;
+            }
+            if ($text !== '') {
                 return true;
             }
         }

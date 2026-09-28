@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowDashboardController
 {
     /**
-     * A dashboard with its widgets filled in.
+     * Show a dashboard with its widgets filled in.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Collection;
 final class StatusPagesQuery
 {
     /**
-     * The account's status pages with their component and confirmed-subscriber counts.
+     * Get the account's status pages with their component and confirmed-subscriber counts.
      *
      * @param  string  $accountId
      * @return Collection<int, StatusPage>
@@ -26,7 +26,7 @@ final class StatusPagesQuery
     }
 
     /**
-     * One of the account's status pages with its components; 404 otherwise.
+     * Find one of the account's status pages with its components; 404 otherwise.
      *
      * @param  string  $accountId
      * @param  string|int  $id
@@ -38,7 +38,7 @@ final class StatusPagesQuery
     }
 
     /**
-     * The account's monitors, which can be shown as components.
+     * Get the account's monitors, which can be shown as components.
      *
      * @param  Account  $account
      * @return Collection<int, Monitor>

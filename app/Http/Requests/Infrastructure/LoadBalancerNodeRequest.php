@@ -9,7 +9,8 @@ use Illuminate\Foundation\Http\FormRequest;
 final class LoadBalancerNodeRequest extends FormRequest
 {
     /**
-     * A node's server (only when adding one), upstream port, weight and whether it receives traffic.
+     * Get the validation rules: a node's server (only when adding one), upstream port, weight and whether it receives
+     * traffic.
      *
      * @return array<string, array<mixed>>
      */
@@ -24,7 +25,7 @@ final class LoadBalancerNodeRequest extends FormRequest
     }
 
     /**
-     * The validated node.
+     * Get the validated node.
      *
      * @return array{server_id?: int|string, upstream_port: int|string, weight: int|string, is_enabled?: bool|string|null}
      */

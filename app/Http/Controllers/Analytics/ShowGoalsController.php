@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ShowGoalsController
 {
     /**
-     * The goals of the chosen site (or the project's first).
+     * Show the goals of the chosen site (or the project's first).
      *
      * @param  Request  $request
      * @param  User  $user

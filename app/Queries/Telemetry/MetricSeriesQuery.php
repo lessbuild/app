@@ -13,7 +13,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 final class MetricSeriesQuery
 {
     /**
-     * The project's metric series matching the filters, most recently received first, 25 to a page.
+     * Get the project's metric series matching the filters, most recently received first, 25 to a page.
      *
      * @param  Project  $project
      * @param  array{q?: string, environment?: string, kind?: string, page?: int}  $filters
@@ -38,7 +38,7 @@ final class MetricSeriesQuery
     }
 
     /**
-     * One of the project's metric series; 404 otherwise.
+     * Find one of the project's metric series; 404 otherwise.
      *
      * @param  Project  $project
      * @param  string|int  $id

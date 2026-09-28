@@ -63,7 +63,7 @@ final class IngestReceipt extends Model
     use HasFactory, HasUlids;
 
     /**
-     * The environment the batch was sent to.
+     * Get the environment the batch was sent to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -73,7 +73,7 @@ final class IngestReceipt extends Model
     }
 
     /**
-     * The account whose event allowance it counts against.
+     * Get the account whose event allowance it counts against.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -83,7 +83,7 @@ final class IngestReceipt extends Model
     }
 
     /**
-     * The raw batch, kept while it waits to be processed.
+     * Get the raw batch, kept while it waits to be processed.
      *
      * @return HasOne<IngestPayload, $this>
      */
@@ -93,7 +93,7 @@ final class IngestReceipt extends Model
     }
 
     /**
-     * A sentence explaining the last processing error code, for the receipts page.
+     * Explain the last processing error code in a sentence, for the receipts page.
      *
      * @return string|null
      */
@@ -111,6 +111,8 @@ final class IngestReceipt extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `source` as an IngestSource and `status` as an IngestStatus.
      *
      * @return array<string, string>

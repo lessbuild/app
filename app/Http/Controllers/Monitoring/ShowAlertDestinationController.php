@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowAlertDestinationController
 {
     /**
-     * A destination's page with its recent deliveries, and a newly issued secret when there is one.
+     * Show a destination's page with its recent deliveries, and a newly issued secret when there is one.
      *
      * @param  User  $user
      * @param  Project  $project

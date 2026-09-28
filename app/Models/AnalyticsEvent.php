@@ -40,6 +40,8 @@ class AnalyticsEvent extends Model
     protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'visitor_hash', 'session_id', 'properties'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `properties` as JSON.
      *
      * @return array<string, string>
@@ -50,7 +52,7 @@ class AnalyticsEvent extends Model
     }
 
     /**
-     * The site that sent the event.
+     * Get the site that sent the event.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */
@@ -60,7 +62,7 @@ class AnalyticsEvent extends Model
     }
 
     /**
-     * The batch it arrived in; reports only count events whose batch was processed.
+     * Get the batch it arrived in; reports only count events whose batch was processed.
      *
      * @return BelongsTo<AnalyticsIngestionBatch, $this>
      */
@@ -70,7 +72,7 @@ class AnalyticsEvent extends Model
     }
 
     /**
-     * Limits a query to events that count in reports: those collected before batching existed, those in a processed
+     * Limit a query to events that count in reports: those collected before batching existed, those in a processed
      * batch, and, while it's being processed, the given batch.
      *
      * @param  Builder<self>  $query
@@ -90,8 +92,8 @@ class AnalyticsEvent extends Model
     }
 
     /**
-     * Whose visit the event belongs to: its session, else its daily visitor hash, else the event alone, so events
-     * without either never merge with someone else's.
+     * Identify whose visit the event belongs to: its session, else its daily visitor hash, else the event alone, so
+     * events without either never merge with someone else's.
      *
      * @return string
      */

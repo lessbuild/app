@@ -42,7 +42,7 @@ final class MetricSample extends Model
     use HasFactory;
 
     /**
-     * The series the sample is a point of.
+     * Get the series the sample is a point of.
      *
      * @return BelongsTo<MetricSeries, $this>
      */
@@ -52,7 +52,7 @@ final class MetricSample extends Model
     }
 
     /**
-     * The ingested event the sample came from.
+     * Get the ingested event the sample came from.
      *
      * @return BelongsTo<TelemetryEvent, $this>
      */
@@ -62,6 +62,8 @@ final class MetricSample extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

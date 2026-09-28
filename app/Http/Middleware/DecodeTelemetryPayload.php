@@ -15,6 +15,8 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 final class DecodeTelemetryPayload
 {
     /**
+     * Create a new DecodeTelemetryPayload instance.
+     *
      * Reads telemetry bodies safely before the framework parses them.
      *
      * @param  TelemetryPayloadGuard  $guard  Checks JSON complexity, numbers and record counts.
@@ -22,9 +24,9 @@ final class DecodeTelemetryPayload
     public function __construct(private readonly TelemetryPayloadGuard $guard) {}
 
     /**
-     * For telemetry POSTs, insists on JSON, reads at most the wire-size limit, gunzips within the decoded-size limit,
-     * checks nesting, complexity and record counts, and hands the decoded object to the request. Each limit has its own
-     * status and message, so clients can tell what to fix.
+     * Decode telemetry POSTs safely: insist on JSON, read at most the wire-size limit, gunzip within the decoded-size
+     * limit, check nesting, complexity and record counts, and hand the decoded object to the request. Each limit has
+     * its own status and message, so clients can tell what to fix.
      *
      * @param  Request  $request
      * @param  Closure(Request): Response  $next
@@ -77,7 +79,7 @@ final class DecodeTelemetryPayload
     }
 
     /**
-     * Gunzips in 1 KiB steps, stopping as soon as the output passes the limit, so a small compressed bomb can't expand
+     * Gunzip in 1 KiB steps, stopping as soon as the output passes the limit, so a small compressed bomb can't expand
      * in memory. Concatenated gzip members are accepted; truncated or invalid data is a 400.
      *
      * @param  string  $body

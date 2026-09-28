@@ -7,6 +7,8 @@ namespace App\Platform\Catalog;
 final readonly class Meter
 {
     /**
+     * Create a new Meter instance.
+     *
      * Usage the platform counts each month, such as telemetry events.
      *
      * @param  string  $key  Stable identifier for the usage records.

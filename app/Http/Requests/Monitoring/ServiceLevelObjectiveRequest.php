@@ -16,8 +16,8 @@ use Illuminate\Validation\Validator;
 final class ServiceLevelObjectiveRequest extends FormRequest
 {
     /**
-     * An SLO's settings. Latency SLOs need a threshold and availability SLOs a status range; the environment must be the
-     * project's.
+     * Get the validation rules for an SLO's settings. Latency SLOs need a threshold and availability SLOs a status
+     * range; the environment must be the project's.
      *
      * @return array<string, array<mixed>|string>
      */
@@ -44,7 +44,7 @@ final class ServiceLevelObjectiveRequest extends FormRequest
     }
 
     /**
-     * Refuses changing an existing SLO's environment.
+     * Refuse changing an existing SLO's environment.
      *
      * @return array<callable(Validator): void>
      */

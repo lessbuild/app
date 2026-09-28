@@ -11,8 +11,8 @@ use App\Models\User;
 final class EnvironmentPolicy
 {
     /**
-     * Changing an environment's deploy settings, variables, processes and resources: people who manage Deploy in its
-     * project.
+     * Determine whether the user can change an environment's deploy settings, variables, processes and resources:
+     * people who manage Deploy in its project.
      *
      * @param  User  $user
      * @param  Environment  $environment

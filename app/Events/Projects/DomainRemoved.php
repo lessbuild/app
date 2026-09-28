@@ -13,6 +13,8 @@ final readonly class DomainRemoved
     use Dispatchable;
 
     /**
+     * Create a new DomainRemoved instance.
+     *
      * A domain was removed from a project. Recorded in the project's activity.
      *
      * @param  Domain  $domain  The removed domain.

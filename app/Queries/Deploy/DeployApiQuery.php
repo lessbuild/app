@@ -24,6 +24,8 @@ use Illuminate\Validation\ValidationException;
 final class DeployApiQuery
 {
     /**
+     * Create a new DeployApiQuery instance.
+     *
      * Reads for the Deployer API v1, scoped to the token's account and to what its person may use.
      *
      * @param  Entitlements  $entitlements  Reads the account's Deploy tier for `/me`.
@@ -31,7 +33,7 @@ final class DeployApiQuery
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * The account's projects whose Deploy the person may use, with their environments.
+     * Query the account's projects whose Deploy the person may use, with their environments.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -45,7 +47,7 @@ final class DeployApiQuery
     }
 
     /**
-     * One such project; 404 outside the account, 403 when the person may not use its Deploy.
+     * Get one such project; 404 outside the account, 403 when the person may not use its Deploy.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -61,7 +63,7 @@ final class DeployApiQuery
     }
 
     /**
-     * Deploys of repositories in the projects the person may use, including repositories disconnected since.
+     * Query the deploys of repositories in the projects the person may use, including repositories disconnected since.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -73,7 +75,7 @@ final class DeployApiQuery
     }
 
     /**
-     * One such deploy with its repository, website and environment; 404 when it's outside them.
+     * Get one such deploy with its repository, website and environment; 404 when it's outside them.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -89,7 +91,7 @@ final class DeployApiQuery
     }
 
     /**
-     * An environment of the account, checked the same way as its project.
+     * Get an environment of the account, checked the same way as its project.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -105,7 +107,7 @@ final class DeployApiQuery
     }
 
     /**
-     * Deployer's optional cursor pagination: without `limit` or `cursor` the whole (bounded) list is returned.
+     * Paginate a list the way Deployer's API does: without `limit` or `cursor` the whole (bounded) list is returned.
      *
      * @param  Builder<TModel>  $query
      * @param  mixed  $limit
@@ -133,7 +135,7 @@ final class DeployApiQuery
     }
 
     /**
-     * The `/me` payload: the person and the account ("organization" in Deployer's API) with its Deploy plan.
+     * Build the `/me` payload: the person and the account ("organization" in Deployer's API) with its Deploy plan.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -147,7 +149,8 @@ final class DeployApiQuery
     }
 
     /**
-     * A project as the API returns it, with its environments. `state` is always "running" until hibernation exists.
+     * Format a project as the API returns it, with its environments. `state` is always "running" until hibernation
+     * exists.
      *
      * @param  Project  $project
      * @return array<string, mixed>
@@ -161,7 +164,7 @@ final class DeployApiQuery
     }
 
     /**
-     * A deploy as the API returns it.
+     * Format a deploy as the API returns it.
      *
      * @param  Build  $build
      * @return array<string, mixed>

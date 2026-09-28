@@ -11,7 +11,7 @@ use App\Models\User;
 final class AccountPolicy
 {
     /**
-     * Opening the account at all: any member.
+     * Determine whether the user can open the account at all: any member can.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -23,7 +23,7 @@ final class AccountPolicy
     }
 
     /**
-     * Renaming the account and changing its settings.
+     * Determine whether the user can rename the account and change its settings.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -35,7 +35,7 @@ final class AccountPolicy
     }
 
     /**
-     * Inviting, removing and changing members.
+     * Determine whether the user can invite, remove and change members.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -47,7 +47,7 @@ final class AccountPolicy
     }
 
     /**
-     * Seeing the account's plans, usage and invoices.
+     * Determine whether the user can see the account's plans, usage and invoices.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -59,7 +59,7 @@ final class AccountPolicy
     }
 
     /**
-     * Changing plans and payment details.
+     * Determine whether the user can change plans and payment details.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -71,7 +71,7 @@ final class AccountPolicy
     }
 
     /**
-     * Creating and revoking the account's API tokens.
+     * Determine whether the user can create and revoke the account's API tokens.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -83,7 +83,7 @@ final class AccountPolicy
     }
 
     /**
-     * Reading the account's audit log.
+     * Determine whether the user can read the account's audit log.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -95,7 +95,8 @@ final class AccountPolicy
     }
 
     /**
-     * Whether the service shows up for this person at all (their membership may be limited to some services).
+     * Determine whether the service shows up for this person at all (their membership may be limited to some
+     * services).
      *
      * @param  User  $user
      * @param  Account  $account
@@ -110,7 +111,7 @@ final class AccountPolicy
     }
 
     /**
-     * Deleting the account and everything in it: owners only.
+     * Determine whether the user can delete the account and everything in it: owners only.
      *
      * @param  User  $user
      * @param  Account  $account
@@ -122,7 +123,7 @@ final class AccountPolicy
     }
 
     /**
-     * Whether the person's role in the account includes the permission; non-members hold none.
+     * Determine whether the person's role in the account includes the permission; non-members hold none.
      *
      * @param  User  $user
      * @param  Account  $account

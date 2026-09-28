@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateStatusPageController
 {
     /**
-     * Saves a status page.
+     * Save a status page.
      *
      * @param  StatusPageRequest  $request
      * @param  User  $user

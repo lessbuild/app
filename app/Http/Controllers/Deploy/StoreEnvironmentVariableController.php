@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreEnvironmentVariableController
 {
     /**
-     * Adds or changes one variable on an environment.
+     * Add or changes one variable on an environment.
      *
      * @param  Request  $request
      * @param  User  $user

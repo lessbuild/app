@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class UpdateAlertEscalations
 {
     /**
+     * Create a new UpdateAlertEscalations instance.
+     *
      * Changes a rule's escalation steps, within the plan.
      *
      * @param  Entitlements  $entitlements  Checks how many steps the plan allows.

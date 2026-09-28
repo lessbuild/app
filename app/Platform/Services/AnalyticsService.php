@@ -14,7 +14,7 @@ use App\Platform\ServiceNavItem;
 final class AnalyticsService implements PlatformService
 {
     /**
-     * Stored on projects and billing items as `analytics`.
+     * Get the service's key, stored on projects and billing items as `analytics`.
      *
      * @return string
      */
@@ -24,7 +24,7 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * Shown as "Analytics".
+     * Get the service's name, shown as "Analytics".
      *
      * @return string
      */
@@ -34,7 +34,7 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * Describes Analytics on the service cards.
+     * Describe Analytics on the service cards.
      *
      * @return string
      */
@@ -44,7 +44,7 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * A grid, standing for dashboards of numbers.
+     * Get the service's icon: a grid, standing for dashboards of numbers.
      *
      * @return string
      */
@@ -54,7 +54,7 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * The traffic overview, goals and the sites that send pageviews.
+     * Get the service's pages: the traffic overview, goals and the sites that send pageviews.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -69,7 +69,7 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * Analytics read and write.
+     * Get the service's API scopes: Analytics read and write.
      *
      * @return list<ApiScope>
      */
@@ -79,7 +79,7 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * The Analytics catalogue: a free tier until paid plans are priced.
+     * Get the Analytics catalogue: a free tier until paid plans are priced.
      *
      * @return ServiceBilling
      */

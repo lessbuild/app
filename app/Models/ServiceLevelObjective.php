@@ -44,7 +44,7 @@ final class ServiceLevelObjective extends Model
     use HasFactory, SoftDeletes;
 
     /**
-     * Limits a query to SLOs in the account's environments.
+     * Limit a query to SLOs in the account's environments.
      *
      * @param  Builder<ServiceLevelObjective>  $query
      * @param  Account  $account
@@ -57,7 +57,7 @@ final class ServiceLevelObjective extends Model
     }
 
     /**
-     * The environment the SLO measures.
+     * Get the environment the SLO measures.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -67,7 +67,7 @@ final class ServiceLevelObjective extends Model
     }
 
     /**
-     * "Latency" or "Availability".
+     * Get the indicator's name: "Latency" or "Availability".
      *
      * @return string
      */
@@ -77,7 +77,7 @@ final class ServiceLevelObjective extends Model
     }
 
     /**
-     * Which traffic the SLO covers: its service and route, or all request traffic.
+     * Describe which traffic the SLO covers: its service and route, or all request traffic.
      *
      * @return string
      */
@@ -88,7 +88,7 @@ final class ServiceLevelObjective extends Model
     }
 
     /**
-     * The rolling window, such as "30-day rolling window".
+     * Describe the rolling window, such as "30-day rolling window".
      *
      * @return string
      */
@@ -98,7 +98,7 @@ final class ServiceLevelObjective extends Model
     }
 
     /**
-     * Whether the SLO measures latency rather than availability.
+     * Determine whether the SLO measures latency rather than availability.
      *
      * @return bool
      */
@@ -108,6 +108,8 @@ final class ServiceLevelObjective extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

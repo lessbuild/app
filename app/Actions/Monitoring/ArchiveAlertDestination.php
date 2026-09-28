@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
 final class ArchiveAlertDestination
 {
     /**
+     * Create a new ArchiveAlertDestination instance.
+     *
      * Archives an alert destination.
      *
      * @param  RecordAuditEntry  $audit  Records it.

@@ -87,7 +87,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
     ];
 
     /**
-     * Registers a route binding for every parameter in BINDINGS. The scoped lookup applies only to the routes the entry
+     * Register a route binding for every parameter in BINDINGS. The scoped lookup applies only to the routes the entry
      * names; other routes that happen to use the same parameter name get the raw value.
      *
      * @return void
@@ -100,7 +100,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
     }
 
     /**
-     * Finds the record for a URL parameter inside the route's scope (its account, project, environment, server,
+     * Find the record for a URL parameter inside the route's scope (its account, project, environment, server,
      * repository or review) and 404s when it isn't there, so a guessed ID from another account never resolves.
      * Soft-deleted records resolve on `*.show` routes only, so their pages stay reachable.
      *
@@ -130,7 +130,7 @@ final class RouteBindingServiceProvider extends ServiceProvider
     }
 
     /**
-     * The route's project, whether it's already bound to a model or still the raw ID; 404 when it doesn't exist.
+     * Get the route's project, whether it's already bound to a model or still the raw ID; 404 when it doesn't exist.
      *
      * @param  RoutingRoute  $route
      * @return Project
@@ -143,8 +143,8 @@ final class RouteBindingServiceProvider extends ServiceProvider
     }
 
     /**
-     * The account a route is scoped to: the project's account when the URL names a project, otherwise the signed-in
-     * person's current account. 404 when there is neither.
+     * Get the account a route is scoped to: the project's account when the URL names a project, otherwise the
+     * signed-in person's current account. 404 when there is neither.
      *
      * @param  RoutingRoute  $route
      * @return string

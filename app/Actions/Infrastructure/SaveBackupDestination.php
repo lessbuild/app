@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveBackupDestination
 {
     /**
+     * Create a new SaveBackupDestination instance.
+     *
      * Creates or changes a backup destination.
      *
      * @param  RecordAuditEntry  $audit  Records the change (never the keys).

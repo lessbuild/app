@@ -47,7 +47,7 @@ class QueueSnapshot extends Model
     protected $hidden = ['payload_hash'];
 
     /**
-     * The queue monitor the report was sent to, including archived ones.
+     * Get the queue monitor the report was sent to, including archived ones.
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -57,6 +57,8 @@ class QueueSnapshot extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

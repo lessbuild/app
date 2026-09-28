@@ -28,7 +28,7 @@ use Laravel\Fortify\Fortify;
 final class FortifyServiceProvider extends ServiceProvider
 {
     /**
-     * Wires Fortify to our actions and auth views (offering the configured social providers on sign-in, register and
+     * Wire Fortify to our actions and auth views (offering the configured social providers on sign-in, register and
      * password confirmation), records sign-in activity, and sets the rate limits for sign-in, two-factor codes and
      * passkey assertions.
      *
@@ -76,8 +76,8 @@ final class FortifyServiceProvider extends ServiceProvider
     }
 
     /**
-     * The social sign-in providers that have credentials in this environment, in their declared order. The sign-in and
-     * register pages only offer these.
+     * Get the social sign-in providers that have credentials in this environment, in their declared order. The sign-in
+     * and register pages only offer these.
      *
      * @return list<SocialProvider>
      */

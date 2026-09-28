@@ -17,7 +17,8 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
     public const IDENTIFIER = 'checked-repository';
 
     /**
-     * The script to run
+     * Render the stage that checks out the build's commit (which must be on the branch) and reports the revision and
+     * commit message.
      *
      * @param  int  $step
      * @param  Build  $build

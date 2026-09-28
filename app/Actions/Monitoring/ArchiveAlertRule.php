@@ -18,6 +18,8 @@ use Illuminate\Support\Facades\Gate;
 final class ArchiveAlertRule
 {
     /**
+     * Create a new ArchiveAlertRule instance.
+     *
      * Archives an alert rule.
      *
      * @param  IncidentLifecycle  $lifecycle  Closes the rule's open incidents.

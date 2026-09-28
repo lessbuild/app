@@ -11,6 +11,8 @@ use App\Models\Membership;
 final readonly class Departure
 {
     /**
+     * Create a new Departure instance.
+     *
      * What deleting a person would do to each account they belong to, worked out before anything changes so the
      * confirmation page can show it and blocked deletions can be explained.
      *

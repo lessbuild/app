@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class AuditEntryView
 {
     /**
+     * Create a new AuditEntryView instance.
+     *
      * One line of the audit log.
      *
      * @param  string  $id  The entry's ID.

@@ -9,7 +9,7 @@ use App\Models\User;
 final class MarkAllNotificationsRead
 {
     /**
-     * Marks every unread notification read and returns how many there were.
+     * Mark every unread notification read and returns how many there were.
      *
      * @param  User  $user
      * @return int

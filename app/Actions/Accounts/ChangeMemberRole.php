@@ -15,7 +15,7 @@ use Illuminate\Support\Facades\Gate;
 final class ChangeMemberRole
 {
     /**
-     * Changes a member's role. The actor must be able to assign both the old and the new role, and the account's
+     * Change a member's role. The actor must be able to assign both the old and the new role, and the account's
      * memberships are locked so two concurrent demotions can't remove the last owner.
      *
      * @param  User  $actor

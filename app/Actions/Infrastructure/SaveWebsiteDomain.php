@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveWebsiteDomain
 {
     /**
+     * Create a new SaveWebsiteDomain instance.
+     *
      * Adds or changes a website's domain.
      *
      * @param  SyncWebsiteDomain  $sync  Creates its DNS record at Cloudflare when a DNS provider is chosen.

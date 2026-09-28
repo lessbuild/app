@@ -37,7 +37,7 @@ class ProviderConnectionCheck extends Model
     public $timestamps = false;
 
     /**
-     * The provider that was checked.
+     * Get the provider that was checked.
      *
      * @return BelongsTo<Provider, $this>
      */
@@ -47,6 +47,8 @@ class ProviderConnectionCheck extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

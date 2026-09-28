@@ -11,8 +11,8 @@ use Illuminate\Validation\Rule;
 final class BackupDestinationRequest extends FormRequest
 {
     /**
-     * A destination's storage provider, HTTPS endpoint, bucket, region, keys and path prefix. The bucket and prefix are
-     * limited to characters that are safe in the backup commands.
+     * Get the validation rules for a destination's storage provider, HTTPS endpoint, bucket, region, keys and path
+     * prefix. The bucket and prefix are limited to characters that are safe in the backup commands.
      *
      * @return array<string, array<mixed>>
      */
@@ -31,7 +31,7 @@ final class BackupDestinationRequest extends FormRequest
     }
 
     /**
-     * The validated destination with optional fields as null.
+     * Get the validated destination with optional fields as null.
      *
      * @return array{name: string, storage_provider: string, endpoint: string|null, bucket: string, region: string, access_key: string|null, secret_key: string|null, path_prefix: string}
      */

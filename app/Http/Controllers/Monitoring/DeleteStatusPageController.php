@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteStatusPageController
 {
     /**
-     * Deletes a status page.
+     * Delete a status page.
      *
      * @param  User  $user
      * @param  Project  $project

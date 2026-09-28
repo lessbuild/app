@@ -10,7 +10,7 @@ use App\Models\Monitor;
 final class MonitorHistoryQuery
 {
     /**
-     * A monitor's recent checks and incidents, plus its runs for heartbeat monitors, or its latest report and live
+     * Get a monitor's recent checks and incidents, plus its runs for heartbeat monitors, or its latest report and live
      * workers for queue monitors.
      *
      * @param  Monitor  $monitor

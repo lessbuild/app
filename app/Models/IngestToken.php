@@ -41,7 +41,7 @@ final class IngestToken extends Model
     use HasFactory;
 
     /**
-     * The environment the token sends to.
+     * Get the environment the token sends to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -51,7 +51,7 @@ final class IngestToken extends Model
     }
 
     /**
-     * Who created it (`created_by`).
+     * Get the person who created the token (`created_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -61,7 +61,7 @@ final class IngestToken extends Model
     }
 
     /**
-     * Limits a query to tokens that aren't revoked or expired.
+     * Limit a query to tokens that aren't revoked or expired.
      *
      * @param  Builder<IngestToken>  $query
      * @return void
@@ -74,7 +74,7 @@ final class IngestToken extends Model
     }
 
     /**
-     * `active`, `expired` or `revoked`.
+     * Get the token's status: `active`, `expired` or `revoked`.
      *
      * @return string
      */
@@ -88,6 +88,8 @@ final class IngestToken extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

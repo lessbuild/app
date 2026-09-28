@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteGoalController
 {
     /**
-     * Deletes a goal and removes it from the site's history.
+     * Delete a goal and removes it from the site's history.
      *
      * @param  User  $user
      * @param  Project  $project

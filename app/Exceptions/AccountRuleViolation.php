@@ -8,7 +8,7 @@ namespace App\Exceptions;
 final class AccountRuleViolation extends RuleViolation
 {
     /**
-     * The change would leave the account without an owner, whether by demotion or removal.
+     * Build the violation for a change that would leave the account without an owner, whether by demotion or removal.
      *
      * @return AccountRuleViolation
      */
@@ -18,8 +18,8 @@ final class AccountRuleViolation extends RuleViolation
     }
 
     /**
-     * The actor's role doesn't outrank the member's role (or the role being given), so they can't change, remove or
-     * restrict that member.
+     * Build the violation for an actor whose role doesn't outrank the member's role (or the role being given), so they
+     * can't change, remove or restrict that member.
      *
      * @return AccountRuleViolation
      */
@@ -29,7 +29,7 @@ final class AccountRuleViolation extends RuleViolation
     }
 
     /**
-     * The invited email already belongs to a member of the account.
+     * Build the violation for inviting an email that already belongs to a member of the account.
      *
      * @return AccountRuleViolation
      */
@@ -39,7 +39,7 @@ final class AccountRuleViolation extends RuleViolation
     }
 
     /**
-     * The invitation was revoked, has expired or was already accepted.
+     * Build the violation for an invitation that was revoked, has expired or was already accepted.
      *
      * @return AccountRuleViolation
      */
@@ -49,7 +49,7 @@ final class AccountRuleViolation extends RuleViolation
     }
 
     /**
-     * The signed-in person's email doesn't match the one the invitation was sent to.
+     * Build the violation for accepting an invitation sent to a different email address.
      *
      * @return AccountRuleViolation
      */

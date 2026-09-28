@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 final class FinishBuild
 {
     /**
+     * Create a new FinishBuild instance.
+     *
      * Ends a deploy and does what follows from how it ended.
      *
      * @param  DeploymentMarkers  $markers  Records the deploy on the environment's Monitoring timeline.
@@ -65,8 +67,8 @@ final class FinishBuild
     }
 
     /**
-     * Deploys the push that arrived while this deploy was running, if the repository can deploy now, and clears it so it
-     * isn't deployed twice.
+     * Deploy the push that arrived while this deploy was running, if the repository can deploy now, and clears it so
+     * it isn't deployed twice.
      *
      * @param  int  $repositoryId
      * @return void

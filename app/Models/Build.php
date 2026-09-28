@@ -99,7 +99,7 @@ class Build extends Model
     public const FINISHED = [self::STATUS_REJECTED, self::STATUS_SUCCEEDED, self::STATUS_FAILED, self::STATUS_CANCELED];
 
     /**
-     * The repository deployed, including disconnected ones so old deploys still read.
+     * Get the repository deployed, including disconnected ones so old deploys still read.
      *
      * @return BelongsTo<Repository, $this>
      */
@@ -109,7 +109,7 @@ class Build extends Model
     }
 
     /**
-     * The website deployed to, including deleted ones.
+     * Get the website deployed to, including deleted ones.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -119,7 +119,7 @@ class Build extends Model
     }
 
     /**
-     * The environment the deploy was for.
+     * Get the environment the deploy was for.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -129,7 +129,7 @@ class Build extends Model
     }
 
     /**
-     * Who asked for the deploy (`requested_by`); null for pushes and automation.
+     * Get the person who asked for the deploy (`requested_by`); null for pushes and automation.
      *
      * @return BelongsTo<User, $this>
      */
@@ -139,7 +139,7 @@ class Build extends Model
     }
 
     /**
-     * Who approved it, for environments that require approval (`approved_by`).
+     * Get the person who approved the deploy, for environments that require approval (`approved_by`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -149,7 +149,7 @@ class Build extends Model
     }
 
     /**
-     * The deploy this one rolled back (`rolled_back_from_build_id`).
+     * Get the deploy this one rolled back (`rolled_back_from_build_id`).
      *
      * @return BelongsTo<Build, $this>
      */
@@ -159,7 +159,7 @@ class Build extends Model
     }
 
     /**
-     * The deploy this one repeated (`redeployed_from_build_id`).
+     * Get the deploy this one repeated (`redeployed_from_build_id`).
      *
      * @return BelongsTo<Build, $this>
      */
@@ -169,7 +169,7 @@ class Build extends Model
     }
 
     /**
-     * The deploy in a lower environment this one promoted (`promoted_from_build_id`).
+     * Get the deploy in a lower environment this one promoted (`promoted_from_build_id`).
      *
      * @return BelongsTo<Build, $this>
      */
@@ -179,7 +179,7 @@ class Build extends Model
     }
 
     /**
-     * Deploys that promoted this one to higher environments.
+     * Get the deploys that promoted this one to higher environments.
      *
      * @return \Illuminate\Database\Eloquent\Relations\HasMany<Build, $this>
      */
@@ -189,7 +189,7 @@ class Build extends Model
     }
 
     /**
-     * Whether the deploy is still queued, waiting for approval or running.
+     * Determine whether the deploy is still queued, waiting for approval or running.
      *
      * @return bool
      */
@@ -199,7 +199,7 @@ class Build extends Model
     }
 
     /**
-     * The repository subdirectory this build deploys, as it was when queued.
+     * Get the repository subdirectory this build deploys, as it was when queued.
      *
      * @return string
      */
@@ -211,7 +211,8 @@ class Build extends Model
     }
 
     /**
-     * A path under the website's directory for a phase (`setup` while building, `current` once live), inside the deployed subdirectory.
+     * Get a path under the website's directory for a phase (`setup` while building, `current` once live), inside the
+     * deployed subdirectory.
      *
      * @param  string  $phase
      * @return string
@@ -222,7 +223,7 @@ class Build extends Model
     }
 
     /**
-     * The release directory name: the one recorded when it started, else one made from its creation time and ID.
+     * Get the release directory name: the one recorded when it started, else one made from its creation time and ID.
      *
      * @return string
      */
@@ -232,7 +233,7 @@ class Build extends Model
     }
 
     /**
-     * The first 12 characters of the commit, for display.
+     * Get the first 12 characters of the commit, for display.
      *
      * @return string|null
      */
@@ -242,7 +243,10 @@ class Build extends Model
     }
 
     /**
-     * Encrypts the environment payload (it holds variables and secrets) and the log, and reads `changed_paths` as JSON.
+     * Get the attributes that should be cast.
+     *
+     * Encrypts the environment payload (it holds variables and secrets) and the log, and reads `changed_paths` as
+     * JSON.
      *
      * @return array<string, string>
      */

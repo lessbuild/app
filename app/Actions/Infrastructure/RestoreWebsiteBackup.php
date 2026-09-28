@@ -17,6 +17,8 @@ use Illuminate\Validation\ValidationException;
 final class RestoreWebsiteBackup
 {
     /**
+     * Create a new RestoreWebsiteBackup instance.
+     *
      * Restores a website from a backup.
      *
      * @param  RecordAuditEntry  $audit  Records the restore.

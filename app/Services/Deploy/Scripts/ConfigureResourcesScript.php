@@ -16,6 +16,8 @@ class ConfigureResourcesScript extends BuildProvisioningScript
     public const IDENTIFIER = 'configured-resources';
 
     /**
+     * Create a new ConfigureResourcesScript instance.
+     *
      * Makes sure the environment's managed resources are running.
      *
      * @param  ManagedResourceScript  $resources  Renders the commands for each managed resource.

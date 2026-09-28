@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class CloseServerTerminalController
 {
     /**
-     * Closes the terminal and forgets its browser token.
+     * Close the terminal and forgets its browser token.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -18,7 +18,7 @@ use Illuminate\Contracts\View\View;
 final class ShowIssueController
 {
     /**
-     * An issue's page: its latest occurrences and timeline, redacted, and who it can be assigned to.
+     * Show an issue's page: its latest occurrences and timeline, redacted, and who it can be assigned to.
      *
      * @param  User  $user
      * @param  Project  $project

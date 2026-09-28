@@ -17,7 +17,7 @@ final class ServiceRegistry
     private array $services = [];
 
     /**
-     * Adds a service. Keys are stored in the database, so a second service with the same key is a programming error and
+     * Add a service. Keys are stored in the database, so a second service with the same key is a programming error and
      * throws.
      *
      * @param  PlatformService  $service
@@ -32,7 +32,7 @@ final class ServiceRegistry
     }
 
     /**
-     * Every service, in the order they were registered, which is the order the shell lists them.
+     * Get every service, in the order they were registered, which is the order the shell lists them.
      *
      * @return list<PlatformService>
      */
@@ -42,7 +42,7 @@ final class ServiceRegistry
     }
 
     /**
-     * Whether a key names a registered service, used to validate service keys from requests.
+     * Determine whether a key names a registered service, used to validate service keys from requests.
      *
      * @param  string  $key
      * @return bool
@@ -53,7 +53,7 @@ final class ServiceRegistry
     }
 
     /**
-     * The service with this key, or null.
+     * Find the service with this key, or return null.
      *
      * @param  string  $key
      * @return PlatformService|null
@@ -64,7 +64,7 @@ final class ServiceRegistry
     }
 
     /**
-     * Every registered key, in display order.
+     * Get every registered key, in display order.
      *
      * @return list<string>
      */

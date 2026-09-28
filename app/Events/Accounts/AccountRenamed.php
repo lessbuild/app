@@ -13,6 +13,8 @@ final readonly class AccountRenamed
     use Dispatchable;
 
     /**
+     * Create a new AccountRenamed instance.
+     *
      * An account's name changed. Recorded in the audit log.
      *
      * @param  Account  $account  The account, already carrying its new name.

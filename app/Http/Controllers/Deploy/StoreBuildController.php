@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreBuildController
 {
     /**
-     * Starts a deploy, of a given commit or the branch's latest.
+     * Start a deploy, of a given commit or the branch's latest.
      *
      * @param  Request  $request
      * @param  User  $user

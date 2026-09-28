@@ -9,6 +9,8 @@ use App\Enums\ApiScope;
 final readonly class CreateApiTokenData
 {
     /**
+     * Create a new CreateApiTokenData instance.
+     *
      * A token someone wants to create.
      *
      * @param  string  $name  A name to recognise it by, such as the CI system using it.

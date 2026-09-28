@@ -13,7 +13,7 @@ use Illuminate\Contracts\View\View;
 final class CreateDashboardController
 {
     /**
-     * The new dashboard form.
+     * Show the new dashboard form.
      *
      * @param  User  $user
      * @param  Project  $project

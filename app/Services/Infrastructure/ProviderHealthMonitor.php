@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\DB;
 class ProviderHealthMonitor
 {
     /**
+     * Create a new ProviderHealthMonitor instance.
+     *
      * Checks providers' credentials.
      *
      * @param  ProviderConnectionTester  $tester  Asks the provider's API.
@@ -24,9 +26,9 @@ class ProviderHealthMonitor
     public function __construct(private readonly ProviderConnectionTester $tester) {}
 
     /**
-     * Checks the credential and records the result under lock, keeping the latest checks. A provider fails after its
-     * threshold of failures in a row and recovers after one success; its creator is told about each change. Results are
-     * dropped if the credential changed during the check, or automatic checks were turned off.
+     * Check the credential and records the result under lock, keeping the latest checks. A provider fails after its
+     * threshold of failures in a row and recovers after one success; its creator is told about each change. Results
+     * are dropped if the credential changed during the check, or automatic checks were turned off.
      *
      * @param  Provider  $provider
      * @param  bool  $automatic

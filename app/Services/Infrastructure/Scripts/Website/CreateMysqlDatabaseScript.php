@@ -9,7 +9,7 @@ use App\Models\Website;
 final class CreateMysqlDatabaseScript extends WebsiteProvisioningScript
 {
     /**
-     * Creates the website's database and user (or resets the user's password) with every privilege on that database
+     * Create the website's database and user (or resets the user's password) with every privilege on that database
      * only.
      *
      * @param  int  $step

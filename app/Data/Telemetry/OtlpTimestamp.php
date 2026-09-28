@@ -10,6 +10,8 @@ use InvalidArgumentException;
 final readonly class OtlpTimestamp
 {
     /**
+     * Create a new OtlpTimestamp instance.
+     *
      * Use `fromUnixNano()`, which validates the value first.
      *
      * @param  string  $unixNano  The timestamp in nanoseconds as a canonical decimal string. OTLP timestamps are
@@ -24,7 +26,7 @@ final readonly class OtlpTimestamp
     ) {}
 
     /**
-     * Whether a value is an unsigned 64-bit integer, given as an int or a string of digits.
+     * Determine whether a value is an unsigned 64-bit integer, given as an int or a string of digits.
      *
      * @param  mixed  $value
      * @return bool
@@ -41,7 +43,7 @@ final readonly class OtlpTimestamp
     }
 
     /**
-     * Parses an OTLP nanosecond timestamp; null stays null, and anything that isn't an unsigned 64-bit integer throws.
+     * Parse an OTLP nanosecond timestamp; null stays null, and anything that isn't an unsigned 64-bit integer throws.
      *
      * @param  mixed  $value
      * @return OtlpTimestamp|null
@@ -64,7 +66,7 @@ final readonly class OtlpTimestamp
     }
 
     /**
-     * The timestamp in UTC with microsecond precision, which is as fine as Carbon goes.
+     * Format the timestamp in UTC with microsecond precision, which is as fine as Carbon goes.
      *
      * @return string
      */
@@ -76,8 +78,8 @@ final readonly class OtlpTimestamp
     }
 
     /**
-     * The time from this timestamp to `$end` in milliseconds, computed from the split seconds and nanoseconds so no
-     * precision is lost to floats.
+     * Measure the time from this timestamp to `$end` in milliseconds, computed from the split seconds and nanoseconds
+     * so no precision is lost to floats.
      *
      * @param  OtlpTimestamp  $end
      * @return float

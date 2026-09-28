@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreLoadBalancerController
 {
     /**
-     * Adds a load balancer.
+     * Add a load balancer.
      *
      * @param  LoadBalancerRequest  $request
      * @param  User  $user

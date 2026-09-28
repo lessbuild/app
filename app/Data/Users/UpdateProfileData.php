@@ -7,6 +7,8 @@ namespace App\Data\Users;
 final readonly class UpdateProfileData
 {
     /**
+     * Create a new UpdateProfileData instance.
+     *
      * A change to the signed-in person's profile.
      *
      * @param  string  $name  Their new name.

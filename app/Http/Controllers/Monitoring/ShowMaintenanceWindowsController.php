@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowMaintenanceWindowsController
 {
     /**
-     * Maintenance windows that ended in the last 30 days or haven't ended yet.
+     * Show the maintenance windows that ended in the last 30 days or haven't ended yet.
      *
      * @param  User  $user
      * @param  Project  $project

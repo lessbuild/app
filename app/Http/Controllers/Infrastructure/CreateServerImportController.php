@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class CreateServerImportController
 {
     /**
-     * The form for importing an existing server.
+     * Show the form for importing an existing server.
      *
      * @param  User  $user
      * @param  Project  $project

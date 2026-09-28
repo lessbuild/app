@@ -14,7 +14,7 @@ use RuntimeException;
 class GitHubApp
 {
     /**
-     * Whether the App's ID, slug, webhook secret and private key are all set.
+     * Determine whether the App's ID, slug, webhook secret and private key are all set.
      *
      * @return bool
      */
@@ -24,7 +24,7 @@ class GitHubApp
     }
 
     /**
-     * GitHub's page for installing the App, carrying the one-time state.
+     * Build GitHub's page for installing the App, carrying the one-time state.
      *
      * @param  string  $state
      * @return string
@@ -40,7 +40,7 @@ class GitHubApp
     }
 
     /**
-     * A short-lived token for one installation, from GitHub's API.
+     * Request a short-lived token for one installation from GitHub's API.
      *
      * @param  string  $installationId
      * @return string
@@ -54,7 +54,7 @@ class GitHubApp
     }
 
     /**
-     * The repositories the installation can reach (first 100), with their visibility and default branch.
+     * List the repositories the installation can reach (first 100), with their visibility and default branch.
      *
      * @param  string  $installationId
      * @return list<array{id: int, full_name: string, private: bool, default_branch: string}>
@@ -74,7 +74,7 @@ class GitHubApp
     }
 
     /**
-     * A JSON Web Token signed with the App's private key, valid for nine minutes (backdated one, for clock drift), which
+     * Sign a JSON Web Token with the App's private key, valid for nine minutes (backdated one, for clock drift), which
      * GitHub requires to issue installation tokens.
      *
      * @return string
@@ -96,7 +96,7 @@ class GitHubApp
     }
 
     /**
-     * The unencrypted RSA key from config (the key itself, or a readable file), or null.
+     * Read the unencrypted RSA key from config (the key itself, or a readable file), or return null.
      *
      * @return string|null
      */
@@ -115,7 +115,7 @@ class GitHubApp
     }
 
     /**
-     * Base64 in its URL-safe form without padding, as JWTs use.
+     * Encode in Base64's URL-safe form without padding, as JWTs use.
      *
      * @param  string  $value
      * @return string

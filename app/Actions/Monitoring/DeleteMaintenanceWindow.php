@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteMaintenanceWindow
 {
     /**
-     * Deletes one of the account's maintenance windows.
+     * Delete one of the account's maintenance windows.
      *
      * @param  Account  $account
      * @param  User  $actor

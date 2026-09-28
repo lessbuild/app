@@ -34,6 +34,8 @@ final class ProvisionWebsite implements ShouldQueue
     public int $backoff = 10;
 
     /**
+     * Create a new ProvisionWebsite instance.
+     *
      * Creates a website's directories, database and Caddy site on its server.
      *
      * @param  int  $websiteId  The website.
@@ -42,7 +44,7 @@ final class ProvisionWebsite implements ShouldQueue
     public function __construct(public readonly int $websiteId, public readonly string $attempt) {}
 
     /**
-     * Claims the attempt and starts provisioning on the server.
+     * Claim the attempt and starts provisioning on the server.
      *
      * @param  WebsiteProvisioner  $provisioner
      * @return void
@@ -56,7 +58,7 @@ final class ProvisionWebsite implements ShouldQueue
     }
 
     /**
-     * Marks the website failed and stores the error as its provisioning log.
+     * Mark the website failed and stores the error as its provisioning log.
      *
      * @param  Throwable  $exception
      * @return void
@@ -72,7 +74,7 @@ final class ProvisionWebsite implements ShouldQueue
     }
 
     /**
-     * The website, only while it's still on this provisioning attempt.
+     * Query the website, only while it's still on this provisioning attempt.
      *
      * @return Builder<Website>
      */

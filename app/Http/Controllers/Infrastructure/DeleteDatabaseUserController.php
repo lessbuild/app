@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteDatabaseUserController
 {
     /**
-     * Starts removing an extra database user.
+     * Start removing an extra database user.
      *
      * @param  User  $user
      * @param  Project  $project

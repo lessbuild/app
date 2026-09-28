@@ -35,6 +35,8 @@ final class RestoreWebsiteBackup implements ShouldQueue
     public int $timeout = 3600;
 
     /**
+     * Create a new RestoreWebsiteBackup instance.
+     *
      * Restores a website from one of its backups.
      *
      * @param  int  $restoreId  The queued restore.
@@ -42,7 +44,7 @@ final class RestoreWebsiteBackup implements ShouldQueue
     public function __construct(public readonly int $restoreId) {}
 
     /**
-     * Claims the restore and runs the restore script on the website's server, recording success or the script's error.
+     * Claim the restore and runs the restore script on the website's server, recording success or the script's error.
      *
      * @param  ServerShell  $shell
      * @param  BackupScripts  $scripts
@@ -71,7 +73,7 @@ final class RestoreWebsiteBackup implements ShouldQueue
     }
 
     /**
-     * Marks the restore failed with the reason.
+     * Mark the restore failed with the reason.
      *
      * @param  Throwable  $exception
      * @return void

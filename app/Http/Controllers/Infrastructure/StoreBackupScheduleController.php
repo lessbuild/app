@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreBackupScheduleController
 {
     /**
-     * Adds a daily or weekly backup schedule to a website.
+     * Add a daily or weekly backup schedule to a website.
      *
      * @param  Request  $request
      * @param  User  $user

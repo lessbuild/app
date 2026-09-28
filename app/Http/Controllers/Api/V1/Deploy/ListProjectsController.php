@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ListProjectsController
 {
     /**
-     * Returns the projects the token can deploy, oldest first.
+     * Return the projects the token can deploy, oldest first.
      *
      * @param  Request  $request
      * @param  User  $user

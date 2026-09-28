@@ -36,6 +36,8 @@ final class ProcessAlertDelivery implements ShouldQueue
     public bool $failOnTimeout = true;
 
     /**
+     * Create a new ProcessAlertDelivery instance.
+     *
      * Sends one alert delivery attempt.
      *
      * @param  string  $deliveryId  The delivery.
@@ -44,7 +46,7 @@ final class ProcessAlertDelivery implements ShouldQueue
     public function __construct(public readonly string $deliveryId, public readonly int $generation) {}
 
     /**
-     * Hands the delivery to its destination's transport and records the outcome.
+     * Hand the delivery to its destination's transport and records the outcome.
      *
      * @param  AlertDeliveryRunner  $runner
      * @return void
@@ -55,9 +57,8 @@ final class ProcessAlertDelivery implements ShouldQueue
     }
 
     /**
-     * Records that the attempt was interrupted while sending. Webhooks carry a delivery ID receivers can deduplicate
-     * on, so they're retried;
-     * other destinations are marked uncertain, since the alert may have arrived.
+     * Record that the attempt was interrupted while sending. Webhooks carry a delivery ID receivers can deduplicate
+     * on, so they're retried; other destinations are marked uncertain, since the alert may have arrived.
      *
      * @param  Throwable|null  $exception
      * @return void

@@ -31,7 +31,7 @@ class EnvironmentResource extends Model
     public const TYPES = ['mysql' => 'MySQL', 'postgresql' => 'PostgreSQL', 'redis' => 'Redis', 'valkey' => 'Valkey', 'object_storage' => 'Object storage'];
 
     /**
-     * The environment the resource is attached to.
+     * Get the environment the resource is attached to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -41,6 +41,8 @@ class EnvironmentResource extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `configuration`, which can hold credentials.
      *
      * @return array<string, string>

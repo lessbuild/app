@@ -12,7 +12,7 @@ enum IngestSource: string
     case OtlpMetrics = 'otlp_metrics';
 
     /**
-     * How the ingest receipts page names the source.
+     * Get how the ingest receipts page names the source.
      *
      * @return string
      */
@@ -27,7 +27,7 @@ enum IngestSource: string
     }
 
     /**
-     * The OTLP signal the source carries, or null for our own JSON event format.
+     * Get the OTLP signal the source carries, or null for our own JSON event format.
      *
      * @return string|null
      */

@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final readonly class SocialIdentitySummary
 {
     /**
+     * Create a new SocialIdentitySummary instance.
+     *
      * A provider account connected to the signed-in person, for the security page.
      *
      * @param  SocialProvider  $provider  Which provider it is.

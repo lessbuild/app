@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateDashboardController
 {
     /**
-     * Saves a dashboard.
+     * Save a dashboard.
      *
      * @param  DashboardRequest  $request
      * @param  User  $user

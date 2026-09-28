@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class EnsureServiceEnabled
 {
     /**
-     * Lets the request through when the person may use the service and it's on in the project; sends them to its enable
+     * Let the request through when the person may use the service and it's on in the project; sends them to its enable
      * page when it's off, and refuses them otherwise.
      *
      * @param  Request  $request

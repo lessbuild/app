@@ -9,7 +9,7 @@ use App\Contracts\Monitoring\DnsResolver;
 final class NativeDnsResolver implements DnsResolver
 {
     /**
-     * Resolves a hostname to its A and AAAA addresses, following CNAMEs.
+     * Resolve a hostname to its A and AAAA addresses, following CNAMEs.
      *
      * @param  string  $hostname
      * @return list<string>
@@ -20,7 +20,7 @@ final class NativeDnsResolver implements DnsResolver
     }
 
     /**
-     * Follows CNAMEs up to five deep; a loop or an unresolvable target resolves to nothing.
+     * Follow CNAMEs up to five deep; a loop or an unresolvable target resolves to nothing.
      *
      * @param  string  $hostname
      * @param  list<string>  $visited

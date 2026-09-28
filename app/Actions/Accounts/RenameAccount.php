@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\Gate;
 final class RenameAccount
 {
     /**
-     * Renames the account; an unchanged name records nothing.
+     * Rename the account; an unchanged name records nothing.
      *
      * @param  User  $actor
      * @param  Account  $account

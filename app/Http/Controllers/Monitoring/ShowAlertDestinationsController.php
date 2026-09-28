@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowAlertDestinationsController
 {
     /**
-     * The destinations page.
+     * Show the destinations page.
      *
      * @param  User  $user
      * @param  Project  $project

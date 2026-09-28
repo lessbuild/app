@@ -39,7 +39,7 @@ class ServerAlertRule extends Model
     public const METRICS = ['cpu_percent' => 'CPU (%)', 'memory_percent' => 'Memory (%)', 'disk_percent' => 'Disk (%)', 'load_1m' => 'Load (1 min)', 'process_count' => 'Processes'];
 
     /**
-     * The server the rule watches; null for rules that watch every server.
+     * Get the server the rule watches; null for rules that watch every server.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -49,6 +49,8 @@ class ServerAlertRule extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -16,6 +16,9 @@ final class CollectionHealthQuery
     public const DEFAULT_STALE_AFTER_MINUTES = 60;
 
     /**
+     * Check whether each of the project's environments is receiving telemetry, with counts of each state and the stale
+     * window used.
+     *
      * @param  Project  $project
      * @return array{
      *     environments: Collection<int, array{environment: Environment, state: CollectionHealthState, description: string}>,
@@ -55,8 +58,8 @@ final class CollectionHealthQuery
     }
 
     /**
-     * Whether an environment is receiving telemetry: no usable ingest key, nothing received yet, nothing within the
-     * stale window, or receiving.
+     * Determine whether an environment is receiving telemetry: no usable ingest key, nothing received yet, nothing
+     * within the stale window, or receiving.
      *
      * @param  Environment  $environment
      * @param  CarbonImmutable  $now
@@ -79,7 +82,7 @@ final class CollectionHealthQuery
     }
 
     /**
-     * One line explaining the state, with when the last event arrived.
+     * Explain the state in one line, with when the last event arrived.
      *
      * @param  Environment  $environment
      * @param  CollectionHealthState  $state

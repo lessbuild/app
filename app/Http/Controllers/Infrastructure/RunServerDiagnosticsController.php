@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RunServerDiagnosticsController
 {
     /**
-     * Starts a diagnostic run and opens the diagnostics tab.
+     * Start a diagnostic run and opens the diagnostics tab.
      *
      * @param  User  $user
      * @param  Project  $project

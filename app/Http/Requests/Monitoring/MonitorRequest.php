@@ -27,7 +27,7 @@ final class MonitorRequest extends FormRequest
     public const INTERVALS = [1 => 'Every minute', 5 => 'Every 5 minutes', 15 => 'Every 15 minutes', 30 => 'Every 30 minutes', 60 => 'Every hour'];
 
     /**
-     * The JSON body for API calls, the form fields otherwise.
+     * Get the data to validate: the JSON body for API calls, the form fields otherwise.
      *
      * @return array<string, mixed>
      */
@@ -37,8 +37,8 @@ final class MonitorRequest extends FormRequest
     }
 
     /**
-     * Every field a monitor of the chosen type needs; fields for other types are excluded. Stored secrets may be left
-     * blank when editing, to keep them.
+     * Get the validation rules for every field a monitor of the chosen type needs; fields for other types are
+     * excluded. Stored secrets may be left blank when editing, to keep them.
      *
      * @return array<string, array<mixed>>
      */
@@ -103,7 +103,7 @@ final class MonitorRequest extends FormRequest
     }
 
     /**
-     * Checks what rules can't: the environment and type of an existing monitor don't change, cron schedules have a
+     * Check what rules can't: the environment and type of an existing monitor don't change, cron schedules have a
      * future occurrence, hostnames and URLs are public (bearer tokens need HTTPS), DNS expectations parse, HEAD checks
      * don't look for body text, and a secret isn't both replaced and cleared.
      *
@@ -184,7 +184,7 @@ final class MonitorRequest extends FormRequest
     }
 
     /**
-     * The monitor type: from the form, else the monitor being edited, else HTTP.
+     * Get the monitor type: from the form, else the monitor being edited, else HTTP.
      *
      * @return mixed
      */
@@ -194,7 +194,7 @@ final class MonitorRequest extends FormRequest
     }
 
     /**
-     * The project in the URL.
+     * Get the project in the URL.
      *
      * @return Project
      */
@@ -207,7 +207,7 @@ final class MonitorRequest extends FormRequest
     }
 
     /**
-     * The monitor being changed, or null when creating one.
+     * Get the monitor being changed, or null when creating one.
      *
      * @return Monitor|null
      */

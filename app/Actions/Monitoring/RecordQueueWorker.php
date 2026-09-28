@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 final class RecordQueueWorker
 {
     /**
+     * Create a new RecordQueueWorker instance.
+     *
      * Records a heartbeat from a worker a queue monitor watches.
      *
      * @param  MonitorQueue  $queue  Locks the monitor and checks it still accepts heartbeats.
@@ -21,7 +23,7 @@ final class RecordQueueWorker
     public function __construct(private readonly MonitorQueue $queue, private readonly QueueMonitorEvaluator $evaluation) {}
 
     /**
-     * Stores a worker's status after checking the monitor's key. Sequences must only go up: a repeat returns the
+     * Store a worker's status after checking the monitor's key. Sequences must only go up: a repeat returns the
      * original receipt, an older one is a conflict. A queue can have at most 100 live workers, and a busy worker keeps
      * its job's start time while it stays on the same job.
      *
@@ -72,7 +74,7 @@ final class RecordQueueWorker
     }
 
     /**
-     * What the worker gets back: its ID, sequence and status, whether it was a replay, and when it was seen.
+     * Build what the worker gets back: its ID, sequence and status, whether it was a replay, and when it was seen.
      *
      * @param  QueueWorker  $worker
      * @param  bool  $replayed

@@ -7,6 +7,8 @@ namespace App\Data\Billing;
 final readonly class MeterUsage
 {
     /**
+     * Create a new MeterUsage instance.
+     *
      * This month's usage of one meter.
      *
      * @param  string  $name  The meter's name.

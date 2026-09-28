@@ -10,7 +10,7 @@ use App\Models\Website;
 final class WebsiteCaddyConfiguration
 {
     /**
-     * The site for a PHP website served by PHP-FPM from the document root.
+     * Render the site for a PHP website served by PHP-FPM from the document root.
      *
      * @param  Website  $website
      * @param  string  $documentRoot
@@ -28,7 +28,7 @@ final class WebsiteCaddyConfiguration
     }
 
     /**
-     * The site for a website served by an app listening on a local port.
+     * Render the site for a website served by an app listening on a local port.
      *
      * @param  Website  $website
      * @param  int  $port
@@ -40,7 +40,7 @@ final class WebsiteCaddyConfiguration
     }
 
     /**
-     * IP addresses get plain HTTP (no certificate can be issued for them).
+     * Get a hostname's Caddy site address. IP addresses get plain HTTP (no certificate can be issued for them).
      *
      * @param  string  $hostname
      * @return string
@@ -55,8 +55,8 @@ final class WebsiteCaddyConfiguration
     }
 
     /**
-     * The site block for the website's primary hostname and aliases, plus a permanent-redirect block for each redirect
-     * domain.
+     * Render the site block for the website's primary hostname and aliases, plus a permanent-redirect block for each
+     * redirect domain.
      *
      * @param  Website  $website
      * @param  string  $body
@@ -77,7 +77,7 @@ final class WebsiteCaddyConfiguration
     }
 
     /**
-     * The site's JSON access log, rotated at 20 MiB and kept for a week.
+     * Render the site's JSON access log, rotated at 20 MiB and kept for a week.
      *
      * @param  Website  $website
      * @return string

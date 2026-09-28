@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RetryLoadBalancerController
 {
     /**
-     * Tries a failed load-balancer change again.
+     * Try a failed load-balancer change again.
      *
      * @param  User  $user
      * @param  Project  $project

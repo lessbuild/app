@@ -56,7 +56,7 @@ class MonitorCheck extends Model
     protected $hidden = ['processing_token', 'queue_job_uuid', 'evidence', 'scheduled_slot'];
 
     /**
-     * The monitor that ran the check, including archived ones.
+     * Get the monitor that ran the check, including archived ones.
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -66,6 +66,8 @@ class MonitorCheck extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `evidence` (record values seen during the check) and reads `details` as JSON.
      *
      * @return array<string, string>

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class CheckBackupDestinationController
 {
     /**
-     * Checks the destination's bucket can be written and shows the result.
+     * Check the destination's bucket can be written and shows the result.
      *
      * @param  User  $user
      * @param  Project  $project

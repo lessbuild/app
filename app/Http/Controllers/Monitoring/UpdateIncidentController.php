@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateIncidentController
 {
     /**
-     * Acknowledges, assigns, annotates or resolves an incident.
+     * Acknowledge, assign, annotate or resolve an incident.
      *
      * @param  IncidentRequest  $request
      * @param  User  $user

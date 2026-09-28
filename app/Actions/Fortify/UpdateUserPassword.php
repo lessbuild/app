@@ -14,6 +14,8 @@ final class UpdateUserPassword implements UpdatesUserPasswords
     use PasswordValidationRules;
 
     /**
+     * Create a new UpdateUserPassword instance.
+     *
      * Fortify's password-change adapter.
      *
      * @param  ChangePassword  $changePassword  Sets the new password.
@@ -21,7 +23,7 @@ final class UpdateUserPassword implements UpdatesUserPasswords
     public function __construct(private readonly ChangePassword $changePassword) {}
 
     /**
-     * Validates the new password, and the current one when the person has one (people who signed up through a provider
+     * Validate the new password, and the current one when the person has one (people who signed up through a provider
      * don't), then changes it.
      *
      * @param  User  $user

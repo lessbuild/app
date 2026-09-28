@@ -10,7 +10,7 @@ use Illuminate\Contracts\View\View;
 final class ComponentGalleryController
 {
     /**
-     * The Signal component gallery, available only in local and testing environments.
+     * Show the Signal component gallery, available only in local and testing environments.
      *
      * @return View
      */

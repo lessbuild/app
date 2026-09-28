@@ -18,6 +18,8 @@ final class TelemetryUsage
     public const METER = 'monitoring.events';
 
     /**
+     * Create a new TelemetryUsage instance.
+     *
      * Counts telemetry against allowances.
      *
      * @param  Entitlements  $entitlements  Reads the account's allowance.
@@ -25,7 +27,7 @@ final class TelemetryUsage
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * Events counted for the account from the start of the month up to the moment given.
+     * Count the events recorded for the account from the start of the month up to the moment given.
      *
      * @param  Account  $account
      * @param  CarbonImmutable|null  $at
@@ -42,7 +44,7 @@ final class TelemetryUsage
     }
 
     /**
-     * The monthly allowance; null means unlimited.
+     * Get the account's monthly allowance; null means unlimited.
      *
      * @param  Account  $account
      * @return int|null
@@ -53,7 +55,7 @@ final class TelemetryUsage
     }
 
     /**
-     * Whether a batch received at `$receivedAt` still fits in that month's allowance.
+     * Determine whether a batch received at `$receivedAt` still fits in that month's allowance.
      *
      * @param  Account  $account
      * @param  int  $events

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreStatusPageController
 {
     /**
-     * Creates a status page.
+     * Create a status page.
      *
      * @param  StatusPageRequest  $request
      * @param  User  $user

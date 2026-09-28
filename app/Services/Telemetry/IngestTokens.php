@@ -14,6 +14,9 @@ use Illuminate\Support\Str;
 final class IngestTokens
 {
     /**
+     * Create an ingest token for the environment and return it with its secret, which is shown once; only its hash is
+     * stored.
+     *
      * Called in a transaction holding the project and environment locks.
      *
      * @param  Environment  $environment

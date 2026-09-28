@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\DB;
 final class IncidentAssigneeSubscriber
 {
     /**
+     * Create a new IncidentAssigneeSubscriber instance.
+     *
      * Keeps incident assignments pointing at people who can still act on them.
      *
      * @param  IncidentLifecycle  $incidents  Unassigns people and records it on the incidents.
@@ -23,7 +25,7 @@ final class IncidentAssigneeSubscriber
     public function __construct(private readonly IncidentLifecycle $incidents) {}
 
     /**
-     * The membership changes that can take away someone's access to incidents.
+     * Register the membership changes that can take away someone's access to incidents.
      *
      * @param  Dispatcher  $events
      * @return array<class-string, string>
@@ -38,7 +40,7 @@ final class IncidentAssigneeSubscriber
     }
 
     /**
-     * Unassigns every incident in the account from a member who left or was removed.
+     * Unassign every incident in the account from a member who left or was removed.
      *
      * @param  MemberRemoved  $event
      * @return void
@@ -49,7 +51,7 @@ final class IncidentAssigneeSubscriber
     }
 
     /**
-     * Unassigns a member whose new role or service list means they can no longer be assigned incidents.
+     * Unassign a member whose new role or service list means they can no longer be assigned incidents.
      *
      * @param  MemberRoleChanged|MemberServiceAccessChanged  $event
      * @return void

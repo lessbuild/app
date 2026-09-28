@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ListDeploymentsController
 {
     /**
-     * Returns the deploys the token can see, newest first.
+     * Return the deploys the token can see, newest first.
      *
      * @param  Request  $request
      * @param  User  $user

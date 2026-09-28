@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\DB;
 class Deployments
 {
     /**
+     * Create a new Deployments instance.
+     *
      * Queues builds.
      *
      * @param  BuildPayload  $payload  Captures what each build deploys with.
@@ -28,7 +30,8 @@ class Deployments
     public function __construct(private readonly BuildPayload $payload) {}
 
     /**
-     * Why the repository's environment won't take a deploy now (locked, or outside its window), or null.
+     * Explain why the repository's environment won't take a deploy now (locked, or outside its window), or return
+     * null.
      *
      * @param  Repository  $repository
      * @return string|null
@@ -67,7 +70,7 @@ class Deployments
     }
 
     /**
-     * Queues a build for the repository unless its website already has one active (null then). The build waits for
+     * Queue a build for the repository unless its website already has one active (null then). The build waits for
      * approval when its environment requires it, in which case the approvers are notified after commit; otherwise it's
      * published after commit.
      *
@@ -102,7 +105,8 @@ class Deployments
     }
 
     /**
-     * A deploy that failed after going live (or failed its observation) goes back to the last good release, if the environment asks for that.
+     * Roll a deploy that failed after going live (or failed its observation) back to the last good release, if the
+     * environment asks for that.
      *
      * @param  Build  $failed
      * @return void

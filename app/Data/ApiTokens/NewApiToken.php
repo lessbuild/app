@@ -10,6 +10,8 @@ use SensitiveParameter;
 final readonly class NewApiToken
 {
     /**
+     * Create a new NewApiToken instance.
+     *
      * A token that has just been created, with the one chance to see its secret.
      *
      * @param  ApiToken  $token  The stored token.

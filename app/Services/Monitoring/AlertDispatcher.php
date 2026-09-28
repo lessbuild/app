@@ -16,6 +16,8 @@ use LogicException;
 final class AlertDispatcher
 {
     /**
+     * Create a new AlertDispatcher instance.
+     *
      * Writes alert deliveries and queues them.
      *
      * @param  AlertDeliveryQueue  $queue  Queues each delivery's job.
@@ -24,6 +26,8 @@ final class AlertDispatcher
     public function __construct(private readonly AlertDeliveryQueue $queue, private readonly TelemetryRedactor $redactor) {}
 
     /**
+     * Queue an alert to every enabled destination routed for the incident's event (opened or recovered).
+     *
      * Called in the incident transaction, after locking its project, environment, source and incident.
      *
      * @param  Incident  $incident
@@ -78,7 +82,7 @@ final class AlertDispatcher
     }
 
     /**
-     * Writes a delivery for the destination and queues it, now or at `$sendAt`.
+     * Write a delivery for the destination and queues it, now or at `$sendAt`.
      *
      * @param  AlertDestination  $destination
      * @param  array<string, mixed>  $payload

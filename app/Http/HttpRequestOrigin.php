@@ -11,6 +11,8 @@ use Illuminate\Http\Request;
 final class HttpRequestOrigin implements RequestOrigin
 {
     /**
+     * Create a new HttpRequestOrigin instance.
+     *
      * Reads the request's origin for audit entries.
      *
      * @param  Application  $app  Used to tell console runs from requests and to reach the current request.
@@ -18,7 +20,7 @@ final class HttpRequestOrigin implements RequestOrigin
     public function __construct(private readonly Application $app) {}
 
     /**
-     * The request's client IP; null in console commands and queued jobs.
+     * Get the request's client IP; null in console commands and queued jobs.
      *
      * @return string|null
      */
@@ -28,7 +30,7 @@ final class HttpRequestOrigin implements RequestOrigin
     }
 
     /**
-     * The request's user agent; null in console commands and queued jobs.
+     * Get the request's user agent; null in console commands and queued jobs.
      *
      * @return string|null
      */
@@ -38,7 +40,8 @@ final class HttpRequestOrigin implements RequestOrigin
     }
 
     /**
-     * The current request, or null outside one. Tests count as requests, so audit entries in tests carry an origin.
+     * Get the current request, or null outside one. Tests count as requests, so audit entries in tests carry an
+     * origin.
      *
      * @return Request|null
      */

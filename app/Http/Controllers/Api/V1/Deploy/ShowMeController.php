@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
 final class ShowMeController
 {
     /**
-     * Returns the token's person and account.
+     * Return the token's person and account.
      *
      * @param  User  $user
      * @param  Account  $account

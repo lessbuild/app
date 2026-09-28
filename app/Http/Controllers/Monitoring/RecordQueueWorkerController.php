@@ -12,7 +12,7 @@ use Illuminate\Http\JsonResponse;
 final class RecordQueueWorkerController
 {
     /**
-     * Records the worker heartbeat for the monitor the middleware authenticated and returns its receipt, never cached.
+     * Record the worker heartbeat for the monitor the middleware authenticated and returns its receipt, never cached.
      *
      * @param  StoreQueueWorkerRequest  $request
      * @param  RecordQueueWorker  $workers

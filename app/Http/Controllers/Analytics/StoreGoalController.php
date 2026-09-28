@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreGoalController
 {
     /**
-     * Creates a goal on a site.
+     * Create a goal on a site.
      *
      * @param  GoalRequest  $request
      * @param  User  $user

@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final readonly class InvitationRow
 {
     /**
+     * Create a new InvitationRow instance.
+     *
      * A pending invitation on the members page.
      *
      * @param  string  $id  The invitation's ID, used to revoke it.

@@ -15,6 +15,8 @@ use Illuminate\Http\RedirectResponse;
 final class DisableProjectServiceController
 {
     /**
+     * Create a new DisableProjectServiceController instance.
+     *
      * Turns services off in projects.
      *
      * @param  ServiceRegistry  $services  Looks up the service in the URL.
@@ -22,7 +24,7 @@ final class DisableProjectServiceController
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * Turns a service off in the project. Its data is kept for when it's turned back on.
+     * Turn a service off in the project. Its data is kept for when it's turned back on.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -39,7 +41,7 @@ final class DisableProjectServiceController
     }
 
     /**
-     * The service named in the URL; unknown keys are a 404.
+     * Find the service named in the URL; unknown keys are a 404.
      *
      * @param  string  $key
      * @return PlatformService

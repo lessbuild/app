@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowApiTokensController
 {
     /**
-     * The API tokens page: the account's tokens and the form for new ones.
+     * Show the API tokens page: the account's tokens and the form for new ones.
      *
      * @param  Account  $account
      * @param  User  $user

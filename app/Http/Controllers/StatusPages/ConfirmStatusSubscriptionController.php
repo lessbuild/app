@@ -12,7 +12,7 @@ use Illuminate\Http\RedirectResponse;
 final class ConfirmStatusSubscriptionController
 {
     /**
-     * Confirms the subscription when the token matches; anything else is a 404.
+     * Confirm the subscription when the token matches; anything else is a 404.
      *
      * @param  string  $subscription
      * @param  string  $token

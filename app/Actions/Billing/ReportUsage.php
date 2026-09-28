@@ -12,6 +12,8 @@ use App\Platform\ServiceRegistry;
 final class ReportUsage
 {
     /**
+     * Create a new ReportUsage instance.
+     *
      * Reports metered usage beyond each account's allowance to the payment provider.
      *
      * @param  PaymentProvider  $provider  Receives the usage.

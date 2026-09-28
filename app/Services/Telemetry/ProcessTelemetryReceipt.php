@@ -22,6 +22,8 @@ use UnexpectedValueException;
 final class ProcessTelemetryReceipt
 {
     /**
+     * Create a new ProcessTelemetryReceipt instance.
+     *
      * Processes queued telemetry batches.
      *
      * @param  TelemetryQueue  $queue  Locks the receipt and marks it failed when needed.
@@ -41,7 +43,7 @@ final class ProcessTelemetryReceipt
     ) {}
 
     /**
-     * Returns a release delay when an early delivery must wait for its retry window.
+     * Return a release delay when an early delivery must wait for its retry window.
      *
      * @param  string  $receiptId
      * @param  int  $generation
@@ -200,7 +202,7 @@ final class ProcessTelemetryReceipt
     }
 
     /**
-     * Marks the receipt failed after its last attempt, keeping the last error code (or recording that the worker was
+     * Mark the receipt failed after its last attempt, keeping the last error code (or recording that the worker was
      * interrupted). Receipts that finished or were retried since are left alone.
      *
      * @param  string  $receiptId

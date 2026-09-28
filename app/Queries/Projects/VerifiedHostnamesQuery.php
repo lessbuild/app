@@ -9,7 +9,7 @@ use App\Models\Project;
 final class VerifiedHostnamesQuery
 {
     /**
-     * The project's verified hostnames, in ASCII.
+     * Get the project's verified hostnames, in ASCII.
      *
      * @param  Project  $project
      * @return list<string> the project's verified hostnames (ASCII)

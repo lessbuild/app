@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteSiteController
 {
     /**
-     * Deletes an analytics site and everything it collected.
+     * Delete an analytics site and everything it collected.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -12,8 +12,8 @@ use App\Models\User;
 final class TokenAccountQuery
 {
     /**
-     * The account a token acts in, or null once its creator has left the account or lost the
-     * right to use API tokens there. Checked on every request, so removing someone disables their tokens.
+     * Get the account a token acts in, or null once its creator has left the account or lost the right to use API
+     * tokens there. Checked on every request, so removing someone disables their tokens.
      *
      * @param  User  $user
      * @param  ApiToken  $token

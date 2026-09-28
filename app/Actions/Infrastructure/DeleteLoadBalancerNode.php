@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteLoadBalancerNode
 {
     /**
+     * Create a new DeleteLoadBalancerNode instance.
+     *
      * Removes a server from behind a load balancer.
      *
      * @param  LoadBalancerChanges  $changes  Re-applies the load balancer's configuration.

@@ -35,6 +35,8 @@ final class PublishBuild implements ShouldQueue
     public int $backoff = 15;
 
     /**
+     * Create a new PublishBuild instance.
+     *
      * Starts a queued deploy on its website's server.
      *
      * @param  int  $buildId  The queued build to start.
@@ -42,7 +44,7 @@ final class PublishBuild implements ShouldQueue
     public function __construct(public readonly int $buildId) {}
 
     /**
-     * Claims the build, names its release and uploads the deploy script to run in the background on the server. The
+     * Claim the build, names its release and uploads the deploy script to run in the background on the server. The
      * script reports its progress back; if uploading fails, the build is put back in the queue so the retry starts it
      * cleanly.
      *
@@ -84,7 +86,7 @@ final class PublishBuild implements ShouldQueue
     }
 
     /**
-     * Marks a build that never started as failed, with the reason.
+     * Mark a build that never started as failed, with the reason.
      *
      * @param  Throwable  $exception
      * @return void

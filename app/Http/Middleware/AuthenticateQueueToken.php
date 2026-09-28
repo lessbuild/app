@@ -15,6 +15,8 @@ use Symfony\Component\HttpFoundation\Response;
 final class AuthenticateQueueToken
 {
     /**
+     * Create a new AuthenticateQueueToken instance.
+     *
      * Authenticates queue collectors and workers.
      *
      * @param  MonitorQueue  $queue  Checks the monitor still accepts signals.
@@ -23,7 +25,7 @@ final class AuthenticateQueueToken
     public function __construct(private readonly MonitorQueue $queue, private readonly ThrottleRequests $throttle) {}
 
     /**
-     * Finds the queue monitor in the URL and checks the bearer key against its hash, then passes the monitor and key
+     * Find the queue monitor in the URL and checks the bearer key against its hash, then passes the monitor and key
      * hash on as request attributes. Wrong keys and unavailable monitors get the same 401.
      *
      * @param  Request  $request

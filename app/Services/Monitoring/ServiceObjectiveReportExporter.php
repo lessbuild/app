@@ -13,7 +13,7 @@ use RuntimeException;
 final class ServiceObjectiveReportExporter
 {
     /**
-     * The SLO report as a two-line CSV, with text cells protected from spreadsheet formulas.
+     * Build the SLO report as a two-line CSV, with text cells protected from spreadsheet formulas.
      *
      * @param  ServiceLevelObjective  $objective
      * @param  array<string, mixed>  $report
@@ -63,7 +63,7 @@ final class ServiceObjectiveReportExporter
     }
 
     /**
-     * A download name from the SLO's name and the report's end.
+     * Build a download name from the SLO's name and the report's end.
      *
      * @param  ServiceLevelObjective  $objective
      * @param  CarbonImmutable  $until

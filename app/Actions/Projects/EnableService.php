@@ -16,6 +16,8 @@ use Illuminate\Support\Facades\Gate;
 final class EnableService
 {
     /**
+     * Create a new EnableService instance.
+     *
      * Turns a service on in a project.
      *
      * @param  ServiceRegistry  $services  Rejects keys that aren't registered services.

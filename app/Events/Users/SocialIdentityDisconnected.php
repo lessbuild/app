@@ -13,6 +13,8 @@ final readonly class SocialIdentityDisconnected
     use Dispatchable;
 
     /**
+     * Create a new SocialIdentityDisconnected instance.
+     *
      * Someone disconnected a sign-in provider account. Recorded in their personal security log.
      *
      * @param  User  $user  The person.

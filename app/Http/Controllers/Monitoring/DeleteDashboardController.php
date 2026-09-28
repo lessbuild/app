@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteDashboardController
 {
     /**
-     * Deletes a dashboard.
+     * Delete a dashboard.
      *
      * @param  User  $user
      * @param  Project  $project

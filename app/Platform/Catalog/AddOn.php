@@ -7,6 +7,8 @@ namespace App\Platform\Catalog;
 final readonly class AddOn
 {
     /**
+     * Create a new AddOn instance.
+     *
      * Something bought in units on top of a tier, such as extra seats or events.
      *
      * @param  string  $key  Stable identifier stored on billing items.

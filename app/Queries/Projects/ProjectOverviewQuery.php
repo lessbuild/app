@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 final class ProjectOverviewQuery
 {
     /**
+     * Create a new ProjectOverviewQuery instance.
+     *
      * Assembles a project's overview.
      *
      * @param  ServiceRegistry  $services  Every registered service, for the service cards.
@@ -24,8 +26,8 @@ final class ProjectOverviewQuery
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * The project, its environments (production first), a card for every service saying whether it's on and what the
-     * viewer may do with it, and whether the viewer may change the project.
+     * Build the project overview: the project, its environments (production first), a card for every service saying
+     * whether it's on and what the viewer may do with it, and whether the viewer may change the project.
      *
      * @param  Project  $project
      * @param  User  $viewer

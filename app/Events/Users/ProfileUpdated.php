@@ -12,6 +12,8 @@ final readonly class ProfileUpdated
     use Dispatchable;
 
     /**
+     * Create a new ProfileUpdated instance.
+     *
      * Someone changed their name or email. Recorded in their personal security log.
      *
      * @param  User  $user  The person, already carrying the change.

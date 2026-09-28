@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteEnvironmentSettingController
 {
     /**
-     * Removes one variable, process or resource from an environment; the server changes with the next deploy.
+     * Remove one variable, process or resource from an environment; the server changes with the next deploy.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class RenameAccountController
 {
     /**
-     * Renames the account.
+     * Rename the account.
      *
      * @param  Account  $account
      * @param  Request  $request

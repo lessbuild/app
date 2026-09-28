@@ -32,6 +32,8 @@ use Illuminate\Support\Carbon;
 class IssueDigestDelivery extends Model
 {
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

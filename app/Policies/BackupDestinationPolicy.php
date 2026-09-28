@@ -17,7 +17,7 @@ final class BackupDestinationPolicy
     use ChecksAccountRole;
 
     /**
-     * Adding a storage destination for backups: people who manage the account's settings.
+     * Determine whether the user can add a storage destination for backups: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -29,7 +29,7 @@ final class BackupDestinationPolicy
     }
 
     /**
-     * Changing a destination's credentials or settings: the same people.
+     * Determine whether the user can change a destination's credentials or settings: the same people.
      *
      * @param  User  $user
      * @param  BackupDestination  $destination
@@ -41,7 +41,7 @@ final class BackupDestinationPolicy
     }
 
     /**
-     * Removing a destination, allowed to the same people as update.
+     * Determine whether the user can remove a destination, which the same people as update can.
      *
      * @param  User  $user
      * @param  BackupDestination  $destination

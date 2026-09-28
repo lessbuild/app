@@ -11,8 +11,8 @@ use App\Models\User;
 final class ServerTerminalSessionPolicy
 {
     /**
-     * Typing into and reading a terminal: only the person who opened it, and only while they may still run commands on
-     * the server.
+     * Determine whether the user can type into and read a terminal: only the person who opened it, and only while they
+     * may still run commands on the server.
      *
      * @param  User  $user
      * @param  ServerTerminalSession  $terminal

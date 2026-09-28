@@ -14,7 +14,7 @@ use App\Platform\ServiceNavItem;
 final class MonitoringService implements PlatformService
 {
     /**
-     * Stored on projects and billing items as `monitoring`.
+     * Get the service's key, stored on projects and billing items as `monitoring`.
      *
      * @return string
      */
@@ -24,7 +24,7 @@ final class MonitoringService implements PlatformService
     }
 
     /**
-     * Shown as "Monitoring".
+     * Get the service's name, shown as "Monitoring".
      *
      * @return string
      */
@@ -34,7 +34,7 @@ final class MonitoringService implements PlatformService
     }
 
     /**
-     * Describes Monitoring on the service cards.
+     * Describe Monitoring on the service cards.
      *
      * @return string
      */
@@ -44,7 +44,7 @@ final class MonitoringService implements PlatformService
     }
 
     /**
-     * A check mark, standing for passing checks.
+     * Get the service's icon: a check mark, standing for passing checks.
      *
      * @return string
      */
@@ -54,8 +54,8 @@ final class MonitoringService implements PlatformService
     }
 
     /**
-     * Monitors, incidents, issues, telemetry events and traces, metrics and dashboards, releases, SLOs,
-     * alerting, status pages and the telemetry setup.
+     * Get the service's pages: monitors, incidents, issues, telemetry events and traces, metrics and dashboards,
+     * releases, SLOs, alerting, status pages and the telemetry setup.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -77,7 +77,7 @@ final class MonitoringService implements PlatformService
     }
 
     /**
-     * Monitoring read and write.
+     * Get the service's API scopes: Monitoring read and write.
      *
      * @return list<ApiScope>
      */
@@ -87,7 +87,7 @@ final class MonitoringService implements PlatformService
     }
 
     /**
-     * Monitor's tiers and usage meters, carried over unchanged.
+     * Get Monitor's tiers and usage meters, carried over unchanged.
      *
      * @return ServiceBilling
      */

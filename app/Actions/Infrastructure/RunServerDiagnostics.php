@@ -18,6 +18,8 @@ use Illuminate\Support\Str;
 final class RunServerDiagnostics
 {
     /**
+     * Create a new RunServerDiagnostics instance.
+     *
      * Starts a diagnostic run on a server.
      *
      * @param  ServerDiagnostics  $diagnostics  Checks the server can be diagnosed at all.

@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 final class RetryAlertDelivery
 {
     /**
+     * Create a new RetryAlertDelivery instance.
+     *
      * Resends a failed or uncertain alert delivery.
      *
      * @param  AlertDeliveryQueue  $queue  Locks the delivery.

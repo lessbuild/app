@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class TokenAccount implements ContextualAttribute
 {
     /**
-     * The account the `token.account` middleware put on the request; 403 without one.
+     * Resolve the account the `token.account` middleware put on the request; 403 without one.
      *
      * @param  TokenAccount  $attribute
      * @param  Container  $container

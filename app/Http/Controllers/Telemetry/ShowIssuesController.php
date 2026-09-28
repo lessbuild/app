@@ -19,7 +19,7 @@ use Illuminate\Contracts\View\View;
 final class ShowIssuesController
 {
     /**
-     * The issues list, 20 to a page, with titles redacted.
+     * Show the issues list, 20 to a page, with titles redacted.
      *
      * @param  SearchIssuesRequest  $request
      * @param  User  $user

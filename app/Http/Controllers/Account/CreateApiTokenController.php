@@ -16,7 +16,7 @@ use Illuminate\Http\RedirectResponse;
 final class CreateApiTokenController
 {
     /**
-     * Creates an API token and flashes its secret for exactly one page view; only the hash is kept.
+     * Create an API token and flashes its secret for exactly one page view; only the hash is kept.
      *
      * @param  Account  $account
      * @param  CreateApiTokenRequest  $request

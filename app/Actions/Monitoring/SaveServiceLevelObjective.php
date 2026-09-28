@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveServiceLevelObjective
 {
     /**
+     * Create a new SaveServiceLevelObjective instance.
+     *
      * Creates or changes an SLO.
      *
      * @param  TelemetryRedactor  $redactor  Redacts its name, service and route.

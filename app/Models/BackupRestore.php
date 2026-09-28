@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
 class BackupRestore extends Model
 {
     /**
-     * The backup being restored.
+     * Get the backup being restored.
      *
      * @return BelongsTo<WebsiteBackup, $this>
      */
@@ -38,6 +38,8 @@ class BackupRestore extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

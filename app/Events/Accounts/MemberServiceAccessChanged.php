@@ -13,6 +13,8 @@ final readonly class MemberServiceAccessChanged
     use Dispatchable;
 
     /**
+     * Create a new MemberServiceAccessChanged instance.
+     *
      * The services a member may use changed. The audit log records it, and incidents in services they lost are
      * unassigned from them.
      *

@@ -14,9 +14,9 @@ use Illuminate\Database\Eloquent\Builder;
 final class EventsQuery
 {
     /**
-     * The project's events matching the event browser's filters (environment, release, type, severity, service, trace,
-     * status, duration and text) inside the time window. A custom window's end is exclusive, since its minutes come from
-     * a form.
+     * Query the project's events matching the event browser's filters (environment, release, type, severity, service,
+     * trace, status, duration and text) inside the time window. A custom window's end is exclusive, since its minutes
+     * come from a form.
      *
      * @param  Project  $project
      * @param  array<string, mixed>  $filters
@@ -60,7 +60,7 @@ final class EventsQuery
     }
 
     /**
-     * Orders events newest first, oldest first, or slowest first (events without a duration last), with ties broken by
+     * Order events newest first, oldest first, or slowest first (events without a duration last), with ties broken by
      * the precise timestamp and ID.
      *
      * @param  Builder<TelemetryEvent>  $query
@@ -78,8 +78,8 @@ final class EventsQuery
     }
 
     /**
-     * The time window for a range: all time, a custom range entered in UTC, or the last 15 minutes, hour, day, 7 or 30
-     * days.
+     * Work out the time window for a range: all time, a custom range entered in UTC, or the last 15 minutes, hour,
+     * day, 7 or 30 days.
      *
      * @param  array<string, mixed>  $filters
      * @return array{CarbonImmutable|null, CarbonImmutable|null}

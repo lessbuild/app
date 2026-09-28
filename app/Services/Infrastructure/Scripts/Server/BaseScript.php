@@ -11,7 +11,8 @@ use App\Services\Infrastructure\ProvisioningCallbackUrl;
 class BaseScript implements ServerScript
 {
     /**
-     * Base Script
+     * Render the start of the provisioning script: strict error handling, the log, its uploads, and the failure
+     * report.
      *
      * @param  int  $step
      * @param  Server  $server

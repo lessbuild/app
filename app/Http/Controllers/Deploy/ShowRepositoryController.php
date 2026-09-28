@@ -17,8 +17,8 @@ use Illuminate\Http\Request;
 final class ShowRepositoryController
 {
     /**
-     * A repository's page, in tabs: recent deploys, push deploys (with the latest webhook deliveries), and settings for
-     * people who may change them.
+     * Show a repository's page, in tabs: recent deploys, push deploys (with the latest webhook deliveries), and
+     * settings for people who may change them.
      *
      * @param  Request  $request
      * @param  User  $user

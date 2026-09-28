@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Gate;
 final class SaveBackupSchedule
 {
     /**
-     * Back a website up to a destination on a schedule (one schedule per destination; saving again changes it).
+     * Schedule backups of a website to a destination (one schedule per destination; saving again changes it).
      *
      * @param  User  $actor
      * @param  Website  $website

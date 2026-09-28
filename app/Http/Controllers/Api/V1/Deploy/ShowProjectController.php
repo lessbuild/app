@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
 final class ShowProjectController
 {
     /**
-     * Returns one project with its environments.
+     * Return one project with its environments.
      *
      * @param  User  $user
      * @param  Account  $account

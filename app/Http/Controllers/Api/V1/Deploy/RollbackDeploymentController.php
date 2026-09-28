@@ -16,7 +16,7 @@ use Illuminate\Http\JsonResponse;
 final class RollbackDeploymentController
 {
     /**
-     * Queues the rollback (202).
+     * Queue the rollback (202).
      *
      * @param  User  $user
      * @param  Account  $account

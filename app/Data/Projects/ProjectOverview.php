@@ -10,6 +10,8 @@ use App\Models\Project;
 final readonly class ProjectOverview
 {
     /**
+     * Create a new ProjectOverview instance.
+     *
      * Everything the project overview page shows.
      *
      * @param  Project  $project  The project.
@@ -25,7 +27,7 @@ final readonly class ProjectOverview
     ) {}
 
     /**
-     * The services turned on in this project, in registry order.
+     * Get the services turned on in this project, in registry order.
      *
      * @return list<ServiceCard>
      */

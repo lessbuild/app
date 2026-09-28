@@ -31,6 +31,8 @@ class AnalyticsGoalConversion extends Model
     protected $fillable = ['site_id', 'goal_id', 'goal_version_id', 'analytics_event_id', 'visit_id', 'converted_at'];
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -41,7 +43,7 @@ class AnalyticsGoalConversion extends Model
     }
 
     /**
-     * The site the conversion happened on.
+     * Get the site the conversion happened on.
      *
      * @return BelongsTo<AnalyticsSite, $this>
      */
@@ -51,7 +53,7 @@ class AnalyticsGoalConversion extends Model
     }
 
     /**
-     * The goal that was completed.
+     * Get the goal that was completed.
      *
      * @return BelongsTo<AnalyticsGoal, $this>
      */
@@ -61,7 +63,7 @@ class AnalyticsGoalConversion extends Model
     }
 
     /**
-     * The goal's definition that matched.
+     * Get the goal's definition that matched.
      *
      * @return BelongsTo<AnalyticsGoalVersion, $this>
      */
@@ -71,7 +73,7 @@ class AnalyticsGoalConversion extends Model
     }
 
     /**
-     * The event that completed it.
+     * Get the event that completed it.
      *
      * @return BelongsTo<AnalyticsEvent, $this>
      */
@@ -81,7 +83,7 @@ class AnalyticsGoalConversion extends Model
     }
 
     /**
-     * The visit it happened in.
+     * Get the visit it happened in.
      *
      * @return BelongsTo<AnalyticsVisit, $this>
      */

@@ -13,7 +13,7 @@ use Illuminate\Http\RedirectResponse;
 final class CheckProviderConnectionController
 {
     /**
-     * Checks the provider's stored credential now and shows the result.
+     * Check the provider's stored credential now and shows the result.
      *
      * @param  User  $user
      * @param  Provider  $provider

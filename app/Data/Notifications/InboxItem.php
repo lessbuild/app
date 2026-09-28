@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class InboxItem
 {
     /**
+     * Create a new InboxItem instance.
+     *
      * One notification in the inbox.
      *
      * @param  string  $id  The notification's ID, used to mark it read.

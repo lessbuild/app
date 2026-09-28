@@ -11,6 +11,8 @@ use App\Models\Server;
 class ServerShell
 {
     /**
+     * Create a new ServerShell instance.
+     *
      * Runs commands on servers.
      *
      * @param  Runner  $runner  Builds the SSH client.
@@ -18,7 +20,7 @@ class ServerShell
     public function __construct(private readonly Runner $runner) {}
 
     /**
-     * Runs a command as root and returns its output and exit code. Output is only logged when asked, since it can
+     * Run a command as root and returns its output and exit code. Output is only logged when asked, since it can
      * contain secrets.
      *
      * @param  Server  $server

@@ -24,6 +24,8 @@ final class UsageAlerts
     public const THRESHOLDS = [80, 100];
 
     /**
+     * Create a new UsageAlerts instance.
+     *
      * Sends usage alerts.
      *
      * @param  TelemetryUsage  $usage  Counts the month's events and reads the allowance.
@@ -32,7 +34,8 @@ final class UsageAlerts
     public function __construct(private readonly TelemetryUsage $usage, private readonly EmailDeliveryLedger $ledger) {}
 
     /**
-     * The account's usage this month: events counted, the allowance, the percentage used and the thresholds crossed.
+     * Summarise the account's usage this month: events counted, the allowance, the percentage used and the thresholds
+     * crossed.
      *
      * @param  Account  $account
      * @param  CarbonImmutable|null  $at
@@ -56,7 +59,7 @@ final class UsageAlerts
     }
 
     /**
-     * Emails each verified owner of accounts that sent telemetry this month about the highest threshold crossed, once
+     * Email each verified owner of accounts that sent telemetry this month about the highest threshold crossed, once
      * per threshold per month, and returns how many were sent, skipped or failed.
      *
      * @param  CarbonImmutable|null  $at
@@ -88,7 +91,7 @@ final class UsageAlerts
     }
 
     /**
-     * The account's owners with a verified email.
+     * Get the account's owners with a verified email.
      *
      * @param  Account  $account
      * @return list<User>

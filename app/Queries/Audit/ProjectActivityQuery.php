@@ -12,8 +12,8 @@ use Carbon\CarbonImmutable;
 final class ProjectActivityQuery
 {
     /**
-     * The latest entries of a project's activity for its overview page. Addresses and devices are left out; the full
-     * audit log shows them to people allowed to see it.
+     * Get the latest entries of a project's activity for its overview page. Addresses and devices are left out; the
+     * full audit log shows them to people allowed to see it.
      *
      * @param  string  $projectId
      * @param  int  $limit

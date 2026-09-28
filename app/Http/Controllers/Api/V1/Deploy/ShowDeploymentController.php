@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
 final class ShowDeploymentController
 {
     /**
-     * Returns one deploy.
+     * Return one deploy.
      *
      * @param  User  $user
      * @param  Account  $account

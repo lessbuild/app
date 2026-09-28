@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteLoadBalancerNodeController
 {
     /**
-     * Takes a server out from behind a load balancer.
+     * Take a server out from behind a load balancer.
      *
      * @param  User  $user
      * @param  Project  $project

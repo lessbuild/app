@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RetryWebsiteProvisioningController
 {
     /**
-     * Tries a failed website setup again.
+     * Try a failed website setup again.
      *
      * @param  User  $user
      * @param  Project  $project

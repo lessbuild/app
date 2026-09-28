@@ -47,7 +47,7 @@ final class MetricSeries extends Model
     use HasFactory;
 
     /**
-     * Limits a query to series in the account's environments.
+     * Limit a query to series in the account's environments.
      *
      * @param  Builder<MetricSeries>  $query
      * @param  Account  $account
@@ -60,7 +60,7 @@ final class MetricSeries extends Model
     }
 
     /**
-     * The environment that reports the series.
+     * Get the environment that reports the series.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -70,7 +70,7 @@ final class MetricSeries extends Model
     }
 
     /**
-     * Its data points.
+     * Get the series's data points.
      *
      * @return HasMany<MetricSample, $this>
      */
@@ -80,7 +80,7 @@ final class MetricSeries extends Model
     }
 
     /**
-     * Whether a per-second rate makes sense: only monotonic sums (counters) with a known temporality.
+     * Determine whether a per-second rate makes sense: only monotonic sums (counters) with a known temporality.
      *
      * @return bool
      */
@@ -90,6 +90,8 @@ final class MetricSeries extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `descriptor` (the OTLP metric's attributes and unit) as JSON.
      *
      * @return array<string, string>

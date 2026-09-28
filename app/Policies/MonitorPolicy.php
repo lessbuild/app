@@ -14,7 +14,8 @@ final class MonitorPolicy
     use ManagesMonitoring;
 
     /**
-     * Creating a monitor: people who manage Monitoring in the project, with a verified email since monitors send alerts.
+     * Determine whether the user can create a monitor: people who manage Monitoring in the project, with a verified
+     * email since monitors send alerts.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -26,7 +27,8 @@ final class MonitorPolicy
     }
 
     /**
-     * Changing, pausing or resuming a monitor: the same people as create, while it isn't archived.
+     * Determine whether the user can change, pause or resume a monitor: the same people as create, while it isn't
+     * archived.
      *
      * @param  User  $user
      * @param  Monitor  $record
@@ -38,7 +40,8 @@ final class MonitorPolicy
     }
 
     /**
-     * Heartbeat and queue monitors have a key their jobs sign in with.
+     * Determine whether the user can replace or revoke a monitor's key. Only heartbeat and queue monitors have a key
+     * their jobs sign in with.
      *
      * @param  User  $user
      * @param  Monitor  $record
@@ -50,7 +53,7 @@ final class MonitorPolicy
     }
 
     /**
-     * Archiving a monitor, allowed to the same people as update.
+     * Determine whether the user can archive a monitor, which the same people as update can.
      *
      * @param  User  $user
      * @param  Monitor  $record

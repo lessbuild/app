@@ -14,6 +14,8 @@ final class ResetUserPassword implements ResetsUserPasswords
     use PasswordValidationRules;
 
     /**
+     * Create a new ResetUserPassword instance.
+     *
      * Fortify's password-reset adapter.
      *
      * @param  ChangePassword  $changePassword  Sets the new password.
@@ -21,7 +23,7 @@ final class ResetUserPassword implements ResetsUserPasswords
     public function __construct(private readonly ChangePassword $changePassword) {}
 
     /**
-     * Validates the new password from a reset link and sets it.
+     * Validate the new password from a reset link and sets it.
      *
      * @param  User  $user
      * @param  array<string, string>  $input

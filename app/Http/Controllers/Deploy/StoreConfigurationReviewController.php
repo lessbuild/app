@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreConfigurationReviewController
 {
     /**
-     * Opens a review of the posted configuration document.
+     * Open a review of the posted configuration document.
      *
      * @param  ConfigurationRequest  $request
      * @param  User  $user

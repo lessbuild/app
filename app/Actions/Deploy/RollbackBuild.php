@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 final class RollbackBuild
 {
     /**
+     * Create a new RollbackBuild instance.
+     *
      * Rolls a website back to an earlier release.
      *
      * @param  Entitlements  $entitlements  Checks the plan keeps releases to roll back to.

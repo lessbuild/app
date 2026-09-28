@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 final class DeleteBackupDestination
 {
     /**
+     * Create a new DeleteBackupDestination instance.
+     *
      * Removes a backup destination that nothing uses.
      *
      * @param  RecordAuditEntry  $audit  Records the removal.

@@ -45,7 +45,7 @@ final class Release extends Model
     use HasFactory;
 
     /**
-     * Limits a query to releases of the account's projects.
+     * Limit a query to releases of the account's projects.
      *
      * @param  Builder<Release>  $query
      * @param  Account  $account
@@ -58,7 +58,7 @@ final class Release extends Model
     }
 
     /**
-     * The project the release belongs to.
+     * Get the project the release belongs to.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -68,7 +68,7 @@ final class Release extends Model
     }
 
     /**
-     * Events reported by this release.
+     * Get the events reported by this release.
      *
      * @return HasMany<TelemetryEvent, $this>
      */
@@ -78,7 +78,7 @@ final class Release extends Model
     }
 
     /**
-     * When and where the release was deployed.
+     * Get when and where the release was deployed.
      *
      * @return HasMany<Deployment, $this>
      */
@@ -88,7 +88,7 @@ final class Release extends Model
     }
 
     /**
-     * The release's service as people read it: "namespace / service", or "Unspecified service".
+     * Describe the release's service as people read it: "namespace / service", or "Unspecified service".
      *
      * @return string
      */
@@ -100,6 +100,8 @@ final class Release extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -44,7 +44,7 @@ class AlertDeliveryAttempt extends Model
     protected $dateFormat = 'Y-m-d H:i:s.u';
 
     /**
-     * The delivery this was a try at sending.
+     * Get the delivery this was a try at sending.
      *
      * @return BelongsTo<AlertDelivery, $this>
      */
@@ -54,6 +54,8 @@ class AlertDeliveryAttempt extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `status` as an AlertDeliveryStatus.
      *
      * @return array<string, string>

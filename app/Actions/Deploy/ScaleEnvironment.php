@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 final class ScaleEnvironment
 {
     /**
+     * Create a new ScaleEnvironment instance.
+     *
      * Sets how many replicas an environment runs.
      *
      * @param  Entitlements  $entitlements  Checks the plan includes scaling.

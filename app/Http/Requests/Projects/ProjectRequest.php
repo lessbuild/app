@@ -10,7 +10,7 @@ use Illuminate\Foundation\Http\FormRequest;
 final class ProjectRequest extends FormRequest
 {
     /**
-     * A project's name and optional description.
+     * Get the validation rules: a project's name and optional description.
      *
      * @return array<string, mixed>
      */
@@ -23,7 +23,7 @@ final class ProjectRequest extends FormRequest
     }
 
     /**
-     * The project's details, with a blank description as none.
+     * Build the project's details, with a blank description as none.
      *
      * @return ProjectDetails
      */

@@ -14,8 +14,10 @@ final readonly class MemberRemoved
     use Dispatchable;
 
     /**
-     * A member left or was removed from the account. The audit log records it, the member is notified (unless they left), and incidents
-     * assigned to them are unassigned.
+     * Create a new MemberRemoved instance.
+     *
+     * A member left or was removed from the account. The audit log records it, the member is notified (unless they
+     * left), and incidents assigned to them are unassigned.
      *
      * @param  Account  $account  The account they left.
      * @param  User  $member  The person who is no longer a member.

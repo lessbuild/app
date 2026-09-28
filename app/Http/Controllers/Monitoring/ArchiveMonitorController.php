@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ArchiveMonitorController
 {
     /**
-     * Archives a monitor, keeping its history, if it hasn't changed since the page was opened.
+     * Archive a monitor, keeping its history, if it hasn't changed since the page was opened.
      *
      * @param  Request  $request
      * @param  User  $user

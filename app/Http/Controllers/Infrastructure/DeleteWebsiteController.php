@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteWebsiteController
 {
     /**
-     * Deletes a website; it's removed from its server in the background.
+     * Delete a website; it's removed from its server in the background.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -18,6 +18,8 @@ use Throwable;
 final class DeleteWebsiteDomain
 {
     /**
+     * Create a new DeleteWebsiteDomain instance.
+     *
      * Removes a domain from a website.
      *
      * @param  CloudflareDns  $cloudflare  Deletes its DNS record when Cloudflare manages it.

@@ -16,7 +16,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateProviderController
 {
     /**
-     * Changes a provider's name, credential or check settings.
+     * Change a provider's name, credential or check settings.
      *
      * @param  Account  $account
      * @param  ProviderRequest  $request

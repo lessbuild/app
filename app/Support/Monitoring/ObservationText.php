@@ -10,7 +10,7 @@ use App\Data\Monitoring\MonitorObservation;
 final class ObservationText
 {
     /**
-     * What a monitor checked, from the snapshot taken when an incident opened.
+     * Describe what a monitor checked, from the snapshot taken when an incident opened.
      *
      * @param  array<string, mixed>  $snapshot
      * @return string
@@ -36,7 +36,7 @@ final class ObservationText
     }
 
     /**
-     * The type-specific details of one observation. Never includes record values, URLs or keys.
+     * Describe the type-specific details of one observation. Never includes record values, URLs or keys.
      *
      * @param  array<string, mixed>  $details
      * @return list<string>
@@ -62,7 +62,7 @@ final class ObservationText
     }
 
     /**
-     * Prints a scalar snapshot value, or the placeholder when the value is missing or isn't printable.
+     * Print a scalar snapshot value, or the placeholder when the value is missing or isn't printable.
      *
      * @param  mixed  $value
      * @param  string  $default

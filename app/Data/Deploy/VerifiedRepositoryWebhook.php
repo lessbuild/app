@@ -7,6 +7,8 @@ namespace App\Data\Deploy;
 final readonly class VerifiedRepositoryWebhook
 {
     /**
+     * Create a new VerifiedRepositoryWebhook instance.
+     *
      * Carry the verified delivery identity and normalized push or preview event fields.
      *
      * @param  string  $deliveryId  Provider delivery identifier used to deduplicate the webhook.

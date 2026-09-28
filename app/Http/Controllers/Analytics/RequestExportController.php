@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class RequestExportController
 {
     /**
-     * Starts a CSV export of a report with its filters and goes to the export's page to wait for it.
+     * Start a CSV export of a report with its filters and goes to the export's page to wait for it.
      *
      * @param  Request  $request
      * @param  User  $user

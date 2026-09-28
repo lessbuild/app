@@ -25,6 +25,8 @@ use Illuminate\Support\Carbon;
 class EnvironmentVariableVersion extends Model
 {
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `value`.
      *
      * @return array<string, string>

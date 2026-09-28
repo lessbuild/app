@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class PromoteBuildController
 {
     /**
-     * Promotes a deploy's commit to another of the project's environments, saying whether it's running or waiting for
+     * Promote a deploy's commit to another of the project's environments, saying whether it's running or waiting for
      * approval.
      *
      * @param  Request  $request

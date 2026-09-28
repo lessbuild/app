@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 final class DeleteAccountController
 {
     /**
-     * Deletes the account once the person has typed its name exactly, after a recent password confirmation.
+     * Delete the account once the person has typed its name exactly, after a recent password confirmation.
      *
      * @param  Account  $account
      * @param  Request  $request

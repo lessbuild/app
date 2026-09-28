@@ -15,7 +15,7 @@ use Illuminate\Http\JsonResponse;
 final class ShowDeploymentLogController
 {
     /**
-     * Returns the deploy's log, never cached.
+     * Return the deploy's log, never cached.
      *
      * @param  User  $user
      * @param  Account  $account

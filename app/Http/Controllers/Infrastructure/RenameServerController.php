@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class RenameServerController
 {
     /**
-     * Sets or clears the server's display name.
+     * Set or clears the server's display name.
      *
      * @param  Request  $request
      * @param  User  $user

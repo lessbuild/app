@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreWebsiteController
 {
     /**
-     * Creates a website and shows its database name and password once.
+     * Create a website and shows its database name and password once.
      *
      * @param  WebsiteRequest  $request
      * @param  User  $user

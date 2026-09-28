@@ -28,7 +28,7 @@ use Illuminate\Support\Carbon;
 class EnvironmentProcess extends Model
 {
     /**
-     * The environment the process runs in.
+     * Get the environment the process runs in.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -38,6 +38,8 @@ class EnvironmentProcess extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

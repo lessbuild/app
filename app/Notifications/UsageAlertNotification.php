@@ -12,6 +12,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 final class UsageAlertNotification extends InboxNotification
 {
     /**
+     * Create a new UsageAlertNotification instance.
+     *
      * Tells an account owner that Monitoring events for the month crossed a threshold of the plan's allowance.
      *
      * @param  Account  $account  The account.
@@ -21,7 +23,7 @@ final class UsageAlertNotification extends InboxNotification
     public function __construct(private readonly Account $account, private readonly array $usage, private readonly int $threshold) {}
 
     /**
-     * By email, because telemetry stops being accepted at 100%, and in the inbox.
+     * Get the notification's delivery channels: email, because telemetry stops being accepted at 100%, and the inbox.
      *
      * @param  object  $notifiable
      * @return list<string>
@@ -32,7 +34,7 @@ final class UsageAlertNotification extends InboxNotification
     }
 
     /**
-     * The usage, when the allowance resets, and a link to plans.
+     * Build the email: the usage, when the allowance resets, and a link to plans.
      *
      * @param  object  $notifiable
      * @return MailMessage
@@ -47,7 +49,7 @@ final class UsageAlertNotification extends InboxNotification
     }
 
     /**
-     * How much of the allowance is used, or that all of it is.
+     * Get the headline: how much of the allowance is used, or that all of it is.
      *
      * @return string
      */
@@ -59,7 +61,7 @@ final class UsageAlertNotification extends InboxNotification
     }
 
     /**
-     * The event count against the limit and what happens at 100%.
+     * Give the event count against the limit and what happens at 100%.
      *
      * @return string
      */
@@ -73,7 +75,7 @@ final class UsageAlertNotification extends InboxNotification
     }
 
     /**
-     * The billing page, to upgrade.
+     * Get the billing page, to upgrade.
      *
      * @return string
      */
@@ -83,7 +85,7 @@ final class UsageAlertNotification extends InboxNotification
     }
 
     /**
-     * The account the usage belongs to.
+     * Get the account the usage belongs to.
      *
      * @return string
      */

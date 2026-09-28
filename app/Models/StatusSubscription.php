@@ -37,7 +37,7 @@ class StatusSubscription extends Model
     use HasFactory;
 
     /**
-     * A lookup key for an email address, so a subscriber can be found without decrypting every row.
+     * Hash an email address into a lookup key, so a subscriber can be found without decrypting every row.
      *
      * @param  string  $email
      * @return string
@@ -48,7 +48,7 @@ class StatusSubscription extends Model
     }
 
     /**
-     * The page subscribed to.
+     * Get the page subscribed to.
      *
      * @return BelongsTo<StatusPage, $this>
      */
@@ -58,6 +58,8 @@ class StatusSubscription extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts the email address and the unsubscribe token.
      *
      * @return array<string, string>

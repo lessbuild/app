@@ -11,6 +11,8 @@ use App\Platform\Catalog\Tier;
 final readonly class AccountEntitlements
 {
     /**
+     * Create a new AccountEntitlements instance.
+     *
      * One account's limits and features, worked out by Entitlements.
      *
      * @param  array<string, Tier>  $tiers  service => the tier that applies
@@ -24,7 +26,7 @@ final readonly class AccountEntitlements
     ) {}
 
     /**
-     * The limit for a key, or null when the account has no limit there.
+     * Get the limit for a key, or null when the account has no limit there.
      *
      * @param  string  $key
      * @return int|null
@@ -35,7 +37,7 @@ final readonly class AccountEntitlements
     }
 
     /**
-     * Whether one of the account's tiers turns the feature on.
+     * Determine whether one of the account's tiers turns the feature on.
      *
      * @param  string  $flag
      * @return bool
@@ -46,7 +48,8 @@ final readonly class AccountEntitlements
     }
 
     /**
-     * May the account have $wanted of something limited by $key (e.g. members after adding one)?
+     * Decide whether the account may have `$wanted` of something limited by `$key` (for example, members after adding
+     * one).
      *
      * @param  string  $key
      * @param  int  $wanted

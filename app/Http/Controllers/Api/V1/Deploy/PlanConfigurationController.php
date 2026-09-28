@@ -17,7 +17,7 @@ use Illuminate\Http\JsonResponse;
 final class PlanConfigurationController
 {
     /**
-     * Returns the plan for the posted document.
+     * Return the plan for the posted document.
      *
      * @param  ConfigurationRequest  $request
      * @param  User  $user

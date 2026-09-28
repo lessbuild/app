@@ -7,7 +7,7 @@ namespace App\Http\Requests\Telemetry;
 final class StoreDeploymentApiRequest extends StoreDeploymentRequest
 {
     /**
-     * The JSON body, which the middleware decoded.
+     * Get the JSON body to validate, which the middleware decoded.
      *
      * @return array<string, mixed>
      */

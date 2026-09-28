@@ -23,6 +23,8 @@ use Illuminate\Validation\ValidationException;
 class ConfigurationOperations
 {
     /**
+     * Create a new ConfigurationOperations instance.
+     *
      * Runs configuration operations.
      *
      * @param  Deployments  $deployments  Queues the deploys.
@@ -32,7 +34,7 @@ class ConfigurationOperations
     public function __construct(private readonly Deployments $deployments, private readonly BuildPayload $payload, private readonly FinishBuild $finish) {}
 
     /**
-     * Starts a pending or blocked deploy operation when its gates pass (target available, requester still allowed,
+     * Start a pending or blocked deploy operation when its gates pass (target available, requester still allowed,
      * repository unchanged, environment open), marking it delivered or awaiting approval; otherwise records why it's
      * blocked.
      *
@@ -192,7 +194,7 @@ class ConfigurationOperations
     }
 
     /**
-     * Refuses the change with a message on `operation`.
+     * Refuse the change with a message on `operation`.
      *
      * @param  string  $message
      * @return never

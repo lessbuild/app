@@ -34,6 +34,8 @@ final class SaveMonitor
         'queue_name', 'queue_settings'];
 
     /**
+     * Create a new SaveMonitor instance.
+     *
      * Creates or changes a monitor.
      *
      * @param  TelemetryRedactor  $redactor  Redacts the name and queue name.

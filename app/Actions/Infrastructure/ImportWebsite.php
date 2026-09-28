@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class ImportWebsite
 {
     /**
+     * Create a new ImportWebsite instance.
+     *
      * Adopts a website that already runs on a server.
      *
      * @param  Entitlements  $entitlements  Checks the plan's website limit.

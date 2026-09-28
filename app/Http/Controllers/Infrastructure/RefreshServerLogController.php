@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class RefreshServerLogController
 {
     /**
-     * Fetches a fresh copy of one of the server's logs, for active servers.
+     * Fetch a fresh copy of one of the server's logs, for active servers.
      *
      * @param  User  $user
      * @param  Project  $project

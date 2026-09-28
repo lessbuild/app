@@ -12,6 +12,8 @@ use App\Platform\ServiceRegistry;
 final class AccountProjectsQuery
 {
     /**
+     * Create a new AccountProjectsQuery instance.
+     *
      * Lists the account's projects.
      *
      * @param  ServiceRegistry  $services  Orders and names each project's enabled services.
@@ -19,7 +21,7 @@ final class AccountProjectsQuery
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * The account's projects by name, with their enabled services in registry order and environment count.
+     * Get the account's projects by name, with their enabled services in registry order and environment count.
      *
      * @param  Account  $account
      * @return list<ProjectCard>

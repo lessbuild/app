@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateSiteController
 {
     /**
-     * Saves a site's settings.
+     * Save a site's settings.
      *
      * @param  SiteRequest  $request
      * @param  User  $user

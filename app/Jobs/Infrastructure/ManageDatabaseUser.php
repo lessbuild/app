@@ -41,6 +41,8 @@ final class ManageDatabaseUser implements ShouldQueue
     public int $timeout = 120;
 
     /**
+     * Create a new ManageDatabaseUser instance.
+     *
      * Creates, updates or removes a website's extra database user on its server.
      *
      * @param  int  $userId  The database user.
@@ -49,7 +51,7 @@ final class ManageDatabaseUser implements ShouldQueue
     public function __construct(public readonly int $userId, public readonly string $operation) {}
 
     /**
-     * Runs the change when the user is still waiting for it, then marks it active or deletes it.
+     * Run the change when the user is still waiting for it, then marks it active or deletes it.
      *
      * @param  ServerShell  $shell
      * @param  DatabaseCommands  $commands
@@ -75,7 +77,7 @@ final class ManageDatabaseUser implements ShouldQueue
     }
 
     /**
-     * Marks the user failed with MySQL's error.
+     * Mark the user failed with MySQL's error.
      *
      * @param  Throwable  $exception
      * @return void

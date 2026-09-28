@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class StoreWebsiteBackupController
 {
     /**
-     * Starts a backup now, unless one is already running.
+     * Start a backup now, unless one is already running.
      *
      * @param  Request  $request
      * @param  User  $user

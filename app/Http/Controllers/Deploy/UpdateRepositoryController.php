@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateRepositoryController
 {
     /**
-     * Saves a repository's settings; the next deploy uses them.
+     * Save a repository's settings; the next deploy uses them.
      *
      * @param  RepositoryRequest  $request
      * @param  User  $user

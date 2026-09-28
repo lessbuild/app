@@ -16,7 +16,7 @@ use Illuminate\Http\Response;
 final class RecordBuildCallbackController
 {
     /**
-     * Records a deploy script's report (a stage reached, a failure, a log chunk or the deployed revision). The URL's
+     * Record a deploy script's report (a stage reached, a failure, a log chunk or the deployed revision). The URL's
      * signature, checked by middleware, proves it came from the script.
      *
      * @param  Request  $request

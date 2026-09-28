@@ -19,6 +19,8 @@ use Illuminate\Validation\ValidationException;
 final class UpdateIssue
 {
     /**
+     * Create a new UpdateIssue instance.
+     *
      * Resolves, reopens, snoozes, ignores or assigns an issue.
      *
      * @param  TelemetryRedactor  $redactor  Redacts notes before they're stored.

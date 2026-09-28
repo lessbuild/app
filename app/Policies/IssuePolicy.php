@@ -14,7 +14,8 @@ final class IssuePolicy
     use ManagesMonitoring;
 
     /**
-     * Resolving, snoozing, ignoring or assigning an issue: people who manage Monitoring in the issue's project.
+     * Determine whether the user can resolve, snooze, ignore or assign an issue: people who manage Monitoring in the
+     * issue's project.
      *
      * @param  User  $user
      * @param  Issue  $record

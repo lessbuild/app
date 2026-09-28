@@ -8,8 +8,8 @@ namespace App\Platform\Catalog;
 final class MonitoringCatalog
 {
     /**
-     * Monitor's Free, Pro, Team and Scale tiers with their event, retention, application and seat limits and feature
-     * flags, plus the events meter that counts usage against each tier's monthly allowance.
+     * Get Monitor's Free, Pro, Team and Scale tiers with their event, retention, application and seat limits and
+     * feature flags, plus the events meter that counts usage against each tier's monthly allowance.
      *
      * @return ServiceBilling
      */
@@ -27,7 +27,7 @@ final class MonitoringCatalog
     }
 
     /**
-     * Builds a tier from Monitor's plan table, turning dollars into cents and the positional limits into entitlement
+     * Build a tier from Monitor's plan table, turning dollars into cents and the positional limits into entitlement
      * keys, so the table above stays readable.
      *
      * @param  string  $key

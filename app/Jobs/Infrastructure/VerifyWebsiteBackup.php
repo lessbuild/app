@@ -42,6 +42,8 @@ final class VerifyWebsiteBackup implements ShouldQueue
     ];
 
     /**
+     * Create a new VerifyWebsiteBackup instance.
+     *
      * Proves a backup can be restored: restores it into a temporary directory and database, checks them, and removes
      * them again.
      *
@@ -50,8 +52,8 @@ final class VerifyWebsiteBackup implements ShouldQueue
     public function __construct(public readonly int $verificationId) {}
 
     /**
-     * Claims the verification, runs the verification script, and reads the stage markers it prints to decide which stage
-     * (if any) failed.
+     * Claim the verification, runs the verification script, and reads the stage markers it prints to decide which
+     * stage (if any) failed.
      *
      * @param  ServerShell  $shell
      * @param  BackupScripts  $scripts
@@ -94,7 +96,7 @@ final class VerifyWebsiteBackup implements ShouldQueue
     }
 
     /**
-     * Marks an unfinished verification failed at the restore stage.
+     * Mark an unfinished verification failed at the restore stage.
      *
      * @param  Throwable  $exception
      * @return void
@@ -108,7 +110,7 @@ final class VerifyWebsiteBackup implements ShouldQueue
     }
 
     /**
-     * Stores the outcome, the per-check statuses, a message for the failed stage and how long it took.
+     * Store the outcome, the per-check statuses, a message for the failed stage and how long it took.
      *
      * @param  BackupVerification  $verification
      * @param  string|null  $stage

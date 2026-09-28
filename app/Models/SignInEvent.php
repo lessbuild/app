@@ -31,6 +31,8 @@ class SignInEvent extends Model
     public const UPDATED_AT = null;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `method` as a SignInMethod.
      *
      * @return array<string, string>
@@ -45,7 +47,7 @@ class SignInEvent extends Model
     }
 
     /**
-     * Sign-ins older than the retention period, which the model pruner deletes.
+     * Get the sign-ins older than the retention period, which the model pruner deletes.
      *
      * @return Builder<static>
      */

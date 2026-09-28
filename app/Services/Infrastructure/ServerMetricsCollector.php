@@ -31,6 +31,8 @@ final class ServerMetricsCollector
     BASH;
 
     /**
+     * Create a new ServerMetricsCollector instance.
+     *
      * Collects server metrics.
      *
      * @param  ServerShell  $shell  Runs the collection script.
@@ -39,7 +41,7 @@ final class ServerMetricsCollector
     public function __construct(private readonly ServerShell $shell, private readonly ServerAlerts $alerts) {}
 
     /**
-     * Records a reading (percentages clamped, required values checked), deletes readings older than 30 days, and
+     * Record a reading (percentages clamped, required values checked), deletes readings older than 30 days, and
      * evaluates alert rules.
      *
      * @param  Server  $server

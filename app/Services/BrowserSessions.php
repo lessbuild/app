@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\DB;
 final class BrowserSessions
 {
     /**
+     * Create a new BrowserSessions instance.
+     *
      * Reads browser sessions from the database session store.
      *
      * @param  Repository  $config  Which session driver and table are in use.
@@ -20,7 +22,7 @@ final class BrowserSessions
     public function __construct(private readonly Repository $config) {}
 
     /**
-     * Whether sessions are in the database, the only store they can be listed from.
+     * Determine whether sessions are in the database, the only store they can be listed from.
      *
      * @return bool
      */
@@ -30,7 +32,7 @@ final class BrowserSessions
     }
 
     /**
-     * The person's session rows.
+     * Query the person's session rows.
      *
      * @param  User  $user
      * @return Builder

@@ -18,7 +18,7 @@ use Illuminate\Contracts\View\View;
 final class ShowDeploymentController
 {
     /**
-     * A deployment's page comparing equal windows before and after it.
+     * Show a deployment's page comparing equal windows before and after it.
      *
      * @param  SearchReleasesRequest  $request
      * @param  User  $user

@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteDashboard
 {
     /**
+     * Create a new DeleteDashboard instance.
+     *
      * Deletes a dashboard.
      *
      * @param  RecordAuditEntry  $audit  Records it.
@@ -22,7 +24,7 @@ final class DeleteDashboard
     public function __construct(private readonly RecordAuditEntry $audit) {}
 
     /**
-     * Deletes one of the account's dashboards and records it.
+     * Delete one of the account's dashboards and records it.
      *
      * @param  Account  $account
      * @param  User  $actor

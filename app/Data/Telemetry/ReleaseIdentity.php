@@ -10,6 +10,8 @@ use App\Services\Monitoring\TelemetryRedactor;
 final readonly class ReleaseIdentity
 {
     /**
+     * Create a new ReleaseIdentity instance.
+     *
      * Use `from()` or `fromEvent()`, which validate the labels first.
      *
      * @param  string  $version  The release version, such as a tag or commit.
@@ -19,8 +21,8 @@ final readonly class ReleaseIdentity
     private function __construct(public string $version, public ?string $service, public ?string $namespace) {}
 
     /**
-     * A release identity from raw labels, or null when the version is missing or any label is too long, has control
-     * characters, or was redacted.
+     * Build a release identity from raw labels, or return null when the version is missing or any label is too long,
+     * has control characters, or was redacted.
      *
      * @param  mixed  $version
      * @param  mixed  $service
@@ -37,7 +39,7 @@ final readonly class ReleaseIdentity
     }
 
     /**
-     * The release an ingested event belongs to, read from `service.version`, `service.name` and `service.namespace` in
+     * Read the release an ingested event belongs to from `service.version`, `service.name` and `service.namespace` in
      * its resource attributes (OTLP) or attributes (JSON; the event's own `service` wins there).
      *
      * @param  array<string, mixed>  $event
@@ -62,8 +64,8 @@ final readonly class ReleaseIdentity
     }
 
     /**
-     * A fixed-length key for the namespace and service together, used in unique indexes where the labels themselves
-     * could be too long.
+     * Hash the namespace and service together into a fixed-length key, used in unique indexes where the labels
+     * themselves could be too long.
      *
      * @return string
      */
@@ -73,7 +75,7 @@ final readonly class ReleaseIdentity
     }
 
     /**
-     * A fixed-length key for the version, for the same reason.
+     * Hash the version into a fixed-length key, for the same reason.
      *
      * @return string
      */
@@ -83,8 +85,8 @@ final readonly class ReleaseIdentity
     }
 
     /**
-     * Whether a label is safe to store: within the length limit, not blank unless optional, not a redaction placeholder,
-     * and free of control characters.
+     * Determine whether a label is safe to store: within the length limit, not blank unless optional, not a redaction
+     * placeholder, and free of control characters.
      *
      * @param  mixed  $value
      * @param  int  $limit

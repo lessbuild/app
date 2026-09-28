@@ -15,8 +15,8 @@ use Illuminate\Support\Carbon;
 final class AccountApiTokensQuery
 {
     /**
-     * The account's API tokens, newest first, with their owners' names ("Former member" once the owner is gone) and
-     * scopes.
+     * Get the account's API tokens, newest first, with their owners' names ("Former member" once the owner is gone)
+     * and scopes.
      *
      * @param  Account  $account
      * @param  User  $viewer

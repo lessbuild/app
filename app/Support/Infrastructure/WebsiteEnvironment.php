@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 final class WebsiteEnvironment
 {
     /**
-     * Checks that a website is being linked to an environment in the same account and returns its ID, or null when none
+     * Check that a website is being linked to an environment in the same account and returns its ID, or null when none
      * was chosen. A foreign environment is a validation error on `environment_id`.
      *
      * @param  Account  $account

@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class ConfirmWithProviderController
 {
     /**
-     * Starts a provider sign-in to confirm identity instead of typing a password.
+     * Start a provider sign-in to confirm identity instead of typing a password.
      *
      * @param  Request  $request
      * @param  User  $user

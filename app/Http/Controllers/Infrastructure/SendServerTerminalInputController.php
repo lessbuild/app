@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class SendServerTerminalInputController
 {
     /**
-     * Queues keystrokes for the terminal and returns their sequence number (202).
+     * Queue keystrokes for the terminal and returns their sequence number (202).
      *
      * @param  Request  $request
      * @param  User  $user

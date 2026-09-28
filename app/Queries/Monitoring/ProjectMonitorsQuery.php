@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class ProjectMonitorsQuery
 {
     /**
-     * The project's monitors by name, with their environment.
+     * Get the project's monitors by name, with their environment.
      *
      * @param  Project  $project
      * @return list<Monitor> the project's current monitors, with their environment
@@ -23,7 +23,8 @@ final class ProjectMonitorsQuery
     }
 
     /**
-     * A monitor of this project (404 otherwise). Archived monitors only when asked for, e.g. to show their history.
+     * Find a monitor of this project (404 otherwise). Archived monitors only when asked for, e.g. to show their
+     * history.
      *
      * @param  Project  $project
      * @param  string|int  $id
@@ -43,7 +44,7 @@ final class ProjectMonitorsQuery
     }
 
     /**
-     * Monitors of the project's environments.
+     * Query the monitors of the project's environments.
      *
      * @param  Project  $project
      * @return Builder<Monitor>

@@ -15,7 +15,8 @@ final class AlertDestinationPolicy
     use ManagesMonitoring;
 
     /**
-     * Adding an alert destination (email, Slack, a webhook…): people who manage the account's settings.
+     * Determine whether the user can add an alert destination (email, Slack, a webhook…): people who manage the
+     * account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -27,7 +28,7 @@ final class AlertDestinationPolicy
     }
 
     /**
-     * Changing a destination: the same people, while it isn't archived.
+     * Determine whether the user can change a destination: the same people, while it isn't archived.
      *
      * @param  User  $user
      * @param  AlertDestination  $record
@@ -39,7 +40,7 @@ final class AlertDestinationPolicy
     }
 
     /**
-     * Archiving a destination, allowed to the same people as update.
+     * Determine whether the user can archive a destination, which the same people as update can.
      *
      * @param  User  $user
      * @param  AlertDestination  $record

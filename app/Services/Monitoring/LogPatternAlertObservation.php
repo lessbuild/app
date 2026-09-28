@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class LogPatternAlertObservation
 {
     /**
-     * Counts events in the rule's environment (and service) whose text matches the pattern within the window, breaching
+     * Count events in the rule's environment (and service) whose text matches the pattern within the window, breaching
      * at the threshold.
      *
      * @param  AlertRule  $rule

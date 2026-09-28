@@ -12,7 +12,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class RedirectToProviderController
 {
     /**
-     * Sends a guest to the provider's sign-in page.
+     * Send a guest to the provider's sign-in page.
      *
      * @param  SocialProvider  $provider
      * @param  SocialSignInGateway  $gateway

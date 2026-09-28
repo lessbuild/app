@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteWebsiteDomainController
 {
     /**
-     * Removes a domain from a website.
+     * Remove a domain from a website.
      *
      * @param  User  $user
      * @param  Project  $project

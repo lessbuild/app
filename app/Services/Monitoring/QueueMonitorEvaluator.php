@@ -17,6 +17,8 @@ final class QueueMonitorEvaluator
     public const MAX_LIVE_WORKERS = 100;
 
     /**
+     * Create a new QueueMonitorEvaluator instance.
+     *
      * Judges queue monitors from their reports and workers.
      *
      * @param  MonitorResults  $results  Records each judgement.
@@ -24,6 +26,8 @@ final class QueueMonitorEvaluator
     public function __construct(private readonly MonitorResults $results) {}
 
     /**
+     * Judge the queue monitor now and record the result, storing a check when the outcome or its reasons changed.
+     *
      * Caller holds source and monitor locks in a transaction.
      *
      * @param  Monitor  $monitor
@@ -51,9 +55,9 @@ final class QueueMonitorEvaluator
     }
 
     /**
-     * Judges a queue monitor now: missing or stale reports, too few live workers (after their grace period), metrics
-     * over their thresholds, and jobs running too long each breach it; missing data leaves it unknown. Also returns when
-     * it next needs looking at.
+     * Judge a queue monitor now: missing or stale reports, too few live workers (after their grace period), metrics
+     * over their thresholds, and jobs running too long each breach it; missing data leaves it unknown. Also returns
+     * when it next needs looking at.
      *
      * @param  Monitor  $monitor
      * @param  CarbonImmutable  $now
@@ -126,8 +130,8 @@ final class QueueMonitorEvaluator
     }
 
     /**
-     * The monitor's workers under its current configuration that are idle or busy and were seen within the worker
-     * timeout.
+     * Query the monitor's workers under its current configuration that are idle or busy and were seen within the
+     * worker timeout.
      *
      * @param  Monitor  $monitor
      * @param  CarbonImmutable  $now
@@ -141,7 +145,7 @@ final class QueueMonitorEvaluator
     }
 
     /**
-     * Starts evaluation afresh after its settings change, giving collectors and workers until the shorter timeout to
+     * Start evaluation afresh after its settings change, giving collectors and workers until the shorter timeout to
      * report.
      *
      * @param  Monitor  $monitor

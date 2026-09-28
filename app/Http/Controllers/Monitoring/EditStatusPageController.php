@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class EditStatusPageController
 {
     /**
-     * The status page form, filled in.
+     * Show the status page form, filled in.
      *
      * @param  User  $user
      * @param  Project  $project

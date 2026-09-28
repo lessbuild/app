@@ -12,6 +12,8 @@ use Illuminate\Support\Str;
 final class SignOutBrowsers
 {
     /**
+     * Create a new SignOutBrowsers instance.
+     *
      * Ends the person's other browser sessions.
      *
      * @param  BrowserSessions  $sessions  Reads and deletes sessions in the session store.

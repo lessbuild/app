@@ -13,7 +13,7 @@ use Illuminate\Contracts\View\View;
 final class EditAccountSettingsController
 {
     /**
-     * The account settings page, with the danger zone only for people who may delete the account.
+     * Show the account settings page, with the danger zone only for people who may delete the account.
      *
      * @param  Account  $account
      * @param  User  $user

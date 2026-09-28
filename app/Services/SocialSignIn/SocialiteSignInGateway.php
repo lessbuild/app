@@ -18,6 +18,8 @@ use Throwable;
 final class SocialiteSignInGateway implements SocialSignInGateway
 {
     /**
+     * Create a new SocialiteSignInGateway instance.
+     *
      * Signs people in through Socialite.
      *
      * @param  Repository  $config  Holds each provider's client credentials under `services.{provider}`.
@@ -25,7 +27,7 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     public function __construct(private readonly Repository $config) {}
 
     /**
-     * Whether the provider has client credentials (and, for GitLab, a valid host) in this environment.
+     * Determine whether the provider has client credentials (and, for GitLab, a valid host) in this environment.
      *
      * @param  SocialProvider  $provider
      * @return bool
@@ -40,7 +42,7 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     }
 
     /**
-     * The provider's authorisation page.
+     * Redirect to the provider's authorisation page.
      *
      * @param  SocialProvider  $provider
      * @return RedirectResponse
@@ -51,8 +53,8 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     }
 
     /**
-     * The person's profile from the provider's callback, with a usable ID, a valid email or none, and a display name
-     * falling back to the email's local part. Anything the provider gets wrong becomes SocialSignInFailed.
+     * Read the person's profile from the provider's callback, with a usable ID, a valid email or none, and a display
+     * name falling back to the email's local part. Anything the provider gets wrong becomes SocialSignInFailed.
      *
      * @param  SocialProvider  $provider
      * @return SocialProfile
@@ -77,7 +79,7 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     }
 
     /**
-     * A Socialite driver for the provider, pointed at our callback. Unconfigured providers throw.
+     * Build a Socialite driver for the provider, pointed at our callback. Unconfigured providers throw.
      *
      * @param  SocialProvider  $provider
      * @return AbstractProvider
@@ -107,7 +109,7 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     }
 
     /**
-     * The provider's configuration, or none.
+     * Get the provider's configuration, or none.
      *
      * @param  SocialProvider  $provider
      * @return array<string, mixed>
@@ -120,7 +122,8 @@ final class SocialiteSignInGateway implements SocialSignInGateway
     }
 
     /**
-     * Only a bare HTTPS origin is accepted, so a misconfigured host can't leak tokens over plain HTTP.
+     * Get the configured GitLab host. Only a bare HTTPS origin is accepted, so a misconfigured host can't leak tokens
+     * over plain HTTP.
      *
      * @param  array<string, mixed>  $config
      * @return string|null

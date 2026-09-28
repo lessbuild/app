@@ -7,7 +7,7 @@ namespace App\Services\Telemetry;
 final class TelemetryPayloadGuard
 {
     /**
-     * Refuses NaN and infinite numbers anywhere in the payload.
+     * Refuse NaN and infinite numbers anywhere in the payload.
      *
      * @param  mixed  $value
      * @return void
@@ -24,7 +24,7 @@ final class TelemetryPayloadGuard
     }
 
     /**
-     * Counts objects, arrays, keys and values in the raw JSON without decoding it, refusing bodies with too many.
+     * Count objects, arrays, keys and values in the raw JSON without decoding it, refusing bodies with too many.
      *
      * @param  string  $body
      * @return void
@@ -62,7 +62,7 @@ final class TelemetryPayloadGuard
     }
 
     /**
-     * Refuses batches with more events (or OTLP spans, log records or metric data points) than allowed.
+     * Refuse batches with more events (or OTLP spans, log records or metric data points) than allowed.
      *
      * @param  array<string, mixed>  $payload
      * @param  string  $signal
@@ -112,7 +112,7 @@ final class TelemetryPayloadGuard
     }
 
     /**
-     * Refuses batches whose events, once normalised, would take more storage than allowed.
+     * Refuse batches whose events, once normalised, would take more storage than allowed.
      *
      * @param  array<int, array<string, mixed>>  $events
      * @return void
@@ -129,7 +129,7 @@ final class TelemetryPayloadGuard
     }
 
     /**
-     * Refuses a count above the per-batch event limit.
+     * Refuse a count above the per-batch event limit.
      *
      * @param  int  $count
      * @return void

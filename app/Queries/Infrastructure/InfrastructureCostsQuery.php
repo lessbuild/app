@@ -14,8 +14,8 @@ use Illuminate\Support\Collection;
 final class InfrastructureCostsQuery
 {
     /**
-     * The costs page: each server's monthly cost, CPU over the last hour, website count, idle flag and the projects it
-     * serves, plus totals per currency and how many servers have no known cost or look idle.
+     * Build the costs page: each server's monthly cost, CPU over the last hour, website count, idle flag and the
+     * projects it serves, plus totals per currency and how many servers have no known cost or look idle.
      *
      * @param  string  $accountId
      * @return array{rows: Collection<int, ServerCost>, totals: array<string, float>, unknown: int, idle: int}

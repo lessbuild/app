@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowObjectivesController
 {
     /**
-     * The project's SLOs with each one's current report.
+     * Show the project's SLOs with each one's current report.
      *
      * @param  User  $user
      * @param  Project  $project

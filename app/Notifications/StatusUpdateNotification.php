@@ -18,8 +18,10 @@ final class StatusUpdateNotification extends Notification implements ShouldQueue
     use Queueable;
 
     /**
-     * Emails a confirmed subscriber about an incident or maintenance update on a status page. Sent after the transaction
-     * commits.
+     * Create a new StatusUpdateNotification instance.
+     *
+     * Emails a confirmed subscriber about an incident or maintenance update on a status page. Sent after the
+     * transaction commits.
      *
      * @param  StatusUpdate  $update  The update being published.
      * @param  StatusSubscription  $subscription  The subscriber, for the personal unsubscribe link.
@@ -41,8 +43,8 @@ final class StatusUpdateNotification extends Notification implements ShouldQueue
     }
 
     /**
-     * The update with its status and any root cause, remediation and follow-up, a link to the page, and one-click
-     * unsubscribe headers so mail clients can offer it.
+     * Build the email: the update with its status and any root cause, remediation and follow-up, a link to the page,
+     * and one-click unsubscribe headers so mail clients can offer it.
      *
      * @param  object  $notifiable
      * @return MailMessage

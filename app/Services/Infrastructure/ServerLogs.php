@@ -20,6 +20,8 @@ final class ServerLogs
     ];
 
     /**
+     * Create a new ServerLogs instance.
+     *
      * Reads server logs.
      *
      * @param  ServerShell  $shell  Runs the command for each log.
@@ -27,7 +29,7 @@ final class ServerLogs
     public function __construct(private readonly ServerShell $shell) {}
 
     /**
-     * The tail of one of the server's logs, cut to the configured length.
+     * Read the tail of one of the server's logs, cut to the configured length.
      *
      * @param  Server  $server
      * @param  string  $type

@@ -71,7 +71,7 @@ final class Issue extends Model
     use HasFactory;
 
     /**
-     * Limits a query to issues in the account's projects.
+     * Limit a query to issues in the account's projects.
      *
      * @param  Builder<Issue>  $query
      * @param  Account  $account
@@ -84,7 +84,7 @@ final class Issue extends Model
     }
 
     /**
-     * The project the issue was seen in.
+     * Get the project the issue was seen in.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -94,7 +94,7 @@ final class Issue extends Model
     }
 
     /**
-     * The environment it was first seen in.
+     * Get the environment it was first seen in.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -104,7 +104,7 @@ final class Issue extends Model
     }
 
     /**
-     * Who is working on it (`assignee_id`).
+     * Get the person working on the issue (`assignee_id`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -114,7 +114,7 @@ final class Issue extends Model
     }
 
     /**
-     * Its timeline: detection, resolution, reopening, snoozes and assignments.
+     * Get the issue's timeline: detection, resolution, reopening, snoozes and assignments.
      *
      * @return HasMany<IssueActivity, $this>
      */
@@ -124,7 +124,7 @@ final class Issue extends Model
     }
 
     /**
-     * The exception events grouped into it.
+     * Get the exception events grouped into it.
      *
      * @return HasMany<TelemetryEvent, $this>
      */
@@ -134,6 +134,8 @@ final class Issue extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `status` as an IssueStatus and `metadata` as JSON.
      *
      * @return array<string, string>

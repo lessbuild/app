@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
 class ConfigurationApplication extends Model
 {
     /**
-     * The review that was applied.
+     * Get the review that was applied.
      *
      * @return BelongsTo<ConfigurationReview, $this>
      */
@@ -40,7 +40,7 @@ class ConfigurationApplication extends Model
     }
 
     /**
-     * The deploys and changes this application started.
+     * Get the deploys and changes this application started.
      *
      * @return HasMany<ConfigurationOperation, $this>
      */
@@ -50,7 +50,7 @@ class ConfigurationApplication extends Model
     }
 
     /**
-     * Operations from earlier applications that this one waits on or retries.
+     * Get the operations from earlier applications that this one waits on or retries.
      *
      * @return BelongsToMany<ConfigurationOperation, $this>
      */
@@ -60,7 +60,7 @@ class ConfigurationApplication extends Model
     }
 
     /**
-     * Everything that decides this application's status: its own operations and the ones it references.
+     * Query everything that decides this application's status: its own operations and the ones it references.
      *
      * @return Builder<ConfigurationOperation> Its own operations and the earlier ones it refers to.
      */
@@ -71,6 +71,8 @@ class ConfigurationApplication extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

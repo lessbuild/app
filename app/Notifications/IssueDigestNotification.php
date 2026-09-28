@@ -12,6 +12,8 @@ use Illuminate\Notifications\Notification;
 final class IssueDigestNotification extends Notification
 {
     /**
+     * Create a new IssueDigestNotification instance.
+     *
      * The daily email summarising an account's issues for someone who asked for it.
      *
      * @param  array{account: string, from: CarbonImmutable, until: CarbonImmutable, open: int, critical: int, snoozed: int, new: list<array{title: string, location: string|null, project: string, severity: string, occurrences: int, at: string, url: string}>, resolved: list<array{title: string, location: string|null, project: string, severity: string, occurrences: int, at: string, url: string}>, active: bool}  $digest  The account's issue report for the period, built by IssueDigest with already-redacted titles.
@@ -19,7 +21,8 @@ final class IssueDigestNotification extends Notification
     public function __construct(public readonly array $digest) {}
 
     /**
-     * Digests are email only; the issues pages already show the same information in the app.
+     * Get the notification's delivery channels: email only, since the issues pages already show the same information
+     * in the app.
      *
      * @param  object  $notifiable
      * @return list<string>
@@ -30,8 +33,8 @@ final class IssueDigestNotification extends Notification
     }
 
     /**
-     * The open, critical and snoozed counts, then each new and resolved issue with a link, the period covered, and where
-     * to turn the digest off.
+     * Build the email: the open, critical and snoozed counts, then each new and resolved issue with a link, the period
+     * covered, and where to turn the digest off.
      *
      * @param  object  $notifiable
      * @return MailMessage

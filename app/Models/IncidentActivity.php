@@ -34,7 +34,7 @@ class IncidentActivity extends Model
     use HasFactory;
 
     /**
-     * The incident the activity is on.
+     * Get the incident the activity is on.
      *
      * @return BelongsTo<Incident, $this>
      */
@@ -44,7 +44,7 @@ class IncidentActivity extends Model
     }
 
     /**
-     * Who did it (`actor_id`); null for automatic entries.
+     * Get the person who did it (`actor_id`); null for automatic entries.
      *
      * @return BelongsTo<User, $this>
      */
@@ -54,7 +54,7 @@ class IncidentActivity extends Model
     }
 
     /**
-     * The activity as a line on the timeline.
+     * Describe the activity as a line on the timeline.
      *
      * @return string
      */
@@ -80,6 +80,8 @@ class IncidentActivity extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `metadata` as JSON.
      *
      * @return array<string, string>

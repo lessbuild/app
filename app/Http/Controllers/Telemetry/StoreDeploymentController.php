@@ -16,7 +16,7 @@ use Illuminate\Validation\ValidationException;
 final class StoreDeploymentController
 {
     /**
-     * Records a deployment by hand for one of the project's environments.
+     * Record a deployment by hand for one of the project's environments.
      *
      * @param  StoreDeploymentRequest  $request
      * @param  User  $user

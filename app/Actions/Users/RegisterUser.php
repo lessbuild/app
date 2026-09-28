@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 final class RegisterUser
 {
     /**
+     * Create a new RegisterUser instance.
+     *
      * Registration gives every new person an account of their own.
      *
      * @param  CreateAccount  $createAccount  Creates that first account with them as owner.

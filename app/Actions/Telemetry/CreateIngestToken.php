@@ -19,6 +19,8 @@ use Illuminate\Support\Facades\Gate;
 final class CreateIngestToken
 {
     /**
+     * Create a new CreateIngestToken instance.
+     *
      * Creates an ingest token for an environment.
      *
      * @param  IngestTokens  $tokens  Generates the token and stores its hash.

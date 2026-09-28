@@ -24,6 +24,8 @@ use Carbon\CarbonImmutable;
 final class BillingOverviewQuery
 {
     /**
+     * Create a new BillingOverviewQuery instance.
+     *
      * Assembles the billing page.
      *
      * @param  ServiceRegistry  $services  The services, with their catalogues.
@@ -41,8 +43,8 @@ final class BillingOverviewQuery
     ) {}
 
     /**
-     * Each service's current tier, the tiers it can move to, this month's metered usage against allowances, the monthly
-     * total of tiers and add-ons, and the subscription's state.
+     * Build the billing page: each service's current tier, the tiers it can move to, this month's metered usage
+     * against allowances, the monthly total of tiers and add-ons, and the subscription's state.
      *
      * @param  Account  $account
      * @return BillingOverview

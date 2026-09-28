@@ -24,8 +24,8 @@ use App\Services\Deploy\Scripts\VerifyDeploymentHealthScript;
 class RepositoryDeploymentPlan
 {
     /**
-     * The deploy's stages in order, from cloning to purging old releases. Each stage's position is the progress number
-     * it reports.
+     * List the deploy's stages in order, from cloning to purging old releases. Each stage's position is the progress
+     * number it reports.
      *
      * @return list<class-string<BuildScript>>
      */

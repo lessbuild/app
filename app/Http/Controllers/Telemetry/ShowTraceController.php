@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ShowTraceController
 {
     /**
-     * A trace's waterfall, up to 500 events. Unknown traces are a 404.
+     * Show a trace's waterfall, up to 500 events. Unknown traces are a 404.
      *
      * @param  Request  $request
      * @param  User  $user

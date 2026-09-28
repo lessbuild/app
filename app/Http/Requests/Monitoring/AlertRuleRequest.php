@@ -23,7 +23,7 @@ final class AlertRuleRequest extends FormRequest
     public const WINDOWS = [1 => '1 minute', 5 => '5 minutes', 15 => '15 minutes', 30 => '30 minutes', 60 => '1 hour'];
 
     /**
-     * The JSON body for API calls, the form fields otherwise.
+     * Get the data to validate: the JSON body for API calls, the form fields otherwise.
      *
      * @return array<string, mixed>
      */
@@ -33,8 +33,8 @@ final class AlertRuleRequest extends FormRequest
     }
 
     /**
-     * An alert rule's settings. Which fields are required, and the threshold's range, depend on the metric; SLOs and
-     * series must belong to the project's environments.
+     * Get the validation rules for an alert rule's settings. Which fields are required, and the threshold's range,
+     * depend on the metric; SLOs and series must belong to the project's environments.
      *
      * @return array<string, array<mixed>>
      */
@@ -72,9 +72,9 @@ final class AlertRuleRequest extends FormRequest
     }
 
     /**
-     * Checks the plan includes the metric chosen, that an SLO or series fits the rule (enabled, same environment, the
-     * right kind of series for the calculation), that an existing rule's environment isn't changed, and that labels and
-     * patterns contain no secrets.
+     * Check the plan includes the metric chosen, that an SLO or series fits the rule (enabled, same environment, the
+     * right kind of series for the calculation), that an existing rule's environment isn't changed, and that labels
+     * and patterns contain no secrets.
      *
      * @param  TelemetryRedactor  $redactor
      * @param  Entitlements  $entitlements
@@ -130,7 +130,7 @@ final class AlertRuleRequest extends FormRequest
     }
 
     /**
-     * The project in the URL.
+     * Get the project in the URL.
      *
      * @return Project
      */
@@ -143,7 +143,7 @@ final class AlertRuleRequest extends FormRequest
     }
 
     /**
-     * The rule being changed, or null when creating one.
+     * Get the rule being changed, or null when creating one.
      *
      * @return AlertRule|null
      */

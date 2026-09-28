@@ -47,6 +47,8 @@ use Laravel\Passkeys\Events\PasskeyRegistered;
 final class AuditSubscriber
 {
     /**
+     * Create a new AuditSubscriber instance.
+     *
      * Turns domain, Fortify and Passkeys events into audit entries.
      *
      * @param  RecordAuditEntry  $record  Writes the entries.
@@ -55,7 +57,7 @@ final class AuditSubscriber
     public function __construct(private readonly RecordAuditEntry $record, private readonly ServiceRegistry $services) {}
 
     /**
-     * Every event that leaves an audit entry, and the method that records it.
+     * Register every event that leaves an audit entry, and the method that records it.
      *
      * @param  Dispatcher  $events
      * @return array<class-string, string>
@@ -99,7 +101,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records the account's creation, attributed to its first owner.
+     * Record the account's creation, attributed to its first owner.
      *
      * @param  AccountCreated  $event
      * @return void
@@ -110,7 +112,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a rename with the old and new names.
+     * Record a rename with the old and new names.
      *
      * @param  AccountRenamed  $event
      * @return void
@@ -121,7 +123,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records who was invited and with which role.
+     * Record who was invited and with which role.
      *
      * @param  MemberInvited  $event
      * @return void
@@ -135,7 +137,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records which invitation was withdrawn.
+     * Record which invitation was withdrawn.
      *
      * @param  InvitationRevoked  $event
      * @return void
@@ -146,7 +148,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records the new member joining, attributed to them.
+     * Record the new member joining, attributed to them.
      *
      * @param  InvitationAccepted  $event
      * @return void
@@ -157,7 +159,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a removal, or the member leaving when they removed themselves.
+     * Record a removal, or the member leaving when they removed themselves.
      *
      * @param  MemberRemoved  $event
      * @return void
@@ -172,7 +174,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a role change with the old and new roles.
+     * Record a role change with the old and new roles.
      *
      * @param  MemberRoleChanged  $event
      * @return void
@@ -187,7 +189,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records the member's new service list: "all services", "none", or the names.
+     * Record the member's new service list: "all services", "none", or the names.
      *
      * @param  MemberServiceAccessChanged  $event
      * @return void
@@ -202,7 +204,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a new project in the account log and the project's activity.
+     * Record a new project in the account log and the project's activity.
      *
      * @param  ProjectCreated  $event
      * @return void
@@ -213,7 +215,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a change to a project's details, keeping the previous name for renames.
+     * Record a change to a project's details, keeping the previous name for renames.
      *
      * @param  ProjectUpdated  $event
      * @return void
@@ -224,7 +226,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a deleted project in the account log (its own activity went with it).
+     * Record a deleted project in the account log (its own activity went with it).
      *
      * @param  ProjectDeleted  $event
      * @return void
@@ -235,7 +237,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a new environment in the project's activity.
+     * Record a new environment in the project's activity.
      *
      * @param  EnvironmentCreated  $event
      * @return void
@@ -247,7 +249,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a deleted environment in the project's activity.
+     * Record a deleted environment in the project's activity.
      *
      * @param  EnvironmentDeleted  $event
      * @return void
@@ -258,7 +260,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a domain being added, verified or removed in the project's activity.
+     * Record a domain being added, verified or removed in the project's activity.
      *
      * @param  DomainAdded|DomainVerified|DomainRemoved  $event
      * @return void
@@ -275,7 +277,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a service being turned on in a project.
+     * Record a service being turned on in a project.
      *
      * @param  ServiceEnabled  $event
      * @return void
@@ -286,7 +288,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a service being turned off in a project.
+     * Record a service being turned off in a project.
      *
      * @param  ServiceDisabled  $event
      * @return void
@@ -297,7 +299,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a tier change with the tier names, and when it takes effect for scheduled downgrades.
+     * Record a tier change with the tier names, and when it takes effect for scheduled downgrades.
      *
      * @param  ServiceTierChanged  $event
      * @return void
@@ -314,7 +316,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a profile change in the person's own security log.
+     * Record a profile change in the person's own security log.
      *
      * @param  ProfileUpdated  $event
      * @return void
@@ -325,7 +327,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a password change in the person's own security log.
+     * Record a password change in the person's own security log.
      *
      * @param  PasswordChanged  $event
      * @return void
@@ -336,7 +338,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records two-factor authentication being confirmed.
+     * Record two-factor authentication being confirmed.
      *
      * @param  TwoFactorAuthenticationConfirmed  $event
      * @return void
@@ -347,7 +349,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records two-factor authentication being turned off.
+     * Record two-factor authentication being turned off.
      *
      * @param  TwoFactorAuthenticationDisabled  $event
      * @return void
@@ -358,7 +360,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records recovery codes being regenerated.
+     * Record recovery codes being regenerated.
      *
      * @param  RecoveryCodesGenerated  $event
      * @return void
@@ -370,7 +372,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a passkey being registered, by name.
+     * Record a passkey being registered, by name.
      *
      * @param  PasskeyRegistered  $event
      * @return void
@@ -381,7 +383,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a passkey being deleted, by name.
+     * Record a passkey being deleted, by name.
      *
      * @param  PasskeyDeleted  $event
      * @return void
@@ -392,7 +394,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a sign-in provider being connected.
+     * Record a sign-in provider being connected.
      *
      * @param  SocialIdentityConnected  $event
      * @return void
@@ -403,7 +405,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a sign-in provider being disconnected.
+     * Record a sign-in provider being disconnected.
      *
      * @param  SocialIdentityDisconnected  $event
      * @return void
@@ -414,7 +416,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records other browsers being signed out, with how many.
+     * Record other browsers being signed out, with how many.
      *
      * @param  BrowsersSignedOut  $event
      * @return void
@@ -425,7 +427,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a new API token with its scopes (never its secret).
+     * Record a new API token with its scopes (never its secret).
      *
      * @param  ApiTokenCreated  $event
      * @return void
@@ -439,7 +441,7 @@ final class AuditSubscriber
     }
 
     /**
-     * Records a revoked API token.
+     * Record a revoked API token.
      *
      * @param  ApiTokenRevoked  $event
      * @return void
@@ -450,7 +452,7 @@ final class AuditSubscriber
     }
 
     /**
-     * A deleted user's own security log goes with them; shared accounts keep their record of what the person did.
+     * Delete a deleted user's own security log; shared accounts keep their record of what the person did.
      *
      * @param  UserDeleting  $event
      * @return void
@@ -461,7 +463,8 @@ final class AuditSubscriber
     }
 
     /**
-     * Fortify and Passkeys events type their user loosely, so check it is ours before recording.
+     * Record a personal security entry from a Fortify or Passkeys event. Those events type their user loosely, so
+     * check it is ours before recording.
      *
      * @param  AuditAction  $action
      * @param  mixed  $user
@@ -477,7 +480,7 @@ final class AuditSubscriber
     }
 
     /**
-     * The service's display name, or the key itself for a service that no longer exists.
+     * Get the service's display name, or the key itself for a service that no longer exists.
      *
      * @param  string  $key
      * @return string
@@ -488,7 +491,7 @@ final class AuditSubscriber
     }
 
     /**
-     * A member as "Name <email>", so the entry still identifies them after they leave or rename themselves.
+     * Describe a member as "Name <email>", so the entry still identifies them after they leave or rename themselves.
      *
      * @param  User  $user
      * @return string

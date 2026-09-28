@@ -18,7 +18,7 @@ use Illuminate\Contracts\View\View;
 final class ShowEventsController
 {
     /**
-     * The event browser, 50 events to a page, with the filters kept in the page links.
+     * Show the event browser, 50 events to a page, with the filters kept in the page links.
      *
      * @param  SearchEventsRequest  $request
      * @param  User  $user

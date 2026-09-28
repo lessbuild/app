@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreDatabaseUserController
 {
     /**
-     * Adds an extra database user and shows its password once.
+     * Add an extra database user and shows its password once.
      *
      * @param  Request  $request
      * @param  User  $user

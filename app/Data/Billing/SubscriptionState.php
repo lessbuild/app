@@ -9,6 +9,8 @@ use Carbon\CarbonImmutable;
 final readonly class SubscriptionState
 {
     /**
+     * Create a new SubscriptionState instance.
+     *
      * A subscription as the payment provider reports it.
      *
      * @param  string  $status  The provider's status, such as `active` or `past_due`.

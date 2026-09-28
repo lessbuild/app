@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class ShowSitesController
 {
     /**
-     * The project's analytics sites.
+     * Show the project's analytics sites.
      *
      * @param  User  $user
      * @param  Project  $project

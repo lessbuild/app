@@ -8,6 +8,8 @@ namespace App\Data\Infrastructure;
 final readonly class ShellResult
 {
     /**
+     * Create a new ShellResult instance.
+     *
      * The result of running a command on a server.
      *
      * @param  string  $output  What it wrote to standard output.
@@ -17,7 +19,7 @@ final readonly class ShellResult
     public function __construct(public string $output, public string $errorOutput, public ?int $exitCode) {}
 
     /**
-     * Whether the command finished with exit code 0.
+     * Determine whether the command finished with exit code 0.
      *
      * @return bool
      */
@@ -27,7 +29,7 @@ final readonly class ShellResult
     }
 
     /**
-     * Standard output and error together, trimmed.
+     * Get standard output and error together, trimmed.
      *
      * @return string
      */

@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 final class InviteMemberRequest extends FormRequest
 {
     /**
-     * The invitee's email and a role.
+     * Get the validation rules: the invitee's email and a role.
      *
      * @return array<string, mixed>
      */
@@ -25,7 +25,7 @@ final class InviteMemberRequest extends FormRequest
     }
 
     /**
-     * The invitation to send.
+     * Build the invitation to send.
      *
      * @return InviteMemberData
      */

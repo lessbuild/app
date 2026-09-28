@@ -17,7 +17,7 @@ use Illuminate\Contracts\View\View;
 final class ShowWebsitesController
 {
     /**
-     * The account's websites and the plan's website limit.
+     * Show the account's websites and the plan's website limit.
      *
      * @param  User  $user
      * @param  Project  $project

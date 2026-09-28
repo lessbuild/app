@@ -8,9 +8,9 @@ namespace App\Support;
 final class Hostname
 {
     /**
-     * Turns what someone typed (possibly a URL, mixed case, a trailing dot or an internationalised name) into the
-     * lowercase ASCII hostname we store and verify. Returns null for anything that isn't a public DNS name: IPs, ports,
-     * `localhost`, single-label names and malformed labels.
+     * Turn what someone typed (possibly a URL, mixed case, a trailing dot or an internationalised name) into the
+     * lowercase ASCII hostname we store and verify. Returns null for anything that isn't a public DNS name: IPs,
+     * ports, `localhost`, single-label names and malformed labels.
      *
      * @param  string  $input
      * @return string|null the ASCII hostname, or null if it isn't a public hostname we can verify
@@ -45,7 +45,7 @@ final class Hostname
     }
 
     /**
-     * The name people recognise, for display.
+     * Convert an ASCII hostname to the name people recognise, for display.
      *
      * @param  string  $ascii
      * @return string
@@ -58,8 +58,8 @@ final class Hostname
     }
 
     /**
-     * What someone typed into a hostname field, without a leading `http://` or `https://` or trailing slashes, and
-     * lowercased. Forms run this before validation; the Hostname rule then checks what's left.
+     * Clean what someone typed into a hostname field: strip a leading `http://` or `https://` and trailing slashes,
+     * and lowercase it. Forms run this before validation; the Hostname rule then checks what's left.
      *
      * @param  mixed  $value
      * @return string

@@ -35,6 +35,8 @@ final class InspectDatabase implements ShouldQueue
     public int $timeout = 300;
 
     /**
+     * Create a new InspectDatabase instance.
+     *
      * Reads a website's database size, tables and connection count.
      *
      * @param  int  $snapshotId  The queued snapshot to fill in.
@@ -42,7 +44,7 @@ final class InspectDatabase implements ShouldQueue
     public function __construct(public readonly int $snapshotId) {}
 
     /**
-     * Claims the snapshot, runs the inspection on the server, stores what it reports, and removes the website's
+     * Claim the snapshot, runs the inspection on the server, stores what it reports, and removes the website's
      * snapshots older than 30 days.
      *
      * @param  ServerShell  $shell
@@ -75,7 +77,7 @@ final class InspectDatabase implements ShouldQueue
     }
 
     /**
-     * Marks the snapshot failed.
+     * Mark the snapshot failed.
      *
      * @param  Throwable  $exception
      * @return void

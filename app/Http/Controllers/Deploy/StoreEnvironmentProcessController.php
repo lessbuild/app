@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class StoreEnvironmentProcessController
 {
     /**
-     * Adds or changes a worker or scheduler process on an environment.
+     * Add or changes a worker or scheduler process on an environment.
      *
      * @param  Request  $request
      * @param  User  $user

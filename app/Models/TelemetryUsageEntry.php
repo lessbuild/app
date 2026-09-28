@@ -33,7 +33,7 @@ final class TelemetryUsageEntry extends Model
     use HasFactory;
 
     /**
-     * The account the usage counts against.
+     * Get the account the usage counts against.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -43,7 +43,7 @@ final class TelemetryUsageEntry extends Model
     }
 
     /**
-     * The environment that sent the events.
+     * Get the environment that sent the events.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -53,7 +53,7 @@ final class TelemetryUsageEntry extends Model
     }
 
     /**
-     * The batch counted.
+     * Get the batch counted.
      *
      * @return BelongsTo<IngestReceipt, $this>
      */
@@ -63,6 +63,8 @@ final class TelemetryUsageEntry extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `source` as an IngestSource.
      *
      * @return array<string, string>

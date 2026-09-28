@@ -8,8 +8,8 @@ namespace App\Support\Infrastructure;
 final class BackupDestinationPresets
 {
     /**
-     * The storage providers the backup-destination form offers, with the hint, endpoint pattern and region example it
-     * shows for each.
+     * Get the storage providers the backup-destination form offers, with the hint, endpoint pattern and region example
+     * it shows for each.
      *
      * @return array<string, array{name: string, description: string, endpoint: string, region: string}>
      */
@@ -24,7 +24,7 @@ final class BackupDestinationPresets
     }
 
     /**
-     * The endpoint for Spaces and S3 when only the region was given.
+     * Fill in the endpoint for Spaces and S3 when only the region was given.
      *
      * @param  string  $provider
      * @param  string  $region

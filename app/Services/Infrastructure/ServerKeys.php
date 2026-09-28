@@ -11,7 +11,7 @@ use Throwable;
 class ServerKeys
 {
     /**
-     * The OpenSSH public key for a private key.
+     * Derive the OpenSSH public key for a private key.
      *
      * @param  string  $privateKey
      * @return string
@@ -22,7 +22,7 @@ class ServerKeys
     }
 
     /**
-     * Whether the text is an unencrypted private key phpseclib can read.
+     * Determine whether the text is an unencrypted private key phpseclib can read.
      *
      * @param  string  $privateKey
      * @return bool

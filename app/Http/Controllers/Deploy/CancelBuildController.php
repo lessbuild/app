@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class CancelBuildController
 {
     /**
-     * Cancels a deploy that hasn't finished.
+     * Cancel a deploy that hasn't finished.
      *
      * @param  User  $user
      * @param  Project  $project

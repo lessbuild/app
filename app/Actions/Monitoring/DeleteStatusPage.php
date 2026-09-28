@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Gate;
 final class DeleteStatusPage
 {
     /**
+     * Create a new DeleteStatusPage instance.
+     *
      * Deletes a status page and its subscriptions.
      *
      * @param  RecordAuditEntry  $audit  Records the deletion.

@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 final class RecordServerProvisioning
 {
     /**
+     * Create a new RecordServerProvisioning instance.
+     *
      * Records progress reported by a server's provisioning script.
      *
      * @param  ServerProvisioningPlan  $plan  Knows which stage is last.

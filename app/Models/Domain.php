@@ -30,6 +30,8 @@ class Domain extends Model
     public const RECORD_PREFIX = '_buildpusher';
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>
@@ -40,7 +42,7 @@ class Domain extends Model
     }
 
     /**
-     * The project the domain belongs to.
+     * Get the project the domain belongs to.
      *
      * @return BelongsTo<Project, $this>
      */
@@ -50,7 +52,7 @@ class Domain extends Model
     }
 
     /**
-     * The environment it points at, if any.
+     * Get the environment it points at, if any.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -60,7 +62,7 @@ class Domain extends Model
     }
 
     /**
-     * The name of the TXT record that proves ownership, under a fixed prefix of the hostname.
+     * Get the name of the TXT record that proves ownership, under a fixed prefix of the hostname.
      *
      * @return string
      */
@@ -70,7 +72,7 @@ class Domain extends Model
     }
 
     /**
-     * The value that TXT record must have.
+     * Get the value that TXT record must have.
      *
      * @return string
      */
@@ -80,7 +82,7 @@ class Domain extends Model
     }
 
     /**
-     * The hostname as people read it (Unicode rather than punycode).
+     * Get the hostname as people read it (Unicode rather than punycode).
      *
      * @return string
      */

@@ -41,6 +41,8 @@ final class ExecuteServerCommand implements ShouldQueue
     public bool $failOnTimeout = true;
 
     /**
+     * Create a new ExecuteServerCommand instance.
+     *
      * Runs a command someone typed on the server page.
      *
      * @param  int  $executionId  The queued execution.
@@ -51,7 +53,7 @@ final class ExecuteServerCommand implements ShouldQueue
     }
 
     /**
-     * Claims the execution, runs the command over SSH on the active server and stores its exit code and output.
+     * Claim the execution, runs the command over SSH on the active server and stores its exit code and output.
      *
      * @param  ServerShell  $shell
      * @return void
@@ -74,7 +76,7 @@ final class ExecuteServerCommand implements ShouldQueue
     }
 
     /**
-     * Records that the command couldn't be run, if it hadn't finished.
+     * Record that the command couldn't be run, if it hadn't finished.
      *
      * @param  Throwable  $exception
      * @return void
@@ -85,7 +87,7 @@ final class ExecuteServerCommand implements ShouldQueue
     }
 
     /**
-     * Stores the result, keeping the tail of long output. Only an execution still in one of `$from` is updated, so a
+     * Store the result, keeping the tail of long output. Only an execution still in one of `$from` is updated, so a
      * late failure can't overwrite a result.
      *
      * @param  string  $status

@@ -37,7 +37,7 @@ class EnvironmentVariable extends Model
     public const SCOPES = ['runtime' => 'Runtime (.env)', 'build' => 'Build only', 'all' => 'Build and runtime'];
 
     /**
-     * The environment the variable belongs to.
+     * Get the environment the variable belongs to.
      *
      * @return BelongsTo<Environment, $this>
      */
@@ -47,7 +47,7 @@ class EnvironmentVariable extends Model
     }
 
     /**
-     * The variable's earlier values, so a change can be traced or undone.
+     * Get the variable's earlier values, so a change can be traced or undone.
      *
      * @return HasMany<EnvironmentVariableVersion, $this>
      */
@@ -57,6 +57,8 @@ class EnvironmentVariable extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `value`.
      *
      * @return array<string, string>

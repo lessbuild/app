@@ -15,6 +15,8 @@ use Throwable;
 class S3StorageProbe
 {
     /**
+     * Create a new S3StorageProbe instance.
+     *
      * Tests backup destinations.
      *
      * @param  Factory  $http  Makes the signed requests.
@@ -22,7 +24,7 @@ class S3StorageProbe
     public function __construct(private readonly Factory $http) {}
 
     /**
-     * Writes a small test object, reads it back and compares it, then deletes it (a failed delete is reported but
+     * Write a small test object, reads it back and compares it, then deletes it (a failed delete is reported but
      * doesn't fail the check). Throws with a message safe to show when anything fails.
      *
      * @param  BackupDestination  $destination
@@ -55,7 +57,7 @@ class S3StorageProbe
     }
 
     /**
-     * Sends one signed S3 request for an object in the destination's bucket.
+     * Send one signed S3 request for an object in the destination's bucket.
      *
      * @param  BackupDestination  $destination
      * @param  string  $method
@@ -80,7 +82,7 @@ class S3StorageProbe
     }
 
     /**
-     * The base URL, host and path of an HTTPS endpoint without credentials, query or fragment.
+     * Split an HTTPS endpoint without credentials, query or fragment into its base URL, host and path.
      *
      * @param  string  $endpoint
      * @return array{string, string, string} base URL, host header and base path
@@ -99,7 +101,7 @@ class S3StorageProbe
     }
 
     /**
-     * A request path from its parts, with each segment URL-encoded exactly once.
+     * Build a request path from its parts, with each segment URL-encoded exactly once.
      *
      * @param  string  ...$parts
      * @return string
@@ -119,7 +121,7 @@ class S3StorageProbe
     }
 
     /**
-     * The headers for an AWS Signature Version 4 request, including the signed Authorization header.
+     * Build the headers for an AWS Signature Version 4 request, including the signed Authorization header.
      *
      * @param  string  $method
      * @param  string  $uri
@@ -155,7 +157,7 @@ class S3StorageProbe
     }
 
     /**
-     * Throws when a request failed, with the status and S3's error code but never the response body.
+     * Throw when a request failed, with the status and S3's error code but never the response body.
      *
      * @param  string  $operation
      * @param  Response  $response

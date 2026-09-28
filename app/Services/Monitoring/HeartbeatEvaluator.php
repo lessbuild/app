@@ -15,6 +15,8 @@ final class HeartbeatEvaluator
     public const MAX_ACTIVE_RUNS = 100;
 
     /**
+     * Create a new HeartbeatEvaluator instance.
+     *
      * Judges heartbeat monitors.
      *
      * @param  MonitorResults  $results  Records each judgement.
@@ -22,6 +24,9 @@ final class HeartbeatEvaluator
     public function __construct(private readonly MonitorResults $results) {}
 
     /**
+     * Judge a heartbeat monitor now: runs past their deadline time out, and a missing ping after the due time plus
+     * grace counts as missed.
+     *
      * Caller holds the source and monitor locks in a transaction.
      *
      * @param  Monitor  $monitor
@@ -50,7 +55,7 @@ final class HeartbeatEvaluator
     }
 
     /**
-     * Sets when the monitor next needs looking at: the earliest running run's deadline or the next due time plus grace.
+     * Set when the monitor next needs looking at: the earliest running run's deadline or the next due time plus grace.
      *
      * @param  Monitor  $monitor
      * @return void
@@ -67,7 +72,7 @@ final class HeartbeatEvaluator
     }
 
     /**
-     * Records a heartbeat result as a completed check and, when it concerns the current configuration, as the monitor's
+     * Record a heartbeat result as a completed check and, when it concerns the current configuration, as the monitor's
      * health.
      *
      * @param  Monitor  $monitor

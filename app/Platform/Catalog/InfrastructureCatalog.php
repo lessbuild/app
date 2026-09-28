@@ -8,8 +8,8 @@ namespace App\Platform\Catalog;
 final class InfrastructureCatalog
 {
     /**
-     * A single free "included" tier: Infrastructure isn't priced on its own yet, and the server limit lives on Deploy's
-     * tiers.
+     * Get Infrastructure's catalogue: a single free "included" tier, since Infrastructure isn't priced on its own yet
+     * and the server limit lives on Deploy's tiers.
      *
      * @return ServiceBilling
      */

@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowServiceController
 {
     /**
-     * A service's account-wide page: which projects use it.
+     * Show a service's account-wide page: which projects use it.
      *
      * @param  Account  $account
      * @param  User  $user

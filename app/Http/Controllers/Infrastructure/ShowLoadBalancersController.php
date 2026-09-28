@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowLoadBalancersController
 {
     /**
-     * The load balancers page, offering servers with Caddy as proxies.
+     * Show the load balancers page, offering servers with Caddy as proxies.
      *
      * @param  User  $user
      * @param  Project  $project

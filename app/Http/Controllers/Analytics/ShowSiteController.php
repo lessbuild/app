@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowSiteController
 {
     /**
-     * A site's setup page.
+     * Show a site's setup page.
      *
      * @param  User  $user
      * @param  Project  $project

@@ -45,8 +45,8 @@ final class CreateAccount
     }
 
     /**
-     * A URL slug from the account's name, with a random suffix when it's taken. Slugs are global, so a random suffix
-     * avoids guessable collisions.
+     * Make a URL slug from the account's name, with a random suffix when it's taken. Slugs are global, so a random
+     * suffix avoids guessable collisions.
      *
      * @param  string  $name
      * @return string

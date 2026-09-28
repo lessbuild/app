@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowAlertRuleController
 {
     /**
-     * An alert rule's page: its recent incidents, routing and escalation steps.
+     * Show an alert rule's page: its recent incidents, routing and escalation steps.
      *
      * @param  User  $user
      * @param  Project  $project

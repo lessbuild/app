@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class OpenServerTerminalController
 {
     /**
-     * Opens a terminal at the browser's window size and keeps its token in this browser's session, so only this browser
+     * Open a terminal at the browser's window size and keeps its token in this browser's session, so only this browser
      * can type into it.
      *
      * @param  Request  $request

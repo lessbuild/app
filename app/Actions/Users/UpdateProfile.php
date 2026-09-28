@@ -12,7 +12,7 @@ use Illuminate\Support\Str;
 final class UpdateProfile
 {
     /**
-     * A changed email address must be verified again before it is trusted.
+     * Save the person's name and email. A changed email address must be verified again before it is trusted.
      *
      * @param  User  $user
      * @param  UpdateProfileData  $data

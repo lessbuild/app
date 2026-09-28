@@ -35,7 +35,7 @@ class StatusPageComponent extends Model
     use HasFactory;
 
     /**
-     * The page the component is on.
+     * Get the page the component is on.
      *
      * @return BelongsTo<StatusPage, $this>
      */
@@ -45,7 +45,7 @@ class StatusPageComponent extends Model
     }
 
     /**
-     * The monitor it shows, including archived ones (which are then left off the page).
+     * Get the monitor it shows, including archived ones (which are then left off the page).
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -55,6 +55,8 @@ class StatusPageComponent extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

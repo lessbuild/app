@@ -15,7 +15,8 @@ use Illuminate\Contracts\View\View;
 final class ShowNotificationSettingsController
 {
     /**
-     * The email settings page, offering the issue digest to members who use Monitoring on a plan that includes it.
+     * Show the email settings page, offering the issue digest to members who use Monitoring on a plan that includes
+     * it.
      *
      * @param  User  $user
      * @param  IssueDigest  $digest

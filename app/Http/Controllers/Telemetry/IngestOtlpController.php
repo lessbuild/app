@@ -17,8 +17,8 @@ use Illuminate\Http\JsonResponse;
 final class IngestOtlpController
 {
     /**
-     * Converts an OTLP export into events and stores them. Without an `X-Beacon-Batch` header, identical content is what
-     * makes a resend a duplicate.
+     * Convert an OTLP export into events and stores them. Without an `X-Beacon-Batch` header, identical content is
+     * what makes a resend a duplicate.
      *
      * @param  StoreOtlpRequest  $request
      * @param  string  $signal

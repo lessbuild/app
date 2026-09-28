@@ -10,7 +10,7 @@ use App\Models\Project;
 final class ProjectSwitcherQuery
 {
     /**
-     * The account's projects by name, for the project switcher.
+     * Get the account's projects by name, for the project switcher.
      *
      * @param  Account  $account
      * @param  int  $limit

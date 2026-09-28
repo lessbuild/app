@@ -7,6 +7,8 @@ namespace App\Data\Analytics;
 final readonly class SiteDetails
 {
     /**
+     * Create a new SiteDetails instance.
+     *
      * The settings of an analytics site.
      *
      * @param  string  $name  The site's name.

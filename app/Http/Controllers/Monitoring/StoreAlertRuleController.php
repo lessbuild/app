@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreAlertRuleController
 {
     /**
-     * Creates an alert rule; it starts checking within a minute.
+     * Create an alert rule; it starts checking within a minute.
      *
      * @param  AlertRuleRequest  $request
      * @param  User  $user

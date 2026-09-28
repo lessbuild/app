@@ -10,6 +10,8 @@ use Carbon\CarbonImmutable;
 final class ServiceObjectiveBurnRate
 {
     /**
+     * Create a new ServiceObjectiveBurnRate instance.
+     *
      * Measures how fast SLOs burn their error budget.
      *
      * @param  ServiceObjectiveReport  $reports  Reports each SLO over a period.
@@ -17,6 +19,9 @@ final class ServiceObjectiveBurnRate
     public function __construct(private readonly ServiceObjectiveReport $reports) {}
 
     /**
+     * Measure how fast an SLO burns its error budget over the last hour and six hours, and rate it critical, warning
+     * or healthy from both.
+     *
      * @param  ServiceLevelObjective  $objective
      * @param  CarbonImmutable|null  $until
      * @return array{

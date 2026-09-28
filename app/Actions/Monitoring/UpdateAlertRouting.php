@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 final class UpdateAlertRouting
 {
     /**
+     * Create a new UpdateAlertRouting instance.
+     *
      * Changes which destinations a monitor or rule alerts.
      *
      * @param  MonitorChanges  $changes  Locks the account's Monitoring configuration while it changes.

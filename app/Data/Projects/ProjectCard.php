@@ -7,6 +7,8 @@ namespace App\Data\Projects;
 final readonly class ProjectCard
 {
     /**
+     * Create a new ProjectCard instance.
+     *
      * One project on the projects list.
      *
      * @param  string  $id  The project's ID.

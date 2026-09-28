@@ -17,6 +17,8 @@ use Illuminate\Validation\Rule;
 final class UpdateMemberServicesController
 {
     /**
+     * Create a new UpdateMemberServicesController instance.
+     *
      * Saves a member's service access.
      *
      * @param  ServiceRegistry  $services  The service keys the form may send.
@@ -24,7 +26,7 @@ final class UpdateMemberServicesController
     public function __construct(private readonly ServiceRegistry $services) {}
 
     /**
-     * Sets which services a member may use: all of them, or the ones ticked.
+     * Set which services a member may use: all of them, or the ones ticked.
      *
      * @param  Account  $account
      * @param  Request  $request

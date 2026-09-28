@@ -36,6 +36,8 @@ final class ProcessMonitorCheck implements ShouldQueue
     public bool $failOnTimeout = true;
 
     /**
+     * Create a new ProcessMonitorCheck instance.
+     *
      * Runs one scheduled monitor check.
      *
      * @param  string  $checkId  The queued check.
@@ -43,7 +45,7 @@ final class ProcessMonitorCheck implements ShouldQueue
     public function __construct(public readonly string $checkId) {}
 
     /**
-     * Runs the check and records the result.
+     * Run the check and records the result.
      *
      * @param  MonitorCheckRunner  $runner
      * @return void
@@ -54,7 +56,7 @@ final class ProcessMonitorCheck implements ShouldQueue
     }
 
     /**
-     * Records that the checker was interrupted, so the check reads "unknown" instead of staying queued.
+     * Record that the checker was interrupted, so the check reads "unknown" instead of staying queued.
      *
      * @param  Throwable|null  $exception
      * @return void

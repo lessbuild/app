@@ -22,8 +22,8 @@ final class MonitorQueue
     public const LEASE_SECONDS = 120;
 
     /**
-     * Queues a check's job inside the scheduling transaction on the primary database queue, and remembers the job's UUID
-     * so it can be discarded if the check is cancelled.
+     * Queue a check's job inside the scheduling transaction on the primary database queue, and remembers the job's
+     * UUID so it can be discarded if the check is cancelled.
      *
      * @param  MonitorCheck  $check
      * @return void
@@ -46,6 +46,8 @@ final class MonitorQueue
     }
 
     /**
+     * Lock a monitor with its environment and project, or return null when any of them is gone.
+     *
      * Project → environment → monitor; callers then lock check / incident rows.
      *
      * @param  int  $id
@@ -71,7 +73,7 @@ final class MonitorQueue
     }
 
     /**
-     * Whether a monitor should run: it is on, and its project still has Monitoring turned on.
+     * Determine whether a monitor should run: it is on, and its project still has Monitoring turned on.
      *
      * @param  Monitor|null  $monitor
      * @return bool
@@ -85,7 +87,7 @@ final class MonitorQueue
     }
 
     /**
-     * Deletes the check's job if no worker has picked it up yet.
+     * Delete the check's job if no worker has picked it up yet.
      *
      * @param  MonitorCheck  $check
      * @return void

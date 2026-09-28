@@ -8,6 +8,8 @@ namespace App\Data\Users;
 final readonly class SocialProfile
 {
     /**
+     * Create a new SocialProfile instance.
+     *
      * What a sign-in provider told us about the person after they approved the connection.
      *
      * @param  string  $providerUserId  The provider's stable ID for the person, which identifies them on later sign-ins

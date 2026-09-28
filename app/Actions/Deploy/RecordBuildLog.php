@@ -9,7 +9,7 @@ use App\Models\Build;
 final class RecordBuildLog
 {
     /**
-     * The latest tail of the deployment log (signed callback, every few seconds while it runs).
+     * Store the latest tail of the deployment log (signed callback, every few seconds while it runs).
      *
      * @param  Build  $build
      * @param  string  $log

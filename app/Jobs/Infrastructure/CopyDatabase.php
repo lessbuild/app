@@ -35,6 +35,8 @@ final class CopyDatabase implements ShouldQueue
     public int $timeout = 3600;
 
     /**
+     * Create a new CopyDatabase instance.
+     *
      * Copies one website's database over another's on the same server.
      *
      * @param  int  $cloneId  The queued copy.
@@ -42,7 +44,7 @@ final class CopyDatabase implements ShouldQueue
     public function __construct(public readonly int $cloneId) {}
 
     /**
-     * Claims the copy, checks both websites are still on the same server, and runs it.
+     * Claim the copy, checks both websites are still on the same server, and runs it.
      *
      * @param  ServerShell  $shell
      * @param  DatabaseCommands  $commands
@@ -71,7 +73,7 @@ final class CopyDatabase implements ShouldQueue
     }
 
     /**
-     * Marks the copy failed with the reason.
+     * Mark the copy failed with the reason.
      *
      * @param  Throwable  $exception
      * @return void

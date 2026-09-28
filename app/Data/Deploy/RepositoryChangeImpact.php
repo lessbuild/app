@@ -13,6 +13,8 @@ final readonly class RepositoryChangeImpact
     public const UNKNOWN = 'unknown';
 
     /**
+     * Create a new RepositoryChangeImpact instance.
+     *
      * Carry a conservative automatic-deployment path decision.
      *
      * @param  'affected'|'unaffected'|'unknown'  $status  Whether configured paths require an automatic deployment.

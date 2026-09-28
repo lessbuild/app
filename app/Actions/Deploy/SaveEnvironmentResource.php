@@ -15,6 +15,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveEnvironmentResource
 {
     /**
+     * Create a new SaveEnvironmentResource instance.
+     *
      * Attaches or changes an environment's resource, within the plan.
      *
      * @param  Entitlements  $entitlements  Checks the plan includes managed resources.

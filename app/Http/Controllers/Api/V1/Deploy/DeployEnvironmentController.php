@@ -16,7 +16,7 @@ use Illuminate\Http\JsonResponse;
 final class DeployEnvironmentController
 {
     /**
-     * Queues a deploy of the environment's first repository (202), or 422 when it has none.
+     * Queue a deploy of the environment's first repository (202), or 422 when it has none.
      *
      * @param  User  $user
      * @param  Account  $account

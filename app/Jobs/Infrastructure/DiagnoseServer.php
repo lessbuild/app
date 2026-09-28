@@ -27,6 +27,8 @@ final class DiagnoseServer implements ShouldQueue
     public int $tries = 1;
 
     /**
+     * Create a new DiagnoseServer instance.
+     *
      * Runs the connectivity and health diagnostic on a server.
      *
      * @param  int  $snapshotId  The snapshot to fill in.
@@ -35,7 +37,7 @@ final class DiagnoseServer implements ShouldQueue
     public function __construct(public readonly int $snapshotId, public readonly string $attempt) {}
 
     /**
-     * Runs the checks and stores them, or records which stage failed (server state, host identity, transport or
+     * Run the checks and stores them, or records which stage failed (server state, host identity, transport or
      * response).
      *
      * @param  ServerDiagnostics  $diagnostics
@@ -59,7 +61,7 @@ final class DiagnoseServer implements ShouldQueue
     }
 
     /**
-     * Records a transport failure when the job itself couldn't finish.
+     * Record a transport failure when the job itself couldn't finish.
      *
      * @param  Throwable  $exception
      * @return void
@@ -70,7 +72,7 @@ final class DiagnoseServer implements ShouldQueue
     }
 
     /**
-     * Stores the outcome on the snapshot, if it's still this run's, and releases its lease.
+     * Store the outcome on the snapshot, if it's still this run's, and releases its lease.
      *
      * @param  array<string, mixed>  $values
      * @return void

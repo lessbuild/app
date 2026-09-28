@@ -25,6 +25,8 @@ class DigitalOcean implements ServerProvider
     private const KEYS = 'https://api.digitalocean.com/v2/account/keys';
 
     /**
+     * Create a new DigitalOcean instance.
+     *
      * A client for one DigitalOcean account.
      *
      * @param  string  $apiToken  The account's personal access token, sent as a bearer token on every request.
@@ -147,7 +149,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * DigitalOcean's regions.
+     * Get DigitalOcean's regions.
      *
      * @return array<mixed> Available regions returned by the provider.
      *
@@ -165,7 +167,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * DigitalOcean's droplet sizes (up to 200).
+     * Get DigitalOcean's droplet sizes (up to 200).
      *
      * @return array<mixed> Available instance sizes returned by the provider.
      *
@@ -183,7 +185,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * DigitalOcean's images of a type, distributions by default.
+     * Get DigitalOcean's images of a type, distributions by default.
      *
      * @param  string  $type  Provider image category, defaulting to distribution images.
      * @return array<mixed> Images in the requested category.
@@ -202,7 +204,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Gets all droplets
+     * Get all droplets
      *
      * @return array<mixed> Droplets in the provider response.
      *
@@ -220,7 +222,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Gets information about a single droplet
+     * Get information about a single droplet
      *
      * @param  int|string  $droplet_id  The provider's droplet identifier.
      * @return array<string, mixed> Decoded droplet metadata.
@@ -239,7 +241,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Creates a new droplet.
+     * Create a new droplet.
      *
      * @param  array<string, mixed>  $params  Droplet parameters. The only locally mandatory item is 'name'.
      * @return array<string, mixed> The decoded creation response.
@@ -262,8 +264,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Creates a new SSH key or reuses the exact key already in the account.
-     *
+     * Create a new SSH key or reuses the exact key already in the account.
      *
      * @param  array<string, mixed>  $params
      * @return array<string, mixed>
@@ -298,7 +299,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Destroys a Droplet
+     * Destroy a Droplet
      *
      * @param  string|int  $droplet_id
      * @return bool
@@ -317,7 +318,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Makes a GET query
+     * Make a GET query
      *
      * @param  string  $endpoint  API endpoint
      * @param  array<string, mixed>  $custom_headers  Optional query parameters (legacy argument name retained).
@@ -330,7 +331,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Makes a POST query
+     * Make a POST query
      *
      * @param  string  $endpoint  API endpoint.
      * @param  array<string, mixed>  $params  JSON request attributes.
@@ -343,7 +344,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * Makes a DELETE query
+     * Make a DELETE query
      *
      * @param  string  $endpoint  API endpoint.
      * @return Response The synchronous HTTP response.
@@ -355,7 +356,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * A JSON array from a response, or an exception when DigitalOcean returned something incomplete.
+     * Read a JSON array from a response, or throw when DigitalOcean returned something incomplete.
      *
      * @param  Response  $response  The provider response to decode.
      * @param  string|null  $key  The top-level payload key, or null for the complete response.
@@ -390,7 +391,7 @@ class DigitalOcean implements ServerProvider
     }
 
     /**
-     * The account's SSH key with the same key material, found by its MD5 fingerprint, so importing the same key twice
+     * Find the account's SSH key with the same key material by its MD5 fingerprint, so importing the same key twice
      * reuses it. Null when there isn't one.
      *
      * @param  string  $publicKey

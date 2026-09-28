@@ -14,7 +14,7 @@ use Illuminate\Contracts\Pagination\CursorPaginator;
 final class AccountAuditLogQuery
 {
     /**
-     * The account's audit log, newest first and cursor-paginated, optionally narrowed to one project.
+     * Get the account's audit log, newest first and cursor-paginated, optionally narrowed to one project.
      *
      * @param  Account  $account
      * @param  string|null  $projectId

@@ -15,7 +15,7 @@ class PurgeOldReleasesScript extends BuildProvisioningScript
     public const IDENTIFIER = 'purged-releases';
 
     /**
-     * The script to run
+     * Render the stage that deletes old releases beyond the website's retention and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build

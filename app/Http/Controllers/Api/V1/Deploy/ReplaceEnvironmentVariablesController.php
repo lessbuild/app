@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ReplaceEnvironmentVariablesController
 {
     /**
-     * Replaces the variables and returns how many there are now.
+     * Replace the variables and returns how many there are now.
      *
      * @param  Request  $request
      * @param  User  $user

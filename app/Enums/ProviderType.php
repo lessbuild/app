@@ -16,7 +16,7 @@ enum ProviderType: string
     case Bitbucket = 'bitbucket';
 
     /**
-     * The provider's product name.
+     * Get the provider's product name.
      *
      * @return string
      */
@@ -34,7 +34,7 @@ enum ProviderType: string
     }
 
     /**
-     * What the account uses it for.
+     * Describe what the account uses the provider for.
      *
      * @return string
      */
@@ -48,7 +48,7 @@ enum ProviderType: string
     }
 
     /**
-     * Whether we can create servers with this provider's API.
+     * Determine whether we can create servers with this provider's API.
      *
      * @return bool
      */
@@ -58,7 +58,7 @@ enum ProviderType: string
     }
 
     /**
-     * Whether the provider hosts Git repositories we deploy from.
+     * Determine whether the provider hosts Git repositories we deploy from.
      *
      * @return bool
      */
@@ -68,7 +68,7 @@ enum ProviderType: string
     }
 
     /**
-     * The Git host repositories are cloned from, for source-control providers.
+     * Get the Git host repositories are cloned from, for source-control providers.
      *
      * @return string|null
      */
@@ -83,7 +83,7 @@ enum ProviderType: string
     }
 
     /**
-     * The username that goes with the token for Git over HTTPS.
+     * Get the username that goes with the token for Git over HTTPS.
      *
      * @return string|null
      */
@@ -98,7 +98,7 @@ enum ProviderType: string
     }
 
     /**
-     * The providers that can host servers, for the server creation form.
+     * Get the providers that can host servers, for the server creation form.
      *
      * @return list<self>
      */

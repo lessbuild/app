@@ -9,6 +9,8 @@ use App\Models\IngestToken;
 final readonly class IssuedIngestToken
 {
     /**
+     * Create a new IssuedIngestToken instance.
+     *
      * An ingest token that has just been created or rotated, with its secret.
      *
      * @param  IngestToken  $token  The stored token.

@@ -14,7 +14,7 @@ use RuntimeException;
 class CloudflareDns
 {
     /**
-     * Creates or updates the domain's A or AAAA record in the most specific Cloudflare zone the token can see,
+     * Create or updates the domain's A or AAAA record in the most specific Cloudflare zone the token can see,
      * unproxied, and remembers the zone and record IDs.
      *
      * @param  WebsiteDomain  $domain
@@ -45,7 +45,7 @@ class CloudflareDns
     }
 
     /**
-     * Deletes the domain's record at Cloudflare, if we created one.
+     * Delete the domain's record at Cloudflare, if we created one.
      *
      * @param  WebsiteDomain  $domain
      * @return void
@@ -61,7 +61,7 @@ class CloudflareDns
     }
 
     /**
-     * The ID of the longest active zone the hostname falls in.
+     * Find the ID of the longest active zone the hostname falls in.
      *
      * @param  string  $token
      * @param  string  $hostname
@@ -85,7 +85,7 @@ class CloudflareDns
     }
 
     /**
-     * The zone and record IDs from a stored `zone:record` reference.
+     * Split a stored `zone:record` reference into its zone and record IDs.
      *
      * @param  string|null  $reference
      * @return array{string, string}|null
@@ -96,7 +96,7 @@ class CloudflareDns
     }
 
     /**
-     * An HTTP client for the Cloudflare API with the token, short timeouts and two quick retries.
+     * Build an HTTP client for the Cloudflare API with the token, short timeouts and two quick retries.
      *
      * @param  string  $token
      * @return PendingRequest

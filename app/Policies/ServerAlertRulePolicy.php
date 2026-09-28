@@ -16,7 +16,7 @@ final class ServerAlertRulePolicy
     use ChecksAccountRole;
 
     /**
-     * Adding a server alert rule: people who manage the account's settings.
+     * Determine whether the user can add a server alert rule: people who manage the account's settings.
      *
      * @param  User  $user
      * @param  Account|Project  $scope
@@ -28,7 +28,7 @@ final class ServerAlertRulePolicy
     }
 
     /**
-     * Removing a rule: the same people.
+     * Determine whether the user can remove a rule: the same people.
      *
      * @param  User  $user
      * @param  ServerAlertRule  $rule

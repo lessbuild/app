@@ -34,7 +34,7 @@ final class IssueActivity extends Model
     use HasFactory;
 
     /**
-     * The issue the activity is on.
+     * Get the issue the activity is on.
      *
      * @return BelongsTo<Issue, $this>
      */
@@ -44,7 +44,7 @@ final class IssueActivity extends Model
     }
 
     /**
-     * Who did it (`actor_id`); null for automatic entries.
+     * Get the person who did it (`actor_id`); null for automatic entries.
      *
      * @return BelongsTo<User, $this>
      */
@@ -54,7 +54,7 @@ final class IssueActivity extends Model
     }
 
     /**
-     * The activity as a line on the timeline.
+     * Describe the activity as a line on the timeline.
      *
      * @return string
      */
@@ -75,6 +75,8 @@ final class IssueActivity extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `metadata` as JSON.
      *
      * @return array<string, string>

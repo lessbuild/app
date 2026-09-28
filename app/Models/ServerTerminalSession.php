@@ -47,7 +47,7 @@ class ServerTerminalSession extends Model
     public const ACTIVE = ['connecting', 'connected'];
 
     /**
-     * The server the terminal is on.
+     * Get the server the terminal is on.
      *
      * @return BelongsTo<Server, $this>
      */
@@ -57,7 +57,7 @@ class ServerTerminalSession extends Model
     }
 
     /**
-     * Who opened it; nobody else may use it.
+     * Get the person who opened the terminal; nobody else may use it.
      *
      * @return BelongsTo<User, $this>
      */
@@ -67,7 +67,7 @@ class ServerTerminalSession extends Model
     }
 
     /**
-     * Keystrokes and output waiting to be relayed.
+     * Get the keystrokes and output waiting to be relayed.
      *
      * @return HasMany<ServerTerminalFrame, $this>
      */
@@ -77,7 +77,7 @@ class ServerTerminalSession extends Model
     }
 
     /**
-     * Whether the terminal is connecting or connected.
+     * Determine whether the terminal is connecting or connected.
      *
      * @return bool
      */
@@ -87,7 +87,7 @@ class ServerTerminalSession extends Model
     }
 
     /**
-     * Whether it has run past its time limit or sat idle too long.
+     * Determine whether it has run past its time limit or sat idle too long.
      *
      * @return bool
      */
@@ -97,6 +97,8 @@ class ServerTerminalSession extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

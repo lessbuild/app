@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ReplaceEnvironmentVariablesController
 {
     /**
-     * Replaces an environment's variables with the pasted `.env` text.
+     * Replace an environment's variables with the pasted `.env` text.
      *
      * @param  Request  $request
      * @param  User  $user

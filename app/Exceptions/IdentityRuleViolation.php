@@ -8,7 +8,8 @@ namespace App\Exceptions;
 final class IdentityRuleViolation extends RuleViolation
 {
     /**
-     * Disconnecting this provider would leave the person with no password, passkey or other provider to sign in with.
+     * Build the violation for disconnecting a provider that would leave the person with no password, passkey or other
+     * provider to sign in with.
      *
      * @return IdentityRuleViolation
      */
@@ -18,7 +19,7 @@ final class IdentityRuleViolation extends RuleViolation
     }
 
     /**
-     * The provider account being connected already belongs to another user here.
+     * Build the violation for connecting a provider account that already belongs to another user here.
      *
      * @return IdentityRuleViolation
      */
@@ -28,7 +29,7 @@ final class IdentityRuleViolation extends RuleViolation
     }
 
     /**
-     * The person already has a different account from this provider connected; only one per provider is allowed.
+     * Build the violation for connecting a second account from the same provider; only one per provider is allowed.
      *
      * @param  string  $provider
      * @return IdentityRuleViolation
@@ -39,7 +40,8 @@ final class IdentityRuleViolation extends RuleViolation
     }
 
     /**
-     * The provider didn't vouch for the account's email address, so we can't trust it to identify the person.
+     * Build the violation for a provider that didn't vouch for the account's email address, so we can't trust it to
+     * identify the person.
      *
      * @param  string  $provider
      * @return IdentityRuleViolation

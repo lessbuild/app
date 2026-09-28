@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class EditObjectiveController
 {
     /**
-     * The SLO form, filled in.
+     * Show the SLO form, filled in.
      *
      * @param  User  $user
      * @param  Project  $project

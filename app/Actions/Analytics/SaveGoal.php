@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class SaveGoal
 {
     /**
+     * Create a new SaveGoal instance.
+     *
      * Creates or changes a goal.
      *
      * @param  RebuildSiteReports  $rebuild  Recounts the site's history against the goal.

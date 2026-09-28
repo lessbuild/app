@@ -16,7 +16,7 @@ class InstallRedisScript implements ServerScript
     public const IDENTIFIER = 'installed-redis';
 
     /**
-     * Shell script to run
+     * Render the stage that installs Redis and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

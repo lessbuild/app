@@ -12,6 +12,9 @@ use InvalidArgumentException;
 final class TraceTimeline
 {
     /**
+     * Lay out a trace's events for the waterfall: ordered by start, nested under their parent spans, with cycles
+     * broken and each row's offset and width.
+     *
      * @param  Collection<int, TelemetryEvent>  $events
      * @return array{
      *   rows: list<array{record: TraceRecord, offset: float, left: float, width: float, depth: int, notes: list<string>}>,
@@ -103,7 +106,7 @@ final class TraceTimeline
     }
 
     /**
-     * Detaches spans whose parent links form a loop, noting it on each, so the waterfall can always be drawn as a tree.
+     * Detach spans whose parent links form a loop, noting it on each, so the waterfall can always be drawn as a tree.
      *
      * @param  array<int, int|null>  $parents
      * @param  array<int, list<string>>  $notes

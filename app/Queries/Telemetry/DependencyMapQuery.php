@@ -23,6 +23,10 @@ final class DependencyMapQuery
     private const MAX_EVENTS = 20_000;
 
     /**
+     * Map which services call which in the project's traces over a range, with each service's and each
+     * caller-to-callee edge's calls, error rate and latency. At most 20,000 spans are read; `truncated` says when
+     * there were more.
+     *
      * @param  Project  $project
      * @param  string  $range
      * @param  string|null  $environmentId
@@ -172,7 +176,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * A service's counters before any spans are added.
+     * Start a service's counters before any spans are added.
      *
      * @param  string  $name
      * @return array{name: string, span_count: int, error_count: int, duration_total: float, duration_count: int, last_seen: CarbonImmutable|null}
@@ -183,7 +187,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * A caller-to-callee edge's counters before any calls are added.
+     * Start a caller-to-callee edge's counters before any calls are added.
      *
      * @param  string  $source
      * @param  string  $target
@@ -195,7 +199,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * The span's service, or "Unspecified service" so unnamed spans still group together.
+     * Get the span's service, or "Unspecified service" so unnamed spans still group together.
      *
      * @param  string|null  $service
      * @return string
@@ -206,7 +210,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * A key identifying a span within its trace, or null when either ID is missing.
+     * Build a key identifying a span within its trace, or null when either ID is missing.
      *
      * @param  string|null  $traceId
      * @param  string|null  $spanId
@@ -218,7 +222,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * Whether a span failed: error or critical severity, or a 5xx status.
+     * Determine whether a span failed: error or critical severity, or a 5xx status.
      *
      * @param  TelemetryEvent  $event
      * @return bool
@@ -229,7 +233,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * The span's duration when it's a finite, non-negative number; otherwise null so it doesn't skew averages.
+     * Get the span's duration when it's a finite, non-negative number; otherwise null so it doesn't skew averages.
      *
      * @param  mixed  $duration
      * @return float|null
@@ -240,7 +244,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * A share as a percentage with two decimals; 0 when there's nothing to divide by.
+     * Express a share as a percentage with two decimals; 0 when there's nothing to divide by.
      *
      * @param  int  $part
      * @param  int  $whole
@@ -252,7 +256,7 @@ final class DependencyMapQuery
     }
 
     /**
-     * The later of two times, accepting the stored value as a string or Carbon.
+     * Pick the later of two times, accepting the stored value as a string or Carbon.
      *
      * @param  CarbonImmutable|null  $current
      * @param  mixed  $candidate

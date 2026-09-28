@@ -11,6 +11,8 @@ use Symfony\Component\HttpFoundation\IpUtils;
 final class PublicWebhookTarget
 {
     /**
+     * Create a new PublicWebhookTarget instance.
+     *
      * Checks alert endpoints are safe to call.
      *
      * @param  DnsResolver  $dns  Resolves the endpoint's host.
@@ -18,8 +20,8 @@ final class PublicWebhookTarget
     public function __construct(private readonly DnsResolver $dns) {}
 
     /**
-     * The endpoint's host when the URL is a plain HTTPS address on port 443, without credentials or a fragment, and on
-     * the provider's own host and path for Slack, Teams, PagerDuty and Discord. Null otherwise.
+     * Get the endpoint's host when the URL is a plain HTTPS address on port 443, without credentials or a fragment,
+     * and on the provider's own host and path for Slack, Teams, PagerDuty and Discord. Null otherwise.
      *
      * @param  string  $url
      * @param  AlertDestinationType  $type
@@ -62,8 +64,8 @@ final class PublicWebhookTarget
     }
 
     /**
-     * The endpoint's host and the address to connect to, or why it can't be used: invalid, not resolvable, or resolving
-     * to any non-public address.
+     * Resolve the endpoint's host and the address to connect to, or say why it can't be used: invalid, not resolvable,
+     * or resolving to any non-public address.
      *
      * @param  string  $url
      * @param  AlertDestinationType  $type
@@ -89,8 +91,9 @@ final class PublicWebhookTarget
     }
 
     /**
-     * Whether an address is on the public internet: not private, loopback, link-local, carrier-grade NAT, documentation,
-     * multicast or reserved (IPv4), and in global unicast space but not documentation or transition ranges (IPv6).
+     * Determine whether an address is on the public internet: not private, loopback, link-local, carrier-grade NAT,
+     * documentation, multicast or reserved (IPv4), and in global unicast space but not documentation or transition
+     * ranges (IPv6).
      *
      * @param  string  $address
      * @return bool

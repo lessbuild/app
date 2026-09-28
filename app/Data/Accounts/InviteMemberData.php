@@ -9,6 +9,8 @@ use App\Enums\AccountRole;
 final readonly class InviteMemberData
 {
     /**
+     * Create a new InviteMemberData instance.
+     *
      * An invitation someone wants to send.
      *
      * @param  string  $email  Who to invite.

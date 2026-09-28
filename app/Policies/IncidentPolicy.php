@@ -14,7 +14,8 @@ final class IncidentPolicy
     use ManagesMonitoring;
 
     /**
-     * Acknowledging, assigning, resolving or annotating an incident: people who manage Monitoring in the incident's project.
+     * Determine whether the user can acknowledge, assign, resolve or annotate an incident: people who manage
+     * Monitoring in the incident's project.
      *
      * @param  User  $user
      * @param  Incident  $record

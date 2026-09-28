@@ -15,6 +15,8 @@ class RunPostDeploymentCommandsScript extends RepositoryHookScript
     public const IDENTIFIER = 'ran-post-deployment-commands';
 
     /**
+     * Create a new RunPostDeploymentCommandsScript instance.
+     *
      * Runs the repository's post-deployment commands, preceded by preview initialisation. Tests can pass their own
      * initialisation script.
      *

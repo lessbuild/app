@@ -15,7 +15,7 @@ use Carbon\CarbonInterface;
 final class UnavailablePaymentProvider implements PaymentProvider
 {
     /**
-     * Never: no payment provider is configured.
+     * Report that no payment provider is configured.
      *
      * @return bool
      */
@@ -25,7 +25,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Refuses, since there's no provider to create customers at.
+     * Refuse, since there's no provider to create customers at.
      *
      * @param  string  $accountId
      * @param  string  $name
@@ -38,7 +38,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Refuses, since there's nothing to check out with.
+     * Refuse, since there's nothing to check out with.
      *
      * @param  string  $customerId
      * @param  string  $accountId
@@ -53,7 +53,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Refuses; there are no subscriptions without a provider.
+     * Refuse; there are no subscriptions without a provider.
      *
      * @param  string  $subscriptionId
      * @param  list<\App\Data\Billing\LineItem>  $items
@@ -65,7 +65,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Refuses; there are no subscriptions without a provider.
+     * Refuse; there are no subscriptions without a provider.
      *
      * @param  string  $subscriptionId
      * @return SubscriptionState
@@ -76,7 +76,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Refuses; there are no subscriptions without a provider.
+     * Refuse; there are no subscriptions without a provider.
      *
      * @param  string  $subscriptionId
      * @return void
@@ -87,7 +87,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Refuses, since there's no portal.
+     * Refuse, since there's no portal.
      *
      * @param  string  $customerId
      * @param  string  $returnUrl
@@ -99,7 +99,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * None, since nothing was ever billed.
+     * Return no invoices, since nothing was ever billed.
      *
      * @param  string  $customerId
      * @param  int  $limit
@@ -111,7 +111,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     }
 
     /**
-     * Does nothing: usage beyond an allowance can't be billed without a provider.
+     * Do nothing: usage beyond an allowance can't be billed without a provider.
      *
      * @param  string  $customerId
      * @param  string  $eventName
@@ -123,7 +123,7 @@ final class UnavailablePaymentProvider implements PaymentProvider
     public function reportUsage(string $customerId, string $eventName, int $quantity, CarbonInterface $at, string $idempotencyKey): void {}
 
     /**
-     * Refuses every webhook, since there's no secret to check it with.
+     * Refuse every webhook, since there's no secret to check it with.
      *
      * @param  string  $payload
      * @param  string  $signature

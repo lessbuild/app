@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 final class DeleteProvider
 {
     /**
+     * Create a new DeleteProvider instance.
+     *
      * Disconnects a provider nothing depends on.
      *
      * @param  RecordAuditEntry  $audit  Records it.

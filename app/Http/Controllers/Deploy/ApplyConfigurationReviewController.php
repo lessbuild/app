@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class ApplyConfigurationReviewController
 {
     /**
-     * Applies a configuration review and shows the application's progress.
+     * Apply a configuration review and shows the application's progress.
      *
      * @param  User  $user
      * @param  Project  $project

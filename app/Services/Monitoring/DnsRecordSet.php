@@ -13,8 +13,8 @@ final class DnsRecordSet
     public const RESPONSE_LIMIT = 32768;
 
     /**
-     * A public DNS name, lowercased without its trailing dot, or null for invalid names and reserved suffixes such as
-     * `.local` and `.internal`.
+     * Normalise a public DNS name: lowercased without its trailing dot, or null for invalid names and reserved
+     * suffixes such as `.local` and `.internal`.
      *
      * @param  string  $hostname
      * @return string|null
@@ -35,7 +35,7 @@ final class DnsRecordSet
     }
 
     /**
-     * A syntactically valid DNS name, lowercased without its trailing dot, or null.
+     * Normalise a syntactically valid DNS name: lowercased without its trailing dot, or null.
      *
      * @param  string  $hostname
      * @return string|null
@@ -49,7 +49,7 @@ final class DnsRecordSet
     }
 
     /**
-     * Parses the expected records typed for a DNS monitor (one per line, 1 to 20) into the same form as observed ones;
+     * Parse the expected records typed for a DNS monitor (one per line, 1 to 20) into the same form as observed ones;
      * null if any line is invalid.
      *
      * @param  string  $type
@@ -78,7 +78,7 @@ final class DnsRecordSet
     }
 
     /**
-     * Normalises the records a lookup returned (only those of the monitor's type), or null when the answer is too large
+     * Normalise the records a lookup returned (only those of the monitor's type), or null when the answer is too large
      * or malformed.
      *
      * @param  string  $type
@@ -121,8 +121,8 @@ final class DnsRecordSet
     }
 
     /**
-     * One record value in canonical form: IPs compressed, names lowercased, MX as "priority target" (with the null MX `0
-     * .`), TXT as-is if printable.
+     * Normalise one record value: IPs compressed, names lowercased, MX as "priority target" (with the null MX `0 .`),
+     * TXT as-is if printable.
      *
      * @param  string  $type
      * @param  string  $value
@@ -154,7 +154,7 @@ final class DnsRecordSet
     }
 
     /**
-     * A TXT record's full text, joining its strings when the resolver split them.
+     * Get a TXT record's full text, joining its strings when the resolver split them.
      *
      * @param  array<string, mixed>  $record
      * @return string|null
@@ -173,7 +173,7 @@ final class DnsRecordSet
     }
 
     /**
-     * Unique values in a stable order, so sets compare equal regardless of answer order.
+     * Sort unique values in a stable order, so sets compare equal regardless of answer order.
      *
      * @param  list<string>  $values
      * @return list<string>

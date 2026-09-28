@@ -9,6 +9,8 @@ use Carbon\CarbonInterface;
 final class ApiTokenExpiring extends InboxNotification
 {
     /**
+     * Create a new ApiTokenExpiring instance.
+     *
      * Warns a token's owner, a week ahead, that it's about to expire.
      *
      * @param  string  $accountId  The token's account.
@@ -18,7 +20,7 @@ final class ApiTokenExpiring extends InboxNotification
     public function __construct(private readonly string $accountId, private readonly string $tokenName, private readonly CarbonInterface $expiresAt) {}
 
     /**
-     * Which token expires, and how soon.
+     * Get the headline: which token expires, and how soon.
      *
      * @return string
      */
@@ -28,7 +30,7 @@ final class ApiTokenExpiring extends InboxNotification
     }
 
     /**
-     * What to do before it does.
+     * Say what to do before it does.
      *
      * @return string
      */
@@ -38,7 +40,7 @@ final class ApiTokenExpiring extends InboxNotification
     }
 
     /**
-     * The API tokens page.
+     * Get the API tokens page.
      *
      * @return string
      */
@@ -48,7 +50,7 @@ final class ApiTokenExpiring extends InboxNotification
     }
 
     /**
-     * The token's account.
+     * Get the token's account.
      *
      * @return string
      */

@@ -35,7 +35,7 @@ class QueueWorker extends Model
     use HasFactory;
 
     /**
-     * The queue monitor the worker reports to, including archived ones.
+     * Get the queue monitor the worker reports to, including archived ones.
      *
      * @return BelongsTo<Monitor, $this>
      */
@@ -45,6 +45,8 @@ class QueueWorker extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -53,7 +53,7 @@ class AlertDestination extends Model
     protected $hidden = ['endpoint_url', 'signing_secret'];
 
     /**
-     * Limits a query to the account's destinations.
+     * Limit a query to the account's destinations.
      *
      * @param  Builder<AlertDestination>  $query
      * @param  Account  $account
@@ -66,7 +66,7 @@ class AlertDestination extends Model
     }
 
     /**
-     * The account the destination belongs to.
+     * Get the account the destination belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -76,7 +76,7 @@ class AlertDestination extends Model
     }
 
     /**
-     * The member an email destination sends to (`recipient_user_id`).
+     * Get the member an email destination sends to (`recipient_user_id`).
      *
      * @return BelongsTo<User, $this>
      */
@@ -86,7 +86,7 @@ class AlertDestination extends Model
     }
 
     /**
-     * Monitors that alert this destination.
+     * Get the monitors that alert this destination.
      *
      * @return BelongsToMany<Monitor, $this>
      */
@@ -96,7 +96,7 @@ class AlertDestination extends Model
     }
 
     /**
-     * Alert rules that alert this destination.
+     * Get the alert rules that alert this destination.
      *
      * @return BelongsToMany<AlertRule, $this>
      */
@@ -106,7 +106,7 @@ class AlertDestination extends Model
     }
 
     /**
-     * Escalation steps that notify this destination.
+     * Get the escalation steps that notify this destination.
      *
      * @return HasMany<AlertEscalation, $this>
      */
@@ -116,7 +116,7 @@ class AlertDestination extends Model
     }
 
     /**
-     * Alerts sent to this destination.
+     * Get the alerts sent to this destination.
      *
      * @return HasMany<AlertDelivery, $this>
      */
@@ -126,8 +126,8 @@ class AlertDestination extends Model
     }
 
     /**
-     * Where alerts go, safe to show: the recipient's name for email, or only the host of a webhook URL (the full URL may
-     * contain a token).
+     * Describe where alerts go, safe to show: the recipient's name for email, or only the host of a webhook URL (the
+     * full URL may contain a token).
      *
      * @return string
      */
@@ -139,6 +139,8 @@ class AlertDestination extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Encrypts `endpoint_url` and `signing_secret`, and reads `type` as an AlertDestinationType.
      *
      * @return array<string, string>

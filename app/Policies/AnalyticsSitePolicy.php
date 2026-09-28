@@ -12,7 +12,7 @@ use App\Models\User;
 final class AnalyticsSitePolicy
 {
     /**
-     * Adding an analytics site to a project: people who manage Analytics there.
+     * Determine whether the user can add an analytics site to a project: people who manage Analytics there.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -24,7 +24,7 @@ final class AnalyticsSitePolicy
     }
 
     /**
-     * Seeing a site's reports: people who may use Analytics in its project.
+     * Determine whether the user can see a site's reports: people who may use Analytics in its project.
      *
      * @param  User  $user
      * @param  AnalyticsSite  $site
@@ -36,7 +36,7 @@ final class AnalyticsSitePolicy
     }
 
     /**
-     * Downloading a site's data, allowed to anyone who may see its reports.
+     * Determine whether the user can download a site's data, which anyone who may see its reports can.
      *
      * @param  User  $user
      * @param  AnalyticsSite  $site
@@ -48,7 +48,8 @@ final class AnalyticsSitePolicy
     }
 
     /**
-     * Changing a site's domains, goals and settings: people who manage Analytics in its project.
+     * Determine whether the user can change a site's domains, goals and settings: people who manage Analytics in its
+     * project.
      *
      * @param  User  $user
      * @param  AnalyticsSite  $site
@@ -60,7 +61,7 @@ final class AnalyticsSitePolicy
     }
 
     /**
-     * Removing a site, allowed to the same people as update.
+     * Determine whether the user can remove a site, which the same people as update can.
      *
      * @param  User  $user
      * @param  AnalyticsSite  $site

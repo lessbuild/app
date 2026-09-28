@@ -14,7 +14,7 @@ use App\Support\Hostname;
 final class SearchProjectsQuery
 {
     /**
-     * Projects whose name or slug contains the term, for the command palette.
+     * Find projects whose name or slug contains the term, for the command palette.
      *
      * @param  Account  $account
      * @param  string  $term
@@ -36,8 +36,8 @@ final class SearchProjectsQuery
     }
 
     /**
-     * Domains whose hostname contains the term. Internationalised terms are converted to their ASCII form first, which
-     * is how hostnames are stored.
+     * Find domains whose hostname contains the term. Internationalised terms are converted to their ASCII form first,
+     * which is how hostnames are stored.
      *
      * @param  Account  $account
      * @param  string  $term

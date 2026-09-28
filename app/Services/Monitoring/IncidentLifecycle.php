@@ -14,6 +14,8 @@ use Carbon\CarbonImmutable;
 final class IncidentLifecycle
 {
     /**
+     * Create a new IncidentLifecycle instance.
+     *
      * Opens, closes and changes incidents.
      *
      * @param  AlertDispatcher  $alerts  Queues alerts for incident events.
@@ -21,6 +23,8 @@ final class IncidentLifecycle
     public function __construct(private readonly AlertDispatcher $alerts) {}
 
     /**
+     * Resolve an incident with a reason, record it on the timeline, and send recovery alerts when it recovered.
+     *
      * Called inside a transaction holding the source and incident locks.
      *
      * @param  Incident  $incident

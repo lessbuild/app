@@ -13,7 +13,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class DownloadExportController
 {
     /**
-     * Downloads a finished export by its secret token. Expired or unfinished exports are gone (410).
+     * Download a finished export by its secret token. Expired or unfinished exports are gone (410).
      *
      * @param  Project  $project
      * @param  string  $token

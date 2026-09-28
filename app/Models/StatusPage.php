@@ -39,7 +39,7 @@ class StatusPage extends Model
     use HasFactory;
 
     /**
-     * The account the page belongs to.
+     * Get the account the page belongs to.
      *
      * @return BelongsTo<Account, $this>
      */
@@ -49,7 +49,7 @@ class StatusPage extends Model
     }
 
     /**
-     * The monitors it shows, in order.
+     * Get the monitors it shows, in order.
      *
      * @return HasMany<StatusPageComponent, $this>
      */
@@ -59,7 +59,7 @@ class StatusPage extends Model
     }
 
     /**
-     * Incident and maintenance updates posted to it.
+     * Get the incident and maintenance updates posted to the page.
      *
      * @return HasMany<StatusUpdate, $this>
      */
@@ -69,7 +69,7 @@ class StatusPage extends Model
     }
 
     /**
-     * People subscribed to its updates.
+     * Get the people subscribed to the page's updates.
      *
      * @return HasMany<StatusSubscription, $this>
      */
@@ -79,6 +79,8 @@ class StatusPage extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -52,7 +52,7 @@ final class SaveMaintenanceWindow
     }
 
     /**
-     * A time from the form's `datetime-local` input, read as UTC, or null when it's empty or malformed.
+     * Parse a time from the form's `datetime-local` input as UTC, or return null when it's empty or malformed.
      *
      * @param  mixed  $value
      * @return CarbonImmutable|null

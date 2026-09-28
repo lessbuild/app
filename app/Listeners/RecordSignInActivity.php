@@ -20,6 +20,8 @@ final class RecordSignInActivity
     public const PENDING_METHOD = 'login.method';
 
     /**
+     * Create a new RecordSignInActivity instance.
+     *
      * Records successful and failed sign-ins for the person's sign-in activity list.
      *
      * @param  Request  $request  The request the sign-in happened in, which says how it happened and where from.
@@ -28,7 +30,7 @@ final class RecordSignInActivity
     public function __construct(private readonly Request $request, private readonly RecordSignIn $record) {}
 
     /**
-     * Records a successful sign-in and how it was done, worked out from the route that finished it. After a two-factor
+     * Record a successful sign-in and how it was done, worked out from the route that finished it. After a two-factor
      * challenge, the first factor comes from the session.
      *
      * @param  Login  $event
@@ -58,7 +60,7 @@ final class RecordSignInActivity
     }
 
     /**
-     * Records a wrong password for a known account. Unknown emails aren't recorded, since there's nobody to show them
+     * Record a wrong password for a known account. Unknown emails aren't recorded, since there's nobody to show them
      * to.
      *
      * @param  Failed  $event
@@ -72,7 +74,7 @@ final class RecordSignInActivity
     }
 
     /**
-     * Records a wrong two-factor code, with the first factor the person had already passed.
+     * Record a wrong two-factor code, with the first factor the person had already passed.
      *
      * @param  TwoFactorAuthenticationFailed  $event
      * @return void
@@ -83,7 +85,7 @@ final class RecordSignInActivity
     }
 
     /**
-     * The first factor of a sign-in waiting on its two-factor code. Provider sign-ins store theirs in the session;
+     * Get the first factor of a sign-in waiting on its two-factor code. Provider sign-ins store theirs in the session;
      * otherwise it was a password.
      *
      * @return SignInMethod
@@ -96,7 +98,7 @@ final class RecordSignInActivity
     }
 
     /**
-     * The sign-in method for the provider named in the callback URL, or null for an unknown provider.
+     * Get the sign-in method for the provider named in the callback URL, or null for an unknown provider.
      *
      * @return SignInMethod|null
      */

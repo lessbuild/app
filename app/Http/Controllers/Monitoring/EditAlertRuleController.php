@@ -19,7 +19,7 @@ use Illuminate\Contracts\View\View;
 final class EditAlertRuleController
 {
     /**
-     * The alert rule form, filled in.
+     * Show the alert rule form, filled in.
      *
      * @param  User  $user
      * @param  Project  $project

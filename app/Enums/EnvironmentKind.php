@@ -12,7 +12,7 @@ enum EnvironmentKind: string
     case Preview = 'preview';
 
     /**
-     * The kind's name as shown on environment lists and forms.
+     * Get the kind's name as shown on environment lists and forms.
      *
      * @return string
      */
@@ -27,7 +27,7 @@ enum EnvironmentKind: string
     }
 
     /**
-     * Where the environment sits on the way to production: builds are promoted to a higher rank only.
+     * Get where the environment sits on the way to production: builds are promoted to a higher rank only.
      *
      * @return int
      */

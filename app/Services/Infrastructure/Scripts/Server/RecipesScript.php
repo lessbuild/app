@@ -16,7 +16,7 @@ class RecipesScript implements ServerScript
     public const IDENTIFIER = 'ran-recipes';
 
     /**
-     * Script to run
+     * Render the stage that runs the recipes chosen when the server was created, and reports progress.
      *
      * @param  int  $step
      * @param  Server  $server

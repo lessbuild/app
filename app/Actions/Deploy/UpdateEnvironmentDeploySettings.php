@@ -13,6 +13,8 @@ use Illuminate\Validation\ValidationException;
 final class UpdateEnvironmentDeploySettings
 {
     /**
+     * Create a new UpdateEnvironmentDeploySettings instance.
+     *
      * Changes an environment's deploy settings, within the plan.
      *
      * @param  Entitlements  $entitlements  Checks the plan includes scaling before replica settings change.
@@ -20,8 +22,8 @@ final class UpdateEnvironmentDeploySettings
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * How an environment's deploys run: approval, strategy, automatic rollback, observation, runtime and replicas.
-     * More than one replica needs scaling on the Deploy plan.
+     * Save how an environment's deploys run: approval, strategy, automatic rollback, observation, runtime and
+     * replicas. More than one replica needs scaling on the Deploy plan.
      *
      * @param  User  $actor
      * @param  Environment  $environment

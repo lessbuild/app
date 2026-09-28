@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class InspectDatabaseController
 {
     /**
-     * Starts a database inspection, unless one is already running.
+     * Start a database inspection, unless one is already running.
      *
      * @param  User  $user
      * @param  Project  $project

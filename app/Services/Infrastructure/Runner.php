@@ -19,7 +19,7 @@ class Runner
     protected Server $server;
 
     /**
-     * Sets the server to run the command on
+     * Set the server to run the command on
      *
      * @param  Server  $server
      * @return $this

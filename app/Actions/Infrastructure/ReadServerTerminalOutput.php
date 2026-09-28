@@ -13,6 +13,8 @@ use Illuminate\Support\Facades\Gate;
 final class ReadServerTerminalOutput
 {
     /**
+     * Create a new ReadServerTerminalOutput instance.
+     *
      * Hands a terminal's new output to the browser.
      *
      * @param  TerminalFrames  $frames  Reads output frames after the browser's cursor.
@@ -20,7 +22,8 @@ final class ReadServerTerminalOutput
     public function __construct(private readonly TerminalFrames $frames) {}
 
     /**
-     * Output after the browser's last sequence, and the session's state (so the page knows when it has closed).
+     * Get the output after the browser's last sequence, and the session's state (so the page knows when it has
+     * closed).
      *
      * @param  User  $actor
      * @param  ServerTerminalSession  $terminal

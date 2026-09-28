@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateProjectController
 {
     /**
-     * Saves the project's name and description.
+     * Save the project's name and description.
      *
      * @param  ProjectRequest  $request
      * @param  User  $user

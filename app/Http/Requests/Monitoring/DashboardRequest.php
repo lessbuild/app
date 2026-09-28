@@ -13,7 +13,7 @@ use Illuminate\Validation\Rule;
 final class DashboardRequest extends FormRequest
 {
     /**
-     * A dashboard's name, description, range and at least one widget, each at most once.
+     * Get the validation rules: a dashboard's name, description, range and at least one widget, each at most once.
      *
      * @return array<string, array<mixed>>
      */
@@ -29,7 +29,7 @@ final class DashboardRequest extends FormRequest
     }
 
     /**
-     * A clearer message when no widget is chosen.
+     * Get a clearer message for when no widget is chosen.
      *
      * @return array<string, string>
      */

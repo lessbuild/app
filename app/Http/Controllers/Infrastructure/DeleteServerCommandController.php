@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteServerCommandController
 {
     /**
-     * Deletes a finished command from the history; queued or running ones stay.
+     * Delete a finished command from the history; queued or running ones stay.
      *
      * @param  User  $user
      * @param  Project  $project

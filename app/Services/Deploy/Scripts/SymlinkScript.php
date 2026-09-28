@@ -15,7 +15,8 @@ class SymlinkScript extends BuildProvisioningScript
     public const IDENTIFIER = 'symlinked';
 
     /**
-     * The script to run
+     * Render the stage that links the environment file and persistent storage into the release before it goes live,
+     * and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build

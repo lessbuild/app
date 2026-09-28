@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Builder;
 final class ReleaseMetricsQuery
 {
     /**
-     * The time window for a release page's range: the last day, 7 days or 30 days.
+     * Work out the time window for a release page's range: the last day, 7 days or 30 days.
      *
      * @param  string  $range
      * @return array{CarbonImmutable, CarbonImmutable}
@@ -31,7 +31,7 @@ final class ReleaseMetricsQuery
     }
 
     /**
-     * The events of one release in the project, optionally in one environment, inside the window.
+     * Query the events of one release in the project, optionally in one environment, inside the window.
      *
      * @param  Project  $project
      * @param  Release  $release
@@ -50,7 +50,7 @@ final class ReleaseMetricsQuery
     }
 
     /**
-     * Totals for a set of events: requests, how many were timed and failed, their average duration and error rate,
+     * Total up a set of events: requests, how many were timed and failed, their average duration and error rate,
      * exceptions and distinct issues.
      *
      * @param  Builder<TelemetryEvent>  $query
@@ -80,7 +80,8 @@ final class ReleaseMetricsQuery
     }
 
     /**
-     * Equal observed windows, narrowed for deployments less than a full window old.
+     * Compare equal observed windows before and after a deployment, narrowed for deployments less than a full window
+     * old.
      *
      * @param  Project  $project
      * @param  Deployment  $deployment

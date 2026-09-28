@@ -14,7 +14,7 @@ use Illuminate\Contracts\View\View;
 final class EditProjectSettingsController
 {
     /**
-     * The project settings page, offering every environment kind except production.
+     * Show the project settings page, offering every environment kind except production.
      *
      * @param  User  $user
      * @param  Project  $project

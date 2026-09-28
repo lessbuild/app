@@ -13,8 +13,10 @@ final readonly class InvitationAccepted
     use Dispatchable;
 
     /**
-     * Someone accepted an invitation and joined the account. Recorded in the audit log, and whoever sent the invitation is
-     * notified.
+     * Create a new InvitationAccepted instance.
+     *
+     * Someone accepted an invitation and joined the account. Recorded in the audit log, and whoever sent the
+     * invitation is notified.
      *
      * @param  AccountInvitation  $invitation  The invitation they accepted.
      * @param  Membership  $membership  The membership it created.

@@ -15,7 +15,7 @@ use Illuminate\Http\Request;
 final class ConfirmServerImportController
 {
     /**
-     * Imports the inspected server, using the confirmation token this browser was given when it inspected it.
+     * Import the inspected server, using the confirmation token this browser was given when it inspected it.
      *
      * @param  Request  $request
      * @param  User  $user

@@ -14,8 +14,8 @@ use App\Models\User;
 trait ChecksAccountRole
 {
     /**
-     * Whether the person is a member of the account whose role grants the permission and, when a service is named,
-     * whose membership isn't limited to other services. People outside the account are always refused.
+     * Determine whether the person is a member of the account whose role grants the permission and, when a service is
+     * named, whose membership isn't limited to other services. People outside the account are always refused.
      *
      * @param  User  $user
      * @param  string  $accountId
@@ -31,8 +31,9 @@ trait ChecksAccountRole
     }
 
     /**
-     * The account an ability is checked in. Create abilities receive the account or, from project pages, the project
-     * (account-wide records such as servers are listed there too); other abilities pass the record's account ID.
+     * Resolve the account an ability is checked in. Create abilities receive the account or, from project pages, the
+     * project (account-wide records such as servers are listed there too); other abilities pass the record's account
+     * ID.
      *
      * @param  Account|Project|string  $scope
      * @return string

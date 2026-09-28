@@ -14,7 +14,7 @@ final class SearchMetricsRequest extends FormRequest
     public const KINDS = ['gauge' => 'Gauge', 'sum' => 'Sum', 'histogram' => 'Histogram', 'exponentialHistogram' => 'Exponential histogram', 'summary' => 'Summary'];
 
     /**
-     * The query string.
+     * Get the query string to validate.
      *
      * @return array<string, mixed>
      */
@@ -24,7 +24,7 @@ final class SearchMetricsRequest extends FormRequest
     }
 
     /**
-     * The metrics pages' search, environment, kind, range, value-or-rate mode and page.
+     * Get the validation rules for the metrics pages' search, environment, kind, range, value-or-rate mode and page.
      *
      * @return array<string, array<mixed>>
      */
@@ -41,7 +41,7 @@ final class SearchMetricsRequest extends FormRequest
     }
 
     /**
-     * The validated filters with empty ones dropped, over defaults of the last hour showing values.
+     * Get the validated filters with empty ones dropped, over defaults of the last hour showing values.
      *
      * @return array{range: string, mode: string, q?: string, environment?: string, kind?: string, page?: int}
      */

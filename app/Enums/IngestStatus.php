@@ -13,7 +13,7 @@ enum IngestStatus: string
     case Failed = 'failed';
 
     /**
-     * The receipt status as shown on the ingest receipts page.
+     * Get the receipt status as shown on the ingest receipts page.
      *
      * @return string
      */
@@ -23,7 +23,7 @@ enum IngestStatus: string
     }
 
     /**
-     * The badge colour for the status.
+     * Get the badge colour for the status.
      *
      * @return string
      */

@@ -16,7 +16,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateConfigurationOperationController
 {
     /**
-     * Retries or cancels one of an applied configuration's operations.
+     * Retry or cancels one of an applied configuration's operations.
      *
      * @param  User  $user
      * @param  Project  $project

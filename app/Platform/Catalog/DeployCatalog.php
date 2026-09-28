@@ -8,8 +8,8 @@ namespace App\Platform\Catalog;
 final class DeployCatalog
 {
     /**
-     * Deployer's Free, Starter, Pro, Team and Business tiers with their website, preview, server and member limits and
-     * feature flags.
+     * Get Deployer's Free, Starter, Pro, Team and Business tiers with their website, preview, server and member limits
+     * and feature flags.
      *
      * @return ServiceBilling
      */
@@ -26,7 +26,7 @@ final class DeployCatalog
     }
 
     /**
-     * Builds a tier from Deployer's plan table, turning dollars into cents and the positional limits into entitlement
+     * Build a tier from Deployer's plan table, turning dollars into cents and the positional limits into entitlement
      * keys, so the table above stays readable.
      *
      * @param  string  $key

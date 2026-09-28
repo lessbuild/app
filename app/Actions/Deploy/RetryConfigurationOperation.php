@@ -14,6 +14,8 @@ use Illuminate\Support\Facades\Gate;
 final class RetryConfigurationOperation
 {
     /**
+     * Create a new RetryConfigurationOperation instance.
+     *
      * Retries a failed configuration operation.
      *
      * @param  ConfigurationOperations  $operations  Starts the retry and refreshes its application's status.

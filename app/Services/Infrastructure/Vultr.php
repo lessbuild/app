@@ -17,6 +17,8 @@ class Vultr implements ServerProvider
     private const API = 'https://api.vultr.com/v2';
 
     /**
+     * Create a new Vultr instance.
+     *
      * Configure the Vultr client with the account API credential.
      *
      * @param  string  $token  Bearer token used for authenticated provider requests.

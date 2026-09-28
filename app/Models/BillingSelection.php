@@ -25,6 +25,8 @@ class BillingSelection extends Model
     use HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `kind` as a SelectionKind (tier or add-on).
      *
      * @return array<string, string>

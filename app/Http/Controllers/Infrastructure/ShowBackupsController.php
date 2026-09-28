@@ -16,7 +16,7 @@ use Illuminate\Contracts\View\View;
 final class ShowBackupsController
 {
     /**
-     * The backups page: destinations, recent backups and when backups, restores and verifications last succeeded.
+     * Show the backups page: destinations, recent backups and when backups, restores and verifications last succeeded.
      *
      * @param  User  $user
      * @param  Project  $project

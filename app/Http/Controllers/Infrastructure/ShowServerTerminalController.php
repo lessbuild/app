@@ -16,7 +16,7 @@ use Illuminate\Http\Request;
 final class ShowServerTerminalController
 {
     /**
-     * The terminal page. Only the browser that opened the terminal can type into it; others see it read-only.
+     * Show the terminal page. Only the browser that opened the terminal can type into it; others see it read-only.
      *
      * @param  Request  $request
      * @param  User  $user

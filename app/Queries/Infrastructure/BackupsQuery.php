@@ -16,7 +16,7 @@ use Illuminate\Database\Eloquent\Collection;
 final class BackupsQuery
 {
     /**
-     * The latest backups of the account's websites (or of one website) with their destination, restores and
+     * Get the latest backups of the account's websites (or of one website) with their destination, restores and
      * verifications.
      *
      * @param  string  $accountId
@@ -32,8 +32,8 @@ final class BackupsQuery
     }
 
     /**
-     * When the account last had a successful backup, restore and verification, and how long that restore took, for the
-     * backups page's headline.
+     * Find when the account last had a successful backup, restore and verification, and how long that restore took,
+     * for the backups page's headline.
      *
      * @param  string  $accountId
      * @return array{backup: CarbonImmutable|null, restore: CarbonImmutable|null, restore_seconds: int|null, verification: CarbonImmutable|null}
@@ -53,7 +53,7 @@ final class BackupsQuery
     }
 
     /**
-     * The account's backups, including those of deleted websites.
+     * Query the account's backups, including those of deleted websites.
      *
      * @param  string  $accountId
      * @return Builder<WebsiteBackup>

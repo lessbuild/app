@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class ShowAuditLogController
 {
     /**
-     * The account's audit log, optionally narrowed to one project.
+     * Show the account's audit log, optionally narrowed to one project.
      *
      * @param  Account  $account
      * @param  Request  $request

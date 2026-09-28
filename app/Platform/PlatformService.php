@@ -14,35 +14,36 @@ use App\Platform\Catalog\ServiceBilling;
 interface PlatformService
 {
     /**
-     * Stable identifier stored in the database, e.g. `deploy`.
+     * Get the service's stable identifier, stored in the database, e.g. `deploy`.
      *
      * @return string
      */
     public function key(): string;
 
     /**
-     * The service's product name, as the sidebar, billing and enable pages show it.
+     * Get the service's product name, as the sidebar, billing and enable pages show it.
      *
      * @return string
      */
     public function name(): string;
 
     /**
-     * One sentence for enable pages and the overview's service cards.
+     * Get one sentence for enable pages and the overview's service cards.
      *
      * @return string
      */
     public function tagline(): string;
 
     /**
-     * Icon name in the Signal icon sprite.
+     * Get the icon name in the Signal icon sprite.
      *
      * @return string
      */
     public function icon(): string;
 
     /**
-     * The service's pages inside a project, in sidebar order. The first is the landing page the service card links to.
+     * Get the service's pages inside a project, in sidebar order. The first is the landing page the service card links
+     * to.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem> the service's pages inside a project, first one is its landing page
@@ -50,14 +51,14 @@ interface PlatformService
     public function navItems(string $projectId): array;
 
     /**
-     * The API token scopes this service adds (its read and write scopes), offered on the token form.
+     * Get the API token scopes this service adds (its read and write scopes), offered on the token form.
      *
      * @return list<ApiScope>
      */
     public function apiScopes(): array;
 
     /**
-     * Tiers, add-ons and meters this service sells.
+     * Get the tiers, add-ons and meters this service sells.
      *
      * @return ServiceBilling
      */

@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class DeleteMaintenanceWindowController
 {
     /**
-     * Deletes a maintenance window.
+     * Delete a maintenance window.
      *
      * @param  User  $user
      * @param  Project  $project

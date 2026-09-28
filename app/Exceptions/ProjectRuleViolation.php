@@ -8,7 +8,7 @@ namespace App\Exceptions;
 final class ProjectRuleViolation extends RuleViolation
 {
     /**
-     * The service key doesn't match any registered platform service.
+     * Build the violation for a service key that doesn't match any registered platform service.
      *
      * @param  string  $service
      * @return ProjectRuleViolation
@@ -19,7 +19,7 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * Someone tried to create a second production environment or delete the one every project has.
+     * Build the violation for creating a second production environment or deleting the one every project has.
      *
      * @return ProjectRuleViolation
      */
@@ -29,7 +29,7 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * Environment names are unique within a project.
+     * Build the violation for an environment name the project already uses.
      *
      * @return ProjectRuleViolation
      */
@@ -39,7 +39,7 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * A domain being added isn't a public hostname.
+     * Build the violation for a domain that isn't a public hostname.
      *
      * @return ProjectRuleViolation
      */
@@ -49,7 +49,7 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * The project already lists this domain.
+     * Build the violation for a domain the project already lists.
      *
      * @return ProjectRuleViolation
      */
@@ -59,7 +59,8 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * Another project proved ownership of this domain first; a domain can only be verified in one project at a time.
+     * Build the violation for a domain another project proved ownership of first; a domain can only be verified in one
+     * project at a time.
      *
      * @return ProjectRuleViolation
      */
@@ -69,7 +70,7 @@ final class ProjectRuleViolation extends RuleViolation
     }
 
     /**
-     * A domain was pointed at an environment from a different project.
+     * Build the violation for a domain pointed at an environment from a different project.
      *
      * @return ProjectRuleViolation
      */

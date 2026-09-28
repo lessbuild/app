@@ -19,7 +19,7 @@ use Illuminate\Http\JsonResponse;
 final class UpdateConfigurationOperationController
 {
     /**
-     * Cancels or retries the operation and returns the refreshed receipt (with the new operation's ID for retries).
+     * Cancel or retries the operation and returns the refreshed receipt (with the new operation's ID for retries).
      *
      * @param  User  $user
      * @param  Account  $account

@@ -14,6 +14,8 @@ use Illuminate\Support\Str;
 final class MonitorCheckRunner
 {
     /**
+     * Create a new MonitorCheckRunner instance.
+     *
      * Runs monitor checks.
      *
      * @param  MonitorQueue  $queue  Locks the monitor and discards jobs for cancelled checks.
@@ -27,9 +29,9 @@ final class MonitorCheckRunner
     ) {}
 
     /**
-     * Runs one queued check: claims it with a lease under lock, probes outside the transaction, then records the result
-     * if the claim still holds. Checks whose monitor changed are cancelled, and ones whose lease ran out are recorded as
-     * missed or interrupted.
+     * Run one queued check: claims it with a lease under lock, probes outside the transaction, then records the result
+     * if the claim still holds. Checks whose monitor changed are cancelled, and ones whose lease ran out are recorded
+     * as missed or interrupted.
      *
      * @param  string  $id
      * @return void
@@ -80,7 +82,7 @@ final class MonitorCheckRunner
     }
 
     /**
-     * Settles a check whose worker died (or, with `$expiredOnly`, only one whose lease ran out) as missed or
+     * Settle a check whose worker died (or, with `$expiredOnly`, only one whose lease ran out) as missed or
      * interrupted.
      *
      * @param  string  $id
@@ -105,7 +107,7 @@ final class MonitorCheckRunner
     }
 
     /**
-     * Locks the check's monitor, then the check, in that order, so scheduling and running can't deadlock.
+     * Lock the check's monitor, then the check, in that order, so scheduling and running can't deadlock.
      *
      * @param  string  $id
      * @return array{?Monitor, ?MonitorCheck}
@@ -122,8 +124,8 @@ final class MonitorCheckRunner
     }
 
     /**
-     * Whether the check still applies: the monitor accepts checks and hasn't been reconfigured since the check was
-     * scheduled.
+     * Determine whether the check still applies: the monitor accepts checks and hasn't been reconfigured since the
+     * check was scheduled.
      *
      * @param  Monitor|null  $monitor
      * @param  MonitorCheck  $check
@@ -137,7 +139,7 @@ final class MonitorCheckRunner
     }
 
     /**
-     * Cancels a check whose monitor changed, discarding its job.
+     * Cancel a check whose monitor changed, discarding its job.
      *
      * @param  MonitorCheck  $check
      * @return void
@@ -152,7 +154,7 @@ final class MonitorCheckRunner
     }
 
     /**
-     * Stores the check's result and, unless a newer check already reported, updates the monitor's health, noting a gap
+     * Store the check's result and, unless a newer check already reported, updates the monitor's health, noting a gap
      * when intervals were skipped.
      *
      * @param  Monitor  $monitor

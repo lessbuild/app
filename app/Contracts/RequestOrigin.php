@@ -8,14 +8,14 @@ namespace App\Contracts;
 interface RequestOrigin
 {
     /**
-     * The client IP of the request that caused the change, recorded on audit entries.
+     * Get the client IP of the request that caused the change, recorded on audit entries.
      *
      * @return string|null
      */
     public function ipAddress(): ?string;
 
     /**
-     * The browser or client identifier of that request, recorded alongside the IP.
+     * Get the browser or client identifier of that request, recorded alongside the IP.
      *
      * @return string|null
      */

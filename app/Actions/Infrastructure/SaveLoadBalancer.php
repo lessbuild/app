@@ -16,6 +16,8 @@ use Illuminate\Validation\ValidationException;
 final class SaveLoadBalancer
 {
     /**
+     * Create a new SaveLoadBalancer instance.
+     *
      * Creates or changes a load balancer.
      *
      * @param  LoadBalancerChanges  $changes  Applies its configuration.

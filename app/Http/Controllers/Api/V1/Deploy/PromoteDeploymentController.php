@@ -17,7 +17,7 @@ use Illuminate\Http\Request;
 final class PromoteDeploymentController
 {
     /**
-     * Queues the promotion (202).
+     * Queue the promotion (202).
      *
      * @param  Request  $request
      * @param  User  $user

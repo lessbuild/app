@@ -13,6 +13,8 @@ use Illuminate\Support\Collection;
 final class IncidentDeploymentsQuery
 {
     /**
+     * Create a new IncidentDeploymentsQuery instance.
+     *
      * Finds the deploys that might explain an incident.
      *
      * @param  Entitlements  $entitlements  Decides how far back the account's plan looks.
@@ -20,7 +22,7 @@ final class IncidentDeploymentsQuery
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * How far back the account's Monitoring tier looks; 0 means the feature isn't included.
+     * Get how far back the account's Monitoring tier looks; 0 means the feature isn't included.
      *
      * @param  Incident  $incident
      * @return int
@@ -31,7 +33,7 @@ final class IncidentDeploymentsQuery
     }
 
     /**
-     * Up to ten deploys to the incident's environment in the window before it opened. Empty when the plan doesn't
+     * Find up to ten deploys to the incident's environment in the window before it opened. Empty when the plan doesn't
      * include deployment context or the incident has no environment.
      *
      * @param  Incident  $incident

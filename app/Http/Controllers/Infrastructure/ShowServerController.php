@@ -20,8 +20,8 @@ use Illuminate\Http\Request;
 final class ShowServerController
 {
     /**
-     * A server's page, in tabs: overview, alerts and diagnostics (once it's active), logs, and settings for people who
-     * may change it.
+     * Show a server's page, in tabs: overview, alerts and diagnostics (once it's active), logs, and settings for
+     * people who may change it.
      *
      * @param  Request  $request
      * @param  User  $user

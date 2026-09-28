@@ -23,6 +23,8 @@ class UsageRecord extends Model
     use HasUlids;
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Plain columns; dates come back as Carbon.
      *
      * @return array<string, string>

@@ -15,6 +15,8 @@ final class MetricChart
     public const LIMIT = 600;
 
     /**
+     * Create a new MetricChart instance.
+     *
      * Reads metric series for charts and alerts.
      *
      * @param  MetricAnomalyDetector  $anomalies  Marks unusual points.
@@ -22,8 +24,8 @@ final class MetricChart
     public function __construct(private readonly MetricAnomalyDetector $anomalies) {}
 
     /**
-     * A series' points over a window for charting (the latest ones when there are too many), as values or per-second
-     * rates, positioned on the chart and marked for anomalies.
+     * Read a series' points over a window for charting (the latest ones when there are too many), as values or
+     * per-second rates, positioned on the chart and marked for anomalies.
      *
      * @param  MetricSeries  $series
      * @param  CarbonImmutable  $from
@@ -67,8 +69,8 @@ final class MetricChart
     }
 
     /**
-     * One sample's value, or its rate from the previous sample (delta series use their own interval). Resets, gaps and
-     * invalid times give no value with the reason.
+     * Get one sample's value, or its rate from the previous sample (delta series use their own interval). Resets, gaps
+     * and invalid times give no value with the reason.
      *
      * @param  MetricSeries  $series
      * @param  MetricSample  $sample

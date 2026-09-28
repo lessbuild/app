@@ -18,6 +18,8 @@ use Illuminate\Validation\ValidationException;
 final class UpdateIncident
 {
     /**
+     * Create a new UpdateIncident instance.
+     *
      * Acknowledges, assigns, annotates or resolves an incident.
      *
      * @param  TelemetryRedactor  $redactor  Redacts notes before they're stored.

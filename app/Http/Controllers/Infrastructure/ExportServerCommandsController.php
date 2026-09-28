@@ -14,7 +14,7 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 final class ExportServerCommandsController
 {
     /**
-     * Streams the command history as a UTF-8 CSV, newest first.
+     * Stream the command history as a UTF-8 CSV, newest first.
      *
      * @param  Project  $project
      * @param  Server  $server

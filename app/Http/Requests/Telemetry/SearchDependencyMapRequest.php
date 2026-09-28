@@ -12,7 +12,7 @@ use Illuminate\Validation\Rule;
 final class SearchDependencyMapRequest extends FormRequest
 {
     /**
-     * Always allowed: the route's middleware already checked access to the project.
+     * Allow the request; the route's middleware already checked access to the project.
      *
      * @return bool
      */
@@ -22,7 +22,7 @@ final class SearchDependencyMapRequest extends FormRequest
     }
 
     /**
-     * The query string.
+     * Get the query string to validate.
      *
      * @return array<string, mixed>
      */
@@ -32,7 +32,7 @@ final class SearchDependencyMapRequest extends FormRequest
     }
 
     /**
-     * An optional range and environment.
+     * Get the validation rules: an optional range and environment.
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
@@ -45,7 +45,7 @@ final class SearchDependencyMapRequest extends FormRequest
     }
 
     /**
-     * The validated filters with empty ones dropped, over a default of the last day.
+     * Get the validated filters with empty ones dropped, over a default of the last day.
      *
      * @return array{range: string, environment?: int}
      */

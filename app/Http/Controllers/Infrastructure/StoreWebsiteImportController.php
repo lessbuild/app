@@ -14,7 +14,7 @@ use Illuminate\Http\RedirectResponse;
 final class StoreWebsiteImportController
 {
     /**
-     * Adopts an existing website without changing anything on the server.
+     * Adopt an existing website without changing anything on the server.
      *
      * @param  ImportWebsiteRequest  $request
      * @param  User  $user

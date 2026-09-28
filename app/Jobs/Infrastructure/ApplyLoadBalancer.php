@@ -35,6 +35,8 @@ final class ApplyLoadBalancer implements ShouldQueue
     public int $timeout = 120;
 
     /**
+     * Create a new ApplyLoadBalancer instance.
+     *
      * Writes a load balancer's configuration to its proxy server.
      *
      * @param  int  $loadBalancerId  The pending load balancer.
@@ -42,7 +44,7 @@ final class ApplyLoadBalancer implements ShouldQueue
     public function __construct(public readonly int $loadBalancerId) {}
 
     /**
-     * Applies the configuration on the active proxy server and marks the load balancer active, or failed with Caddy's
+     * Apply the configuration on the active proxy server and marks the load balancer active, or failed with Caddy's
      * error.
      *
      * @param  ServerShell  $shell
@@ -72,7 +74,7 @@ final class ApplyLoadBalancer implements ShouldQueue
     }
 
     /**
-     * Marks a still-pending load balancer failed with the reason.
+     * Mark a still-pending load balancer failed with the reason.
      *
      * @param  Throwable  $exception
      * @return void

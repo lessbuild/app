@@ -12,6 +12,8 @@ final readonly class BrowsersSignedOut
     use Dispatchable;
 
     /**
+     * Create a new BrowsersSignedOut instance.
+     *
      * Someone signed out their other browsers. Recorded in their personal security log.
      *
      * @param  User  $user  The person.

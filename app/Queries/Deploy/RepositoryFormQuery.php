@@ -14,7 +14,8 @@ use Illuminate\Database\Eloquent\Collection;
 final class RepositoryFormQuery
 {
     /**
-     * The choices on the repository form: the account's Git providers, its websites, and the project's environments.
+     * Get the choices on the repository form: the account's Git providers, its websites, and the project's
+     * environments.
      *
      * @param  Project  $project
      * @return array{providers: Collection<int, Provider>, websites: Collection<int, Website>, environments: Collection<int, \App\Models\Environment>}

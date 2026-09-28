@@ -15,7 +15,7 @@ use Illuminate\Http\RedirectResponse;
 final class UpdateGoalController
 {
     /**
-     * Changes a goal; the new definition counts from now on.
+     * Change a goal; the new definition counts from now on.
      *
      * @param  GoalRequest  $request
      * @param  User  $user

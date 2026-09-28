@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
 class DatabaseSnapshot extends Model
 {
     /**
-     * The website whose database was inspected.
+     * Get the website whose database was inspected.
      *
      * @return BelongsTo<Website, $this>
      */
@@ -40,6 +40,8 @@ class DatabaseSnapshot extends Model
     }
 
     /**
+     * Get the attributes that should be cast.
+     *
      * Reads `tables` as a JSON list.
      *
      * @return array<string, string>

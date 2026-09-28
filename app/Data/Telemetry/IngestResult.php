@@ -9,6 +9,8 @@ use App\Enums\IngestStatus;
 final readonly class IngestResult
 {
     /**
+     * Create a new IngestResult instance.
+     *
      * Create a new class instance.
      *
      * @param  string  $batchId  The batch's ID, echoed back.

@@ -15,7 +15,7 @@ use Illuminate\Contracts\View\View;
 final class ShowCostsController
 {
     /**
-     * The costs page, with the budget for people allowed to set it.
+     * Show the costs page, with the budget for people allowed to set it.
      *
      * @param  User  $user
      * @param  Project  $project

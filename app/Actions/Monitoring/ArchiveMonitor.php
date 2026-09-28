@@ -17,6 +17,8 @@ use Illuminate\Support\Facades\Gate;
 final class ArchiveMonitor
 {
     /**
+     * Create a new ArchiveMonitor instance.
+     *
      * Archives a monitor.
      *
      * @param  IncidentLifecycle  $lifecycle  Closes its open incidents.

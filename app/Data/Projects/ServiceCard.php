@@ -7,6 +7,8 @@ namespace App\Data\Projects;
 final readonly class ServiceCard
 {
     /**
+     * Create a new ServiceCard instance.
+     *
      * One service on a project's overview.
      *
      * @param  string  $key  The service's key.

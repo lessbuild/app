@@ -13,6 +13,8 @@ use Illuminate\Support\Str;
 final class MetricProjection
 {
     /**
+     * Create a new MetricProjection instance.
+     *
      * Turns metric events into series and samples.
      *
      * @param  TelemetryRedactor  $redactor  Removes secrets from series labels.
@@ -21,6 +23,8 @@ final class MetricProjection
     public function __construct(private readonly TelemetryRedactor $redactor, private readonly OtlpPayloadMapper $mapper) {}
 
     /**
+     * Turn a metric event into its series and sample, or null for events that aren't metrics.
+     *
      * Server-owned metadata lives outside the submitted event and retry fingerprint.
      *
      * @param  array<string, mixed>  $event
@@ -86,7 +90,7 @@ final class MetricProjection
     }
 
     /**
-     * A sortable fixed-width key for a time, in nanoseconds.
+     * Build a sortable fixed-width key for a time, in nanoseconds.
      *
      * @param  CarbonImmutable  $time
      * @return string
@@ -97,8 +101,8 @@ final class MetricProjection
     }
 
     /**
-     * What identifies the event's series: name, unit, resource, attributes and scope (for OTLP), or name, service and
-     * attributes (for JSON metrics).
+     * Describe what identifies the event's series: name, unit, resource, attributes and scope (for OTLP), or name,
+     * service and attributes (for JSON metrics).
      *
      * @param  array<string, mixed>  $event
      * @param  bool  $isOtlp
@@ -126,7 +130,7 @@ final class MetricProjection
     }
 
     /**
-     * An OTLP nanosecond timestamp as a Carbon time, or null when it's missing or zero.
+     * Convert an OTLP nanosecond timestamp to a Carbon time, or null when it's missing or zero.
      *
      * @param  mixed  $value
      * @return CarbonImmutable|null
@@ -143,7 +147,8 @@ final class MetricProjection
     }
 
     /**
-     * A readable label for where the series comes from: the first host, container, pod, instance or service name found.
+     * Pick a readable label for where the series comes from: the first host, container, pod, instance or service name
+     * found.
      *
      * @param  array<string, mixed>  $descriptor
      * @return string
@@ -163,7 +168,7 @@ final class MetricProjection
     }
 
     /**
-     * Sorts object keys recursively, so equal descriptors hash the same.
+     * Sort object keys recursively, so equal descriptors hash the same.
      *
      * @param  mixed  $value
      * @return mixed

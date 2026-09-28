@@ -13,6 +13,8 @@ use Carbon\CarbonImmutable;
 final class BrowserSessionsQuery
 {
     /**
+     * Create a new BrowserSessionsQuery instance.
+     *
      * Lists someone's signed-in browsers.
      *
      * @param  BrowserSessions  $sessions  Reads sessions from the session store.
@@ -20,8 +22,8 @@ final class BrowserSessionsQuery
     public function __construct(private readonly BrowserSessions $sessions) {}
 
     /**
-     * The person's 50 most recent sessions with a readable device and whether each is the current one; null when the
-     * session driver can't list sessions.
+     * Get the person's 50 most recent sessions with a readable device and whether each is the current one; null when
+     * the session driver can't list sessions.
      *
      * @param  User  $user
      * @param  string  $currentSessionId
