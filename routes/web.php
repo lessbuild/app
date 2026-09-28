@@ -164,6 +164,7 @@ use App\Http\Controllers\Infrastructure\ShowServerCommandsController;
 use App\Http\Controllers\Infrastructure\ShowServerController;
 use App\Http\Controllers\Infrastructure\ShowServerImportController;
 use App\Http\Controllers\Infrastructure\ShowServersController;
+use App\Http\Controllers\Infrastructure\ShowServerStatusController;
 use App\Http\Controllers\Infrastructure\ShowServerTerminalController;
 use App\Http\Controllers\Infrastructure\ShowWebsiteController;
 use App\Http\Controllers\Infrastructure\ShowWebsitesController;
@@ -463,6 +464,7 @@ Route::middleware(['auth', 'verified'])->group(function (): void {
             Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
             Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
             Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');
+            Route::get('/servers/{server}/status', ShowServerStatusController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:60,1'])->name('servers.status');
             Route::put('/servers/{server}', RenameServerController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:30,1'])->name('servers.update');
             Route::delete('/servers/{server}', DeleteServerController::class)->whereNumber('server')->middleware(['can:delete,server', 'password.confirm', 'throttle:10,1'])->name('servers.destroy');
             Route::post('/servers/{server}/initialization/retry', RetryServerInitializationController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.initialization.retry');

@@ -76,15 +76,21 @@ final class ServerLifecycleTest extends TestCase
 
         $this->post($status, ['status' => 3])->assertNoContent();
         $this->assertSame(3, $this->reload($server)->setup_stage);
+        // The page follows along live: the status endpoint names the step running now (the one after the last confirmed).
+        $final = app(\App\Services\Infrastructure\ServerProvisioningPlan::class)->finalStage($server);
+        $this->actingAs($this->owner)->get("{$this->base}/{$server->id}")->assertOk()->assertSee('data-server-status=', false)->assertSee('Installing Redis');
+        $this->actingAs($this->owner)->getJson("{$this->base}/{$server->id}/status")->assertOk()->assertHeader('Cache-Control', 'no-store, private')
+            ->assertJson(['ssh' => 'root@'.$server->public_ip.':'.$server->ssh_port, 'status' => 'provisioning', 'stage' => 3, 'final_stage' => $final, 'step' => 'Installing Redis', 'reason' => null, 'finished' => false]);
         $this->post($this->callbackUrl($server, 'log'), ['log' => "Installing redis\n"])->assertNoContent();
         $this->assertSame("Installing redis\n", $server->logSnapshots()->sole()->log);
         $this->post(str_replace('status', 'failed', $status), ['message' => 'x'])->assertForbidden();
         $this->post("/servers/{$server->id}/provisioning/callback/status", ['status' => 1])->assertForbidden();
 
-        $final = app(\App\Services\Infrastructure\ServerProvisioningPlan::class)->finalStage($server);
         $this->post($status, ['status' => $final])->assertNoContent();
         $this->assertSame(Server::STATUS_ACTIVE, $this->reload($server)->provisioning_status);
         $this->assertNotNull($this->reload($server)->provisioned_at);
+        $this->actingAs($this->owner)->getJson("{$this->base}/{$server->id}/status")->assertJson(['status' => 'active', 'step' => null, 'finished' => true]);
+        $this->actingAs($this->owner)->get("{$this->base}/{$server->id}")->assertDontSee('data-server-status=', false);
 
         $this->post($this->callbackUrl($server, 'failed'), ['message' => 'Too late'])->assertNoContent();
         $this->assertSame(Server::STATUS_ACTIVE, $this->reload($server)->provisioning_status);
@@ -156,7 +162,8 @@ final class ServerLifecycleTest extends TestCase
             $this->assertSame([Server::STATUS_WAITING_FOR_IP, $reason, null], [$server->provisioning_status, $server->provisioning_error, $server->public_ip]);
         }
         $this->actingAs($this->owner)->get("{$this->base}/{$server->id}")->assertOk()
-            ->assertSee('Latest check: The provider hasn’t given the server a public IP yet.')->assertSee('http-equiv="refresh"', false);
+            ->assertSee('Latest check: The provider hasn’t given the server a public IP yet.')->assertSee('data-server-status=', false);
+        $this->actingAs($this->owner)->getJson("{$this->base}/{$server->id}/status")->assertJson(['status' => 'waiting_for_ip', 'step' => null, 'reason' => 'The provider hasn’t given the server a public IP yet.', 'public_ip' => null]);
 
         [$this->cloud->publicIp, $this->cloud->readiness] = ['203.0.113.50', 'ready'];
         $job->handle(app(\App\Services\Infrastructure\ServerProviderResolver::class), app(\App\Services\Infrastructure\SshHostIdentity::class));
@@ -204,11 +211,14 @@ final class ServerLifecycleTest extends TestCase
 
         $this->actingAs($viewer)->get($this->base)->assertOk()->assertSee('Primary web')->assertDontSee('Create a server');
         $this->actingAs($viewer)->get("{$this->base}/{$server->id}")->assertOk()->assertDontSee('Delete server');
+        $this->actingAs($viewer)->getJson("{$this->base}/{$server->id}/status")->assertOk()->assertJson(['finished' => true]);
         $this->actingAs($viewer)->get("{$this->base}/create")->assertForbidden();
         $this->actingAs($viewer)->post($this->base, $this->server())->assertForbidden();
         $this->actingAs($viewer)->put("{$this->base}/{$server->id}", ['display_name' => 'Mine'])->assertForbidden();
         $this->actingAs($viewer)->delete("{$this->base}/{$server->id}")->assertForbidden();
-        $this->actingAs($this->owner)->get("{$this->base}/".Server::factory()->create()->id)->assertNotFound();
+        $theirs = Server::factory()->create()->id;
+        $this->actingAs($this->owner)->get("{$this->base}/{$theirs}")->assertNotFound();
+        $this->actingAs($this->owner)->getJson("{$this->base}/{$theirs}/status")->assertNotFound();
     }
 
     /**

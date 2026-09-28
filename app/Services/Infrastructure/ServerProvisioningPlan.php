@@ -67,4 +67,35 @@ final class ServerProvisioningPlan
     {
         return count($this->steps($server));
     }
+
+    /**
+     * Describe the step a server is on now (the one after its last confirmed stage), or null before setup starts
+     * running steps or once they're done.
+     *
+     * @param  Server  $server
+     * @return string|null
+     */
+    public function currentStep(Server $server): ?string
+    {
+        $step = $this->steps($server)[$server->setup_stage] ?? null;
+
+        $label = match ($step) {
+            UpdateDependenciesScript::class => 'Updating system packages',
+            ConfigureSwapScript::class => 'Setting up swap',
+            ConfigureServerScript::class => 'Configuring the server',
+            InstallComposerScript::class => 'Installing Composer',
+            InstallPHPScript::class => 'Installing PHP',
+            InstallNodeScript::class => 'Installing Node',
+            InstallCaddyScript::class => 'Installing Caddy',
+            InstallMysqlScript::class => 'Installing MySQL',
+            InstallRedisScript::class => 'Installing Redis',
+            InstallMemcachedScript::class => 'Installing Memcached',
+            RecipesScript::class => 'Running recipes',
+            EndScript::class => 'Finishing up',
+            default => null,
+        };
+        $translated = $label === null ? null : __($label);
+
+        return is_string($translated) ? $translated : $label;
+    }
 }

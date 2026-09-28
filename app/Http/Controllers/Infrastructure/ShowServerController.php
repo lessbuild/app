@@ -47,6 +47,7 @@ final class ShowServerController
             'overview' => $overview->handle($project, $user),
             'server' => $server,
             'finalStage' => $plan->finalStage($server),
+            'currentStep' => $plan->currentStep($server),
             'logType' => $logType,
             'logTypes' => array_keys(ServerLogs::TYPES),
             'log' => $server->logSnapshots()->where('type', $logType)->first(),

@@ -9,26 +9,27 @@
     @endforeach
     @include('infrastructure._secrets')
 
-    <x-signal.ui.card class="grid gap-4 p-5">
+    {{-- While setup runs, resources/js/server-status.js follows it live through the status endpoint. --}}
+    <x-signal.ui.card class="grid gap-4 p-5" :data-server-status="$server->isProvisioning() ? route('infrastructure.servers.status', [$project, $server->id]) : null">
         <div class="flex flex-wrap items-center gap-3">
-            @include('infrastructure._status', ['server' => $server])
+            <span data-server-status-badge>@include('infrastructure._status', ['server' => $server])</span>
             @if ($server->isProvisioning())
-                <span class="text-sm text-muted">{{ __('Stage :stage of :final', ['stage' => $server->setup_stage, 'final' => $finalStage]) }}</span>
+                <span class="text-sm text-muted" data-server-status-stage data-template="{{ __('Stage :stage of :final', ['stage' => '__stage__', 'final' => '__final__']) }}">{{ __('Stage :stage of :final', ['stage' => $server->setup_stage, 'final' => $finalStage]) }}</span>
+                <span class="inline-flex items-center gap-2 text-sm font-semibold text-ink" data-server-status-step aria-live="polite">
+                    <span class="size-2 animate-pulse rounded-full bg-primary" aria-hidden="true"></span>
+                    <span data-server-status-step-text>{{ $server->provisioning_status === 'provisioning' ? $currentStep : '' }}</span>
+                </span>
             @elseif ($server->provisioned_at)
                 <span class="text-sm text-muted">{{ __('Provisioned :time', ['time' => $server->provisioned_at->diffForHumans()]) }}</span>
             @endif
         </div>
         @if ($server->isProvisioning())
-            {{-- Setup moves on in the background; reload so the page follows it. --}}
-            @push('head')<meta http-equiv="refresh" content="15">@endpush
-            <x-signal.ui.progress :value="$server->setup_stage" :max="$finalStage" :label="__('Provisioning progress')" />
+            <x-signal.ui.progress :value="$server->setup_stage" :max="$finalStage" :label="__('Provisioning progress')" data-server-status-progress />
         @endif
-        @if ($server->provisioning_status === 'waiting_for_ip')
-            <p class="text-sm text-muted">
+        @if ($server->isProvisioning())
+            <p class="text-sm text-muted" data-server-status-waiting @unless ($server->provisioning_status === 'waiting_for_ip') hidden @endunless>
                 {{ __('Waiting for the provider to start the server and give it an address, then for SSH to answer. This usually takes a minute or two; we keep checking for up to twenty minutes.') }}
-                @if ($server->provisioning_error)
-                    <span class="block mt-1">{{ __('Latest check: :reason', ['reason' => $server->provisioning_error]) }}</span>
-                @endif
+                <span class="mt-1 block" data-server-status-reason data-template="{{ __('Latest check: :reason', ['reason' => '__reason__']) }}">{{ $server->provisioning_status === 'waiting_for_ip' && $server->provisioning_error ? __('Latest check: :reason', ['reason' => $server->provisioning_error]) : '' }}</span>
             </p>
         @endif
         @if ($server->provisioning_status === 'failed')
@@ -46,8 +47,8 @@
             @endif
         @endif
         <dl class="grid gap-4 text-sm sm:grid-cols-3">
-            <div><dt class="text-xs text-muted">{{ __('SSH') }}</dt><dd class="mt-1 font-mono">{{ 'root@'.($server->public_ip ?? '—').':'.$server->ssh_port }}</dd></div>
-            <div><dt class="text-xs text-muted">{{ __('Host key') }}</dt><dd class="mt-1 break-all font-mono text-xs">{{ $server->ssh_host_fingerprint ?? '—' }}</dd></div>
+            <div><dt class="text-xs text-muted">{{ __('SSH') }}</dt><dd class="mt-1 font-mono" data-server-status-ssh>{{ 'root@'.($server->public_ip ?? '—').':'.$server->ssh_port }}</dd></div>
+            <div><dt class="text-xs text-muted">{{ __('Host key') }}</dt><dd class="mt-1 break-all font-mono text-xs" data-server-status-host-key>{{ $server->ssh_host_fingerprint ?? '—' }}</dd></div>
             <div><dt class="text-xs text-muted">{{ __('Size · image') }}</dt><dd class="mt-1">{{ $server->size ?? '—' }} · {{ $server->image ?? '—' }}</dd></div>
         </dl>
     </x-signal.ui.card>

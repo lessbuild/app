@@ -8,6 +8,7 @@ import './signal-shell';
 import './passkeys';
 import './terminal-open';
 import './page-tabs';
+import './server-status';
 
 window.Alpine = Alpine;
 Alpine.start();
