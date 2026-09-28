@@ -1,5 +1,6 @@
 @php($money = fn (?int $cents): string => $cents === null ? __('Contact us') : ($cents === 0 ? __('Free') : '$'.number_format($cents / 100, $cents % 100 === 0 ? 0 : 2)))
 <x-signal.layouts.public :title="__('Pricing')" :description="__('Each service has its own tiers. Start free and pay for what each project needs.')" :canonical="route('pricing')">
+    <div class="mx-auto grid max-w-6xl gap-12 px-5 py-12 sm:px-8 sm:py-16">
     <section class="grid gap-3 text-center">
         <h1 class="text-4xl font-extrabold tracking-tight text-ink">{{ __('Pricing') }}</h1>
         <p class="mx-auto max-w-2xl text-lg text-muted">{{ __('Each service has its own tiers, all on one bill. Start free, change tiers any time, and pay monthly in US dollars.') }}</p>
@@ -40,4 +41,5 @@
             @endif
         </section>
     @endforeach
+    </div>
 </x-signal.layouts.public>

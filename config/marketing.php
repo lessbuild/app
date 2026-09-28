@@ -8,6 +8,20 @@ return [
     'headline' => 'Ship, run and understand your apps from one place.',
     'summary' => 'Deploy from Git to servers in your own cloud accounts, watch every environment, and see how people use what you ship, with one account, one bill and one set of permissions.',
 
+    'hero' => [
+        'badge' => 'One platform for your applications',
+        'headline' => 'Ship with confidence.',
+        'accent' => 'Know what happens next.',
+        'points' => ['Your own cloud accounts', 'One account and one bill', 'Start free'],
+    ],
+
+    'workflow' => [
+        ['01', 'Ship', 'Connect a repository, provision what you need, and release an exact revision.', 'cloud-upload'],
+        ['02', 'Observe', 'Follow health, errors, traces and incidents as the system changes.', 'pulse'],
+        ['03', 'Understand', 'See how people use what you shipped, with each release beside the traffic.', 'chart'],
+        ['04', 'Recover', 'Keep the history and controls to restore a known good release in seconds.', 'refresh'],
+    ],
+
     'integrations' => [
         ['Deploy → Monitoring and Analytics', 'Every live deploy becomes a release marker: issues and incidents point at the release that caused them, and Analytics reports list it beside the traffic.'],
         ['Infrastructure → Deploy', 'Repositories deploy to the websites and servers you manage here, with backups, domains and load balancers beside them.'],
@@ -17,6 +31,7 @@ return [
 
     'services' => [
         'deploy' => [
+            'card' => ['badge' => 'Deploy', 'tone' => 'primary', 'icon' => 'cloud-upload', 'chips' => ['Git-connected releases', 'Previews per pull request', 'Rollback in seconds'], 'preview' => ['title' => 'Production release', 'subtitle' => 'storefront · main · a71c8ef', 'status' => 'Live', 'status_tone' => 'success', 'metrics' => [['Fetch revision', 'Complete'], ['Activate release', 'Complete'], ['Verify health', 'Passed']]]],
             'eyebrow' => 'Build and ship',
             'headline' => 'Deploy with clarity. Recover with confidence.',
             'summary' => 'Release from GitHub, GitLab or Bitbucket to servers you own, with approvals, safe strategies, previews and a rollback that’s always one click away.',
@@ -46,6 +61,7 @@ return [
             ],
         ],
         'infrastructure' => [
+            'card' => ['badge' => 'Provision', 'tone' => 'info', 'icon' => 'server', 'chips' => ['DigitalOcean, Hetzner, Vultr', 'Domains and TLS', 'Verified backups'], 'preview' => ['title' => 'web-1 · fra1', 'subtitle' => 'Ubuntu 24.04 · 2 vCPU · 4 GB', 'status' => 'Active', 'status_tone' => 'success', 'metrics' => [['CPU', '18%'], ['Websites', '3'], ['Last backup', '2h ago']]]],
             'eyebrow' => 'Servers you own',
             'headline' => 'Provision without the guesswork.',
             'summary' => 'Create and import servers, host websites with domains and TLS, back them up, and keep an eye on what it all costs.',
@@ -71,6 +87,7 @@ return [
             ],
         ],
         'monitoring' => [
+            'card' => ['badge' => 'Observe', 'tone' => 'success', 'icon' => 'pulse', 'chips' => ['HTTP, DNS, TLS, heartbeat', 'Errors and traces', 'Alerts and incidents'], 'preview' => ['title' => 'Current service health', 'subtitle' => 'Across your environments', 'status' => 'Operational', 'status_tone' => 'success', 'metrics' => [['Uptime', '99.99%'], ['Latest response', '184ms'], ['Open incidents', '0']]]],
             'eyebrow' => 'Understand production',
             'headline' => 'See health, errors and changes together.',
             'summary' => 'Uptime, heartbeat and queue checks, application telemetry and traces, and alerts that turn the signals that matter into incidents.',
@@ -94,6 +111,7 @@ return [
             ],
         ],
         'analytics' => [
+            'card' => ['badge' => 'Understand', 'tone' => 'warning', 'icon' => 'chart', 'chips' => ['No cookies', 'Goals and sources', 'Releases beside traffic'], 'preview' => ['title' => 'This week', 'subtitle' => 'storefront.com', 'status' => '+18.4%', 'status_tone' => 'info', 'metrics' => [['Visitors', '12.8K'], ['Pageviews', '41.2K'], ['Conversions', '316']]]],
             'eyebrow' => 'Understand your audience',
             'headline' => 'Understand the work your website is doing.',
             'summary' => 'A focused, privacy-friendly view of visitors, pages, sources and goals, without a noisy dashboard.',

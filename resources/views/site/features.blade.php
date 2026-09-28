@@ -1,4 +1,5 @@
 <x-signal.layouts.public :title="$service->name()" :description="__($copy['summary'])" :canonical="route('features', $service->key())">
+    <div class="mx-auto grid max-w-6xl gap-12 px-5 py-12 sm:px-8 sm:py-16">
     <section class="grid gap-4">
         <p class="ui-eyebrow">{{ __($copy['eyebrow']) }} · {{ $service->name() }}</p>
         <h1 class="max-w-3xl text-4xl font-extrabold tracking-tight text-ink">{{ __($copy['headline']) }}</h1>
@@ -28,4 +29,5 @@
             @endforeach
         </section>
     @endif
+    </div>
 </x-signal.layouts.public>

@@ -18,7 +18,7 @@ final class PublicSiteTest extends TestCase
     public function test_guests_get_the_home_page_and_signed_in_people_their_dashboard(): void
     {
         $home = $this->get('/')->assertOk()->assertHeader('Cache-Control', 'max-age=300, public');
-        $home->assertSee('Ship, run and understand your apps from one place.')->assertSee('Better together')->assertSee('index, follow', false);
+        $home->assertSee('Ship with confidence.')->assertSee('Know what happens next.')->assertSee('Four focused services. One account.')->assertSee('Better together')->assertSee('index, follow', false);
         foreach (app(ServiceRegistry::class)->all() as $service) {
             $home->assertSee($service->name())->assertSee(route('features', $service->key()));
         }
