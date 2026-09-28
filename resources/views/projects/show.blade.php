@@ -1,34 +1,31 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="$project->name" :description="$project->description">
-    @if ($checklist !== [])
-        @php($done = count(array_filter($checklist, fn ($step) => $step->done)))
+    @if ($setup !== null && ! $setup->complete())
+        @php($next = $setup->next())
         <x-signal.ui.panel as="section" class="space-y-4 p-5 sm:p-6" aria-labelledby="checklist-heading">
             <div class="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <p class="ui-eyebrow">{{ __(':done of :total done', ['done' => $done, 'total' => count($checklist)]) }}</p>
+                    <p class="ui-eyebrow">{{ __(':done of :total done', ['done' => $setup->doneCount(), 'total' => count($setup->steps)]) }}</p>
                     <h2 id="checklist-heading" class="mt-1 text-lg font-extrabold text-ink">{{ __('Get :project going', ['project' => $project->name]) }}</h2>
+                    @if ($next)<p class="mt-1 text-sm text-muted">{{ __('Next: :step', ['step' => $next->title]) }}@if ($next->detail) — {{ $next->detail }}@endif</p>@endif
                 </div>
-                <form method="POST" action="{{ route('projects.checklist.dismiss', $project) }}">
-                    @csrf
-                    @method('DELETE')
-                    <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Hide this') }}</x-signal.ui.button>
-                </form>
+                <div class="flex flex-wrap gap-2">
+                    @if ($next?->actionUrl)<x-signal.ui.button :href="$next->actionUrl" variant="primary" size="sm">{{ $next->actionLabel }}</x-signal.ui.button>@endif
+                    <x-signal.ui.button :href="route('projects.setup', $project)" variant="secondary" size="sm">{{ __('Open the setup guide') }}</x-signal.ui.button>
+                    <form method="POST" action="{{ route('projects.checklist.dismiss', $project) }}">
+                        @csrf
+                        @method('DELETE')
+                        <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Hide this') }}</x-signal.ui.button>
+                    </form>
+                </div>
             </div>
-            <x-signal.ui.progress :value="$done" :max="count($checklist)" :label="__('Getting started progress')" />
-            <ol class="grid gap-2">
-                @foreach ($checklist as $step)
-                    <li class="flex flex-wrap items-center justify-between gap-3 rounded-panel border border-line bg-surface px-4 py-3">
-                        <div class="flex min-w-0 items-start gap-3">
-                            <span @class(['mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[11px] font-extrabold', 'border-success bg-success text-white' => $step->done, 'border-line text-muted' => ! $step->done]) aria-hidden="true">{{ $step->done ? '✓' : $loop->iteration }}</span>
-                            <div class="min-w-0">
-                                <p @class(['text-sm font-bold', 'text-muted line-through' => $step->done, 'text-ink' => ! $step->done])>{{ $step->label }}<span class="sr-only">{{ $step->done ? __(' (done)') : '' }}</span></p>
-                                <p class="text-xs text-muted">{{ $step->description }}</p>
-                            </div>
-                        </div>
-                        @if (! $step->done && $step->actionUrl)
-                            <x-signal.ui.button :href="$step->actionUrl" variant="secondary" size="sm">{{ $step->actionLabel }}</x-signal.ui.button>
-                        @endif
+            <x-signal.ui.progress :value="$setup->doneCount()" :max="count($setup->steps)" :label="__('Setup progress')" />
+            <ol class="flex flex-wrap gap-2" aria-label="{{ __('Setup steps') }}">
+                @foreach ($setup->steps as $step)
+                    <li @class(['ui-chip inline-flex items-center gap-1.5', 'text-success' => $step->done()])>
+                        @if ($step->done())<x-signal.ui.icon name="check" class="size-3.5" /><span class="sr-only">{{ __('Done:') }}</span>@else<span class="text-xs font-extrabold text-muted">{{ $loop->iteration }}</span>@endif
+                        {{ $step->title }}
                     </li>
                 @endforeach
             </ol>

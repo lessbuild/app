@@ -27,6 +27,6 @@ final class StoreProjectController
     {
         $project = $create->handle($user, $account, $request->toDetails());
 
-        return to_route('projects.show', $project)->with('status', __('Project created. Next, turn on the services you need.'));
+        return to_route('projects.setup', $project)->with('status', __('Project created. Here’s the path from here to a deployed, monitored site.'));
     }
 }

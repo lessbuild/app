@@ -130,6 +130,7 @@ final class ShellComposer
         if ($project !== null) {
             $links = [
                 new NavLink(__('Overview'), route('projects.show', $project), $this->request->routeIs('projects.show')),
+                new NavLink(__('Setup guide'), route('projects.setup', $project), $this->request->routeIs('projects.setup')),
                 new NavLink(__('Domains'), route('projects.domains', $project), $this->request->routeIs('projects.domains')),
             ];
             if ($user->can('update', $project)) {

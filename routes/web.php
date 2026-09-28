@@ -278,6 +278,7 @@ use App\Http\Controllers\Projects\RemoveDomainController;
 use App\Http\Controllers\Projects\ShowDomainsController;
 use App\Http\Controllers\Projects\ShowProjectController;
 use App\Http\Controllers\Projects\ShowProjectServiceController;
+use App\Http\Controllers\Projects\ShowProjectSetupController;
 use App\Http\Controllers\Projects\StoreEnvironmentController;
 use App\Http\Controllers\Projects\StoreProjectController;
 use App\Http\Controllers\Projects\UpdateProjectController;
@@ -642,6 +643,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         });
 
         Route::get('/', ShowProjectController::class)->name('projects.show');
+        Route::get('/setup', ShowProjectSetupController::class)->name('projects.setup');
         Route::delete('/checklist', DismissChecklistController::class)->name('projects.checklist.dismiss');
         Route::get('/settings', EditProjectSettingsController::class)->middleware('can:update,project')->name('projects.settings');
         Route::put('/settings', UpdateProjectController::class)->name('projects.update');

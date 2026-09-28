@@ -6,7 +6,6 @@ namespace Tests\Feature\Projects;
 
 use App\Enums\AccountRole;
 use App\Models\Account;
-use App\Models\Domain;
 use App\Models\Project;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -16,22 +15,49 @@ final class ChecklistTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_the_checklist_ticks_off_steps_and_goes_away_when_complete(): void
+    public function test_the_setup_guide_follows_a_project_from_provider_to_analytics(): void
     {
         $owner = User::factory()->create();
         $account = Account::factory()->withMember($owner)->create();
         $project = Project::factory()->for($account)->create(['name' => 'Storefront']);
-        $url = "/projects/{$project->id}";
+        $production = $project->environments()->where('slug', 'production')->firstOrFail();
+        $guide = "/projects/{$project->id}/setup";
         $heading = __('Get :project going', ['project' => 'Storefront']);
 
-        $this->actingAs($owner)->get($url)->assertOk()->assertSee($heading)->assertSee(__(':done of :total done', ['done' => 1, 'total' => 4]));
+        $this->actingAs($owner)->get("/projects/{$project->id}")->assertOk()->assertSee($heading)->assertSee(__(':done of :total done', ['done' => 0, 'total' => 7]))->assertSee(route('projects.setup', $project));
+        $this->actingAs($owner)->get($guide)->assertOk()->assertSee('Next: Connect a cloud provider')->assertSee(route('account.providers'))
+            ->assertSee('Turn on Infrastructure')->assertSee(route('projects.services.show', [$project, 'infrastructure']));
 
-        $project->enabledServices()->forceCreate(['service' => 'deploy']);
-        (new Domain)->forceFill(['project_id' => $project->id, 'hostname' => 'example.com', 'verification_token' => 'x'])->save();
-        $this->actingAs($owner)->get($url)->assertSee(__(':done of :total done', ['done' => 3, 'total' => 4]))->assertSee(route('account.members'), false);
+        foreach (['infrastructure', 'deploy', 'monitoring', 'analytics'] as $service) {
+            $project->enabledServices()->forceCreate(['service' => $service]);
+        }
+        $provider = \App\Models\Provider::factory()->create(['account_id' => $account->id, 'name' => 'Main cloud']);
+        $server = \App\Models\Server::factory()->provisioning(\App\Models\Server::STATUS_PROVISIONING, 2)->create(['provider_id' => $provider->id, 'name' => 'web-1']);
+        $this->actingAs($owner)->get($guide)->assertSee('Main cloud is connected.')->assertSee('web-1 is being set up', false)->assertSee('Watch it live')->assertSee('http-equiv="refresh"', false);
 
-        $account->memberships()->forceCreate(['user_id' => User::factory()->create()->id, 'role' => AccountRole::Member]);
-        $this->actingAs($owner)->get($url)->assertOk()->assertDontSee($heading);
+        $server->forceFill(['provisioning_status' => \App\Models\Server::STATUS_ACTIVE])->save();
+        $website = \App\Models\Website::factory()->create(['server_id' => $server->id, 'environment_id' => $production->id, 'name' => 'Shop']);
+        $repository = \App\Models\Repository::factory()->create(['project_id' => $project->id, 'website_id' => $website->id, 'environment_id' => $production->id]);
+        $this->actingAs($owner)->get($guide)->assertSee('Shop is live.')->assertSee('Next: Deploy')->assertSee(route('deploy.repositories.show', [$project, $repository->id]))
+            ->assertSee(__(':done of :total done', ['done' => 4, 'total' => 7]));
+
+        \App\Models\Build::factory()->succeeded()->create(['repository_id' => $repository->id]);
+        \App\Models\Monitor::factory()->create(['environment_id' => $production->id]);
+        $site = \App\Models\AnalyticsSite::factory()->create(['project_id' => $project->id, 'name' => 'storefront.example']);
+        $this->actingAs($owner)->get($guide)->assertSee('Waiting for the first visit to storefront.example')->assertSee('Next: Measure visits');
+
+        $site->forceFill(['last_event_at' => now()])->save();
+        $this->actingAs($owner)->get($guide)->assertSee('Storefront is set up.')->assertDontSee('http-equiv="refresh"', false);
+        $this->actingAs($owner)->get("/projects/{$project->id}")->assertOk()->assertDontSee($heading);
+    }
+
+    public function test_new_projects_open_on_their_setup_guide(): void
+    {
+        $owner = User::factory()->create();
+        $account = Account::factory()->withMember($owner)->create();
+        $owner->forceFill(['current_account_id' => $account->id])->save();
+
+        $this->actingAs($owner)->post('/projects', ['name' => 'Blog'])->assertRedirect(route('projects.setup', Project::query()->where('name', 'Blog')->sole()));
     }
 
     public function test_it_can_be_hidden_and_viewers_never_see_it(): void
