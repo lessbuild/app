@@ -67,6 +67,7 @@
                     <p class="text-xs font-extrabold uppercase tracking-[0.16em] text-subtle">{{ __('Resources') }}</p>
                     <nav class="mt-4 flex flex-col items-start gap-3" aria-label="{{ __('Resources') }}">
                         <a href="{{ route('pricing') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Pricing') }}</a>
+                        <a href="{{ route('help') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Help centre') }}</a>
                         <a href="{{ route('docs.api') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('API reference') }}</a>
                         <a href="{{ route('platform.status') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Status') }}</a>
                         <a href="{{ route('legal', 'privacy') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Privacy') }}</a>

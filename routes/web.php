@@ -120,6 +120,8 @@ use App\Http\Controllers\Deploy\UpdateRepositoryController;
 use App\Http\Controllers\Deploy\UpdateRepositoryPreviewsController;
 use App\Http\Controllers\Deploy\UpdateRepositoryWebhookController;
 use App\Http\Controllers\Docs\ShowApiReferenceController;
+use App\Http\Controllers\Help\ShowHelpController;
+use App\Http\Controllers\Help\ShowHelpGuideController;
 use App\Http\Controllers\Infrastructure\CancelServerCommandController;
 use App\Http\Controllers\Infrastructure\CheckBackupDestinationController;
 use App\Http\Controllers\Infrastructure\CloseServerTerminalController;
@@ -332,6 +334,8 @@ use Illuminate\Support\Facades\Route;
 Route::get('/', ShowHomeController::class)->name('home');
 Route::get('/features/{service}', ShowFeaturesController::class)->where('service', '[a-z]+')->name('features');
 Route::get('/pricing', ShowPricingController::class)->name('pricing');
+Route::get('/help', ShowHelpController::class)->name('help');
+Route::get('/help/{guide}', ShowHelpGuideController::class)->where('guide', '[a-z-]+')->name('help.guide');
 Route::get('/{page}', ShowLegalPageController::class)->whereIn('page', ['privacy', 'terms'])->name('legal');
 
 Route::get('/_gallery', ComponentGalleryController::class)->name('gallery');

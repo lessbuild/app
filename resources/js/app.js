@@ -9,6 +9,7 @@ import './passkeys';
 import './terminal-open';
 import './page-tabs';
 import './server-status';
+import './help-search';
 
 window.Alpine = Alpine;
 Alpine.start();

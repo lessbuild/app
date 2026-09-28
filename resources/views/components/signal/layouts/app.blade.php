@@ -67,6 +67,7 @@
                                 @endif
                                 <div class="mt-1 grid gap-1 border-t border-line pt-1">
                                     <a href="{{ route('settings.profile') }}" class="topbar-nav-link w-full" @if (request()->routeIs('settings.*')) aria-current="page" @endif>{{ __('Your settings') }}</a>
+                                    <a href="{{ route('help') }}" class="topbar-nav-link w-full">{{ __('Help centre') }}</a>
                                     @if ($shell->user->is_platform_admin)
                                         <a href="{{ route('admin.home') }}" class="topbar-nav-link w-full" @if (request()->routeIs('admin.*')) aria-current="page" @endif>{{ __('Platform admin') }}</a>
                                     @endif
