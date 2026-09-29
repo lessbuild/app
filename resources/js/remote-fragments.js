@@ -1,7 +1,8 @@
 // Modal contents loaded on demand: <div data-fragment-src="url"> inside a <dialog> fetches its HTML (with the
 // X-Fragment header, so the server answers with just the fragment) the first time the dialog opens. Inside it,
 // <form data-fragment-form> (GET) reloads the fragment instead of leaving the page, and a control with
-// data-fragment-autosubmit reloads it as soon as it changes. If loading fails, the fragment links to the full page.
+// data-fragment-autosubmit reloads it as soon as it changes. With data-fragment-refresh it reloads every time the dialog
+// opens (for things that change, like notifications). If loading fails, the fragment links to the full page.
 const load = async (container, url) => {
     container.setAttribute('aria-busy', 'true');
     try {
@@ -38,7 +39,8 @@ document.querySelectorAll('[data-fragment-src]').forEach((container) => {
     });
 
     const loadOnce = () => {
-        if (container.dataset.fragmentLoaded !== 'true' && container.getAttribute('aria-busy') !== 'true') {
+        const stale = container.dataset.fragmentLoaded !== 'true' || container.hasAttribute('data-fragment-refresh');
+        if (stale && container.getAttribute('aria-busy') !== 'true') {
             load(container, container.dataset.fragmentSrc);
         }
     };

@@ -46,11 +46,20 @@ final class InboxTest extends TestCase
         $this->actingAs($member)->get('/notifications')->assertOk()->assertSee('You are now Administrator in Acme')->assertSee('Olive Owner changed your role.');
 
         $id = $member->notifications()->sole()->id;
+        // The bell opens a modal that loads the latest notifications.
+        $this->actingAs($member)->get('/dashboard')->assertSee('data-modal-trigger="notifications"', false)->assertSee('data-fragment-src="'.route('notifications.index').'"', false);
+        $this->actingAs($member)->get('/notifications')->assertDontSee('data-modal-trigger="notifications"', false);
+        $this->actingAs($member)->withHeader('X-Fragment', '1')->get('/notifications')->assertOk()
+            ->assertSee('You are now Administrator in Acme')->assertSee('1 unread')->assertSee(__('See all notifications'))->assertDontSee('<html', false);
+        $this->flushHeaders();
+
         $this->actingAs($member)->get("/notifications/{$id}")->assertRedirect('/account/members');
         $this->assertSame(0, $member->unreadNotifications()->count());
 
         app(ChangeMemberRole::class)->handle($this->owner, $membership->refresh(), AccountRole::Viewer);
         $this->actingAs($member)->post('/notifications/read')->assertRedirect('/notifications');
+        app(ChangeMemberRole::class)->handle($this->owner, $membership->refresh(), AccountRole::Member);
+        $this->actingAs($member)->from('/dashboard')->post('/notifications/read', ['from_modal' => '1'])->assertRedirect('/dashboard');
         $this->assertSame(0, $member->unreadNotifications()->count());
         $this->actingAs($this->owner)->get("/notifications/{$id}")->assertNotFound();
     }

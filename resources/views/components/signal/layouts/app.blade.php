@@ -45,7 +45,7 @@
                                 <span class="absolute right-1 top-1 size-2 rounded-full bg-primary" aria-hidden="true"></span>
                             @endif
                         </x-signal.ui.icon-button>
-                        <x-signal.ui.icon-button :label="$shell->unreadNotifications > 0 ? trans_choice('Notifications, :count unread|Notifications, :count unread', $shell->unreadNotifications, ['count' => $shell->unreadNotifications]) : __('Notifications')" :href="route('notifications.index')" class="relative" :aria-current="request()->routeIs('notifications.*') ? 'page' : null">
+                        <x-signal.ui.icon-button :label="$shell->unreadNotifications > 0 ? trans_choice('Notifications, :count unread|Notifications, :count unread', $shell->unreadNotifications, ['count' => $shell->unreadNotifications]) : __('Notifications')" :href="route('notifications.index')" class="relative" :aria-current="request()->routeIs('notifications.*') ? 'page' : null" :data-modal-trigger="request()->routeIs('notifications.*') ? null : 'notifications'" :data-modal-history-url="request()->routeIs('notifications.*') ? null : request()->fullUrlWithQuery(['dialog' => 'notifications'])">
                             <x-signal.ui.icon name="bell" class="h-[18px] w-[18px] stroke-2" />
                             @if ($shell->unreadNotifications > 0)
                                 <span class="absolute -right-0.5 -top-0.5 grid min-w-4 place-items-center rounded-full bg-danger px-1 text-[10px] font-extrabold leading-4 text-white" aria-hidden="true">{{ $shell->unreadNotifications > 9 ? '9+' : $shell->unreadNotifications }}</span>
@@ -146,6 +146,14 @@
             </x-signal.overlays.modal>
         @endif
         {{-- What's new: the latest changelog entries, with the roadmap a click away. --}}
+        @unless (request()->routeIs('notifications.*'))
+            <x-signal.overlays.modal id="notifications" :title="__('Notifications')">
+                <div data-fragment-src="{{ route('notifications.index') }}" data-fragment-refresh data-fragment-fallback="{{ __('Couldn’t load your notifications. Open the inbox.') }}">
+                    <p class="text-sm text-muted" role="status">{{ __('Loading notifications…') }}</p>
+                </div>
+            </x-signal.overlays.modal>
+        @endunless
+
         <x-signal.overlays.modal id="whats-new" :title="__('What’s new')" :description="__('The latest improvements to :app.', ['app' => config('app.name')])">
             <div class="grid gap-5">
                 @foreach (array_slice(\App\Support\Changelog::entries(), 0, 3) as $entry)
