@@ -64,6 +64,7 @@ final class AnalyticsService implements PlatformService
         return [
             new ServiceNavItem(__('Overview'), route('analytics.overview', $projectId), 'analytics.overview'),
             new ServiceNavItem(__('Goals'), route('analytics.goals', $projectId), 'analytics.goals*'),
+            new ServiceNavItem(__('Funnels'), route('analytics.funnels', $projectId), 'analytics.funnels*'),
             new ServiceNavItem(__('Campaigns'), route('analytics.campaigns', $projectId), 'analytics.campaigns*'),
             new ServiceNavItem(__('Sites'), route('analytics.sites', $projectId), 'analytics.sites*'),
         ];
