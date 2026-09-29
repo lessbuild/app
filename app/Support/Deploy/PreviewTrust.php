@@ -33,7 +33,7 @@ final class PreviewTrust
         if ($webhook->targetRepository === null) {
             return 'preview_source_unverified';
         }
-        $host = $source->provider?->type->repositoryHost();
+        $host = $source->provider?->repositoryHost();
         $configured = self::repositoryPath($source->url, $host);
         $target = self::repositoryPath($webhook->targetRepository, $host);
         if ($configured === '' || $target === '' || ! hash_equals($configured, $target)) {

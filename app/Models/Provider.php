@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property string $credential_type
  * @property string|null $external_id
  * @property string $token
+ * @property string|null $base_url a self-hosted GitLab's address (https://host); null for the provider's public service
  * @property string $connection_status unchecked, healthy or failed
  * @property CarbonImmutable|null $connection_checked_at
  * @property bool $connection_monitoring_enabled
@@ -128,6 +129,32 @@ class Provider extends Model
     }
 
     /**
+     * Get the Git host repositories are cloned from: a self-hosted GitLab's own host, or the provider's public one.
+     *
+     * @return string|null
+     */
+    public function repositoryHost(): ?string
+    {
+        if ($this->type === ProviderType::GitLab && $this->base_url !== null) {
+            $host = parse_url($this->base_url, PHP_URL_HOST);
+
+            return is_string($host) ? strtolower($host) : null;
+        }
+
+        return $this->type->repositoryHost();
+    }
+
+    /**
+     * Get the base of GitLab's API: the self-hosted instance's, or gitlab.com's.
+     *
+     * @return string
+     */
+    public function gitLabApiBase(): string
+    {
+        return rtrim($this->base_url ?? 'https://gitlab.com', '/').'/api/v4';
+    }
+
+    /**
      * Determine whether a repository URL (`host/owner/name`) is on this provider's Git host.
      *
      * @param  string  $url
@@ -135,7 +162,7 @@ class Provider extends Model
      */
     public function supportsRepositoryUrl(string $url): bool
     {
-        $host = $this->type->repositoryHost();
+        $host = $this->repositoryHost();
 
         return $host !== null && str_starts_with(strtolower($url), $host.'/');
     }

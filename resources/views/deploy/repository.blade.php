@@ -55,7 +55,7 @@
     </x-signal.ui.page-tab-panel>
 
     <x-signal.ui.page-tab-panel name="webhook" :current="$tab">
-    <x-signal.ui.settings-section id="webhook" :title="__('Push deploys')" :description="__('A webhook from :host deploys each push to :branch.', ['host' => $repository->provider?->type->repositoryHost() ?? __('your Git host'), 'branch' => $repository->branch])">
+    <x-signal.ui.settings-section id="webhook" :title="__('Push deploys')" :description="__('A webhook from :host deploys each push to :branch.', ['host' => $repository->provider?->repositoryHost() ?? __('your Git host'), 'branch' => $repository->branch])">
         <div class="grid gap-4 p-4 sm:p-6">
             <p class="text-sm">{{ $repository->webhook_enabled ? __('On') : __('Off') }}@if ($repository->webhook_last_received_at) · {{ __('last push :when', ['when' => $repository->webhook_last_received_at->diffForHumans()]) }}@endif</p>
             @if ($deliveries->isNotEmpty())

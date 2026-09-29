@@ -26,7 +26,7 @@ class CloneRepositoryScript extends BuildProvisioningScript
     {
         $repository = $build->repository;
         $provider = $repository->provider ?? throw new RuntimeException('The repository has no Git provider.');
-        $host = $provider->type->repositoryHost();
+        $host = $provider->repositoryHost();
         $username = $provider->type->repositoryCredentialUsername();
         $setup = $build->deploymentPath('setup');
         $setupPath = escapeshellarg($setup);

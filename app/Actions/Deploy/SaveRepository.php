@@ -32,7 +32,7 @@ final class SaveRepository
             throw ValidationException::withMessages(['provider_id' => __('Choose a GitHub, GitLab or Bitbucket provider from this account.')]);
         }
         if (! $provider->supportsRepositoryUrl($data['url'])) {
-            throw ValidationException::withMessages(['url' => __('Use a :host repository address for this provider.', ['host' => $provider->type->repositoryHost()])]);
+            throw ValidationException::withMessages(['url' => __('Use a :host repository address for this provider.', ['host' => $provider->repositoryHost()])]);
         }
         $website = Website::query()->where('account_id', $project->account_id)->find((int) $data['website_id']);
         if ($website === null) {

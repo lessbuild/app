@@ -4,16 +4,26 @@ declare(strict_types=1);
 
 namespace App\Services\Infrastructure;
 
+use App\Enums\AlertDestinationType;
 use App\Enums\ProviderType;
 use App\Models\Provider;
+use App\Services\Monitoring\PublicWebhookTarget;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use RuntimeException;
 use Throwable;
 
 /** Asks a provider's API whether it accepts the stored credential, using the least-privileged read each API offers. */
 final class ProviderConnectionTester
 {
+    /**
+     * Create a new ProviderConnectionTester instance.
+     *
+     * @param  PublicWebhookTarget  $targets  Checks a self-hosted GitLab's address is public before it's called.
+     */
+    public function __construct(private readonly PublicWebhookTarget $targets) {}
+
     /**
      * Ask the provider whether it accepts the credential and returns the outcome with a message safe to show. GitHub
      * App providers are tested by requesting an installation token.
@@ -85,6 +95,19 @@ final class ProviderConnectionTester
     private function request(Provider $provider): Response
     {
         $request = Http::acceptJson()->connectTimeout(3)->timeout(8)->withHeaders(['User-Agent' => (string) config('app.name')]);
+
+        if ($provider->type === ProviderType::GitLab && $provider->base_url !== null) {
+            // A self-hosted GitLab is the customer's address: only a public one, connected to at the address checked.
+            $url = $provider->gitLabApiBase().'/user';
+            $target = $this->targets->resolve($url, AlertDestinationType::Webhook);
+            if ($target['error'] !== null || $target['host'] === null || $target['address'] === null) {
+                throw new RuntimeException('The GitLab address isn’t a public HTTPS address.');
+            }
+            $pinned = str_contains($target['address'], ':') ? '['.$target['address'].']' : $target['address'];
+
+            return $request->withoutRedirecting()->withOptions(['curl' => [CURLOPT_RESOLVE => ["{$target['host']}:443:{$pinned}"]]])
+                ->withHeader('PRIVATE-TOKEN', $provider->token)->get($url);
+        }
 
         return match ($provider->type) {
             ProviderType::GitLab => $request->withHeader('PRIVATE-TOKEN', $provider->token)->get($this->endpoint($provider->type)),

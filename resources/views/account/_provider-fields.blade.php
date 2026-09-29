@@ -6,6 +6,9 @@
     @endforeach
 </x-signal.ui.select-field>
 <div class="sm:col-span-2">
+    <x-signal.ui.input-field name="base_url" type="url" :label="__('GitLab address (self-hosted only)')" :value="$provider?->base_url" placeholder="https://gitlab.example.com" :description="__('For GitLab providers on your own server. Leave empty for gitlab.com and for other types.')" autocomplete="off" />
+</div>
+<div class="sm:col-span-2">
     <x-signal.ui.input-field name="token" type="password" :label="$provider ? __('New API token') : __('API token')" :description="$provider ? __('Leave empty to keep the current token. It’s stored encrypted and never shown again.') : __('Stored encrypted and never shown again. Give it only the access servers or DNS need.')" autocomplete="off" :required="$provider === null" :restore="false" />
 </div>
 <div class="sm:col-span-2">

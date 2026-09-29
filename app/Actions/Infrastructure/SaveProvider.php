@@ -10,6 +10,7 @@ use App\Enums\ProviderType;
 use App\Models\Account;
 use App\Models\Provider;
 use App\Models\User;
+use App\Support\Hostname;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
@@ -48,7 +49,8 @@ final class SaveProvider
             if ($isNew && $token === '') {
                 throw ValidationException::withMessages(['token' => __('Enter the API token.')]);
             }
-            $credentialChanged = $isNew || $token !== '' || $provider->type !== $type;
+            $baseUrl = $type === ProviderType::GitLab ? self::baseUrl($data['base_url'] ?? null) : null;
+            $credentialChanged = $isNew || $token !== '' || $provider->type !== $type || $provider->base_url !== $baseUrl;
             $description = trim((string) ($data['description'] ?? ''));
 
             $provider->forceFill([
@@ -57,6 +59,7 @@ final class SaveProvider
                 'name' => trim((string) $data['name']),
                 'description' => $description !== '' ? $description : null,
                 'type' => $type,
+                'base_url' => $baseUrl,
                 'connection_monitoring_enabled' => (bool) ($data['connection_monitoring_enabled'] ?? true),
                 'connection_check_interval_minutes' => (int) ($data['connection_check_interval_minutes'] ?? 1440),
                 'connection_failure_threshold' => (int) ($data['connection_failure_threshold'] ?? 1),
@@ -74,5 +77,34 @@ final class SaveProvider
 
             return $provider;
         }, attempts: 3);
+    }
+
+    /**
+     * Normalise a self-hosted GitLab's address to `https://host` (with its path, if GitLab lives under one), or null
+     * for gitlab.com. Only HTTPS on the standard port, with a real hostname, is accepted.
+     *
+     * @param  mixed  $input
+     * @return string|null
+     */
+    private static function baseUrl(mixed $input): ?string
+    {
+        $url = trim(is_string($input) ? $input : '');
+        if ($url === '' || in_array(rtrim(strtolower($url), '/'), ['https://gitlab.com', 'gitlab.com'], true)) {
+            return null;
+        }
+        if (! str_contains($url, '://')) {
+            $url = 'https://'.$url;
+        }
+        $parts = parse_url($url);
+        $host = is_array($parts) ? Hostname::normalize((string) ($parts['host'] ?? '')) : null;
+        if (! is_array($parts) || ($parts['scheme'] ?? '') !== 'https' || $host === null || isset($parts['port']) || isset($parts['user']) || isset($parts['query']) || isset($parts['fragment'])) {
+            throw ValidationException::withMessages(['base_url' => __('Enter your GitLab’s HTTPS address, such as https://gitlab.example.com.')]);
+        }
+        $path = rtrim((string) ($parts['path'] ?? ''), '/');
+        if ($path !== '' && preg_match('#\A(/[A-Za-z0-9._-]+)+\z#', $path) !== 1) {
+            throw ValidationException::withMessages(['base_url' => __('Enter your GitLab’s HTTPS address, such as https://gitlab.example.com.')]);
+        }
+
+        return 'https://'.$host.$path;
     }
 }
