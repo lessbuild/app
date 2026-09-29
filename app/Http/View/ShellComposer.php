@@ -72,7 +72,7 @@ final class ShellComposer
             account: $account,
             accounts: $this->accounts->handle($user),
             project: $project,
-            projects: $account !== null ? $this->projects->handle($account) : [],
+            projects: $account !== null ? $this->projects->handle($account, 50, $user) : [],
             primaryNav: $account !== null ? $this->primaryNav($user, $account, $project) : [],
             sectionLabel: $sectionLabel,
             sectionNav: $sectionNav,

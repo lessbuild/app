@@ -9,6 +9,8 @@ use App\Http\Attributes\CurrentAccount;
 use App\Http\Requests\Account\AuditLogRequest;
 use App\Models\Account;
 use App\Models\AuditEntry;
+use App\Models\AuditStream;
+use App\Models\BackupDestination;
 use App\Models\User;
 use App\Queries\Audit\AccountAuditLogQuery;
 use App\Queries\Projects\ProjectSwitcherQuery;
@@ -41,6 +43,9 @@ final class ShowAuditLogController
             'members' => $members,
             'categories' => AuditAction::CATEGORIES,
             'retentionDays' => AuditEntry::RETENTION_DAYS,
+            'streams' => AuditStream::query()->where('account_id', $account->id)->with('destination')->orderBy('name')->get(),
+            'backupDestinations' => BackupDestination::query()->where('account_id', $account->id)->orderBy('name')->get(['id', 'name']),
+            'canManageStreams' => $user->can('update', $account),
         ]);
     }
 }

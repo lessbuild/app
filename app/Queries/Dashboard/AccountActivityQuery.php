@@ -10,11 +10,20 @@ use App\Models\AuditEntry;
 use App\Models\Build;
 use App\Models\Incident;
 use App\Models\Project;
+use App\Models\User;
+use App\Queries\Projects\VisibleProjects;
 use Carbon\CarbonImmutable;
 
 /** What the team has been doing across an account's projects: deploys, incidents and changes, newest first. */
 final class AccountActivityQuery
 {
+    /**
+     * Create a new AccountActivityQuery instance.
+     *
+     * @param  VisibleProjects  $visible  Limits the feed to the projects the person can see.
+     */
+    public function __construct(private readonly VisibleProjects $visible) {}
+
     /**
      * The feed's filters, as kind => label key.
      *
@@ -30,15 +39,17 @@ final class AccountActivityQuery
      * @param  Account  $account
      * @param  string|null  $kind  one of KINDS to show only that kind, or null for everything
      * @param  int  $limit
+     * @param  User|null  $user  limits it to the projects they can see
      * @return list<ActivityItem>
      */
-    public function handle(Account $account, ?string $kind = null, int $limit = 15): array
+    public function handle(Account $account, ?string $kind = null, int $limit = 15, ?User $user = null): array
     {
-        $projects = Project::query()->whereBelongsTo($account)->pluck('name', 'id')->all();
+        $projects = $this->visible->scope(Project::query()->whereBelongsTo($account), $account->id, $user)->pluck('name', 'id')->all();
+        $limited = $this->visible->ids($account->id, $user) !== null;
         $items = [
             ...($kind === null || $kind === 'deploy' ? $this->deploys(array_keys($projects), $projects, $limit) : []),
             ...($kind === null || $kind === 'incident' ? $this->incidents($account, $projects, $limit) : []),
-            ...($kind === null || $kind === 'change' ? $this->changes($account, $projects, $limit) : []),
+            ...($kind === null || $kind === 'change' ? $this->changes($account, $projects, $limit, $limited) : []),
         ];
         usort($items, fn (ActivityItem $a, ActivityItem $b): int => $b->at <=> $a->at);
 
@@ -96,7 +107,7 @@ final class AccountActivityQuery
      */
     private function incidents(Account $account, array $projects, int $limit): array
     {
-        return Incident::query()->whereBelongsTo($account)->whereNotNull('project_id')
+        return Incident::query()->whereBelongsTo($account)->whereIn('project_id', array_keys($projects))
             ->latest('opened_at')->latest('id')->limit($limit)->get()
             ->map(fn (Incident $incident): ActivityItem => new ActivityItem(
                 kind: 'incident', icon: 'alert',
@@ -117,11 +128,13 @@ final class AccountActivityQuery
      * @param  Account  $account
      * @param  array<string, string>  $projects  project id => name
      * @param  int  $limit
+     * @param  bool  $limited  whether the person only sees those projects, so other projects' changes are left out
      * @return array<int, ActivityItem>
      */
-    private function changes(Account $account, array $projects, int $limit): array
+    private function changes(Account $account, array $projects, int $limit, bool $limited = false): array
     {
         return AuditEntry::query()->where('account_id', $account->id)
+            ->when($limited, fn ($query) => $query->where(fn ($query) => $query->whereNull('project_id')->orWhereIn('project_id', array_keys($projects))))
             ->orderByDesc('created_at')->orderByDesc('id')->limit($limit * 3)->get()
             ->reject(fn (AuditEntry $entry): bool => $entry->action->category() === 'security')->take($limit)
             ->map(fn (AuditEntry $entry): ActivityItem => new ActivityItem(

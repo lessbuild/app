@@ -33,8 +33,8 @@ final class DashboardController
 
         return view('dashboard', [
             'account' => $account,
-            'projects' => $account !== null ? $projects->handle($account) : [],
-            'activity' => $account !== null ? $activity->handle($account, $kind) : [],
+            'projects' => $account !== null ? $projects->handle($account, $user) : [],
+            'activity' => $account !== null ? $activity->handle($account, $kind, 15, $user) : [],
             'activityKind' => $kind,
             'canCreate' => $account !== null && $user->can('create', [Project::class, $account]),
         ]);

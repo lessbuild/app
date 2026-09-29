@@ -10,6 +10,7 @@ use App\Http\Controllers\Account\ChangePlanController;
 use App\Http\Controllers\Account\CheckProviderConnectionController;
 use App\Http\Controllers\Account\CreateApiTokenController;
 use App\Http\Controllers\Account\DeleteAccountController;
+use App\Http\Controllers\Account\DeleteAuditStreamController;
 use App\Http\Controllers\Account\DeleteProviderController;
 use App\Http\Controllers\Account\EditAccountSettingsController;
 use App\Http\Controllers\Account\ExportAuditLogController;
@@ -28,9 +29,11 @@ use App\Http\Controllers\Account\ShowInvitationController;
 use App\Http\Controllers\Account\ShowMembersController;
 use App\Http\Controllers\Account\ShowProviderController;
 use App\Http\Controllers\Account\ShowProvidersController;
+use App\Http\Controllers\Account\StoreAuditStreamController;
 use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateAccountSecurityController;
+use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Admin\AddFeedbackToRoadmapController;
@@ -771,6 +774,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::put('/account/members/{membership}', ChangeMemberRoleController::class)->name('account.members.update');
     Route::delete('/account/members/{membership}', RemoveMemberController::class)->name('account.members.destroy');
     Route::put('/account/members/{membership}/services', UpdateMemberServicesController::class)->name('account.members.services');
+    Route::put('/account/members/{membership}/projects', UpdateMemberProjectsController::class)->name('account.members.projects');
     Route::get('/account/api-tokens', ShowApiTokensController::class)->middleware('account.can:manageApiTokens')->name('account.api-tokens');
     Route::post('/account/api-tokens', CreateApiTokenController::class)->middleware(['password.confirm', 'throttle:20,1'])->name('account.api-tokens.store');
     Route::delete('/account/api-tokens/{token}', RevokeApiTokenController::class)->whereNumber('token')->name('account.api-tokens.destroy');
@@ -782,6 +786,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::put('/account/security', UpdateAccountSecurityController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.update');
     Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
     Route::get('/account/audit-log/export', ExportAuditLogController::class)->middleware(['account.can:viewAuditLog', 'throttle:10,1'])->name('account.audit-log.export');
+    Route::post('/account/audit-log/streams', StoreAuditStreamController::class)->middleware(['account.can:update', 'throttle:10,1'])->name('account.audit-log.streams.store');
+    Route::delete('/account/audit-log/streams/{stream}', DeleteAuditStreamController::class)->whereNumber('stream')->middleware(['account.can:update', 'throttle:10,1'])->name('account.audit-log.streams.destroy');
     // GitHub App installs (Deployer's paths: the App's Setup URL points at /github-app/callback).
     Route::get('/github-app/connect', ConnectGitHubAppController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.connect');
     Route::get('/github-app/callback', CompleteGitHubAppInstallController::class)->middleware(['can:create,App\\Models\\Provider', 'throttle:10,1'])->name('github-app.callback');

@@ -18,6 +18,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
  * @property string $user_id
  * @property AccountRole $role
  * @property list<string>|null $service_access null means every service
+ * @property list<string>|null $project_ids the projects the member can see; null means every project
+ * @property bool $deploy_protected may deploy to and change protected environments
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property-read Account $account
  * @property-read User $user
@@ -29,13 +31,13 @@ class Membership extends Model
     /**
      * Get the attributes that should be cast.
      *
-     * Reads `role` as an AccountRole and `service_access` as a JSON list (null means every service).
+     * Reads `role` as an AccountRole, and `service_access` and `project_ids` as JSON lists (null means all).
      *
      * @return array<string, string>
      */
     protected function casts(): array
     {
-        return ['role' => AccountRole::class, 'service_access' => 'array'];
+        return ['role' => AccountRole::class, 'service_access' => 'array', 'project_ids' => 'array', 'deploy_protected' => 'boolean'];
     }
 
     /**
@@ -92,5 +94,30 @@ class Membership extends Model
     public function allows(AccountPermission $permission): bool
     {
         return $this->role->allows($permission);
+    }
+
+    /**
+     * Determine whether the member can see a project: owners and administrators see every project, and so does anyone
+     * not limited to some.
+     *
+     * @param  string  $projectId
+     * @return bool
+     */
+    public function canSeeProject(string $projectId): bool
+    {
+        return in_array($this->role, [AccountRole::Owner, AccountRole::Admin], true)
+            || $this->project_ids === null
+            || in_array($projectId, $this->project_ids, true);
+    }
+
+    /**
+     * Determine whether the member may deploy to and change protected environments: owners and administrators always
+     * may; others when they've been allowed.
+     *
+     * @return bool
+     */
+    public function canDeployProtected(): bool
+    {
+        return in_array($this->role, [AccountRole::Owner, AccountRole::Admin], true) || $this->deploy_protected;
     }
 }

@@ -39,7 +39,7 @@ final class ProjectPolicy
      */
     public function view(User $user, Project $project): bool
     {
-        return $this->allows($user, $project->account_id, AccountPermission::ViewProjects);
+        return $this->allowsInProject($user, $project, AccountPermission::ViewProjects);
     }
 
     /**
@@ -51,7 +51,7 @@ final class ProjectPolicy
      */
     public function update(User $user, Project $project): bool
     {
-        return $this->allows($user, $project->account_id, AccountPermission::ManageProjects);
+        return $this->allowsInProject($user, $project, AccountPermission::ManageProjects);
     }
 
     /**
@@ -76,7 +76,7 @@ final class ProjectPolicy
      */
     public function useService(User $user, Project $project, string $service): bool
     {
-        return $this->allows($user, $project->account_id, AccountPermission::ViewProjects, $service);
+        return $this->allowsInProject($user, $project, AccountPermission::ViewProjects, $service);
     }
 
     /**
@@ -89,7 +89,7 @@ final class ProjectPolicy
      */
     public function manageService(User $user, Project $project, string $service): bool
     {
-        return $this->allows($user, $project->account_id, AccountPermission::ManageProjects, $service);
+        return $this->allowsInProject($user, $project, AccountPermission::ManageProjects, $service);
     }
 
     /**

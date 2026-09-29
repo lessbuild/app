@@ -63,6 +63,31 @@
                                     <div><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Save service access') }}</x-signal.ui.button></div>
                                 </form>
                             </details>
+                            @if ($member->projectAccess !== null || $member->deployProtected)
+                                <p class="mt-1 text-xs text-muted">
+                                    @if ($member->projectAccess !== null){{ __('Projects: :projects', ['projects' => $member->projectAccess === [] ? __('none') : $projects->whereIn('id', $member->projectAccess)->pluck('name')->implode(', ')]) }}@endif
+                                    @if ($member->deployProtected) · {{ __('Can deploy protected environments') }}@endif
+                                </p>
+                            @endif
+                            <details class="mt-2 text-sm" @if ($errors->has('projects') && old('membership') === $member->membershipId) open @endif>
+                                <summary class="cursor-pointer font-bold text-primary">{{ __('Project access') }}</summary>
+                                <form method="POST" action="{{ route('account.members.projects', $member->membershipId) }}" class="mt-3 grid gap-3 rounded-panel border border-line bg-surface-muted p-4">
+                                    @csrf
+                                    @method('PUT')
+                                    <fieldset class="grid gap-2">
+                                        <legend class="sr-only">{{ __('Which projects :name can see', ['name' => $member->name]) }}</legend>
+                                        <x-signal.ui.choice type="radio" :id="'projects-all-'.$member->membershipId" name="project_access" value="all" :label="__('Every project, including new ones')" :checked="$member->projectAccess === null" :restore="false" :error-key="false" />
+                                        <x-signal.ui.choice type="radio" :id="'projects-some-'.$member->membershipId" name="project_access" value="some" :label="__('Only these projects:')" :checked="$member->projectAccess !== null" :restore="false" :error-key="false" />
+                                        <div class="grid gap-1 pl-6 sm:grid-cols-2">
+                                            @foreach ($projects as $project)
+                                                <x-signal.ui.checkbox :id="'projects-'.$member->membershipId.'-'.$project->id" name="projects[]" :value="$project->id" :checked="in_array($project->id, $member->projectAccess ?? [], true)" :restore="false">{{ $project->name }}</x-signal.ui.checkbox>
+                                            @endforeach
+                                        </div>
+                                    </fieldset>
+                                    <x-signal.ui.checkbox :id="'deploy-protected-'.$member->membershipId" name="deploy_protected" value="1" :checked="$member->deployProtected" :restore="false">{{ __('Can deploy to and change protected environments') }}</x-signal.ui.checkbox>
+                                    <div><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Save project access') }}</x-signal.ui.button></div>
+                                </form>
+                            </details>
                         @endif
                     </div>
                     <div class="flex flex-wrap items-center gap-2">

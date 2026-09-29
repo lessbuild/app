@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
+use App\Models\Project;
 use App\Models\User;
 use App\Platform\ServiceRegistry;
 use App\Queries\Accounts\MembersOverviewQuery;
@@ -34,6 +35,9 @@ final class ShowMembersController
     public function __invoke(#[CurrentAccount] Account $account, #[CurrentUser] User $user, MembersOverviewQuery $query): View
     {
 
-        return view('account.members', ['account' => $account, 'overview' => $query->handle($account, $user), 'services' => $this->services->all()]);
+        return view('account.members', [
+            'account' => $account, 'overview' => $query->handle($account, $user), 'services' => $this->services->all(),
+            'projects' => Project::query()->where('account_id', $account->id)->orderBy('name')->get(['id', 'name']),
+        ]);
     }
 }

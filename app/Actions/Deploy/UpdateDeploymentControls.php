@@ -16,13 +16,14 @@ final class UpdateDeploymentControls
      *
      * @param  User  $actor
      * @param  Environment  $environment
-     * @param  array{locked: bool, lock_reason: string|null, window: bool, days: list<int>, start: string|null, end: string|null, timezone: string|null}  $data
+     * @param  array{protected?: bool, locked: bool, lock_reason: string|null, window: bool, days: list<int>, start: string|null, end: string|null, timezone: string|null}  $data
      * @return void
      */
     public function handle(User $actor, Environment $environment, array $data): void
     {
         Gate::forUser($actor)->authorize('configureDeploy', $environment);
         $environment->forceFill([
+            'protected' => (bool) ($data['protected'] ?? $environment->protected),
             'deployment_locked_at' => $data['locked'] ? ($environment->deployment_locked_at ?? now()) : null,
             'deployment_locked_by' => $data['locked'] ? ($environment->deployment_locked_by ?? $actor->id) : null,
             'deployment_lock_reason' => $data['locked'] ? (trim((string) $data['lock_reason']) ?: null) : null,

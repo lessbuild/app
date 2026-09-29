@@ -34,8 +34,8 @@ final class SearchController
         }
 
         $groups = [
-            ['label' => __('Projects'), 'results' => $projects->projects($account, $term)],
-            ['label' => __('Domains'), 'results' => $projects->domains($account, $term)],
+            ['label' => __('Projects'), 'results' => $projects->projects($account, $term, 6, $user)],
+            ['label' => __('Domains'), 'results' => $projects->domains($account, $term, 6, $user)],
             ['label' => __('Members'), 'results' => $members->handle($account, $term)],
         ];
 

@@ -50,7 +50,7 @@ final class RepositoryPolicy
      */
     public function update(User $user, Repository $repository): bool
     {
-        return $this->allows($user, $repository->project->account_id, AccountPermission::ManageProjects, 'deploy');
+        return $this->allowsInProject($user, $repository->project, AccountPermission::ManageProjects, 'deploy');
     }
 
     /**
@@ -66,7 +66,8 @@ final class RepositoryPolicy
     }
 
     /**
-     * Determine whether the user can deploy, redeploy, roll back and cancel the repository's deploys.
+     * Determine whether the user can deploy, redeploy, roll back and cancel the repository's deploys: people who manage
+     * it and, when its environment is protected, may deploy protected environments.
      *
      * @param  User  $user
      * @param  Repository  $repository
@@ -74,6 +75,6 @@ final class RepositoryPolicy
      */
     public function deploy(User $user, Repository $repository): bool
     {
-        return $this->update($user, $repository);
+        return $this->update($user, $repository) && $this->mayTouchEnvironment($user, $repository->environment);
     }
 }

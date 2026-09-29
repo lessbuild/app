@@ -6,7 +6,9 @@ namespace App\Actions\Audit;
 
 use App\Contracts\RequestOrigin;
 use App\Enums\AuditAction;
+use App\Jobs\Audit\StreamAuditEntry;
 use App\Models\AuditEntry;
+use App\Models\AuditStream;
 use App\Models\User;
 use Illuminate\Support\Str;
 
@@ -24,7 +26,7 @@ final class RecordAuditEntry
     /**
      * Store an entry with the actor's name and email copied in (so it still reads after they leave), the request's IP
      * and user agent, and the account and project it belongs to. Entries without an account are the person's own
-     * security log.
+     * security log. Accounts with audit streams get the entry sent to them in the background.
      *
      * @param  AuditAction  $action
      * @param  User|null  $actor
@@ -49,5 +51,8 @@ final class RecordAuditEntry
             'ip_address' => $this->origin->ipAddress(),
             'user_agent' => $userAgent !== null ? Str::limit($userAgent, 500, '') : null,
         ])->save();
+        if ($accountId !== null && AuditStream::query()->where('account_id', $accountId)->where('enabled', true)->exists()) {
+            StreamAuditEntry::dispatch($entry->id)->afterCommit();
+        }
     }
 }

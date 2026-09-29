@@ -23,6 +23,8 @@ final readonly class MemberRow
      * @param  bool  $manageable  Whether the viewer may change this member's role or remove them.
      * @param  list<string>|null  $serviceAccess  null means every service
      * @param  bool  $canLimitServices  Owners and admins always have every service, so only other roles can be limited.
+     * @param  list<string>|null  $projectAccess  the projects they can see; null means every project
+     * @param  bool  $deployProtected  whether they may deploy to protected environments
      */
     public function __construct(
         public string $membershipId,
@@ -34,5 +36,7 @@ final readonly class MemberRow
         public bool $manageable,
         public ?array $serviceAccess = null,
         public bool $canLimitServices = false,
+        public ?array $projectAccess = null,
+        public bool $deployProtected = false,
     ) {}
 }

@@ -71,4 +71,47 @@
             </nav>
         @endif
     @endif
+
+    <x-signal.ui.settings-section id="streams" :title="__('Streams')" :description="__('Send every new entry, as it happens, to a Slack channel, a signed webhook (for a SIEM) or S3-compatible storage for long-term keeping. A stream that fails 20 times in a row is paused.')">
+        <div class="grid gap-3 p-4 sm:p-6">
+            @if (session('stream_secret'))
+                <x-signal.ui.alert tone="info">{{ __('Signing secret (shown once): :secret — requests carry X-BuildPusher-Signature: v1=HMAC-SHA256 of the timestamp, a dot and the body.', ['secret' => session('stream_secret')]) }}</x-signal.ui.alert>
+            @endif
+            @forelse ($streams as $stream)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span>
+                        <span class="font-bold">{{ $stream->name }}</span>
+                        <span class="text-muted">· {{ __(\App\Models\AuditStream::TYPES[$stream->type] ?? $stream->type) }}@if ($stream->destination) ({{ $stream->destination->name }})@endif</span>
+                        @if (! $stream->enabled)<x-signal.ui.badge tone="danger">{{ __('Paused') }}</x-signal.ui.badge>@endif
+                        @if ($stream->last_error)<span class="block text-xs text-danger">{{ $stream->last_error }}</span>@elseif ($stream->last_delivered_at)<span class="block text-xs text-muted">{{ __('Last sent :time', ['time' => $stream->last_delivered_at->diffForHumans()]) }}</span>@endif
+                    </span>
+                    @if ($canManageStreams)
+                        <form method="POST" action="{{ route('account.audit-log.streams.destroy', $stream->id) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('No streams. Entries stay here for :days days.', ['days' => $retentionDays]) }}</p>
+            @endforelse
+            @if ($canManageStreams)
+                <div><x-signal.ui.button :href="route('account.audit-log', ['dialog' => 'add-stream'])" variant="secondary" data-modal-trigger="add-stream">{{ __('Add a stream') }}</x-signal.ui.button></div>
+                <x-signal.overlays.form-modal id="add-stream" :title="__('Add an audit stream')" :action="route('account.audit-log.streams.store')" :submit="__('Add stream')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                    <x-signal.ui.input-field id="stream-name" name="name" :label="__('Name')" maxlength="120" placeholder="SIEM" required />
+                    <x-signal.ui.select-field id="stream-type" name="type" :label="__('Send to')">
+                        @foreach (\App\Models\AuditStream::TYPES as $value => $label)
+                            <option value="{{ $value }}">{{ __($label) }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <div class="sm:col-span-2"><x-signal.ui.input-field id="stream-url" name="endpoint_url" type="url" :label="__('Slack or webhook address')" :description="__('For Slack and webhooks.')" maxlength="2048" /></div>
+                    <div class="sm:col-span-2">
+                        <x-signal.ui.select-field id="stream-destination" name="backup_destination_id" :label="__('Backup destination')" :description="__('For S3: one JSON file per entry under audit/ in the destination’s bucket.')">
+                            <option value="">{{ __('None') }}</option>
+                            @foreach ($backupDestinations as $destination)
+                                <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                    </div>
+                </x-signal.overlays.form-modal>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
 </x-signal.layouts.account>

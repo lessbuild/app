@@ -16,6 +16,7 @@
         <form method="POST" action="{{ route('deploy.environments.controls', [$project, $environment]) }}" class="grid items-start gap-4 p-4 sm:grid-cols-2 sm:p-6">
             @csrf
             @method('PUT')
+            <div class="sm:col-span-2"><x-signal.ui.checkbox name="protected" value="1" :checked="$environment->protected" :disabled="! $canManage" :description="__('Only owners, admins and members allowed to deploy protected environments (under Account → Members) can deploy here or change these settings.')">{{ __('Protected environment') }}</x-signal.ui.checkbox></div>
             <div class="sm:col-span-2"><x-signal.ui.checkbox name="locked" value="1" :checked="(bool) $environment->deployment_locked_at" :disabled="! $canManage">{{ __('Lock deploys') }}</x-signal.ui.checkbox></div>
             <x-signal.ui.input-field name="lock_reason" :label="__('Reason (shown to people who try)')" :value="$environment->deployment_lock_reason" maxlength="500" />
             <div class="sm:col-span-2"><x-signal.ui.checkbox name="window" value="1" :checked="$environment->deployment_window_days !== null" :disabled="! $canManage">{{ __('Only deploy in a window') }}</x-signal.ui.checkbox></div>
