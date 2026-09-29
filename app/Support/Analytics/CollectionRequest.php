@@ -78,11 +78,12 @@ final class CollectionRequest
     public const AUTOMATIC_EVENTS = ['outbound_link' => 'url', 'file_download' => 'file'];
 
     /**
-     * Keep a custom event's name and, for the tracker's automatic events, their link or file (host and path only,
-     * without query strings); nothing else a site sends is stored.
+     * Keep a custom event's name, its revenue (an amount up to a billion with two decimals, and a three-letter
+     * currency, USD when none is given) and, for the tracker's automatic events, their link or file (host and path
+     * only, without query strings); nothing else a site sends is stored.
      *
      * @param  mixed  $properties
-     * @return array{name?: string, url?: string, file?: string}
+     * @return array{name?: string, url?: string, file?: string, revenue?: float, currency?: string}
      */
     public static function safeProperties(mixed $properties): array
     {
@@ -98,6 +99,15 @@ final class CollectionRequest
             if ($value !== '') {
                 $kept[$detail] = $value;
             }
+        }
+        $revenue = $properties['revenue'] ?? null;
+        if (is_string($revenue) && is_numeric($revenue)) {
+            $revenue = (float) $revenue;
+        }
+        if ((is_int($revenue) || is_float($revenue)) && $revenue >= 0 && $revenue <= 1_000_000_000) {
+            $kept['revenue'] = round((float) $revenue, 2);
+            $currency = strtoupper(is_string($properties['currency'] ?? null) ? trim($properties['currency']) : '');
+            $kept['currency'] = preg_match('/^[A-Z]{3}$/', $currency) === 1 ? $currency : 'USD';
         }
 
         return $kept;

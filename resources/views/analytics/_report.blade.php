@@ -121,7 +121,7 @@
             </div>
             <ul class="mt-4 grid gap-2.5 text-sm">
                 @forelse ($summary['goals'] as $goal)
-                    <li class="flex items-center justify-between gap-4"><span class="truncate text-muted">{{ $goal['name'] }}</span><strong class="tabular-nums text-ink">{{ number_format($goal['value']) }}</strong></li>
+                    <li class="flex items-center justify-between gap-4"><span class="truncate text-muted">{{ $goal['name'] }}</span><span class="shrink-0 text-right tabular-nums">@if ($goal['revenue'] ?? null)<span class="mr-2 text-xs font-bold text-success">{{ $goal['revenue'] }}</span>@endif<strong class="text-ink">{{ number_format($goal['value']) }}</strong></span></li>
                 @empty
                     <li class="text-muted">{{ __('Add a page or event goal to measure conversions.') }}</li>
                 @endforelse

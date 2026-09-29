@@ -31,7 +31,7 @@
                 <p class="p-4 text-sm text-muted sm:p-6">{{ __('No tagged visits yet. Share a link from the builder above.') }}</p>
             @else
                 <x-signal.ui.table :caption="__('Campaign results')" :framed="false">
-                    <x-slot:head><tr><th scope="col">{{ __('Campaign') }}</th><th scope="col">{{ __('Source / medium') }}</th><th scope="col" class="text-right">{{ __('Visits') }}</th><th scope="col" class="text-right">{{ __('Pageviews') }}</th><th scope="col" class="text-right">{{ __('Converted') }}</th></tr></x-slot:head>
+                    <x-slot:head><tr><th scope="col">{{ __('Campaign') }}</th><th scope="col">{{ __('Source / medium') }}</th><th scope="col" class="text-right">{{ __('Visits') }}</th><th scope="col" class="text-right">{{ __('Pageviews') }}</th><th scope="col" class="text-right">{{ __('Converted') }}</th><th scope="col" class="text-right">{{ __('Revenue') }}</th></tr></x-slot:head>
                     @foreach ($results as $row)
                         <tr>
                             <td><a class="font-bold text-primary hover:underline" href="{{ route('analytics.overview', [$project, 'site' => $site->id, 'days' => 30, 'campaign' => $row['campaign']]) }}">{{ $row['campaign'] }}</a></td>
@@ -39,6 +39,7 @@
                             <td class="text-right tabular-nums">{{ number_format($row['visits']) }}</td>
                             <td class="text-right tabular-nums">{{ number_format($row['pageviews']) }}</td>
                             <td class="text-right tabular-nums">{{ number_format($row['converted']) }} <span class="text-muted">({{ $row['rate'] }}%)</span></td>
+                            <td class="text-right tabular-nums">{{ $row['revenue'] ?? '—' }}</td>
                         </tr>
                     @endforeach
                 </x-signal.ui.table>

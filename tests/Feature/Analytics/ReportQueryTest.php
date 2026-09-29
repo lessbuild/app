@@ -77,7 +77,7 @@ final class ReportQueryTest extends TestCase
         $this->assertContains(['label' => 'newsletter / email', 'value' => 1], $report['sources']);
         $this->assertContains(['label' => 'news.example', 'value' => 1], $report['sources']);
         $this->assertSame([['label' => 'launch', 'value' => 1]], $report['campaigns']);
-        $this->assertSame([['name' => 'Signed up', 'value' => 1, 'kind' => 'path']], $report['goals'], 'Only completions after the goal was made count.');
+        $this->assertSame([['name' => 'Signed up', 'value' => 1, 'kind' => 'path', 'revenue' => null]], $report['goals'], 'Only completions after the goal was made count.');
         $this->assertSame(5, array_sum(array_column($report['series'], 'value')));
         $this->assertCount(7, $report['series']);
 

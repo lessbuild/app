@@ -10,6 +10,7 @@ use App\Models\AnalyticsGoal;
 use App\Models\AnalyticsGoalConversion;
 use App\Models\AnalyticsSite;
 use App\Models\AnalyticsVisit;
+use App\Support\Analytics\Revenue;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
@@ -146,6 +147,7 @@ final class AnalyticsReportQuery
                 'name' => $goal->name,
                 'value' => $conversions['perGoal'][$goal->id] ?? 0,
                 'kind' => $goal->kind,
+                'revenue' => Revenue::format($conversions['revenue'][$goal->id] ?? []),
             ])->values()->all(),
             'lastProcessedAt' => $site->last_processed_at,
             'hasData' => $number($totals, 'events') > 0,
@@ -209,28 +211,39 @@ final class AnalyticsReportQuery
 
     /**
      * Count goal completions in the period per goal (judged by each goal's definition at the time, as recorded when
-     * the events were processed), and how many visitors completed any goal.
+     * the events were processed), the revenue they carried per goal and currency, and how many visitors completed any
+     * goal.
      *
      * @param  AnalyticsSite  $site
      * @param  Collection<int, AnalyticsGoal>  $goals
      * @param  CarbonImmutable  $from
      * @param  CarbonImmutable  $until
      * @param  array<string, string|null>  $filters
-     * @return array{perGoal: array<int, int>, visitors: int}
+     * @return array{perGoal: array<int, int>, revenue: array<int, array<string, float>>, visitors: int}
      */
     private function conversions(AnalyticsSite $site, Collection $goals, CarbonImmutable $from, CarbonImmutable $until, array $filters): array
     {
         if ($goals->isEmpty()) {
-            return ['perGoal' => [], 'visitors' => 0];
+            return ['perGoal' => [], 'revenue' => [], 'visitors' => 0];
         }
         $matching = AnalyticsGoalConversion::query()
             ->whereIn('goal_id', $goals->pluck('id'))
             ->whereIn('analytics_event_id', $this->events($site, $from, $until, $filters)->select('id'));
         $perGoal = (clone $matching)->toBase()->selectRaw('goal_id, COUNT(*) AS total')->groupBy('goal_id')->pluck('total', 'goal_id')
             ->mapWithKeys(fn (mixed $total, mixed $goal): array => [(int) $goal => (int) $total])->all();
+        $revenue = [];
+        $rows = (clone $matching)->toBase()
+            ->join('analytics_events as revenue_events', 'revenue_events.id', '=', 'analytics_goal_conversions.analytics_event_id')
+            ->whereRaw(Revenue::amount('revenue_events').' IS NOT NULL')
+            ->selectRaw('analytics_goal_conversions.goal_id AS goal_id, '.Revenue::currency('revenue_events').' AS currency, SUM('.Revenue::amount('revenue_events').') AS amount')
+            ->groupBy('analytics_goal_conversions.goal_id', 'currency')
+            ->get();
+        foreach ($rows as $row) {
+            $revenue[(int) $row->goal_id][(string) $row->currency] = (float) $row->amount;
+        }
         $visitors = AnalyticsEvent::query()->whereIn('id', $matching->select('analytics_event_id'))->whereNotNull('visitor_hash')->distinct()->count('visitor_hash');
 
-        return ['perGoal' => $perGoal, 'visitors' => $visitors];
+        return ['perGoal' => $perGoal, 'revenue' => $revenue, 'visitors' => $visitors];
     }
 
     /**

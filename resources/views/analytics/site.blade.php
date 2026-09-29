@@ -11,7 +11,7 @@
     <x-signal.ui.settings-section :title="__('Tracking snippet')" :description="__('Paste it into the <head> of every page. It sets no cookies and respects an optional consent callback (data-consent).')">
         <div class="grid gap-4 p-4 sm:p-6">
             <x-signal.ui.code-block :code="$snippet" class="whitespace-pre-wrap break-all" />
-            <p class="text-xs text-muted">{{ __('Custom events: window.buildpusher.track(\'signup\').') }}</p>
+            <p class="text-xs text-muted">{{ __('Custom events: window.buildpusher.track(\'signup\'). Add revenue to measure what goals and campaigns earn: window.buildpusher.track(\'purchase\', {revenue: 49.99, currency: \'EUR\'}).') }}</p>
             <div class="grid gap-2 text-sm">
                 <p class="font-bold text-ink">{{ __('Optional: count more automatically') }}</p>
                 <ul class="grid gap-1.5 text-muted">
