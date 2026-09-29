@@ -39,6 +39,31 @@ final class AdminCustomersTest extends TestCase
         $this->assertTrue(Cache::has('admin:business-analytics'));
     }
 
+    /**
+     * Check that the sign-up funnel follows new accounts from sign-up to paying, and that sample projects and old
+     * accounts don't count.
+     *
+     * @return void
+     */
+    public function test_the_sign_up_funnel_follows_new_accounts(): void
+    {
+        $admin = $this->admin();
+        $paying = Project::factory()->withServices(['deploy'])->create();
+        $this->onTier($paying, 'deploy', 'pro');
+        Project::factory()->create(['is_sample' => true]);
+        $old = Project::factory()->create();
+        $old->account->forceFill(['created_at' => now()->subDays(45)])->save();
+
+        $page = $this->as($admin)->get('/admin/analytics')->assertOk()->assertSee('Sign-up funnel');
+        /** @var list<array{label: string, accounts: int}> $steps */
+        $steps = $page->viewData('funnel');
+        $funnel = array_column($steps, 'accounts', 'label');
+        $this->assertSame(Account::query()->where('created_at', '>=', now()->subDays(30))->count(), $funnel['Signed up']);
+        $this->assertSame(1, $funnel['Created a project']);
+        $this->assertSame(0, $funnel['Deployed']);
+        $this->assertSame(1, $funnel['Pays']);
+    }
+
     public function test_support_finds_and_opens_people_and_accounts_leaving_a_trail(): void
     {
         $admin = $this->admin();

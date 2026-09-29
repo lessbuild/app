@@ -16,6 +16,29 @@
         @endforeach
     </div>
 
+    {{-- Where the last 30 days' new accounts got to. Each bar is a share of those accounts; the drop is from the step before. --}}
+    @php($cohort = max(1, $funnel[0]['accounts'] ?? 0))
+    <x-signal.ui.card as="section" class="grid gap-4 p-5" aria-labelledby="funnel-heading">
+        <div>
+            <h2 id="funnel-heading" class="text-sm font-extrabold text-ink">{{ __('Sign-up funnel') }}</h2>
+            <p class="mt-1 text-xs text-muted">{{ __('Accounts created in the last 30 days, and how many have reached each step. Sample projects don’t count.') }}</p>
+        </div>
+        <ol class="grid gap-2.5">
+            @foreach ($funnel as $step)
+                @php($share = round($step['accounts'] / $cohort * 100))
+                @php($previous = $loop->first ? null : $funnel[$loop->index - 1]['accounts'])
+                <li class="grid items-center gap-x-3 gap-y-1 text-sm sm:grid-cols-[12rem_1fr_7rem]">
+                    <span class="font-semibold text-ink">{{ $step['label'] }}</span>
+                    <x-signal.ui.progress :value="$step['accounts']" :max="$cohort" role="meter" :label="__(':step: :count accounts', ['step' => $step['label'], 'count' => $step['accounts']])" />
+                    <span class="tabular-nums text-muted sm:text-right">
+                        <span class="font-bold text-ink">{{ number_format($step['accounts']) }}</span> · {{ $share }}%
+                        @if ($previous !== null && $previous > 0 && $previous > $step['accounts'])<span class="sr-only">, {{ __(':drop fewer than the step before', ['drop' => $previous - $step['accounts']]) }}</span>@endif
+                    </span>
+                </li>
+            @endforeach
+        </ol>
+    </x-signal.ui.card>
+
     <div class="grid gap-4 lg:grid-cols-2">
         @foreach ($services as $service)
             <x-signal.ui.table :caption="__(':service tiers', ['service' => $service['name']])">
