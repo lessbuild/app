@@ -70,16 +70,37 @@ final class CollectionRequest
     }
 
     /**
-     * Keep only a custom event's name; nothing else a site sends is stored.
+     * The automatic events the tracker can send, and the one detail each may carry: the link's host and path, or the
+     * file's path. Nothing else a site sends is stored.
+     *
+     * @var array<string, string>
+     */
+    public const AUTOMATIC_EVENTS = ['outbound_link' => 'url', 'file_download' => 'file'];
+
+    /**
+     * Keep a custom event's name and, for the tracker's automatic events, their link or file (host and path only,
+     * without query strings); nothing else a site sends is stored.
      *
      * @param  mixed  $properties
-     * @return array{name?: string}
+     * @return array{name?: string, url?: string, file?: string}
      */
     public static function safeProperties(mixed $properties): array
     {
         $name = is_array($properties) ? ($properties['name'] ?? null) : null;
+        if (! is_string($name) || preg_match('/^[a-z0-9][a-z0-9_.-]{0,79}$/i', $name) !== 1) {
+            return [];
+        }
+        $kept = ['name' => $name];
+        $detail = self::AUTOMATIC_EVENTS[$name] ?? null;
+        $value = $detail !== null ? ($properties[$detail] ?? null) : null;
+        if (is_string($value)) {
+            $value = Str::limit(trim((string) preg_replace('/[\x00-\x1F\x7F]|[?#].*$/u', '', $value)), 500, '');
+            if ($value !== '') {
+                $kept[$detail] = $value;
+            }
+        }
 
-        return is_string($name) && preg_match('/^[a-z0-9][a-z0-9_.-]{0,79}$/i', $name) === 1 ? ['name' => $name] : [];
+        return $kept;
     }
 
     /**

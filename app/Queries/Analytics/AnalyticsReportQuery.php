@@ -133,6 +133,9 @@ final class AnalyticsReportQuery
             'campaigns' => $hasVisits
                 ? $this->rank($currentVisits()->whereNotNull('entry_utm_campaign'), 'entry_utm_campaign')
                 : $this->rank($currentEvents()->whereNotNull('utm_campaign'), 'utm_campaign'),
+            'outboundLinks' => $this->rank($this->automaticEvents($currentEvents(), 'outbound_link'), $this->labelOf($this->property('url'))),
+            'fileDownloads' => $this->rank($this->automaticEvents($currentEvents(), 'file_download'), $this->labelOf($this->property('file'))),
+            'notFound' => $this->rank($this->automaticEvents($currentEvents(), 'not_found'), $this->labelOf('path')),
             'recent' => $this->live->handle($site, $filters),
             'filters' => $filters,
             'goals' => $goals->map(fn (AnalyticsGoal $goal): array => [
@@ -352,6 +355,33 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * Limit events to one of the tracker's automatic custom events (outbound links, downloads, missing pages).
+     *
+     * @param  Builder<AnalyticsEvent>  $events
+     * @param  string  $name
+     * @return Builder<AnalyticsEvent>
+     */
+    private function automaticEvents(Builder $events, string $name): Builder
+    {
+        return $events->where('type', 'event')->whereRaw($this->property('name').' = ?', [$name]);
+    }
+
+    /**
+     * Get a SQL expression reading one text property of an event's properties.
+     *
+     * @param  'name'|'url'|'file'  $key
+     * @return literal-string
+     */
+    private function property(string $key): string
+    {
+        return match ($key) {
+            'name' => DB::getDriverName() === 'pgsql' ? "properties->>'name'" : "json_extract(properties, '$.name')",
+            'url' => DB::getDriverName() === 'pgsql' ? "properties->>'url'" : "json_extract(properties, '$.url')",
+            'file' => DB::getDriverName() === 'pgsql' ? "properties->>'file'" : "json_extract(properties, '$.file')",
+        };
+    }
+
+    /**
      * Get a SQL expression for a column's value, with missing values as "Unknown".
      *
      * @param  literal-string  $column
@@ -454,6 +484,9 @@ final class AnalyticsReportQuery
             'browsers' => $this->aggregateRanking($site, 'browser', $start, $end, 'pageviews'),
             'operatingSystems' => $this->aggregateRanking($site, 'operating_system', $start, $end, 'pageviews'),
             'campaigns' => $this->aggregateRanking($site, 'campaign', $start, $end, 'visits'),
+            'outboundLinks' => [],
+            'fileDownloads' => [],
+            'notFound' => [],
             'recent' => ['visitorCount' => 0, 'events' => []],
             'filters' => $filters,
             'goals' => [],

@@ -110,6 +110,40 @@
     };
 
     push('pageview');
+
+    // Opt-in automatic events, switched on with attributes on the script tag:
+    // data-not-found on a 404 page's snippet counts the missing page; data-outbound counts clicks on links to other
+    // sites; data-downloads counts file downloads (common file types, or the extensions listed, e.g. "pdf,zip").
+    if (script.dataset.notFound !== undefined) {
+        window.buildpusher.track('not_found');
+    }
+    var outbound = script.dataset.outbound !== undefined;
+    var downloads = script.dataset.downloads;
+    var extensions = (downloads || 'pdf,zip,rar,7z,gz,tgz,tar,dmg,exe,msi,pkg,deb,rpm,apk,csv,xls,xlsx,doc,docx,ppt,pptx,txt,rtf,epub,mp3,mp4,mov,avi,wav,iso')
+        .toLowerCase().split(',').map(function (extension) { return extension.trim().replace(/^\./, ''); });
+    function linkClicked(event) {
+        var link = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+        if (!link) return;
+        var url;
+        try {
+            url = new URL(link.href, window.location.href);
+        } catch (_) {
+            return;
+        }
+        if (url.protocol !== 'http:' && url.protocol !== 'https:') return;
+        var external = url.hostname !== window.location.hostname;
+        var extension = (url.pathname.split('.').pop() || '').toLowerCase();
+        if (downloads !== undefined && url.pathname.indexOf('.') !== -1 && extensions.indexOf(extension) !== -1) {
+            window.buildpusher.track('file_download', { file: (external ? url.hostname : '') + url.pathname });
+        } else if (outbound && external) {
+            window.buildpusher.track('outbound_link', { url: url.hostname + url.pathname });
+        }
+    }
+    if (outbound || downloads !== undefined) {
+        document.addEventListener('click', linkClicked, true);
+        document.addEventListener('auxclick', function (event) { if (event.button === 1) linkClicked(event); }, true);
+    }
+
     ['pushState', 'replaceState'].forEach(function (method) {
         var original = window.history[method];
         window.history[method] = function () {

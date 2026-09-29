@@ -9,6 +9,9 @@
     [__('Countries'), $summary['countries'], __('Countries appear once visitors arrive.'), 'country'],
     [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), null],
     [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), null],
+    [__('Outbound links'), $summary['outboundLinks'], __('Add data-outbound to the snippet to count clicks on links to other sites.'), null],
+    [__('File downloads'), $summary['fileDownloads'], __('Add data-downloads to the snippet to count file downloads.'), null],
+    [__('Pages not found'), $summary['notFound'], __('Add data-not-found to the snippet on your 404 page to see which missing pages people reach.'), null],
 ])
 
 <x-signal.layouts.project :overview="$overview" :title="__('Analytics')" :description="$site ? __(':site · cookieless visitor estimates, visits and goals', ['site' => $site->name]) : null">

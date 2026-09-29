@@ -74,6 +74,9 @@ final class GenerateReportExport implements ShouldQueue
                 'browsers' => $summary['browsers'],
                 'operating_systems' => $summary['operatingSystems'],
                 'campaigns' => $summary['campaigns'],
+                'outbound_links' => $summary['outboundLinks'],
+                'file_downloads' => $summary['fileDownloads'],
+                'pages_not_found' => $summary['notFound'],
             ] as $section => $items) {
                 foreach ($items as $item) {
                     fputcsv($handle, [$section, $item['label'], $item['value']]);
