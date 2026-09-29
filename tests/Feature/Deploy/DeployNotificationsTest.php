@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Deploy;
 
 use App\Actions\Deploy\FinishBuild;
+use App\Enums\AlertDeliveryStatus;
 use App\Enums\AlertDestinationType;
 use App\Models\AlertDelivery;
 use App\Models\AlertDestination;
@@ -17,9 +18,11 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Notifications\IncidentAlertNotification;
+use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertNotificationTransport;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Notification;
 use ReflectionMethod;
 use Tests\Feature\Infrastructure\InfrastructureHelpers;
 use Tests\Feature\Monitoring\MonitoringHelpers;
@@ -133,6 +136,26 @@ final class DeployNotificationsTest extends TestCase
         $mail = (new IncidentAlertNotification('delivery-1', $payload))->toMail($this->owner);
         $this->assertStringContainsString('Deploy failed — Production', (string) $mail->subject);
         $this->assertSame('View deploy', $mail->actionText);
+    }
+
+    /**
+     * Check that a deploy notification is actually delivered, not cancelled for lacking an incident.
+     *
+     * @return void
+     */
+    public function test_deploy_notifications_are_delivered(): void
+    {
+        config(['monitoring.alerts.mailer' => 'alert_smtp']);
+        Notification::fake();
+        $email = AlertDestination::factory()->email()->create(['account_id' => $this->project->account_id]);
+        $this->production->deployNotifications()->make()->forceFill(['alert_destination_id' => $email->id, 'on_success' => true, 'on_failure' => true])->save();
+        $this->finish(Build::STATUS_SUCCEEDED);
+        $delivery = AlertDelivery::query()->sole();
+
+        app(AlertDeliveryRunner::class)->process($delivery->id, 0);
+
+        $this->assertSame(AlertDeliveryStatus::Accepted, $delivery->refresh()->status);
+        Notification::assertSentOnDemand(IncidentAlertNotification::class);
     }
 
     /**

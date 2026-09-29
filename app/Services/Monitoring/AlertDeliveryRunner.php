@@ -178,7 +178,8 @@ final class AlertDeliveryRunner
             ->whereKey($destination->recipient_user_id)->whereNotNull('email_verified_at')->exists()) {
             return 'recipient_unavailable';
         }
-        if ($delivery->event === 'test') {
+        // Test alerts and deploy notifications aren't about an incident: the destination checks above are all they need.
+        if ($delivery->event === 'test' || str_starts_with($delivery->event, 'deploy_')) {
             return null;
         }
         $incident = $delivery->incident;
