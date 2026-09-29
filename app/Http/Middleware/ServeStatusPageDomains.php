@@ -48,6 +48,8 @@ final class ServeStatusPageDomains
             '/' => "/status/{$page->slug}",
             'report.json' => "/status/{$page->slug}/report.json",
             'subscribe' => "/status/{$page->slug}/subscribe",
+            'badge.svg' => "/status/{$page->slug}/badge.svg",
+            'embed' => "/status/{$page->slug}/embed",
             default => null,
         };
         abort_if($path === null, 404);

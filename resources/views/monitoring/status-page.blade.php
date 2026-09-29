@@ -37,6 +37,29 @@
         @endif
     </x-signal.ui.card>
 
+    @if ($page->published)
+        <x-signal.ui.settings-section id="share" :title="__('Share and embed')" :description="__('Put the page’s state in a README, a footer or your app. Badges and the widget update within a minute.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                <div class="flex flex-wrap items-center gap-3">
+                    <img src="{{ route('status.badge', $page->slug) }}" alt="{{ __(':page status badge', ['page' => $page->name]) }}" height="20">
+                    <img src="{{ route('status.badge', [$page->slug, 'show' => 'uptime']) }}" alt="{{ __(':page uptime badge', ['page' => $page->name]) }}" height="20">
+                </div>
+                <div class="grid gap-1">
+                    <p class="text-xs font-bold text-muted">{{ __('Status badge (Markdown)') }}</p>
+                    <x-signal.ui.code-block :code="'[!['.$page->name.' status]('.route('status.badge', $page->slug).')]('.$page->publicUrl().')'" class="break-all whitespace-pre-wrap" />
+                </div>
+                <div class="grid gap-1">
+                    <p class="text-xs font-bold text-muted">{{ __('Uptime badge (Markdown)') }}</p>
+                    <x-signal.ui.code-block :code="'[!['.$page->name.' uptime]('.route('status.badge', [$page->slug, 'show' => 'uptime']).')]('.$page->publicUrl().')'" class="break-all whitespace-pre-wrap" />
+                </div>
+                <div class="grid gap-1">
+                    <p class="text-xs font-bold text-muted">{{ __('Widget for your site (HTML)') }}</p>
+                    <x-signal.ui.code-block :code="'<iframe src=\''.route('status.embed', $page->slug).'\' title=\''.e($page->name).' status\' width=\'260\' height=\'40\' style=\'border:0\' loading=\'lazy\'></iframe>'" class="break-all whitespace-pre-wrap" />
+                </div>
+            </div>
+        </x-signal.ui.settings-section>
+    @endif
+
     @if ($canManage)
         <x-signal.ui.settings-section id="custom-domain" :title="__('Custom domain')" :description="__('Serve this page on a domain of your own, such as status.example.com. HTTPS is set up for you.')">
             <div class="grid gap-4 p-4 sm:p-6">

@@ -32,7 +32,7 @@ final class SecurityHeaders
         $headers->set('X-Content-Type-Options', 'nosniff');
         $headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=(), usb=()');
-        $embeddable = $request->routeIs('status.show');
+        $embeddable = $request->routeIs('status.show', 'status.embed');
         if (! $embeddable) {
             $headers->set('X-Frame-Options', 'DENY');
         }
