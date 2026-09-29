@@ -164,6 +164,33 @@ step "Switching Caddy to v2 (the old Caddyfile is kept as a backup)"
 BACKUP="/etc/caddy/Caddyfile.unified-$(date -u +%Y%m%d%H%M%S).bak"
 cp /etc/caddy/Caddyfile "$BACKUP"
 sed -i "s|root \* /var/www/buildpusher-unified/current/public|root * $LINK/current/public|" /etc/caddy/Caddyfile
+# Status pages on customers' own domains: Caddy gets a certificate on the first visit, but only for hostnames the app
+# confirms are a published page's verified domain. Added once; later deploys find the marker and leave it alone.
+if ! grep -q "# buildpusher-status-domains" /etc/caddy/Caddyfile; then
+    {
+        printf '# buildpusher-status-domains\n{\n\ton_demand_tls {\n\t\task https://buildpusher.com/internal/tls/status-domain\n\t\tinterval 1m\n\t\tburst 10\n\t}\n}\n\n'
+        cat /etc/caddy/Caddyfile
+        cat <<CADDY
+
+# buildpusher-status-domains: any other hostname, once the app has verified it for a status page
+https:// {
+	tls {
+		on_demand
+	}
+	root * $LINK/current/public
+	encode zstd gzip
+	php_fastcgi unix//run/buildpusher/php8.5-fpm.sock
+	file_server
+	header {
+		-Server
+		X-Content-Type-Options "nosniff"
+		Referrer-Policy "strict-origin-when-cross-origin"
+	}
+}
+CADDY
+    } > /etc/caddy/Caddyfile.next
+    mv /etc/caddy/Caddyfile.next /etc/caddy/Caddyfile
+fi
 caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null || { cp "$BACKUP" /etc/caddy/Caddyfile; fail "the new Caddyfile didn't validate; restored $BACKUP"; }
 systemctl reload caddy
 

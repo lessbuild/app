@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Carbon\CarbonImmutable;
 use Database\Factories\StatusPageFactory;
 use Illuminate\Database\Eloquent\Attributes\Table;
 use Illuminate\Database\Eloquent\Attributes\UseFactory;
@@ -24,6 +25,9 @@ use Illuminate\Support\Carbon;
  * @property string $slug
  * @property string|null $description
  * @property bool $published
+ * @property string|null $custom_domain the customer's own hostname for the page (ASCII)
+ * @property string|null $custom_domain_token the value its TXT record must carry
+ * @property CarbonImmutable|null $custom_domain_verified_at when the TXT record was found; the domain serves the page from then on
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Account $account
@@ -37,6 +41,46 @@ class StatusPage extends Model
 {
     /** @use HasFactory<StatusPageFactory> */
     use HasFactory;
+
+    /**
+     * Get the name of the TXT record that proves the customer controls the custom domain.
+     *
+     * @return string|null
+     */
+    public function domainRecordName(): ?string
+    {
+        return $this->custom_domain === null ? null : Domain::RECORD_PREFIX.'.'.$this->custom_domain;
+    }
+
+    /**
+     * Get the value the custom domain's TXT record must have.
+     *
+     * @return string|null
+     */
+    public function domainRecordValue(): ?string
+    {
+        return $this->custom_domain_token === null ? null : 'buildpusher-status='.$this->custom_domain_token;
+    }
+
+    /**
+     * Determine whether the page is served on its custom domain.
+     *
+     * @return bool
+     */
+    public function servesCustomDomain(): bool
+    {
+        return $this->published && $this->custom_domain !== null && $this->custom_domain_verified_at !== null;
+    }
+
+    /**
+     * Get the page's public address: its custom domain once verified, otherwise its /status/{slug} URL.
+     *
+     * @return string
+     */
+    public function publicUrl(): string
+    {
+        return $this->servesCustomDomain() ? 'https://'.$this->custom_domain.'/' : route('status.show', $this->slug);
+    }
 
     /**
      * Get the account the page belongs to.
@@ -87,6 +131,6 @@ class StatusPage extends Model
      */
     protected function casts(): array
     {
-        return ['published' => 'boolean'];
+        return ['published' => 'boolean', 'custom_domain_verified_at' => 'immutable_datetime'];
     }
 }

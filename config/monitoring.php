@@ -8,6 +8,11 @@ return [
         'location' => env('MONITOR_LOCATION', 'This server'),
     ],
 
+    'status_pages' => [
+        // The hostname customers point their status page domains at (a CNAME). Defaults to the app's own host.
+        'domain_target' => env('STATUS_PAGE_DOMAIN_TARGET', parse_url((string) env('APP_URL', 'http://localhost'), PHP_URL_HOST) ?: 'localhost'),
+    ],
+
     'alerts' => [
         // Mailer for alert emails; null uses the default mailer.
         'mailer' => env('ALERT_MAILER'),

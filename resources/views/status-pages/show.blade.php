@@ -1,6 +1,6 @@
 @php($tone = fn (string $state): string => match ($state) { 'operational' => 'success', 'major_outage' => 'danger', 'maintenance' => 'info', default => 'warning' })
 
-<x-signal.layouts.base :title="$page->name" :description="$page->description ?: __('Live service status and recent incident history.')" indexable :canonical="route('status.show', $page->slug)">
+<x-signal.layouts.base :title="$page->name" :description="$page->description ?: __('Live service status and recent incident history.')" indexable :canonical="$page->publicUrl()">
     <main id="main-content" tabindex="-1" class="mx-auto grid max-w-4xl gap-6 px-4 py-10 sm:px-8 sm:py-14">
         <header class="flex items-start justify-between gap-4">
             <div class="min-w-0">

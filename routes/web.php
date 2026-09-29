@@ -263,7 +263,9 @@ use App\Http\Controllers\Monitoring\UpdateMaintenanceWindowController;
 use App\Http\Controllers\Monitoring\UpdateMonitorController;
 use App\Http\Controllers\Monitoring\UpdateObjectiveController;
 use App\Http\Controllers\Monitoring\UpdateStatusPageController;
+use App\Http\Controllers\Monitoring\UpdateStatusPageDomainController;
 use App\Http\Controllers\Monitoring\UpdateStatusUpdateController;
+use App\Http\Controllers\Monitoring\VerifyStatusPageDomainController;
 use App\Http\Controllers\Notifications\ExportNotificationsController;
 use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Notifications\OpenNotificationController;
@@ -333,6 +335,7 @@ use App\Http\Controllers\Site\ShowRobotsController;
 use App\Http\Controllers\Site\ShowSecurityTxtController;
 use App\Http\Controllers\Site\ShowSitemapController;
 use App\Http\Controllers\Site\ShowStatusBadgeController;
+use App\Http\Controllers\StatusPages\CheckStatusPageDomainController;
 use App\Http\Controllers\StatusPages\ConfirmStatusSubscriptionController;
 use App\Http\Controllers\StatusPages\RedirectLegacyStatusPageController;
 use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
@@ -391,6 +394,8 @@ Route::get('/docs/api', ShowApiReferenceController::class)->name('docs.api');
 // Core's platform status page and report, kept at the same addresses.
 Route::get('/status', ShowPlatformStatusController::class)->middleware('throttle:120,1')->name('platform.status');
 Route::get('/status/report.json', ShowPlatformStatusReportController::class)->middleware('throttle:120,1')->name('platform.status.report');
+// Caddy asks before issuing a certificate for a status page's custom domain.
+Route::get('/internal/tls/status-domain', CheckStatusPageDomainController::class)->name('status.domains.check');
 Route::get('/status/subscriptions/{subscription}/confirm/{token}', ConfirmStatusSubscriptionController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.confirm');
 Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', ShowUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
 Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe.store');
@@ -629,6 +634,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/status-pages/{page}', ShowStatusPageController::class)->whereNumber('page')->name('status-pages.show');
             Route::get('/status-pages/{page}/edit', EditStatusPageController::class)->whereNumber('page')->middleware('can:update,page')->name('status-pages.edit');
             Route::put('/status-pages/{page}', UpdateStatusPageController::class)->whereNumber('page')->middleware(['can:update,page', 'throttle:30,1'])->name('status-pages.update');
+            Route::put('/status-pages/{page}/domain', UpdateStatusPageDomainController::class)->whereNumber('page')->middleware(['can:update,page', 'throttle:30,1'])->name('status-pages.domain');
+            Route::post('/status-pages/{page}/domain/verify', VerifyStatusPageDomainController::class)->whereNumber('page')->middleware(['can:update,page', 'throttle:10,1'])->name('status-pages.domain.verify');
             Route::delete('/status-pages/{page}', DeleteStatusPageController::class)->whereNumber('page')->middleware(['can:delete,page', 'throttle:30,1'])->name('status-pages.destroy');
             Route::post('/status-pages/{page}/updates', StoreStatusUpdateController::class)->whereNumber('page')->middleware(['can:update,page', 'throttle:30,1'])->name('status-pages.updates.store');
             Route::put('/status-pages/{page}/updates/{update}', UpdateStatusUpdateController::class)->whereNumber(['page', 'update'])->middleware(['can:update,page', 'throttle:30,1'])->name('status-pages.updates.update');

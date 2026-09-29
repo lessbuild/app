@@ -14,6 +14,7 @@ use App\Http\Middleware\ProjectContext;
 use App\Http\Middleware\ReceiveMonitorSignal;
 use App\Http\Middleware\ResolveTokenAccount;
 use App\Http\Middleware\SecurityHeaders;
+use App\Http\Middleware\ServeStatusPageDomains;
 use App\Services\Telemetry\OtlpErrorResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -36,6 +37,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: ['webhooks/stripe', 'status/subscriptions/*/unsubscribe/*', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*', 'builds/*/deployment/callback/*']);
         // Monitor signals are checked byte for byte; monitor secrets are stored exactly as typed.
         $middleware->prepend([ReceiveMonitorSignal::class, DecodeTelemetryPayload::class]);
+        // Customers' own status page domains see only their status page.
+        $middleware->prepend(ServeStatusPageDomains::class);
         $signal = fn (Request $request): bool => $request->is('api/v1/heartbeats/*', 'api/v1/queues/*', 'api/v1/ingest', 'api/v1/otlp/v1/*', 'api/v1/deployments', 'servers/*/provisioning/callback/*', 'websites/*/provisioning/callback/*', 'builds/*/deployment/callback/*', 'api/repositories/*/webhook', 'api/github-app/webhook');
         // Terminal keystrokes (Enter, spaces, control characters) must reach the shell untouched.
         $terminal = fn (Request $request): bool => $request->is('projects/*/infrastructure/servers/*/terminal/*/input');

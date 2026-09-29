@@ -1,7 +1,7 @@
 @php($project = $overview->project)
 @php($tone = fn (string $state): string => match ($state) { 'operational' => 'success', 'major_outage' => 'danger', 'maintenance' => 'info', default => 'warning' })
 
-<x-signal.layouts.project :overview="$overview" :title="$page->name" :description="$page->published ? url('/status/'.$page->slug) : __('Draft: only your team can see this page.')">
+<x-signal.layouts.project :overview="$overview" :title="$page->name" :description="$page->published ? $page->publicUrl() : __('Draft: only your team can see this page.')">
     <div class="flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2">
             <x-signal.ui.badge :tone="$page->published ? 'success' : 'neutral'">{{ $page->published ? __('Published') : __('Draft') }}</x-signal.ui.badge>
@@ -10,7 +10,7 @@
         </div>
         <div class="flex flex-wrap gap-2">
             @if ($page->published)
-                <x-signal.ui.button :href="route('status.show', $page->slug)" variant="secondary" target="_blank" rel="noopener">{{ __('Open public page') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="$page->publicUrl()" variant="secondary" target="_blank" rel="noopener">{{ __('Open public page') }}</x-signal.ui.button>
             @endif
             @if ($canManage)
                 <x-signal.ui.button :href="route('monitoring.status-pages.edit', [$project, $page->id])" variant="secondary">{{ __('Edit') }}</x-signal.ui.button>
@@ -36,6 +36,46 @@
             </ul>
         @endif
     </x-signal.ui.card>
+
+    @if ($canManage)
+        <x-signal.ui.settings-section id="custom-domain" :title="__('Custom domain')" :description="__('Serve this page on a domain of your own, such as status.example.com. HTTPS is set up for you.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                <form method="POST" action="{{ route('monitoring.status-pages.domain', [$project, $page->id]) }}" class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    @method('PUT')
+                    <div class="min-w-64 flex-1"><x-signal.ui.input-field name="custom_domain" :label="__('Domain')" :value="$page->custom_domain" placeholder="status.example.com" autocomplete="off" /></div>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Save') }}</x-signal.ui.button>
+                </form>
+                @if ($page->custom_domain !== null)
+                    @if ($page->custom_domain_verified_at !== null)
+                        <p class="flex flex-wrap items-center gap-2 text-sm"><x-signal.ui.badge tone="success">{{ __('Verified') }}</x-signal.ui.badge>
+                            @if ($page->published)
+                                <span>{{ __('Served at') }} <a href="{{ $page->publicUrl() }}" class="font-bold text-primary underline" target="_blank" rel="noopener">{{ $page->custom_domain }}</a></span>
+                            @else
+                                <span>{{ __('Publish the page to serve it there.') }}</span>
+                            @endif
+                        </p>
+                    @else
+                        <x-signal.ui.alert tone="info">{{ __('Add these two DNS records at your DNS provider, then check them. The first proves the domain is yours; the second sends its visitors here.') }}</x-signal.ui.alert>
+                    @endif
+                    <x-signal.ui.table :caption="__('DNS records')">
+                        <thead><tr><th scope="col">{{ __('Type') }}</th><th scope="col">{{ __('Name') }}</th><th scope="col">{{ __('Value') }}</th></tr></thead>
+                        <tbody>
+                            <tr><td>TXT</td><td class="font-mono text-xs break-all">{{ $page->domainRecordName() }}</td><td class="font-mono text-xs break-all">{{ $page->domainRecordValue() }}</td></tr>
+                            <tr><td>CNAME</td><td class="font-mono text-xs break-all">{{ $page->custom_domain }}</td><td class="font-mono text-xs break-all">{{ config('monitoring.status_pages.domain_target') }}</td></tr>
+                        </tbody>
+                    </x-signal.ui.table>
+                    @if ($page->custom_domain_verified_at === null)
+                        <form method="POST" action="{{ route('monitoring.status-pages.domain.verify', [$project, $page->id]) }}">
+                            @csrf
+                            <x-signal.ui.button type="submit" variant="primary">{{ __('Check DNS') }}</x-signal.ui.button>
+                        </form>
+                    @endif
+                    <p class="text-xs text-muted">{{ __('For a bare domain (example.com) that can’t have a CNAME, point an A record at the same address as :target.', ['target' => config('monitoring.status_pages.domain_target')]) }}</p>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+    @endif
 
     @if ($canManage)
         <x-slot:actions>
