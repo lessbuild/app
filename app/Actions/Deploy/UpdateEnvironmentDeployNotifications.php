@@ -21,8 +21,8 @@ final class UpdateEnvironmentDeployNotifications
 
     /**
      * Choose which of the account's alert destinations hear about the environment's deploys, and for which outcomes.
-     * A destination with no outcome ticked stops hearing about them. PagerDuty is left out: it pages people, and a
-     * deploy isn't an incident.
+     * A destination with no outcome ticked stops hearing about them. PagerDuty and phone calls are left out: they page
+     * people, and a deploy isn't an incident.
      *
      * @param  User  $actor
      * @param  Environment  $environment
@@ -33,7 +33,7 @@ final class UpdateEnvironmentDeployNotifications
     {
         Gate::forUser($actor)->authorize('configureDeploy', $environment);
         $destinations = AlertDestination::query()->forAccount($environment->project->account)
-            ->where('type', '!=', AlertDestinationType::PagerDuty)->get();
+            ->whereNotIn('type', [AlertDestinationType::PagerDuty, AlertDestinationType::Voice])->get();
 
         $routed = 0;
         foreach ($destinations as $destination) {

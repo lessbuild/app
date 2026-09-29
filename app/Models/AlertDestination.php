@@ -137,7 +137,9 @@ class AlertDestination extends Model
     {
         return $this->type === AlertDestinationType::Email
             ? ($this->on_call_schedule_id !== null ? 'On call: '.($this->onCallSchedule->name ?? 'schedule removed') : ($this->recipient->name ?? 'Recipient unavailable'))
-            : (parse_url($this->endpoint_url ?? '', PHP_URL_HOST) ?: 'Endpoint unavailable');
+            : ($this->type->isPhone()
+                ? (is_string($this->endpoint_url) ? substr($this->endpoint_url, 4, 3).' ••• '.substr($this->endpoint_url, -3) : 'Number unavailable')
+                : (parse_url($this->endpoint_url ?? '', PHP_URL_HOST) ?: 'Endpoint unavailable'));
     }
 
     /**

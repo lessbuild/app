@@ -32,6 +32,7 @@ final class AlertDestinationRequest extends FormRequest
         $type = $destination->type ?? AlertDestinationType::tryFrom($this->string('type')->toString());
         $email = $type === AlertDestinationType::Email;
         $pagerDuty = $type === AlertDestinationType::PagerDuty;
+        $phone = $type?->isPhone() ?? false;
         $accountId = $this->project()->account_id;
 
         return [
@@ -49,7 +50,8 @@ final class AlertDestinationRequest extends FormRequest
                     }
                 },
             ],
-            'endpoint_url' => [$email || $pagerDuty ? 'exclude' : ($destination !== null ? 'nullable' : 'required'), 'string', 'max:2048',
+            'phone_number' => [$phone ? ($destination !== null ? 'nullable' : 'required') : 'exclude', 'string', 'regex:/\A\+[1-9][0-9]{7,14}\z/'],
+            'endpoint_url' => [$email || $pagerDuty || $phone ? 'exclude' : ($destination !== null ? 'nullable' : 'required'), 'string', 'max:2048',
                 function (string $attribute, mixed $value, Closure $fail) use ($targets, $type): void {
                     if (is_string($value) && $type !== null && $targets->host($value, $type) === null) {
                         $fail(__('Use a valid public HTTPS address on port 443 for this provider.'));

@@ -12,6 +12,8 @@ enum AlertDestinationType: string
     case Teams = 'teams';
     case PagerDuty = 'pagerduty';
     case Discord = 'discord';
+    case Sms = 'sms';
+    case Voice = 'voice';
 
     /**
      * Get the destination type's name on the alert destination form.
@@ -27,6 +29,18 @@ enum AlertDestinationType: string
             self::Teams => 'Microsoft Teams',
             self::PagerDuty => 'PagerDuty',
             self::Discord => 'Discord',
+            self::Sms => __('Text message (SMS)'),
+            self::Voice => __('Phone call'),
         };
+    }
+
+    /**
+     * Determine whether the type sends to a phone number through Twilio.
+     *
+     * @return bool
+     */
+    public function isPhone(): bool
+    {
+        return $this === self::Sms || $this === self::Voice;
     }
 }

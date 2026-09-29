@@ -6,7 +6,9 @@
     <input type="hidden" name="version" value="{{ $destination->state_version }}">
 @else
     <x-signal.ui.select-field name="type" :label="__('Type')" required>
+        @php($twilio = app(\App\Services\Monitoring\TwilioAlerts::class)->configured())
         @foreach (\App\Enums\AlertDestinationType::cases() as $option)
+            @continue($option->isPhone() && ! $twilio)
             <option value="{{ $option->value }}" @selected(old('type', 'email') === $option->value)>{{ $option->label() }}</option>
         @endforeach
     </x-signal.ui.select-field>
@@ -32,6 +34,10 @@
 @if (! $destination || in_array($type, [\App\Enums\AlertDestinationType::Webhook, \App\Enums\AlertDestinationType::Slack, \App\Enums\AlertDestinationType::Teams, \App\Enums\AlertDestinationType::Discord], true))
     <x-signal.ui.input-field name="endpoint_url" :label="__('Webhook URL')" type="password" autocomplete="off" maxlength="2048" :restore="false"
         :description="$destination ? __('Stored encrypted: :host. Leave blank to keep it.', ['host' => $destination->targetLabel()]) : __('For a signed webhook, Slack, Teams or Discord. A public HTTPS address on port 443.')" />
+@endif
+@if ((! $destination && app(\App\Services\Monitoring\TwilioAlerts::class)->configured()) || $type?->isPhone())
+    <x-signal.ui.input-field name="phone_number" type="tel" :label="__('Phone number')" autocomplete="off" maxlength="16" placeholder="+447700900123" :restore="false"
+        :description="$destination ? __('Stored encrypted: :number. Leave blank to keep it.', ['number' => $destination->targetLabel()]) : __('For text messages and phone calls, in international format. At most :limit a day per number.', ['limit' => config('services.twilio.daily_limit')])" />
 @endif
 @if (! $destination || $type === \App\Enums\AlertDestinationType::PagerDuty)
     <x-signal.ui.input-field name="signing_secret" :label="__('PagerDuty routing key')" type="password" autocomplete="off" maxlength="256" :restore="false"

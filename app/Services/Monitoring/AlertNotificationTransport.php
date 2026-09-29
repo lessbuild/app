@@ -26,8 +26,9 @@ final class AlertNotificationTransport
      * Delivers alerts to their destinations.
      *
      * @param  PublicWebhookTarget  $targets  Checks and resolves webhook endpoints.
+     * @param  TwilioAlerts  $twilio  Sends text messages and phone calls.
      */
-    public function __construct(private readonly PublicWebhookTarget $targets) {}
+    public function __construct(private readonly PublicWebhookTarget $targets, private readonly TwilioAlerts $twilio) {}
 
     /**
      * Send one alert. Email goes through the monitoring mailer. Webhook-style destinations are posted to the address
@@ -42,6 +43,9 @@ final class AlertNotificationTransport
      */
     public function send(string $id, array $target, array $payload): AlertDeliveryResult
     {
+        if ($target['type']->isPhone()) {
+            return $this->twilio->send($target['type'], substr((string) $target['endpoint'], 4), $this->spoken($payload));
+        }
         if ($target['type'] === AlertDestinationType::Email) {
             if (! $this->mailConfigured()) {
                 return new AlertDeliveryResult(AlertDeliveryStatus::Failed, 'mail_unconfigured');
@@ -309,5 +313,22 @@ final class AlertNotificationTransport
     private function linkLabel(array $payload): string
     {
         return is_string($payload['url_label'] ?? null) ? $payload['url_label'] : 'View incident';
+    }
+
+    /**
+     * Put an alert into a short sentence for a text message or phone call, e.g. "BuildPusher: Opened — API down.
+     * Shop, production."
+     *
+     * @param  array<string, mixed>  $payload
+     * @return string
+     */
+    private function spoken(array $payload): string
+    {
+        $where = implode(', ', array_filter([
+            is_string($payload['project'] ?? null) ? $payload['project'] : null,
+            is_string($payload['environment'] ?? null) ? $payload['environment'] : null,
+        ]));
+
+        return $this->heading($payload).'.'.($where !== '' ? ' '.$where.'.' : '');
     }
 }

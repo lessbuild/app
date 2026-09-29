@@ -52,6 +52,15 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // SMS and phone-call alerts. Both destination types stay unavailable until all three are set.
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+        // Most messages or calls to one number in a UTC day, so an alert storm can't run up the bill.
+        'daily_limit' => (int) env('TWILIO_DAILY_LIMIT_PER_NUMBER', 50),
+    ],
+
     'slack' => [
         'notifications' => [
             'bot_user_oauth_token' => env('SLACK_BOT_USER_OAUTH_TOKEN'),

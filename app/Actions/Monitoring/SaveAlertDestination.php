@@ -14,6 +14,7 @@ use App\Models\OnCallSchedule;
 use App\Models\User;
 use App\Services\Monitoring\PublicWebhookTarget;
 use App\Services\Monitoring\TelemetryRedactor;
+use App\Services\Monitoring\TwilioAlerts;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Str;
@@ -29,8 +30,9 @@ final class SaveAlertDestination
      * @param  PublicWebhookTarget  $targets  Checks a webhook URL points at a public host.
      * @param  TelemetryRedactor  $redactor  Redacts the name.
      * @param  RecordAuditEntry  $audit  Records the change (never the URL or secret).
+     * @param  TwilioAlerts  $twilio  Says whether text and phone alerts can be sent.
      */
-    public function __construct(private readonly PublicWebhookTarget $targets, private readonly TelemetryRedactor $redactor, private readonly RecordAuditEntry $audit) {}
+    public function __construct(private readonly PublicWebhookTarget $targets, private readonly TelemetryRedactor $redactor, private readonly RecordAuditEntry $audit, private readonly TwilioAlerts $twilio) {}
 
     /**
      * Create or change where alerts go: an account member's email, a signed webhook, Slack, Teams, Discord or PagerDuty.
@@ -67,6 +69,15 @@ final class SaveAlertDestination
                 if ($recipientId === null && $scheduleId === null) {
                     throw ValidationException::withMessages(['recipient_user_id' => __('Choose a verified member of this account, or one of its on-call schedules.')]);
                 }
+            } elseif ($type->isPhone()) {
+                if (! $this->twilio->configured()) {
+                    throw ValidationException::withMessages(['type' => __('Text and phone alerts need Twilio, which isn’t set up yet.')]);
+                }
+                $number = filled($data['phone_number'] ?? null) ? 'tel:'.preg_replace('/\s+/', '', (string) $data['phone_number']) : $destination->endpoint_url;
+                if (! is_string($number) || preg_match('/\Atel:\+[1-9][0-9]{7,14}\z/', $number) !== 1) {
+                    throw ValidationException::withMessages(['phone_number' => __('Enter the number in international format, such as +447700900123.')]);
+                }
+                $endpoint = $number;
             } elseif ($type === AlertDestinationType::PagerDuty) {
                 $endpoint = 'https://events.pagerduty.com/v2/enqueue';
                 $secret = filled($data['signing_secret'] ?? null) ? $data['signing_secret'] : $destination->signing_secret;
