@@ -67,6 +67,16 @@ class BillingAccount extends Model
     }
 
     /**
+     * Determine whether a new subscription gets the free trial: only the account's first one.
+     *
+     * @return bool
+     */
+    public function trialAvailable(): bool
+    {
+        return (int) config('billing.trial_days') > 0 && $this->stripe_subscription_id === null && in_array($this->status, ['none', 'incomplete'], true);
+    }
+
+    /**
      * Determine whether there's a subscription still billing (active, trialing or past due) that changes must be
      * synced to.
      *

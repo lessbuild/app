@@ -43,9 +43,10 @@ interface PaymentProvider
      * @param  list<LineItem>  $items
      * @param  string  $successUrl
      * @param  string  $cancelUrl
+     * @param  int  $trialDays  free days before the first charge (0 for none)
      * @return string
      */
-    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl): string;
+    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl, int $trialDays = 0): string;
 
     /**
      * Make the subscription's items exactly these (adding, changing and removing items, prorated).

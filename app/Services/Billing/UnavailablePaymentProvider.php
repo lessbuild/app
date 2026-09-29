@@ -45,9 +45,10 @@ final class UnavailablePaymentProvider implements PaymentProvider
      * @param  list<\App\Data\Billing\LineItem>  $items
      * @param  string  $successUrl
      * @param  string  $cancelUrl
+     * @param  int  $trialDays  free days before the first charge (0 for none)
      * @return string
      */
-    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl): string
+    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl, int $trialDays = 0): string
     {
         throw new PaymentProviderUnavailable('Payments are not configured.');
     }

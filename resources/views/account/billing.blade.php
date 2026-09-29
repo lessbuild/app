@@ -20,6 +20,9 @@
     @unless ($overview->paymentsAvailable)
         <x-signal.ui.alert tone="warning" role="status">{{ __('Payments aren’t connected in this environment, so only free plans can be chosen.') }}</x-signal.ui.alert>
     @endunless
+    @if ($overview->trialDays > 0 && $overview->paymentsAvailable)
+        <x-signal.ui.alert tone="info" role="status">{{ __('Your first paid plan starts with a :days-day free trial. You won’t be charged until it ends, and you can cancel before then.', ['days' => $overview->trialDays]) }}</x-signal.ui.alert>
+    @endif
     @if ($overview->status === 'past_due' || $overview->status === 'unpaid')
         <x-signal.ui.alert tone="danger" role="alert">{{ __('Your last payment didn’t go through. Update your payment method to keep your plans.') }}</x-signal.ui.alert>
     @endif
@@ -43,6 +46,25 @@
             </form>
         @endif
     </x-signal.ui.card>
+
+    @if ($overview->limits !== [])
+        <x-signal.ui.settings-section :title="__('Plan limits')" :description="__('What you’re using of each limit your plans set. Monthly limits reset on the 1st.')">
+            <ul class="grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
+                @foreach ($overview->limits as $limit)
+                    <li class="grid gap-2">
+                        <div class="flex items-baseline justify-between gap-3 text-sm">
+                            <span class="font-bold text-ink">{{ ucfirst($limit->label) }}@if ($limit->monthly) <span class="font-normal text-muted">{{ __('this month') }}</span>@endif</span>
+                            <span @class(['font-semibold', 'text-danger' => $limit->percent() >= 100, 'text-warning' => $limit->nearLimit() && $limit->percent() < 100, 'text-muted' => ! $limit->nearLimit()])>{{ number_format($limit->used) }} / {{ number_format((int) $limit->limit) }}</span>
+                        </div>
+                        <x-signal.ui.progress :value="min($limit->used, (int) $limit->limit)" :max="(int) $limit->limit" :label="__(':label used', ['label' => $limit->label])" />
+                        @if ($limit->nearLimit() && $limit->service !== 'account')
+                            <a href="#billing-{{ $limit->service }}" class="text-xs font-semibold text-primary hover:underline">{{ $limit->percent() >= 100 ? __('Limit reached: upgrade for more') : __('Nearly there: see plans with more') }}</a>
+                        @endif
+                    </li>
+                @endforeach
+            </ul>
+        </x-signal.ui.settings-section>
+    @endif
 
     @foreach ($overview->services as $service)
         <x-signal.ui.card as="section" class="grid gap-5 p-5 sm:p-6" :aria-labelledby="'billing-'.$service->key">

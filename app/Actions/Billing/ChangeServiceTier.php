@@ -83,6 +83,7 @@ final class ChangeServiceTier
                 [new LineItem(SubscriptionItems::reference($service, SelectionKind::Tier, $target->key), $price)],
                 $returnUrl.'?checkout=done',
                 $returnUrl.'?checkout=cancelled',
+                $billingAccount->trialAvailable() ? (int) config('billing.trial_days') : 0,
             ));
         }
 

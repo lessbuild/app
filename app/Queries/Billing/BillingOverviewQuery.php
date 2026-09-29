@@ -18,6 +18,7 @@ use App\Platform\Catalog\Tier;
 use App\Platform\ServiceRegistry;
 use App\Queries\Projects\ServicesInUseQuery;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\PlanUsage;
 use App\Services\Billing\PriceBook;
 use Carbon\CarbonImmutable;
 
@@ -33,6 +34,7 @@ final class BillingOverviewQuery
      * @param  PriceBook  $prices  Which tiers are on sale and in which currency.
      * @param  ServicesInUseQuery  $inUse  Which services the account's projects use.
      * @param  PaymentProvider  $provider  Whether payments are available.
+     * @param  PlanUsage  $planUsage  Usage of each plan limit.
      */
     public function __construct(
         private readonly ServiceRegistry $services,
@@ -40,6 +42,7 @@ final class BillingOverviewQuery
         private readonly PriceBook $prices,
         private readonly ServicesInUseQuery $inUse,
         private readonly PaymentProvider $provider,
+        private readonly PlanUsage $planUsage,
     ) {}
 
     /**
@@ -91,6 +94,8 @@ final class BillingOverviewQuery
             periodEnd: $billing?->current_period_end !== null ? CarbonImmutable::instance($billing->current_period_end) : null,
             hasCustomer: $billing?->stripe_customer_id !== null,
             paymentsAvailable: $this->provider->available(),
+            limits: $this->planUsage->handle($account),
+            trialDays: $billing === null || $billing->trialAvailable() ? max(0, (int) config('billing.trial_days')) : 0,
         );
     }
 }

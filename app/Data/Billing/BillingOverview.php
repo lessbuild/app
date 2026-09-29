@@ -21,6 +21,8 @@ final readonly class BillingOverview
      * @param  bool  $hasCustomer  Whether the account has a customer at the payment provider, which the billing portal
      *                             needs.
      * @param  bool  $paymentsAvailable  Whether payments are configured in this environment.
+     * @param  list<LimitUsage>  $limits  Usage of each limit the account's plans set.
+     * @param  int  $trialDays  Free days the next paid plan starts with (0 when the account has had its trial).
      */
     public function __construct(
         public array $services,
@@ -30,5 +32,7 @@ final readonly class BillingOverview
         public ?CarbonImmutable $periodEnd,
         public bool $hasCustomer,
         public bool $paymentsAvailable,
+        public array $limits = [],
+        public int $trialDays = 0,
     ) {}
 }

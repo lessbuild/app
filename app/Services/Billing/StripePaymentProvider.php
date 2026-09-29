@@ -75,16 +75,17 @@ final class StripePaymentProvider implements PaymentProvider
      * @param  list<LineItem>  $items
      * @param  string  $successUrl
      * @param  string  $cancelUrl
+     * @param  int  $trialDays  free days before the first charge (0 for none)
      * @return string
      */
-    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl): string
+    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl, int $trialDays = 0): string
     {
         return $this->call(fn (): string => (string) $this->stripe->checkout->sessions->create([
             'mode' => 'subscription',
             'customer' => $customerId,
             'client_reference_id' => $accountId,
             'line_items' => array_map(fn (LineItem $item): array => ['price' => $item->priceId, 'quantity' => $item->quantity], $items),
-            'subscription_data' => ['metadata' => ['account_id' => $accountId, self::REFERENCES => $this->referenceMap($items)]],
+            'subscription_data' => ['metadata' => ['account_id' => $accountId, self::REFERENCES => $this->referenceMap($items)], ...($trialDays > 0 ? ['trial_period_days' => $trialDays] : [])],
             'success_url' => $successUrl,
             'cancel_url' => $cancelUrl,
         ])->url);

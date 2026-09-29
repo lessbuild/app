@@ -4,6 +4,9 @@
     <section class="grid gap-3 text-center">
         <h1 class="text-4xl font-extrabold tracking-tight text-ink">{{ __('Pricing') }}</h1>
         <p class="mx-auto max-w-2xl text-lg text-muted">{{ __('Each service has its own tiers, all on one bill. Start free, change tiers any time, and pay monthly in US dollars.') }}</p>
+        @if ((int) config('billing.trial_days') > 0)
+            <p class="mx-auto"><x-signal.ui.badge tone="success">{{ __('Your first paid plan is free for :days days', ['days' => (int) config('billing.trial_days')]) }}</x-signal.ui.badge></p>
+        @endif
     </section>
 
     @foreach ($services as $service)

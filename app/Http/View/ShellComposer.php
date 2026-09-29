@@ -12,8 +12,10 @@ use App\Platform\ServiceRegistry;
 use App\Queries\Accounts\AccountSwitcherQuery;
 use App\Queries\Notifications\InboxQuery;
 use App\Queries\Projects\ProjectSwitcherQuery;
+use App\Services\Billing\PlanUsage;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 
 /** Builds the Shell for the signed-in layout from the current user and route, so pages don't pass navigation in. */
 final class ShellComposer
@@ -28,6 +30,7 @@ final class ShellComposer
      * @param  ProjectSwitcherQuery  $projects  The project switcher's list.
      * @param  ServiceRegistry  $services  The services for the primary navigation.
      * @param  InboxQuery  $inbox  The unread count for the inbox badge.
+     * @param  PlanUsage  $planUsage  Finds a plan limit that's nearly used up.
      */
     public function __construct(
         private readonly Request $request,
@@ -35,6 +38,7 @@ final class ShellComposer
         private readonly ProjectSwitcherQuery $projects,
         private readonly ServiceRegistry $services,
         private readonly InboxQuery $inbox,
+        private readonly PlanUsage $planUsage,
     ) {}
 
     /**
@@ -75,6 +79,9 @@ final class ShellComposer
             accountLinks: $account !== null ? $this->accountLinks($user, $account) : [],
             canCreateProject: $account !== null && $user->can('create', [Project::class, $account]),
             unreadNotifications: $this->inbox->unreadCount($user),
+            limitWarning: $account !== null && $user->can('viewBilling', $account) && ! $this->request->routeIs('account.billing')
+                ? Cache::remember("plan-usage.nearest.{$account->id}", 300, fn () => $this->planUsage->nearest($account))
+                : null,
         ));
     }
 

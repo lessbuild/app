@@ -1,6 +1,6 @@
 @php($project = $overview->project)
 <x-signal.layouts.project :overview="$overview" :title="$dashboard ? __('Edit :dashboard', ['dashboard' => $dashboard->name]) : __('Add a dashboard')" :description="__('Dashboards cover every project in the account.')">
-    @error('plan')<x-signal.ui.alert tone="warning" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+    <x-signal.ui.plan-limit-alert service="monitoring" />
     <form method="POST" action="{{ $dashboard ? route('monitoring.dashboards.update', [$project, $dashboard->id]) : route('monitoring.dashboards.store', $project) }}" class="grid gap-6">
         @csrf
         @if ($dashboard) @method('PUT') @endif

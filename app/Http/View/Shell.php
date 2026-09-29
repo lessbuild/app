@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\View;
 
+use App\Data\Billing\LimitUsage;
 use App\Models\Account;
 use App\Models\Project;
 use App\Models\User;
@@ -31,6 +32,7 @@ final readonly class Shell
      * @param  list<NavLink>  $accountLinks  account pages for the user menu
      * @param  bool  $canCreateProject  Whether to offer "New project".
      * @param  int  $unreadNotifications  The inbox badge count.
+     * @param  LimitUsage|null  $limitWarning  A plan limit the account has used 80% or more of, for people who see billing.
      */
     public function __construct(
         public User $user,
@@ -44,5 +46,6 @@ final readonly class Shell
         public array $accountLinks,
         public bool $canCreateProject,
         public int $unreadNotifications = 0,
+        public ?LimitUsage $limitWarning = null,
     ) {}
 }

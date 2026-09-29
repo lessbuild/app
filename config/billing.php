@@ -9,6 +9,9 @@ declare(strict_types=1);
 return [
     'currency' => 'usd',
 
+    // Days an account's first paid subscription is free for; 0 turns trials off. Later subscriptions start paid.
+    'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
+
     'prices' => [
         'deploy' => [
             'tier' => [

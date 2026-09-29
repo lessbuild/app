@@ -1,7 +1,7 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="$importing ? __('Import a website') : __('Create a website')" :description="$importing ? __('Adopt an application already in /var/www on an app server. Its files, Caddy site and database are left as they are.') : __('We set up the Caddy site, a MySQL database and user, and the .env file.')">
-    @error('plan')<x-signal.ui.alert tone="warning" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+    <x-signal.ui.plan-limit-alert service="deploy" />
     @if ($hosts->isEmpty())
         <x-signal.ui.empty-state icon="server" :title="__('No app servers ready')" :description="__('Websites need an active app server with MySQL. Create one first.')">
             <x-slot:action><x-signal.ui.button :href="route('infrastructure.servers.create', $project)" variant="secondary">{{ __('Create a server') }}</x-signal.ui.button></x-slot:action>

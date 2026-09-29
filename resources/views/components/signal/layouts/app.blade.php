@@ -104,6 +104,15 @@
     </header>
 
     <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto w-full max-w-content space-y-6 py-7 sm:py-9">
+        @if (isset($shell) && $shell->limitWarning !== null)
+            @php($near = $shell->limitWarning)
+            <x-signal.ui.alert :tone="$near->percent() >= 100 ? 'danger' : 'warning'" role="status">
+                {{ $near->percent() >= 100
+                    ? __('You’ve reached your plan’s limit of :limit :label:monthly.', ['limit' => number_format((int) $near->limit), 'label' => $near->label, 'monthly' => $near->monthly ? __(' this month') : ''])
+                    : __('You’ve used :used of :limit :label on your plan:monthly.', ['used' => number_format($near->used), 'limit' => number_format((int) $near->limit), 'label' => $near->label, 'monthly' => $near->monthly ? __(' this month') : '']) }}
+                <a href="{{ route('account.billing').'#billing-'.$near->service }}" class="font-semibold underline">{{ __('See plans') }}</a>
+            </x-signal.ui.alert>
+        @endif
         @if (session('feedback'))
             <x-signal.ui.alert tone="success" role="status">{{ session('feedback') }}</x-signal.ui.alert>
         @endif

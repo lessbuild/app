@@ -20,6 +20,7 @@
             @endforeach
         @else
             <x-signal.overlays.form-modal id="create-website" :title="__('Create a website')" :description="__('We set up the Caddy site, a MySQL database and user, and the .env file.')" :action="route('infrastructure.websites.store', $project)" :submit="__('Create website')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                <div class="sm:col-span-2"><x-signal.ui.plan-limit-alert service="deploy" /></div>
                 @include('infrastructure._website-fields', ['website' => null])
             </x-signal.overlays.form-modal>
             <x-signal.overlays.form-modal id="import-website" :title="__('Import a website')" :description="__('Adopt an application already in /var/www on an app server. Its files, Caddy site and database are left as they are.')" :action="route('infrastructure.websites.import', $project)" :submit="__('Import website')" form-class="grid items-start gap-5 sm:grid-cols-2">

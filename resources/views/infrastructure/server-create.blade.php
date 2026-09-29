@@ -1,7 +1,7 @@
 @php($project = $overview->project)
 
 <x-signal.layouts.project :overview="$overview" :title="__('Create a server')" :description="__('The server provisions itself with the software its type needs. It takes about ten minutes.')">
-    @error('plan')<x-signal.ui.alert tone="warning" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+    <x-signal.ui.plan-limit-alert service="infrastructure" />
 
     @if ($providers->isEmpty())
         <x-signal.ui.empty-state icon="server" :title="__('Connect a cloud provider first')" :description="__('Add a DigitalOcean, Hetzner Cloud or Vultr token on the account’s Providers page.')">

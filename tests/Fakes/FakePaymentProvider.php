@@ -19,7 +19,7 @@ final class FakePaymentProvider implements PaymentProvider
     /** @var array<string, list<LineItem>> subscription id => items */
     public array $subscriptions = [];
 
-    /** @var list<array{customer: string, items: list<LineItem>}> */
+    /** @var list<array{customer: string, items: list<LineItem>, trial_days: int}> */
     public array $checkouts = [];
 
     /** @var list<string> */
@@ -41,9 +41,9 @@ final class FakePaymentProvider implements PaymentProvider
         return 'cus_'.$accountId;
     }
 
-    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl): string
+    public function checkoutUrl(string $customerId, string $accountId, array $items, string $successUrl, string $cancelUrl, int $trialDays = 0): string
     {
-        $this->checkouts[] = ['customer' => $customerId, 'items' => $items];
+        $this->checkouts[] = ['customer' => $customerId, 'items' => $items, 'trial_days' => $trialDays];
 
         return 'https://checkout.stripe.test/session';
     }
