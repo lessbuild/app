@@ -134,6 +134,7 @@ use App\Http\Controllers\Deploy\StoreRepositoryController;
 use App\Http\Controllers\Deploy\StoreScalingScheduleController;
 use App\Http\Controllers\Deploy\StoreScheduledDeployController;
 use App\Http\Controllers\Deploy\StoreScheduledTaskController;
+use App\Http\Controllers\Deploy\UpdateBuildCacheController;
 use App\Http\Controllers\Deploy\UpdateConfigurationOperationController;
 use App\Http\Controllers\Deploy\UpdateDeploymentControlsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentDeployNotificationsController;
@@ -488,6 +489,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/repositories', StoreRepositoryController::class)->middleware(['can:create,App\\Models\\Repository,project', 'throttle:20,1'])->name('repositories.store');
             Route::get('/repositories/{repository}', ShowRepositoryController::class)->whereNumber('repository')->middleware('can:view,repository')->name('repositories.show');
             Route::put('/repositories/{repository}', UpdateRepositoryController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.update');
+            Route::put('/repositories/{repository}/build-cache', UpdateBuildCacheController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:20,1'])->name('repositories.build-cache');
             Route::delete('/repositories/{repository}', DeleteRepositoryController::class)->whereNumber('repository')->middleware(['can:delete,repository', 'throttle:10,1'])->name('repositories.destroy');
             Route::post('/repositories/{repository}/webhook', UpdateRepositoryWebhookController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:10,1'])->name('repositories.webhook.store');
             Route::delete('/repositories/{repository}/webhook', UpdateRepositoryWebhookController::class)->whereNumber('repository')->middleware(['can:update,repository', 'throttle:10,1'])->name('repositories.webhook.destroy');

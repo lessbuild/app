@@ -42,6 +42,8 @@ use Illuminate\Support\Carbon;
  * @property bool $webhook_pending a push arrived while a deploy was running; it deploys when that finishes
  * @property string|null $webhook_pending_revision
  * @property string|null $webhook_pending_commit_message
+ * @property bool $build_cache_enabled keep package-manager downloads on the server between deploys
+ * @property int $build_cache_version bumped to clear the cache
  * @property bool $previews_enabled pull requests into the branch get their own preview
  * @property string|null $preview_domain previews are served at `pr-{number}-{project}.{domain}`
  * @property int $preview_ttl_hours a preview closes this long after its last activity
@@ -222,7 +224,7 @@ class Repository extends Model
         return [
             'auto_deploy_include_paths' => 'array', 'auto_deploy_exclude_paths' => 'array', 'webhook_secret' => 'encrypted',
             'webhook_enabled' => 'boolean', 'webhook_pending' => 'boolean', 'webhook_last_received_at' => 'immutable_datetime',
-            'previews_enabled' => 'boolean', 'preview_ttl_hours' => 'integer',
+            'previews_enabled' => 'boolean', 'build_cache_enabled' => 'boolean', 'build_cache_version' => 'integer', 'preview_ttl_hours' => 'integer',
         ];
     }
 }

@@ -45,10 +45,13 @@ class InstallDependenciesScript extends BuildProvisioningScript
         $runtimeVersion = escapeshellarg((string) ($runtime['version'] ?? ''));
         $resourcePreparation = $this->resources->render($build->environment_payload['resources'] ?? []);
         $progress = $this->progress($step, $build);
+        $cache = $this->cache($build);
 
         return <<<SCRIPT
 
             cd -- {$setupPath}
+
+            {$cache}
 
             # Dependency hooks and migrations may need resources on the first deployment.
             # The normal resource stage still reconciles and reports its original callback.
@@ -111,6 +114,35 @@ class InstallDependenciesScript extends BuildProvisioningScript
             # Ping
             {$progress}
 
+        SCRIPT;
+    }
+
+    /**
+     * Render the lines that point Composer, npm, Yarn, pnpm and pip at the website's shared download cache (created
+     * on first use, and replacing older versions after the cache is cleared), or keep them off it when the repository
+     * turns the cache off.
+     *
+     * @param  Build  $build
+     * @return string
+     */
+    private function cache(Build $build): string
+    {
+        $repository = $build->repository;
+        $root = "/var/www/{$repository->website->deployment_slug}/cache";
+        if (! $repository->build_cache_enabled) {
+            return '# Build cache off for this repository.';
+        }
+        $version = max(1, (int) $repository->build_cache_version);
+        $directory = escapeshellarg("{$root}/v{$version}");
+        $rootArgument = escapeshellarg($root);
+        $keep = escapeshellarg("v{$version}");
+
+        return <<<SCRIPT
+        # Shared download cache: reused by later deploys of this website; older versions are removed.
+        BUILD_CACHE={$directory}
+        install -d -m 755 -- "\$BUILD_CACHE"
+        find {$rootArgument} -mindepth 1 -maxdepth 1 -type d ! -name {$keep} -exec rm -rf -- {} + 2>/dev/null || true
+        export COMPOSER_CACHE_DIR="\$BUILD_CACHE/composer" npm_config_cache="\$BUILD_CACHE/npm" YARN_CACHE_FOLDER="\$BUILD_CACHE/yarn" npm_config_store_dir="\$BUILD_CACHE/pnpm" PIP_CACHE_DIR="\$BUILD_CACHE/pip"
         SCRIPT;
     }
 }

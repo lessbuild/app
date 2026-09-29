@@ -100,6 +100,25 @@
 
     @if ($canManage)
     <x-signal.ui.page-tab-panel name="settings" :current="$tab">
+        <x-signal.ui.settings-section id="build-cache" :title="__('Build cache')" :description="__('Keeps Composer, npm, Yarn, pnpm and pip downloads on the server between deploys, so installs are faster. Clear it if a dependency seems stuck.')">
+            <div class="flex flex-wrap items-center gap-3 p-4 sm:p-6">
+                <form method="POST" action="{{ route('deploy.repositories.build-cache', [$project, $repository->id]) }}" class="flex flex-wrap items-center gap-3">
+                    @csrf
+                    @method('PUT')
+                    <x-signal.ui.checkbox id="build-cache-enabled" name="build_cache_enabled" value="1" unchecked-value="0" :checked="$repository->build_cache_enabled" :restore="false">{{ __('Cache dependencies between deploys') }}</x-signal.ui.checkbox>
+                    <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Save') }}</x-signal.ui.button>
+                </form>
+                @if ($repository->build_cache_enabled)
+                    <form method="POST" action="{{ route('deploy.repositories.build-cache', [$project, $repository->id]) }}">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="build_cache_enabled" value="1">
+                        <input type="hidden" name="clear" value="1">
+                        <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Clear build cache') }}</x-signal.ui.button>
+                    </form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
         <x-signal.ui.settings-section :title="__('Settings')" :description="__('Changes apply to the next deploy.')">
             <form method="POST" action="{{ route('deploy.repositories.update', [$project, $repository->id]) }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
                 @csrf
