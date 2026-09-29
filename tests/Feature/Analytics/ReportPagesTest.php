@@ -65,7 +65,8 @@ final class ReportPagesTest extends TestCase
         Deployment::factory()->create(['environment_id' => $production->id, 'release_id' => $release('v1.0.0'), 'deployed_at' => now()->subDays(60)]);
 
         $this->actingAs($this->owner)->get("/projects/{$this->project->id}/analytics")
-            ->assertOk()->assertSee('Releases in this period')->assertSee('v2.4.0')->assertDontSee('v1.0.0');
+            ->assertOk()->assertSee('Releases in this period')->assertSee('v2.4.0')->assertDontSee('v1.0.0')
+            ->assertSee(now()->subDays(2)->format('M j').': ', false)->assertSee('Released v2.4.0');
     }
 
     public function test_goals_are_created_edited_and_removed_and_conversions_are_recounted(): void

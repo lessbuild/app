@@ -73,7 +73,8 @@
                 <p class="text-xs text-muted">{{ $summary['range']['start']->format('M j') }} – {{ $summary['range']['end']->format('M j, Y') }} · {{ $site->timezone }}</p>
             </div>
             @if ($summary['hasData'])
-                <x-signal.ui.bar-chart :label="__('Pageviews per day')" :points="array_map(fn (array $point): array => ['label' => $point['date'], 'value' => $point['value']], $summary['series'])" :unit="__('pageviews')" />
+                <x-signal.ui.bar-chart :label="__('Pageviews per day')" :points="array_map(fn (array $point): array => ['label' => $point['date'], 'value' => $point['value']], $summary['series'])" :unit="__('pageviews')"
+                    :markers="$releases->map(fn ($deployment): array => ['label' => $deployment->deployed_at->setTimezone($site->timezone)->format('M j'), 'text' => __('Released :version', ['version' => $deployment->release->version])])->values()->all()" />
             @else
                 <p class="text-sm text-muted">{{ __('No pageviews in this period yet.') }}</p>
             @endif
