@@ -69,6 +69,7 @@ final class GenerateReportExport implements ShouldQueue
                 'entry_pages' => $summary['entryPages'],
                 'exit_pages' => $summary['exitPages'],
                 'sources' => $summary['sources'],
+                'countries' => $summary['countries'],
                 'devices' => $summary['devices'],
                 'browsers' => $summary['browsers'],
                 'operating_systems' => $summary['operatingSystems'],

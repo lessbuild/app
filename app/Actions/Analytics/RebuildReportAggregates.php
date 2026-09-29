@@ -27,7 +27,7 @@ final class RebuildReportAggregates
     /**
      * Rebuild the daily totals that long-range reports read: for the older days a batch touched, for the given days,
      * or for every day the site has data (a week at a time, so memory stays bounded). Each day gets an overall row plus
-     * rows per page, device, browser, system, source and campaign.
+     * rows per page, device, browser, system, source, country and campaign.
      *
      * @param  AnalyticsSite  $site
      * @param  AnalyticsIngestionBatch|null  $batch
@@ -95,6 +95,11 @@ final class RebuildReportAggregates
             foreach ($dayVisits->groupBy(fn (AnalyticsVisit $visit): string => $this->source($visit)) as $value => $items) {
                 $sourceVisits = collect($items);
                 $rows[] = $this->row($site, $date, 'source', $value, $this->eventsForVisits($dayEvents, $sourceVisits, $visitMap), $sourceVisits, $goals, $now);
+            }
+
+            foreach ($dayVisits->groupBy(fn (AnalyticsVisit $visit): string => $visit->country_code ?: 'Unknown') as $value => $items) {
+                $countryVisits = collect($items);
+                $rows[] = $this->row($site, $date, 'country', $value, $this->eventsForVisits($dayEvents, $countryVisits, $visitMap), $countryVisits, $goals, $now);
             }
 
             foreach ($dayVisits->filter(fn (AnalyticsVisit $visit): bool => $visit->entry_utm_campaign !== null)->groupBy('entry_utm_campaign') as $value => $items) {

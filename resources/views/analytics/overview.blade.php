@@ -2,12 +2,13 @@
 @php($hourly = ($summary['granularity'] ?? 'day') === 'hour')
 @php($chartLabel = $hourly ? __('Pageviews per hour') : __('Pageviews per day'))
 @php($lists = $summary === null ? [] : [
-    [__('Top pages'), $summary['pages'], __('Pages appear after the first visit.'), true],
-    [__('Entry pages'), $summary['entryPages'], __('Entry pages appear once visits are processed.'), true],
-    [__('Exit pages'), $summary['exitPages'], __('Exit pages appear once visits are processed.'), true],
-    [__('Sources'), $summary['sources'], __('Sources appear once visitors arrive.'), false],
-    [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), false],
-    [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), false],
+    [__('Top pages'), $summary['pages'], __('Pages appear after the first visit.'), 'path'],
+    [__('Entry pages'), $summary['entryPages'], __('Entry pages appear once visits are processed.'), 'path'],
+    [__('Exit pages'), $summary['exitPages'], __('Exit pages appear once visits are processed.'), 'path'],
+    [__('Sources'), $summary['sources'], __('Sources appear once visitors arrive.'), null],
+    [__('Countries'), $summary['countries'], __('Countries appear once visitors arrive.'), 'country'],
+    [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), null],
+    [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), null],
 ])
 
 <x-signal.layouts.project :overview="$overview" :title="__('Analytics')" :description="$site ? __(':site · cookieless visitor estimates, visits and goals', ['site' => $site->name]) : null">
@@ -34,6 +35,7 @@
                         <option value="{{ $value }}" @selected($days === $value)>{{ $label }}</option>
                     @endforeach
                 </x-signal.ui.select-field>
+                @if ($filters['country'])<input type="hidden" name="country" value="{{ $filters['country'] }}">@endif
                 <x-signal.ui.input-field name="path" :label="__('Page')" :value="$filters['path']" placeholder="/pricing" :restore="false" :show-errors="false" />
                 <x-signal.ui.input-field name="source" :label="__('Source')" :value="$filters['source']" :placeholder="__('newsletter or google.com')" :restore="false" :show-errors="false" />
                 <x-signal.ui.select-field name="device" :label="__('Device')" :show-errors="false">
@@ -93,16 +95,17 @@
         </x-signal.ui.card>
 
         <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-            @foreach ($lists as [$title, $items, $empty, $linksToPage])
+            @foreach ($lists as [$title, $items, $empty, $filterKey])
                 <x-signal.ui.card as="section" class="p-5" :aria-label="$title">
                     <h2 class="font-extrabold text-ink">{{ $title }}</h2>
                     <ul class="mt-4 grid gap-2.5 text-sm">
                         @forelse ($items as $item)
                             <li class="flex items-center justify-between gap-4">
-                                @if ($linksToPage)
-                                    <a class="truncate text-muted hover:text-ink hover:underline" href="{{ route('analytics.overview', [$project, 'site' => $site->id, 'days' => $days, 'path' => $item['label']]) }}">{{ $item['label'] }}</a>
+                                @php($label = $filterKey === 'country' ? \App\Support\Country::label($item['label']) : $item['label'])
+                                @if ($filterKey !== null && $item['label'] !== 'Unknown')
+                                    <a class="truncate text-muted hover:text-ink hover:underline" href="{{ route('analytics.overview', [$project, 'site' => $site->id, 'days' => $days, ...array_filter($filters), $filterKey => $item['label']]) }}">{{ $label }}</a>
                                 @else
-                                    <span class="truncate text-muted">{{ $item['label'] }}</span>
+                                    <span class="truncate text-muted">{{ $label }}</span>
                                 @endif
                                 <strong class="tabular-nums text-ink">{{ number_format($item['value']) }}</strong>
                             </li>

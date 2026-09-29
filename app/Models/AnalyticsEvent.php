@@ -16,6 +16,7 @@ use Illuminate\Support\Carbon;
  * @property string $event_id
  * @property string $type
  * @property Carbon $occurred_at
+ * @property string|null $country_code
  * @property Carbon $received_at
  * @property string $path
  * @property string|null $referrer_host
@@ -37,7 +38,7 @@ class AnalyticsEvent extends Model
      *
      * @var list<string>
      */
-    protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'visitor_hash', 'session_id', 'properties'];
+    protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'country_code', 'visitor_hash', 'session_id', 'properties'];
 
     /**
      * Get the attributes that should be cast.
@@ -93,7 +94,7 @@ class AnalyticsEvent extends Model
 
     /**
      * Limit a query to events matching a report's filters: page, source (campaign source or referring site),
-     * campaign and device. Empty filters are ignored.
+     * campaign, device and country. Empty filters are ignored.
      *
      * @param  Builder<self>  $query
      * @param  array<string, string|null>  $filters
@@ -107,7 +108,8 @@ class AnalyticsEvent extends Model
                 $query->where('utm_source', $source)->orWhere('referrer_host', $source);
             }))
             ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('utm_campaign', $campaign))
-            ->when($filters['device'] ?? null, fn (Builder $query, string $device) => $query->where('device_category', $device));
+            ->when($filters['device'] ?? null, fn (Builder $query, string $device) => $query->where('device_category', $device))
+            ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country));
     }
 
     /**

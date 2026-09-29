@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Analytics;
 
 use App\Actions\Analytics\AcceptEventBatch;
+use App\Contracts\Analytics\CountryLookup;
 use App\Data\Analytics\NormalizedEvent;
 use App\Http\Requests\Analytics\CollectEventsRequest;
 use App\Models\AnalyticsSite;
@@ -24,9 +25,10 @@ final class CollectEventsController
      * @param  CollectEventsRequest  $request
      * @param  string  $publicId
      * @param  AcceptEventBatch  $acceptEventBatch
+     * @param  CountryLookup  $countries
      * @return JsonResponse
      */
-    public function __invoke(CollectEventsRequest $request, string $publicId, AcceptEventBatch $acceptEventBatch): JsonResponse
+    public function __invoke(CollectEventsRequest $request, string $publicId, AcceptEventBatch $acceptEventBatch, CountryLookup $countries): JsonResponse
     {
         $site = AnalyticsSite::query()->where('public_id', $publicId)->first();
         if ($site === null || ! $site->isCollectionAvailable()) {
@@ -40,6 +42,7 @@ final class CollectEventsController
         }
 
         $now = CarbonImmutable::now();
+        $country = $countries->country($request->ip());
         /** @var list<array<string, mixed>> $input */
         $input = $request->validated('events');
         $events = [];
@@ -67,6 +70,7 @@ final class CollectEventsController
                 visitorHash: hash_hmac('sha256', ($event['visitor'] ?? '').'|'.$request->ip().'|'.($request->userAgent() ?? '').'|'.$now->setTimezone($site->timezone)->toDateString(), (string) config('analytics.visitor_key')),
                 sessionId: CollectionRequest::cleanValue($event['session'] ?? null, 64),
                 properties: $event['type'] === 'event' ? CollectionRequest::safeProperties($event['properties'] ?? []) : null,
+                countryCode: $country,
             );
         }
 

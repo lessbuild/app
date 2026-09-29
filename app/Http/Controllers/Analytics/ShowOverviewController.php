@@ -41,6 +41,8 @@ final class ShowOverviewController
             $value = trim($request->string($key)->toString());
             $filters[$key] = $value !== '' ? mb_substr($value, 0, $max) : null;
         }
+        $country = strtoupper(trim($request->string('country')->toString()));
+        $filters['country'] = preg_match('/^[A-Z]{2}$/', $country) === 1 ? $country : null;
 
         // The "right now" panel refreshes itself; answer it with just that panel instead of the whole report.
         if ($site !== null && $request->hasHeader('X-Live-Region')) {

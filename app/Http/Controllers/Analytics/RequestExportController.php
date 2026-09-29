@@ -27,11 +27,12 @@ final class RequestExportController
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, AnalyticsSite $site, RequestExport $export): RedirectResponse
     {
         $validated = $request->validate([
-            'days' => ['required', 'integer', 'in:7,30,90,365'],
+            'days' => ['required', 'integer', 'in:1,7,30,90,365'],
             'path' => ['nullable', 'string', 'max:2048'],
             'source' => ['nullable', 'string', 'max:255'],
             'campaign' => ['nullable', 'string', 'max:150'],
             'device' => ['nullable', 'string', 'max:32'],
+            'country' => ['nullable', 'string', 'regex:/^[A-Z]{2}$/'],
         ]);
         $token = $export->handle($user, $site, $validated);
 

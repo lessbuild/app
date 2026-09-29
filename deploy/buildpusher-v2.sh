@@ -104,6 +104,10 @@ step "Migrating the database and caching configuration"
 "$PHP" artisan route:cache
 "$PHP" artisan view:cache
 "$PHP" artisan event:cache
+# Analytics' IP-to-country database lives in shared storage; fetch it once, then the scheduler refreshes it monthly.
+if [ ! -f "$SHARED/storage/app/geoip/dbip-country-lite.mmdb" ]; then
+    sudo -u www-data "$PHP" artisan analytics:update-geoip || printf 'Could not download the country database yet; the monthly schedule will retry.\n'
+fi
 chown -R root:www-data "$RELEASE"
 chmod -R g+rX "$RELEASE"
 chown -R www-data:www-data "$RELEASE/bootstrap/cache"

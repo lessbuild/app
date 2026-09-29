@@ -28,6 +28,7 @@ final readonly class NormalizedEvent
      *                                across days.
      * @param  ?string  $sessionId  The tracker's session ID, used to group a visit's pages.
      * @param  array<string, mixed>|null  $properties
+     * @param  ?string  $countryCode  The visitor's country (ISO 3166 alpha-2), from their IP address, which isn't kept.
      */
     public function __construct(
         public string $eventId,
@@ -44,6 +45,7 @@ final readonly class NormalizedEvent
         public ?string $visitorHash,
         public ?string $sessionId,
         public ?array $properties,
+        public ?string $countryCode = null,
     ) {}
 
     /**
@@ -71,6 +73,7 @@ final readonly class NormalizedEvent
             'device_category' => $this->deviceCategory,
             'browser' => $this->browser,
             'operating_system' => $this->operatingSystem,
+            'country_code' => $this->countryCode,
             'visitor_hash' => $this->visitorHash,
             'session_id' => $this->sessionId,
             'properties' => $this->properties ? json_encode($this->properties, JSON_THROW_ON_ERROR) : null,

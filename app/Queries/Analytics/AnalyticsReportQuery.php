@@ -124,6 +124,9 @@ final class AnalyticsReportQuery
             'sources' => $hasVisits
                 ? $this->rank($currentVisits()->where('pageviews', '>', 0), $this->sourceLabel('entry_utm_source', 'entry_utm_medium', 'entry_referrer_host'))
                 : $this->rank($currentEvents()->where('type', 'pageview'), $this->sourceLabel('utm_source', 'utm_medium', 'referrer_host')),
+            'countries' => $hasVisits
+                ? $this->rank($currentVisits(), $this->labelOf('country_code'))
+                : $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('country_code')),
             'devices' => $this->rank($currentEvents(), $this->labelOf('device_category')),
             'browsers' => $this->rank($currentEvents(), $this->labelOf('browser')),
             'operatingSystems' => $this->rank($currentEvents(), $this->labelOf('operating_system')),
@@ -182,6 +185,7 @@ final class AnalyticsReportQuery
                 $query->where('entry_utm_source', $source)->orWhere('entry_referrer_host', $source);
             }))
             ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('entry_utm_campaign', $campaign))
+            ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country))
             ->when($path !== null || $device !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $device): void {
                 $events->selectRaw('1')->from('analytics_events as visit_events')
                     ->whereColumn('visit_events.site_id', 'analytics_visits.site_id')
@@ -445,6 +449,7 @@ final class AnalyticsReportQuery
             'entryPages' => [],
             'exitPages' => [],
             'sources' => $this->aggregateRanking($site, 'source', $start, $end, 'visits'),
+            'countries' => $this->aggregateRanking($site, 'country', $start, $end, 'visits'),
             'devices' => $this->aggregateRanking($site, 'device', $start, $end, 'pageviews'),
             'browsers' => $this->aggregateRanking($site, 'browser', $start, $end, 'pageviews'),
             'operatingSystems' => $this->aggregateRanking($site, 'operating_system', $start, $end, 'pageviews'),

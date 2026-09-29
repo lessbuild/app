@@ -36,6 +36,7 @@ use App\Services\Admin\PlatformAdmins;
 use App\Services\Admin\PlatformBackups;
 use App\Services\Admin\SelfMonitoring;
 use App\Services\Admin\SystemHealth;
+use App\Services\Analytics\GeoIpDatabase;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Referrals;
 use App\Services\Deploy\Automation;
@@ -95,6 +96,18 @@ Artisan::command('analytics:prune {--days= : Override event and visit retention 
 Artisan::command('analytics:refresh-recent', function (RefreshRecentAggregates $refresh): void {
     $this->info('Refreshed today\'s and yesterday\'s totals for '.$refresh->handle().' sites.');
 })->purpose('Rebuild the last two days of analytics daily totals');
+Artisan::command('analytics:update-geoip', function (GeoIpDatabase $database): int {
+    try {
+        $this->info('Installed the country database for '.$database->update().'.');
+
+        return 0;
+    } catch (RuntimeException $exception) {
+        $this->error($exception->getMessage());
+
+        return 1;
+    }
+})->purpose('Download the latest IP-to-country database for Analytics');
+Schedule::command('analytics:update-geoip')->monthlyOn(3, '04:20')->withoutOverlapping();
 Schedule::command('analytics:dispatch-pending')->everyMinute()->withoutOverlapping();
 Schedule::command('analytics:refresh-recent')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('analytics:prune')->daily()->withoutOverlapping();
