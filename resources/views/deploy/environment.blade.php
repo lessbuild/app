@@ -31,6 +31,33 @@
             @if ($canManage)<div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Save controls') }}</x-signal.ui.button></div>@endif
         </form>
     </x-signal.ui.settings-section>
+    <x-signal.ui.settings-section id="freezes" :title="__('Freezes')" :description="__('Dates when this environment takes no deploys, such as a holiday or a launch. Scheduled and push deploys wait too.')">
+        <div class="grid gap-3 p-4 sm:p-6">
+            @forelse ($freezes as $freeze)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span>
+                        @if ($freeze->starts_at->isPast())<x-signal.ui.badge tone="warning">{{ __('Frozen now') }}</x-signal.ui.badge>@endif
+                        <span class="font-semibold">{{ $freeze->starts_at->toDayDateTimeString() }} – {{ $freeze->ends_at->toDayDateTimeString() }} UTC</span>
+                        @if ($freeze->reason)<span class="text-muted"> · {{ $freeze->reason }}</span>@endif
+                    </span>
+                    @if ($canManage)
+                        <form method="POST" action="{{ route('deploy.environments.settings.destroy', [$project, $environment, 'freezes', $freeze->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ $freeze->starts_at->isPast() ? __('End now') : __('Remove') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('No freezes planned.') }}</p>
+            @endforelse
+            @if ($canManage)
+                <div><x-signal.ui.button :href="route('deploy.environments.show', [$project, $environment, 'tab' => 'controls', 'dialog' => 'add-freeze'])" variant="secondary" data-modal-trigger="add-freeze">{{ __('Add a freeze') }}</x-signal.ui.button></div>
+                <x-signal.overlays.form-modal id="add-freeze" :title="__('Add a freeze')" :action="route('deploy.environments.freezes.store', [$project, $environment])" :submit="__('Add freeze')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                    <x-signal.ui.input-field id="freeze-starts" name="starts_at" type="datetime-local" :label="__('From')" required />
+                    <x-signal.ui.input-field id="freeze-ends" name="ends_at" type="datetime-local" :label="__('Until')" required />
+                    <x-signal.ui.input-field id="freeze-timezone" name="timezone" :label="__('Time zone')" :value="old('timezone', $environment->deployment_window_timezone ?? 'UTC')" maxlength="64" required />
+                    <x-signal.ui.input-field id="freeze-reason" name="reason" :label="__('Reason (shown to people who try)')" maxlength="255" />
+                </x-signal.overlays.form-modal>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
     </x-signal.ui.page-tab-panel>
 
     <x-signal.ui.page-tab-panel name="settings" :current="$tab">

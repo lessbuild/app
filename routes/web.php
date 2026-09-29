@@ -90,6 +90,7 @@ use App\Http\Controllers\Deploy\ApplyConfigurationReviewController;
 use App\Http\Controllers\Deploy\ApplyWorkflowController;
 use App\Http\Controllers\Deploy\ApprovePreviewSecretsController;
 use App\Http\Controllers\Deploy\CancelBuildController;
+use App\Http\Controllers\Deploy\CancelScheduledDeployController;
 use App\Http\Controllers\Deploy\ClosePreviewController;
 use App\Http\Controllers\Deploy\CompleteGitHubAppInstallController;
 use App\Http\Controllers\Deploy\ConnectGitHubAppController;
@@ -124,12 +125,14 @@ use App\Http\Controllers\Deploy\ShowScheduledTaskRunController;
 use App\Http\Controllers\Deploy\StoreBuildController;
 use App\Http\Controllers\Deploy\StoreConfigurationReviewController;
 use App\Http\Controllers\Deploy\StoreDeploymentScheduleController;
+use App\Http\Controllers\Deploy\StoreEnvironmentFreezeController;
 use App\Http\Controllers\Deploy\StoreEnvironmentProcessController;
 use App\Http\Controllers\Deploy\StoreEnvironmentRecipeController;
 use App\Http\Controllers\Deploy\StoreEnvironmentResourceController;
 use App\Http\Controllers\Deploy\StoreEnvironmentVariableController;
 use App\Http\Controllers\Deploy\StoreRepositoryController;
 use App\Http\Controllers\Deploy\StoreScalingScheduleController;
+use App\Http\Controllers\Deploy\StoreScheduledDeployController;
 use App\Http\Controllers\Deploy\StoreScheduledTaskController;
 use App\Http\Controllers\Deploy\UpdateConfigurationOperationController;
 use App\Http\Controllers\Deploy\UpdateDeploymentControlsController;
@@ -494,11 +497,14 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/previews/{preview}/cleanup', RetryPreviewCleanupController::class)->whereNumber('preview')->middleware(['can:operate,preview', 'throttle:10,1'])->name('previews.cleanup');
             Route::post('/previews/{preview}/secrets', ApprovePreviewSecretsController::class)->whereNumber('preview')->middleware(['can:approveSecrets,preview', 'throttle:20,1'])->name('previews.secrets');
             Route::post('/repositories/{repository}/builds', StoreBuildController::class)->whereNumber('repository')->middleware(['can:deploy,repository', 'throttle:20,1'])->name('repositories.deploy');
+            Route::post('/repositories/{repository}/scheduled-deploys', StoreScheduledDeployController::class)->whereNumber('repository')->middleware(['can:deploy,repository', 'throttle:20,1'])->name('repositories.scheduled-deploys.store');
+            Route::delete('/repositories/{repository}/scheduled-deploys/{scheduled}', CancelScheduledDeployController::class)->whereNumber(['repository', 'scheduled'])->middleware(['can:deploy,repository', 'throttle:20,1'])->name('repositories.scheduled-deploys.destroy');
             Route::get('/environments', ShowDeployEnvironmentsController::class)->name('environments');
             Route::get('/environments/{environment}', ShowDeployEnvironmentController::class)->name('environments.show');
             Route::middleware(['can:configureDeploy,environment', 'throttle:30,1'])->group(function (): void {
                 Route::put('/environments/{environment}/settings', UpdateEnvironmentDeploySettingsController::class)->name('environments.settings');
                 Route::put('/environments/{environment}/controls', UpdateDeploymentControlsController::class)->name('environments.controls');
+                Route::post('/environments/{environment}/freezes', StoreEnvironmentFreezeController::class)->name('environments.freezes.store');
                 Route::post('/environments/{environment}/variables', StoreEnvironmentVariableController::class)->name('environments.variables.store');
                 Route::put('/environments/{environment}/variables', ReplaceEnvironmentVariablesController::class)->name('environments.variables.replace');
                 Route::post('/environments/{environment}/processes', StoreEnvironmentProcessController::class)->name('environments.processes.store');
@@ -516,7 +522,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
                 Route::put('/environments/{environment}/recipes/settings', UpdateEnvironmentRecipeSettingsController::class)->name('environments.recipes.settings');
                 Route::post('/environments/{environment}/recipes/{entry}/refresh', RefreshEnvironmentRecipeController::class)->whereNumber('entry')->name('environments.recipes.refresh');
                 Route::post('/environments/{environment}/recipes/{entry}/move', MoveEnvironmentRecipeController::class)->whereNumber('entry')->name('environments.recipes.move');
-                Route::delete('/environments/{environment}/{kind}/{setting}', DeleteEnvironmentSettingController::class)->whereIn('kind', ['variables', 'processes', 'resources', 'deployment-schedules', 'scaling-schedules', 'tasks', 'recipes'])->whereNumber('setting')->name('environments.settings.destroy');
+                Route::delete('/environments/{environment}/{kind}/{setting}', DeleteEnvironmentSettingController::class)->whereIn('kind', ['variables', 'processes', 'resources', 'deployment-schedules', 'scaling-schedules', 'tasks', 'recipes', 'freezes'])->whereNumber('setting')->name('environments.settings.destroy');
             });
             Route::get('/configuration', ShowConfigurationController::class)->name('configuration');
             Route::middleware(['can:manageDeploy,project', 'throttle:30,1'])->group(function (): void {

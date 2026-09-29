@@ -26,8 +26,28 @@
             <x-signal.overlays.form-modal id="deploy-ref" :title="__('Deploy a specific version')" :description="__('Deploy another branch, a release tag, or an exact commit. The environment’s approvals, locks and windows still apply.')" :action="route('deploy.repositories.deploy', [$project, $repository->id])" :submit="__('Deploy')">
                 <x-signal.ui.input-field id="deploy-ref-input" name="ref" :label="__('Branch, tag or commit')" placeholder="v1.4.0" maxlength="200" autocomplete="off" required />
             </x-signal.overlays.form-modal>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'schedule-deploy'])" variant="quiet" data-modal-trigger="schedule-deploy">{{ __('Deploy later…') }}</x-signal.ui.button>
+            <x-signal.overlays.form-modal id="schedule-deploy" :title="__('Book a deploy')" :description="__('Deploy at a set time, such as a quiet hour tonight. It runs as you, and the environment’s approvals, locks, windows and freezes apply then.')" :action="route('deploy.repositories.scheduled-deploys.store', [$project, $repository->id])" :submit="__('Book deploy')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                <x-signal.ui.input-field id="schedule-deploy-at" name="deploy_at" type="datetime-local" :label="__('When')" required />
+                <x-signal.ui.input-field id="schedule-deploy-timezone" name="timezone" :label="__('Time zone')" :value="old('timezone', $repository->environment?->deployment_window_timezone ?? 'UTC')" maxlength="64" required />
+                <div class="sm:col-span-2"><x-signal.ui.input-field id="schedule-deploy-ref" name="ref" :label="__('Branch, tag or commit')" :description="__('Optional. Leave empty for the latest :branch.', ['branch' => $repository->branch])" maxlength="200" autocomplete="off" /></div>
+            </x-signal.overlays.form-modal>
         @endif
     </x-signal.ui.card>
+
+    @if ($scheduledDeploys->isNotEmpty())
+        <x-signal.ui.card as="section" class="grid gap-2 p-5" aria-labelledby="booked-heading">
+            <h2 id="booked-heading" class="text-sm font-extrabold text-ink">{{ __('Booked deploys') }}</h2>
+            @foreach ($scheduledDeploys as $booked)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><time datetime="{{ $booked->run_at->toIso8601String() }}" class="font-semibold">{{ $booked->run_at->toDayDateTimeString() }} UTC</time> · {{ $booked->git_ref ?? $repository->branch }} · <span class="text-muted">{{ $booked->creator?->name ?? __('Someone') }}</span></span>
+                    @if ($canDeploy)
+                        <form method="POST" action="{{ route('deploy.repositories.scheduled-deploys.destroy', [$project, $repository->id, $booked->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Cancel') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+            @endforeach
+        </x-signal.ui.card>
+    @endif
 
     <x-signal.ui.page-tabs :tabs="$tabs" :current="$tab" :url="route('deploy.repositories.show', [$project, $repository->id])" />
 

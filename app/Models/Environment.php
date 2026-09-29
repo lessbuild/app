@@ -194,6 +194,16 @@ class Environment extends Model
     }
 
     /**
+     * Get the periods when the environment takes no deploys.
+     *
+     * @return HasMany<EnvironmentFreeze, $this>
+     */
+    public function freezes(): HasMany
+    {
+        return $this->hasMany(EnvironmentFreeze::class);
+    }
+
+    /**
      * Get the environment's recipes, in the order they run.
      *
      * @return HasMany<EnvironmentRecipe, $this>
@@ -235,7 +245,7 @@ class Environment extends Model
     }
 
     /**
-     * Explain why a deploy can't start now (locked, or outside the deployment window), or return null.
+     * Explain why a deploy can't start now (locked, frozen, or outside the deployment window), or return null.
      *
      * @param  \Carbon\CarbonInterface|null  $at
      * @return string|null
@@ -244,6 +254,13 @@ class Environment extends Model
     {
         if ($this->deployment_locked_at !== null) {
             return $this->deployment_lock_reason ?: (string) __('Deploys are locked for this environment.');
+        }
+        $moment = \Carbon\CarbonImmutable::instance($at ?? now())->utc();
+        $freeze = $this->freezes()->where('starts_at', '<=', $moment)->where('ends_at', '>', $moment)->orderByDesc('ends_at')->first();
+        if ($freeze !== null) {
+            return $freeze->reason !== null
+                ? (string) __('Deploys are frozen until :time: :reason', ['time' => $freeze->ends_at->toDayDateTimeString().' UTC', 'reason' => $freeze->reason])
+                : (string) __('Deploys are frozen until :time.', ['time' => $freeze->ends_at->toDayDateTimeString().' UTC']);
         }
         $days = array_map('intval', $this->deployment_window_days ?? []);
         if ($days === [] || $this->deployment_window_start === null || $this->deployment_window_end === null) {

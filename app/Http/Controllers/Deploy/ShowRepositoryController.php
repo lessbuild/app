@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Deploy;
 
 use App\Models\Project;
 use App\Models\Repository;
+use App\Models\ScheduledDeploy;
 use App\Models\User;
 use App\Queries\Deploy\RepositoryFormQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -39,6 +40,7 @@ final class ShowRepositoryController
             'repository' => $repository->load(['website.server', 'environment', 'provider', 'preview']),
             'builds' => $repository->builds()->with(['requester'])->latest('id')->limit(30)->get(),
             'deliveries' => $repository->webhookDeliveries()->latest('id')->limit(10)->get(),
+            'scheduledDeploys' => ScheduledDeploy::query()->where('repository_id', $repository->id)->where('status', ScheduledDeploy::STATUS_PENDING)->with('creator')->orderBy('run_at')->get(),
             'canDeploy' => $user->can('deploy', $repository),
             'canManage' => $user->can('update', $repository),
             ...$form->handle($project),

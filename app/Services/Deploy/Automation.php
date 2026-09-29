@@ -8,6 +8,7 @@ use App\Jobs\Deploy\ApplyEnvironmentRuntime;
 use App\Jobs\Deploy\RunScheduledTask;
 use App\Models\DeploymentSchedule;
 use App\Models\ScalingSchedule;
+use App\Models\ScheduledDeploy;
 use App\Models\ScheduledTask;
 use App\Models\ScheduledTaskRun;
 use App\Models\User;
@@ -32,7 +33,7 @@ final class Automation
     public function __construct(private readonly Deployments $deployments, private readonly Entitlements $entitlements) {}
 
     /**
-     * Run every enabled schedule and task that's due in this minute.
+     * Run every one-off deploy booked for now or earlier, and every enabled schedule and task that's due in this minute.
      *
      * @param  CarbonInterface  $now
      * @return array{deploys: int, scaling: int, tasks: int} how many of each ran
@@ -40,6 +41,14 @@ final class Automation
     public function runDue(CarbonInterface $now): array
     {
         $ran = ['deploys' => 0, 'scaling' => 0, 'tasks' => 0];
+        ScheduledDeploy::query()->where('status', ScheduledDeploy::STATUS_PENDING)->where('run_at', '<=', $now)->orderBy('run_at')->limit(100)->get()
+            ->each(function (ScheduledDeploy $scheduled) use (&$ran): void {
+                // Claim it, so an overlapping run can't start it twice.
+                if (ScheduledDeploy::query()->whereKey($scheduled->id)->where('status', ScheduledDeploy::STATUS_PENDING)->update(['status' => 'running']) === 1) {
+                    $this->runScheduledDeploy($scheduled->refresh());
+                    $ran['deploys']++;
+                }
+            });
         DeploymentSchedule::query()->where('is_enabled', true)->with(['environment.project.account', 'creator'])->each(function (DeploymentSchedule $schedule) use ($now, &$ran): void {
             if ($schedule->isDue($now) && $this->entitlements->for($schedule->environment->project->account)->has('deploy.scheduled') && $schedule->claim($now)) {
                 $schedule->forceFill(['last_result' => $this->deploy($schedule)])->save();
@@ -112,6 +121,33 @@ final class Automation
         }
 
         return mb_substr(implode('; ', $results), 0, 255);
+    }
+
+    /**
+     * Start a one-off scheduled deploy as the person who booked it, recording the deploy it started or why it
+     * couldn't (blocked, not ready, already deploying, or they no longer may deploy).
+     *
+     * @param  ScheduledDeploy  $scheduled
+     * @return void
+     */
+    private function runScheduledDeploy(ScheduledDeploy $scheduled): void
+    {
+        $repository = $scheduled->repository()->with(['environment', 'provider', 'website.server'])->first();
+        $creator = $scheduled->creator;
+        $build = null;
+        if ($repository === null) {
+            $result = (string) __('The repository was removed.');
+        } elseif ($creator === null || ! $creator->can('deploy', $repository)) {
+            $result = (string) __('Whoever booked it can no longer deploy.');
+        } elseif (($blocked = $this->deployments->blockReason($repository)) !== null) {
+            $result = $blocked;
+        } elseif (! $repository->isDeploymentReady()) {
+            $result = (string) __('The repository wasn’t ready to deploy.');
+        } else {
+            $build = $this->deployments->queue($repository, ['trigger_source' => 'scheduled', 'git_ref' => $scheduled->git_ref], $creator);
+            $result = $build === null ? (string) __('A deploy was already running.') : (string) __('Started deploy #:id.', ['id' => $build->id]);
+        }
+        $scheduled->forceFill(['status' => 'done', 'build_id' => $build?->id, 'result' => mb_substr($result, 0, 255)])->save();
     }
 
     /**

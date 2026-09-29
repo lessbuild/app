@@ -34,12 +34,19 @@ final class DeleteEnvironmentSettingController
             'deployment-schedules' => $environment->deploymentSchedules()->findOrFail((int) $setting),
             'scaling-schedules' => $environment->scalingSchedules()->findOrFail((int) $setting),
             'recipes' => $environment->recipes()->findOrFail((int) $setting),
+            'freezes' => $environment->freezes()->findOrFail((int) $setting),
             default => $environment->scheduledTasks()->findOrFail((int) $setting),
         };
         $delete->handle($user, $record);
-        $automation = in_array($kind, ['deployment-schedules', 'scaling-schedules', 'tasks', 'recipes'], true);
+        $automation = in_array($kind, ['deployment-schedules', 'scaling-schedules', 'tasks', 'recipes', 'freezes'], true);
+        $tab = match ($kind) {
+            'recipes' => 'recipes',
+            'freezes' => 'controls',
+            'deployment-schedules', 'scaling-schedules', 'tasks' => 'automation',
+            default => $kind,
+        };
 
-        return to_route('deploy.environments.show', [$project, $environment, 'tab' => $kind === 'recipes' ? 'recipes' : ($automation ? 'automation' : $kind)])
+        return to_route('deploy.environments.show', [$project, $environment, 'tab' => $tab])
             ->with('status', $automation ? __('Removed.') : __('Removed. The server changes with the next deploy.'));
     }
 }
