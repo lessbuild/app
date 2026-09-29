@@ -90,6 +90,34 @@
         @endif
     </x-signal.ui.card>
 
+    @if ($summary['searchTerms'] ?? null)
+        @php($terms = $summary['searchTerms'])
+        <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="search-terms-heading">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="search-terms-heading" class="text-lg font-extrabold text-ink">{{ __('Google search terms') }}</h2>
+                <p class="text-xs text-muted">{{ __('From Google Search Console (:property). Google’s figures lag by about two days.', ['property' => $terms['property']]) }}</p>
+            </div>
+            @if ($terms['error'])
+                <x-signal.ui.alert tone="warning">{{ $terms['error'] }}</x-signal.ui.alert>
+            @elseif ($terms['rows'] === [])
+                <p class="text-sm text-muted">{{ __('No searches led here in this period.') }}</p>
+            @else
+                <x-signal.ui.table :caption="__('Google search terms')" :framed="false">
+                    <x-slot:head><tr><th scope="col">{{ __('Search term') }}</th><th scope="col" class="text-right">{{ __('Clicks') }}</th><th scope="col" class="text-right">{{ __('Impressions') }}</th><th scope="col" class="text-right">{{ __('Click rate') }}</th><th scope="col" class="text-right">{{ __('Position') }}</th></tr></x-slot:head>
+                    @foreach ($terms['rows'] as $row)
+                        <tr>
+                            <td class="font-bold text-ink">{{ $row['query'] }}</td>
+                            <td class="text-right tabular-nums">{{ number_format($row['clicks']) }}</td>
+                            <td class="text-right tabular-nums">{{ number_format($row['impressions']) }}</td>
+                            <td class="text-right tabular-nums">{{ $row['ctr'] }}%</td>
+                            <td class="text-right tabular-nums">{{ $row['position'] }}</td>
+                        </tr>
+                    @endforeach
+                </x-signal.ui.table>
+            @endif
+        </x-signal.ui.card>
+    @endif
+
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         @foreach ($lists as [$title, $items, $empty, $filterKey])
             <x-signal.ui.card as="section" class="p-5" :aria-label="$title">

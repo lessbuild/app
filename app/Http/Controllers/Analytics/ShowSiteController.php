@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Contracts\Analytics\SearchConsole;
 use App\Models\AnalyticsSite;
 use App\Models\Project;
 use App\Models\User;
+use App\Queries\Analytics\SearchConsolePropertiesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use DateTimeZone;
 use Illuminate\Container\Attributes\CurrentUser;
@@ -22,11 +24,14 @@ final class ShowSiteController
      * @param  Project  $project
      * @param  AnalyticsSite  $site
      * @param  ProjectOverviewQuery  $overview
+     * @param  SearchConsolePropertiesQuery  $searchConsoleProperties
+     * @param  SearchConsole  $searchConsole
      * @return View
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, ProjectOverviewQuery $overview): View
+    public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, ProjectOverviewQuery $overview, SearchConsolePropertiesQuery $searchConsoleProperties, SearchConsole $searchConsole): View
     {
         return view('analytics.site', [
+            'searchConsole' => ['configured' => $searchConsole->configured(), ...$searchConsoleProperties->handle($site)],
             'overview' => $overview->handle($project, $user),
             'site' => $site,
             'canManage' => $user->can('manageService', [$project, 'analytics']),

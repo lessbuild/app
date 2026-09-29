@@ -64,11 +64,15 @@ use App\Http\Controllers\Admin\StoreFeatureRequestController;
 use App\Http\Controllers\Admin\UpdateAccessRequestController;
 use App\Http\Controllers\Admin\UpdateFeatureFlagController;
 use App\Http\Controllers\Admin\UpdateFeatureRequestController;
+use App\Http\Controllers\Analytics\ChooseSearchConsolePropertyController;
+use App\Http\Controllers\Analytics\ConnectSearchConsoleController;
 use App\Http\Controllers\Analytics\DeleteFunnelController;
 use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
+use App\Http\Controllers\Analytics\DisconnectSearchConsoleController;
 use App\Http\Controllers\Analytics\DownloadExportController;
 use App\Http\Controllers\Analytics\RequestExportController;
+use App\Http\Controllers\Analytics\SearchConsoleCallbackController;
 use App\Http\Controllers\Analytics\ShareSiteReportController;
 use App\Http\Controllers\Analytics\ShowCampaignsController;
 use App\Http\Controllers\Analytics\ShowExportController;
@@ -505,6 +509,8 @@ Route::get('/sso/saml/{account}/metadata', ShowSamlMetadataController::class)->w
 Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
     Route::post('/whats-new/seen', MarkChangelogSeenController::class)->name('whats-new.seen');
+    // Google sends people back here after they allow Search Console access (one fixed URL, registered with Google).
+    Route::get('/analytics/search-console/callback', SearchConsoleCallbackController::class)->middleware('throttle:10,1')->name('analytics.search-console.callback');
     Route::get('/sso/verify', StartSsoVerificationController::class)->middleware('throttle:10,1')->name('sso.verify');
     Route::post('/invitations/{token}', AcceptInvitationController::class)->middleware('throttle:10,1')->name('invitations.accept');
 
@@ -528,6 +534,9 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->middleware('can:view,site')->name('sites.show');
             Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->middleware('can:update,site')->name('sites.update');
             Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.verify');
+            Route::post('/sites/{site}/search-console/connect', ConnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:10,1'])->name('sites.search-console.connect');
+            Route::put('/sites/{site}/search-console', ChooseSearchConsolePropertyController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.property');
+            Route::delete('/sites/{site}/search-console', DisconnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.disconnect');
             Route::post('/sites/{site}/share', ShareSiteReportController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.share');
             Route::delete('/sites/{site}/share', StopSharingSiteReportController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.unshare');
             Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware(['can:delete,site', 'password.confirm'])->name('sites.destroy');

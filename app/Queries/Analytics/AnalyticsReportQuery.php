@@ -24,8 +24,9 @@ final class AnalyticsReportQuery
      *
      * @param  LiveVisitorsQuery  $live  Reads the last five minutes.
      * @param  PageSpeedQuery  $pageSpeed  Summarises real visitors' page speed.
+     * @param  SearchTermsQuery  $searchTerms  Reads Google Search Console, for connected sites.
      */
-    public function __construct(private readonly LiveVisitorsQuery $live, private readonly PageSpeedQuery $pageSpeed) {}
+    public function __construct(private readonly LiveVisitorsQuery $live, private readonly PageSpeedQuery $pageSpeed, private readonly SearchTermsQuery $searchTerms) {}
 
     /**
      * Build an analytics site's report for today (`$days` = 1, per hour, compared with yesterday up to the same time)
@@ -141,6 +142,7 @@ final class AnalyticsReportQuery
             'fileDownloads' => $this->rank($this->automaticEvents($currentEvents(), 'file_download'), $this->labelOf($this->property('file'))),
             'notFound' => $this->rank($this->automaticEvents($currentEvents(), 'not_found'), $this->labelOf('path')),
             'vitals' => $this->pageSpeed->handle($site, $startUtc, $endUtc, $filters),
+            'searchTerms' => $this->searchTerms->handle($site, $start, $end, $filters['path'] ?? null),
             'recent' => $this->live->handle($site, $filters),
             'filters' => $filters,
             'goals' => $goals->map(fn (AnalyticsGoal $goal): array => [
@@ -548,6 +550,7 @@ final class AnalyticsReportQuery
             'fileDownloads' => [],
             'notFound' => [],
             'vitals' => $this->pageSpeed->handle($site, $start->utc(), $end->utc()),
+            'searchTerms' => $this->searchTerms->handle($site, $start, $end),
             'recent' => ['visitorCount' => 0, 'events' => []],
             'filters' => $filters,
             'goals' => [],

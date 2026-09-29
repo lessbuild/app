@@ -42,6 +42,36 @@
     </x-signal.ui.settings-section>
 
     @if ($canManage)
+        <x-signal.ui.settings-section :title="__('Google Search Console')" :description="__('See which Google searches bring people to the site, next to its visits. Read-only access; Google’s figures lag by about two days.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @error('search_console')<x-signal.ui.alert tone="danger">{{ $message }}</x-signal.ui.alert>@enderror
+                @if (! $searchConsole['configured'] && ! $site->search_console_token)
+                    <p class="text-sm text-muted">{{ __('Search Console isn’t set up on this platform yet: it needs a Google OAuth client (GOOGLE_SEARCH_CONSOLE_CLIENT_ID and GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET).') }}</p>
+                @elseif (! $site->search_console_token)
+                    <form method="POST" action="{{ route('analytics.sites.search-console.connect', [$project, $site->id]) }}">
+                        @csrf
+                        <x-signal.ui.button type="submit" variant="primary">{{ __('Connect Google Search Console') }}</x-signal.ui.button>
+                    </form>
+                @else
+                    @if ($searchConsole['error'])<x-signal.ui.alert tone="warning">{{ $searchConsole['error'] }}</x-signal.ui.alert>@endif
+                    <form method="POST" action="{{ route('analytics.sites.search-console.property', [$project, $site->id]) }}" class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                        @csrf @method('PUT')
+                        <x-signal.ui.select-field name="search_console_property" :label="__('Property')" :description="$site->search_console_property ? null : __('Choose the property for this site.')">
+                            @if (! $site->search_console_property)<option value="">{{ __('Choose…') }}</option>@endif
+                            @foreach ($searchConsole['properties'] as $property)
+                                <option value="{{ $property }}" @selected($site->search_console_property === $property)>{{ $property }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Use this property') }}</x-signal.ui.button>
+                    </form>
+                    <form method="POST" action="{{ route('analytics.sites.search-console.disconnect', [$project, $site->id]) }}">
+                        @csrf @method('DELETE')
+                        <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Disconnect') }}</x-signal.ui.button>
+                    </form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+
         <x-signal.ui.settings-section :title="__('Share the report')" :description="__('Give clients or your team a read-only link to this site’s report. They don’t need an account. Releases and goal settings aren’t shown.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @if ($site->share_token)

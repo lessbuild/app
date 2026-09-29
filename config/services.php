@@ -52,6 +52,13 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // Google Search Console for Analytics: an OAuth client (web application) whose redirect URI is
+    // {APP_URL}/analytics/search-console/callback. Off until both are set.
+    'google_search_console' => [
+        'client_id' => env('GOOGLE_SEARCH_CONSOLE_CLIENT_ID'),
+        'client_secret' => env('GOOGLE_SEARCH_CONSOLE_CLIENT_SECRET'),
+    ],
+
     // Cloudflare Turnstile on sign-up; off until both keys are set.
     'turnstile' => [
         'site_key' => env('TURNSTILE_SITE_KEY'),

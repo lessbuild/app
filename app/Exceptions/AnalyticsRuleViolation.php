@@ -39,4 +39,14 @@ final class AnalyticsRuleViolation extends RuleViolation
     {
         return new self('environment_id', __('Choose one of this project’s environments.'));
     }
+
+    /**
+     * Build the violation for a Search Console property the connected Google account can't read.
+     *
+     * @return AnalyticsRuleViolation
+     */
+    public static function searchConsolePropertyUnavailable(): self
+    {
+        return new self('search_console_property', __('Choose one of the properties this Google account can read.'));
+    }
 }
