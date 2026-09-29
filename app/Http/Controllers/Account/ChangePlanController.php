@@ -30,16 +30,16 @@ final class ChangePlanController
     {
         $validated = $request->validate(['tier' => ['required', 'string', 'max:40']]);
         try {
-            $result = $change->handle($user, $account, $service, $validated['tier'], route('account.billing'));
+            $result = $change->handle($user, $account, $service, $validated['tier'], route('account.billing', ['tab' => $service]));
         } catch (PaymentProviderUnavailable $unavailable) {
-            return to_route('account.billing')->withErrors(['tier' => $unavailable->getMessage()]);
+            return to_route('account.billing', ['tab' => $service])->withErrors(['tier' => $unavailable->getMessage()]);
         }
 
         return match ($result->outcome) {
             'checkout' => redirect()->away((string) $result->checkoutUrl),
-            'scheduled' => to_route('account.billing')->with('status', __('Your plan stays as it is until :date, then moves to the free plan.', ['date' => $result->effectiveAt?->toFormattedDateString()])),
-            'unchanged' => to_route('account.billing'),
-            default => to_route('account.billing')->with('status', __('Plan changed. The difference is prorated on your next invoice.')),
+            'scheduled' => to_route('account.billing', ['tab' => $service])->with('status', __('Your plan stays as it is until :date, then moves to the free plan.', ['date' => $result->effectiveAt?->toFormattedDateString()])),
+            'unchanged' => to_route('account.billing', ['tab' => $service]),
+            default => to_route('account.billing', ['tab' => $service])->with('status', __('Plan changed. The difference is prorated on your next invoice.')),
         };
     }
 }

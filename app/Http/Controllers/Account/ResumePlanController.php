@@ -26,6 +26,6 @@ final class ResumePlanController
     {
         $resume->handle($user, $account, $service);
 
-        return to_route('account.billing')->with('status', __('Your plan will carry on as before.'));
+        return to_route('account.billing', ['tab' => $service])->with('status', __('Your plan will carry on as before.'));
     }
 }

@@ -30,10 +30,20 @@ final class ShowBillingController
      */
     public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices, Referrals $referrals): View
     {
+        $summary = $overview->handle($account);
+        // One tab for the account's plan as a whole, one per service, and one for invoices and referrals.
+        $tabs = ['overview' => __('Overview')];
+        foreach ($summary->services as $service) {
+            $tabs[$service->key] = $service->name;
+        }
+        $tabs['invoices'] = __('Invoices');
+        $tab = is_string($request->query('tab')) && isset($tabs[$request->query('tab')]) ? $request->query('tab') : 'overview';
 
         return view('account.billing', [
             'account' => $account,
-            'overview' => $overview->handle($account),
+            'overview' => $summary,
+            'tabs' => $tabs,
+            'tab' => $tab,
             'invoices' => $invoices->handle($account),
             'canManage' => $user->can('manageBilling', $account),
             'checkout' => $request->query('checkout'),

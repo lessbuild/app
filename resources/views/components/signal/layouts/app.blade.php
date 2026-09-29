@@ -120,9 +120,9 @@
                 @php($upgrade = app(\App\Services\Billing\PlanUsage::class)->upgradeFor($near))
                 @if ($upgrade)
                     {{ __(':service :tier gives :limit :label for $:price a month.', ['service' => $upgrade['service'], 'tier' => $upgrade['tier']->name, 'limit' => $upgrade['limit'] === null ? __('unlimited') : number_format($upgrade['limit']), 'label' => $near->label, 'price' => number_format($upgrade['monthlyCents'] / 100, $upgrade['monthlyCents'] % 100 === 0 ? 0 : 2)]) }}
-                    <a href="{{ route('account.billing').'#billing-'.$near->service }}" class="font-semibold underline">{{ __('Upgrade') }}</a>
+                    <a href="{{ route('account.billing', ['tab' => $near->service]) }}" class="font-semibold underline">{{ __('Upgrade') }}</a>
                 @else
-                    <a href="{{ route('account.billing').'#billing-'.$near->service }}" class="font-semibold underline">{{ __('See plans') }}</a>
+                    <a href="{{ route('account.billing', ['tab' => $near->service]) }}" class="font-semibold underline">{{ __('See plans') }}</a>
                 @endif
             </x-signal.ui.alert>
         @endif

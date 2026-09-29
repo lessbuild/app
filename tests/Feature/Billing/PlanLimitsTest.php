@@ -59,7 +59,7 @@ final class PlanLimitsTest extends TestCase
         $usage = new UsageRecord;
         $usage->forceFill(['account_id' => $this->account->id, 'meter' => 'analytics.pageviews', 'quantity' => 9_000, 'period_start' => now()->utc()->startOfHour()])->save();
         cache()->flush();
-        $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertSee('You’ve used 9,000 of 10,000 pageviews on your plan this month.', false)->assertSee(route('account.billing').'#billing-analytics');
+        $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertSee('You’ve used 9,000 of 10,000 pageviews on your plan this month.', false)->assertSee(route('account.billing', ['tab' => 'analytics']));
 
         // With a plan on sale that raises the allowance, the warning names it.
         config(['billing.prices.analytics.tier' => ['pro' => 'price_analytics_pro', 'business' => 'price_analytics_business']]);
@@ -72,7 +72,7 @@ final class PlanLimitsTest extends TestCase
     {
         $this->actingAs($this->owner);
         $this->withViewErrors(['plan' => 'Your plan allows 1 server.'])->blade('<x-signal.ui.plan-limit-alert service="infrastructure" />')
-            ->assertSee('Your plan allows 1 server.')->assertSee('See plans with more')->assertSee(route('account.billing').'#billing-infrastructure');
+            ->assertSee('Your plan allows 1 server.')->assertSee('See plans with more')->assertSee(route('account.billing', ['tab' => 'infrastructure']));
         $this->withViewErrors([])->blade('<x-signal.ui.plan-limit-alert />')->assertDontSee('See plans');
     }
 }

@@ -124,19 +124,31 @@ final class BillingTest extends TestCase
         $this->assertSame(1, AuditEntry::query()->where('action', AuditAction::PlanChanged)->count(), 'Webhook retries apply once.');
     }
 
+    public function test_the_billing_page_has_a_tab_per_service(): void
+    {
+        $page = $this->actingAs($this->owner)->get('/account/billing?tab=monitoring')->assertOk()
+            ->assertSee('id="page-tab-overview"', false)->assertSee('id="page-tab-deploy"', false)->assertSee('id="page-tab-infrastructure"', false)
+            ->assertSee('id="page-tab-monitoring"', false)->assertSee('id="page-tab-analytics"', false)->assertSee('id="page-tab-invoices"', false);
+        $html = (string) $page->getContent();
+        $panel = fn (string $name): string => preg_match('/<section\s+id="page-panel-'.$name.'"[^>]*>/', $html, $tag) === 1 ? $tag[0] : '';
+        $this->assertStringNotContainsString('hidden', $panel('monitoring'), 'The chosen tab is shown.');
+        $this->assertStringContainsString('hidden', $panel('deploy'), 'Other tabs are hidden.');
+        $this->actingAs($this->owner)->get('/account/billing?tab=nonsense')->assertOk()->assertSee('id="page-panel-overview"', false);
+    }
+
     public function test_changing_one_service_only_changes_its_item_and_downgrades_wait_for_the_period_end(): void
     {
         $this->subscribe(['deploy' => 'starter', 'monitoring' => 'pro']);
 
-        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'team'])->assertRedirect('/account/billing')->assertSessionHas('status');
+        $this->actingAs($this->owner)->post('/account/billing/deploy', ['tier' => 'team'])->assertRedirect('/account/billing?tab=deploy')->assertSessionHas('status');
         $this->assertSame(['price_deploy_team', 'price_mon_pro'], array_map(fn ($item) => $item->priceId, $this->stripe->subscriptions['sub_1']));
 
-        $this->actingAs($this->owner)->post('/account/billing/monitoring', ['tier' => 'free'])->assertRedirect('/account/billing');
+        $this->actingAs($this->owner)->post('/account/billing/monitoring', ['tier' => 'free'])->assertRedirect('/account/billing?tab=monitoring');
         $monitoring = BillingSelection::query()->where('service', 'monitoring')->sole();
         $this->assertNotNull($monitoring->ends_at, 'Paid until the end of the period.');
         $this->assertCount(2, $this->stripe->subscriptions['sub_1']);
 
-        $this->actingAs($this->owner)->post('/account/billing/monitoring/resume')->assertRedirect('/account/billing');
+        $this->actingAs($this->owner)->post('/account/billing/monitoring/resume')->assertRedirect('/account/billing?tab=monitoring');
         $this->assertNull($monitoring->refresh()->ends_at);
 
         $this->actingAs($this->owner)->post('/account/billing/monitoring', ['tier' => 'free']);
