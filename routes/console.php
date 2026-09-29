@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Actions\Analytics\DispatchPendingBatches;
 use App\Actions\Analytics\PruneAnalyticsData;
+use App\Actions\Analytics\RefreshRecentAggregates;
 use App\Actions\Billing\ApplyEndedSelections;
 use App\Actions\Billing\ReportUsage;
 use App\Actions\Deploy\FinishBuild;
@@ -91,7 +92,11 @@ Artisan::command('analytics:prune {--days= : Override event and visit retention 
     $counts = $prune->handle(is_numeric($days) ? (int) $days : null);
     $this->info("Pruned {$counts['events']} events, {$counts['visits']} visits, {$counts['batches']} batches, {$counts['aggregates']} aggregates and {$counts['exports']} exports.");
 })->purpose('Remove analytics data past its retention');
+Artisan::command('analytics:refresh-recent', function (RefreshRecentAggregates $refresh): void {
+    $this->info('Refreshed today\'s and yesterday\'s totals for '.$refresh->handle().' sites.');
+})->purpose('Rebuild the last two days of analytics daily totals');
 Schedule::command('analytics:dispatch-pending')->everyMinute()->withoutOverlapping();
+Schedule::command('analytics:refresh-recent')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('analytics:prune')->daily()->withoutOverlapping();
 
 Artisan::command('monitors:check {--limit=100 : Maximum checks to schedule (1-1000)}', function (MonitorScheduler $checks): int {

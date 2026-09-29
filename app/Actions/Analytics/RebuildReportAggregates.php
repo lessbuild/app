@@ -17,20 +17,54 @@ use Illuminate\Support\Collection;
 final class RebuildReportAggregates
 {
     /**
-     * Rebuild the daily totals that long-range reports read, for the days a batch touched or every day the site has
-     * data. Each day gets an overall row plus rows per page, device, browser, system, source and campaign.
+     * The local days a batch leaves alone: today and yesterday change all the time, so the scheduled refresh
+     * (RefreshRecentAggregates) rebuilds them every few minutes instead of every batch.
+     *
+     * @var int
+     */
+    public const RECENT_DAYS = 2;
+
+    /**
+     * Rebuild the daily totals that long-range reports read: for the older days a batch touched, for the given days,
+     * or for every day the site has data (a week at a time, so memory stays bounded). Each day gets an overall row plus
+     * rows per page, device, browser, system, source and campaign.
      *
      * @param  AnalyticsSite  $site
      * @param  AnalyticsIngestionBatch|null  $batch
+     * @param  list<string>|null  $dates  local dates (Y-m-d) to rebuild instead
      * @return void
      */
-    public function handle(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null): void
+    public function handle(AnalyticsSite $site, ?AnalyticsIngestionBatch $batch = null, ?array $dates = null): void
     {
-        $batchEvents = $batch?->events()->orderBy('occurred_at')->orderBy('id')->get() ?? collect();
-        $dates = $batch === null
-            ? $this->allDates($site)
-            : $batchEvents->map(fn (AnalyticsEvent $event): string => $this->localDate($event->occurred_at, $site->timezone))->unique()->values();
+        if ($dates !== null) {
+            $this->rebuild($site, collect($dates), null);
 
+            return;
+        }
+        if ($batch === null) {
+            $this->allDates($site)->chunk(7)->each(fn (Collection $week) => $this->rebuild($site, $week->values(), null));
+
+            return;
+        }
+        $recent = CarbonImmutable::now($site->timezone)->subDays(self::RECENT_DAYS - 1)->toDateString();
+        $dates = $batch->events()->toBase()->pluck('occurred_at')
+            ->map(fn (mixed $at): string => $this->localDate($at, $site->timezone))
+            ->unique()
+            ->filter(fn (string $date): bool => $date < $recent)
+            ->values();
+        $this->rebuild($site, $dates, $batch);
+    }
+
+    /**
+     * Rebuild the totals for some local days.
+     *
+     * @param  AnalyticsSite  $site
+     * @param  Collection<int, string>  $dates
+     * @param  AnalyticsIngestionBatch|null  $batch  a batch being processed, whose events count already
+     * @return void
+     */
+    private function rebuild(AnalyticsSite $site, Collection $dates, ?AnalyticsIngestionBatch $batch): void
+    {
         if ($dates->isEmpty()) {
             return;
         }
@@ -44,6 +78,9 @@ final class RebuildReportAggregates
         foreach ($dates as $date) {
             $dayEvents = $events->filter(fn (AnalyticsEvent $event): bool => $this->localDate($event->occurred_at, $site->timezone) === $date);
             $dayVisits = $visits->filter(fn (AnalyticsVisit $visit): bool => $this->localDate($visit->started_at, $site->timezone) === $date);
+            if ($dayEvents->isEmpty() && $dayVisits->isEmpty()) {
+                continue;
+            }
             $visitMap = $this->visitMap($dayVisits);
 
             $rows[] = $this->row($site, $date, 'all', null, $dayEvents, $dayVisits, $goals, $now);
@@ -76,20 +113,24 @@ final class RebuildReportAggregates
     }
 
     /**
-     * Get every local day with countable events or visits.
+     * Get every local day between the site's first and last event, oldest first.
      *
      * @param  AnalyticsSite  $site
      * @return Collection<int, string>
      */
     private function allDates(AnalyticsSite $site): Collection
     {
-        $events = $site->events()->countable()->get(['occurred_at']);
-        $visits = $site->visits()->get(['started_at']);
+        $range = $site->events()->toBase()->selectRaw('MIN(occurred_at) AS first_at, MAX(occurred_at) AS last_at')->first();
+        if ($range === null || $range->first_at === null) {
+            return collect();
+        }
+        $dates = collect();
+        $last = $this->localDate($range->last_at, $site->timezone);
+        for ($date = CarbonImmutable::parse($this->localDate($range->first_at, $site->timezone)); $date->toDateString() <= $last; $date = $date->addDay()) {
+            $dates->push($date->toDateString());
+        }
 
-        return $events->map(fn (AnalyticsEvent $event): string => $this->localDate($event->occurred_at, $site->timezone))
-            ->merge($visits->map(fn (AnalyticsVisit $visit): string => $this->localDate($visit->started_at, $site->timezone)))
-            ->unique()
-            ->values();
+        return $dates;
     }
 
     /**

@@ -7,6 +7,7 @@ namespace Tests\Feature\Analytics;
 use App\Actions\Analytics\RebuildGoalConversions;
 use App\Actions\Analytics\RebuildReportAggregates;
 use App\Actions\Analytics\RebuildSiteVisits;
+use App\Actions\Analytics\RefreshRecentAggregates;
 use App\Actions\Billing\RecordUsage;
 use App\Jobs\Analytics\ProcessEventBatch;
 use App\Models\AnalyticsEvent;
@@ -81,6 +82,9 @@ final class AnalyticsCollectionTest extends TestCase
         $this->assertNotNull($site->refresh()->last_processed_at);
         // One pageview (the other event isn't one) counts against the plan's monthly allowance.
         $this->assertSame(1, (int) UsageRecord::query()->where('meter', 'analytics.pageviews')->sum('quantity'));
+        // Today's daily totals are left to the ten-minute refresh rather than rebuilt by every batch.
+        $this->assertDatabaseMissing('analytics_daily_aggregates', ['site_id' => $site->id]);
+        $this->assertSame(1, app(RefreshRecentAggregates::class)->handle());
         $this->assertDatabaseHas('analytics_daily_aggregates', ['site_id' => $site->id, 'dimension' => 'all']);
         $this->assertDatabaseHas('analytics_goal_conversions', ['site_id' => $site->id, 'goal_id' => $goal->id]);
     }

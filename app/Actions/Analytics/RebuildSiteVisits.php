@@ -27,7 +27,8 @@ class RebuildSiteVisits
         $goals = $site->goals()->where('active', true)->with('versions')->get();
 
         if ($batch === null) {
-            $events = AnalyticsEvent::query()->whereBelongsTo($site, 'site')->countable()->orderBy('occurred_at')->orderBy('id')->get();
+            // Streamed in chunks: only the visits being built are held in memory, not every event.
+            $events = AnalyticsEvent::query()->whereBelongsTo($site, 'site')->countable()->orderBy('occurred_at')->orderBy('id')->lazy(2000);
             $visits = $this->group($events, $site, $goals);
 
             $site->visits()->delete();
@@ -93,15 +94,15 @@ class RebuildSiteVisits
     }
 
     /**
-     * Insert rebuilt visits in one statement.
+     * Insert rebuilt visits, 500 rows per statement.
      *
      * @param  array<string, array<string, mixed>>  $visits
      * @return void
      */
     private function insert(array $visits): void
     {
-        if ($visits !== []) {
-            AnalyticsVisit::query()->insert(array_values($visits));
+        foreach (array_chunk(array_values($visits), 500) as $chunk) {
+            AnalyticsVisit::query()->insert($chunk);
         }
     }
 
@@ -123,12 +124,12 @@ class RebuildSiteVisits
      * keeps its landing and exit pages, where it came from (from its first pageview), its pageview count and its goal
      * completions.
      *
-     * @param  Collection<int, AnalyticsEvent>  $events
+     * @param  iterable<int, AnalyticsEvent>  $events  in time order
      * @param  AnalyticsSite  $site
      * @param  Collection<int, AnalyticsGoal>  $goals
      * @return array<string, array<string, mixed>>
      */
-    private function group(Collection $events, AnalyticsSite $site, Collection $goals): array
+    private function group(iterable $events, AnalyticsSite $site, Collection $goals): array
     {
         $visits = [];
         $states = [];
