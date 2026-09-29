@@ -14,6 +14,9 @@
 
 <x-signal.layouts.settings :title="__('Security')" :description="__('How you sign in to :app.', ['app' => config('app.name')])">
     @if (session('warning'))<x-signal.ui.alert tone="warning" role="alert">{{ session('warning') }}</x-signal.ui.alert>@endif
+    @if (request()->query('for') === 'admin' && ! auth()->user()?->hasSecondFactor())
+        <x-signal.ui.alert tone="warning" role="alert">{{ __('The admin panel needs a second factor. Add an authenticator app or a passkey below, then open it again.') }}</x-signal.ui.alert>
+    @endif
     @if (is_string($status) && isset($statusMessages[$status]))
         <x-signal.ui.alert tone="success" role="status">{{ $statusMessages[$status] }}</x-signal.ui.alert>
     @endif

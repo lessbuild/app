@@ -22,7 +22,10 @@ final class AdminAccessTest extends TestCase
         $this->actingAs($person)->get('/admin')->assertNotFound();
 
         $person->forceFill(['is_platform_admin' => true])->save();
-        $this->actingAs($person)->get('/admin')->assertRedirect(route('settings.security'));
+        $this->actingAs($person)->get('/admin')->assertRedirect(route('settings.security', ['for' => 'admin']));
+        // The security page says why, even after asking for the password first.
+        $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()])->get(route('settings.security', ['for' => 'admin']))
+            ->assertOk()->assertSee(__('The admin panel needs a second factor. Add an authenticator app or a passkey below, then open it again.'));
 
         $person->forceFill(['two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
         $this->actingAs($person)->withSession(['auth.password_confirmed_at' => now()->subMinutes(16)->getTimestamp()])->get('/admin')->assertRedirect(route('password.confirm'));

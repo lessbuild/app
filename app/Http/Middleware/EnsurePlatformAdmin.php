@@ -16,7 +16,7 @@ use Symfony\Component\HttpFoundation\Response;
 final class EnsurePlatformAdmin
 {
     /**
-     * Let a platform admin with an authenticator app or passkey through; send one without to their security settings.
+     * Let a platform admin with an authenticator app or passkey through; send one without to their security settings, which say why.
      *
      * @param  Request  $request
      * @param  Closure(Request): Response  $next
@@ -27,7 +27,8 @@ final class EnsurePlatformAdmin
         $user = $request->user();
         abort_unless($user instanceof User && $user->is_platform_admin, 404);
         if (! $user->hasSecondFactor()) {
-            return to_route('settings.security')->with('status', __('Add an authenticator app or a passkey before opening the admin panel.'));
+            // The reason travels in the address: the security page asks for the password first, which would use up a flash.
+            return to_route('settings.security', ['for' => 'admin']);
         }
 
         return $next($request);
