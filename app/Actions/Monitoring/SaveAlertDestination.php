@@ -10,6 +10,7 @@ use App\Enums\AuditAction;
 use App\Exceptions\StateConflict;
 use App\Models\Account;
 use App\Models\AlertDestination;
+use App\Models\OnCallSchedule;
 use App\Models\User;
 use App\Services\Monitoring\PublicWebhookTarget;
 use App\Services\Monitoring\TelemetryRedactor;
@@ -53,12 +54,18 @@ final class SaveAlertDestination
             $destination ??= new AlertDestination;
             $type = $new ? AlertDestinationType::from($data['type']) : $destination->type;
             $recipientId = null;
+            $scheduleId = null;
             $endpoint = null;
             $secret = null;
             if ($type === AlertDestinationType::Email) {
-                $recipientId = $account->members()->whereNotNull('email_verified_at')->whereKey($data['recipient_user_id'] ?? 0)->value('users.id');
-                if ($recipientId === null) {
-                    throw ValidationException::withMessages(['recipient_user_id' => __('Choose a verified member of this account.')]);
+                $chosen = (string) ($data['recipient_user_id'] ?? '');
+                if (str_starts_with($chosen, 'schedule:')) {
+                    $scheduleId = OnCallSchedule::query()->where('account_id', $account->id)->whereKey((int) substr($chosen, 9))->value('id');
+                } else {
+                    $recipientId = $account->members()->whereNotNull('email_verified_at')->whereKey($chosen === '' ? 0 : $chosen)->value('users.id');
+                }
+                if ($recipientId === null && $scheduleId === null) {
+                    throw ValidationException::withMessages(['recipient_user_id' => __('Choose a verified member of this account, or one of its on-call schedules.')]);
                 }
             } elseif ($type === AlertDestinationType::PagerDuty) {
                 $endpoint = 'https://events.pagerduty.com/v2/enqueue';
@@ -75,7 +82,7 @@ final class SaveAlertDestination
             $destination->forceFill([
                 'account_id' => $account->id, 'type' => $type,
                 'name' => $this->redactor->redact(['name' => $data['name']])['name'],
-                'enabled' => (bool) $data['enabled'], 'recipient_user_id' => $recipientId, 'endpoint_url' => $endpoint,
+                'enabled' => (bool) $data['enabled'], 'recipient_user_id' => $recipientId, 'on_call_schedule_id' => $scheduleId, 'endpoint_url' => $endpoint,
             ]);
             if ($type === AlertDestinationType::PagerDuty) {
                 $destination->forceFill(['signing_secret' => $secret]);
@@ -85,11 +92,11 @@ final class SaveAlertDestination
             if ($new && $type === AlertDestinationType::Webhook) {
                 $destination->forceFill(['signing_secret' => Str::random(64)]);
             }
-            $changed = $new || $destination->isDirty(['name', 'enabled', 'recipient_user_id', 'endpoint_url', 'signing_secret']);
+            $changed = $new || $destination->isDirty(['name', 'enabled', 'recipient_user_id', 'on_call_schedule_id', 'endpoint_url', 'signing_secret']);
             if ($new || $destination->isDirty()) {
                 $destination->forceFill([
                     'state_version' => $new ? 0 : $destination->state_version + 1,
-                    'target_revision' => $new ? 0 : $destination->target_revision + (int) ($changed && $destination->isDirty(['enabled', 'recipient_user_id', 'endpoint_url'])),
+                    'target_revision' => $new ? 0 : $destination->target_revision + (int) ($changed && $destination->isDirty(['enabled', 'recipient_user_id', 'on_call_schedule_id', 'endpoint_url'])),
                 ])->save();
             }
 

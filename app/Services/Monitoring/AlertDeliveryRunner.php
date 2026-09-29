@@ -9,7 +9,10 @@ use App\Enums\AlertDeliveryStatus;
 use App\Enums\AlertDestinationType;
 use App\Models\AlertDelivery;
 use App\Models\AlertDeliveryAttempt;
+use App\Models\AlertDestination;
 use App\Models\AlertRule;
+use App\Models\OnCallSchedule;
+use App\Models\User;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -24,8 +27,9 @@ final class AlertDeliveryRunner
      *
      * @param  AlertDeliveryQueue  $queue  Locks deliveries and queues their jobs.
      * @param  AlertNotificationTransport  $transport  Sends to the destination.
+     * @param  OnCall  $onCall  Finds who's on call for destinations that follow a schedule.
      */
-    public function __construct(private readonly AlertDeliveryQueue $queue, private readonly AlertNotificationTransport $transport) {}
+    public function __construct(private readonly AlertDeliveryQueue $queue, private readonly AlertNotificationTransport $transport, private readonly OnCall $onCall) {}
 
     /**
      * Send one delivery attempt: claims it under lock (skipping stale generations and deliveries not yet due,
@@ -70,7 +74,7 @@ final class AlertDeliveryRunner
             $destination = $delivery->destination;
             $target = [
                 'type' => $destination->type, 'endpoint' => $destination->endpoint_url, 'secret' => $destination->signing_secret,
-                'email' => $destination->type === AlertDestinationType::Email ? $destination->recipient?->email : null,
+                'email' => $destination->type === AlertDestinationType::Email ? $this->recipient($destination)?->email : null,
             ];
             $payload = $delivery->payload;
             $token = (string) Str::uuid();
@@ -174,9 +178,11 @@ final class AlertDeliveryRunner
         if ($destination->trashed() || ! $destination->enabled || $destination->target_revision !== $delivery->target_revision) {
             return 'destination_changed';
         }
-        if ($destination->type === AlertDestinationType::Email && ! $delivery->account->members()
-            ->whereKey($destination->recipient_user_id)->whereNotNull('email_verified_at')->exists()) {
-            return 'recipient_unavailable';
+        if ($destination->type === AlertDestinationType::Email) {
+            $recipient = $this->recipient($destination);
+            if ($recipient === null || ! $delivery->account->members()->whereKey($recipient->id)->whereNotNull('email_verified_at')->exists()) {
+                return 'recipient_unavailable';
+            }
         }
         // Test alerts and deploy notifications aren't about an incident: the destination checks above are all they need.
         if ($delivery->event === 'test' || str_starts_with($delivery->event, 'deploy_')) {
@@ -266,5 +272,22 @@ final class AlertDeliveryRunner
     {
         $delivery->forceFill(['generation' => $delivery->generation + 1, 'queue_job_uuid' => null])->save();
         $this->queue->dispatch($delivery);
+    }
+
+    /**
+     * Get who an email destination sends to right now: whoever is on call in its schedule, or its fixed recipient.
+     *
+     * @param  AlertDestination  $destination
+     * @return User|null
+     */
+    private function recipient(AlertDestination $destination): ?User
+    {
+        if ($destination->on_call_schedule_id !== null) {
+            $schedule = OnCallSchedule::query()->where('account_id', $destination->account_id)->find($destination->on_call_schedule_id);
+
+            return $schedule === null ? null : $this->onCall->current($schedule);
+        }
+
+        return $destination->recipient;
     }
 }

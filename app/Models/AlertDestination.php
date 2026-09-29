@@ -27,6 +27,7 @@ use Illuminate\Support\Carbon;
  * @property int $state_version
  * @property int $target_revision
  * @property string|null $recipient_user_id
+ * @property int|null $on_call_schedule_id email whoever is on call in this schedule instead of a fixed recipient
  * @property string|null $endpoint_url
  * @property string|null $signing_secret
  * @property int|null $legacy_id
@@ -35,6 +36,7 @@ use Illuminate\Support\Carbon;
  * @property mixed $deleted_at
  * @property-read Account $account
  * @property-read User|null $recipient
+ * @property-read OnCallSchedule|null $onCallSchedule
  * @property-read \Illuminate\Database\Eloquent\Collection<int, Monitor> $monitors
  * @property-read \Illuminate\Database\Eloquent\Collection<int, AlertDelivery> $deliveries
  */
@@ -134,8 +136,18 @@ class AlertDestination extends Model
     public function targetLabel(): string
     {
         return $this->type === AlertDestinationType::Email
-            ? ($this->recipient->name ?? 'Recipient unavailable')
+            ? ($this->on_call_schedule_id !== null ? 'On call: '.($this->onCallSchedule->name ?? 'schedule removed') : ($this->recipient->name ?? 'Recipient unavailable'))
             : (parse_url($this->endpoint_url ?? '', PHP_URL_HOST) ?: 'Endpoint unavailable');
+    }
+
+    /**
+     * Get the on-call schedule an email destination follows, when it does.
+     *
+     * @return BelongsTo<OnCallSchedule, $this>
+     */
+    public function onCallSchedule(): BelongsTo
+    {
+        return $this->belongsTo(OnCallSchedule::class);
     }
 
     /**

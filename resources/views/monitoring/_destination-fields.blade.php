@@ -12,11 +12,21 @@
     </x-signal.ui.select-field>
 @endif
 @if (! $destination || $type === \App\Enums\AlertDestinationType::Email)
-    <x-signal.ui.select-field name="recipient_user_id" :label="__('Email recipient')" :description="$destination ? null : __('For email. Members with a verified email address.')">
+    <x-signal.ui.select-field name="recipient_user_id" :label="__('Email recipient')" :description="$destination ? null : __('For email. A member with a verified email address, or whoever is on call in a schedule.')">
         <option value="">{{ __('Choose a member') }}</option>
-        @foreach ($members as $member)
-            <option value="{{ $member->id }}" @selected(old('recipient_user_id', $destination?->recipient_user_id) === $member->id)>{{ $member->name }} ({{ $member->email }})</option>
-        @endforeach
+        @php($chosen = old('recipient_user_id', $destination?->on_call_schedule_id !== null ? 'schedule:'.$destination->on_call_schedule_id : $destination?->recipient_user_id))
+        @if (($schedules ?? []) !== [])
+            <optgroup label="{{ __('Whoever is on call') }}">
+                @foreach ($schedules as $schedule)
+                    <option value="schedule:{{ $schedule->id }}" @selected($chosen === 'schedule:'.$schedule->id)>{{ __('On call: :schedule', ['schedule' => $schedule->name]) }}</option>
+                @endforeach
+            </optgroup>
+        @endif
+        <optgroup label="{{ __('A member') }}">
+            @foreach ($members as $member)
+                <option value="{{ $member->id }}" @selected($chosen === $member->id)>{{ $member->name }} ({{ $member->email }})</option>
+            @endforeach
+        </optgroup>
     </x-signal.ui.select-field>
 @endif
 @if (! $destination || in_array($type, [\App\Enums\AlertDestinationType::Webhook, \App\Enums\AlertDestinationType::Slack, \App\Enums\AlertDestinationType::Teams, \App\Enums\AlertDestinationType::Discord], true))

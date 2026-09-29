@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Monitoring;
 
 use App\Models\AlertDestination;
+use App\Models\OnCallSchedule;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Monitoring\AlertDestinationsQuery;
@@ -32,6 +33,7 @@ final class ShowAlertDestinationController
             'destination' => $destination,
             'deliveries' => $destination->deliveries()->latest('created_at')->limit(50)->get(),
             'members' => $destinations->recipients($project->account_id),
+            'schedules' => OnCallSchedule::query()->where('account_id', $project->account_id)->orderBy('name')->get(['id', 'name'])->all(),
             'canManage' => $user->can('update', $destination),
             'issuedKey' => session('issued_key'),
         ]);

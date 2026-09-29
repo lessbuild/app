@@ -7,10 +7,11 @@ namespace App\Http\Requests\Monitoring;
 use App\Enums\AlertDestinationType;
 use App\Models\AlertDestination;
 use App\Models\Membership;
+use App\Models\OnCallSchedule;
 use App\Models\Project;
+use App\Models\User;
 use App\Services\Monitoring\PublicWebhookTarget;
 use Closure;
-use Illuminate\Database\Query\Builder;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -38,10 +39,16 @@ final class AlertDestinationRequest extends FormRequest
             'type' => ['required', Rule::enum(AlertDestinationType::class), ...($destination !== null ? [Rule::in([$destination->type->value])] : [])],
             'enabled' => ['required', 'boolean'],
             'version' => [$destination !== null ? 'required' : 'exclude', 'integer', 'min:0'],
-            'recipient_user_id' => [$email ? 'required' : 'exclude', 'string', Rule::exists('users', 'id')->where(
-                fn (Builder $query): Builder => $query->whereNotNull('email_verified_at')
-                    ->whereIn('id', Membership::query()->where('account_id', $accountId)->select('user_id')),
-            )],
+            'recipient_user_id' => [$email ? 'required' : 'exclude', 'string',
+                function (string $attribute, mixed $value, Closure $fail) use ($accountId): void {
+                    $valid = is_string($value) && (str_starts_with($value, 'schedule:')
+                        ? OnCallSchedule::query()->where('account_id', $accountId)->whereKey((int) substr($value, 9))->exists()
+                        : User::query()->whereKey($value)->whereNotNull('email_verified_at')->whereIn('id', Membership::query()->where('account_id', $accountId)->select('user_id'))->exists());
+                    if (! $valid) {
+                        $fail(__('Choose a verified member of this account, or one of its on-call schedules.'));
+                    }
+                },
+            ],
             'endpoint_url' => [$email || $pagerDuty ? 'exclude' : ($destination !== null ? 'nullable' : 'required'), 'string', 'max:2048',
                 function (string $attribute, mixed $value, Closure $fail) use ($targets, $type): void {
                     if (is_string($value) && $type !== null && $targets->host($value, $type) === null) {
