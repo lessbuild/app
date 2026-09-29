@@ -53,13 +53,19 @@ final class PlanLimitsTest extends TestCase
     public function test_billing_shows_every_limit_and_the_app_warns_before_a_monthly_allowance_runs_out(): void
     {
         Server::factory()->create(['provider_id' => Provider::factory()->create(['account_id' => $this->account->id])->id]);
-        $this->actingAs($this->owner)->get('/account/billing')->assertOk()->assertSee('Plan limits')->assertSee('Servers')->assertSee('1 / 1')->assertSee('Limit reached: upgrade for more');
+        $this->actingAs($this->owner)->get('/account/billing')->assertOk()->assertSee('Plan limits')->assertSee('Servers')->assertSee('1 / 1')->assertSee('Limit reached.');
         $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertDontSee('See plans');
 
         $usage = new UsageRecord;
         $usage->forceFill(['account_id' => $this->account->id, 'meter' => 'analytics.pageviews', 'quantity' => 9_000, 'period_start' => now()->utc()->startOfHour()])->save();
         cache()->flush();
         $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertSee('You’ve used 9,000 of 10,000 pageviews on your plan this month.', false)->assertSee(route('account.billing').'#billing-analytics');
+
+        // With a plan on sale that raises the allowance, the warning names it.
+        config(['billing.prices.analytics.tier' => ['pro' => 'price_analytics_pro', 'business' => 'price_analytics_business']]);
+        cache()->flush();
+        $this->actingAs($this->owner)->get('/dashboard')->assertOk()->assertSee('Analytics Pro gives 100,000 pageviews for $9 a month.')->assertSee('Upgrade');
+        $this->actingAs($this->owner)->get('/account/billing')->assertOk()->assertSee('Pro gives 100,000 for $9/mo');
     }
 
     public function test_hitting_a_limit_offers_the_plans_with_more(): void

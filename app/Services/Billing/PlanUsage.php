@@ -13,6 +13,8 @@ use App\Models\Project;
 use App\Models\Server;
 use App\Models\UsageRecord;
 use App\Models\Website;
+use App\Platform\Catalog\Tier;
+use App\Platform\ServiceRegistry;
 
 /**
  * Counts what an account uses against each plan limit, the same way the limits are checked: servers, websites and
@@ -24,8 +26,10 @@ final class PlanUsage
      * Create a new PlanUsage instance.
      *
      * @param  Entitlements  $entitlements  Knows each limit on the account's plans.
+     * @param  ServiceRegistry  $services  Lists each service's tiers, for upgrade suggestions.
+     * @param  PriceBook  $prices  Says which tiers are on sale.
      */
-    public function __construct(private readonly Entitlements $entitlements) {}
+    public function __construct(private readonly Entitlements $entitlements, private readonly ServiceRegistry $services, private readonly PriceBook $prices) {}
 
     /**
      * Get the account's usage of every limit its plans set, the counted ones first.
@@ -74,5 +78,28 @@ final class PlanUsage
         usort($near, fn (LimitUsage $a, LimitUsage $b): int => $b->percent() <=> $a->percent());
 
         return $near[0] ?? null;
+    }
+
+    /**
+     * Suggest the cheapest plan on sale that raises a limit: the tier, its new limit (null for unlimited), and its
+     * monthly price. Null when no plan raises it (or it's an account-wide limit).
+     *
+     * @param  LimitUsage  $usage
+     * @return array{service: string, tier: Tier, limit: int|null, monthlyCents: int}|null
+     */
+    public function upgradeFor(LimitUsage $usage): ?array
+    {
+        $service = $this->services->find($usage->service);
+        if ($service === null) {
+            return null;
+        }
+        $candidates = array_filter($service->billing()->tiers, fn (Tier $tier): bool => ! $tier->isFree() && $tier->monthlyCents !== null
+            && $this->prices->purchasable($usage->service, $tier)
+            && array_key_exists($usage->key, $tier->limits)
+            && ($tier->limits[$usage->key] === null || $tier->limits[$usage->key] > (int) $usage->limit));
+        usort($candidates, fn (Tier $a, Tier $b): int => $a->monthlyCents <=> $b->monthlyCents);
+        $tier = $candidates[0] ?? null;
+
+        return $tier === null ? null : ['service' => $service->name(), 'tier' => $tier, 'limit' => $tier->limits[$usage->key], 'monthlyCents' => (int) $tier->monthlyCents];
     }
 }

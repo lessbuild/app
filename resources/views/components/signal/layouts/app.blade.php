@@ -116,7 +116,13 @@
                 {{ $near->percent() >= 100
                     ? __('You’ve reached your plan’s limit of :limit :label:monthly.', ['limit' => number_format((int) $near->limit), 'label' => $near->label, 'monthly' => $near->monthly ? __(' this month') : ''])
                     : __('You’ve used :used of :limit :label on your plan:monthly.', ['used' => number_format($near->used), 'limit' => number_format((int) $near->limit), 'label' => $near->label, 'monthly' => $near->monthly ? __(' this month') : '']) }}
-                <a href="{{ route('account.billing').'#billing-'.$near->service }}" class="font-semibold underline">{{ __('See plans') }}</a>
+                @php($upgrade = app(\App\Services\Billing\PlanUsage::class)->upgradeFor($near))
+                @if ($upgrade)
+                    {{ __(':service :tier gives :limit :label for $:price a month.', ['service' => $upgrade['service'], 'tier' => $upgrade['tier']->name, 'limit' => $upgrade['limit'] === null ? __('unlimited') : number_format($upgrade['limit']), 'label' => $near->label, 'price' => number_format($upgrade['monthlyCents'] / 100, $upgrade['monthlyCents'] % 100 === 0 ? 0 : 2)]) }}
+                    <a href="{{ route('account.billing').'#billing-'.$near->service }}" class="font-semibold underline">{{ __('Upgrade') }}</a>
+                @else
+                    <a href="{{ route('account.billing').'#billing-'.$near->service }}" class="font-semibold underline">{{ __('See plans') }}</a>
+                @endif
             </x-signal.ui.alert>
         @endif
         @if (session('feedback'))

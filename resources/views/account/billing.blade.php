@@ -73,7 +73,11 @@
                         </div>
                         <x-signal.ui.progress :value="min($limit->used, (int) $limit->limit)" :max="(int) $limit->limit" :label="__(':label used', ['label' => $limit->label])" />
                         @if ($limit->nearLimit() && $limit->service !== 'account')
-                            <a href="#billing-{{ $limit->service }}" class="text-xs font-semibold text-primary hover:underline">{{ $limit->percent() >= 100 ? __('Limit reached: upgrade for more') : __('Nearly there: see plans with more') }}</a>
+                            @php($upgrade = app(\App\Services\Billing\PlanUsage::class)->upgradeFor($limit))
+                            <a href="#billing-{{ $limit->service }}" class="text-xs font-semibold text-primary hover:underline">
+                                {{ $limit->percent() >= 100 ? __('Limit reached.') : __('Nearly there.') }}
+                                {{ $upgrade ? __(':tier gives :limit for $:price/mo', ['tier' => $upgrade['tier']->name, 'limit' => $upgrade['limit'] === null ? __('unlimited') : number_format($upgrade['limit']), 'price' => number_format($upgrade['monthlyCents'] / 100, $upgrade['monthlyCents'] % 100 === 0 ? 0 : 2)]) : __('See plans with more') }}
+                            </a>
                         @endif
                     </li>
                 @endforeach
