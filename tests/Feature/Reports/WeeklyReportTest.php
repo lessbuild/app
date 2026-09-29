@@ -6,7 +6,9 @@ namespace Tests\Feature\Reports;
 
 use App\Enums\AccountRole;
 use App\Models\AnalyticsDailyAggregate;
+use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsSite;
+use App\Models\AnalyticsVisit;
 use App\Models\Build;
 use App\Models\Incident;
 use App\Models\Monitor;
@@ -22,6 +24,7 @@ use App\Notifications\WeeklyReportNotification;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
 
@@ -63,6 +66,10 @@ final class WeeklyReportTest extends TestCase
 
         $site = AnalyticsSite::factory()->create(['project_id' => $project->id]);
         $this->visits($site, $monday->subDays(2), 330);
+        foreach (['/pricing', '/pricing', '/'] as $path) {
+            AnalyticsEvent::create(['site_id' => $site->id, 'event_id' => (string) Str::uuid(), 'type' => 'pageview', 'occurred_at' => $monday->subDays(2), 'received_at' => $monday->subDays(2), 'path' => $path]);
+        }
+        (new AnalyticsVisit)->forceFill(['site_id' => $site->id, 'visit_key' => 'v1', 'started_at' => $monday->subDays(2), 'last_seen_at' => $monday->subDays(2), 'entry_referrer_host' => 'news.ycombinator.com', 'pageviews' => 2])->save();
         $this->visits($site, $monday->subDays(9), 300);
 
         Project::factory()->create(['name' => 'Nothing happened']);
@@ -78,6 +85,7 @@ final class WeeklyReportTest extends TestCase
             $this->assertStringContainsString('3 deploys (1 failed)', $body);
             $this->assertStringContainsString('75% uptime', $body);
             $this->assertStringContainsString('330 visits (up 10%)', $body);
+            $this->assertStringContainsString('Top pages: /pricing (2), / (1) · Top source: news.ycombinator.com', $body);
             $this->assertStringContainsString('last week: 3 deploys, 1 incident', (string) $mail->subject);
 
             return true;

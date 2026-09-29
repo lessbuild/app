@@ -6,7 +6,9 @@ namespace App\Services\Reports;
 
 use App\Models\Account;
 use App\Models\AnalyticsDailyAggregate;
+use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsSite;
+use App\Models\AnalyticsVisit;
 use App\Models\Build;
 use App\Models\Incident;
 use App\Models\Monitor;
@@ -22,7 +24,7 @@ use Carbon\CarbonImmutable;
  * The Monday email: for each of an account's projects, last week's deploys, incidents, uptime and visits, with the
  * week before for comparison.
  *
- * @phpstan-type ProjectWeek array{name: string, url: string, deploys: int, deploys_failed: int, incidents: int, incidents_open: int, uptime: ?float, visits: ?int, visits_before: ?int}
+ * @phpstan-type ProjectWeek array{name: string, url: string, deploys: int, deploys_failed: int, incidents: int, incidents_open: int, uptime: ?float, visits: ?int, visits_before: ?int, top_pages: list<array{path: string, views: int}>, top_source: ?string}
  * @phpstan-type Report array{account: string, from: CarbonImmutable, until: CarbonImmutable, projects: list<ProjectWeek>}
  */
 final class WeeklyReport
@@ -116,6 +118,8 @@ final class WeeklyReport
             'uptime' => $this->uptime($project, $from, $until),
             'visits' => $sites === [] ? null : $this->visits($sites, $from, $until),
             'visits_before' => $sites === [] ? null : $this->visits($sites, $from->subWeek(), $from),
+            'top_pages' => $sites === [] ? [] : $this->topPages($sites, $from, $until),
+            'top_source' => $sites === [] ? null : $this->topSource($sites, $from, $until),
         ];
     }
 
@@ -156,5 +160,39 @@ final class WeeklyReport
         return (int) AnalyticsDailyAggregate::query()->whereIn('site_id', $siteIds)->where('dimension', 'all')
             ->where('local_date', '>=', $from->toDateString())->where('local_date', '<', $until->toDateString())
             ->sum('visits');
+    }
+
+    /**
+     * Get the week's three most viewed pages across the sites.
+     *
+     * @param  list<int>  $siteIds
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @return list<array{path: string, views: int}>
+     */
+    private function topPages(array $siteIds, CarbonImmutable $from, CarbonImmutable $until): array
+    {
+        return array_values(AnalyticsEvent::query()->whereIn('site_id', $siteIds)->where('type', 'pageview')
+            ->where('occurred_at', '>=', $from)->where('occurred_at', '<', $until)
+            ->toBase()->selectRaw('path, COUNT(*) AS views')->groupBy('path')->orderByDesc('views')->limit(3)->get()
+            ->map(fn (object $row): array => ['path' => (string) $row->path, 'views' => (int) $row->views])->all());
+    }
+
+    /**
+     * Get where most of the week's tagged or referred visits came from: the campaign source, else the referring site.
+     *
+     * @param  list<int>  $siteIds
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @return string|null
+     */
+    private function topSource(array $siteIds, CarbonImmutable $from, CarbonImmutable $until): ?string
+    {
+        $row = AnalyticsVisit::query()->whereIn('site_id', $siteIds)->where('started_at', '>=', $from)->where('started_at', '<', $until)
+            ->where(fn ($query) => $query->whereNotNull('entry_utm_source')->orWhereNotNull('entry_referrer_host'))
+            ->toBase()->selectRaw('COALESCE(entry_utm_source, entry_referrer_host) AS source, COUNT(*) AS visits')
+            ->groupByRaw('COALESCE(entry_utm_source, entry_referrer_host)')->orderByDesc('visits')->first();
+
+        return $row === null ? null : (string) $row->source;
     }
 }

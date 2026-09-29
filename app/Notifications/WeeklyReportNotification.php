@@ -71,6 +71,10 @@ final class WeeklyReportNotification extends Notification
                 $facts[] = trans_choice(':count visit|:count visits', $project['visits'], ['count' => number_format($project['visits'])]).$this->change($project['visits'], $project['visits_before']);
             }
             $message->line(implode(' · ', $facts));
+            if ($project['top_pages'] !== []) {
+                $message->line(__('Top pages: :pages', ['pages' => implode(', ', array_map(fn (array $page): string => $page['path'].' ('.number_format($page['views']).')', $project['top_pages']))])
+                    .($project['top_source'] !== null ? ' · '.__('Top source: :source', ['source' => $project['top_source']]) : ''));
+            }
         }
 
         return $message
