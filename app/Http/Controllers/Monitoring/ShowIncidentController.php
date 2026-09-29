@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Monitoring;
 
 use App\Models\Incident;
 use App\Models\Project;
+use App\Models\StatusPage;
+use App\Models\StatusUpdate;
 use App\Models\User;
 use App\Queries\Monitoring\ProjectIncidentsQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -33,6 +35,8 @@ final class ShowIncidentController
             'activities' => $incident->activities()->with('actor')->latest('id')->limit(100)->get(),
             'assignees' => $incidents->assignees($project),
             'canRespond' => $user->can('update', $incident),
+            'statusPages' => StatusPage::query()->where('account_id', $incident->account_id)->orderBy('name')->get(['id', 'name', 'published']),
+            'publishedReport' => $incident->postmortem_status_update_id === null ? null : StatusUpdate::query()->with('statusPage')->find($incident->postmortem_status_update_id),
         ]);
     }
 }

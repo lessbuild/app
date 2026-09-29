@@ -62,6 +62,8 @@ class IncidentActivity extends Model
     {
         return match ($this->action) {
             'opened' => 'Threshold breached',
+            'postmortem_saved' => 'Post-mortem written',
+            'postmortem_published' => 'Post-mortem published to a status page',
             'acknowledge' => 'Acknowledged',
             'note' => 'Note added',
             'assign' => ($this->metadata['assignee_id'] ?? null) === null ? 'Unassigned' : 'Assignee changed',

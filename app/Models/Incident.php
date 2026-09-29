@@ -37,6 +37,8 @@ use Illuminate\Support\Carbon;
  * @property CarbonImmutable|null $resolved_at
  * @property string|null $closure_reason
  * @property int|null $legacy_id
+ * @property array<string, string>|null $postmortem the post-mortem's sections (summary, impact, root_cause, resolution, follow_ups)
+ * @property int|null $postmortem_status_update_id the status page report it was published as
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Account $account
@@ -178,7 +180,7 @@ class Incident extends Model
      */
     protected function casts(): array
     {
-        return [
+        return ['postmortem' => 'array',
             'active_slot' => 'boolean', 'state_version' => 'integer',
             'rule_snapshot' => 'array', 'opening_observation' => 'array', 'latest_observation' => 'array',
             'opened_at' => 'immutable_datetime', 'last_breached_at' => 'immutable_datetime',
