@@ -14,7 +14,7 @@
             @foreach (['create-website' => __('Create a website'), 'import-website' => __('Import a website')] as $id => $title)
                 <x-signal.overlays.modal :id="$id" :title="$title">
                     <x-signal.ui.empty-state icon="server" :title="__('No app servers ready')" :description="__('Websites need an active app server with MySQL. Create one first.')">
-                        <x-slot:action><x-signal.ui.button :href="route('infrastructure.servers.create', $project)" variant="primary">{{ __('Create a server') }}</x-signal.ui.button></x-slot:action>
+                        <x-slot:action><x-signal.ui.button :href="route('infrastructure.servers', [$project, 'dialog' => 'create-server'])" variant="primary">{{ __('Create a server') }}</x-signal.ui.button></x-slot:action>
                     </x-signal.ui.empty-state>
                 </x-signal.overlays.modal>
             @endforeach

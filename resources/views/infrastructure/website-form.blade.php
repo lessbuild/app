@@ -4,7 +4,7 @@
     <x-signal.ui.plan-limit-alert service="deploy" />
     @if ($hosts->isEmpty())
         <x-signal.ui.empty-state icon="server" :title="__('No app servers ready')" :description="__('Websites need an active app server with MySQL. Create one first.')">
-            <x-slot:action><x-signal.ui.button :href="route('infrastructure.servers.create', $project)" variant="secondary">{{ __('Create a server') }}</x-signal.ui.button></x-slot:action>
+            <x-slot:action><x-signal.ui.button :href="route('infrastructure.servers', [$project, 'dialog' => 'create-server'])" variant="secondary">{{ __('Create a server') }}</x-signal.ui.button></x-slot:action>
         </x-signal.ui.empty-state>
     @else
         <x-signal.ui.card>

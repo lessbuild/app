@@ -12,7 +12,7 @@
         :eyebrow="$project->account->name"
         :title="$title"
         :description="$description"
-        :breadcrumbs="request()->routeIs('projects.show') ? [['label' => __('Projects'), 'href' => route('dashboard')]] : [['label' => __('Projects'), 'href' => route('dashboard')], ['label' => $project->name, 'href' => route('projects.show', $project)]]"
+        :breadcrumbs="app(\App\Http\View\ProjectBreadcrumbs::class)->handle($project)"
         class="mb-0 sm:mb-0"
     >
         @isset($actions)

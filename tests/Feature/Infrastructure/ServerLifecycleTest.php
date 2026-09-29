@@ -197,10 +197,19 @@ final class ServerLifecycleTest extends TestCase
         $this->actingAs($this->owner)->get("{$this->base}/create")->assertOk()
             ->assertSee('Frankfurt 1')->assertSee('Basic · 1 GB RAM · 1 vCPU · $6/month')->assertSee('Ubuntu 24.04 (LTS) x64')->assertDontSee('Debian');
 
+        // The Servers page's modal asks for just the form.
+        $this->actingAs($this->owner)->withHeader('X-Fragment', '1')->get("{$this->base}/create")->assertOk()
+            ->assertSee('Frankfurt 1')->assertSee('name="_modal" value="create-server"', false)->assertDontSee('<html', false);
+        $this->flushHeaders();
+        $this->actingAs($this->owner)->get($this->base)->assertOk()
+            ->assertSee('data-modal-trigger="create-server"', false)->assertSee('data-fragment-src="'.url("{$this->base}/create").'"', false)->assertDontSee('Frankfurt 1');
+
         $this->onTier($this->project, 'deploy', 'free');
         Server::factory()->create(['account_id' => $this->project->account_id, 'provider_id' => $this->provider->id]);
         $this->actingAs($this->owner)->post($this->base, $this->server())->assertSessionHasErrors('plan');
-        $this->actingAs($this->owner)->get($this->base)->assertSee('1 of 1 servers on your plan');
+        // After a failed submit from the modal, the Servers page opens it with the form and the error already in it.
+        $this->actingAs($this->owner)->from($this->base)->followingRedirects()->post($this->base, [...$this->server(), '_modal' => 'create-server'])->assertOk()
+            ->assertSee('1 of 1 servers on your plan')->assertSee('data-modal-initial-open="true"', false)->assertSee('Frankfurt 1')->assertSee('role="alert"', false);
     }
 
     public function test_viewers_see_servers_but_cant_manage_them(): void

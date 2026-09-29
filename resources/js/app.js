@@ -13,3 +13,4 @@ import './build-status';
 import './live-regions';
 import './tabs';
 import './help-search';
+import './remote-fragments';

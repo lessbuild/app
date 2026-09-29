@@ -32,6 +32,7 @@ final class ShellComposer
      * @param  ServiceRegistry  $services  The services for the primary navigation.
      * @param  InboxQuery  $inbox  The unread count for the inbox badge.
      * @param  PlanUsage  $planUsage  Finds a plan limit that's nearly used up.
+     * @param  ProjectBreadcrumbs  $breadcrumbs  Knows which service the page belongs to.
      */
     public function __construct(
         private readonly Request $request,
@@ -40,6 +41,7 @@ final class ShellComposer
         private readonly ServiceRegistry $services,
         private readonly InboxQuery $inbox,
         private readonly PlanUsage $planUsage,
+        private readonly ProjectBreadcrumbs $breadcrumbs,
     ) {}
 
     /**
@@ -98,7 +100,7 @@ final class ShellComposer
      */
     private function primaryNav(User $user, Account $account, ?Project $project): array
     {
-        $service = $this->currentService();
+        $service = $this->breadcrumbs->currentService();
         $links = [new NavLink(__('Projects'), route('dashboard'), ! is_string($service) && $this->request->routeIs('dashboard', 'projects.*'), 'tasks')];
 
         foreach ($this->services->all() as $definition) {
@@ -126,7 +128,7 @@ final class ShellComposer
      */
     private function sections(User $user, ?Account $account, ?Project $project): array
     {
-        $service = $this->currentService();
+        $service = $this->breadcrumbs->currentService();
         $definition = is_string($service) ? $this->services->find($service) : null;
 
         if ($project !== null && $definition !== null) {
@@ -171,27 +173,6 @@ final class ShellComposer
         }
 
         return ['', []];
-    }
-
-    /**
-     * Work out which service's pages are showing: the generic {service} pages, or a service's own routes (e.g.
-     * analytics.*).
-     *
-     * @return string|null
-     */
-    private function currentService(): ?string
-    {
-        $service = $this->request->route('service');
-        if (is_string($service)) {
-            return $service;
-        }
-        foreach ($this->services->keys() as $key) {
-            if ($this->request->routeIs($key.'.*')) {
-                return $key;
-            }
-        }
-
-        return null;
     }
 
     /**
