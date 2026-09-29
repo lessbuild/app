@@ -160,6 +160,49 @@
         document.addEventListener('auxclick', function (event) { if (event.button === 1) linkClicked(event); }, true);
     }
 
+    // Opt-in page speed (data-vitals): real visitors' Largest Contentful Paint, Interaction to Next Paint, Cumulative
+    // Layout Shift and Time to First Byte for the page they landed on, sent once when the page is hidden.
+    if (script.dataset.vitals !== undefined && typeof PerformanceObserver === 'function') {
+        var vitals = {};
+        var vitalsSent = false;
+        var clsWindow = 0;
+        var clsWindowStart = 0;
+        var clsLast = 0;
+        var observe = function (type, callback, options) {
+            try {
+                new PerformanceObserver(function (list) { list.getEntries().forEach(callback); }).observe(Object.assign({ type: type, buffered: true }, options || {}));
+            } catch (_) {}
+        };
+        observe('largest-contentful-paint', function (entry) { vitals.lcp = Math.round(entry.startTime); });
+        observe('layout-shift', function (entry) {
+            if (entry.hadRecentInput) return;
+            // Shifts less than a second apart, within five seconds, form one window; CLS is the largest window.
+            if (clsWindow && entry.startTime - clsLast < 1000 && entry.startTime - clsWindowStart < 5000) {
+                clsWindow += entry.value;
+            } else {
+                clsWindow = entry.value;
+                clsWindowStart = entry.startTime;
+            }
+            clsLast = entry.startTime;
+            vitals.cls = Math.max(vitals.cls || 0, Math.round(clsWindow * 10000) / 10000);
+        });
+        observe('event', function (entry) {
+            if (entry.interactionId) vitals.inp = Math.max(vitals.inp || 0, Math.round(entry.duration));
+        }, { durationThreshold: 40 });
+        try {
+            var navigation = performance.getEntriesByType('navigation')[0];
+            if (navigation && navigation.responseStart > 0) vitals.ttfb = Math.round(navigation.responseStart);
+        } catch (_) {}
+        var sendVitals = function (leaving) {
+            if (vitalsSent || (leaving !== true && document.visibilityState !== 'hidden') || (vitals.lcp === undefined && vitals.ttfb === undefined)) return;
+            vitalsSent = true;
+            if (vitals.cls === undefined) vitals.cls = 0;
+            push('vitals', vitals);
+        };
+        document.addEventListener('visibilitychange', sendVitals);
+        window.addEventListener('pagehide', function () { sendVitals(true); });
+    }
+
     ['pushState', 'replaceState'].forEach(function (method) {
         var original = window.history[method];
         window.history[method] = function () {

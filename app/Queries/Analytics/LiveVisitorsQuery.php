@@ -30,7 +30,7 @@ final class LiveVisitorsQuery
 
         return [
             'visitorCount' => $recent()->whereNotNull('visitor_hash')->distinct()->count('visitor_hash'),
-            'events' => $recent()->orderByDesc('occurred_at')->orderByDesc('id')->limit(8)->get()->map(fn (AnalyticsEvent $event): array => [
+            'events' => $recent()->where('type', '!=', 'vitals')->orderByDesc('occurred_at')->orderByDesc('id')->limit(8)->get()->map(fn (AnalyticsEvent $event): array => [
                 'type' => $event->type,
                 'path' => $event->path,
                 'occurredAt' => $event->occurred_at,

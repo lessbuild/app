@@ -54,6 +54,6 @@ final class AutomaticEventsTest extends TestCase
 
         $this->actingAs($owner)->get("/projects/{$project->id}/analytics?days=7")->assertOk()
             ->assertSee(__('Outbound links'))->assertSee('github.com/acme')->assertSee(__('Pages not found'))->assertSee('/old-page');
-        $this->actingAs($owner)->get("/projects/{$project->id}/analytics/sites/{$site->id}")->assertOk()->assertSee('data-outbound data-downloads', false);
+        $this->actingAs($owner)->get("/projects/{$project->id}/analytics/sites/{$site->id}")->assertOk()->assertSee('data-outbound data-downloads data-vitals', false);
     }
 }

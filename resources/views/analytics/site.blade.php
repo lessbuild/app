@@ -17,9 +17,10 @@
                 <ul class="grid gap-1.5 text-muted">
                     <li><code class="font-mono text-ink">data-outbound</code> · {{ __('clicks on links to other sites') }}</li>
                     <li><code class="font-mono text-ink">data-downloads</code> · {{ __('file downloads (PDFs, zips, documents and more), or list your own: data-downloads="pdf,zip"') }}</li>
+                    <li><code class="font-mono text-ink">data-vitals</code> · {{ __('page speed (Core Web Vitals) as real visitors experience it') }}</li>
                     <li><code class="font-mono text-ink">data-not-found</code> · {{ __('on your 404 page only, to see which missing pages people reach') }}</li>
                 </ul>
-                <x-signal.ui.code-block :code="str_replace(' src=', ' data-outbound data-downloads src=', $snippet)" class="whitespace-pre-wrap break-all" />
+                <x-signal.ui.code-block :code="str_replace(' src=', ' data-outbound data-downloads data-vitals src=', $snippet)" class="whitespace-pre-wrap break-all" />
                 <p class="text-muted">{{ __('To leave your own visits out, open any page of the site once with ?bp_ignore=1 in each browser you use (?bp_ignore=0 counts it again).') }}</p>
             </div>
         </div>

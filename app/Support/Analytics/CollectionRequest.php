@@ -104,6 +104,26 @@ final class CollectionRequest
     }
 
     /**
+     * Keep a page-speed (Web Vitals) event's measurements: LCP, INP and TTFB in whole milliseconds up to ten minutes,
+     * and CLS as a score up to 100. Anything else is dropped.
+     *
+     * @param  mixed  $properties
+     * @return array<string, int|float>
+     */
+    public static function safeVitals(mixed $properties): array
+    {
+        $kept = [];
+        foreach (['lcp' => 600000, 'inp' => 600000, 'ttfb' => 600000, 'cls' => 100] as $metric => $max) {
+            $value = is_array($properties) ? ($properties[$metric] ?? null) : null;
+            if ((is_int($value) || is_float($value)) && $value >= 0 && $value <= $max) {
+                $kept[$metric] = $metric === 'cls' ? round((float) $value, 4) : (int) round((float) $value);
+            }
+        }
+
+        return $kept;
+    }
+
+    /**
      * Build the CORS headers for the collection endpoint. They echo the caller's Origin because the tracker runs on
      * customers' own domains; the origin is checked against the site separately.
      *

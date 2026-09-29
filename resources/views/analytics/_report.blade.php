@@ -51,6 +51,45 @@
         @endif
     </x-signal.ui.card>
 
+    @php($vitals = $summary['vitals'] ?? ['samples' => 0, 'metrics' => [], 'slowPages' => []])
+    @php($vitalNames = ['lcp' => [__('Largest Contentful Paint'), __('How long the main content takes to appear')], 'inp' => [__('Interaction to Next Paint'), __('How quickly the page responds to taps and clicks')], 'cls' => [__('Cumulative Layout Shift'), __('How much the page jumps around while loading')], 'ttfb' => [__('Time to First Byte'), __('How long the server takes to answer')]])
+    @php($ratingLabels = ['good' => [__('Good'), 'success'], 'needs_improvement' => [__('Needs improvement'), 'warning'], 'poor' => [__('Poor'), 'danger']])
+    @php($formatVital = fn (string $metric, float $value): string => $metric === 'cls' ? number_format($value, 2) : ($value >= 1000 ? number_format($value / 1000, 2).' s' : number_format($value).' ms'))
+    <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="speed-heading">
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 id="speed-heading" class="text-lg font-extrabold text-ink">{{ __('Page speed') }}</h2>
+            <p class="text-xs text-muted">{{ $vitals['samples'] > 0 ? trans_choice('75th percentile of :count page load by real visitors|75th percentile of :count page loads by real visitors', $vitals['samples'], ['count' => number_format($vitals['samples'])]) : __('Core Web Vitals from real visitors') }}</p>
+        </div>
+        @if ($vitals['samples'] === 0)
+            <p class="text-sm text-muted">{{ __('Add data-vitals to the snippet to measure how fast pages load for real visitors, and see whether a release made them slower.') }}</p>
+        @else
+            <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach ($vitalNames as $metric => [$name, $explanation])
+                    @php($measure = $vitals['metrics'][$metric] ?? ['value' => null, 'rating' => null])
+                    <div class="rounded-control border border-line p-4">
+                        <p class="text-xs font-bold text-muted">{{ $name }} <span class="uppercase">({{ $metric }})</span></p>
+                        <p class="mt-2 text-2xl font-extrabold tracking-tight text-ink tabular-nums">{{ $measure['value'] === null ? '—' : $formatVital($metric, $measure['value']) }}</p>
+                        @if ($measure['rating'])<x-signal.ui.badge class="mt-2" :tone="$ratingLabels[$measure['rating']][1]">{{ $ratingLabels[$measure['rating']][0] }}</x-signal.ui.badge>@endif
+                        <p class="mt-2 text-xs text-muted">{{ $explanation }}</p>
+                    </div>
+                @endforeach
+            </div>
+            @if ($vitals['slowPages'] !== [])
+                <div>
+                    <h3 class="text-sm font-extrabold text-ink">{{ __('Slowest pages to load') }}</h3>
+                    <ul class="mt-2 grid gap-2 text-sm">
+                        @foreach ($vitals['slowPages'] as $page)
+                            <li class="flex items-center justify-between gap-4">
+                                <a class="truncate text-muted hover:text-ink hover:underline" href="{{ $reportUrl(['days' => $days, ...array_filter($filters), 'path' => $page['path']]) }}">{{ $page['path'] }}</a>
+                                <span class="shrink-0 tabular-nums"><strong class="text-ink">{{ $formatVital('lcp', $page['lcp']) }}</strong> <span class="text-xs text-muted">· {{ trans_choice(':count load|:count loads', $page['samples'], ['count' => $page['samples']]) }}</span></span>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
+        @endif
+    </x-signal.ui.card>
+
     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         @foreach ($lists as [$title, $items, $empty, $filterKey])
             <x-signal.ui.card as="section" class="p-5" :aria-label="$title">

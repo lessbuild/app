@@ -39,7 +39,7 @@ final class CollectEventsRequest extends FormRequest
         return [
             'events' => ['required', 'array', 'min:1', 'max:20'],
             'events.*.id' => ['required', 'uuid'],
-            'events.*.type' => ['required', 'string', 'in:pageview,event'],
+            'events.*.type' => ['required', 'string', 'in:pageview,event,vitals'],
             // The client timestamp is accepted only for schema compatibility;
             // collection always records the server receipt time.
             'events.*.occurred_at' => ['nullable', 'date'],

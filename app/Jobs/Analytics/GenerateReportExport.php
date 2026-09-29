@@ -64,6 +64,11 @@ final class GenerateReportExport implements ShouldQueue
             foreach ($summary['metrics'] as $metric) {
                 fputcsv($handle, ['metrics', $metric['label'], $metric['value']]);
             }
+            foreach ($summary['vitals']['metrics'] ?? [] as $vital => $measure) {
+                if ($measure['value'] !== null) {
+                    fputcsv($handle, ['page_speed_p75', $vital, $measure['value']]);
+                }
+            }
             foreach ([
                 'pages' => $summary['pages'],
                 'entry_pages' => $summary['entryPages'],

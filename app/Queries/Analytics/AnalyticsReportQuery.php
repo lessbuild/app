@@ -22,8 +22,9 @@ final class AnalyticsReportQuery
      * Create a new AnalyticsReportQuery instance.
      *
      * @param  LiveVisitorsQuery  $live  Reads the last five minutes.
+     * @param  PageSpeedQuery  $pageSpeed  Summarises real visitors' page speed.
      */
-    public function __construct(private readonly LiveVisitorsQuery $live) {}
+    public function __construct(private readonly LiveVisitorsQuery $live, private readonly PageSpeedQuery $pageSpeed) {}
 
     /**
      * Build an analytics site's report for today (`$days` = 1, per hour, compared with yesterday up to the same time)
@@ -129,15 +130,16 @@ final class AnalyticsReportQuery
             'countries' => $hasVisits
                 ? $this->rank($currentVisits(), $this->labelOf('country_code'))
                 : $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('country_code')),
-            'devices' => $this->rank($currentEvents(), $this->labelOf('device_category')),
-            'browsers' => $this->rank($currentEvents(), $this->labelOf('browser')),
-            'operatingSystems' => $this->rank($currentEvents(), $this->labelOf('operating_system')),
+            'devices' => $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('device_category')),
+            'browsers' => $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('browser')),
+            'operatingSystems' => $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('operating_system')),
             'campaigns' => $hasVisits
                 ? $this->rank($currentVisits()->whereNotNull('entry_utm_campaign'), 'entry_utm_campaign')
                 : $this->rank($currentEvents()->whereNotNull('utm_campaign'), 'utm_campaign'),
             'outboundLinks' => $this->rank($this->automaticEvents($currentEvents(), 'outbound_link'), $this->labelOf($this->property('url'))),
             'fileDownloads' => $this->rank($this->automaticEvents($currentEvents(), 'file_download'), $this->labelOf($this->property('file'))),
             'notFound' => $this->rank($this->automaticEvents($currentEvents(), 'not_found'), $this->labelOf('path')),
+            'vitals' => $this->pageSpeed->handle($site, $startUtc, $endUtc, $filters),
             'recent' => $this->live->handle($site, $filters),
             'filters' => $filters,
             'goals' => $goals->map(fn (AnalyticsGoal $goal): array => [
@@ -532,6 +534,7 @@ final class AnalyticsReportQuery
             'outboundLinks' => [],
             'fileDownloads' => [],
             'notFound' => [],
+            'vitals' => $this->pageSpeed->handle($site, $start->utc(), $end->utc()),
             'recent' => ['visitorCount' => 0, 'events' => []],
             'filters' => $filters,
             'goals' => [],

@@ -69,7 +69,11 @@ final class CollectEventsController
                 // A daily-rotating hash: visitors can be counted within a day but not followed across days.
                 visitorHash: hash_hmac('sha256', ($event['visitor'] ?? '').'|'.$request->ip().'|'.($request->userAgent() ?? '').'|'.$now->setTimezone($site->timezone)->toDateString(), (string) config('analytics.visitor_key')),
                 sessionId: CollectionRequest::cleanValue($event['session'] ?? null, 64),
-                properties: $event['type'] === 'event' ? CollectionRequest::safeProperties($event['properties'] ?? []) : null,
+                properties: match ($event['type']) {
+                    'event' => CollectionRequest::safeProperties($event['properties'] ?? []),
+                    'vitals' => CollectionRequest::safeVitals($event['properties'] ?? []) ?: null,
+                    default => null,
+                },
                 countryCode: $country,
             );
         }
