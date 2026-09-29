@@ -114,6 +114,21 @@
                 </div>
                 <x-signal.ui.button type="submit" variant="primary">{{ __('Subscribe') }}</x-signal.ui.button>
             </form>
+            <details class="mt-4 text-sm">
+                <summary class="cursor-pointer font-bold text-primary">{{ __('Post updates to Slack or a webhook instead') }}</summary>
+                @if (session('webhook_secret'))
+                    <x-signal.ui.alert tone="info" class="mt-3">{{ __('Your signing secret (shown once): :secret — requests carry X-BuildPusher-Signature: v1=HMAC-SHA256 of the timestamp, a dot and the body.', ['secret' => session('webhook_secret')]) }}</x-signal.ui.alert>
+                @endif
+                <form method="POST" action="{{ route('status.subscribe.webhook', $page->slug) }}" class="mt-3 grid items-end gap-3 sm:grid-cols-[10rem_1fr_auto]">
+                    @csrf
+                    <x-signal.ui.select-field name="channel" :label="__('Where')">
+                        <option value="slack">Slack</option>
+                        <option value="webhook">{{ __('Signed webhook') }}</option>
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.input-field name="url" type="url" :label="__('Incoming webhook URL')" maxlength="2048" placeholder="https://hooks.slack.com/services/…" required />
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Subscribe') }}</x-signal.ui.button>
+                </form>
+            </details>
         </x-signal.ui.card>
 
         @if ($pastUpdates !== [] || $recentIncidents !== [])

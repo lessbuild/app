@@ -6,6 +6,7 @@ namespace App\Actions\Monitoring;
 
 use App\Actions\Audit\RecordAuditEntry;
 use App\Enums\AuditAction;
+use App\Jobs\Monitoring\SendStatusUpdateToWebhooks;
 use App\Models\StatusPage;
 use App\Models\StatusSubscription;
 use App\Models\StatusUpdate;
@@ -73,6 +74,7 @@ final class SaveStatusUpdate
             $page->subscriptions()->whereNotNull('verified_at')->lazyById(500)->each(function (StatusSubscription $subscription) use ($update): void {
                 Notification::route('mail', $subscription->email)->notify(new StatusUpdateNotification($update, $subscription));
             });
+            SendStatusUpdateToWebhooks::dispatch($update->id);
         }
 
         return $update;

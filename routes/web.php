@@ -363,9 +363,12 @@ use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
 use App\Http\Controllers\StatusPages\ShowStatusPageBadgeController;
 use App\Http\Controllers\StatusPages\ShowStatusPageEmbedController;
 use App\Http\Controllers\StatusPages\ShowStatusPageReportController;
+use App\Http\Controllers\StatusPages\ShowStatusWebhookUnsubscribeController;
 use App\Http\Controllers\StatusPages\ShowUnsubscribeController;
+use App\Http\Controllers\StatusPages\SubscribeStatusWebhookController;
 use App\Http\Controllers\StatusPages\SubscribeToStatusPageController;
 use App\Http\Controllers\StatusPages\UnsubscribeFromStatusPageController;
+use App\Http\Controllers\StatusPages\UnsubscribeStatusWebhookController;
 use App\Http\Controllers\Telemetry\CreateIngestTokenController;
 use App\Http\Controllers\Telemetry\RetryIngestReceiptController;
 use App\Http\Controllers\Telemetry\RevokeIngestTokenController;
@@ -428,12 +431,15 @@ Route::get('/internal/tls/status-domain', CheckStatusPageDomainController::class
 Route::get('/status/subscriptions/{subscription}/confirm/{token}', ConfirmStatusSubscriptionController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.confirm');
 Route::get('/status/subscriptions/{subscription}/unsubscribe/{token}', ShowUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe');
 Route::post('/status/subscriptions/{subscription}/unsubscribe/{token}', UnsubscribeFromStatusPageController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.subscriptions.unsubscribe.store');
+Route::get('/status/webhooks/{subscription}/unsubscribe/{token}', ShowStatusWebhookUnsubscribeController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.unsubscribe');
+Route::post('/status/webhooks/{subscription}/unsubscribe/{token}', UnsubscribeStatusWebhookController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.unsubscribe.store');
 Route::get('/status/{product}/{slug}', RedirectLegacyStatusPageController::class)->whereIn('product', ['deployer', 'monitor'])->where('slug', '[a-z0-9-]+');
 Route::get('/status/{slug}', ShowPublicStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.show');
 Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.report');
 Route::get('/status/{slug}/badge.svg', ShowStatusPageBadgeController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('status.badge');
 Route::get('/status/{slug}/embed', ShowStatusPageEmbedController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('status.embed');
 Route::post('/status/{slug}/subscribe', SubscribeToStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe');
+Route::post('/status/{slug}/subscribe/webhook', SubscribeStatusWebhookController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:5,1')->name('status.subscribe.webhook');
 
 // Provisioning scripts report here (Deployer's URLs); signed, expiring, and CSRF-exempt.
 Route::post('/servers/{serverId}/provisioning/callback/{event}', RecordServerProvisioningController::class)->whereNumber('serverId')->whereIn('event', ['status', 'failed', 'log'])
