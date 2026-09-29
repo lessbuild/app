@@ -54,11 +54,11 @@ final class ChangeServiceTier
         Gate::forUser($actor)->authorize('manageBilling', $account);
         $billing = $this->services->find($service)?->billing() ?? throw BillingRuleViolation::unknown();
         $target = $billing->tier($tierKey) ?? throw BillingRuleViolation::unknown();
-        if (! $this->prices->purchasable($service, $target)) {
+        $billingAccount = BillingAccount::forAccount($account->id);
+        if (! $this->prices->purchasable($service, $target, $billingAccount->interval)) {
             throw BillingRuleViolation::notOnSale();
         }
 
-        $billingAccount = BillingAccount::forAccount($account->id);
         $selection = BillingSelection::query()->where('account_id', $account->id)->where('service', $service)->where('kind', SelectionKind::Tier)->first();
         $current = $selection !== null ? $billing->tier($selection->item_key) ?? $billing->defaultTier() : $billing->defaultTier();
 
@@ -75,7 +75,7 @@ final class ChangeServiceTier
         if (! $billingAccount->hasLiveSubscription()) {
             $customer = $billingAccount->stripe_customer_id ?? $this->provider->createCustomer($account->id, $account->name, $actor->email);
             $billingAccount->forceFill(['stripe_customer_id' => $customer])->save();
-            $price = (string) $this->prices->priceId($service, SelectionKind::Tier, $target->key);
+            $price = (string) $this->prices->priceId($service, SelectionKind::Tier, $target->key, $billingAccount->interval);
 
             return PlanChange::checkout($this->provider->checkoutUrl(
                 $customer,

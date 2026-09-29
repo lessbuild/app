@@ -55,13 +55,14 @@ final class SubscriptionItems
      * original price).
      *
      * @param  string  $accountId
-     * @return list<LineItem> every selection that is billed (including ones running out at period end)
+     * @return list<LineItem> every selection that is billed (including ones running out at period end), at the account's interval
      */
     public function desired(string $accountId): array
     {
         $items = [];
+        $interval = (string) (BillingAccount::query()->whereKey($accountId)->value('interval') ?? 'month');
         foreach (BillingSelection::query()->where('account_id', $accountId)->orderBy('service')->get() as $selection) {
-            $price = $selection->legacy_price_id ?? $this->prices->priceId($selection->service, $selection->kind, $selection->item_key);
+            $price = $selection->legacy_price_id ?? $this->prices->priceId($selection->service, $selection->kind, $selection->item_key, $interval);
             if ($price !== null) {
                 $items[] = new LineItem(self::reference($selection->service, $selection->kind, $selection->item_key), $price, $selection->quantity);
             }

@@ -77,7 +77,7 @@ final class BillingOverviewQuery
                 tier: $tier,
                 endsAt: $selection?->ends_at !== null ? CarbonImmutable::instance($selection->ends_at) : null,
                 inUse: in_array($service->key(), $inUse, true),
-                options: array_map(fn (Tier $option): TierOption => new TierOption($option, $option->key === $tier->key, $this->prices->purchasable($service->key(), $option)), $catalog->tiers),
+                options: array_map(fn (Tier $option): TierOption => new TierOption($option, $option->key === $tier->key, $this->prices->purchasable($service->key(), $option, $billing->interval ?? 'month')), $catalog->tiers),
                 meters: array_map(fn ($meter): MeterUsage => new MeterUsage($meter->name, $meter->unit, (int) ($usage[$meter->key] ?? 0), $entitlements->limit($meter->allowanceKey) ?? $tier->limits[$meter->allowanceKey] ?? null), $catalog->meters),
             );
         }

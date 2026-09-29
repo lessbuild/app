@@ -27,6 +27,21 @@
         <x-signal.ui.alert tone="danger" role="alert">{{ __('Your last payment didn’t go through. Update your payment method to keep your plans.') }}</x-signal.ui.alert>
     @endif
 
+    <x-signal.ui.card class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-5">
+        <div>
+            <p class="font-bold text-ink">{{ $interval === 'year' ? __('You pay yearly') : __('You pay monthly') }}</p>
+            <p class="text-sm text-muted">{{ __('Yearly costs ten months, so two months are free. Switching moves every paid plan and is prorated.') }}</p>
+        </div>
+        @if ($canManage)
+            <form method="POST" action="{{ route('account.billing.interval') }}">
+                @csrf
+                @method('PUT')
+                <input type="hidden" name="interval" value="{{ $interval === 'year' ? 'month' : 'year' }}">
+                <x-signal.ui.button type="submit" variant="secondary">{{ $interval === 'year' ? __('Pay monthly instead') : __('Pay yearly, 2 months free') }}</x-signal.ui.button>
+            </form>
+        @endif
+    </x-signal.ui.card>
+
     <x-signal.ui.card class="grid gap-4 p-5 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center sm:p-6">
         <div class="grid gap-1">
             <p class="ui-eyebrow">{{ __('Monthly total') }}</p>
@@ -76,7 +91,7 @@
                     <div>
                         <h2 id="billing-{{ $service->key }}" class="text-lg font-extrabold text-ink">{{ $service->name }}</h2>
                         <p class="text-sm text-muted">
-                            {{ $service->tier->name }}@if (($service->tier->monthlyCents ?? 0) > 0) · {{ $money($service->tier->monthlyCents) }} / {{ __('month') }}@endif
+                            {{ $service->tier->name }}@if (($service->tier->monthlyCents ?? 0) > 0) · {{ $interval === 'year' ? $money($service->tier->yearlyCents()).' / '.__('year') : $money($service->tier->monthlyCents).' / '.__('month') }}@endif
                             @unless ($service->inUse) · {{ __('not used by any project yet') }} @endunless
                         </p>
                     </div>
@@ -118,7 +133,7 @@
                                         <input type="radio" name="tier" value="{{ $option->tier->key }}" class="ui-check" @checked($option->current) @disabled(! $option->purchasable && ! $option->current)>
                                         <span class="font-extrabold text-ink">{{ $option->tier->name }}</span>
                                     </span>
-                                    <span class="text-sm font-bold text-ink">{{ $money($option->tier->monthlyCents) }}@if (($option->tier->monthlyCents ?? 0) > 0)<span class="font-normal text-muted">/{{ __('mo') }}</span>@endif</span>
+                                    <span class="text-sm font-bold text-ink">{{ $money($interval === 'year' ? $option->tier->yearlyCents() : $option->tier->monthlyCents) }}@if (($option->tier->monthlyCents ?? 0) > 0)<span class="font-normal text-muted">/{{ $interval === 'year' ? __('yr') : __('mo') }}</span>@endif</span>
                                 </span>
                                 <span class="text-xs text-muted">{{ $option->tier->description }}</span>
                                 @if ($option->tier->features !== [])

@@ -15,6 +15,33 @@ return [
     // Credit, in cents, that both the referrer and the new account get once the new account's subscription is paid.
     'referral_credit_cents' => (int) env('BILLING_REFERRAL_CREDIT_CENTS', 2000),
 
+    // Yearly prices (ten months each, so two months free) for accounts that pay yearly. A tier without one can only
+    // be bought monthly.
+    'prices_yearly' => [
+        'deploy' => [
+            'tier' => [
+                'starter' => env('STRIPE_PRICE_DEPLOY_STARTER_YEARLY'),
+                'pro' => env('STRIPE_PRICE_DEPLOY_PRO_YEARLY'),
+                'team' => env('STRIPE_PRICE_DEPLOY_TEAM_YEARLY'),
+                'business' => env('STRIPE_PRICE_DEPLOY_BUSINESS_YEARLY'),
+                'unlimited' => env('STRIPE_PRICE_DEPLOY_UNLIMITED_YEARLY'),
+            ],
+        ],
+        'monitoring' => [
+            'tier' => [
+                'pro' => env('STRIPE_PRICE_MONITORING_PRO_YEARLY'),
+                'team' => env('STRIPE_PRICE_MONITORING_TEAM_YEARLY'),
+                'scale' => env('STRIPE_PRICE_MONITORING_SCALE_YEARLY'),
+            ],
+        ],
+        'analytics' => [
+            'tier' => [
+                'pro' => env('STRIPE_PRICE_ANALYTICS_PRO_YEARLY'),
+                'business' => env('STRIPE_PRICE_ANALYTICS_BUSINESS_YEARLY'),
+            ],
+        ],
+    ],
+
     'prices' => [
         'deploy' => [
             'tier' => [

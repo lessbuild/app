@@ -33,6 +33,7 @@ use App\Http\Controllers\Account\StoreAuditStreamController;
 use App\Http\Controllers\Account\StoreProviderController;
 use App\Http\Controllers\Account\SwitchAccountController;
 use App\Http\Controllers\Account\UpdateAccountSecurityController;
+use App\Http\Controllers\Account\UpdateBillingIntervalController;
 use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
@@ -789,6 +790,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::delete('/account/api-tokens/{token}', RevokeApiTokenController::class)->whereNumber('token')->name('account.api-tokens.destroy');
     Route::get('/account/billing', ShowBillingController::class)->middleware('account.can:viewBilling')->name('account.billing');
     Route::post('/account/billing/portal', OpenBillingPortalController::class)->name('account.billing.portal');
+    Route::put('/account/billing/interval', UpdateBillingIntervalController::class)->middleware('throttle:10,1')->name('account.billing.interval');
     Route::post('/account/billing/{service}', ChangePlanController::class)->middleware('throttle:20,1')->name('account.billing.change');
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
     Route::get('/account/security', ShowAccountSecurityController::class)->middleware('account.can:update')->name('account.security');

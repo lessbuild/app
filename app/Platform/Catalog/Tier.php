@@ -39,4 +39,14 @@ final readonly class Tier
     {
         return $this->monthlyCents === 0;
     }
+
+    /**
+     * Get the price for a year, paid yearly: ten months, so two months are free. Null for tiers without a price.
+     *
+     * @return int|null
+     */
+    public function yearlyCents(): ?int
+    {
+        return $this->monthlyCents === null ? null : $this->monthlyCents * 10;
+    }
 }

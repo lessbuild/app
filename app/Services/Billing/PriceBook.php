@@ -21,30 +21,35 @@ final class PriceBook
     public function __construct(private readonly Repository $config) {}
 
     /**
-     * Get the Stripe price for a catalogue item, or null when it hasn't been set (which keeps it off sale).
+     * Get the Stripe price for a catalogue item, monthly or yearly, or null when it hasn't been set (which keeps it
+     * off sale at that interval).
      *
      * @param  string  $service
      * @param  SelectionKind  $kind
      * @param  string  $itemKey
+     * @param  string  $interval  month or year
      * @return string|null
      */
-    public function priceId(string $service, SelectionKind $kind, string $itemKey): ?string
+    public function priceId(string $service, SelectionKind $kind, string $itemKey, string $interval = 'month'): ?string
     {
-        $id = $this->config->get("billing.prices.{$service}.{$kind->value}.{$itemKey}");
+        $prices = $interval === 'year' ? 'prices_yearly' : 'prices';
+        $id = $this->config->get("billing.{$prices}.{$service}.{$kind->value}.{$itemKey}");
 
         return is_string($id) && $id !== '' ? $id : null;
     }
 
     /**
-     * Determine whether a tier can be chosen: free tiers always can; paid ones need an amount and a Stripe price.
+     * Determine whether a tier can be chosen at an interval: free tiers always can; paid ones need an amount and a
+     * Stripe price for that interval.
      *
      * @param  string  $service
      * @param  Tier  $tier
+     * @param  string  $interval  month or year
      * @return bool
      */
-    public function purchasable(string $service, Tier $tier): bool
+    public function purchasable(string $service, Tier $tier, string $interval = 'month'): bool
     {
-        return $tier->isFree() || ($tier->monthlyCents !== null && $this->priceId($service, SelectionKind::Tier, $tier->key) !== null);
+        return $tier->isFree() || ($tier->monthlyCents !== null && $this->priceId($service, SelectionKind::Tier, $tier->key, $interval) !== null);
     }
 
     /**

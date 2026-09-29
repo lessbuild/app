@@ -12,6 +12,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $stripe_customer_id
  * @property string|null $stripe_subscription_id
  * @property string $status none, incomplete, trialing, active, past_due, unpaid, canceled
+ * @property string $interval month or year: how often the whole subscription is billed
  * @property Carbon|null $current_period_end
  */
 class BillingAccount extends Model
@@ -60,7 +61,7 @@ class BillingAccount extends Model
         $billing = self::query()->find($accountId);
         if ($billing === null) {
             $billing = new self;
-            $billing->forceFill(['account_id' => $accountId, 'status' => 'none'])->save();
+            $billing->forceFill(['account_id' => $accountId, 'status' => 'none', 'interval' => 'month'])->save();
         }
 
         return $billing;

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Account;
 
 use App\Http\Attributes\CurrentAccount;
 use App\Models\Account;
+use App\Models\BillingAccount;
 use App\Models\User;
 use App\Queries\Billing\BillingOverviewQuery;
 use App\Queries\Billing\InvoicesQuery;
@@ -37,6 +38,7 @@ final class ShowBillingController
             'canManage' => $user->can('manageBilling', $account),
             'checkout' => $request->query('checkout'),
             'referrals' => $referrals->summary($account),
+            'interval' => (string) (BillingAccount::query()->whereKey($account->id)->value('interval') ?? 'month'),
         ]);
     }
 }
