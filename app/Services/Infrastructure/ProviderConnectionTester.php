@@ -83,6 +83,7 @@ final class ProviderConnectionTester
             ProviderType::Hetzner => 'https://api.hetzner.cloud/v1/servers?per_page=1',
             ProviderType::Vultr => 'https://api.vultr.com/v2/account',
             ProviderType::Linode => 'https://api.linode.com/v4/linode/instances?page_size=25',
+            ProviderType::Lightsail => 'https://lightsail.us-east-1.amazonaws.com/',
             ProviderType::Cloudflare => rtrim((string) config('infrastructure.cloudflare_api_url'), '/').'/user/tokens/verify',
         };
     }
@@ -108,6 +109,10 @@ final class ProviderConnectionTester
 
             return $request->withoutRedirecting()->withOptions(['curl' => [CURLOPT_RESOLVE => ["{$target['host']}:443:{$pinned}"]]])
                 ->withHeader('PRIVATE-TOKEN', $provider->token)->get($url);
+        }
+
+        if ($provider->type === ProviderType::Lightsail) {
+            return (new Lightsail($provider->token))->ping();
         }
 
         return match ($provider->type) {

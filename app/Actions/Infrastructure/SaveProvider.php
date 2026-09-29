@@ -49,6 +49,9 @@ final class SaveProvider
             if ($isNew && $token === '') {
                 throw ValidationException::withMessages(['token' => __('Enter the API token.')]);
             }
+            if ($type === ProviderType::Lightsail && $token !== '' && preg_match('/\A[A-Z0-9]{16,128}:[A-Za-z0-9\/+=]{20,128}\z/', $token) !== 1) {
+                throw ValidationException::withMessages(['token' => __('For AWS Lightsail, enter the access key ID and secret access key as ACCESS_KEY_ID:SECRET.')]);
+            }
             $baseUrl = $type === ProviderType::GitLab ? self::baseUrl($data['base_url'] ?? null) : null;
             $credentialChanged = $isNew || $token !== '' || $provider->type !== $type || $provider->base_url !== $baseUrl;
             $description = trim((string) ($data['description'] ?? ''));

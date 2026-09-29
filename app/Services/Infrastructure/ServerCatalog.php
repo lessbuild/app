@@ -24,6 +24,7 @@ class ServerCatalog
             ProviderType::Hetzner => $this->hetzner($client),
             ProviderType::Vultr => $this->vultr($client),
             ProviderType::Linode => $this->linode($client),
+            ProviderType::Lightsail => $this->lightsail($client),
             default => $this->digitalOcean($client),
         };
     }
@@ -152,6 +153,26 @@ class ServerCatalog
             'images' => $this->sort(collect($client->images())
                 ->filter(fn (array $image): bool => str_contains(strtolower((string) ($image['label'] ?? '')), 'ubuntu'))
                 ->map(fn (array $image): array => ['id' => (string) ($image['id'] ?? ''), 'label' => (string) ($image['label'] ?? '')])),
+        ];
+    }
+
+    /**
+     * Normalize Lightsail availability zones, Linux bundles and Ubuntu blueprints for server-selection controls.
+     *
+     * @param  ServerProvider  $client  The Lightsail adapter supplying catalog responses.
+     * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>}
+     */
+    private function lightsail(ServerProvider $client): array
+    {
+        return [
+            'regions' => $this->sort(collect($client->regions())->map(fn (array $zone): array => ['id' => (string) ($zone['id'] ?? ''), 'label' => (string) ($zone['label'] ?? '')])),
+            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $bundle): array => [
+                'id' => (string) ($bundle['bundleId'] ?? ''),
+                'label' => sprintf('%s · %s GB RAM · %s vCPU · $%s/month', (string) ($bundle['name'] ?? $bundle['bundleId'] ?? ''), $this->number((float) ($bundle['ramSizeInGb'] ?? 0)), (string) ($bundle['cpuCount'] ?? '?'), $this->number((float) ($bundle['price'] ?? 0))),
+            ])),
+            'images' => $this->sort(collect($client->images())
+                ->filter(fn (array $blueprint): bool => str_contains(strtolower((string) ($blueprint['name'] ?? '')), 'ubuntu'))
+                ->map(fn (array $blueprint): array => ['id' => (string) ($blueprint['blueprintId'] ?? ''), 'label' => trim(((string) ($blueprint['name'] ?? '')).' '.((string) ($blueprint['version'] ?? '')))])),
         ];
     }
 

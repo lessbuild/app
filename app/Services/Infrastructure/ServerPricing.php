@@ -72,6 +72,7 @@ class ServerPricing
             $matches = match ($type) {
                 ProviderType::Hetzner => ($entry['name'] ?? null) === $size,
                 ProviderType::Vultr, ProviderType::Linode => ($entry['id'] ?? null) === $size,
+                ProviderType::Lightsail => ($entry['bundleId'] ?? null) === $size,
                 default => ($entry['slug'] ?? null) === $size,
             };
             if (! $matches) {
@@ -87,6 +88,7 @@ class ServerPricing
             $value = match ($type) {
                 ProviderType::Vultr => $entry['monthly_cost'] ?? null,
                 ProviderType::Linode => is_array($entry['price'] ?? null) ? ($entry['price']['monthly'] ?? null) : null,
+                ProviderType::Lightsail => $entry['price'] ?? null,
                 default => $entry['price_monthly'] ?? null,
             };
 

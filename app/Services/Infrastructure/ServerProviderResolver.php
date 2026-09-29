@@ -37,6 +37,7 @@ class ServerProviderResolver
             ProviderType::Hetzner => new HetznerCloud($token),
             ProviderType::Vultr => new Vultr($token),
             ProviderType::Linode => new Linode($token),
+            ProviderType::Lightsail => new Lightsail($token),
             default => throw new RuntimeException("{$type->label()} doesn’t host servers."),
         };
     }
