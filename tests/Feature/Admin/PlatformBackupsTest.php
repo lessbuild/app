@@ -24,7 +24,7 @@ final class PlatformBackupsTest extends TestCase
     // Snapshots can't run inside the transaction RefreshDatabase wraps each test in.
     use DatabaseMigrations;
 
-    private string $directory;
+    private string $directory = '';
 
     protected function setUp(): void
     {
@@ -39,7 +39,9 @@ final class PlatformBackupsTest extends TestCase
 
     protected function tearDown(): void
     {
-        File::deleteDirectory($this->directory);
+        if ($this->directory !== '') {
+            File::deleteDirectory($this->directory);
+        }
         parent::tearDown();
     }
 

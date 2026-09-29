@@ -90,7 +90,7 @@ final class CreateSampleProject
     {
         $site = new AnalyticsSite;
         $site->forceFill(['project_id' => $project->id, 'name' => 'storefront.example', 'domains' => ['storefront.example'], 'timezone' => 'UTC', 'verified_at' => now(), 'collection_enabled' => false])->save();
-        $batch = AnalyticsIngestionBatch::query()->create(['site_id' => $site->id, 'batch_id' => 'sample-'.Str::uuid(), 'event_count' => 0, 'status' => 'processing', 'accepted_at' => now()]);
+        $batch = AnalyticsIngestionBatch::query()->create(['site_id' => $site->id, 'batch_id' => Str::uuid()->toString(), 'event_count' => 0, 'status' => 'processing', 'accepted_at' => now()]);
         $rows = [];
         $devices = [['desktop', 'Chrome', 'macOS', 45], ['desktop', 'Firefox', 'Windows', 15], ['mobile', 'Safari', 'iOS', 25], ['mobile', 'Chrome', 'Android', 15]];
         for ($day = 29; $day >= 0; $day--) {
@@ -147,7 +147,7 @@ final class CreateSampleProject
     {
         $environment = $project->environments()->where('slug', 'production')->firstOrFail();
         $release = now('UTC')->subHours(9);
-        $this->deployments->handle($environment, ['deployment_id' => 'sample-'.Str::uuid(), 'version' => 'v1.4.0', 'service' => 'storefront', 'service_namespace' => null, 'commit_sha' => 'a71c8ef', 'note' => __('Sample release'), 'deployed_at' => $release->toIso8601String()], $actor);
+        $this->deployments->handle($environment, ['deployment_id' => Str::uuid()->toString(), 'version' => 'v1.4.0', 'service' => 'storefront', 'service_namespace' => null, 'commit_sha' => 'a71c8ef', 'note' => __('Sample release'), 'deployed_at' => $release->toIso8601String()], $actor);
         $routes = [['GET /', '/', 45, 90], ['GET /pricing', '/pricing', 20, 110], ['GET /products/{product}', '/products/{product}', 25, 140], ['POST /checkout', '/checkout', 10, 420]];
         $errors = [['PaymentDeclinedException', 'Card was declined by the payment gateway', '/checkout'], ['QueryException', 'Deadlock found when trying to get lock', '/checkout'], ['TypeError', 'Argument #1 ($price) must be of type int, null given', '/products/{product}']];
         $events = [];
