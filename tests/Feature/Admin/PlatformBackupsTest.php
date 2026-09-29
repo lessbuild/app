@@ -29,6 +29,10 @@ final class PlatformBackupsTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        if (DB::getDriverName() !== 'sqlite') {
+            // PostgreSQL backups shell out to pg_dump, which must match the server's version; CI's doesn't.
+            $this->markTestSkipped('These tests snapshot the SQLite database; the SQLite run covers them.');
+        }
         $this->directory = sys_get_temp_dir().'/platform-backups-'.uniqid();
         config(['platform.backups.path' => $this->directory, 'platform.backups.keep_local' => 2, 'platform.backups.s3.endpoint' => null]);
     }
