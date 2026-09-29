@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-09-29', 'title' => 'Analytics: today, countries, page speed and revenue', 'changes' => [
+        'A Today view with visits per hour, and a “Right now” panel that updates itself.',
+        'See which countries visitors come from, how long visits last, and which Google searches brought them (connect Search Console).',
+        'Count outbound links, file downloads, missing pages and page speed (Core Web Vitals) by adding one attribute to the snippet.',
+        'Add revenue to your events to see what each goal and campaign earns.',
+        'Share a site’s report with a link, with or without a password, and read reports through the API and SDKs.',
+        'Reports stay fast on busy sites, and ?bp_ignore=1 leaves your own visits out.',
+    ]],
     ['date' => '2026-09-29', 'title' => 'Deploy safely, page the right person, and grow', 'changes' => [
         'Deploy any branch, tag or commit, book a deploy for later, freeze an environment for the holidays, and let a jump in errors roll a deploy back.',
         'On-call schedules, text and phone alerts, incident post-mortems for your status page, and status updates in Slack or a webhook.',
