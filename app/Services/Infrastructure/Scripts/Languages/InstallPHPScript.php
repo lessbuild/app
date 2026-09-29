@@ -26,14 +26,30 @@ class InstallPHPScript implements ServerScript
     public function script(int $step, Server $server): string
     {
         $version = (string) config('infrastructure.default_php_version', '8.4');
-        if (! preg_match('/\A8\.[2-5]\z/', $version)) {
-            throw new RuntimeException('The configured PHP version is not supported.');
-        }
+        $install = self::install($version);
 
         return <<<SCRIPT
 
         provisionPing {$server->id} $step
 
+        {$install}
+        SCRIPT;
+    }
+
+    /**
+     * Render the commands that install a PHP version's FPM, CLI and extensions and configure them, so another version
+     * can be added to a server that already runs one.
+     *
+     * @param  string  $version  8.2 to 8.5
+     * @return string
+     */
+    public static function install(string $version): string
+    {
+        if (! preg_match('/\A8\.[2-5]\z/', $version)) {
+            throw new RuntimeException('The PHP version is not supported.');
+        }
+
+        return <<<SCRIPT
         apt_wait
         sudo env DEBIAN_FRONTEND=noninteractive apt-get -o Dpkg::Options::=--force-confold install -y php{$version} php{$version}-fpm php{$version}-cli php{$version}-curl \
         php{$version}-pgsql php{$version}-dev php{$version}-gd php{$version}-mbstring php{$version}-mysql php{$version}-xml php{$version}-zip \

@@ -76,7 +76,7 @@ class RemoteDeployments
         if (! is_string($build->release_name) || preg_match('/\A[a-zA-Z0-9._-]+\z/D', $build->release_name) !== 1 || $build->release_path !== "{$root}/releases/{$build->release_name}") {
             throw new RuntimeException('The retained release is invalid.');
         }
-        $fpm = 'systemctl reload '.escapeshellarg('php'.config('deploy.default_php_version').'-fpm');
+        $fpm = 'systemctl reload '.escapeshellarg('php'.$website->phpVersion().'-fpm');
         $health = $website->health_check_enabled
             ? 'if ! curl --fail --silent --show-error --location --connect-timeout 5 --max-time 15 --retry 5 --retry-delay 2 --retry-all-errors --output /dev/null '.escapeshellarg("https://{$website->url}{$website->health_check_path}")."; then\n"
                 ."    if [ -n \"\$PREVIOUS_PATH\" ] && [ -d \"\$PREVIOUS_PATH\" ]; then ln -sfn -- \"\$PREVIOUS_PATH\" \"\$DEPLOY_ROOT/current.rollback\"; mv -Tf -- \"\$DEPLOY_ROOT/current.rollback\" \"\$DEPLOY_ROOT/current\"; fi\n"

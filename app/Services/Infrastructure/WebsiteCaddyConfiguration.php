@@ -23,7 +23,7 @@ final class WebsiteCaddyConfiguration
             '    encode zstd gzip',
             $this->accessLog($website),
             '    file_server',
-            '    php_fastcgi unix//var/run/php/php'.config('infrastructure.default_php_version', '8.4').'-fpm.sock',
+            '    php_fastcgi unix//var/run/php/php'.$website->phpVersion().'-fpm.sock',
         ]));
     }
 

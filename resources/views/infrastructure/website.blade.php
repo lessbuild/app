@@ -345,6 +345,18 @@
 
     @if ($canManage)
     <x-signal.ui.page-tab-panel name="settings" :current="$tab">
+        <x-signal.ui.settings-section id="php-version" :title="__('PHP version')" :description="__('The website’s PHP-FPM version. Switching installs it on the server if needed (other websites keep theirs) and points this site at it; the next deploy reloads it too.')">
+            <form method="POST" action="{{ route('infrastructure.websites.php-version', [$project, $website->id]) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">
+                @csrf
+                @method('PUT')
+                <x-signal.ui.select-field name="php_version" :label="__('PHP')">
+                    @foreach (\App\Models\Website::PHP_VERSIONS as $version)
+                        <option value="{{ $version }}" @selected($website->phpVersion() === $version)>PHP {{ $version }}@if ($version === config('infrastructure.default_php_version')) ({{ __('default') }})@endif</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.button type="submit" variant="secondary" :disabled="$website->isProvisioning()">{{ __('Switch') }}</x-signal.ui.button>
+            </form>
+        </x-signal.ui.settings-section>
         <x-signal.ui.settings-section :title="__('Settings')" :description="__('A new server, domain or .env sets the website up again. Moving servers keeps the old copy until the new one is live.')">
             <form method="POST" action="{{ route('infrastructure.websites.update', [$project, $website->id]) }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
                 @csrf

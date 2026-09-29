@@ -49,6 +49,7 @@ use Illuminate\Support\Str;
  * @property string|null $password only while a remote provisioning retry needs it
  * @property string|null $mysql_root_password the database admin password: MySQL's root, or PostgreSQL's postgres user
  * @property string|null $database_engine mysql or postgres, for database servers
+ * @property string|null $node_version the Node.js major version chosen for the server; null for the latest installed at setup
  * @property int $setup_stage
  * @property string $provisioning_status queued, waiting_for_ip, provisioning, active or failed
  * @property string|null $provisioning_error

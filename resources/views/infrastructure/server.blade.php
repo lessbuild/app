@@ -239,6 +239,20 @@
 
     @if ($canManage)
     <x-signal.ui.page-tab-panel name="settings" :current="$tab">
+        @if (in_array('node', $server->type->installs(), true) && $server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
+            <x-signal.ui.settings-section id="node-version" :title="__('Node.js version')" :description="__('Node.js is installed for the whole server, so switching changes it for every website and build on it.')">
+                <form method="POST" action="{{ route('infrastructure.servers.node-version', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">
+                    @csrf
+                    @method('PUT')
+                    <x-signal.ui.select-field name="node_version" :label="__('Node.js')">
+                        @foreach (\App\Actions\Infrastructure\ChangeRuntimeVersion::NODE_VERSIONS as $version)
+                            <option value="{{ $version }}" @selected($server->node_version === $version)>Node.js {{ $version }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Switch') }}</x-signal.ui.button>
+                </form>
+            </x-signal.ui.settings-section>
+        @endif
         <x-signal.ui.settings-section :title="__('Name')" :description="__('Shown in the app. The server’s hostname stays :name.', ['name' => $server->name])">
             <form method="POST" action="{{ route('infrastructure.servers.update', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">
                 @csrf

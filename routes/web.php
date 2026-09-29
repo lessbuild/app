@@ -222,7 +222,9 @@ use App\Http\Controllers\Infrastructure\UpdateInfrastructureBudgetController;
 use App\Http\Controllers\Infrastructure\UpdateLoadBalancerController;
 use App\Http\Controllers\Infrastructure\UpdateLoadBalancerNodeController;
 use App\Http\Controllers\Infrastructure\UpdateServerMonthlyCostController;
+use App\Http\Controllers\Infrastructure\UpdateServerNodeVersionController;
 use App\Http\Controllers\Infrastructure\UpdateWebsiteController;
+use App\Http\Controllers\Infrastructure\UpdateWebsitePhpVersionController;
 use App\Http\Controllers\Infrastructure\VerifyWebsiteBackupController;
 use App\Http\Controllers\Monitoring\ArchiveAlertDestinationController;
 use App\Http\Controllers\Monitoring\ArchiveAlertRuleController;
@@ -581,6 +583,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
             Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
             Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');
+            Route::put('/servers/{server}/node-version', UpdateServerNodeVersionController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.node-version');
             Route::post('/servers/{server}/database-recovery', EnableDatabaseRecoveryController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:10,1'])->name('servers.database-recovery');
             Route::post('/servers/{server}/database-recovery/restore', RestoreDatabaseController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:5,1'])->name('servers.database-recovery.restore');
             Route::get('/servers/{server}/status', ShowServerStatusController::class)->whereNumber('server')->middleware(['can:view,server', 'throttle:60,1'])->name('servers.status');
@@ -608,6 +611,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/websites', StoreWebsiteController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:20,1'])->name('websites.store');
             Route::post('/websites/import', StoreWebsiteImportController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:10,1'])->name('websites.import');
             Route::get('/websites/{website}', ShowWebsiteController::class)->whereNumber('website')->middleware('can:view,website')->name('websites.show');
+            Route::put('/websites/{website}/php-version', UpdateWebsitePhpVersionController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.php-version');
             Route::put('/websites/{website}', UpdateWebsiteController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:20,1'])->name('websites.update');
             Route::delete('/websites/{website}', DeleteWebsiteController::class)->whereNumber('website')->middleware(['can:delete,website', 'password.confirm', 'throttle:10,1'])->name('websites.destroy');
             Route::post('/websites/{website}/retry', RetryWebsiteProvisioningController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.retry');

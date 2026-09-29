@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
  * the account (like servers); Deploy links it to an environment. The .env and database password are encrypted.
  *
  * @property int $id
+ * @property string|null $php_version the PHP version its FPM pool runs; null for the platform default
  * @property string $account_id
  * @property string|null $created_by
  * @property int|null $server_id
@@ -141,6 +142,23 @@ class Website extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    /**
+     * The PHP versions a website can run.
+     *
+     * @var list<string>
+     */
+    public const PHP_VERSIONS = ['8.2', '8.3', '8.4', '8.5'];
+
+    /**
+     * Get the PHP version the website runs: its own choice, or the platform default.
+     *
+     * @return string
+     */
+    public function phpVersion(): string
+    {
+        return $this->php_version ?? (string) config('infrastructure.default_php_version', '8.4');
     }
 
     /**

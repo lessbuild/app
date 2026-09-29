@@ -40,7 +40,7 @@ final class DeploymentScript
         $uploadFile = escapeshellarg("/tmp/lessbuild-deployment-{$build->id}.upload.log");
         $limit = max(1, (int) config('deploy.deployment_log_max_characters'));
         $units = escapeshellarg('buildpusher-'.$build->website->deployment_slug.'-');
-        $fpm = escapeshellarg('php'.config('deploy.default_php_version').'-fpm');
+        $fpm = escapeshellarg('php'.$build->website->phpVersion().'-fpm');
         $stages = '';
         foreach ($this->plan->scripts() as $index => $class) {
             $script = app($class);

@@ -47,7 +47,7 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         $type = $runtime['type'] ?? 'php';
         $progress = $this->progress($step, $build);
         if (! in_array($type, ['node', 'python', 'docker'], true)) {
-            $phpFpmService = escapeshellarg('php'.config('deploy.default_php_version', '8.4').'-fpm');
+            $phpFpmService = escapeshellarg('php'.$build->repository->website->phpVersion().'-fpm');
             if ($build->deploymentRoot() !== '.') {
                 $website = $build->repository->website;
                 $documentRoot = $build->deploymentPath('current').'/public';
