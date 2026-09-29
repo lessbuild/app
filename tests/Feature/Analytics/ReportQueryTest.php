@@ -106,4 +106,26 @@ final class ReportQueryTest extends TestCase
         $series = array_column(app(AnalyticsReportQuery::class)->handle($site, 7)['series'], 'value', 'date');
         $this->assertSame([1, 1], [$series['Sep 18'], $series['Sep 19']]);
     }
+
+    /**
+     * Check that today is shown per hour and compared with yesterday up to the same time.
+     *
+     * @return void
+     */
+    public function test_today_is_hourly_and_compared_with_yesterday_so_far(): void
+    {
+        $this->travelTo(CarbonImmutable::parse('2026-09-20 12:30', 'UTC'));
+        $site = $this->site();
+        $this->event($site, CarbonImmutable::parse('2026-09-20 09:10', 'UTC'), ['visitor_hash' => 'x']);
+        $this->event($site, CarbonImmutable::parse('2026-09-20 11:50', 'UTC'), ['visitor_hash' => 'y']);
+        $this->event($site, CarbonImmutable::parse('2026-09-19 10:00', 'UTC'), ['visitor_hash' => 'z']);
+        $this->event($site, CarbonImmutable::parse('2026-09-19 20:00', 'UTC'), ['visitor_hash' => 'later']);
+
+        $report = app(AnalyticsReportQuery::class)->handle($site, 1);
+        $this->assertSame('hour', $report['granularity']);
+        $this->assertCount(24, $report['series']);
+        $series = array_column($report['series'], 'value', 'date');
+        $this->assertSame([1, 1, 0], [$series['09:00'], $series['11:00'], $series['12:00']]);
+        $this->assertSame(['2', '+100.0%'], [$report['metrics'][0]['value'], $report['metrics'][0]['change']], 'Yesterday after 12:30 is left out.');
+    }
 }

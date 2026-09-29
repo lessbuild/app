@@ -1,4 +1,6 @@
 @php($project = $overview->project)
+@php($hourly = ($summary['granularity'] ?? 'day') === 'hour')
+@php($chartLabel = $hourly ? __('Pageviews per hour') : __('Pageviews per day'))
 @php($lists = $summary === null ? [] : [
     [__('Top pages'), $summary['pages'], __('Pages appear after the first visit.'), true],
     [__('Entry pages'), $summary['entryPages'], __('Entry pages appear once visits are processed.'), true],
@@ -28,7 +30,7 @@
                     <input type="hidden" name="site" value="{{ $site->id }}">
                 @endif
                 <x-signal.ui.select-field name="days" :label="__('Period')" :show-errors="false">
-                    @foreach ([7 => __('Last 7 days'), 30 => __('Last 30 days'), 90 => __('Last 90 days'), 365 => __('Last 12 months')] as $value => $label)
+                    @foreach ([1 => __('Today'), 7 => __('Last 7 days'), 30 => __('Last 30 days'), 90 => __('Last 90 days'), 365 => __('Last 12 months')] as $value => $label)
                         <option value="{{ $value }}" @selected($days === $value)>{{ $label }}</option>
                     @endforeach
                 </x-signal.ui.select-field>
@@ -61,7 +63,7 @@
                     <p class="text-xs font-bold text-muted">{{ __($metric['label']) }}</p>
                     <p class="mt-2 text-2xl font-extrabold tracking-tight text-ink tabular-nums">{{ $metric['value'] }}</p>
                     <p @class(['mt-1 text-xs', 'text-muted' => $metric['change'] === null, 'font-bold text-danger' => $metric['change'] !== null && str_starts_with($metric['change'], '-'), 'font-bold text-success' => $metric['change'] !== null && ! str_starts_with($metric['change'], '-')])>
-                        {{ match (true) { $metric['change'] === null => __('This period'), $metric['change'] === 'New' => __('New this period'), default => __(':change vs previous period', ['change' => $metric['change']]) } }}
+                        {{ match (true) { $metric['change'] === null => __('This period'), $metric['change'] === 'New' => __('New this period'), $hourly => __(':change vs this time yesterday', ['change' => $metric['change']]), default => __(':change vs previous period', ['change' => $metric['change']]) } }}
                     </p>
                 </x-signal.ui.card>
             @endforeach
@@ -69,12 +71,12 @@
 
         <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="pageviews-heading">
             <div class="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 id="pageviews-heading" class="text-lg font-extrabold text-ink">{{ __('Pageviews per day') }}</h2>
-                <p class="text-xs text-muted">{{ $summary['range']['start']->format('M j') }} – {{ $summary['range']['end']->format('M j, Y') }} · {{ $site->timezone }}</p>
+                <h2 id="pageviews-heading" class="text-lg font-extrabold text-ink">{{ $chartLabel }}</h2>
+                <p class="text-xs text-muted">{{ $hourly ? $summary['range']['start']->format('M j, Y') : $summary['range']['start']->format('M j').' – '.$summary['range']['end']->format('M j, Y') }} · {{ $site->timezone }}</p>
             </div>
             @if ($summary['hasData'])
-                <x-signal.ui.bar-chart :label="__('Pageviews per day')" :points="array_map(fn (array $point): array => ['label' => $point['date'], 'value' => $point['value']], $summary['series'])" :unit="__('pageviews')"
-                    :markers="$releases->map(fn ($deployment): array => ['label' => $deployment->deployed_at->setTimezone($site->timezone)->format('M j'), 'text' => __('Released :version', ['version' => $deployment->release->version])])->values()->all()" />
+                <x-signal.ui.bar-chart :label="$chartLabel" :points="array_map(fn (array $point): array => ['label' => $point['date'], 'value' => $point['value']], $summary['series'])" :unit="__('pageviews')"
+                    :markers="$releases->map(fn ($deployment): array => ['label' => $deployment->deployed_at->setTimezone($site->timezone)->format($hourly ? 'H:00' : 'M j'), 'text' => __('Released :version', ['version' => $deployment->release->version])])->values()->all()" />
             @else
                 <p class="text-sm text-muted">{{ __('No pageviews in this period yet.') }}</p>
             @endif
@@ -126,22 +128,7 @@
                     @endforelse
                 </ul>
             </x-signal.ui.card>
-            <x-signal.ui.card as="section" class="p-5" aria-labelledby="live-heading">
-                <div class="flex items-center justify-between gap-3">
-                    <h2 id="live-heading" class="font-extrabold text-ink">{{ __('Last 5 minutes') }}</h2>
-                    <span class="text-xs text-muted">{{ trans_choice(':count visitor|:count visitors', $summary['recent']['visitorCount'], ['count' => $summary['recent']['visitorCount']]) }}</span>
-                </div>
-                <ul class="mt-3 divide-y divide-line text-sm">
-                    @forelse ($summary['recent']['events'] as $event)
-                        <li class="flex items-center justify-between gap-4 py-2.5">
-                            <span class="min-w-0"><span class="block truncate font-bold text-ink">{{ $event['path'] }}</span><span class="text-xs text-muted">{{ ucfirst($event['type']) }} · {{ $event['source'] }}</span></span>
-                            <time class="shrink-0 text-xs text-muted" datetime="{{ $event['occurredAt']->toIso8601String() }}">{{ $event['occurredAt']->diffForHumans() }}</time>
-                        </li>
-                    @empty
-                        <li class="py-2.5 text-muted">{{ __('No traffic in the last five minutes.') }}</li>
-                    @endforelse
-                </ul>
-            </x-signal.ui.card>
+            @include('analytics._live', ['recent' => $summary['recent']])
         </div>
 
         <div class="flex flex-wrap items-center justify-between gap-3 text-xs text-muted">

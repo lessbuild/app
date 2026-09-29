@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Analytics;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\AnalyticsReportQuery;
+use App\Queries\Analytics\LiveVisitorsQuery;
 use App\Queries\Analytics\ProjectSitesQuery;
 use App\Queries\Analytics\SiteReleasesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -28,16 +29,22 @@ final class ShowOverviewController
      * @param  ProjectSitesQuery  $sites
      * @param  AnalyticsReportQuery  $report
      * @param  SiteReleasesQuery  $releases
+     * @param  LiveVisitorsQuery  $live
      * @return View
      */
-    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report, SiteReleasesQuery $releases): View
+    public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report, SiteReleasesQuery $releases, LiveVisitorsQuery $live): View
     {
         $site = $sites->selected($project, $request->query('site'));
-        $days = in_array((int) $request->query('days'), [7, 30, 90, 365], true) ? (int) $request->query('days') : 30;
+        $days = in_array((int) $request->query('days'), [1, 7, 30, 90, 365], true) ? (int) $request->query('days') : 30;
         $filters = [];
         foreach (['path' => 2048, 'source' => 255, 'campaign' => 150, 'device' => 32] as $key => $max) {
             $value = trim($request->string($key)->toString());
             $filters[$key] = $value !== '' ? mb_substr($value, 0, $max) : null;
+        }
+
+        // The "right now" panel refreshes itself; answer it with just that panel instead of the whole report.
+        if ($site !== null && $request->hasHeader('X-Live-Region')) {
+            return view('analytics._live', ['recent' => $live->handle($site, $filters)]);
         }
 
         $summary = $site !== null ? $report->handle($site, $days, $filters) : null;

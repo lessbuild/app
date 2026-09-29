@@ -19,8 +19,15 @@ use Illuminate\Support\Facades\DB;
 final class AnalyticsReportQuery
 {
     /**
-     * Build an analytics site's report for the last `$days` days (clamped to 7–395) compared with the period before:
-     * headline metrics, a daily pageview series, top pages, entry and exit pages, sources, devices, browsers, systems,
+     * Create a new AnalyticsReportQuery instance.
+     *
+     * @param  LiveVisitorsQuery  $live  Reads the last five minutes.
+     */
+    public function __construct(private readonly LiveVisitorsQuery $live) {}
+
+    /**
+     * Build an analytics site's report for today (`$days` = 1, per hour, compared with yesterday up to the same time)
+     * or the last `$days` days (clamped to 7–395) compared with the period before: headline metrics, a pageview series, top pages, entry and exit pages, sources, devices, browsers, systems,
      * campaigns, recent activity and goal counts. Unfiltered reports longer than 90 days read the daily aggregates
      * (raw events may be past retention by then); the rest is counted in the database from events and visits. Only
      * events whose batch has been processed are counted.
@@ -32,7 +39,7 @@ final class AnalyticsReportQuery
      */
     public function handle(AnalyticsSite $site, int $days = 30, array $filters = []): array
     {
-        $days = min(max($days, 7), 395);
+        $days = $days === 1 ? 1 : min(max($days, 7), 395);
         $end = CarbonImmutable::now($site->timezone)->endOfDay();
         $start = $end->subDays($days - 1)->startOfDay();
         $comparisonStart = $start->subDays($days);
@@ -64,17 +71,19 @@ final class AnalyticsReportQuery
     {
         $startUtc = $start->utc();
         $endUtc = $end->utc();
+        // Today is compared with yesterday up to the same time, not all of yesterday.
+        $previousEndUtc = $days === 1 ? CarbonImmutable::now()->subDay()->utc() : $startUtc;
         $totals = $this->events($site, $comparisonStart->utc(), $endUtc, $filters)->toBase()
             ->selectRaw("COUNT(CASE WHEN type = 'pageview' AND occurred_at >= ? THEN 1 END) AS pageviews", [$startUtc])
-            ->selectRaw("COUNT(CASE WHEN type = 'pageview' AND occurred_at < ? THEN 1 END) AS previous_pageviews", [$startUtc])
+            ->selectRaw("COUNT(CASE WHEN type = 'pageview' AND occurred_at < ? THEN 1 END) AS previous_pageviews", [$previousEndUtc])
             ->selectRaw('COUNT(DISTINCT CASE WHEN occurred_at >= ? THEN visitor_hash END) AS visitors', [$startUtc])
-            ->selectRaw('COUNT(DISTINCT CASE WHEN occurred_at < ? THEN visitor_hash END) AS previous_visitors', [$startUtc])
+            ->selectRaw('COUNT(DISTINCT CASE WHEN occurred_at < ? THEN visitor_hash END) AS previous_visitors', [$previousEndUtc])
             ->selectRaw('COUNT(CASE WHEN occurred_at >= ? THEN 1 END) AS events', [$startUtc])
             ->first();
         $bounceCutoff = CarbonImmutable::now()->subMinutes(30)->utc();
         $visitTotals = $this->visits($site, $comparisonStart->utc(), $endUtc, $filters)->toBase()
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? THEN 1 END) AS visits', [$startUtc])
-            ->selectRaw('COUNT(CASE WHEN last_seen_at < ? THEN 1 END) AS previous_visits', [$startUtc])
+            ->selectRaw('COUNT(CASE WHEN last_seen_at < ? THEN 1 END) AS previous_visits', [$previousEndUtc])
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND conversion_count > 0 THEN 1 END) AS converted', [$startUtc])
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND last_seen_at <= ? AND pageviews > 0 THEN 1 END) AS eligible', [$startUtc, $bounceCutoff])
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND last_seen_at <= ? AND pageviews = 1 AND conversion_count = 0 THEN 1 END) AS bounces', [$startUtc, $bounceCutoff])
@@ -89,7 +98,7 @@ final class AnalyticsReportQuery
         $previousVisitors = $this->averageVisitors($number($totals, 'previous_visitors'), $days);
         $hasVisits = $number($visitTotals, 'visits') > 0;
         $currentVisitCount = $hasVisits ? $number($visitTotals, 'visits') : $this->estimateVisits($site, $startUtc, $endUtc, $filters);
-        $previousVisitCount = $number($visitTotals, 'previous_visits') ?: $this->estimateVisits($site, $comparisonStart->utc(), $start->subSecond()->utc(), $filters);
+        $previousVisitCount = $number($visitTotals, 'previous_visits') ?: $this->estimateVisits($site, $comparisonStart->utc(), $previousEndUtc->subSecond(), $filters);
         $convertedVisits = $hasVisits ? $number($visitTotals, 'converted') : $conversions['visitors'];
         $conversionRate = $currentVisitCount > 0 ? round(($convertedVisits / $currentVisitCount) * 100, 1) : 0;
         $eligible = $number($visitTotals, 'eligible');
@@ -107,7 +116,8 @@ final class AnalyticsReportQuery
                 ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'change' => null, 'tone' => 'warning'],
                 ['label' => 'Active goals', 'value' => number_format($goals->count()), 'change' => null, 'tone' => 'warning'],
             ],
-            'series' => $this->series($site, $start, $end, $filters),
+            'granularity' => $days === 1 ? 'hour' : 'day',
+            'series' => $days === 1 ? $this->hourSeries($site, $start, $filters) : $this->series($site, $start, $end, $filters),
             'pages' => $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('path')),
             'entryPages' => $this->rank($currentVisits(), $this->labelOf('landing_path')),
             'exitPages' => $this->rank($currentVisits(), $this->labelOf('exit_path')),
@@ -120,7 +130,7 @@ final class AnalyticsReportQuery
             'campaigns' => $hasVisits
                 ? $this->rank($currentVisits()->whereNotNull('entry_utm_campaign'), 'entry_utm_campaign')
                 : $this->rank($currentEvents()->whereNotNull('utm_campaign'), 'utm_campaign'),
-            'recent' => $this->recent($site, $filters),
+            'recent' => $this->live->handle($site, $filters),
             'filters' => $filters,
             'goals' => $goals->map(fn (AnalyticsGoal $goal): array => [
                 'name' => $goal->name,
@@ -147,12 +157,7 @@ final class AnalyticsReportQuery
             ->where('site_id', $site->id)
             ->countable()
             ->whereBetween('occurred_at', [$from, $until])
-            ->when($filters['path'] ?? null, fn (Builder $query, string $path) => $query->where('path', $path))
-            ->when($filters['source'] ?? null, fn (Builder $query, string $source) => $query->where(function (Builder $query) use ($source): void {
-                $query->where('utm_source', $source)->orWhere('referrer_host', $source);
-            }))
-            ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('utm_campaign', $campaign))
-            ->when($filters['device'] ?? null, fn (Builder $query, string $device) => $query->where('device_category', $device));
+            ->matchingReportFilters($filters);
     }
 
     /**
@@ -242,7 +247,7 @@ final class AnalyticsReportQuery
     private function estimateVisits(AnalyticsSite $site, CarbonImmutable $from, CarbonImmutable $until, array $filters): int
     {
         return $this->events($site, $from, $until, $filters)->where('type', 'pageview')->toBase()
-            ->selectRaw('COUNT(DISTINCT COALESCE(session_id, visitor_hash, event_id)) AS visits')
+            ->selectRaw('COUNT(DISTINCT COALESCE(session_id, visitor_hash, CAST(event_id AS TEXT))) AS visits')
             ->value('visits') ?? 0;
     }
 
@@ -269,6 +274,25 @@ final class AnalyticsReportQuery
         }
 
         return collect($days)->map(fn (int $value, string $date): array => ['date' => CarbonImmutable::parse($date)->format('M j'), 'value' => $value])->values()->all();
+    }
+
+    /**
+     * Count pageviews in each hour of one local day, with empty hours as zero.
+     *
+     * @param  AnalyticsSite  $site
+     * @param  CarbonImmutable  $day  the start of the local day
+     * @param  array<string, string|null>  $filters
+     * @return array<int, array{date: string, value: int}>
+     */
+    private function hourSeries(AnalyticsSite $site, CarbonImmutable $day, array $filters): array
+    {
+        $counts = $this->hourlyPageviews($site, $day, $day->endOfDay(), $filters);
+        $series = [];
+        for ($hour = $day; $hour->isSameDay($day); $hour = $hour->addHour()) {
+            $series[] = ['date' => $hour->format('H:00'), 'value' => $counts[$hour->format('Y-m-d H')] ?? 0];
+        }
+
+        return $series;
     }
 
     /**
@@ -349,30 +373,6 @@ final class AnalyticsReportQuery
     }
 
     /**
-     * Get the last few events from the past five minutes and how many visitors sent events then, for the "right now"
-     * panel.
-     *
-     * @param  AnalyticsSite  $site
-     * @param  array<string, string|null>  $filters
-     * @return array{visitorCount: int, events: array<int, array<string, mixed>>}
-     */
-    private function recent(AnalyticsSite $site, array $filters): array
-    {
-        $now = CarbonImmutable::now()->utc();
-        $recent = fn () => $this->events($site, $now->subMinutes(5), $now->addMinute(), $filters);
-
-        return [
-            'visitorCount' => $recent()->whereNotNull('visitor_hash')->distinct()->count('visitor_hash'),
-            'events' => $recent()->orderByDesc('occurred_at')->orderByDesc('id')->limit(8)->get()->map(fn (AnalyticsEvent $event): array => [
-                'type' => $event->type,
-                'path' => $event->path,
-                'occurredAt' => $event->occurred_at,
-                'source' => $event->utm_source ?: ($event->referrer_host ?: 'Direct / unknown'),
-            ])->values()->all(),
-        ];
-    }
-
-    /**
      * Calculate the change from the previous period as a signed percentage, "New" when there was nothing before, or
      * null when there's nothing either time.
      *
@@ -439,6 +439,7 @@ final class AnalyticsReportQuery
                 ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'change' => null, 'tone' => 'warning'],
                 ['label' => 'Active goals', 'value' => number_format($goals->count()), 'change' => null, 'tone' => 'warning'],
             ],
+            'granularity' => 'day',
             'series' => $this->aggregateSeries($current, $start, $end),
             'pages' => $this->aggregateRanking($site, 'path', $start, $end, 'pageviews'),
             'entryPages' => [],

@@ -57,6 +57,19 @@ final class ReportPagesTest extends TestCase
         $this->actingAs($this->owner)->get("{$base}?days=9999&site=999")->assertOk()->assertSee('Shop');
     }
 
+    public function test_today_shows_pageviews_per_hour_and_the_live_panel_refreshes_on_its_own(): void
+    {
+        $base = "/projects/{$this->project->id}/analytics";
+
+        $this->actingAs($this->owner)->get("{$base}?days=1")->assertOk()
+            ->assertSee(__('Pageviews per hour'))->assertSee('00:00')->assertSee('23:00')
+            ->assertSee('id="analytics-live"', false)->assertSee('data-live-region', false);
+
+        AnalyticsEvent::create(['site_id' => $this->site->id, 'event_id' => (string) Str::uuid(), 'type' => 'pageview', 'occurred_at' => now()->subMinute(), 'received_at' => now(), 'path' => '/checkout', 'visitor_hash' => 'visitor-live']);
+        $live = $this->actingAs($this->owner)->withHeader('X-Live-Region', '1')->get("{$base}?days=1")->assertOk();
+        $live->assertSee('id="analytics-live"', false)->assertSee('/checkout')->assertSee('1 visitor in the last 5 minutes')->assertDontSee(__('Pageviews per hour'));
+    }
+
     public function test_the_report_lists_releases_that_went_live_in_the_period(): void
     {
         $production = $this->project->environments()->where('slug', 'production')->firstOrFail();

@@ -92,6 +92,25 @@ class AnalyticsEvent extends Model
     }
 
     /**
+     * Limit a query to events matching a report's filters: page, source (campaign source or referring site),
+     * campaign and device. Empty filters are ignored.
+     *
+     * @param  Builder<self>  $query
+     * @param  array<string, string|null>  $filters
+     * @return void
+     */
+    #[Scope]
+    protected function matchingReportFilters(Builder $query, array $filters): void
+    {
+        $query->when($filters['path'] ?? null, fn (Builder $query, string $path) => $query->where('path', $path))
+            ->when($filters['source'] ?? null, fn (Builder $query, string $source) => $query->where(function (Builder $query) use ($source): void {
+                $query->where('utm_source', $source)->orWhere('referrer_host', $source);
+            }))
+            ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('utm_campaign', $campaign))
+            ->when($filters['device'] ?? null, fn (Builder $query, string $device) => $query->where('device_category', $device));
+    }
+
+    /**
      * Identify whose visit the event belongs to: its session, else its daily visitor hash, else the event alone, so
      * events without either never merge with someone else's.
      *
