@@ -85,9 +85,9 @@ final class InfrastructureBudgetReached extends InboxNotification
     /**
      * Get the account it's about.
      *
-     * @return string|null
+     * @return string
      */
-    protected function accountId(): ?string
+    protected function accountId(): string
     {
         return $this->accountId;
     }
