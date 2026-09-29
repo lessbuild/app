@@ -309,6 +309,7 @@ paths:
             schema: { type: object, required: [variables], properties: { variables: { type: string, description: KEY=value lines } } }
       responses:
         '200': { description: "Applied; `count` says how many variables there are now." }
+        '202': { description: "The environment needs a second person to approve variable changes: `status` is `pending_approval` and `change_id` names the change waiting in the app." }
         '401': { $ref: '#/components/responses/Unauthenticated' }
         '422': { $ref: '#/components/responses/Invalid' }
   /v1/projects/{project}/workflow:

@@ -103,6 +103,7 @@ use App\Http\Controllers\Deploy\ClosePreviewController;
 use App\Http\Controllers\Deploy\CompleteGitHubAppInstallController;
 use App\Http\Controllers\Deploy\ConnectGitHubAppController;
 use App\Http\Controllers\Deploy\CreateRepositoryController;
+use App\Http\Controllers\Deploy\DecideVariableChangeController;
 use App\Http\Controllers\Deploy\DeleteEnvironmentSettingController;
 use App\Http\Controllers\Deploy\DeleteRepositoryController;
 use App\Http\Controllers\Deploy\MoveEnvironmentRecipeController;
@@ -544,6 +545,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
                 Route::post('/environments/{environment}/freezes', StoreEnvironmentFreezeController::class)->name('environments.freezes.store');
                 Route::post('/environments/{environment}/variables', StoreEnvironmentVariableController::class)->name('environments.variables.store');
                 Route::put('/environments/{environment}/variables', ReplaceEnvironmentVariablesController::class)->name('environments.variables.replace');
+                Route::post('/environments/{environment}/variable-changes/{change}', DecideVariableChangeController::class)->whereNumber('change')->name('environments.variable-changes.decide');
                 Route::post('/environments/{environment}/processes', StoreEnvironmentProcessController::class)->name('environments.processes.store');
                 Route::post('/environments/{environment}/resources', StoreEnvironmentResourceController::class)->name('environments.resources.store');
                 Route::post('/environments/{environment}/deployment-schedules', StoreDeploymentScheduleController::class)->name('environments.deployment-schedules.store');

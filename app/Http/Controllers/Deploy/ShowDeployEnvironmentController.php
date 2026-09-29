@@ -45,6 +45,7 @@ final class ShowDeployEnvironmentController
             ...$automation->handle($environment),
             'environmentRecipes' => $environment->recipes()->with('recipe')->get(),
             'deployDestinations' => AlertDestination::query()->forAccount($project->account)->whereNotIn('type', [AlertDestinationType::PagerDuty, AlertDestinationType::Voice])->orderBy('name')->get(),
+            'pendingChanges' => $environment->pendingVariableChanges()->where('status', 'pending')->with('requester')->latest('id')->get(),
             'freezes' => $environment->freezes()->where('ends_at', '>', now())->orderBy('starts_at')->get(),
             'deployRoutes' => $environment->deployNotifications()->get()->keyBy('alert_destination_id'),
             'libraryRecipes' => Recipe::query()->where('account_id', $project->account_id)->orderBy('name')->get(['id', 'name']),

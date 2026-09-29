@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Deploy;
 
 use App\Actions\Deploy\ReplaceEnvironmentVariables;
+use App\Actions\Deploy\RequestVariableChange;
 use App\Http\Attributes\TokenAccount;
 use App\Models\Account;
 use App\Models\User;
@@ -25,12 +26,20 @@ final class ReplaceEnvironmentVariablesController
      * @param  string  $environment
      * @param  DeployApiQuery  $query
      * @param  ReplaceEnvironmentVariables  $replace
+     * @param  RequestVariableChange  $requestChange
      * @return JsonResponse
      */
-    public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $environment, DeployApiQuery $query, ReplaceEnvironmentVariables $replace): JsonResponse
+    public function __invoke(Request $request, #[CurrentUser] User $user, #[TokenAccount] Account $account, string $environment, DeployApiQuery $query, ReplaceEnvironmentVariables $replace, RequestVariableChange $requestChange): JsonResponse
     {
         $request->validate(['variables' => ['required', 'string', 'max:50000']]);
 
-        return response()->json(['data' => ['status' => 'applied', 'count' => $replace->handle($user, $query->environment($user, $account, $environment), $request->string('variables')->toString())]]);
+        $target = $query->environment($user, $account, $environment);
+        if ($target->require_variable_approval) {
+            $change = $requestChange->handle($user, $target, 'replace', ['contents' => $request->string('variables')->toString()]);
+
+            return response()->json(['data' => ['status' => 'pending_approval', 'change_id' => $change->id]], 202);
+        }
+
+        return response()->json(['data' => ['status' => 'applied', 'count' => $replace->handle($user, $target, $request->string('variables')->toString())]]);
     }
 }

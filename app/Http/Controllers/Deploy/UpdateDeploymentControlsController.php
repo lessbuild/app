@@ -35,7 +35,7 @@ final class UpdateDeploymentControlsController
             'timezone' => ['nullable', 'timezone:all'],
         ]);
         $update->handle($user, $environment, [
-            'protected' => $request->boolean('protected'), 'locked' => $request->boolean('locked'), 'lock_reason' => $request->filled('lock_reason') ? $request->string('lock_reason')->toString() : null, 'window' => $request->boolean('window'),
+            'protected' => $request->boolean('protected'), 'require_variable_approval' => $request->boolean('require_variable_approval'), 'locked' => $request->boolean('locked'), 'lock_reason' => $request->filled('lock_reason') ? $request->string('lock_reason')->toString() : null, 'window' => $request->boolean('window'),
             'days' => array_values(array_map('intval', (array) ($data['days'] ?? []))), 'start' => $request->filled('start') ? $request->string('start')->toString() : null,
             'end' => $request->filled('end') ? $request->string('end')->toString() : null, 'timezone' => $request->filled('timezone') ? $request->string('timezone')->toString() : null,
         ]);

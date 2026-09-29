@@ -26,10 +26,14 @@ final class ReplaceEnvironmentVariables
      * @param  User  $actor
      * @param  Environment  $environment
      * @param  string  $contents
+     * @param  bool  $approved  whether a second person approved it, for environments that require that
      * @return int
      */
-    public function handle(User $actor, Environment $environment, string $contents): int
+    public function handle(User $actor, Environment $environment, string $contents, bool $approved = false): int
     {
+        if ($environment->require_variable_approval && ! $approved) {
+            throw ValidationException::withMessages(['variables' => __('Variable changes in this environment need someone else’s approval.')]);
+        }
         $variables = [];
         foreach (preg_split('/\R/', $contents) ?: [] as $number => $line) {
             if (trim($line) === '' || str_starts_with(ltrim($line), '#')) {

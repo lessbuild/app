@@ -17,6 +17,7 @@
             @csrf
             @method('PUT')
             <div class="sm:col-span-2"><x-signal.ui.checkbox name="protected" value="1" :checked="$environment->protected" :disabled="! $canManage" :description="__('Only owners, admins and members allowed to deploy protected environments (under Account → Members) can deploy here or change these settings.')">{{ __('Protected environment') }}</x-signal.ui.checkbox></div>
+            <div class="sm:col-span-2"><x-signal.ui.checkbox name="require_variable_approval" value="1" :checked="$environment->require_variable_approval" :disabled="! $canManage" :description="__('Adding, changing or removing a variable waits until someone else who can configure this environment approves it.')">{{ __('Variable changes need a second person') }}</x-signal.ui.checkbox></div>
             <div class="sm:col-span-2"><x-signal.ui.checkbox name="locked" value="1" :checked="(bool) $environment->deployment_locked_at" :disabled="! $canManage">{{ __('Lock deploys') }}</x-signal.ui.checkbox></div>
             <x-signal.ui.input-field name="lock_reason" :label="__('Reason (shown to people who try)')" :value="$environment->deployment_lock_reason" maxlength="500" />
             <div class="sm:col-span-2"><x-signal.ui.checkbox name="window" value="1" :checked="$environment->deployment_window_days !== null" :disabled="! $canManage">{{ __('Only deploy in a window') }}</x-signal.ui.checkbox></div>
@@ -109,6 +110,25 @@
     </x-signal.ui.page-tab-panel>
 
     <x-signal.ui.page-tab-panel name="variables" :current="$tab">
+    @if ($pendingChanges->isNotEmpty())
+        <x-signal.ui.settings-section id="pending-variable-changes" :title="__('Waiting for approval')" :description="__('Variable changes someone asked for. Someone other than the person who asked approves or rejects each one.')">
+            <div class="grid gap-3 p-4 sm:p-6">
+                @foreach ($pendingChanges as $change)
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                        <span><span class="font-bold">{{ $change->summary }}</span> <span class="text-muted">· {{ $change->requester?->name ?? __('Someone') }} · {{ $change->created_at?->diffForHumans() }}</span></span>
+                        @if ($canManage && $change->requested_by !== auth()->id())
+                            <span class="flex gap-2">
+                                <form method="POST" action="{{ route('deploy.environments.variable-changes.decide', [$project, $environment, $change->id]) }}">@csrf<input type="hidden" name="decision" value="approve"><x-signal.ui.button type="submit" variant="primary" size="sm">{{ __('Approve') }}</x-signal.ui.button></form>
+                                <form method="POST" action="{{ route('deploy.environments.variable-changes.decide', [$project, $environment, $change->id]) }}">@csrf<input type="hidden" name="decision" value="reject"><x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Reject') }}</x-signal.ui.button></form>
+                            </span>
+                        @elseif ($change->requested_by === auth()->id())
+                            <x-signal.ui.badge tone="warning">{{ __('Waiting for someone else') }}</x-signal.ui.badge>
+                        @endif
+                    </div>
+                @endforeach
+            </div>
+        </x-signal.ui.settings-section>
+    @endif
     <x-signal.ui.settings-section id="variables" :title="__('Variables')" :description="__('Written into .env on each deploy (runtime), exported while building (build), or both. Secrets aren’t shown again.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @if ($environment->variables->isNotEmpty())

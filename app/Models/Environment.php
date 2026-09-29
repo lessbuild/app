@@ -25,6 +25,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $telemetry_event_count events Monitoring has received for this environment
  * @property \Carbon\CarbonImmutable|null $telemetry_last_received_at
  * @property bool $requires_deployment_approval Deploy: builds wait for someone else to approve them
+ * @property bool $require_variable_approval changes to its variables wait for someone else's approval
  * @property bool $protected only owners, admins and members allowed to deploy protected environments can deploy to or change it
  * @property \Carbon\CarbonImmutable|null $deployment_locked_at Deploy: no deploys while locked
  * @property string|null $deployment_locked_by
@@ -74,7 +75,7 @@ class Environment extends Model
     {
         return [
             'kind' => EnvironmentKind::class, 'telemetry_event_count' => 'integer', 'telemetry_last_received_at' => 'immutable_datetime',
-            'requires_deployment_approval' => 'boolean', 'protected' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
+            'requires_deployment_approval' => 'boolean', 'protected' => 'boolean', 'require_variable_approval' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
             'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer', 'rollback_error_rate_percent' => 'integer',
             'container_port' => 'integer', 'minimum_replicas' => 'integer', 'maximum_replicas' => 'integer', 'desired_replicas' => 'integer',
             'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean',
@@ -192,6 +193,16 @@ class Environment extends Model
     public function deployNotifications(): HasMany
     {
         return $this->hasMany(EnvironmentDeployNotification::class);
+    }
+
+    /**
+     * Get the variable changes waiting for approval, and those decided.
+     *
+     * @return HasMany<PendingVariableChange, $this>
+     */
+    public function pendingVariableChanges(): HasMany
+    {
+        return $this->hasMany(PendingVariableChange::class);
     }
 
     /**

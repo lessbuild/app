@@ -14,6 +14,7 @@ use App\Models\ScalingSchedule;
 use App\Models\ScheduledTask;
 use App\Models\User;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\ValidationException;
 
 final class DeleteEnvironmentSetting
 {
@@ -28,6 +29,9 @@ final class DeleteEnvironmentSetting
     public function handle(User $actor, EnvironmentVariable|EnvironmentProcess|EnvironmentResource|DeploymentSchedule|ScalingSchedule|ScheduledTask|EnvironmentRecipe|EnvironmentFreeze $setting): void
     {
         Gate::forUser($actor)->authorize('configureDeploy', $setting->environment);
+        if ($setting instanceof EnvironmentVariable && $setting->environment->require_variable_approval) {
+            throw ValidationException::withMessages(['variables' => __('Variable changes in this environment need someone else’s approval.')]);
+        }
         $setting->delete();
     }
 }
