@@ -2,7 +2,7 @@
 @php($others = collect($services)->reject(fn ($other): bool => $other->key() === $service->key()))
 
 {{-- A service's page, laid out like the Signal product pages. Long lists collapse to titles on phones. --}}
-<x-signal.layouts.public :title="$service->name()" :description="__($copy['summary'])" :canonical="route('features', $service->key())">
+<x-signal.layouts.public :title="$service->name()" :description="__($copy['summary'])" :canonical="route('features', $service->key())" :image="asset('images/og/'.$service->key().'.png')">
     <section class="border-b border-line bg-surface" aria-labelledby="service-heading">
         <div class="mx-auto grid max-w-6xl items-center gap-8 px-5 py-10 sm:px-8 sm:py-16 lg:grid-cols-[.95fr_1.05fr] lg:gap-12 lg:py-20">
             <div class="min-w-0">
@@ -58,6 +58,19 @@
             </div>
         </div>
     </section>
+
+    @if (file_exists(public_path('images/screens/'.$service->key().'.png')))
+        <section class="bg-page pb-12 sm:pb-20" aria-labelledby="screenshot-heading">
+            <div class="mx-auto max-w-6xl px-5 sm:px-8">
+                <h2 id="screenshot-heading" class="sr-only">{{ __('What :service looks like', ['service' => $service->name()]) }}</h2>
+                <figure class="overflow-hidden rounded-panel border border-line bg-surface shadow-panel">
+                    <div class="flex items-center gap-1.5 border-b border-line bg-surface-muted px-4 py-3" aria-hidden="true"><span class="size-2.5 rounded-full bg-danger/60"></span><span class="size-2.5 rounded-full bg-warning/60"></span><span class="size-2.5 rounded-full bg-success/60"></span></div>
+                    <img src="{{ asset('images/screens/'.$service->key().'.png') }}" alt="{{ __('A screenshot of :service in :app', ['service' => $service->name(), 'app' => config('app.name')]) }}" width="1360" height="860" loading="lazy" class="block h-auto w-full">
+                    <figcaption class="border-t border-line px-4 py-3 text-xs text-muted">{{ __('The real :service, with sample data.', ['service' => $service->name()]) }}</figcaption>
+                </figure>
+            </div>
+        </section>
+    @endif
 
     <section id="capabilities" class="border-y border-line bg-surface-muted/60 py-12 sm:py-20" aria-labelledby="capabilities-heading">
         <div class="mx-auto max-w-6xl px-5 sm:px-8">

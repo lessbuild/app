@@ -41,5 +41,13 @@
             @endif
         </section>
     @endforeach
+    <section aria-labelledby="compare-heading" class="border-t border-line pt-10">
+        <h2 id="compare-heading" class="text-lg font-extrabold text-ink">{{ __('Coming from another tool?') }}</h2>
+        <ul class="mt-4 flex flex-wrap gap-2">
+            @foreach (config('compare.competitors') as $slug => $competitor)
+                <li><a href="{{ route('compare', $slug) }}" class="ui-chip hover:text-ink">{{ __(':app vs :other', ['app' => config('app.name'), 'other' => $competitor['name']]) }}</a></li>
+            @endforeach
+        </ul>
+    </section>
     </div>
 </x-signal.layouts.public>

@@ -2,12 +2,13 @@
     'title',
     'description' => null,
     'canonical' => null,
+    'image' => null,
 ])
 
 @php($services = app(\App\Platform\ServiceRegistry::class)->all())
 
 {{-- The public site, as the Signal starter's Buildpusher homepage lays it out: a blurred sticky header, the page, and a three-column footer. Indexed by search engines. --}}
-<x-signal.layouts.base :title="$title" :description="$description" indexable :canonical="$canonical">
+<x-signal.layouts.base :title="$title" :description="$description" indexable :canonical="$canonical" :image="$image">
     <div class="min-h-screen overflow-x-hidden">
         <header class="sticky top-0 z-40 border-b border-line bg-surface/90 backdrop-blur">
             <div class="mx-auto flex h-16 max-w-6xl items-center justify-between gap-6 px-5 sm:px-8">
@@ -68,6 +69,7 @@
                     <nav class="mt-4 flex flex-col items-start gap-3" aria-label="{{ __('Resources') }}">
                         <a href="{{ route('pricing') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Pricing') }}</a>
                         <a href="{{ route('help') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Help centre') }}</a>
+                        <a href="{{ route('changelog') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Changelog') }}</a>
                         <a href="{{ route('docs.api') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('API reference') }}</a>
                         <a href="{{ route('platform.status') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Status') }}</a>
                         <a href="{{ route('legal', 'privacy') }}" class="text-sm font-semibold text-muted transition hover:text-ink">{{ __('Privacy') }}</a>

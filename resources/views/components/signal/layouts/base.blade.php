@@ -3,6 +3,7 @@
     'description' => null,
     'indexable' => false,
     'canonical' => null,
+    'image' => null,
 ])
 
 @php($pageTitle = $title ? $title.' · '.config('app.name') : config('app.name'))
@@ -33,6 +34,21 @@
         <title>{{ $pageTitle }}</title>
         @if ($description)
             <meta name="description" content="{{ $description }}">
+        @endif
+        @if ($indexable)
+            {{-- How the page looks when it's shared. --}}
+            <meta property="og:site_name" content="{{ config('app.name') }}">
+            <meta property="og:type" content="website">
+            <meta property="og:title" content="{{ $pageTitle }}">
+            @if ($description)<meta property="og:description" content="{{ $description }}">@endif
+            <meta property="og:url" content="{{ $canonical ?? url()->current() }}">
+            <meta property="og:image" content="{{ $image ?? asset('images/og/default.png') }}">
+            <meta property="og:image:width" content="1200">
+            <meta property="og:image:height" content="630">
+            <meta name="twitter:card" content="summary_large_image">
+            <meta name="twitter:title" content="{{ $pageTitle }}">
+            @if ($description)<meta name="twitter:description" content="{{ $description }}">@endif
+            <meta name="twitter:image" content="{{ $image ?? asset('images/og/default.png') }}">
         @endif
         <x-signal.theme-boot />
         @vite(['resources/css/app.css', 'resources/js/app.js'])

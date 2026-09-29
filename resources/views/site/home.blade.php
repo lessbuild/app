@@ -1,5 +1,17 @@
 @php($hero = config('marketing.hero'))
 
+@push('head')
+    {{-- Tells search engines what the product is and that it has a free tier. --}}
+    <script type="application/ld+json">{!! json_encode([
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            ['@type' => 'Organization', 'name' => config('app.name'), 'url' => route('home'), 'logo' => asset('images/og/default.png')],
+            ['@type' => 'SoftwareApplication', 'name' => config('app.name'), 'url' => route('home'), 'applicationCategory' => 'DeveloperApplication', 'operatingSystem' => 'Web',
+                'description' => config('marketing.summary'), 'offers' => ['@type' => 'Offer', 'price' => '0', 'priceCurrency' => 'USD', 'description' => 'Free tier for every service']],
+        ],
+    ], JSON_UNESCAPED_SLASHES | JSON_HEX_TAG) !!}</script>
+@endpush
+
 <x-signal.layouts.public :title="config('app.name')" :description="__(config('marketing.summary'))" :canonical="route('home')">
     {{-- Hero: the promise on the left, a glimpse of the dashboard on the right. --}}
     <section class="relative overflow-hidden border-b border-line bg-surface">
