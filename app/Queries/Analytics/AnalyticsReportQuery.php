@@ -113,11 +113,11 @@ final class AnalyticsReportQuery
         return [
             'range' => ['days' => $days, 'start' => $start, 'end' => $end],
             'metrics' => [
-                ['label' => 'Pageviews', 'value' => number_format($currentPageviews), 'change' => $this->change($currentPageviews, $previousPageviews), 'tone' => 'primary'],
-                ['label' => 'Visitors', 'value' => number_format($currentVisitors), 'change' => $this->change($currentVisitors, $previousVisitors), 'tone' => 'info'],
-                ['label' => 'Visits', 'value' => number_format($currentVisitCount), 'change' => $this->change($currentVisitCount, $previousVisitCount), 'tone' => 'info'],
-                ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'change' => null, 'tone' => 'success'],
-                ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'change' => null, 'tone' => 'warning'],
+                ['label' => 'Pageviews', 'value' => number_format($currentPageviews), 'raw' => $currentPageviews, 'change' => $this->change($currentPageviews, $previousPageviews), 'tone' => 'primary'],
+                ['label' => 'Visitors', 'value' => number_format($currentVisitors), 'raw' => $currentVisitors, 'change' => $this->change($currentVisitors, $previousVisitors), 'tone' => 'info'],
+                ['label' => 'Visits', 'value' => number_format($currentVisitCount), 'raw' => $currentVisitCount, 'change' => $this->change($currentVisitCount, $previousVisitCount), 'tone' => 'info'],
+                ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'raw' => (float) $conversionRate, 'change' => null, 'tone' => 'success'],
+                ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'raw' => $bounceRate, 'change' => null, 'tone' => 'warning'],
                 $this->durationMetric($number($visitTotals, 'duration'), $number($visitTotals, 'visits'), $number($visitTotals, 'previous_duration'), $number($visitTotals, 'previous_visits')),
             ],
             'granularity' => $days === 1 ? 'hour' : 'day',
@@ -430,14 +430,14 @@ final class AnalyticsReportQuery
      * @param  int  $visits
      * @param  int  $previousSeconds
      * @param  int  $previousVisits
-     * @return array{label: string, value: string, change: string|null, tone: string}
+     * @return array{label: string, value: string, raw: int|null, change: string|null, tone: string}
      */
     private function durationMetric(int $seconds, int $visits, int $previousSeconds, int $previousVisits): array
     {
         $average = $visits > 0 ? (int) round($seconds / $visits) : 0;
         $previous = $previousVisits > 0 ? (int) round($previousSeconds / $previousVisits) : 0;
 
-        return ['label' => 'Visit duration', 'value' => $visits > 0 ? $this->duration($average) : '—', 'change' => $visits > 0 ? $this->change($average, $previous) : null, 'tone' => 'warning'];
+        return ['label' => 'Visit duration', 'value' => $visits > 0 ? $this->duration($average) : '—', 'raw' => $visits > 0 ? $average : null, 'change' => $visits > 0 ? $this->change($average, $previous) : null, 'tone' => 'warning'];
     }
 
     /**
@@ -526,11 +526,11 @@ final class AnalyticsReportQuery
         return [
             'range' => ['days' => $days, 'start' => $start, 'end' => $end],
             'metrics' => [
-                ['label' => 'Pageviews', 'value' => number_format($currentPageviews), 'change' => $this->change($currentPageviews, $previousPageviews), 'tone' => 'primary'],
-                ['label' => 'Visitors', 'value' => number_format($currentVisitors), 'change' => $this->change($currentVisitors, $previousVisitors), 'tone' => 'info'],
-                ['label' => 'Visits', 'value' => number_format($currentVisits), 'change' => $this->change($currentVisits, $previousVisits), 'tone' => 'info'],
-                ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'change' => null, 'tone' => 'success'],
-                ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'change' => null, 'tone' => 'warning'],
+                ['label' => 'Pageviews', 'value' => number_format($currentPageviews), 'raw' => $currentPageviews, 'change' => $this->change($currentPageviews, $previousPageviews), 'tone' => 'primary'],
+                ['label' => 'Visitors', 'value' => number_format($currentVisitors), 'raw' => $currentVisitors, 'change' => $this->change($currentVisitors, $previousVisitors), 'tone' => 'info'],
+                ['label' => 'Visits', 'value' => number_format($currentVisits), 'raw' => $currentVisits, 'change' => $this->change($currentVisits, $previousVisits), 'tone' => 'info'],
+                ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'raw' => (float) $conversionRate, 'change' => null, 'tone' => 'success'],
+                ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'raw' => $bounceRate, 'change' => null, 'tone' => 'warning'],
                 $this->durationMetric($this->aggregateSum($current, 'duration_seconds'), $currentVisits, $this->aggregateSum($previous, 'duration_seconds'), $previousVisits),
             ],
             'granularity' => 'day',

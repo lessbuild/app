@@ -70,6 +70,29 @@ final class Client
     }
 
     /**
+     * List the Analytics sites the token can read (needs the analytics:read scope).
+     *
+     * @return list<array<string, mixed>>
+     */
+    public function analyticsSites(): array
+    {
+        return array_values($this->data('GET', '/analytics/sites'));
+    }
+
+    /**
+     * Get a site's Analytics report as numbers.
+     *
+     * @param  int  $siteId
+     * @param  int  $days  1 (today, per hour), 7, 30, 90 or 365
+     * @param  array<string, string>  $filters  path, source, campaign, device or country
+     * @return array<string, mixed>
+     */
+    public function analyticsReport(int $siteId, int $days = 30, array $filters = []): array
+    {
+        return $this->data('GET', '/analytics/sites/'.$siteId.'/report?'.http_build_query(['days' => $days, ...$filters]));
+    }
+
+    /**
      * List recent deploys, newest first.
      *
      * @param  int  $limit  1–100

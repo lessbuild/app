@@ -51,6 +51,21 @@ export class BuildPusher {
         return this.#data('GET', `/projects/${encodeURIComponent(projectId)}`);
     }
 
+    /** The Analytics sites the token can read (needs the analytics:read scope). */
+    analyticsSites() {
+        return this.#data('GET', '/analytics/sites');
+    }
+
+    /**
+     * A site's Analytics report as numbers.
+     * @param {number} siteId
+     * @param {{ days?: 1|7|30|90|365, path?: string, source?: string, campaign?: string, device?: string, country?: string }} [options]
+     */
+    analyticsReport(siteId, { days = 30, ...filters } = {}) {
+        const query = new URLSearchParams({ days: String(days), ...filters });
+        return this.#data('GET', `/analytics/sites/${Number(siteId)}/report?${query}`);
+    }
+
     /** Recent deploys, newest first. @param {{ limit?: number }} [options] */
     deployments({ limit = 25 } = {}) {
         return this.#data('GET', `/deployments?limit=${Math.max(1, Math.min(100, limit))}`);

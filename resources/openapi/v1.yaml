@@ -104,6 +104,32 @@ paths:
       responses:
         '200': { description: "The account's ID, name and slug." }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/analytics/sites:
+    get:
+      tags: [Analytics]
+      summary: Analytics sites the token can read
+      security: [{ apiToken: [analytics:read] }]
+      responses:
+        '200': { description: "Each site's ID, name, project, tracker ID, domains, timezone, whether it's verified and when it last received an event." }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/analytics/sites/{site}/report:
+    get:
+      tags: [Analytics]
+      summary: A site's report as numbers
+      description: The same report as the dashboard. Metrics are pageviews, visitors (daily uniques averaged over the period), visits, conversion_rate and bounce_rate (percent) and visit_duration (seconds), each with the change from the previous period. Lists are the top five pages, entry and exit pages, sources, countries, campaigns, devices, browsers, operating systems, outbound links, file downloads and missing pages; goals include revenue; page_speed has the 75th percentile of each Web Vital.
+      security: [{ apiToken: [analytics:read] }]
+      parameters:
+        - { name: site, in: path, required: true, schema: { type: integer } }
+        - { name: days, in: query, description: "1 (today, per hour), 7, 30 (default), 90 or 365", schema: { type: integer, enum: [1, 7, 30, 90, 365] } }
+        - { name: path, in: query, schema: { type: string } }
+        - { name: source, in: query, description: Campaign source or referring site, schema: { type: string } }
+        - { name: campaign, in: query, schema: { type: string } }
+        - { name: device, in: query, schema: { type: string, enum: [Desktop, Mobile, Tablet] } }
+        - { name: country, in: query, description: ISO 3166 alpha-2 code, schema: { type: string, pattern: '^[A-Za-z]{2}$' } }
+      responses:
+        '200': { description: The report. }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { description: No such site in the token's account. }
   /v1/me:
     get:
       tags: [Deploy]

@@ -40,3 +40,14 @@ test('rollback returns the new deploy and errors carry the status', async () => 
     await assert.rejects(client.deployment(99), (error) => error instanceof BuildPusherError && error.status === 404);
     assert.throws(() => new BuildPusher({}), /token is required/);
 });
+
+test('reads an analytics report with filters', async () => {
+    const { fetch, calls } = fakeFetch({
+        'GET /api/v1/analytics/sites/4/report': () => [200, { data: { site_id: 4, metrics: { pageviews: { value: 12, change: null } } } }],
+    });
+    const client = new BuildPusher({ token: 'bp_test', baseUrl: 'https://bp.test', fetch });
+
+    const report = await client.analyticsReport(4, { days: 7, country: 'DE' });
+    assert.equal(report.metrics.pageviews.value, 12);
+    assert.equal(calls[0].url, 'https://bp.test/api/v1/analytics/sites/4/report?days=7&country=DE');
+});
