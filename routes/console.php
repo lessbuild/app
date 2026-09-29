@@ -43,6 +43,7 @@ use App\Services\Deploy\DeploymentObserver;
 use App\Services\Deploy\Deployments;
 use App\Services\Deploy\Hibernation;
 use App\Services\Deploy\Previews;
+use App\Services\Infrastructure\InfrastructureBudgetAlerts;
 use App\Services\Infrastructure\ProviderHealthMonitor;
 use App\Services\Infrastructure\ServerPricing;
 use App\Services\Monitoring\AlertDeliveryRunner;
@@ -222,6 +223,14 @@ Artisan::command('referrals:apply-credits', function (Referrals $referrals): int
     return 0;
 })->purpose('Add pending referral credits to Stripe balances');
 Schedule::command('referrals:apply-credits')->hourly()->withoutOverlapping(30)->onOneServer();
+
+// Owners hear once a month when servers reach 80% and 100% of the infrastructure budget.
+Artisan::command('infrastructure:budget-alerts', function (InfrastructureBudgetAlerts $alerts): int {
+    $this->info(sprintf('Sent %d infrastructure budget alerts.', $alerts->check()));
+
+    return 0;
+})->purpose('Alert owners whose servers cost 80% or more of their monthly budget');
+Schedule::command('infrastructure:budget-alerts')->hourlyAt(20)->withoutOverlapping(30)->onOneServer();
 
 Artisan::command('providers:check {--provider=* : Only these provider IDs}', function (ProviderHealthMonitor $monitor): int {
     $ids = array_values(array_filter(array_map('intval', (array) $this->option('provider')), fn (int $id): bool => $id > 0));
