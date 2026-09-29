@@ -118,6 +118,10 @@ sudo -u www-data "$PHP" artisan route:list --path=up >/dev/null
 
 step "Activating the release"
 ln -sfn "$RELEASE" "$VOLUME/current.tmp" && mv -Tf "$VOLUME/current.tmp" "$VOLUME/current"
+# Keep the three newest releases (the live one always among them) so earlier deploys stay one symlink away.
+ls -1dt "$VOLUME/releases"/*/ 2>/dev/null | tail -n +4 | while read -r old_release; do
+    [ "$(readlink -f "$old_release")" = "$(readlink -f "$VOLUME/current")" ] || rm -rf "$old_release"
+done
 
 step "Installing the v2 workers and scheduler"
 for entry in "${QUEUES[@]}"; do
