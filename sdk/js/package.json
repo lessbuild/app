@@ -1,0 +1,12 @@
+{
+    "name": "@buildpusher/sdk",
+    "version": "1.0.0",
+    "description": "JavaScript client for the BuildPusher API: deploy, follow logs, roll back and manage environment variables.",
+    "type": "module",
+    "main": "index.js",
+    "types": "index.d.ts",
+    "files": ["index.js", "index.d.ts", "README.md"],
+    "engines": { "node": ">=18" },
+    "scripts": { "test": "node --test" },
+    "license": "MIT"
+}

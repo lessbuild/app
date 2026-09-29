@@ -129,6 +129,7 @@ return [
                 ['Deploy', 'Run buildpusher deploy <project> [environment] --wait to deploy and follow the log; add --ref=v1.4.0 to deploy a tag, branch or commit. It exits non-zero if the deploy fails, so CI jobs fail with it.'],
                 ['Follow and undo', 'buildpusher status lists recent deploys, buildpusher logs <id> --follow streams one, and buildpusher rollback <id> goes back to the release a deploy shipped.'],
                 ['Set defaults', 'Put {"project": "shop", "environment": "staging"} in .buildpusher.json at the root of your repository to leave them off each command.'],
+                ['In GitHub Actions or code', 'Deploy from a workflow with the BuildPusher GitHub Action, or from your own code with the PHP (buildpusher/sdk) and JavaScript (@buildpusher/sdk) SDKs.'],
             ],
         ],
         'environments-and-variables' => [
