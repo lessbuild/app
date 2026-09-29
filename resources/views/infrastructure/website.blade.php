@@ -300,41 +300,45 @@
                 </div>
             @endif
 
-            @if ($backups->isEmpty())
-                <p class="text-sm text-muted">{{ __('No backups yet.') }}</p>
-            @else
-                <ul class="divide-y divide-line">
-                    @foreach ($backups as $backup)
-                        @php($restore = $backup->restores->first())
-                        @php($verification = $backup->verifications->first())
-                        <li class="flex flex-wrap items-center justify-between gap-3 py-3">
-                            <div class="min-w-0 text-sm">
-                                <p class="flex flex-wrap items-center gap-2"><span class="font-bold text-ink">{{ $backup->created_at?->toDayDateTimeString() }}</span> @include('infrastructure._backup-status', ['status' => $backup->status]) <span class="text-xs text-muted">{{ $backup->destination->name }}@if ($backup->size_bytes !== null) · {{ \Illuminate\Support\Number::fileSize($backup->size_bytes, maxPrecision: 1) }}@endif @if ($backup->website_backup_schedule_id) · {{ __('scheduled') }}@endif</span></p>
-                                @if ($backup->error)<p class="text-xs text-danger">{{ $backup->error }}</p>@endif
-                                @if ($restore)<p class="text-xs text-muted">{{ __('Restore:') }} {{ __($restore->status) }}@if ($restore->error) · <span class="text-danger">{{ $restore->error }}</span>@endif</p>@endif
-                                @if ($verification)<p class="text-xs text-muted">{{ __('Verification:') }} {{ __($verification->status) }}@if ($verification->error) · <span class="text-danger">{{ $verification->error }}</span>@endif</p>@endif
-                            </div>
-                            @if ($backup->isRestorable())
-                                <div class="flex gap-1">
-                                    @if ($canBackUp)
-                                        <form method="POST" action="{{ route('infrastructure.websites.backups.verify', [$project, $website->id, $backup->id]) }}">@csrf<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Verify') }}</x-signal.ui.button></form>
-                                    @endif
-                                    @if ($canManage)
-                                        <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="restore-backup-{{ $backup->id }}">{{ __('Restore') }}</x-signal.ui.button>
-                                        <x-signal.overlays.modal :id="'restore-backup-'.$backup->id" :title="__('Restore this backup?')" :description="__('The live database, .env file and shared storage are replaced with the backup from :date. The website is in maintenance mode meanwhile, and put back as it was if any step fails.', ['date' => $backup->created_at?->toDayDateTimeString()])">
-                                            <form method="POST" action="{{ route('infrastructure.websites.backups.restore', [$project, $website->id, $backup->id]) }}" class="flex justify-end gap-3">
-                                                @csrf
-                                                <x-signal.ui.button type="button" variant="secondary" data-modal-close>{{ __('Cancel') }}</x-signal.ui.button>
-                                                <x-signal.ui.button type="submit" variant="danger">{{ __('Restore') }}</x-signal.ui.button>
-                                            </form>
-                                        </x-signal.overlays.modal>
-                                    @endif
+            {{-- Follows a backup, restore or check while one is running. --}}
+            @php($backupsBusy = collect($backups)->contains(fn ($backup): bool => in_array($backup->status, ['queued', 'running'], true) || in_array($backup->restores->first()?->status, ['queued', 'running'], true) || in_array($backup->verifications->first()?->status, ['queued', 'running'], true)))
+            <div id="backups-live" @if ($backupsBusy) data-live-region data-live-interval="5000" @endif>
+                @if ($backups->isEmpty())
+                    <p class="text-sm text-muted">{{ __('No backups yet.') }}</p>
+                @else
+                    <ul class="divide-y divide-line">
+                        @foreach ($backups as $backup)
+                            @php($restore = $backup->restores->first())
+                            @php($verification = $backup->verifications->first())
+                            <li class="flex flex-wrap items-center justify-between gap-3 py-3">
+                                <div class="min-w-0 text-sm">
+                                    <p class="flex flex-wrap items-center gap-2"><span class="font-bold text-ink">{{ $backup->created_at?->toDayDateTimeString() }}</span> @include('infrastructure._backup-status', ['status' => $backup->status]) <span class="text-xs text-muted">{{ $backup->destination->name }}@if ($backup->size_bytes !== null) · {{ \Illuminate\Support\Number::fileSize($backup->size_bytes, maxPrecision: 1) }}@endif @if ($backup->website_backup_schedule_id) · {{ __('scheduled') }}@endif</span></p>
+                                    @if ($backup->error)<p class="text-xs text-danger">{{ $backup->error }}</p>@endif
+                                    @if ($restore)<p class="text-xs text-muted">{{ __('Restore:') }} {{ __($restore->status) }}@if ($restore->error) · <span class="text-danger">{{ $restore->error }}</span>@endif</p>@endif
+                                    @if ($verification)<p class="text-xs text-muted">{{ __('Verification:') }} {{ __($verification->status) }}@if ($verification->error) · <span class="text-danger">{{ $verification->error }}</span>@endif</p>@endif
                                 </div>
-                            @endif
-                        </li>
-                    @endforeach
-                </ul>
-            @endif
+                                @if ($backup->isRestorable())
+                                    <div class="flex gap-1">
+                                        @if ($canBackUp)
+                                            <form method="POST" action="{{ route('infrastructure.websites.backups.verify', [$project, $website->id, $backup->id]) }}">@csrf<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Verify') }}</x-signal.ui.button></form>
+                                        @endif
+                                        @if ($canManage)
+                                            <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="restore-backup-{{ $backup->id }}">{{ __('Restore') }}</x-signal.ui.button>
+                                            <x-signal.overlays.modal :id="'restore-backup-'.$backup->id" :title="__('Restore this backup?')" :description="__('The live database, .env file and shared storage are replaced with the backup from :date. The website is in maintenance mode meanwhile, and put back as it was if any step fails.', ['date' => $backup->created_at?->toDayDateTimeString()])">
+                                                <form method="POST" action="{{ route('infrastructure.websites.backups.restore', [$project, $website->id, $backup->id]) }}" class="flex justify-end gap-3">
+                                                    @csrf
+                                                    <x-signal.ui.button type="button" variant="secondary" data-modal-close>{{ __('Cancel') }}</x-signal.ui.button>
+                                                    <x-signal.ui.button type="submit" variant="danger">{{ __('Restore') }}</x-signal.ui.button>
+                                                </form>
+                                            </x-signal.overlays.modal>
+                                        @endif
+                                    </div>
+                                @endif
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+            </div>
         </div>
     </x-signal.ui.settings-section>
     </x-signal.ui.page-tab-panel>

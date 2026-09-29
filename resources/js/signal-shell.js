@@ -652,4 +652,6 @@
     syncModalScrollLock();
 
     document.addEventListener('livewire:navigated', initialiseModals);
+    // Live regions (live-regions.js) swap in fresh markup; bind any modals inside it.
+    document.addEventListener('live-region:updated', initialiseModals);
 })();

@@ -104,6 +104,7 @@ use App\Http\Controllers\Deploy\RunEnvironmentRecipesController;
 use App\Http\Controllers\Deploy\RunScheduledTaskController;
 use App\Http\Controllers\Deploy\ShowBuildComparisonController;
 use App\Http\Controllers\Deploy\ShowBuildController;
+use App\Http\Controllers\Deploy\ShowBuildStatusController;
 use App\Http\Controllers\Deploy\ShowConfigurationApplicationController;
 use App\Http\Controllers\Deploy\ShowConfigurationController;
 use App\Http\Controllers\Deploy\ShowConfigurationReviewController;
@@ -484,6 +485,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/configuration/reviews/{review}', ShowConfigurationReviewController::class)->whereNumber('review')->name('configuration.reviews.show');
             Route::get('/configuration/applications/{application}', ShowConfigurationApplicationController::class)->whereNumber('application')->name('configuration.applications.show');
             Route::get('/builds/{build}', ShowBuildController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.show');
+            Route::get('/builds/{build}/status', ShowBuildStatusController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:120,1'])->name('builds.status');
             Route::get('/builds/{build}/compare', ShowBuildComparisonController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.compare');
             Route::post('/builds/{build}/redeploy', RedeployBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.redeploy');
             Route::post('/builds/{build}/rollback', RollbackBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.rollback');

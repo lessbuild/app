@@ -1,17 +1,14 @@
 @php($project = $overview->project)
 
-@if ($build->isActive())
-    @push('head')<meta http-equiv="refresh" content="5">@endpush
-@endif
-
 <x-signal.layouts.project :overview="$overview" :title="__('Deploy #:id', ['id' => $build->id])" :description="$build->repository->name.' → '.$build->website->name">
     @foreach (['rollback', 'deploy'] as $key)
         @error($key)<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
     @endforeach
 
-    <x-signal.ui.card class="grid gap-4 p-5">
+    {{-- While it runs, resources/js/build-status.js follows it live through the status endpoint. --}}
+    <x-signal.ui.card class="grid gap-4 p-5" :data-build-status="$build->isActive() ? route('deploy.builds.status', [$project, $build->id]) : null">
         <div class="flex flex-wrap items-center gap-3">
-            @include('deploy._build-status', ['status' => $build->status])
+            <span data-build-status-badge>@include('deploy._build-status', ['status' => $build->status])</span>
             @if ($build->revision)
                 @php($commitUrl = $build->repository->revisionUrl($build->revision))
                 <a @if ($commitUrl) href="{{ $commitUrl }}" target="_blank" rel="noopener" @endif class="font-mono text-sm text-primary">{{ $build->shortRevision() }}</a>
@@ -76,22 +73,21 @@
         @endif
     </x-signal.ui.card>
 
-    @if (in_array($build->status, ['deploying', 'running', 'succeeded', 'failed', 'canceled'], true) && $build->trigger_source !== 'rollback')
+    @if (($build->isActive() || in_array($build->status, ['succeeded', 'failed', 'canceled'], true)) && $build->trigger_source !== 'rollback')
         <x-signal.ui.card class="p-5">
-            <ol class="grid gap-2 text-sm sm:grid-cols-3">
+            <ol class="grid gap-2 text-sm sm:grid-cols-3" aria-label="{{ __('Stages') }}">
                 @foreach ($stages as $index => $title)
                     @php($done = $build->setup_stage > $index)
-                    <li class="flex items-center gap-2 {{ $done ? 'text-ink' : 'text-muted' }}"><span aria-hidden="true">{{ $done ? '✓' : '·' }}</span> {{ __($title) }}</li>
+                    <li @class(['flex items-center gap-2', 'text-ink' => $done, 'text-muted' => ! $done]) data-build-stage="{{ $index }}"><span aria-hidden="true" data-build-stage-mark>{{ $done ? '✓' : '·' }}</span> {{ __($title) }}</li>
                 @endforeach
             </ol>
         </x-signal.ui.card>
     @endif
 
-    <x-signal.ui.settings-section :title="__('Log')" :description="$build->isActive() ? __('Updates every few seconds while it runs.') : __('The end of the deployment log.')">
-        @if ($build->log)
-            <x-signal.ui.code-block class="m-4 max-h-[32rem] overflow-auto whitespace-pre-wrap sm:m-6" :code="$build->log" />
-        @else
-            <p class="p-4 text-sm text-muted sm:p-6">{{ __('No log yet.') }}</p>
-        @endif
+    <x-signal.ui.settings-section :title="__('Log')" :description="$build->isActive() ? __('Follows the deploy live.') : __('The end of the deployment log.')">
+        <x-signal.ui.code-block @class(['m-4 max-h-[32rem] overflow-auto whitespace-pre-wrap sm:m-6', 'hidden' => ! $build->log]) :code="$build->log ?? ''" data-build-log aria-live="off" />
+        @unless ($build->log)
+            <p class="p-4 text-sm text-muted sm:p-6" data-build-log-empty>{{ __('No log yet.') }}</p>
+        @endunless
     </x-signal.ui.settings-section>
 </x-signal.layouts.project>

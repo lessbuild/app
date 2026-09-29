@@ -67,19 +67,21 @@
                 <x-signal.ui.button :href="route('account.audit-log', ['project' => $project->id])" variant="quiet" size="sm">{{ __('Full history') }}</x-signal.ui.button>
             @endif
         </div>
-        <x-signal.ui.card class="overflow-hidden">
-            @if ($activity === [])
-                <p class="px-5 py-4 text-sm text-muted">{{ __('Nothing has happened here yet.') }}</p>
-            @else
-                <ol class="divide-y divide-line">
-                    @foreach ($activity as $entry)
-                        <li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-3 text-sm">
-                            <span class="min-w-0"><span class="font-bold text-ink">{{ $entry->actor }}</span> <span class="text-muted">{{ \Illuminate\Support\Str::lcfirst($entry->description) }}</span></span>
-                            <time class="shrink-0 text-xs text-muted" datetime="{{ $entry->at->toIso8601String() }}" title="{{ $entry->at->toDayDateTimeString() }}">{{ $entry->at->diffForHumans() }}</time>
-                        </li>
-                    @endforeach
-                </ol>
-            @endif
-        </x-signal.ui.card>
+        <div id="activity-live" data-live-region data-live-interval="20000">
+            <x-signal.ui.card class="overflow-hidden">
+                @if ($activity === [])
+                    <p class="px-5 py-4 text-sm text-muted">{{ __('Nothing has happened here yet.') }}</p>
+                @else
+                    <ol class="divide-y divide-line">
+                        @foreach ($activity as $entry)
+                            <li class="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 px-5 py-3 text-sm">
+                                <span class="min-w-0"><span class="font-bold text-ink">{{ $entry->actor }}</span> <span class="text-muted">{{ \Illuminate\Support\Str::lcfirst($entry->description) }}</span></span>
+                                <time class="shrink-0 text-xs text-muted" datetime="{{ $entry->at->toIso8601String() }}" title="{{ $entry->at->toDayDateTimeString() }}">{{ $entry->at->diffForHumans() }}</time>
+                            </li>
+                        @endforeach
+                    </ol>
+                @endif
+            </x-signal.ui.card>
+        </div>
     </section>
 </x-signal.layouts.project>

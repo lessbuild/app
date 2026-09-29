@@ -20,17 +20,19 @@
     @if ($servers->isEmpty())
         <x-signal.ui.empty-state icon="server" :title="__('No servers yet')" :description="__('Create one at DigitalOcean, Hetzner Cloud or Vultr, or import an Ubuntu server you already run.')" />
     @else
-        <x-signal.ui.table :caption="__('Servers')">
-            <x-slot:head><tr><th scope="col">{{ __('Server') }}</th><th scope="col">{{ __('Type') }}</th><th scope="col">{{ __('Address') }}</th><th scope="col">{{ __('Where') }}</th><th scope="col">{{ __('Status') }}</th></tr></x-slot:head>
-            @foreach ($servers as $server)
-                <tr>
-                    <td><a href="{{ route('infrastructure.servers.show', [$project, $server->id]) }}" class="font-bold text-primary hover:underline">{{ $server->label() }}</a></td>
-                    <td>{{ $server->type->label() }}</td>
-                    <td class="font-mono text-xs">{{ $server->public_ip ?? '—' }}</td>
-                    <td class="text-muted">{{ $server->provider?->type->label() ?? __('Imported') }}@if ($server->region) · {{ $server->region }}@endif</td>
-                    <td>@include('infrastructure._status', ['server' => $server])</td>
-                </tr>
-            @endforeach
-        </x-signal.ui.table>
+        <div id="servers-live" data-live-region data-live-interval="10000">
+            <x-signal.ui.table :caption="__('Servers')">
+                <x-slot:head><tr><th scope="col">{{ __('Server') }}</th><th scope="col">{{ __('Type') }}</th><th scope="col">{{ __('Address') }}</th><th scope="col">{{ __('Where') }}</th><th scope="col">{{ __('Status') }}</th></tr></x-slot:head>
+                @foreach ($servers as $server)
+                    <tr>
+                        <td><a href="{{ route('infrastructure.servers.show', [$project, $server->id]) }}" class="font-bold text-primary hover:underline">{{ $server->label() }}</a></td>
+                        <td>{{ $server->type->label() }}</td>
+                        <td class="font-mono text-xs">{{ $server->public_ip ?? '—' }}</td>
+                        <td class="text-muted">{{ $server->provider?->type->label() ?? __('Imported') }}@if ($server->region) · {{ $server->region }}@endif</td>
+                        <td>@include('infrastructure._status', ['server' => $server])</td>
+                    </tr>
+                @endforeach
+            </x-signal.ui.table>
+        </div>
     @endif
 </x-signal.layouts.project>

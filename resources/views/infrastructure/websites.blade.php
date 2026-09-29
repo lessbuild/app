@@ -39,16 +39,18 @@
     @if ($websites->isEmpty())
         <x-signal.ui.empty-state icon="globe" :title="__('No websites yet')" :description="__('Create one on an app server, or import an application already under /var/www.')" />
     @else
-        <x-signal.ui.table :caption="__('Websites')">
-            <x-slot:head><tr><th scope="col">{{ __('Website') }}</th><th scope="col">{{ __('Domain') }}</th><th scope="col">{{ __('Server') }}</th><th scope="col">{{ __('Status') }}</th></tr></x-slot:head>
-            @foreach ($websites as $website)
-                <tr>
-                    <td><a href="{{ route('infrastructure.websites.show', [$project, $website->id]) }}" class="font-bold text-primary hover:underline">{{ $website->name }}</a></td>
-                    <td class="font-mono text-xs">{{ $website->url }}</td>
-                    <td class="text-muted">{{ $website->server?->label() ?? '—' }}</td>
-                    <td>@include('infrastructure._website-status', ['website' => $website])</td>
-                </tr>
-            @endforeach
-        </x-signal.ui.table>
+        <div id="websites-live" data-live-region data-live-interval="10000">
+            <x-signal.ui.table :caption="__('Websites')">
+                <x-slot:head><tr><th scope="col">{{ __('Website') }}</th><th scope="col">{{ __('Domain') }}</th><th scope="col">{{ __('Server') }}</th><th scope="col">{{ __('Status') }}</th></tr></x-slot:head>
+                @foreach ($websites as $website)
+                    <tr>
+                        <td><a href="{{ route('infrastructure.websites.show', [$project, $website->id]) }}" class="font-bold text-primary hover:underline">{{ $website->name }}</a></td>
+                        <td class="font-mono text-xs">{{ $website->url }}</td>
+                        <td class="text-muted">{{ $website->server?->label() ?? '—' }}</td>
+                        <td>@include('infrastructure._website-status', ['website' => $website])</td>
+                    </tr>
+                @endforeach
+            </x-signal.ui.table>
+        </div>
     @endif
 </x-signal.layouts.project>

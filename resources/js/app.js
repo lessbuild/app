@@ -9,6 +9,8 @@ import './passkeys';
 import './terminal-open';
 import './page-tabs';
 import './server-status';
+import './build-status';
+import './live-regions';
 import './help-search';
 
 window.Alpine = Alpine;

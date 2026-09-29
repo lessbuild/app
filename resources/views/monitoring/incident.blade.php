@@ -4,7 +4,7 @@
 
 <x-signal.layouts.project :overview="$overview" :title="$incident->title" :description="'#'.$incident->id.' · '.__($incident->statusLabel())">
     <div class="grid items-start gap-6 xl:grid-cols-3">
-        <div class="grid gap-6 xl:col-span-2">
+        <div class="grid gap-6 xl:col-span-2" id="incident-live" data-live-region data-live-interval="5000">
             <x-signal.ui.card class="grid gap-3 p-5 text-sm">
                 <p class="flex flex-wrap items-center gap-2">
                     <x-signal.ui.badge :tone="match ($incident->status) { 'open' => 'danger', 'acknowledged' => 'warning', default => 'neutral' }">{{ __($incident->statusLabel()) }}</x-signal.ui.badge>
