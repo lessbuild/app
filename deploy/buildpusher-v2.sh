@@ -214,6 +214,11 @@ systemctl enable --now buildpusher-v2-schedule.timer
 systemctl restart buildpusher-php-fpm.service
 
 step "Checking buildpusher.com"
+# PHP-FPM needs a moment after its restart; give /up up to 30 seconds before judging the release.
+for attempt in $(seq 1 30); do
+    [ "$(curl -s -o /dev/null -w '%{http_code}' --resolve buildpusher.com:443:127.0.0.1 https://buildpusher.com/up)" = 200 ] && break
+    sleep 1
+done
 for path in /up / /pricing /status/report.json /api/openapi.json /login /register; do
     code=$(curl -s -o /dev/null -w '%{http_code}' --resolve buildpusher.com:443:127.0.0.1 "https://buildpusher.com$path")
     printf '  %-22s %s\n' "$path" "$code"
