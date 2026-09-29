@@ -112,7 +112,7 @@ final class RebuildReportAggregates
 
         foreach (array_chunk($rows, 500) as $chunk) {
             AnalyticsDailyAggregate::query()->upsert($chunk, ['site_id', 'local_date', 'dimension', 'dimension_value'], [
-                'pageviews', 'visits', 'visitors', 'conversions', 'converted_visits', 'bounce_eligible', 'bounces', 'updated_at',
+                'pageviews', 'visits', 'visitors', 'conversions', 'converted_visits', 'bounce_eligible', 'bounces', 'duration_seconds', 'updated_at',
             ]);
         }
     }
@@ -237,8 +237,8 @@ final class RebuildReportAggregates
     }
 
     /**
-     * Build one aggregate row: pageviews, visits, visitors, goal completions, converted visits, and bounces among
-     * visits that ended at least 30 minutes ago.
+     * Build one aggregate row: pageviews, visits, visitors, goal completions, converted visits, bounces among visits
+     * that ended at least 30 minutes ago, and the visits' total length.
      *
      * @param  AnalyticsSite  $site
      * @param  string  $date
@@ -273,6 +273,7 @@ final class RebuildReportAggregates
             'converted_visits' => $visits->where('conversion_count', '>', 0)->count(),
             'bounce_eligible' => $eligible->count(),
             'bounces' => $eligible->where('pageviews', 1)->where('conversion_count', 0)->count(),
+            'duration_seconds' => (int) $visits->sum(fn (AnalyticsVisit $visit): int => max(0, (int) CarbonImmutable::parse($visit->started_at)->diffInSeconds(CarbonImmutable::parse($visit->last_seen_at)))),
             'created_at' => $now,
             'updated_at' => $now,
         ];

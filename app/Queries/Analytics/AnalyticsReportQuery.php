@@ -87,6 +87,8 @@ final class AnalyticsReportQuery
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND conversion_count > 0 THEN 1 END) AS converted', [$startUtc])
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND last_seen_at <= ? AND pageviews > 0 THEN 1 END) AS eligible', [$startUtc, $bounceCutoff])
             ->selectRaw('COUNT(CASE WHEN last_seen_at >= ? AND last_seen_at <= ? AND pageviews = 1 AND conversion_count = 0 THEN 1 END) AS bounces', [$startUtc, $bounceCutoff])
+            ->selectRaw('SUM(CASE WHEN last_seen_at >= ? THEN '.$this->visitSeconds().' ELSE 0 END) AS duration', [$startUtc])
+            ->selectRaw('SUM(CASE WHEN last_seen_at < ? THEN '.$this->visitSeconds().' ELSE 0 END) AS previous_duration', [$previousEndUtc])
             ->first();
         $number = fn (?object $row, string $column): int => (int) ($row->{$column} ?? 0);
         $goals = AnalyticsGoal::query()->where('site_id', $site->id)->where('active', true)->orderBy('id')->get();
@@ -114,7 +116,7 @@ final class AnalyticsReportQuery
                 ['label' => 'Visits', 'value' => number_format($currentVisitCount), 'change' => $this->change($currentVisitCount, $previousVisitCount), 'tone' => 'info'],
                 ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'change' => null, 'tone' => 'success'],
                 ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'change' => null, 'tone' => 'warning'],
-                ['label' => 'Active goals', 'value' => number_format($goals->count()), 'change' => null, 'tone' => 'warning'],
+                $this->durationMetric($number($visitTotals, 'duration'), $number($visitTotals, 'visits'), $number($visitTotals, 'previous_duration'), $number($visitTotals, 'previous_visits')),
             ],
             'granularity' => $days === 1 ? 'hour' : 'day',
             'series' => $days === 1 ? $this->hourSeries($site, $start, $filters) : $this->series($site, $start, $end, $filters),
@@ -407,6 +409,50 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * Build the average visit duration metric, compared with the period before. Single-page visits count as zero.
+     *
+     * @param  int  $seconds  total length of the period's visits
+     * @param  int  $visits
+     * @param  int  $previousSeconds
+     * @param  int  $previousVisits
+     * @return array{label: string, value: string, change: string|null, tone: string}
+     */
+    private function durationMetric(int $seconds, int $visits, int $previousSeconds, int $previousVisits): array
+    {
+        $average = $visits > 0 ? (int) round($seconds / $visits) : 0;
+        $previous = $previousVisits > 0 ? (int) round($previousSeconds / $previousVisits) : 0;
+
+        return ['label' => 'Visit duration', 'value' => $visits > 0 ? $this->duration($average) : '—', 'change' => $visits > 0 ? $this->change($average, $previous) : null, 'tone' => 'warning'];
+    }
+
+    /**
+     * Write a number of seconds briefly: "45s", "2m 05s" or "1h 02m".
+     *
+     * @param  int  $seconds
+     * @return string
+     */
+    private function duration(int $seconds): string
+    {
+        return match (true) {
+            $seconds < 60 => $seconds.'s',
+            $seconds < 3600 => intdiv($seconds, 60).'m '.str_pad((string) ($seconds % 60), 2, '0', STR_PAD_LEFT).'s',
+            default => intdiv($seconds, 3600).'h '.str_pad((string) intdiv($seconds % 3600, 60), 2, '0', STR_PAD_LEFT).'m',
+        };
+    }
+
+    /**
+     * Get a SQL expression for a visit's length in whole seconds.
+     *
+     * @return literal-string
+     */
+    private function visitSeconds(): string
+    {
+        return DB::getDriverName() === 'pgsql'
+            ? 'CAST(EXTRACT(EPOCH FROM (last_seen_at - started_at)) AS BIGINT)'
+            : 'CAST(ROUND((julianday(last_seen_at) - julianday(started_at)) * 86400) AS INTEGER)';
+    }
+
+    /**
      * Calculate the change from the previous period as a signed percentage, "New" when there was nothing before, or
      * null when there's nothing either time.
      *
@@ -461,7 +507,6 @@ final class AnalyticsReportQuery
         $eligible = $this->aggregateSum($current, 'bounce_eligible');
         $bounces = $this->aggregateSum($current, 'bounces');
         $bounceRate = $eligible > 0 ? round(($bounces / $eligible) * 100, 1) : null;
-        $goals = AnalyticsGoal::query()->where('site_id', $site->id)->where('active', true)->get();
 
         return [
             'range' => ['days' => $days, 'start' => $start, 'end' => $end],
@@ -471,7 +516,7 @@ final class AnalyticsReportQuery
                 ['label' => 'Visits', 'value' => number_format($currentVisits), 'change' => $this->change($currentVisits, $previousVisits), 'tone' => 'info'],
                 ['label' => 'Conversion rate', 'value' => number_format($conversionRate, 1).'%', 'change' => null, 'tone' => 'success'],
                 ['label' => 'Bounce rate', 'value' => $bounceRate === null ? '—' : number_format($bounceRate, 1).'%', 'change' => null, 'tone' => 'warning'],
-                ['label' => 'Active goals', 'value' => number_format($goals->count()), 'change' => null, 'tone' => 'warning'],
+                $this->durationMetric($this->aggregateSum($current, 'duration_seconds'), $currentVisits, $this->aggregateSum($previous, 'duration_seconds'), $previousVisits),
             ],
             'granularity' => 'day',
             'series' => $this->aggregateSeries($current, $start, $end),

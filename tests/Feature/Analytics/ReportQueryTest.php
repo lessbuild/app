@@ -73,6 +73,7 @@ final class ReportQueryTest extends TestCase
         $metrics = array_column($report['metrics'], 'value', 'label');
         $this->assertSame(['5', '1', '4', '+400.0%'], [$metrics['Pageviews'], $metrics['Visitors'], $metrics['Visits'], $report['metrics'][0]['change']]);
         $this->assertSame(['label' => '/pricing', 'value' => 2], $report['pages'][0]);
+        $this->assertSame('15s', $metrics['Visit duration'], 'One visit lasted a minute; the other three were single pages.');
         $this->assertContains(['label' => 'newsletter / email', 'value' => 1], $report['sources']);
         $this->assertContains(['label' => 'news.example', 'value' => 1], $report['sources']);
         $this->assertSame([['label' => 'launch', 'value' => 1]], $report['campaigns']);
