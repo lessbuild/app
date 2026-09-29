@@ -53,7 +53,8 @@ final class UpdateAccountSecurity
         }
         $secret = $data->ssoClientSecret ?? $account->sso_client_secret;
         $ssoChanged = $data->ssoIssuer !== $account->sso_issuer || $data->ssoClientId !== $account->sso_client_id || $data->ssoClientSecret !== null;
-        if ($data->ssoEnforced && (blank($data->ssoIssuer) || blank($data->ssoClientId) || blank($secret))) {
+        $configured = $account->sso_protocol === 'saml' ? $account->hasSso() : ! (blank($data->ssoIssuer) || blank($data->ssoClientId) || blank($secret));
+        if ($data->ssoEnforced && ! $configured) {
             $errors['sso_enforced'] = __('Fill in the issuer, client ID and secret before requiring single sign-on.');
         } elseif ($data->ssoEnforced && ! $account->sso_enforced && ($ssoChanged || ! $ssoVerified)) {
             $errors['sso_enforced'] = __('Save the settings, then use Test single sign-on to sign in through your provider once, before requiring it.');

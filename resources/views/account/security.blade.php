@@ -37,4 +37,27 @@
             @endif
         </div>
     </form>
+
+    <x-signal.ui.settings-section id="saml" :title="__('SAML single sign-on')" :description="__('Use SAML 2.0 instead of OpenID Connect (for ADFS, Okta SAML, OneLogin, JumpCloud and others). Saving a provider switches single sign-on to SAML; clearing the fields switches back.')">
+        <div class="grid gap-5 p-4 sm:p-6">
+            <div class="grid gap-2 rounded-control border border-line bg-surface-muted p-3 text-sm">
+                <p><span class="font-semibold text-ink">{{ __('Entity ID / metadata URL') }}</span><span class="mt-1 block break-all font-mono text-xs text-muted">{{ route('sso.saml.metadata', $account->id) }}</span></p>
+                <p><span class="font-semibold text-ink">{{ __('Assertion consumer service (ACS) URL') }}</span><span class="mt-1 block break-all font-mono text-xs text-muted">{{ route('sso.saml.acs') }}</span></p>
+                <p class="text-xs text-muted">{{ __('Send the email address as the name ID, and sign assertions.') }}</p>
+            </div>
+            <form method="POST" action="{{ route('account.security.saml') }}" class="grid gap-5">
+                @csrf
+                @method('PUT')
+                <div class="grid gap-5 sm:grid-cols-2">
+                    <x-signal.ui.input-field name="saml_idp_entity_id" :label="__('Identity provider entity ID')" :value="$account->saml_idp_entity_id" maxlength="500" />
+                    <x-signal.ui.input-field name="saml_idp_sso_url" type="url" :label="__('Identity provider SSO URL')" :value="$account->saml_idp_sso_url" maxlength="500" placeholder="https://idp.example.com/sso/saml" />
+                </div>
+                <x-signal.ui.textarea-field name="saml_idp_certificate" :label="__('Identity provider signing certificate')" :value="$account->saml_idp_certificate" rows="5" :description="__('The X.509 certificate (PEM) it signs assertions with.')" />
+                <div class="flex flex-wrap items-center gap-3">
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Save SAML') }}</x-signal.ui.button>
+                    @if ($account->sso_protocol === 'saml')<x-signal.ui.badge tone="success">{{ __('In use') }}</x-signal.ui.badge>@endif
+                </div>
+            </form>
+        </div>
+    </x-signal.ui.settings-section>
 </x-signal.layouts.account>

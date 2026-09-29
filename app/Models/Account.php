@@ -32,6 +32,10 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string|null $sso_issuer the OIDC identity provider's issuer URL
  * @property string|null $sso_client_id
  * @property string|null $sso_client_secret encrypted
+ * @property string $sso_protocol oidc or saml
+ * @property string|null $saml_idp_entity_id the SAML identity provider's entity ID
+ * @property string|null $saml_idp_sso_url where SAML sign-in requests go (HTTP-Redirect binding)
+ * @property string|null $saml_idp_certificate the identity provider's X.509 signing certificate (PEM)
  * @property bool $sso_enforced members must sign in through the identity provider to use the account
  */
 #[Fillable(['name', 'slug'])]
@@ -105,6 +109,10 @@ class Account extends Model
      */
     public function hasSso(): bool
     {
+        if ($this->sso_protocol === 'saml') {
+            return filled($this->saml_idp_entity_id) && filled($this->saml_idp_sso_url) && filled($this->saml_idp_certificate);
+        }
+
         return filled($this->sso_issuer) && filled($this->sso_client_id) && filled($this->sso_client_secret);
     }
 

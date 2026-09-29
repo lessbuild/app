@@ -36,6 +36,7 @@ use App\Http\Controllers\Account\UpdateAccountSecurityController;
 use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
+use App\Http\Controllers\Account\UpdateSamlSettingsController;
 use App\Http\Controllers\Admin\AddFeedbackToRoadmapController;
 use App\Http\Controllers\Admin\DeleteFeatureFlagController;
 use App\Http\Controllers\Admin\ForgetFailedJobController;
@@ -83,9 +84,12 @@ use App\Http\Controllers\Analytics\UpdateSiteController;
 use App\Http\Controllers\Analytics\VerifySiteController;
 use App\Http\Controllers\Auth\ConfirmWithProviderController;
 use App\Http\Controllers\Auth\ConnectProviderController;
+use App\Http\Controllers\Auth\ConsumeSamlResponseController;
 use App\Http\Controllers\Auth\DisconnectProviderController;
+use App\Http\Controllers\Auth\FinishSamlSignInController;
 use App\Http\Controllers\Auth\HandleProviderCallbackController;
 use App\Http\Controllers\Auth\RedirectToProviderController;
+use App\Http\Controllers\Auth\ShowSamlMetadataController;
 use App\Http\Controllers\Auth\ShowSsoLoginController;
 use App\Http\Controllers\Auth\SsoCallbackController;
 use App\Http\Controllers\Auth\StartSsoLoginController;
@@ -480,6 +484,9 @@ Route::post('/email/getting-started/{user}/stop', StopGettingStartedEmailsContro
 
 // Single sign-on comes back here, whether it was signing someone in or confirming who a signed-in person is.
 Route::get('/sso/callback', SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
+Route::post('/sso/saml/acs', ConsumeSamlResponseController::class)->middleware('throttle:20,1')->name('sso.saml.acs');
+Route::get('/sso/saml/finish', FinishSamlSignInController::class)->middleware('throttle:20,1')->name('sso.saml.finish');
+Route::get('/sso/saml/{account}/metadata', ShowSamlMetadataController::class)->whereUlid('account')->middleware('throttle:60,1')->name('sso.saml.metadata');
 
 Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
@@ -786,6 +793,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::post('/account/billing/{service}/resume', ResumePlanController::class)->name('account.billing.resume');
     Route::get('/account/security', ShowAccountSecurityController::class)->middleware('account.can:update')->name('account.security');
     Route::put('/account/security', UpdateAccountSecurityController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.update');
+    Route::put('/account/security/saml', UpdateSamlSettingsController::class)->middleware(['account.can:update', 'password.confirm', 'throttle:20,1'])->name('account.security.saml');
     Route::get('/account/audit-log', ShowAuditLogController::class)->middleware('account.can:viewAuditLog')->name('account.audit-log');
     Route::get('/account/audit-log/export', ExportAuditLogController::class)->middleware(['account.can:viewAuditLog', 'throttle:10,1'])->name('account.audit-log.export');
     Route::post('/account/audit-log/streams', StoreAuditStreamController::class)->middleware(['account.can:update', 'throttle:10,1'])->name('account.audit-log.streams.store');

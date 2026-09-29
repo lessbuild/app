@@ -29,12 +29,13 @@ final class AccountSso
      * Create a new AccountSso instance.
      *
      * @param  DnsResolver  $dns  Resolves the issuer's hosts, so private addresses can be refused.
+     * @param  AccountSaml  $saml  Handles accounts that use SAML rather than OpenID Connect.
      */
-    public function __construct(private readonly DnsResolver $dns) {}
+    public function __construct(private readonly DnsResolver $dns, private readonly AccountSaml $saml) {}
 
     /**
-     * Start signing in (or proving it's you) through the account's identity provider, and get the address to send
-     * the person to.
+     * Start signing in (or proving it's you) through the account's identity provider (OpenID Connect, or SAML for
+     * accounts that use it), and get the address to send the person to.
      *
      * @param  Session  $session
      * @param  Account  $account
@@ -43,6 +44,9 @@ final class AccountSso
      */
     public function begin(Session $session, Account $account, string $intent): string
     {
+        if ($account->sso_protocol === 'saml') {
+            return $this->saml->begin($session, $account, $intent);
+        }
         $metadata = $this->metadata($account);
         $state = Str::random(64);
         $verifier = Str::random(96);
