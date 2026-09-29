@@ -19,6 +19,7 @@ use App\Listeners\AuditSubscriber;
 use App\Listeners\EnvironmentRecipeSubscriber;
 use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
+use App\Listeners\OnboardingSubscriber;
 use App\Listeners\PreviewWebsiteSubscriber;
 use App\Models\ApiToken;
 use App\Services\Admin\FeatureFlags;
@@ -73,6 +74,7 @@ class AppServiceProvider extends ServiceProvider
     {
         Event::subscribe(AuditSubscriber::class);
         Event::subscribe(NotificationSubscriber::class);
+        Event::subscribe(OnboardingSubscriber::class);
         Event::subscribe(IncidentAssigneeSubscriber::class);
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);

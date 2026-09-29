@@ -598,3 +598,8 @@ Artisan::command('platform:self-monitor {email? : The admin who owns it and gets
     return 0;
 })->purpose('Monitor the platform with its own Monitoring: uptime, the scheduler and its exceptions');
 Schedule::call(fn () => app(SelfMonitoring::class)->beat(app(App\Actions\Monitoring\RecordHeartbeat::class)))->everyMinute()->name('platform:self-monitor-heartbeat')->withoutOverlapping(5);
+
+Artisan::command('onboarding:remind', function (App\Actions\Onboarding\SendSetupReminders $reminders): void {
+    $this->info(trans_choice('Sent :count setup reminder.|Sent :count setup reminders.', $count = $reminders->handle(), ['count' => $count]));
+})->purpose('Send the one setup reminder to people who signed up a few days ago and haven\'t finished');
+Schedule::command('onboarding:remind')->dailyAt('15:00')->withoutOverlapping(30)->onOneServer();

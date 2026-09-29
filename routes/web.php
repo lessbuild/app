@@ -267,6 +267,8 @@ use App\Http\Controllers\Notifications\ExportNotificationsController;
 use App\Http\Controllers\Notifications\MarkAllNotificationsReadController;
 use App\Http\Controllers\Notifications\OpenNotificationController;
 use App\Http\Controllers\Notifications\ShowNotificationsController;
+use App\Http\Controllers\Onboarding\ShowStopGettingStartedEmailsController;
+use App\Http\Controllers\Onboarding\StopGettingStartedEmailsController;
 use App\Http\Controllers\Platform\ShowPlatformStatusController;
 use App\Http\Controllers\Platform\ShowPlatformStatusReportController;
 use App\Http\Controllers\Projects\AddDomainController;
@@ -317,6 +319,7 @@ use App\Http\Controllers\Settings\ShowSecurityController;
 use App\Http\Controllers\Settings\ShowSessionsController;
 use App\Http\Controllers\Settings\SignOutBrowserController;
 use App\Http\Controllers\Settings\SignOutOtherBrowsersController;
+use App\Http\Controllers\Settings\UpdateGettingStartedEmailsController;
 use App\Http\Controllers\Settings\UpdateNotificationSettingsController;
 use App\Http\Controllers\Site\ShowFeaturesController;
 use App\Http\Controllers\Site\ShowHomeController;
@@ -401,6 +404,10 @@ Route::get('/auth/{provider}/redirect', RedirectToProviderController::class)->mi
 // Shared by sign-in, connecting a provider and sudo-mode confirmation; the controller tells them apart.
 Route::get('/auth/{provider}/callback', HandleProviderCallbackController::class)->middleware('throttle:20,1')->name('social.callback');
 Route::post('/user/confirm-password/{provider}', ConfirmWithProviderController::class)->middleware(['auth', 'throttle:10,1'])->name('social.confirm');
+
+// The signed link in getting-started emails; the change needs the confirmation button.
+Route::get('/email/getting-started/{user}/stop', ShowStopGettingStartedEmailsController::class)->whereUlid('user')->middleware(['signed', 'throttle:20,1'])->name('getting-started-emails.stop');
+Route::post('/email/getting-started/{user}/stop', StopGettingStartedEmailsController::class)->whereUlid('user')->middleware(['signed', 'throttle:20,1'])->name('getting-started-emails.stop.store');
 
 // Single sign-on comes back here, whether it was signing someone in or confirming who a signed-in person is.
 Route::get('/sso/callback', SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
@@ -754,6 +761,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/settings/sessions', ShowSessionsController::class)->name('settings.sessions');
     Route::get('/settings/notifications', ShowNotificationSettingsController::class)->name('settings.notifications');
     Route::put('/settings/notifications', UpdateNotificationSettingsController::class)->name('settings.notifications.update');
+    Route::put('/settings/notifications/getting-started', UpdateGettingStartedEmailsController::class)->name('settings.getting-started-emails.update');
     Route::get('/settings/privacy', ShowPrivacyController::class)->name('settings.privacy');
     Route::get('/settings/privacy/export', ExportPersonalDataController::class)->middleware('throttle:6,1')->name('settings.privacy.export');
     Route::delete('/settings/privacy/user', DeleteUserController::class)->middleware('password.confirm')->name('settings.privacy.destroy');

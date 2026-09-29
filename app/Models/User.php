@@ -29,6 +29,8 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $password
  * @property string|null $two_factor_secret
  * @property \Illuminate\Support\Carbon|null $two_factor_confirmed_at
+ * @property bool $getting_started_emails whether they get the welcome and the one setup reminder
+ * @property \Illuminate\Support\Carbon|null $onboarding_nudged_at when the setup reminder was sent
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $created_at
  * @property bool $is_platform_admin operates the platform: opens /admin (granted with `platform:admin`)
@@ -58,6 +60,8 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
+            'getting_started_emails' => 'boolean',
+            'onboarding_nudged_at' => 'datetime',
             'is_platform_admin' => 'boolean',
             'platform_admin_granted_at' => 'datetime',
         ];
