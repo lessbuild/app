@@ -40,6 +40,7 @@ A conventional Laravel layout, organised by type (not by domain). Within a type,
 ## UI
 
 - Use the Signal component library (`resources/views/components/signal`, `x-signal.*`) for every page. Don't add inline styles or one-off components when a Signal primitive exists.
+- The exception is the platform admin panel at `/admin`: it's Filament 5 (`app/Filament`, `App\Providers\Filament\AdminPanelProvider`, views in `resources/views/filament`, theme in `resources/css/filament/admin`). Its writes still go through Actions; its resources set `$shouldSkipAuthorization` because the panel's middleware (platform admin with a second factor, recent password) decides access. Only `/admin` pages get the looser script policy Filament needs.
 - `/_gallery` shows every component and is the visual reference (local environment only).
 
 ## Workflow

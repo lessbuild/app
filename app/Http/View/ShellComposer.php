@@ -45,13 +45,6 @@ final class ShellComposer
     ) {}
 
     /**
-     * The admin panel's pages, as label and route name, in the order its navigation shows them.
-     *
-     * @var list<array{string, string}>
-     */
-    private const ADMIN_SECTIONS = [['Overview', 'admin.home'], ['Health', 'admin.health'], ['Backups', 'admin.backups'], ['Email', 'admin.email'], ['Queues', 'admin.queues'], ['Business', 'admin.analytics'], ['Customers', 'admin.customers'], ['Access requests', 'admin.access-requests'], ['Feedback', 'admin.feedback'], ['Roadmap', 'admin.roadmap'], ['Flags', 'admin.flags']];
-
-    /**
      * Give the layout its shell: switchers, primary and section navigation, account links and the unread count. Guests
      * get nothing.
      *
@@ -149,13 +142,6 @@ final class ShellComposer
             }
 
             return [__('Project sections'), $links];
-        }
-
-        if ($user->is_platform_admin && $this->request->routeIs('admin.*')) {
-            return [__('Admin sections'), array_map(
-                fn (array $link): NavLink => new NavLink(__($link[0]), route($link[1]), $this->request->routeIs($link[1].'*')),
-                self::ADMIN_SECTIONS,
-            )];
         }
 
         if ($account !== null && $this->request->routeIs('account.*', 'recipes.*')) {

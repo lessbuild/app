@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Models;
 
 use Database\Factories\UserFactory;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Hidden;
@@ -41,7 +43,7 @@ use Laravel\Sanctum\HasApiTokens;
 #[Fillable(['name', 'email', 'password'])]
 #[Hidden(['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'])]
 #[UseFactory(UserFactory::class)]
-class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail, PasskeyUser
 {
     /** @use HasApiTokens<ApiToken> */
     use HasApiTokens;
@@ -69,6 +71,18 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'is_platform_admin' => 'boolean',
             'platform_admin_granted_at' => 'datetime',
         ];
+    }
+
+    /**
+     * Determine whether the person may open a Filament panel: only the admin panel, and only platform admins with a
+     * second factor (the panel's middleware sends admins without one to add it first).
+     *
+     * @param  Panel  $panel
+     * @return bool
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return $panel->getId() === 'admin' && $this->is_platform_admin && $this->hasSecondFactor();
     }
 
     /**

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Admin;
 
 use App\Enums\AccountRole;
+use App\Filament\Resources\AccessRequests\Pages\ManageAccessRequests;
 use App\Models\AccessRequest;
 use App\Models\Account;
 use App\Models\AccountInvitation;
@@ -13,14 +14,17 @@ use App\Models\User;
 use App\Notifications\AccessInvitation;
 use App\Notifications\AccessRequestReceived;
 use App\Notifications\NewAccessRequest;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Notifications\AnonymousNotifiable;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 final class AccessRequestsTest extends TestCase
 {
+    use AdminHelpers;
     use RefreshDatabase;
 
     private const PASSWORD = 'correct horse battery staple 42';
@@ -51,9 +55,10 @@ final class AccessRequestsTest extends TestCase
         Notification::assertSentOnDemandTimes(AccessRequestReceived::class, 1);
         Notification::assertSentTo($admin, NewAccessRequest::class);
 
-        $this->as($admin)->get('/admin/access-requests')->assertOk()->assertSee('Deploy the engine, and monitor it.')->assertSee('Waiting (1)');
-        $this->as($admin)->put("/admin/access-requests/{$record->id}", ['status' => 'accepted'])->assertSessionHasErrors('status');
-        $this->as($admin)->put("/admin/access-requests/{$record->id}", ['status' => 'invited', 'review_notes' => 'Good fit'])->assertRedirect();
+        $this->as($admin)->get('/admin/access-requests')->assertOk()->assertSee('Deploy the engine, and monitor it.')->assertSee('Waiting');
+        $review = fn (array $data) => Livewire::test(ManageAccessRequests::class)->callAction(TestAction::make('review')->table($record), $data);
+        $review(['status' => 'accepted'])->assertHasActionErrors(['status']);
+        $review(['status' => 'invited', 'review_notes' => 'Good fit'])->assertHasNoActionErrors()->assertNotified(__('Invitation sent.'));
         $url = '';
         Notification::assertSentOnDemand(AccessInvitation::class, function (AccessInvitation $notification, array $channels, AnonymousNotifiable $notifiable) use (&$url): bool {
             $url = (string) $notification->toMail($notifiable)->actionUrl;
@@ -76,7 +81,8 @@ final class AccessRequestsTest extends TestCase
         auth()->logout();
         $this->flushSession();
         $this->post('/register', [...$this->signUp('eve@example.com'), 'invite' => $invite])->assertSessionHasErrors('email');
-        $this->as($admin)->put("/admin/access-requests/{$record->id}", ['status' => 'declined'])->assertSessionHasErrors('status');
+        $this->as($admin);
+        Livewire::test(ManageAccessRequests::class, ['activeTab' => 'accepted'])->assertCanSeeTableRecords([$record])->assertActionHidden(TestAction::make('review')->table($record));
     }
 
     public function test_people_invited_to_an_account_can_sign_up_while_registration_is_closed(): void
@@ -111,30 +117,5 @@ final class AccessRequestsTest extends TestCase
     private function signUp(string $email): array
     {
         return ['name' => 'New Person', 'email' => $email, 'password' => self::PASSWORD, 'password_confirmation' => self::PASSWORD];
-    }
-
-    /**
-     * Make a platform admin with an authenticator app.
-     *
-     * @return User
-     */
-    private function admin(): User
-    {
-        $user = User::factory()->create();
-        Account::factory()->withMember($user)->create();
-        $user->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
-
-        return $user->refresh();
-    }
-
-    /**
-     * Act as the admin with a fresh confirmation.
-     *
-     * @param  User  $admin
-     * @return $this
-     */
-    private function as(User $admin): static
-    {
-        return $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
     }
 }

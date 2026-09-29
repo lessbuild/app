@@ -29,3 +29,7 @@ Thumbs.db
 /test-results
 /playwright-report
 /storage/e2e.sqlite
+# Published by `php artisan filament:upgrade` after every composer install.
+/public/js/filament
+/public/css/filament
+/public/fonts/filament

@@ -117,8 +117,13 @@ final class ArchitectureTest extends TestCase
                 continue;
             }
             $reflection = new ReflectionClass($name);
+            $fromTraits = $this->traitProperties($reflection);
 
             foreach ($reflection->getProperties() as $property) {
+                // Properties a used trait declares (such as Filament's InteractsWithTable) are documented in the trait.
+                if (isset($fromTraits[$property->name])) {
+                    continue;
+                }
                 // An enum's `name` and `value` are PHP's own; the cases document themselves.
                 if ($reflection->isEnum() && in_array($property->name, ['name', 'value'], true)) {
                     continue;
@@ -154,6 +159,25 @@ final class ArchitectureTest extends TestCase
         }
 
         $this->assertSame([], $missing, "These members in app/{$area} need a docblock that explains them:\n".implode("\n", $missing));
+    }
+
+    /**
+     * Get the names of the properties declared by the traits a class uses, and the traits those use.
+     *
+     * @param  ReflectionClass<object>  $class
+     * @return array<string, true>
+     */
+    private function traitProperties(ReflectionClass $class): array
+    {
+        $names = [];
+        foreach ($class->getTraits() as $trait) {
+            foreach ($trait->getProperties() as $property) {
+                $names[$property->name] = true;
+            }
+            $names += $this->traitProperties($trait);
+        }
+
+        return $names;
     }
 
     /** @return iterable<string, array{class-string}> */

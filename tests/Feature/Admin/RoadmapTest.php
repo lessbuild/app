@@ -4,17 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Filament\Resources\FeatureRequests\Pages\ManageFeatureRequests;
+use App\Filament\Resources\Feedback\Pages\ManageFeedback;
 use App\Models\Account;
 use App\Models\FeatureRequest;
 use App\Models\Feedback;
 use App\Models\User;
 use App\Notifications\FeatureRequestShipped;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 final class RoadmapTest extends TestCase
 {
+    use AdminHelpers;
     use RefreshDatabase;
 
     /**
@@ -34,7 +39,7 @@ final class RoadmapTest extends TestCase
         $feedback = Feedback::query()->sole();
 
         $this->as($admin)->get('/admin/feedback')->assertOk()->assertSee('Add to roadmap');
-        $this->as($admin)->post("/admin/feedback/{$feedback->id}/roadmap", ['title' => 'Bitbucket support', 'description' => 'Deploy from Bitbucket repositories.', 'status' => 'planned'])->assertRedirect('/admin/feedback');
+        Livewire::test(ManageFeedback::class)->callAction(TestAction::make('roadmap')->table($feedback), ['title' => 'Bitbucket support', 'description' => 'Deploy from Bitbucket repositories.', 'status' => 'planned'])->assertHasNoActionErrors();
         $request = FeatureRequest::query()->sole();
         $this->assertSame(['Bitbucket support', 'planned', 1], [$request->title, $request->status, $request->votes_count]);
         $this->assertSame($request->id, $feedback->refresh()->feature_request_id);
@@ -54,10 +59,11 @@ final class RoadmapTest extends TestCase
         // Other feedback can be linked to the same request, counting its sender once.
         $second = new Feedback;
         $second->forceFill(['user_id' => $voter->id, 'kind' => 'idea', 'message' => 'Bitbucket please'])->save();
-        $this->as($admin)->post("/admin/feedback/{$second->id}/roadmap", ['feature_request_id' => $request->id])->assertRedirect();
+        $this->as($admin);
+        Livewire::test(ManageFeedback::class)->callAction(TestAction::make('roadmap')->table($second), ['feature_request_id' => $request->id])->assertHasNoActionErrors();
         $this->assertSame(2, $request->refresh()->votes_count);
 
-        $this->as($admin)->put("/admin/roadmap/{$request->id}", ['title' => 'Bitbucket support', 'description' => null, 'status' => 'shipped'])->assertRedirect('/admin/roadmap');
+        Livewire::test(ManageFeatureRequests::class)->callAction(TestAction::make('edit')->table($request), ['title' => 'Bitbucket support', 'description' => null, 'status' => 'shipped'])->assertHasNoActionErrors();
         $this->assertNotNull($request->refresh()->shipped_at);
         Notification::assertSentTo([$sender, $voter], FeatureRequestShipped::class);
         Notification::assertNotSentTo($admin, FeatureRequestShipped::class);
@@ -74,11 +80,11 @@ final class RoadmapTest extends TestCase
     {
         $person = $this->person();
         $this->actingAs($person)->get('/admin/roadmap')->assertNotFound();
-        $this->actingAs($person)->post('/admin/roadmap', ['title' => 'Mine', 'status' => 'planned'])->assertNotFound();
 
         $admin = $this->admin();
-        $this->as($admin)->post('/admin/roadmap', ['title' => 'Dark launch flags', 'status' => 'bogus'])->assertSessionHasErrors('status');
-        $this->as($admin)->post('/admin/roadmap', ['title' => 'Dark launch flags', 'status' => 'declined'])->assertRedirect('/admin/roadmap');
+        $this->as($admin);
+        Livewire::test(ManageFeatureRequests::class)->callAction('create', ['title' => 'Dark launch flags', 'status' => 'bogus'])->assertHasActionErrors(['status']);
+        Livewire::test(ManageFeatureRequests::class)->callAction('create', ['title' => 'Dark launch flags', 'status' => 'declined'])->assertHasNoActionErrors();
         $this->as($admin)->get('/admin/roadmap')->assertOk()->assertSee('Dark launch flags')->assertSee('Not planned');
         $this->get('/roadmap')->assertOk()->assertDontSee('Dark launch flags');
     }
@@ -94,29 +100,5 @@ final class RoadmapTest extends TestCase
         Account::factory()->withMember($user)->create();
 
         return $user->refresh();
-    }
-
-    /**
-     * Make a platform admin with two-factor authentication on.
-     *
-     * @return User
-     */
-    private function admin(): User
-    {
-        $user = $this->person();
-        $user->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
-
-        return $user->refresh();
-    }
-
-    /**
-     * Act as the admin with a recently confirmed password.
-     *
-     * @param  User  $admin
-     * @return static
-     */
-    private function as(User $admin): static
-    {
-        return $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
     }
 }

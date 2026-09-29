@@ -67,6 +67,6 @@ final class NewFeedback extends InboxNotification
      */
     protected function url(): string
     {
-        return route('admin.feedback');
+        return \App\Filament\Resources\Feedback\FeedbackResource::getUrl(panel: 'admin');
     }
 }

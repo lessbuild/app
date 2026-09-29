@@ -76,7 +76,7 @@
                                     <a href="{{ route('help') }}" class="topbar-nav-link w-full">{{ __('Help centre') }}</a>
                                     <button type="button" class="topbar-nav-link w-full" data-modal-trigger="feedback-modal">{{ __('Send feedback') }}</button>
                                     @if ($shell->user->is_platform_admin)
-                                        <a href="{{ route('admin.home') }}" class="topbar-nav-link w-full" @if (request()->routeIs('admin.*')) aria-current="page" @endif>{{ __('Platform admin') }}</a>
+                                        <a href="{{ \App\Filament\Pages\Dashboard::getUrl(panel: 'admin') }}" class="topbar-nav-link w-full">{{ __('Platform admin') }}</a>
                                     @endif
                                     <form method="POST" action="{{ route('logout') }}">
                                         @csrf

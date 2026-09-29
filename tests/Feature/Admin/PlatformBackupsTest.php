@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Filament\Pages\Backups;
 use App\Models\Account;
+use App\Models\PlatformAdminEvent;
 use App\Models\PlatformBackup;
 use App\Models\User;
 use App\Notifications\PlatformBackupFailed;
@@ -15,12 +17,15 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 use PDO;
 use RuntimeException;
 use Tests\TestCase;
 
 final class PlatformBackupsTest extends TestCase
 {
+    use AdminHelpers;
+
     // Snapshots can't run inside the transaction RefreshDatabase wraps each test in.
     use DatabaseMigrations;
 
@@ -130,13 +135,14 @@ final class PlatformBackupsTest extends TestCase
         $admin = User::factory()->create();
         Account::factory()->withMember($admin)->create();
         $admin->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
-        $as = fn () => $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
+        $as = fn () => $this->as($admin);
 
         $as()->get('/admin/backups')->assertOk()->assertSee('No backup yet.')->assertSee('PLATFORM_BACKUP_S3_ENDPOINT');
         $as()->get('/admin/health')->assertOk()->assertSee('Database backups')->assertSee('No backup yet');
-        $as()->post('/admin/backups')->assertRedirect('/admin/backups')->assertSessionHas('status', 'Backed up on this server.');
+        Livewire::test(Backups::class)->callAction('backup')->assertNotified(__('Backed up on this server.'));
         $as()->get('/admin/backups')->assertSee(PlatformBackup::query()->sole()->file);
         $as()->get('/admin/health')->assertSee('kept on this server only');
-        $this->actingAs(User::factory()->create())->post('/admin/backups')->assertNotFound();
+        $this->actingAs(User::factory()->create())->get('/admin/backups')->assertNotFound();
+        $this->assertSame('backup.created', PlatformAdminEvent::query()->latest('id')->value('action'));
     }
 }

@@ -4,20 +4,24 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Filament\Resources\FeatureFlags\Pages\ManageFeatureFlags;
 use App\Models\Account;
 use App\Models\FeatureFlag;
 use App\Models\PlatformAdminEvent;
 use App\Models\RepositoryWebhookDelivery;
 use App\Models\User;
 use App\Services\Admin\FeatureFlags;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 final class FeatureFlagsTest extends TestCase
 {
+    use AdminHelpers;
     use RefreshDatabase;
 
     public function test_flags_start_off_and_turn_on_for_everyone_or_chosen_accounts(): void
@@ -26,23 +30,25 @@ final class FeatureFlagsTest extends TestCase
         [$chosen, $other] = [Account::factory()->create(), Account::factory()->create()];
         $flags = fn (): FeatureFlags => app(FeatureFlags::class);
         $this->assertFalse($flags()->enabled('deploy.new-scheduler', $chosen));
+        $this->as($admin)->get('/admin/feature-flags')->assertOk()->assertSee(__('New flag'));
 
-        $this->as($admin)->post('/admin/flags', ['key' => 'Deploy New', 'description' => 'x'])->assertSessionHasErrors('key');
-        $this->as($admin)->post('/admin/flags', ['key' => 'deploy.new-scheduler', 'description' => 'The new scheduler'])->assertRedirect('/admin/flags');
+        Livewire::test(ManageFeatureFlags::class)->callAction('create', ['key' => 'Deploy New', 'description' => 'x'])->assertHasActionErrors(['key']);
+        Livewire::test(ManageFeatureFlags::class)->callAction('create', ['key' => 'deploy.new-scheduler', 'description' => 'The new scheduler'])->assertHasNoActionErrors();
         $flag = FeatureFlag::query()->sole();
         $this->assertSame('off', $flag->state);
 
-        $this->as($admin)->put("/admin/flags/{$flag->id}", ['state' => 'accounts', 'description' => 'The new scheduler', 'account_ids' => "nope\n"])->assertSessionHasErrors('account_ids');
-        $this->as($admin)->put("/admin/flags/{$flag->id}", ['state' => 'accounts', 'description' => 'The new scheduler', 'account_ids' => "{$chosen->id}\n{$chosen->id}"])->assertRedirect();
+        $edit = fn (array $data) => Livewire::test(ManageFeatureFlags::class)->callAction(TestAction::make('edit')->table($flag), ['state' => 'accounts', 'description' => 'The new scheduler', ...$data]);
+        $edit(['account_ids' => "nope\n"])->assertHasActionErrors(['account_ids']);
+        $edit(['account_ids' => "{$chosen->id}\n{$chosen->id}"])->assertHasNoActionErrors();
         $this->forgetFlags();
         $this->assertSame([true, false, false], [$flags()->enabled('deploy.new-scheduler', $chosen), $flags()->enabled('deploy.new-scheduler', $other), $flags()->enabled('deploy.new-scheduler')]);
 
-        $this->as($admin)->put("/admin/flags/{$flag->id}", ['state' => 'on', 'description' => 'The new scheduler'])->assertRedirect();
+        $edit(['state' => 'on'])->assertHasNoActionErrors();
         $this->forgetFlags();
         $this->assertTrue($flags()->enabled('deploy.new-scheduler', $other));
-        $this->as($admin)->get('/admin/flags')->assertOk()->assertSee('deploy.new-scheduler')->assertSee('The new scheduler');
+        Livewire::test(ManageFeatureFlags::class)->assertCanSeeTableRecords([$flag->refresh()])->assertSee('The new scheduler');
 
-        $this->as($admin)->delete("/admin/flags/{$flag->id}")->assertRedirect();
+        Livewire::test(ManageFeatureFlags::class)->callAction(TestAction::make('delete')->table($flag));
         $this->forgetFlags();
         $this->assertFalse($flags()->enabled('deploy.new-scheduler', $other));
         $this->assertSame(['flag.created', 'flag.changed', 'flag.changed', 'flag.deleted'], PlatformAdminEvent::query()->orderBy('id')->pluck('action')->all());
@@ -73,30 +79,5 @@ final class FeatureFlagsTest extends TestCase
     private function forgetFlags(): void
     {
         app(FeatureFlags::class)->flush();
-    }
-
-    /**
-     * Make a platform admin with an authenticator app.
-     *
-     * @return User
-     */
-    private function admin(): User
-    {
-        $user = User::factory()->create();
-        Account::factory()->withMember($user)->create();
-        $user->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
-
-        return $user->refresh();
-    }
-
-    /**
-     * Act as the admin with a fresh confirmation.
-     *
-     * @param  User  $admin
-     * @return $this
-     */
-    private function as(User $admin): static
-    {
-        return $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
     }
 }

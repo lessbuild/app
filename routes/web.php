@@ -38,32 +38,7 @@ use App\Http\Controllers\Account\UpdateMemberProjectsController;
 use App\Http\Controllers\Account\UpdateMemberServicesController;
 use App\Http\Controllers\Account\UpdateProviderController;
 use App\Http\Controllers\Account\UpdateSamlSettingsController;
-use App\Http\Controllers\Admin\AddFeedbackToRoadmapController;
-use App\Http\Controllers\Admin\DeleteFeatureFlagController;
-use App\Http\Controllers\Admin\ForgetFailedJobController;
-use App\Http\Controllers\Admin\ResolveFeedbackController;
-use App\Http\Controllers\Admin\RetryFailedJobController;
-use App\Http\Controllers\Admin\RunPlatformBackupController;
-use App\Http\Controllers\Admin\SendTestEmailController;
-use App\Http\Controllers\Admin\ShowAccessRequestsController;
-use App\Http\Controllers\Admin\ShowAdminHomeController;
-use App\Http\Controllers\Admin\ShowBusinessAnalyticsController;
-use App\Http\Controllers\Admin\ShowCustomerAccountController;
-use App\Http\Controllers\Admin\ShowCustomersController;
-use App\Http\Controllers\Admin\ShowCustomerUserController;
-use App\Http\Controllers\Admin\ShowEmailController;
-use App\Http\Controllers\Admin\ShowFeatureFlagsController;
-use App\Http\Controllers\Admin\ShowFeedbackController;
-use App\Http\Controllers\Admin\ShowHealthController;
 use App\Http\Controllers\Admin\ShowHealthReportController;
-use App\Http\Controllers\Admin\ShowPlatformBackupsController;
-use App\Http\Controllers\Admin\ShowQueuesController;
-use App\Http\Controllers\Admin\ShowRoadmapAdminController;
-use App\Http\Controllers\Admin\StoreFeatureFlagController;
-use App\Http\Controllers\Admin\StoreFeatureRequestController;
-use App\Http\Controllers\Admin\UpdateAccessRequestController;
-use App\Http\Controllers\Admin\UpdateFeatureFlagController;
-use App\Http\Controllers\Admin\UpdateFeatureRequestController;
 use App\Http\Controllers\Analytics\ChooseSearchConsolePropertyController;
 use App\Http\Controllers\Analytics\ConnectSearchConsoleController;
 use App\Http\Controllers\Analytics\DeleteFunnelController;
@@ -836,34 +811,9 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::post('/saved-views', StoreSavedViewController::class)->middleware('throttle:30,1')->name('saved-views.store');
     Route::delete('/saved-views/{view}', DeleteSavedViewController::class)->whereNumber('view')->middleware('throttle:30,1')->name('saved-views.destroy');
     // Platform operators only: a 404 for anyone else, a second factor, and a confirmation in the last 15 minutes.
-    Route::prefix('/admin')->name('admin.')->middleware(['platform.admin', 'password.confirm:password.confirm,'.config('platform.admin_confirmation_seconds')])->group(function (): void {
-        Route::get('/', ShowAdminHomeController::class)->name('home');
-        Route::get('/health', ShowHealthController::class)->name('health');
-        Route::get('/health/report.json', ShowHealthReportController::class)->name('health.report');
-        Route::get('/queues', ShowQueuesController::class)->name('queues');
-        Route::get('/analytics', ShowBusinessAnalyticsController::class)->name('analytics');
-        Route::get('/access-requests', ShowAccessRequestsController::class)->name('access-requests');
-        Route::put('/access-requests/{accessRequest}', UpdateAccessRequestController::class)->whereNumber('accessRequest')->middleware('throttle:60,1')->name('access-requests.update');
-        Route::get('/backups', ShowPlatformBackupsController::class)->name('backups');
-        Route::post('/backups', RunPlatformBackupController::class)->middleware('throttle:5,1')->name('backups.store');
-        Route::get('/email', ShowEmailController::class)->name('email');
-        Route::post('/email/test', SendTestEmailController::class)->middleware('throttle:5,1')->name('email.test');
-        Route::get('/feedback', ShowFeedbackController::class)->name('feedback');
-        Route::put('/feedback/{feedback}', ResolveFeedbackController::class)->whereNumber('feedback')->middleware('throttle:60,1')->name('feedback.update');
-        Route::post('/feedback/{feedback}/roadmap', AddFeedbackToRoadmapController::class)->whereNumber('feedback')->middleware('throttle:60,1')->name('feedback.roadmap');
-        Route::get('/roadmap', ShowRoadmapAdminController::class)->name('roadmap');
-        Route::post('/roadmap', StoreFeatureRequestController::class)->middleware('throttle:60,1')->name('roadmap.store');
-        Route::put('/roadmap/{featureRequest}', UpdateFeatureRequestController::class)->whereNumber('featureRequest')->middleware('throttle:60,1')->name('roadmap.update');
-        Route::get('/flags', ShowFeatureFlagsController::class)->name('flags');
-        Route::post('/flags', StoreFeatureFlagController::class)->middleware('throttle:30,1')->name('flags.store');
-        Route::put('/flags/{flag}', UpdateFeatureFlagController::class)->whereNumber('flag')->middleware('throttle:60,1')->name('flags.update');
-        Route::delete('/flags/{flag}', DeleteFeatureFlagController::class)->whereNumber('flag')->middleware('throttle:30,1')->name('flags.destroy');
-        Route::get('/customers', ShowCustomersController::class)->middleware('throttle:60,1')->name('customers');
-        Route::get('/customers/accounts/{account}', ShowCustomerAccountController::class)->whereUlid('account')->name('customers.accounts');
-        Route::get('/customers/users/{person}', ShowCustomerUserController::class)->whereUlid('person')->name('customers.users');
-        Route::post('/queues/failed/{job}/retry', RetryFailedJobController::class)->where('job', 'all|[0-9a-f-]{36}')->middleware('throttle:30,1')->name('queues.retry');
-        Route::delete('/queues/failed/{job}', ForgetFailedJobController::class)->where('job', 'all|[0-9a-f-]{36}')->middleware('throttle:30,1')->name('queues.forget');
-    });
+    // The admin panel itself is Filament (App\Providers\Filament\AdminPanelProvider); only its JSON health report is a plain route.
+    Route::get('/admin/health/report.json', ShowHealthReportController::class)
+        ->middleware(['platform.admin', 'password.confirm:password.confirm,'.config('platform.admin_confirmation_seconds')])->name('admin.health.report');
 
     Route::middleware('can:viewAny,App\\Models\\Recipe')->group(function (): void {
         Route::get('/account/recipes', ShowRecipesController::class)->name('account.recipes');

@@ -66,6 +66,6 @@ final class PlatformBackupFailed extends InboxNotification
      */
     protected function url(): string
     {
-        return route('admin.backups');
+        return \App\Filament\Pages\Backups::getUrl(panel: 'admin');
     }
 }

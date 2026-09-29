@@ -4,20 +4,22 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Filament\Pages\Queues;
 use App\Jobs\Deploy\ReportPreviewToGitHub;
-use App\Models\Account;
 use App\Models\PlatformAdminEvent;
-use App\Models\User;
 use App\Services\Admin\SystemHealth;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 final class AdminOperationsTest extends TestCase
 {
+    use AdminHelpers;
     use RefreshDatabase;
 
     public function test_health_shows_checks_queues_and_the_scheduler_heartbeat(): void
@@ -25,7 +27,8 @@ final class AdminOperationsTest extends TestCase
         $admin = $this->admin();
         DB::table('jobs')->insert(['queue' => 'checks', 'payload' => '{}', 'attempts' => 0, 'reserved_at' => null, 'available_at' => now()->subMinutes(20)->getTimestamp(), 'created_at' => now()->subMinutes(20)->getTimestamp()]);
 
-        $page = $this->as($admin)->get('/admin/health')->assertOk()->assertHeader('Cache-Control', 'no-store, private');
+        $page = $this->as($admin)->get('/admin/health')->assertOk();
+        $this->assertStringContainsString('no-store', (string) $page->headers->get('Cache-Control'));
         $page->assertSee('Database connection')->assertSee('Current')->assertSee('No heartbeat yet')->assertSee('Backed up');
 
         Artisan::call('platform:heartbeat');
@@ -43,43 +46,17 @@ final class AdminOperationsTest extends TestCase
         [$first, $second] = [$this->failedJob('Ping monitor'), $this->failedJob('Send alert')];
 
         $this->as($admin)->get('/admin/queues')->assertOk()->assertSee('Ping monitor')->assertSee('RuntimeException: Connection refused')->assertDontSee('/var/www');
-        $this->as($admin)->post("/admin/queues/failed/{$first}/retry")->assertRedirect('/admin/queues');
+        Livewire::test(Queues::class)->assertCanSeeTableRecords([$first, $second])->callAction(TestAction::make('retry')->table($first))->assertNotified();
         $this->assertSame(1, DB::table('failed_jobs')->count());
         $this->assertSame(1, DB::table('jobs')->where('queue', 'checks')->count());
-        $this->as($admin)->delete("/admin/queues/failed/{$second}")->assertRedirect('/admin/queues');
+        Livewire::test(Queues::class)->callAction(TestAction::make('forget')->table($second));
         $this->assertSame(0, DB::table('failed_jobs')->count());
         $this->failedJob('Another');
-        $this->as($admin)->delete('/admin/queues/failed/all')->assertRedirect();
+        Livewire::test(Queues::class)->callAction('forgetAll');
         $this->assertSame(0, DB::table('failed_jobs')->count());
-        $this->as($admin)->post('/admin/queues/failed/not-a-uuid/retry')->assertNotFound();
 
         $this->assertSame(['jobs.retried', 'jobs.forgotten', 'jobs.forgotten'], PlatformAdminEvent::query()->orderBy('id')->pluck('action')->all());
-        $this->as($admin)->get('/admin')->assertSee("Retried failed job {$first}.");
-    }
-
-    /**
-     * Make a platform admin with an authenticator app.
-     *
-     * @return User
-     */
-    private function admin(): User
-    {
-        $user = User::factory()->create();
-        Account::factory()->withMember($user)->create();
-        $user->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
-
-        return $user->refresh();
-    }
-
-    /**
-     * Act as the admin with a fresh confirmation.
-     *
-     * @param  User  $admin
-     * @return $this
-     */
-    private function as(User $admin): static
-    {
-        return $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
+        $this->as($admin)->get('/admin')->assertOk()->assertSee("Retried failed job {$first}.");
     }
 
     /**

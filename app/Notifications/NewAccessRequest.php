@@ -68,6 +68,6 @@ final class NewAccessRequest extends InboxNotification
      */
     protected function url(): string
     {
-        return route('admin.access-requests');
+        return \App\Filament\Resources\AccessRequests\AccessRequestResource::getUrl(panel: 'admin');
     }
 }

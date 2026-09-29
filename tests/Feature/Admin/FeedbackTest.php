@@ -4,17 +4,21 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Admin;
 
+use App\Filament\Resources\Feedback\Pages\ManageFeedback;
 use App\Models\Account;
 use App\Models\Feedback;
 use App\Models\User;
 use App\Notifications\NewFeedback;
+use Filament\Actions\Testing\TestAction;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Notification;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 final class FeedbackTest extends TestCase
 {
+    use AdminHelpers;
     use RefreshDatabase;
 
     public function test_people_send_feedback_from_the_app_and_admins_are_told(): void
@@ -49,39 +53,13 @@ final class FeedbackTest extends TestCase
         $feedback->forceFill(['user_id' => $user->id, 'kind' => 'problem', 'message' => 'The deploy log is cut off'])->save();
 
         $this->actingAs($user)->get('/admin/feedback')->assertNotFound();
-        $this->actingAs($user)->put("/admin/feedback/{$feedback->id}", ['resolved' => '1'])->assertNotFound();
 
-        $this->as($admin)->get('/admin/feedback')->assertOk()->assertSee('The deploy log is cut off')->assertSee('Grace')->assertSee('Open (1)', false);
-        $this->as($admin)->put("/admin/feedback/{$feedback->id}", ['resolved' => '1'])->assertRedirect()->assertSessionHas('status', 'Marked resolved.');
+        $this->as($admin)->get('/admin/feedback')->assertOk()->assertSee('The deploy log is cut off')->assertSee('Grace')->assertSee('Open');
+        Livewire::test(ManageFeedback::class)->assertCanSeeTableRecords([$feedback])->callAction(TestAction::make('resolve')->table($feedback));
         $this->assertSame($admin->id, $feedback->refresh()->resolved_by);
-        $this->as($admin)->get('/admin/feedback')->assertSee('All caught up');
-        $this->as($admin)->get('/admin/feedback?show=resolved')->assertSee('The deploy log is cut off')->assertSee('Open again');
-        $this->as($admin)->put("/admin/feedback/{$feedback->id}", ['resolved' => '0'])->assertRedirect();
+        Livewire::test(ManageFeedback::class)->assertCanNotSeeTableRecords([$feedback]);
+        Livewire::test(ManageFeedback::class, ['activeTab' => 'resolved'])->assertCanSeeTableRecords([$feedback])
+            ->assertActionHasLabel(TestAction::make('resolve')->table($feedback), 'Open again')->callAction(TestAction::make('resolve')->table($feedback));
         $this->assertNull($feedback->refresh()->resolved_at);
-    }
-
-    /**
-     * Make a platform admin with a second factor.
-     *
-     * @return User
-     */
-    private function admin(): User
-    {
-        $user = User::factory()->create();
-        Account::factory()->withMember($user)->create();
-        $user->forceFill(['is_platform_admin' => true, 'two_factor_secret' => encrypt('JBSWY3DPEHPK3PXP'), 'two_factor_confirmed_at' => now()])->save();
-
-        return $user->refresh();
-    }
-
-    /**
-     * Act as the admin with a fresh confirmation.
-     *
-     * @param  User  $admin
-     * @return $this
-     */
-    private function as(User $admin): static
-    {
-        return $this->actingAs($admin)->withSession(['auth.password_confirmed_at' => now()->getTimestamp()]);
     }
 }
