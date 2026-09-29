@@ -40,10 +40,13 @@ final class SecurityHeaders
             $headers->set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
         }
         // The Vite dev server injects its own client, so the policy only applies to built assets.
+        // Cloudflare Turnstile (on sign-up, when set up) loads a script and a frame from Cloudflare.
+        $turnstile = filled(config('services.turnstile.site_key')) ? ' https://challenges.cloudflare.com' : '';
         if (! Vite::isRunningHot() && ! $headers->has('Content-Security-Policy')) {
             $headers->set('Content-Security-Policy', implode('; ', [
                 "default-src 'self'",
-                "script-src 'self' 'nonce-{$nonce}'",
+                "script-src 'self' 'nonce-{$nonce}'{$turnstile}",
+                "frame-src 'self'{$turnstile}",
                 "style-src 'self' 'unsafe-inline'",
                 "img-src 'self' data: https:",
                 "font-src 'self' data:",

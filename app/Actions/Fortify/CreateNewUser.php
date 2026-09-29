@@ -7,6 +7,7 @@ namespace App\Actions\Fortify;
 use App\Actions\Users\RegisterUser;
 use App\Data\Users\RegisterUserData;
 use App\Models\User;
+use App\Services\Identity\SignUpProtection;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
@@ -22,8 +23,9 @@ final class CreateNewUser implements CreatesNewUsers
      * Fortify's registration adapter.
      *
      * @param  RegisterUser  $registerUser  Registers the person and creates their account.
+     * @param  SignUpProtection  $protection  Keeps bots and floods off sign-up.
      */
-    public function __construct(private readonly RegisterUser $registerUser) {}
+    public function __construct(private readonly RegisterUser $registerUser, private readonly SignUpProtection $protection) {}
 
     /**
      * Validate the registration form and register the person, with the access invitation the form carried, if any.
@@ -38,6 +40,7 @@ final class CreateNewUser implements CreatesNewUsers
             'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)],
             'password' => $this->passwordRules(),
         ])->validate();
+        $this->protection->check($input);
 
         return $this->registerUser->handle(new RegisterUserData(
             $validated['name'], $validated['email'], $validated['password'],

@@ -52,6 +52,12 @@ return [
         'webhook_secret' => env('STRIPE_WEBHOOK_SECRET'),
     ],
 
+    // Cloudflare Turnstile on sign-up; off until both keys are set.
+    'turnstile' => [
+        'site_key' => env('TURNSTILE_SITE_KEY'),
+        'secret_key' => env('TURNSTILE_SECRET_KEY'),
+    ],
+
     // SMS and phone-call alerts. Both destination types stay unavailable until all three are set.
     'twilio' => [
         'account_sid' => env('TWILIO_ACCOUNT_SID'),

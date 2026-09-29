@@ -10,6 +10,12 @@
         <x-signal.ui.input-field name="email" :label="__('Work email')" type="email" autocomplete="email" :value="old('email', $invitedEmail)" required />
         <x-signal.ui.input-field name="password" :label="__('Password')" type="password" autocomplete="new-password" required :restore="false" />
         <x-signal.ui.input-field name="password_confirmation" :label="__('Confirm password')" type="password" autocomplete="new-password" required :restore="false" />
+        {{-- People never see this field; bots that fill every field give themselves away. --}}
+        <div class="absolute -left-[9999px]" aria-hidden="true"><label for="website">Website</label><input id="website" type="text" name="website" tabindex="-1" autocomplete="off"></div>
+        @if (app(\App\Services\Identity\SignUpProtection::class)->turnstileEnabled())
+            <div class="cf-turnstile" data-sitekey="{{ config('services.turnstile.site_key') }}" data-theme="auto"></div>
+            <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer nonce="{{ \Illuminate\Support\Facades\Vite::cspNonce() }}"></script>
+        @endif
         <x-signal.ui.button variant="primary" type="submit" class="w-full justify-center">{{ __('Create account') }}</x-signal.ui.button>
     </form>
     <p class="text-center text-xs leading-5 text-muted">{!! __('By creating an account you agree to the :terms and :privacy.', [
