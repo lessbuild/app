@@ -17,8 +17,18 @@
         return 'bp-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
     }
 
+    // Visiting any page with ?bp_ignore=1 stops this browser being counted (for a site's own team); ?bp_ignore=0 undoes it.
+    try {
+        var ignore = new URL(window.location.href).searchParams.get('bp_ignore');
+        if (ignore === '1') window.localStorage.setItem('buildpusher_ignore', '1');
+        if (ignore === '0') window.localStorage.removeItem('buildpusher_ignore');
+    } catch (_) {}
+
     function collectionAllowed() {
         if (window.buildpusherAnalyticsOptOut === true) return false;
+        try {
+            if (window.localStorage.getItem('buildpusher_ignore') === '1') return false;
+        } catch (_) {}
         var consentCallback = script.dataset.consent;
         if (!consentCallback) return true;
         try {
@@ -30,10 +40,15 @@
 
     function browser() {
         var ua = navigator.userAgent;
-        if (/edg/i.test(ua)) return 'Edge';
-        if (/chrome|crios/i.test(ua)) return 'Chrome';
-        if (/safari/i.test(ua) && !/chrome/i.test(ua)) return 'Safari';
+        if (/edg(e|a|ios)?\//i.test(ua)) return 'Edge';
+        if (/opr\/|opera/i.test(ua)) return 'Opera';
+        if (/samsungbrowser/i.test(ua)) return 'Samsung Internet';
+        if (/yabrowser/i.test(ua)) return 'Yandex';
+        if (/vivaldi/i.test(ua)) return 'Vivaldi';
+        if (/duckduckgo/i.test(ua)) return 'DuckDuckGo';
         if (/firefox|fxios/i.test(ua)) return 'Firefox';
+        if (/chrome|crios|chromium/i.test(ua)) return 'Chrome';
+        if (/safari/i.test(ua)) return 'Safari';
         return 'Other';
     }
 
@@ -44,9 +59,10 @@
     function operatingSystem() {
         var ua = navigator.userAgent;
         if (/windows/i.test(ua)) return 'Windows';
+        if (/iphone|ipad|ipod/i.test(ua)) return 'iOS';
         if (/mac os|macintosh/i.test(ua)) return 'macOS';
         if (/android/i.test(ua)) return 'Android';
-        if (/iphone|ipad|ios/i.test(ua)) return 'iOS';
+        if (/cros/i.test(ua)) return 'ChromeOS';
         if (/linux/i.test(ua)) return 'Linux';
         return 'Other';
     }

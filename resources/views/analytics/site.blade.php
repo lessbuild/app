@@ -20,6 +20,7 @@
                     <li><code class="font-mono text-ink">data-not-found</code> · {{ __('on your 404 page only, to see which missing pages people reach') }}</li>
                 </ul>
                 <x-signal.ui.code-block :code="str_replace(' src=', ' data-outbound data-downloads src=', $snippet)" class="whitespace-pre-wrap break-all" />
+                <p class="text-muted">{{ __('To leave your own visits out, open any page of the site once with ?bp_ignore=1 in each browser you use (?bp_ignore=0 counts it again).') }}</p>
             </div>
         </div>
     </x-signal.ui.settings-section>
