@@ -25,7 +25,8 @@
             @endif
         </x-signal.ui.empty-state>
     @else
-        <ul class="grid gap-4 sm:grid-cols-2" aria-label="{{ __('Projects') }}">
+        <div class="grid items-start gap-6 xl:grid-cols-3">
+        <ul class="grid gap-4 sm:grid-cols-2 xl:col-span-2" aria-label="{{ __('Projects') }}">
             @foreach ($projects as $project)
                 <li>
                     <x-signal.ui.card as="a" tone="interactive" :href="route('projects.show', $project->id)" class="block h-full p-5">
@@ -45,5 +46,36 @@
                 </li>
             @endforeach
         </ul>
+
+        {{-- The team's recent deploys, incidents and changes; refreshes itself so a deploy's outcome appears as it lands. --}}
+        <x-signal.ui.panel as="section" class="grid gap-4 p-5" aria-labelledby="activity-heading">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+                <h2 id="activity-heading" class="text-base font-extrabold text-ink">{{ __('Recent activity') }}</h2>
+                <nav class="flex flex-wrap gap-1 text-xs font-bold" aria-label="{{ __('Filter activity') }}">
+                    @foreach (['' => __('All')] + array_map(fn ($label) => __($label), \App\Queries\Dashboard\AccountActivityQuery::KINDS) as $key => $label)
+                        <a href="{{ route('dashboard', $key === '' ? [] : ['activity' => $key]) }}" @class(['rounded-full px-2.5 py-1', 'bg-primary-soft text-primary' => ($activityKind ?? '') === $key, 'text-muted hover:text-ink' => ($activityKind ?? '') !== $key]) @if (($activityKind ?? '') === $key) aria-current="page" @endif>{{ $label }}</a>
+                    @endforeach
+                </nav>
+            </div>
+            <div id="dashboard-activity" data-live-region data-live-interval="15000">
+                @forelse ($activity as $item)
+                    <div @class(['flex items-start gap-3 py-3 text-sm', 'border-t border-line' => ! $loop->first])>
+                        <span class="mt-0.5 grid size-8 shrink-0 place-items-center rounded-full bg-surface-muted text-muted" aria-hidden="true"><x-signal.ui.icon :name="$item->icon" class="size-4" /></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="font-semibold text-ink">
+                                @if ($item->url)<a href="{{ $item->url }}" class="hover:text-primary hover:underline">{{ $item->title }}</a>@else{{ $item->title }}@endif
+                            </p>
+                            <p class="mt-0.5 text-xs text-muted">
+                                {{ collect([$item->project, $item->actor])->filter()->implode(' · ') }}@if ($item->project || $item->actor) · @endif<time datetime="{{ $item->at->toIso8601String() }}" title="{{ $item->at->toDayDateTimeString() }}">{{ $item->at->diffForHumans() }}</time>
+                            </p>
+                        </div>
+                        <x-signal.ui.badge :tone="$item->tone">{{ $item->outcome }}</x-signal.ui.badge>
+                    </div>
+                @empty
+                    <p class="py-3 text-sm text-muted">{{ __('Nothing yet. Deploys, incidents and changes across your projects show up here.') }}</p>
+                @endforelse
+            </div>
+        </x-signal.ui.panel>
+        </div>
     @endif
 </x-signal.layouts.app>
