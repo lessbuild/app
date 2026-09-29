@@ -40,6 +40,31 @@
     </x-signal.ui.settings-section>
 
     @if ($canManage)
+        <x-signal.ui.settings-section :title="__('Share the report')" :description="__('Give clients or your team a read-only link to this site’s report. They don’t need an account. Releases and goal settings aren’t shown.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @if ($site->share_token)
+                    <x-signal.ui.code-block :code="route('analytics.shared', $site->share_token)" class="whitespace-pre-wrap break-all" />
+                    <p class="text-sm text-muted">{{ $site->share_password ? __('Protected by a password. Shared :time.', ['time' => $site->shared_at?->diffForHumans()]) : __('Anyone with the link can see it. Shared :time.', ['time' => $site->shared_at?->diffForHumans()]) }}</p>
+                @endif
+                <form method="POST" action="{{ route('analytics.sites.share', [$project, $site->id]) }}" class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+                    @csrf
+                    <x-signal.ui.input-field name="share_password" type="password" :label="__('Password (optional)')" :description="__('At least 8 characters. Leave empty for no password.')" autocomplete="new-password" />
+                    <div class="flex flex-wrap items-center gap-3">
+                        @if ($site->share_token)
+                            <x-signal.ui.checkbox name="new_link" :show-errors="false">{{ __('New link (the old one stops working)') }}</x-signal.ui.checkbox>
+                        @endif
+                        <x-signal.ui.button type="submit" variant="primary">{{ $site->share_token ? __('Update sharing') : __('Create link') }}</x-signal.ui.button>
+                    </div>
+                </form>
+                @if ($site->share_token)
+                    <form method="POST" action="{{ route('analytics.sites.unshare', [$project, $site->id]) }}">
+                        @csrf @method('DELETE')
+                        <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Stop sharing') }}</x-signal.ui.button>
+                    </form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+
         <x-signal.ui.settings-section :title="__('Settings')" :description="__('Changing hostnames takes effect for the next visit.')">
             <form method="POST" action="{{ route('analytics.sites.update', [$project, $site->id]) }}" class="grid gap-5 p-4 sm:p-6">
                 @csrf

@@ -29,6 +29,9 @@ use Illuminate\Support\Str;
  * @property Carbon|null $last_processed_at
  * @property bool $collection_enabled
  * @property Carbon|null $collection_paused_at
+ * @property string|null $share_token
+ * @property string|null $share_password
+ * @property Carbon|null $shared_at
  * @property-read Project $project
  */
 #[UseFactory(AnalyticsSiteFactory::class)]
@@ -50,6 +53,13 @@ class AnalyticsSite extends Model
      * @var list<string>
      */
     protected $fillable = ['name', 'domains', 'excluded_paths', 'timezone', 'collection_enabled', 'collection_paused_at', 'last_event_at', 'last_processed_at'];
+
+    /**
+     * Keep the shared report's password hash out of arrays and JSON.
+     *
+     * @var list<string>
+     */
+    protected $hidden = ['share_password'];
 
     /**
      * Give each new site a random public ID for its tracker snippet, so the internal ID isn't exposed.
@@ -79,6 +89,7 @@ class AnalyticsSite extends Model
             'collection_paused_at' => 'datetime',
             'last_event_at' => 'datetime',
             'last_processed_at' => 'datetime',
+            'shared_at' => 'datetime',
             'collection_enabled' => 'boolean',
         ];
     }

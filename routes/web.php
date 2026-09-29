@@ -69,16 +69,20 @@ use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DownloadExportController;
 use App\Http\Controllers\Analytics\RequestExportController;
+use App\Http\Controllers\Analytics\ShareSiteReportController;
 use App\Http\Controllers\Analytics\ShowCampaignsController;
 use App\Http\Controllers\Analytics\ShowExportController;
 use App\Http\Controllers\Analytics\ShowFunnelsController;
 use App\Http\Controllers\Analytics\ShowGoalsController;
 use App\Http\Controllers\Analytics\ShowOverviewController;
+use App\Http\Controllers\Analytics\ShowSharedReportController;
 use App\Http\Controllers\Analytics\ShowSiteController;
 use App\Http\Controllers\Analytics\ShowSitesController;
+use App\Http\Controllers\Analytics\StopSharingSiteReportController;
 use App\Http\Controllers\Analytics\StoreFunnelController;
 use App\Http\Controllers\Analytics\StoreGoalController;
 use App\Http\Controllers\Analytics\StoreSiteController;
+use App\Http\Controllers\Analytics\UnlockSharedReportController;
 use App\Http\Controllers\Analytics\UpdateFunnelController;
 use App\Http\Controllers\Analytics\UpdateGoalController;
 use App\Http\Controllers\Analytics\UpdateSiteController;
@@ -489,6 +493,9 @@ Route::post('/email/getting-started/{user}/stop', StopGettingStartedEmailsContro
 
 // Single sign-on comes back here, whether it was signing someone in or confirming who a signed-in person is.
 Route::get('/sso/callback', SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
+// Shared Analytics reports: read-only, by secret link, optionally behind a password.
+Route::get('/share/analytics/{token}', ShowSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('analytics.shared');
+Route::post('/share/analytics/{token}/unlock', UnlockSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:10,1')->name('analytics.shared.unlock');
 // The platform's own pages report their JavaScript errors here, into the platform's Monitoring.
 Route::post('/_errors', ReportBrowserErrorController::class)->middleware('throttle:20,1')->name('browser-errors.store');
 Route::post('/sso/saml/acs', ConsumeSamlResponseController::class)->middleware('throttle:20,1')->name('sso.saml.acs');
@@ -521,6 +528,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/sites/{site}', ShowSiteController::class)->whereNumber('site')->middleware('can:view,site')->name('sites.show');
             Route::put('/sites/{site}', UpdateSiteController::class)->whereNumber('site')->middleware('can:update,site')->name('sites.update');
             Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.verify');
+            Route::post('/sites/{site}/share', ShareSiteReportController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.share');
+            Route::delete('/sites/{site}/share', StopSharingSiteReportController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.unshare');
             Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware(['can:delete,site', 'password.confirm'])->name('sites.destroy');
             Route::get('/goals', ShowGoalsController::class)->name('goals');
             Route::get('/campaigns', ShowCampaignsController::class)->name('campaigns');

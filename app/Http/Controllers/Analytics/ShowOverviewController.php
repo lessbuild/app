@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Http\Controllers\Analytics\Concerns\ReadsReportParameters;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\AnalyticsReportQuery;
@@ -18,6 +19,8 @@ use Illuminate\Http\Request;
 /** The Analytics report for one site: ?site, ?days and the path/source/campaign/device filters. */
 final class ShowOverviewController
 {
+    use ReadsReportParameters;
+
     /**
      * Show the report page, with the releases that went live in the period. Unknown day ranges fall back to 30 days,
      * and filters are cut to their column lengths.
@@ -35,14 +38,8 @@ final class ShowOverviewController
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectSitesQuery $sites, AnalyticsReportQuery $report, SiteReleasesQuery $releases, LiveVisitorsQuery $live): View
     {
         $site = $sites->selected($project, $request->query('site'));
-        $days = in_array((int) $request->query('days'), [1, 7, 30, 90, 365], true) ? (int) $request->query('days') : 30;
-        $filters = [];
-        foreach (['path' => 2048, 'source' => 255, 'campaign' => 150, 'device' => 32] as $key => $max) {
-            $value = trim($request->string($key)->toString());
-            $filters[$key] = $value !== '' ? mb_substr($value, 0, $max) : null;
-        }
-        $country = strtoupper(trim($request->string('country')->toString()));
-        $filters['country'] = preg_match('/^[A-Z]{2}$/', $country) === 1 ? $country : null;
+        $days = $this->reportDays($request);
+        $filters = $this->reportFilters($request);
 
         // The "right now" panel refreshes itself; answer it with just that panel instead of the whole report.
         if ($site !== null && $request->hasHeader('X-Live-Region')) {
