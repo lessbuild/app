@@ -22,6 +22,7 @@ final class ServerRequest extends FormRequest
         return [
             'provider_id' => ['required', 'integer', 'min:1'],
             'type' => ['required', Rule::enum(ServerType::class)],
+            'database_engine' => ['nullable', 'in:mysql,postgres'],
             'name' => ['required', 'string', 'max:31', 'regex:/^[A-Za-z0-9][A-Za-z0-9 -]*$/'],
             'region' => ['required', 'string', 'max:100'],
             'size' => ['required', 'string', 'max:100'],
@@ -34,11 +35,11 @@ final class ServerRequest extends FormRequest
     /**
      * Get the validated details with the provider ID as an integer and the recipes, in the order chosen.
      *
-     * @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string, recipe_ids: list<int>}
+     * @return array{provider_id: int, type: string, name: string, region: string, size: string, image: string, recipe_ids: list<int>, database_engine?: string|null}
      */
     public function serverDetails(): array
     {
-        /** @var array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string} $data */
+        /** @var array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string, database_engine?: string|null} $data */
         $data = $this->safe()->except('recipe_ids');
 
         return [...$data, 'provider_id' => (int) $data['provider_id'], 'recipe_ids' => array_values(array_map('intval', (array) $this->validated('recipe_ids', [])))];

@@ -172,6 +172,48 @@
         </x-signal.ui.page-tab-panel>
     @endif
 
+    @if (isset($tabs['recovery']))
+        <x-signal.ui.page-tab-panel name="recovery" :current="$tab">
+        <x-signal.ui.settings-section id="continuous-backup" :title="__('Continuous backup')" :description="__('A daily base backup plus the :log, kept in a backup destination, so :engine can be restored to any moment in the window. Uses WAL-G.', ['log' => $server->database_engine === 'postgres' ? __('write-ahead log (sent as it’s written)') : __('binary log (sent every five minutes)'), 'engine' => $server->database_engine === 'postgres' ? 'PostgreSQL' : 'MySQL'])">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @if ($recoveryPlan)
+                    <p class="text-sm">
+                        <x-signal.ui.badge tone="success">{{ __('On') }}</x-signal.ui.badge>
+                        {{ __('Backing up to :destination, keeping :days days. Restorable from :from UTC.', ['destination' => $recoveryPlan->destination->name, 'days' => $recoveryPlan->retention_days, 'from' => $recoveryPlan->earliestRestore()->utc()->format('Y-m-d H:i')]) }}
+                        @if ($recoveryPlan->setupExecution)<span class="text-muted">· {{ __('Setup: :status', ['status' => $recoveryPlan->setupExecution->status]) }}</span>@endif
+                    </p>
+                @endif
+                @if ($canRunCommands)
+                    @if ($backupDestinations->isEmpty())
+                        <p class="text-sm text-muted">{{ __('Add an S3-compatible backup destination under Infrastructure → Backups first.') }}</p>
+                    @else
+                        <form method="POST" action="{{ route('infrastructure.servers.database-recovery', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3">
+                            @csrf
+                            <x-signal.ui.select-field name="backup_destination_id" :label="__('Destination')">
+                                @foreach ($backupDestinations as $destination)
+                                    <option value="{{ $destination->id }}" @selected($recoveryPlan?->backup_destination_id === $destination->id)>{{ $destination->name }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.input-field name="retention_days" type="number" min="1" max="35" :label="__('Keep (days)')" :value="$recoveryPlan->retention_days ?? 7" />
+                            <x-signal.ui.button type="submit" variant="secondary">{{ $recoveryPlan ? __('Set up again') : __('Turn on continuous backup') }}</x-signal.ui.button>
+                        </form>
+                    @endif
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+        @if ($recoveryPlan && $canRunCommands)
+            <x-signal.ui.settings-section id="restore" :title="__('Restore to a point in time')" :description="__('Stops the database, moves its current data aside (kept on the server), restores the last base backup before the moment and replays the log up to it. Applications see the database as it was then.')">
+                <form method="POST" action="{{ route('infrastructure.servers.database-recovery.restore', [$project, $server->id]) }}" class="grid items-end gap-4 p-4 sm:grid-cols-3 sm:p-6">
+                    @csrf
+                    <x-signal.ui.input-field name="restore_to" type="datetime-local" step="1" :label="__('Restore to (UTC)')" required />
+                    <x-signal.ui.input-field name="confirmation" :label="__('Type :name to confirm', ['name' => $server->name])" autocomplete="off" required />
+                    <x-signal.ui.button type="submit" variant="danger">{{ __('Restore') }}</x-signal.ui.button>
+                </form>
+            </x-signal.ui.settings-section>
+        @endif
+        </x-signal.ui.page-tab-panel>
+    @endif
+
     <x-signal.ui.page-tab-panel name="logs" :current="$tab">
     <x-signal.ui.settings-section :title="__('Logs')" :description="$log?->refreshed_at ? __('Fetched :time', ['time' => $log->refreshed_at->diffForHumans()]) : __('The last 200 lines of each log.')">
         <div class="grid gap-3 p-4 sm:p-6">

@@ -47,7 +47,8 @@ use Illuminate\Support\Str;
  * @property string|null $ssh_host_key
  * @property string|null $ssh_host_fingerprint
  * @property string|null $password only while a remote provisioning retry needs it
- * @property string|null $mysql_root_password
+ * @property string|null $mysql_root_password the database admin password: MySQL's root, or PostgreSQL's postgres user
+ * @property string|null $database_engine mysql or postgres, for database servers
  * @property int $setup_stage
  * @property string $provisioning_status queued, waiting_for_ip, provisioning, active or failed
  * @property string|null $provisioning_error

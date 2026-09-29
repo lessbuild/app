@@ -55,7 +55,7 @@ final class CreateServer
      *
      * @param  Account  $account
      * @param  User  $actor
-     * @param  array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string, recipe_ids?: list<int>}  $data
+     * @param  array{provider_id: int|string, type: string, name: string, region: string, size: string, image: string, recipe_ids?: list<int>, database_engine?: string|null}  $data
      * @return Server
      */
     public function handle(Account $account, User $actor, array $data): Server
@@ -90,7 +90,8 @@ final class CreateServer
                 'provisioning_status' => Server::STATUS_QUEUED,
                 'ssh_public_key' => $keys->publicKey(),
                 'ssh_private_key' => $keys->privateKey(),
-                'mysql_root_password' => in_array(InstallMysqlScript::class, $this->plan->steps($type), true) ? Str::random(40) : null,
+                'database_engine' => $type === ServerType::Database ? (($data['database_engine'] ?? 'mysql') === 'postgres' ? 'postgres' : 'mysql') : null,
+                'mysql_root_password' => $type === ServerType::Database || in_array(InstallMysqlScript::class, $this->plan->steps($type), true) ? Str::random(40) : null,
                 'recipe_snapshot' => $snapshot,
             ])->save();
             $this->audit->handle(AuditAction::ServerCreated, $actor, $account->id, ['server' => $server->name, 'provider' => $provider->name, 'type' => $type->value]);

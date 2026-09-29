@@ -30,6 +30,10 @@
                             <option value="{{ $type->value }}" @selected(old('type', 'app') === $type->value)>{{ $type->label() }} · {{ implode(', ', $type->installs()) }}</option>
                         @endforeach
                     </x-signal.ui.select-field>
+                    <x-signal.ui.select-field name="database_engine" :label="__('Database engine')" :description="__('For database servers.')">
+                        <option value="mysql" @selected(old('database_engine', 'mysql') === 'mysql')>MySQL</option>
+                        <option value="postgres" @selected(old('database_engine') === 'postgres')>PostgreSQL</option>
+                    </x-signal.ui.select-field>
                     @foreach (['region' => __('Region'), 'size' => __('Size'), 'image' => __('Ubuntu image')] as $field => $label)
                         <x-signal.ui.select-field :name="$field" :label="$label" required>
                             @foreach ($catalog[$field === 'region' ? 'regions' : ($field === 'size' ? 'sizes' : 'images')] as $choice)

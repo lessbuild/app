@@ -10,6 +10,7 @@ use App\Models\Server;
 use App\Services\Infrastructure\Scripts\Cache\InstallMemcachedScript;
 use App\Services\Infrastructure\Scripts\Cache\InstallRedisScript;
 use App\Services\Infrastructure\Scripts\Database\InstallMysqlScript;
+use App\Services\Infrastructure\Scripts\Database\InstallPostgresScript;
 use App\Services\Infrastructure\Scripts\Languages\InstallNodeScript;
 use App\Services\Infrastructure\Scripts\Languages\InstallPHPScript;
 use App\Services\Infrastructure\Scripts\Server\BaseScript;
@@ -49,7 +50,7 @@ final class ServerProvisioningPlan
             ServerType::App => [InstallComposerScript::class, InstallPHPScript::class, InstallNodeScript::class, InstallCaddyScript::class, InstallMysqlScript::class, InstallRedisScript::class, InstallMemcachedScript::class],
             ServerType::Web => [InstallComposerScript::class, InstallPHPScript::class, InstallCaddyScript::class],
             ServerType::Worker => [InstallComposerScript::class, InstallPHPScript::class, InstallNodeScript::class],
-            ServerType::Database => [InstallMysqlScript::class],
+            ServerType::Database => [$server instanceof Server && $server->database_engine === 'postgres' ? InstallPostgresScript::class : InstallMysqlScript::class],
             ServerType::Cache => [InstallRedisScript::class, InstallMemcachedScript::class],
             ServerType::LoadBalancer => [InstallCaddyScript::class],
         };

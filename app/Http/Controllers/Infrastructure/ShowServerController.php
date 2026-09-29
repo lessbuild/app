@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Infrastructure;
 
+use App\Enums\ServerType;
+use App\Models\BackupDestination;
+use App\Models\DatabaseBackupPlan;
 use App\Models\Project;
 use App\Models\Server;
 use App\Models\ServerAlertRule;
@@ -38,6 +41,7 @@ final class ShowServerController
         $active = $server->provisioning_status === Server::STATUS_ACTIVE;
         $tabs = array_filter([
             'overview' => __('Overview'), 'alerts' => $active ? __('Alerts') : null, 'diagnostics' => $active ? __('Diagnostics') : null,
+            'recovery' => $active && $server->type === ServerType::Database && $server->database_engine !== null ? __('Recovery') : null,
             'logs' => __('Logs'), 'settings' => $user->can('update', $server) ? __('Settings') : null,
         ]);
 
@@ -56,6 +60,9 @@ final class ShowServerController
             'alertRules' => ServerAlertRule::query()->where('account_id', $project->account_id)->where(fn ($query) => $query->whereNull('server_id')->orWhere('server_id', $server->id))->orderBy('name')->get(),
             'canManage' => $user->can('update', $server),
             'canOpenTerminal' => $user->can('openTerminal', $server),
+            'recoveryPlan' => DatabaseBackupPlan::query()->with(['destination', 'setupExecution'])->where('server_id', $server->id)->first(),
+            'backupDestinations' => $server->type === ServerType::Database ? BackupDestination::query()->where('account_id', $server->account_id)->orderBy('name')->get(['id', 'name', 'account_id']) : collect(),
+            'canRunCommands' => $user->can('runCommands', $server),
         ]);
     }
 }
