@@ -13,7 +13,7 @@
 
 declare(strict_types=1);
 
-const BUILDPUSHER_CLI_VERSION = '1.0.0';
+const BUILDPUSHER_CLI_VERSION = '1.1.0';
 const FINISHED = ['succeeded', 'failed', 'canceled', 'rejected'];
 
 exit(main(array_slice($argv, 1)));
@@ -69,7 +69,7 @@ function parseArguments(array $args): array
         if (str_contains($name, '=')) {
             [$name, $value] = explode('=', $name, 2);
             $options[$name] = $value;
-        } elseif (in_array($name, ['url', 'environment', 'env', 'token'], true) && isset($args[$i + 1])) {
+        } elseif (in_array($name, ['url', 'environment', 'env', 'token', 'ref'], true) && isset($args[$i + 1])) {
             $options[$name] = $args[++$i];
         } else {
             $options[$name] = true;
@@ -93,7 +93,8 @@ Usage:
   buildpusher login [--url=https://buildpusher.com]   Save an API token (Account → API tokens, with Deploy scopes)
   buildpusher whoami                                  Show who the token belongs to
   buildpusher projects                                List projects and their environments
-  buildpusher deploy <project> [environment] [--wait] Deploy an environment (production by default)
+  buildpusher deploy <project> [environment] [--wait] [--ref=<branch|tag|commit>]
+                                                      Deploy an environment (production by default)
   buildpusher status [project] [environment]          Show the latest deploys
   buildpusher logs <deploy-id> [--follow]             Print a deploy's log, following it until it finishes
   buildpusher rollback <deploy-id> [--wait]           Roll back to the release a deploy shipped
@@ -177,8 +178,9 @@ function projects(): int
 function deploy(array $args, array $options): int
 {
     [$project, $environment] = resolveEnvironment($args, $options);
-    $build = request('POST', "/environments/{$environment['id']}/deploy")['data'];
-    say("Deploy #{$build['id']} of {$project['name']} to {$environment['name']}: {$build['status']}");
+    $ref = is_string($options['ref'] ?? null) ? $options['ref'] : null;
+    $build = request('POST', "/environments/{$environment['id']}/deploy", $ref === null ? null : ['ref' => $ref])['data'];
+    say("Deploy #{$build['id']} of {$project['name']}".($ref !== null ? " at {$ref}" : '')." to {$environment['name']}: {$build['status']}");
     say(dim(baseUrl()."/projects/{$project['id']}/deploy/builds/{$build['id']}"));
 
     return isset($options['wait']) ? follow((int) $build['id']) : 0;

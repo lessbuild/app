@@ -13,6 +13,7 @@
                 @php($commitUrl = $build->repository->revisionUrl($build->revision))
                 <a @if ($commitUrl) href="{{ $commitUrl }}" target="_blank" rel="noopener" @endif class="font-mono text-sm text-primary">{{ $build->shortRevision() }}</a>
             @endif
+            @if ($build->git_ref)<x-signal.ui.badge tone="accent" title="{{ __('Requested version') }}">{{ $build->git_ref }}</x-signal.ui.badge>@endif
             <span class="text-sm text-ink">{{ $build->commit_message }}</span>
             <x-signal.ui.button :href="route('deploy.builds.compare', [$project, $build->id])" variant="quiet" size="sm" class="ml-auto">{{ __('Compare') }}</x-signal.ui.button>
         </div>

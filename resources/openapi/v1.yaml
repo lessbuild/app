@@ -67,6 +67,7 @@ components:
         status: { type: string, enum: [queued, awaiting_approval, rejected, deploying, running, succeeded, failed, canceled] }
         trigger: { type: string }
         revision: { type: [string, 'null'] }
+        ref: { type: [string, 'null'], description: "The branch, tag or commit someone asked to deploy; null for the repository's branch." }
         promoted_from_build_id: { type: [integer, 'null'] }
         created_at: { type: [string, 'null'], format: date-time }
         finished_at: { type: [string, 'null'], format: date-time }
@@ -247,6 +248,14 @@ paths:
       summary: Deploy the environment's repository
       security: [{ apiToken: [deploy:write] }]
       parameters: [{ $ref: '#/components/parameters/environment' }]
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ref: { type: string, maxLength: 200, description: "A branch, tag or commit to deploy instead of the repository's branch.", example: v1.4.0 }
       responses:
         '202':
           description: The deployment is queued.

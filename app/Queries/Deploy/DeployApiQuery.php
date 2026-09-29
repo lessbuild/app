@@ -175,7 +175,7 @@ final class DeployApiQuery
     {
         return [
             'id' => $build->id, 'repository_id' => $build->repository_id, 'environment_id' => $build->environment_id, 'status' => $build->status,
-            'trigger' => $build->trigger_source, 'revision' => $build->revision, 'promoted_from_build_id' => $build->promoted_from_build_id,
+            'trigger' => $build->trigger_source, 'revision' => $build->revision, 'ref' => $build->git_ref, 'promoted_from_build_id' => $build->promoted_from_build_id,
             'created_at' => $build->created_at?->toIso8601String(), 'finished_at' => $build->finished_at?->toIso8601String(),
         ];
     }

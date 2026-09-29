@@ -22,6 +22,10 @@
         </div>
         @if ($canDeploy)
             <form method="POST" action="{{ route('deploy.repositories.deploy', [$project, $repository->id]) }}">@csrf<x-signal.ui.button type="submit" variant="primary" :disabled="! $repository->isDeploymentReady()">{{ __('Deploy :branch', ['branch' => $repository->branch]) }}</x-signal.ui.button></form>
+            <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'deploy-ref'])" variant="secondary" data-modal-trigger="deploy-ref" :disabled="! $repository->isDeploymentReady()">{{ __('Deploy a version…') }}</x-signal.ui.button>
+            <x-signal.overlays.form-modal id="deploy-ref" :title="__('Deploy a specific version')" :description="__('Deploy another branch, a release tag, or an exact commit. The environment’s approvals, locks and windows still apply.')" :action="route('deploy.repositories.deploy', [$project, $repository->id])" :submit="__('Deploy')">
+                <x-signal.ui.input-field id="deploy-ref-input" name="ref" :label="__('Branch, tag or commit')" placeholder="v1.4.0" maxlength="200" autocomplete="off" required />
+            </x-signal.overlays.form-modal>
         @endif
     </x-signal.ui.card>
 

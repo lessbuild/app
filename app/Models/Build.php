@@ -32,6 +32,7 @@ use Illuminate\Support\Carbon;
  * @property string $status see the STATUS_ constants
  * @property string $trigger_source manual, webhook, redeploy, rollback, scheduled, api or promotion
  * @property string|null $revision
+ * @property string|null $git_ref the branch, tag or commit someone asked to deploy, resolved on the server; null for the repository's branch
  * @property string|null $commit_message
  * @property list<string>|null $changed_paths
  * @property string|null $operator_note
