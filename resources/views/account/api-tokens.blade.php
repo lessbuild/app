@@ -54,6 +54,13 @@
         </form>
     </x-signal.overlays.modal>
 
+    <x-signal.ui.settings-section :title="__('Command-line tool')" :description="__('Deploy, follow logs and roll back from your terminal or CI with a token that has the Deploy scopes.')">
+        <div class="grid gap-3 p-4 sm:p-6">
+            <x-signal.ui.code-block :code="'curl -fsSL '.route('cli.install').' | sh'" :aria-label="__('Install command')" />
+            <p class="text-sm text-muted">{{ __('Then run buildpusher login and paste a token.') }} <a href="{{ route('help.guide', 'use-the-cli') }}" class="font-bold text-primary underline">{{ __('How to use it') }}</a></p>
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Tokens in this account')" :description="__('Everyone’s tokens for :account. Revoke any you don’t recognise.', ['account' => $account->name])">
         @if ($tokens === [])
             <p class="p-4 text-sm text-muted sm:p-6">{{ __('No tokens yet.') }}</p>

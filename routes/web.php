@@ -78,6 +78,8 @@ use App\Http\Controllers\Auth\ShowSsoLoginController;
 use App\Http\Controllers\Auth\SsoCallbackController;
 use App\Http\Controllers\Auth\StartSsoLoginController;
 use App\Http\Controllers\Auth\StartSsoVerificationController;
+use App\Http\Controllers\Cli\DownloadCliController;
+use App\Http\Controllers\Cli\ShowCliInstallerController;
 use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Deploy\ApplyConfigurationReviewController;
@@ -391,6 +393,9 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/request-access', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 });
 Route::get('/docs/api', ShowApiReferenceController::class)->name('docs.api');
+// The command-line tool and its installer.
+Route::get('/cli/buildpusher', DownloadCliController::class)->middleware('throttle:60,1')->name('cli.download');
+Route::get('/cli/install.sh', ShowCliInstallerController::class)->middleware('throttle:60,1')->name('cli.install');
 // Core's platform status page and report, kept at the same addresses.
 Route::get('/status', ShowPlatformStatusController::class)->middleware('throttle:120,1')->name('platform.status');
 Route::get('/status/report.json', ShowPlatformStatusReportController::class)->middleware('throttle:120,1')->name('platform.status.report');

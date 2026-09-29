@@ -119,6 +119,18 @@ return [
                 ['Follow it', 'The deploy page shows each step’s log as it runs, and the release is marked in Monitoring and Analytics once it’s live.'],
             ],
         ],
+        'use-the-cli' => [
+            'group' => 'deploy',
+            'title' => 'Deploy from the command line',
+            'summary' => 'Deploy, follow logs and roll back from your terminal or CI with the BuildPusher CLI.',
+            'steps' => [
+                ['Install it', 'Run curl -fsSL https://buildpusher.com/cli/install.sh | sh. It’s one PHP file, so it needs PHP 8.1 or later.'],
+                ['Log in', 'Create an API token with the Deploy scopes under Account → API tokens, then run buildpusher login and paste it. In CI, set BUILDPUSHER_TOKEN instead.'],
+                ['Deploy', 'Run buildpusher deploy <project> [environment] --wait to deploy and follow the log. It exits non-zero if the deploy fails, so CI jobs fail with it.'],
+                ['Follow and undo', 'buildpusher status lists recent deploys, buildpusher logs <id> --follow streams one, and buildpusher rollback <id> goes back to the release a deploy shipped.'],
+                ['Set defaults', 'Put {"project": "shop", "environment": "staging"} in .buildpusher.json at the root of your repository to leave them off each command.'],
+            ],
+        ],
         'environments-and-variables' => [
             'group' => 'deploy',
             'title' => 'Environments and variables',
