@@ -22,12 +22,12 @@ final class UpdateEnvironmentDeploySettings
     public function __construct(private readonly Entitlements $entitlements) {}
 
     /**
-     * Save how an environment's deploys run: approval, strategy, automatic rollback, observation, runtime and
-     * replicas. More than one replica needs scaling on the Deploy plan.
+     * Save how an environment's deploys run: approval, strategy, automatic rollback, observation (health and error
+     * rate), runtime and replicas. More than one replica needs scaling on the Deploy plan.
      *
      * @param  User  $actor
      * @param  Environment  $environment
-     * @param  array{requires_deployment_approval: bool, deployment_strategy: string, rolling_pause_seconds: int, automatic_rollback: bool, post_deployment_observation_minutes: int|null, runtime_type: string, runtime_version: string|null, build_command: string|null, start_command: string|null, container_port: int|null, dockerfile_path: string|null, minimum_replicas: int, maximum_replicas: int, desired_replicas: int}  $data
+     * @param  array{requires_deployment_approval: bool, deployment_strategy: string, rolling_pause_seconds: int, automatic_rollback: bool, post_deployment_observation_minutes: int|null, rollback_error_rate_percent?: int|null, runtime_type: string, runtime_version: string|null, build_command: string|null, start_command: string|null, container_port: int|null, dockerfile_path: string|null, minimum_replicas: int, maximum_replicas: int, desired_replicas: int}  $data
      * @return void
      */
     public function handle(User $actor, Environment $environment, array $data): void

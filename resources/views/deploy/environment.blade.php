@@ -54,6 +54,12 @@
                     <option value="{{ $minutes }}" @selected($environment->post_deployment_observation_minutes === $minutes)>{{ trans_choice(':count minute|:count minutes', $minutes) }}</option>
                 @endforeach
             </x-signal.ui.select-field>
+            <x-signal.ui.select-field name="rollback_error_rate_percent" :label="__('Fail the deploy when errors jump')" :description="__('While watching, compares failed requests since the deploy with the same time before it, from this environment’s Monitoring telemetry. Needs at least 20 requests.')">
+                <option value="">{{ __('Only check health') }}</option>
+                @foreach ([1, 2, 5, 10, 25] as $percent)
+                    <option value="{{ $percent }}" @selected($environment->rollback_error_rate_percent === $percent)>{{ __('Over :percent% of requests failing', ['percent' => $percent]) }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
             <x-signal.ui.select-field name="runtime_type" :label="__('Runtime')">
                 @foreach (['php' => 'PHP', 'node' => 'Node.js', 'python' => 'Python', 'docker' => 'Docker'] as $value => $label)
                     <option value="{{ $value }}" @selected($environment->runtime_type === $value)>{{ $label }}</option>

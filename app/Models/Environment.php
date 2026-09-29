@@ -36,6 +36,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int $rolling_pause_seconds pause between restarting each process replica
  * @property bool $automatic_rollback a deploy that fails after going live, or fails its observation, rolls back
  * @property int|null $post_deployment_observation_minutes watch the website's health this long after each deploy
+ * @property int|null $rollback_error_rate_percent while watching, fail the deploy when more than this share of requests fail (and more than before it)
  * @property string $runtime_type php, node, python or docker
  * @property string|null $runtime_version
  * @property string|null $build_command
@@ -73,7 +74,7 @@ class Environment extends Model
         return [
             'kind' => EnvironmentKind::class, 'telemetry_event_count' => 'integer', 'telemetry_last_received_at' => 'immutable_datetime',
             'requires_deployment_approval' => 'boolean', 'deployment_locked_at' => 'immutable_datetime', 'deployment_window_days' => 'array',
-            'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer',
+            'rolling_pause_seconds' => 'integer', 'automatic_rollback' => 'boolean', 'post_deployment_observation_minutes' => 'integer', 'rollback_error_rate_percent' => 'integer',
             'container_port' => 'integer', 'minimum_replicas' => 'integer', 'maximum_replicas' => 'integer', 'desired_replicas' => 'integer',
             'hibernate_after_minutes' => 'integer', 'last_activity_at' => 'immutable_datetime', 'hibernated_at' => 'immutable_datetime', 'recipes_run_on_new_websites' => 'boolean',
         ];

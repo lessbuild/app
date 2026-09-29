@@ -13,6 +13,7 @@ use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Repository;
 use App\Models\Server;
+use App\Models\TelemetryEvent;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Infrastructure\ProvisioningCallbackUrl;
@@ -148,6 +149,50 @@ final class EnvironmentsTest extends TestCase
         $this->command('builds:observe')->expectsOutput('Checked 1 deploys under observation; 1 failed.');
         $this->assertSame('failed', $this->reload($watched)->observation_status);
         $this->assertNotNull($this->reload($watched)->automatic_rollback_build_id);
+    }
+
+    /**
+     * Check that a watched deploy fails and rolls back when failed requests jump past the environment's limit, but
+     * not while there are too few requests to judge or when errors were already as high before.
+     *
+     * @return void
+     */
+    public function test_a_jump_in_failed_requests_fails_the_deploy_and_rolls_back(): void
+    {
+        $this->actingAs($this->owner)->put("{$this->base}/settings", $this->settings(['automatic_rollback' => '1', 'post_deployment_observation_minutes' => 5, 'rollback_error_rate_percent' => 5]))->assertRedirect();
+        $this->assertSame(5, $this->reload($this->production)->rollback_error_rate_percent);
+        Build::factory()->succeeded()->create(['repository_id' => $this->repository->id, 'environment_id' => $this->production->id]);
+        Http::fake(fn () => Http::response('', 200));
+        $this->actingAs($this->owner)->post("/projects/{$this->project->id}/deploy/repositories/{$this->repository->id}/builds");
+        $watched = Build::query()->latest('id')->firstOrFail();
+        $this->post(ProvisioningCallbackUrl::buildStatus($watched), ['status' => 15]);
+        $this->travel(2)->minutes();
+
+        // A few failures out of too few requests don't count.
+        $this->requests(5, 500, now()->subMinute());
+        $this->command('builds:observe')->expectsOutput('Checked 1 deploys under observation; 0 failed.');
+
+        // Healthy before, failing after: past the 5% limit.
+        $this->requests(40, 200, now()->subMinutes(3));
+        $this->requests(20, 200, now()->subMinute());
+        $this->requests(5, 500, now()->subSeconds(30));
+        $this->command('builds:observe')->expectsOutput('Checked 1 deploys under observation; 1 failed.');
+        $this->assertSame('failed', $this->reload($watched)->observation_status);
+        $this->assertStringContainsString('33.3% of requests failed after the deploy (0% before it)', (string) $this->reload($watched)->observation_error);
+        $this->assertNotNull($this->reload($watched)->automatic_rollback_build_id);
+    }
+
+    /**
+     * Record requests for production at a time.
+     *
+     * @param  int  $count
+     * @param  int  $status
+     * @param  \Illuminate\Support\Carbon  $at
+     * @return void
+     */
+    private function requests(int $count, int $status, \Illuminate\Support\Carbon $at): void
+    {
+        TelemetryEvent::factory()->count($count)->create(['environment_id' => $this->production->id, 'type' => 'request', 'status_code' => $status, 'severity' => $status >= 500 ? 'error' : 'info', 'occurred_at' => $at]);
     }
 
     public function test_viewers_see_settings_without_changing_them(): void
