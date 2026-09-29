@@ -5,7 +5,7 @@
 
     @if ($canManage)
         <div class="flex justify-end">
-            <x-signal.ui.button :href="route('monitoring.rules.create', $project)" variant="primary">{{ __('Add a rule') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.rules.create', $project)" data-modal-trigger="add-rule" :data-modal-history-url="route('monitoring.rules', [$project, 'dialog' => 'add-rule'])" variant="primary">{{ __('Add a rule') }}</x-signal.ui.button>
         </div>
     @endif
 
@@ -27,5 +27,9 @@
                 @endforeach
             </ul>
         </x-signal.ui.card>
+    @endif
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="add-rule" :title="__('Add an alert rule')" :src="route('monitoring.rules.create', $project)" size="large" />
     @endif
 </x-signal.layouts.project>

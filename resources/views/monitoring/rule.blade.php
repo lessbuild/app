@@ -17,7 +17,7 @@
         </div>
         @if ($canManage)
             <div class="flex gap-2">
-                <x-signal.ui.button :href="route('monitoring.rules.edit', [$project, $rule->id])" variant="secondary" size="sm">{{ __('Edit') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('monitoring.rules.edit', [$project, $rule->id])" data-modal-trigger="edit-rule" :data-modal-history-url="route('monitoring.rules.show', [$project, $rule->id, 'dialog' => 'edit-rule'])" variant="secondary" size="sm">{{ __('Edit') }}</x-signal.ui.button>
                 <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="archive-rule">{{ __('Archive') }}</x-signal.ui.button>
                 <x-signal.overlays.delete-confirmation id="archive-rule" :route="route('monitoring.rules.archive', [$project, $rule->id])" :title="__('Archive :rule?', ['rule' => $rule->name])" :description="__('It stops checking and an open incident closes as “rule archived”.')" :submit-label="__('Archive rule')">
                     <input type="hidden" name="version" value="{{ $rule->state_version }}">
@@ -83,5 +83,9 @@
                 <p class="p-4 text-sm text-muted sm:p-6">{{ __('Escalation steps come with Monitoring Pro and above.') }}</p>
             @endif
         </x-signal.ui.settings-section>
+    @endif
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="edit-rule" :title="__('Edit :rule', ['rule' => $rule->name])" :src="route('monitoring.rules.edit', [$project, $rule->id])" size="large" />
     @endif
 </x-signal.layouts.project>

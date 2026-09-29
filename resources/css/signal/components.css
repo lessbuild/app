@@ -190,6 +190,7 @@
 
   .ui-dialog { width: min(34rem, calc(100% - 2rem)); margin: auto; border: 1px solid var(--ui-line); border-radius: var(--radius-panel-value); background: var(--ui-surface); color: var(--ui-ink); padding: 0; box-shadow: 0 28px 90px rgb(8 12 25 / 0.28); }
   .ui-dialog-wide { width: min(76rem, calc(100% - 1.5rem)); max-height: min(94dvh, 56rem); overflow: auto; }
+  .ui-dialog-large { width: min(48rem, calc(100% - 1.5rem)); }
   .ui-command-dialog { width: min(42rem, calc(100% - 2rem)); }
   .ui-command-list { display: grid; gap: 0.9rem; overscroll-behavior: contain; }
   .ui-command-section { display: grid; gap: 0.25rem; }

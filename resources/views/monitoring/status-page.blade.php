@@ -13,7 +13,7 @@
                 <x-signal.ui.button :href="$page->publicUrl()" variant="secondary" target="_blank" rel="noopener">{{ __('Open public page') }}</x-signal.ui.button>
             @endif
             @if ($canManage)
-                <x-signal.ui.button :href="route('monitoring.status-pages.edit', [$project, $page->id])" variant="secondary">{{ __('Edit') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('monitoring.status-pages.edit', [$project, $page->id])" data-modal-trigger="edit-status-page" :data-modal-history-url="route('monitoring.status-pages.show', [$project, $page->id, 'dialog' => 'edit-status-page'])" variant="secondary">{{ __('Edit') }}</x-signal.ui.button>
             @endif
         </div>
     </div>
@@ -140,4 +140,8 @@
             </ul>
         @endif
     </x-signal.ui.card>
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="edit-status-page" :title="__('Edit :page', ['page' => $page->name])" :src="route('monitoring.status-pages.edit', [$project, $page->id])" size="large" />
+    @endif
 </x-signal.layouts.project>

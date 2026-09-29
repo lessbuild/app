@@ -109,7 +109,8 @@
         </div>
     </header>
 
-    <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto w-full max-w-content space-y-6 py-7 sm:py-9">
+    {{-- Bottom padding keeps the last of the page clear of the fixed footer. --}}
+    <main id="main-content" tabindex="-1" class="ui-layout-gutter mx-auto w-full max-w-content space-y-6 pt-7 pb-20 sm:pt-9">
         @if (isset($shell) && $shell->limitWarning !== null)
             @php($near = $shell->limitWarning)
             <x-signal.ui.alert :tone="$near->percent() >= 100 ? 'danger' : 'warning'" role="status">
@@ -132,6 +133,7 @@
     </main>
 
     @isset($shell)
+        <x-signal.layouts.app-footer :shell="$shell" />
         <x-signal.layouts.command-palette :shell="$shell" />
         @if ($shell->canCreateProject)
             {{-- New project, from the dashboard, the project switcher and search; /projects/create is the fallback. --}}

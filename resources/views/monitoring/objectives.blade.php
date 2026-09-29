@@ -3,7 +3,7 @@
 <x-signal.layouts.project :overview="$overview" :title="__('Service level objectives')" :description="__('Availability or latency targets over a rolling window, and how much error budget is left.')">
     @if ($canManage)
         <div class="flex justify-end">
-            <x-signal.ui.button :href="route('monitoring.objectives.create', $project)" variant="primary">{{ __('Add an objective') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.objectives.create', $project)" data-modal-trigger="add-objective" :data-modal-history-url="route('monitoring.objectives', [$project, 'dialog' => 'add-objective'])" variant="primary">{{ __('Add an objective') }}</x-signal.ui.button>
         </div>
     @endif
 
@@ -27,5 +27,9 @@
                 @endforeach
             </ul>
         </x-signal.ui.card>
+    @endif
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="add-objective" :title="__('Add an objective')" :src="route('monitoring.objectives.create', $project)" size="large" />
     @endif
 </x-signal.layouts.project>

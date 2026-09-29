@@ -3,7 +3,7 @@
 <x-signal.layouts.project :overview="$overview" :title="__('Monitors')" :description="__('Uptime, DNS, TLS and TCP checks, plus heartbeats from your jobs and signals from your queues.')">
     @if ($canManage)
         <div class="flex justify-end">
-            <x-signal.ui.button :href="route('monitoring.monitors.create', $project)" variant="primary">{{ __('Add a monitor') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.monitors.create', $project)" data-modal-trigger="add-monitor" :data-modal-history-url="route('monitoring.monitors', [$project, 'dialog' => 'add-monitor'])" variant="primary">{{ __('Add a monitor') }}</x-signal.ui.button>
         </div>
     @endif
 
@@ -31,5 +31,9 @@
                 </ul>
             </x-signal.ui.card>
         </div>
+    @endif
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="add-monitor" :title="__('Add a monitor')" :src="route('monitoring.monitors.create', $project)" size="wide" />
     @endif
 </x-signal.layouts.project>

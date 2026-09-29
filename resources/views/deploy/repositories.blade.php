@@ -2,7 +2,7 @@
 
 <x-signal.layouts.project :overview="$overview" :title="__('Repositories')" :description="__('Git repositories that deploy to your websites. Each deploy is a new release; the previous ones stay on the server for rollbacks.')">
     @if ($canCreate)
-        <div class="flex justify-end"><x-signal.ui.button :href="route('deploy.repositories.create', $project)" variant="primary">{{ __('Connect a repository') }}</x-signal.ui.button></div>
+        <div class="flex justify-end"><x-signal.ui.button :href="route('deploy.repositories.create', $project)" data-modal-trigger="connect-repository" :data-modal-history-url="route('deploy.repositories', [$project, 'dialog' => 'connect-repository'])" variant="primary">{{ __('Connect a repository') }}</x-signal.ui.button></div>
     @endif
 
     @if ($repositories->isEmpty())
@@ -25,5 +25,9 @@
                 </tr>
             @endforeach
         </x-signal.ui.table>
+    @endif
+
+    @if ($canCreate)
+        <x-signal.overlays.page-modal id="connect-repository" :title="__('Connect a repository')" :src="route('deploy.repositories.create', $project)" size="large" />
     @endif
 </x-signal.layouts.project>

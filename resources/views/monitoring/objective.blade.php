@@ -6,7 +6,7 @@
             <x-signal.ui.button :href="route('monitoring.objectives.export', [$project, $objective->id])" variant="secondary" size="sm">{{ __('Download CSV') }}</x-signal.ui.button>
         @endif
         @if ($canManage)
-            <x-signal.ui.button :href="route('monitoring.objectives.edit', [$project, $objective->id])" variant="secondary" size="sm">{{ __('Edit') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.objectives.edit', [$project, $objective->id])" data-modal-trigger="edit-objective" :data-modal-history-url="route('monitoring.objectives.show', [$project, $objective->id, 'dialog' => 'edit-objective'])" variant="secondary" size="sm">{{ __('Edit') }}</x-signal.ui.button>
             <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="archive-objective">{{ __('Archive') }}</x-signal.ui.button>
             <x-signal.overlays.delete-confirmation id="archive-objective" :route="route('monitoring.objectives.archive', [$project, $objective->id])" :title="__('Archive :objective?', ['objective' => $objective->name])" :description="__('Burn-rate rules that use it stop finding data until you change them.')" :submit-label="__('Archive')" />
         @endif
@@ -36,4 +36,8 @@
     @unless ($canExport)
         <p class="text-xs text-muted">{{ __('CSV reports come with Monitoring Team and Scale.') }}</p>
     @endunless
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="edit-objective" :title="__('Edit :objective', ['objective' => $objective->name])" :src="route('monitoring.objectives.edit', [$project, $objective->id])" size="large" />
+    @endif
 </x-signal.layouts.project>

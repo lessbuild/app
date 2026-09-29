@@ -4,7 +4,7 @@
     <div class="flex flex-wrap items-center justify-between gap-3">
         @include('telemetry._metrics-tabs')
         @if ($canManage)
-            <x-signal.ui.button :href="route('monitoring.dashboards.edit', [$project, $dashboard->id])" variant="secondary">{{ __('Edit') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('monitoring.dashboards.edit', [$project, $dashboard->id])" data-modal-trigger="edit-dashboard" :data-modal-history-url="route('monitoring.dashboards.show', [$project, $dashboard->id, 'dialog' => 'edit-dashboard'])" variant="secondary">{{ __('Edit') }}</x-signal.ui.button>
         @endif
     </div>
     <div class="grid gap-6 xl:grid-cols-2">
@@ -15,4 +15,8 @@
             </x-signal.ui.card>
         @endforeach
     </div>
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="edit-dashboard" :title="__('Edit :dashboard', ['dashboard' => $dashboard->name])" :src="route('monitoring.dashboards.edit', [$project, $dashboard->id])" size="large" />
+    @endif
 </x-signal.layouts.project>

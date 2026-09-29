@@ -17,7 +17,7 @@
         </div>
         @if ($canManage)
             <div class="flex flex-wrap gap-2">
-                <x-signal.ui.button :href="route('monitoring.monitors.edit', [$project, $monitor->id])" variant="secondary" size="sm">{{ __('Edit') }}</x-signal.ui.button>
+                <x-signal.ui.button :href="route('monitoring.monitors.edit', [$project, $monitor->id])" data-modal-trigger="edit-monitor" :data-modal-history-url="route('monitoring.monitors.show', [$project, $monitor->id, 'dialog' => 'edit-monitor'])" variant="secondary" size="sm">{{ __('Edit') }}</x-signal.ui.button>
                 <x-signal.ui.button variant="quiet" size="sm" data-modal-trigger="archive-monitor">{{ __('Archive') }}</x-signal.ui.button>
                 <x-signal.overlays.delete-confirmation id="archive-monitor" :route="route('monitoring.monitors.archive', [$project, $monitor->id])" :title="__('Archive :monitor?', ['monitor' => $monitor->name])" :description="__('It stops checking and any open incident closes as “monitor archived”. Its history is kept.')" :warning="$signals ? __('Its key stops working too.') : null" :submit-label="__('Archive monitor')">
                     <input type="hidden" name="version" value="{{ $monitor->state_version }}">
@@ -135,4 +135,8 @@
             <tr><td colspan="4" class="py-8 text-center text-muted">{{ __('No checks yet. The first one runs within a minute.') }}</td></tr>
         @endforelse
     </x-signal.ui.table>
+
+    @if ($canManage)
+        <x-signal.overlays.page-modal id="edit-monitor" :title="__('Edit :monitor', ['monitor' => $monitor->name])" :src="route('monitoring.monitors.edit', [$project, $monitor->id])" size="wide" />
+    @endif
 </x-signal.layouts.project>

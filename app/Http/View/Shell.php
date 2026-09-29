@@ -34,6 +34,7 @@ final readonly class Shell
      * @param  int  $unreadNotifications  The inbox badge count.
      * @param  LimitUsage|null  $limitWarning  A plan limit the account has used 80% or more of, for people who see billing.
      * @param  int  $unseenChanges  How many changelog entries the person hasn't seen yet.
+     * @param  bool|null  $platformOperational  Whether every part of the platform is working, for the footer (null when unknown).
      */
     public function __construct(
         public User $user,
@@ -49,5 +50,6 @@ final readonly class Shell
         public int $unreadNotifications = 0,
         public ?LimitUsage $limitWarning = null,
         public int $unseenChanges = 0,
+        public ?bool $platformOperational = null,
     ) {}
 }

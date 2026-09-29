@@ -6,10 +6,28 @@
 const load = async (container, url) => {
     container.setAttribute('aria-busy', 'true');
     try {
-        const response = await fetch(url, { headers: { Accept: 'text/html', 'X-Fragment': '1' }, credentials: 'same-origin' });
+        // X-Requested-With keeps the fetch out of the session's "previous page", so redirects back still go to the
+        // page the modal was opened on.
+        const response = await fetch(url, { headers: { Accept: 'text/html', 'X-Fragment': '1', 'X-Requested-With': 'XMLHttpRequest' }, credentials: 'same-origin' });
         if (!response.ok || response.redirected) throw new Error(`HTTP ${response.status}`);
-        container.innerHTML = await response.text();
+        const html = await response.text();
+        // A whole page answers with its data-modal-content part; a fragment answers with just itself.
+        const page = new DOMParser().parseFromString(html, 'text/html');
+        const part = page.querySelector('[data-modal-content]');
+        container.innerHTML = part ? part.innerHTML : html;
         container.dataset.fragmentLoaded = 'true';
+        container.dataset.fragmentUrl = url;
+        // Forms remember which modal they came from, so a failed submit reopens it.
+        const dialog = container.closest('dialog');
+        container.querySelectorAll('form[method="POST" i], form[method="post"]').forEach((form) => {
+            if (dialog?.id && !form.querySelector('input[name="_modal"]')) {
+                const marker = document.createElement('input');
+                marker.type = 'hidden';
+                marker.name = '_modal';
+                marker.value = dialog.id;
+                form.append(marker);
+            }
+        });
     } catch {
         const fallback = document.createElement('a');
         fallback.href = url;
@@ -31,6 +49,22 @@ document.querySelectorAll('[data-fragment-src]').forEach((container) => {
         const url = new URL(form.action, window.location.href);
         new FormData(form).forEach((value, name) => url.searchParams.set(name, String(value)));
         load(container, url.toString());
+    });
+    // Links to other versions of the loaded page (such as another monitor type) reload it here; links back to the page
+    // the modal is on (such as Cancel) just close the modal.
+    container.addEventListener('click', (event) => {
+        const link = event.target instanceof Element ? event.target.closest('a[href]') : null;
+        if (!link || event.defaultPrevented || event.metaKey || event.ctrlKey || event.shiftKey || link.target) return;
+        const url = new URL(link.href, window.location.href);
+        const loaded = new URL(container.dataset.fragmentUrl || container.dataset.fragmentSrc, window.location.href);
+        if (url.origin !== window.location.origin) return;
+        if (url.pathname === loaded.pathname) {
+            event.preventDefault();
+            load(container, url.toString());
+        } else if (url.pathname === window.location.pathname && dialog) {
+            event.preventDefault();
+            dialog.close();
+        }
     });
     container.addEventListener('change', (event) => {
         if (event.target instanceof Element && event.target.hasAttribute('data-fragment-autosubmit')) {

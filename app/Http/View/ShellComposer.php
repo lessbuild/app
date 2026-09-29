@@ -12,6 +12,7 @@ use App\Platform\ServiceRegistry;
 use App\Queries\Accounts\AccountSwitcherQuery;
 use App\Queries\Notifications\InboxQuery;
 use App\Queries\Projects\ProjectSwitcherQuery;
+use App\Services\Admin\PlatformStatus;
 use App\Services\Billing\PlanUsage;
 use App\Support\Changelog;
 use Illuminate\Contracts\View\View;
@@ -33,6 +34,7 @@ final class ShellComposer
      * @param  InboxQuery  $inbox  The unread count for the inbox badge.
      * @param  PlanUsage  $planUsage  Finds a plan limit that's nearly used up.
      * @param  ProjectBreadcrumbs  $breadcrumbs  Knows which service the page belongs to.
+     * @param  PlatformStatus  $platformStatus  Says whether the platform is working, for the footer.
      */
     public function __construct(
         private readonly Request $request,
@@ -42,6 +44,7 @@ final class ShellComposer
         private readonly InboxQuery $inbox,
         private readonly PlanUsage $planUsage,
         private readonly ProjectBreadcrumbs $breadcrumbs,
+        private readonly PlatformStatus $platformStatus,
     ) {}
 
     /**
@@ -79,7 +82,19 @@ final class ShellComposer
                 ? Cache::remember("plan-usage.nearest.{$account->id}", 300, fn () => $this->planUsage->nearest($account))
                 : null,
             unseenChanges: Changelog::unseen($user->last_seen_changelog_at?->format('Y-m-d')),
+            platformOperational: $this->platformOperational(),
         ));
+    }
+
+    /**
+     * Find out whether every part of the platform is working, for the footer's status light: checked at most once a
+     * minute, and unknown (null) rather than an error if the check itself fails.
+     *
+     * @return bool|null
+     */
+    private function platformOperational(): ?bool
+    {
+        return rescue(fn (): bool => Cache::remember('shell.platform-operational', 60, fn (): bool => $this->platformStatus->snapshot()['operational']), null, false);
     }
 
     /**
