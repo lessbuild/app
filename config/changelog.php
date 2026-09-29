@@ -4,6 +4,14 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-09-29', 'title' => 'Deploy safely, page the right person, and grow', 'changes' => [
+        'Deploy any branch, tag or commit, book a deploy for later, freeze an environment for the holidays, and let a jump in errors roll a deploy back.',
+        'On-call schedules, text and phone alerts, incident post-mortems for your status page, and status updates in Slack or a webhook.',
+        'Funnels, campaign links and results, and releases marked on your analytics chart.',
+        'Linode and AWS Lightsail servers, PostgreSQL with point-in-time recovery, per-site PHP versions and budget alerts.',
+        'Limit members to some projects, protect production, stream your audit log, require a second person for secrets, and SAML single sign-on.',
+        'Pay yearly with two months free, and see what’s new right here.',
+    ]],
     ['date' => '2026-09-29', 'title' => 'Set up faster, and follow things live', 'changes' => [
         'The setup guide now shows one step at a time, and you can connect a provider, add a website or add an Analytics site without leaving it.',
         'Explore a sample project with a month of made-up visits and a day of made-up errors before connecting anything real.',

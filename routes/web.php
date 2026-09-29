@@ -235,6 +235,7 @@ use App\Http\Controllers\Infrastructure\UpdateServerNodeVersionController;
 use App\Http\Controllers\Infrastructure\UpdateWebsiteController;
 use App\Http\Controllers\Infrastructure\UpdateWebsitePhpVersionController;
 use App\Http\Controllers\Infrastructure\VerifyWebsiteBackupController;
+use App\Http\Controllers\MarkChangelogSeenController;
 use App\Http\Controllers\Monitoring\ArchiveAlertDestinationController;
 use App\Http\Controllers\Monitoring\ArchiveAlertRuleController;
 use App\Http\Controllers\Monitoring\ArchiveMonitorController;
@@ -491,6 +492,7 @@ Route::get('/sso/saml/{account}/metadata', ShowSamlMetadataController::class)->w
 
 Route::middleware(['auth', 'verified', 'account.security'])->group(function (): void {
     Route::get('/dashboard', DashboardController::class)->name('dashboard');
+    Route::post('/whats-new/seen', MarkChangelogSeenController::class)->name('whats-new.seen');
     Route::get('/sso/verify', StartSsoVerificationController::class)->middleware('throttle:10,1')->name('sso.verify');
     Route::post('/invitations/{token}', AcceptInvitationController::class)->middleware('throttle:10,1')->name('invitations.accept');
 

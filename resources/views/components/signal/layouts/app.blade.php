@@ -39,6 +39,12 @@
                         <x-signal.ui.icon-button :label="__('Search')" class="sm:hidden" aria-controls="signal-command-palette" aria-haspopup="dialog" data-signal-command-open>
                             <x-signal.ui.icon name="search" class="h-[18px] w-[18px] stroke-2" />
                         </x-signal.ui.icon-button>
+                        <x-signal.ui.icon-button :label="$shell->unseenChanges > 0 ? __('What’s new (:count new)', ['count' => $shell->unseenChanges]) : __('What’s new')" :href="route('changelog')" class="relative" data-modal-trigger="whats-new" :data-modal-history-url="request()->fullUrlWithQuery(['dialog' => 'whats-new'])">
+                            <x-signal.ui.icon name="sparkles" class="h-[18px] w-[18px] stroke-2" />
+                            @if ($shell->unseenChanges > 0)
+                                <span class="absolute right-1 top-1 size-2 rounded-full bg-primary" aria-hidden="true"></span>
+                            @endif
+                        </x-signal.ui.icon-button>
                         <x-signal.ui.icon-button :label="$shell->unreadNotifications > 0 ? trans_choice('Notifications, :count unread|Notifications, :count unread', $shell->unreadNotifications, ['count' => $shell->unreadNotifications]) : __('Notifications')" :href="route('notifications.index')" class="relative" :aria-current="request()->routeIs('notifications.*') ? 'page' : null">
                             <x-signal.ui.icon name="bell" class="h-[18px] w-[18px] stroke-2" />
                             @if ($shell->unreadNotifications > 0)
@@ -133,6 +139,29 @@
                 </form>
             </x-signal.overlays.modal>
         @endif
+        {{-- What's new: the latest changelog entries, with the roadmap a click away. --}}
+        <x-signal.overlays.modal id="whats-new" :title="__('What’s new')" :description="__('The latest improvements to :app.', ['app' => config('app.name')])">
+            <div class="grid gap-5">
+                @foreach (array_slice(\App\Support\Changelog::entries(), 0, 3) as $entry)
+                    <section class="grid gap-2">
+                        <p class="text-xs font-semibold text-subtle"><time datetime="{{ $entry['date'] }}">{{ \Illuminate\Support\Carbon::parse($entry['date'])->isoFormat('D MMMM YYYY') }}</time></p>
+                        <h3 class="font-extrabold text-ink">{{ __($entry['title']) }}</h3>
+                        <ul class="grid gap-1.5 text-sm text-muted">
+                            @foreach (array_slice($entry['changes'], 0, 6) as $change)
+                                <li class="flex gap-2"><x-signal.ui.icon name="check" class="mt-1 size-4 shrink-0 text-success" /><span>{{ __($change) }}</span></li>
+                            @endforeach
+                        </ul>
+                    </section>
+                @endforeach
+                <div class="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+                    <div class="flex gap-3 text-sm font-bold">
+                        <a href="{{ route('changelog') }}" class="text-primary underline">{{ __('Full changelog') }}</a>
+                        <a href="{{ route('roadmap') }}" class="text-primary underline">{{ __('What’s coming') }}</a>
+                    </div>
+                    <form method="POST" action="{{ route('whats-new.seen') }}">@csrf<x-signal.ui.button type="submit" variant="primary" size="sm">{{ __('Got it') }}</x-signal.ui.button></form>
+                </div>
+            </div>
+        </x-signal.overlays.modal>
         {{-- Feedback, from the account menu; reopens with its errors if sending failed. --}}
         <x-signal.overlays.modal id="feedback-modal" :title="__('Send feedback')" :description="__('Tell us what would make :app better, or what’s getting in your way. We read everything.', ['app' => config('app.name')])" :open="$errors->hasAny(['feedback_kind', 'feedback_message'])">
             <form method="POST" action="{{ route('feedback.store') }}" class="grid gap-4">

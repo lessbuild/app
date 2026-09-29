@@ -29,6 +29,9 @@
         @case('list')
             <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
             @break
+        @case('sparkles')
+            <path d="M12 3v2M12 19v2M5 12H3M21 12h-2" /><path d="M12 7.5 13.3 10.7 16.5 12 13.3 13.3 12 16.5 10.7 13.3 7.5 12 10.7 10.7Z" /><path d="m18 5-1 1M6 18l1-1" />
+            @break
         @case('bell')
             <path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4" />
             @break

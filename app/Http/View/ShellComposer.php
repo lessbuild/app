@@ -13,6 +13,7 @@ use App\Queries\Accounts\AccountSwitcherQuery;
 use App\Queries\Notifications\InboxQuery;
 use App\Queries\Projects\ProjectSwitcherQuery;
 use App\Services\Billing\PlanUsage;
+use App\Support\Changelog;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
@@ -82,6 +83,7 @@ final class ShellComposer
             limitWarning: $account !== null && $user->can('viewBilling', $account) && ! $this->request->routeIs('account.billing')
                 ? Cache::remember("plan-usage.nearest.{$account->id}", 300, fn () => $this->planUsage->nearest($account))
                 : null,
+            unseenChanges: Changelog::unseen($user->last_seen_changelog_at?->format('Y-m-d')),
         ));
     }
 

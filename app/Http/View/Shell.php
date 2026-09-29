@@ -33,6 +33,7 @@ final readonly class Shell
      * @param  bool  $canCreateProject  Whether to offer "New project".
      * @param  int  $unreadNotifications  The inbox badge count.
      * @param  LimitUsage|null  $limitWarning  A plan limit the account has used 80% or more of, for people who see billing.
+     * @param  int  $unseenChanges  How many changelog entries the person hasn't seen yet.
      */
     public function __construct(
         public User $user,
@@ -47,5 +48,6 @@ final readonly class Shell
         public bool $canCreateProject,
         public int $unreadNotifications = 0,
         public ?LimitUsage $limitWarning = null,
+        public int $unseenChanges = 0,
     ) {}
 }
