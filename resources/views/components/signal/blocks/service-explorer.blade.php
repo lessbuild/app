@@ -1,7 +1,7 @@
 @props(['services'])
 
-{{-- The Signal product explorer: one tab per service, each showing what the service is for and a glimpse of it. --}}
-<section id="service-explorer" {{ $attributes->class(['scroll-mt-20']) }} aria-labelledby="service-explorer-heading" x-data="{ tab: @js($services[0]->key()) }">
+{{-- The Signal product explorer: one tab per service, each showing what the service is for and a glimpse of it. resources/js/tabs.js switches them. --}}
+<section id="service-explorer" {{ $attributes->class(['scroll-mt-20']) }} aria-labelledby="service-explorer-heading" data-tabs>
     <div class="flex flex-col justify-between gap-4 md:flex-row md:items-end">
         <div>
             <p class="ui-eyebrow">{{ __('Product explorer') }}</p>
@@ -20,11 +20,6 @@
                 class="product-explorer-tab"
                 aria-selected="{{ $loop->first ? 'true' : 'false' }}"
                 tabindex="{{ $loop->first ? '0' : '-1' }}"
-                :aria-selected="tab === @js($service->key()) ? 'true' : 'false'"
-                :tabindex="tab === @js($service->key()) ? 0 : -1"
-                x-on:click="tab = @js($service->key())"
-                x-on:keydown.right.prevent="$el.nextElementSibling?.click(); $el.nextElementSibling?.focus()"
-                x-on:keydown.left.prevent="$el.previousElementSibling?.click(); $el.previousElementSibling?.focus()"
             >
                 <x-signal.ui.icon :name="config('marketing.services.'.$service->key().'.icon')" class="size-4" />
                 <span>{{ $service->name() }}</span>
@@ -41,7 +36,6 @@
             aria-labelledby="service-tab-{{ $service->key() }}"
             class="product-explorer-panel"
             @unless ($loop->first) hidden @endunless
-            :hidden="tab !== @js($service->key())"
         >
             <div class="grid min-w-0 gap-5 rounded-panel border border-line bg-surface p-4 shadow-soft sm:p-6 md:grid-cols-[.8fr_1.2fr] md:items-center">
                 <div>

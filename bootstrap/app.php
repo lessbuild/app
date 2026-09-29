@@ -13,6 +13,7 @@ use App\Http\Middleware\EnsureServiceEnabled;
 use App\Http\Middleware\ProjectContext;
 use App\Http\Middleware\ReceiveMonitorSignal;
 use App\Http\Middleware\ResolveTokenAccount;
+use App\Http\Middleware\SecurityHeaders;
 use App\Services\Telemetry\OtlpErrorResponse;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -40,6 +41,8 @@ return Application::configure(basePath: dirname(__DIR__))
         $terminal = fn (Request $request): bool => $request->is('projects/*/infrastructure/servers/*/terminal/*/input');
         $middleware->trimStrings(except: [$signal, $terminal, 'request_url', 'bearer_token', 'body_contains', 'hostname', 'dns_expected', 'heartbeat_cron', 'endpoint_url', 'signing_secret', 'env_file', 'ssh_private_key', 'token', 'script']);
         $middleware->convertEmptyStringsToNull(except: [$signal, $terminal]);
+        // Hardening headers and the Content Security Policy on every web page.
+        $middleware->web(append: [SecurityHeaders::class]);
         $middleware->alias([
             'account.can' => AuthorizeCurrentAccount::class,
             'account.security' => EnforceAccountSecurity::class,

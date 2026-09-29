@@ -15,8 +15,6 @@
 <details
     data-signal-menu
     {{ $attributes->class(['ui-topbar-menu group relative', 'w-full' => $mobile, 'shrink-0' => ! $mobile]) }}
-    @click.outside="$el.open = false"
-    @keydown.escape.stop="$el.open = false; $el.querySelector('summary')?.focus()"
 >
     <summary
         @class([

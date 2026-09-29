@@ -1,5 +1,5 @@
 {{-- Applies saved appearance before first paint to avoid a flash of the wrong theme. --}}
-<script>
+<script nonce="{{ \Illuminate\Support\Facades\Vite::cspNonce() }}">
 (() => {
     const root = document.documentElement;
     const namespace = root.dataset.storageNamespace || 'signal-starter';

@@ -49,7 +49,7 @@
                             <svg class="h-[19px] w-[19px] dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M20.2 15.1A8.5 8.5 0 0 1 8.9 3.8 8.6 8.6 0 1 0 20.2 15.1Z" /></svg>
                             <svg class="hidden h-[19px] w-[19px] dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="12" cy="12" r="3.6" /><path stroke-linecap="round" d="M12 2.5v2M12 19.5v2M4.3 4.3l1.4 1.4m12.6 12.6 1.4 1.4M2.5 12h2m15 0h2M4.3 19.7l1.4-1.4M18.3 5.7l1.4-1.4" /></svg>
                         </x-signal.ui.icon-button>
-                        <details data-signal-menu class="ui-topbar-menu group relative" @click.outside="$el.open = false" @keydown.escape.stop="$el.open = false; $el.querySelector('summary')?.focus()">
+                        <details data-signal-menu class="ui-topbar-menu group relative">
                             <summary class="flex min-h-10 cursor-pointer list-none items-center gap-2 rounded-control px-1.5 text-sm font-bold text-ink hover:bg-surface-muted focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-focus [&::-webkit-details-marker]:hidden" aria-label="{{ __('Account menu for :name', ['name' => $shell->user->name]) }}">
                                 <x-signal.ui.avatar :name="$shell->user->name" class="ui-avatar-sm text-xs" />
                                 <svg class="hidden h-3.5 w-3.5 rotate-90 stroke-2 text-muted transition-transform group-open:-rotate-90 sm:block" aria-hidden="true"><use xlink:href="/assets/images/icons.svg#chevron-right"></use></svg>

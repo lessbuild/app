@@ -1,4 +1,3 @@
-import Alpine from 'alpinejs';
 import './signal-theme-init';
 import './signal-theme';
 import './signal-drawer';
@@ -11,7 +10,5 @@ import './page-tabs';
 import './server-status';
 import './build-status';
 import './live-regions';
+import './tabs';
 import './help-search';
-
-window.Alpine = Alpine;
-Alpine.start();

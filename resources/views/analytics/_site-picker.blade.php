@@ -4,7 +4,7 @@
         @foreach (request()->except('site') as $key => $value)
             @if (is_string($value))<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endif
         @endforeach
-        <x-signal.ui.select-field name="site" :label="__('Site')" :show-errors="false" onchange="this.form.requestSubmit()">
+        <x-signal.ui.select-field name="site" :label="__('Site')" :show-errors="false" data-autosubmit>
             @foreach ($sites as $option)
                 <option value="{{ $option->id }}" @selected($site?->id === $option->id)>{{ $option->name }}</option>
             @endforeach

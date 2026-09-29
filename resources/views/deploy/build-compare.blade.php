@@ -5,7 +5,7 @@
 
 <x-signal.layouts.project :overview="$overview" :title="__('Compare deploy #:id', ['id' => $build->id])" :description="$build->repository->name.' → '.$build->website->name">
     <form method="GET" class="flex flex-wrap items-end gap-3">
-        <x-signal.ui.select-field id="compare-with" name="with" :label="__('Compare with')" onchange="this.form.requestSubmit()">
+        <x-signal.ui.select-field id="compare-with" name="with" :label="__('Compare with')" data-autosubmit>
             @foreach ($candidates as $candidate)
                 <option value="{{ $candidate->id }}" @selected($baseline?->id === $candidate->id)>#{{ $candidate->id }} · {{ __(ucfirst($candidate->status)) }} · {{ $candidate->shortRevision() ?? '—' }} · {{ \Illuminate\Support\Str::limit($candidate->commit_message ?? '', 50) }}</option>
             @endforeach
