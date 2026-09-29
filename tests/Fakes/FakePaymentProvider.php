@@ -31,6 +31,9 @@ final class FakePaymentProvider implements PaymentProvider
     /** @var list<InvoiceSummary> */
     public array $invoiceList = [];
 
+    /** @var array<string, array{customer: string, amount: int, description: string}> idempotency key => credit */
+    public array $credits = [];
+
     public function available(): bool
     {
         return true;
@@ -91,6 +94,13 @@ final class FakePaymentProvider implements PaymentProvider
     public function reportUsage(string $customerId, string $eventName, int $quantity, CarbonInterface $at, string $idempotencyKey): void
     {
         $this->usage[] = ['event' => $eventName, 'quantity' => $quantity, 'key' => $idempotencyKey];
+    }
+
+    public function creditBalance(string $customerId, int $amountCents, string $description, string $idempotencyKey): string
+    {
+        $this->credits[$idempotencyKey] = ['customer' => $customerId, 'amount' => $amountCents, 'description' => $description];
+
+        return 'cbtxn_'.$idempotencyKey;
     }
 
     public function verifyWebhook(string $payload, string $signature): WebhookEvent

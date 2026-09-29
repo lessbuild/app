@@ -144,6 +144,20 @@
         </x-signal.ui.card>
     @endforeach
 
+    @php($money = fn (int $cents): string => '$'.number_format($cents / 100, $cents % 100 === 0 ? 0 : 2))
+    <x-signal.ui.settings-section id="refer" :title="__('Refer a friend')" :description="__('Share your link. When an account that signs up through it starts paying, you both get :amount of credit off your next invoices.', ['amount' => $money($referrals['credit_cents'])])">
+        <div class="grid gap-4 p-4 sm:p-6">
+            <x-signal.ui.input-field name="referral_link" :label="__('Your link')" :value="$referrals['link']" readonly :restore="false" />
+            <dl class="grid gap-3 text-sm sm:grid-cols-3">
+                <div><dt class="text-muted">{{ __('Signed up') }}</dt><dd class="text-lg font-extrabold text-ink">{{ number_format($referrals['signed_up']) }}</dd></div>
+                <div><dt class="text-muted">{{ __('Started paying') }}</dt><dd class="text-lg font-extrabold text-ink">{{ number_format($referrals['qualified']) }}</dd></div>
+                <div><dt class="text-muted">{{ __('Credit earned') }}</dt><dd class="text-lg font-extrabold text-ink">{{ $money($referrals['earned_cents']) }}</dd>
+                    @if ($referrals['pending_cents'] > 0)<dd class="text-xs text-muted">{{ __(':amount more once you have a subscription', ['amount' => $money($referrals['pending_cents'])]) }}</dd>@endif
+                </div>
+            </dl>
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Invoices')" :description="__('Receipts for past payments.')">
         @if ($invoices === null)
             <p class="p-4 text-sm text-muted sm:p-6">{{ __('Invoices can’t be loaded right now. Try again in a moment.') }}</p>

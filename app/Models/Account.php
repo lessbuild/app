@@ -23,6 +23,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
  * @property string $id
  * @property string $name
  * @property string $slug
+ * @property string|null $referral_code the code in the account's refer-a-friend link
  * @property float|null $monthly_infrastructure_budget in USD; the Infrastructure costs page compares server costs with it
  * @property bool $require_two_factor members must turn on two-factor authentication to use the account
  * @property list<string>|null $allowed_email_domains only people with these email domains can be invited or sign in with SSO

@@ -12,6 +12,9 @@ return [
     // Days an account's first paid subscription is free for; 0 turns trials off. Later subscriptions start paid.
     'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
 
+    // Credit, in cents, that both the referrer and the new account get once the new account's subscription is paid.
+    'referral_credit_cents' => (int) env('BILLING_REFERRAL_CREDIT_CENTS', 2000),
+
     'prices' => [
         'deploy' => [
             'tier' => [

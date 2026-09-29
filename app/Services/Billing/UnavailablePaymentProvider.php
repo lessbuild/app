@@ -124,6 +124,20 @@ final class UnavailablePaymentProvider implements PaymentProvider
     public function reportUsage(string $customerId, string $eventName, int $quantity, CarbonInterface $at, string $idempotencyKey): void {}
 
     /**
+     * Refuse to credit anyone, since there's no payment provider to hold the balance.
+     *
+     * @param  string  $customerId
+     * @param  int  $amountCents
+     * @param  string  $description
+     * @param  string  $idempotencyKey
+     * @return string
+     */
+    public function creditBalance(string $customerId, int $amountCents, string $description, string $idempotencyKey): string
+    {
+        throw new PaymentProviderUnavailable(__('Billing isn’t set up.'));
+    }
+
+    /**
      * Refuse every webhook, since there's no secret to check it with.
      *
      * @param  string  $payload

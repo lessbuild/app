@@ -39,6 +39,10 @@ final class CreateNewUser implements CreatesNewUsers
             'password' => $this->passwordRules(),
         ])->validate();
 
-        return $this->registerUser->handle(new RegisterUserData($validated['name'], $validated['email'], $validated['password'], is_string($input['invite'] ?? null) ? $input['invite'] : null));
+        return $this->registerUser->handle(new RegisterUserData(
+            $validated['name'], $validated['email'], $validated['password'],
+            is_string($input['invite'] ?? null) ? $input['invite'] : null,
+            is_string($input['referral'] ?? null) ? $input['referral'] : null,
+        ));
     }
 }

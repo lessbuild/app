@@ -311,6 +311,7 @@ use App\Http\Controllers\Recipes\ShowRecipeReportsController;
 use App\Http\Controllers\Recipes\ShowRecipesController;
 use App\Http\Controllers\Recipes\StoreRecipeController;
 use App\Http\Controllers\Recipes\UpdateRecipeController;
+use App\Http\Controllers\Referrals\ShowReferralController;
 use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
 use App\Http\Controllers\SearchController;
@@ -393,6 +394,8 @@ Route::middleware('guest')->group(function (): void {
     Route::post('/request-access', StoreAccessRequestController::class)->middleware('throttle:5,1')->name('access-requests.store');
 });
 Route::get('/docs/api', ShowApiReferenceController::class)->name('docs.api');
+// Refer-a-friend links.
+Route::get('/r/{code}', ShowReferralController::class)->where('code', '[A-Za-z0-9]{6,16}')->middleware('throttle:60,1')->name('referrals.show');
 // The command-line tool and its installer.
 Route::get('/cli/buildpusher', DownloadCliController::class)->middleware('throttle:60,1')->name('cli.download');
 Route::get('/cli/install.sh', ShowCliInstallerController::class)->middleware('throttle:60,1')->name('cli.install');

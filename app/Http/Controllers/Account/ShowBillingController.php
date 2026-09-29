@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Models\User;
 use App\Queries\Billing\BillingOverviewQuery;
 use App\Queries\Billing\InvoicesQuery;
+use App\Services\Billing\Referrals;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -23,9 +24,10 @@ final class ShowBillingController
      * @param  User  $user
      * @param  BillingOverviewQuery  $overview
      * @param  InvoicesQuery  $invoices
+     * @param  Referrals  $referrals
      * @return View
      */
-    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices): View
+    public function __invoke(#[CurrentAccount] Account $account, Request $request, #[CurrentUser] User $user, BillingOverviewQuery $overview, InvoicesQuery $invoices, Referrals $referrals): View
     {
 
         return view('account.billing', [
@@ -34,6 +36,7 @@ final class ShowBillingController
             'invoices' => $invoices->handle($account),
             'canManage' => $user->can('manageBilling', $account),
             'checkout' => $request->query('checkout'),
+            'referrals' => $referrals->summary($account),
         ]);
     }
 }

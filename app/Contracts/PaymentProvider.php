@@ -108,6 +108,18 @@ interface PaymentProvider
     public function reportUsage(string $customerId, string $eventName, int $quantity, CarbonInterface $at, string $idempotencyKey): void;
 
     /**
+     * Credit the customer's balance, which Stripe takes off their next invoices. `$idempotencyKey` makes a retried
+     * credit harmless. Returns the balance transaction's ID.
+     *
+     * @param  string  $customerId
+     * @param  int  $amountCents  how much to credit, a positive number
+     * @param  string  $description  shown on the customer's invoice
+     * @param  string  $idempotencyKey
+     * @return string
+     */
+    public function creditBalance(string $customerId, int $amountCents, string $description, string $idempotencyKey): string;
+
+    /**
      * Check a webhook's signature against the configured secret and parses it. Anything unsigned or tampered with
      * throws, so the handler only ever sees genuine events.
      *

@@ -7,6 +7,7 @@ namespace App\Actions\Users;
 use App\Actions\Accounts\CreateAccount;
 use App\Data\Users\RegisterUserData;
 use App\Models\User;
+use App\Services\Billing\Referrals;
 use App\Services\Users\Registration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -21,12 +22,14 @@ final class RegisterUser
      *
      * @param  CreateAccount  $createAccount  Creates that first account with them as owner.
      * @param  Registration  $registration  Decides whether they may sign up while registration is closed.
+     * @param  Referrals  $referrals  Records the refer-a-friend link they came through.
      */
-    public function __construct(private readonly CreateAccount $createAccount, private readonly Registration $registration) {}
+    public function __construct(private readonly CreateAccount $createAccount, private readonly Registration $registration, private readonly Referrals $referrals) {}
 
     /**
      * Create the user together with a first account they own, so every signed-in user has somewhere to work. While
-     * registration is closed they need an access invitation (accepted here) or an invitation to join an account.
+     * registration is closed they need an access invitation (accepted here) or an invitation to join an account. A
+     * refer-a-friend code links the new account to the one that shared it.
      *
      * @param  RegisterUserData  $data
      * @return User
@@ -46,7 +49,8 @@ final class RegisterUser
                 'password' => $data->password,
             ])->save();
 
-            $this->createAccount->handle($user, __(':name’s account', ['name' => Str::before($data->name, ' ') ?: $data->name]));
+            $account = $this->createAccount->handle($user, __(':name’s account', ['name' => Str::before($data->name, ' ') ?: $data->name]));
+            $this->referrals->record($account, $user, $data->referralCode);
 
             return $user->refresh();
         });

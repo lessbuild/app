@@ -12,6 +12,7 @@ use App\Models\Account;
 use App\Models\BillingAccount;
 use App\Models\BillingSelection;
 use App\Platform\ServiceRegistry;
+use App\Services\Billing\Referrals;
 use App\Services\Billing\SubscriptionItems;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -26,11 +27,13 @@ final class HandleBillingWebhook
      * @param  PaymentProvider  $provider  Reads the subscription a checkout created.
      * @param  SubscriptionItems  $items  Stores the provider's IDs for each subscription item.
      * @param  ServiceRegistry  $services  Finds each service's free tier when selections end.
+     * @param  Referrals  $referrals  Credits both sides of a referral once the referred account pays.
      */
     public function __construct(
         private readonly PaymentProvider $provider,
         private readonly SubscriptionItems $items,
         private readonly ServiceRegistry $services,
+        private readonly Referrals $referrals,
     ) {}
 
     /**
@@ -104,6 +107,9 @@ final class HandleBillingWebhook
         foreach ($changes as [$service, $from, $to]) {
             ServiceTierChanged::dispatch($account, $service, $from, $to, null);
         }
+        if ($state->status === 'active') {
+            $this->referrals->qualify($account);
+        }
 
         return true;
     }
@@ -124,6 +130,11 @@ final class HandleBillingWebhook
             'status' => is_string($subscription['status'] ?? null) ? $subscription['status'] : $billing->status,
             'current_period_end' => self::periodEnd($subscription) ?? $billing->current_period_end,
         ])->save();
+        // A trial ending in a paid invoice, or a first payment going through, qualifies a referral.
+        $account = $billing->status === 'active' ? Account::query()->find($billing->account_id) : null;
+        if ($account !== null) {
+            $this->referrals->qualify($account);
+        }
 
         return true;
     }

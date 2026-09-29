@@ -36,6 +36,7 @@ use App\Services\Admin\PlatformBackups;
 use App\Services\Admin\SelfMonitoring;
 use App\Services\Admin\SystemHealth;
 use App\Services\Billing\Entitlements;
+use App\Services\Billing\Referrals;
 use App\Services\Deploy\Automation;
 use App\Services\Deploy\Configuration\ConfigurationOperations;
 use App\Services\Deploy\DeploymentObserver;
@@ -213,6 +214,14 @@ Artisan::command('reports:send-weekly {--account= : Only this account} {--until=
     return $totals['failed'] === 0 ? 0 : 1;
 })->purpose('Send the Monday project report');
 Schedule::command('reports:send-weekly')->weeklyOn(1, '08:00')->withoutOverlapping(60)->onOneServer();
+
+// Referral credits wait for a Stripe customer, and retry after the provider fails.
+Artisan::command('referrals:apply-credits', function (Referrals $referrals): int {
+    $this->info(sprintf('Applied %d referral credits.', $referrals->applyPending()));
+
+    return 0;
+})->purpose('Add pending referral credits to Stripe balances');
+Schedule::command('referrals:apply-credits')->hourly()->withoutOverlapping(30)->onOneServer();
 
 Artisan::command('providers:check {--provider=* : Only these provider IDs}', function (ProviderHealthMonitor $monitor): int {
     $ids = array_values(array_filter(array_map('intval', (array) $this->option('provider')), fn (int $id): bool => $id > 0));

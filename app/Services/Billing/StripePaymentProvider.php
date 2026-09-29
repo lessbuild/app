@@ -214,6 +214,25 @@ final class StripePaymentProvider implements PaymentProvider
     }
 
     /**
+     * Add a negative balance transaction (a credit) in the billing currency, sent with the idempotency key so a retry
+     * never credits twice.
+     *
+     * @param  string  $customerId
+     * @param  int  $amountCents
+     * @param  string  $description
+     * @param  string  $idempotencyKey
+     * @return string
+     */
+    public function creditBalance(string $customerId, int $amountCents, string $description, string $idempotencyKey): string
+    {
+        return $this->call(fn (): string => $this->stripe->customers->createBalanceTransaction($customerId, [
+            'amount' => -abs($amountCents),
+            'currency' => (string) config('billing.currency', 'usd'),
+            'description' => $description,
+        ], ['idempotency_key' => $idempotencyKey])->id);
+    }
+
+    /**
      * Check the signature with the endpoint secret and parses the event. A missing secret refuses everything.
      *
      * @param  string  $payload

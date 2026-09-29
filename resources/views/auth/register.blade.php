@@ -5,6 +5,7 @@
     <form method="POST" action="{{ route('register.store') }}" class="grid gap-5">
         @csrf
         @if ($invite)<input type="hidden" name="invite" value="{{ $invite }}">@endif
+        @if (is_string(request()->cookie('bp_referral')))<input type="hidden" name="referral" value="{{ request()->cookie('bp_referral') }}">@endif
         <x-signal.ui.input-field name="name" :label="__('Your name')" autocomplete="name" required autofocus />
         <x-signal.ui.input-field name="email" :label="__('Work email')" type="email" autocomplete="email" :value="old('email', $invitedEmail)" required />
         <x-signal.ui.input-field name="password" :label="__('Password')" type="password" autocomplete="new-password" required :restore="false" />
