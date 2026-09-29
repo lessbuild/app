@@ -324,8 +324,10 @@ use App\Http\Controllers\Projects\ShowDomainsController;
 use App\Http\Controllers\Projects\ShowProjectController;
 use App\Http\Controllers\Projects\ShowProjectServiceController;
 use App\Http\Controllers\Projects\ShowProjectSetupController;
+use App\Http\Controllers\Projects\ShowProjectTemplatesController;
 use App\Http\Controllers\Projects\StoreEnvironmentController;
 use App\Http\Controllers\Projects\StoreProjectController;
+use App\Http\Controllers\Projects\StoreProjectFromTemplateController;
 use App\Http\Controllers\Projects\StoreSampleProjectController;
 use App\Http\Controllers\Projects\UpdateProjectController;
 use App\Http\Controllers\Projects\VerifyDomainController;
@@ -504,6 +506,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
 
     Route::get('/services/{service}', ShowServiceController::class)->middleware('account.can:useService,service')->name('services.show');
     Route::get('/projects/create', CreateProjectController::class)->middleware('account.can:create,App\\Models\\Project')->name('projects.create');
+    Route::get('/projects/templates', ShowProjectTemplatesController::class)->middleware('account.can:create,App\\Models\\Project')->name('projects.templates');
+    Route::post('/projects/templates', StoreProjectFromTemplateController::class)->middleware(['account.can:create,App\\Models\\Project', 'throttle:10,1'])->name('projects.templates.store');
     Route::post('/projects', StoreProjectController::class)->middleware('throttle:30,1')->name('projects.store');
     Route::post('/projects/sample', StoreSampleProjectController::class)->middleware(['account.can:create,App\\Models\\Project', 'throttle:5,1'])->name('projects.sample');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {

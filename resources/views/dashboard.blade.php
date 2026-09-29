@@ -2,6 +2,7 @@
     <x-signal.ui.page-header :eyebrow="$account?->name" :title="__('Projects')" :description="__('Each project groups the environments, domains and services of one app or site.')">
         @if ($canCreate && $projects !== [])
             <x-slot:actions>
+                <x-signal.ui.button :href="route('projects.templates')" variant="secondary">{{ __('From a template') }}</x-signal.ui.button>
                 <x-signal.ui.button :href="route('projects.create')" variant="primary" data-modal-trigger="new-project" :data-modal-history-url="request()->fullUrlWithQuery(['dialog' => 'new-project'])">{{ __('New project') }}</x-signal.ui.button>
             </x-slot:actions>
         @endif
@@ -19,6 +20,7 @@
                 <x-slot:action>
                     <div class="flex flex-wrap justify-center gap-3">
                     <x-signal.ui.button :href="route('projects.create')" variant="primary" data-modal-trigger="new-project" :data-modal-history-url="request()->fullUrlWithQuery(['dialog' => 'new-project'])">{{ __('Create a project') }}</x-signal.ui.button>
+                    <x-signal.ui.button :href="route('projects.templates')" variant="secondary">{{ __('Start from a template') }}</x-signal.ui.button>
                     <form method="POST" action="{{ route('projects.sample') }}">@csrf<x-signal.ui.button type="submit" variant="secondary">{{ __('Explore a sample project') }}</x-signal.ui.button></form>
                     </div>
                 </x-slot:action>
