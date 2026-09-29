@@ -1,5 +1,4 @@
 <x-signal.layouts.admin :title="__('Email')" :description="__('How email is sent, what would stop it arriving, and a test you can send. Secrets are never shown.')">
-    @if (session('status'))<x-signal.ui.alert tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>@endif
     @if (session('error'))<x-signal.ui.alert tone="danger" role="alert">{{ session('error') }}</x-signal.ui.alert>@endif
 
     @forelse ($problems as $problem)

@@ -1,5 +1,4 @@
 <x-signal.layouts.admin :title="__('Backups')" :description="__('Copies of the platform’s own database, taken every night at 02:30 UTC.')">
-    @if (session('status'))<x-signal.ui.alert tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>@endif
     @if (session('error'))<x-signal.ui.alert tone="danger" role="alert">{{ session('error') }}</x-signal.ui.alert>@endif
     @unless ($offsite)
         <x-signal.ui.alert tone="warning" role="alert">{{ __('Backups are only kept on this server, so losing the server loses them too. Set PLATFORM_BACKUP_S3_ENDPOINT, _BUCKET, _KEY and _SECRET (any S3-compatible storage) to copy each one off-site.') }}</x-signal.ui.alert>

@@ -83,9 +83,9 @@
         </div>
     </div>
 
-    @isset($actions)
+    @if (isset($actions) && trim((string) $actions) !== '')
         <div data-ui-page-header-actions data-page-actions class="ui-page-header__actions">
             {{ $actions }}
         </div>
-    @endisset
+    @endif
 </header>

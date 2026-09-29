@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Admin;
 
+use App\Models\FeatureRequest;
 use App\Models\Feedback;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\Request;
@@ -24,7 +25,8 @@ final class ShowFeedbackController
             'resolved' => $resolved,
             'counts' => ['open' => Feedback::query()->whereNull('resolved_at')->count(), 'resolved' => Feedback::query()->whereNotNull('resolved_at')->count()],
             'items' => Feedback::query()->when($resolved, fn ($query) => $query->whereNotNull('resolved_at'), fn ($query) => $query->whereNull('resolved_at'))
-                ->with(['user', 'account', 'resolver'])->latest('created_at')->paginate(50)->withQueryString(),
+                ->with(['user', 'account', 'resolver', 'featureRequest'])->latest('created_at')->paginate(50)->withQueryString(),
+            'roadmap' => FeatureRequest::query()->whereNotIn('status', ['shipped', 'declined'])->orderBy('title')->get(['id', 'title', 'status']),
         ]);
     }
 }

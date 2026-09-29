@@ -4,7 +4,6 @@
         <a href="{{ route('admin.feedback') }}" class="ui-local-nav__link" @unless ($resolved) aria-current="page" @endunless>{{ __('Open') }} ({{ $counts['open'] }})</a>
         <a href="{{ route('admin.feedback', ['show' => 'resolved']) }}" class="ui-local-nav__link" @if ($resolved) aria-current="page" @endif>{{ __('Resolved') }} ({{ $counts['resolved'] }})</a>
     </x-signal.ui.local-nav>
-    @if (session('status'))<x-signal.ui.alert tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>@endif
 
     @forelse ($items as $item)
         <x-signal.ui.card as="article" class="grid gap-3 p-5">
@@ -22,13 +21,35 @@
                     @if ($item->page){{ __('From :page', ['page' => $item->page]) }}@endif
                     @if ($item->resolved_at) · {{ __('Resolved by :name :when', ['name' => $item->resolver->name ?? __('someone'), 'when' => $item->resolved_at->diffForHumans()]) }}@endif
                 </p>
-                <form method="POST" action="{{ route('admin.feedback.update', $item->id) }}">
-                    @csrf
-                    @method('PUT')
-                    <input type="hidden" name="resolved" value="{{ $item->resolved_at ? '0' : '1' }}">
-                    <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ $item->resolved_at ? __('Open again') : __('Mark resolved') }}</x-signal.ui.button>
-                </form>
+                <div class="flex flex-wrap items-center gap-2">
+                    @if ($item->featureRequest)
+                        <a href="{{ route('admin.roadmap') }}" class="text-xs font-bold text-primary underline">{{ __('On the roadmap: :title', ['title' => $item->featureRequest->title]) }}</a>
+                    @else
+                        <x-signal.ui.button :href="route('admin.feedback', ['dialog' => 'roadmap-'.$item->id])" variant="quiet" size="sm" :data-modal-trigger="'roadmap-'.$item->id">{{ __('Add to roadmap') }}</x-signal.ui.button>
+                    @endif
+                    <form method="POST" action="{{ route('admin.feedback.update', $item->id) }}">
+                        @csrf
+                        @method('PUT')
+                        <input type="hidden" name="resolved" value="{{ $item->resolved_at ? '0' : '1' }}">
+                        <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ $item->resolved_at ? __('Open again') : __('Mark resolved') }}</x-signal.ui.button>
+                    </form>
+                </div>
             </div>
+            @unless ($item->featureRequest)
+                <x-signal.overlays.form-modal :id="'roadmap-'.$item->id" :title="__('Add to roadmap')" :description="__('Link it to a request already on the roadmap, or write a new one. The sender’s vote is counted either way, and the feedback is resolved.')" :action="route('admin.feedback.roadmap', $item->id)" :submit="__('Add to roadmap')" form-class="grid items-start gap-5 sm:grid-cols-2">
+                    @if ($roadmap->isNotEmpty())
+                        <div class="sm:col-span-2">
+                            <x-signal.ui.select-field :id="'roadmap-'.$item->id.'-existing'" name="feature_request_id" :label="__('Existing request')" :description="__('Leave on “New request” to write one below.')">
+                                <option value="">{{ __('New request') }}</option>
+                                @foreach ($roadmap as $request)
+                                    <option value="{{ $request->id }}">{{ $request->title }} ({{ $request->statusLabel() }})</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                        </div>
+                    @endif
+                    @include('admin._feature-request-fields', ['item' => null, 'prefix' => 'roadmap-'.$item->id, 'titleRequired' => $roadmap->isEmpty()])
+                </x-signal.overlays.form-modal>
+            @endunless
         </x-signal.ui.card>
     @empty
         <x-signal.ui.empty-state icon="inbox" :title="$resolved ? __('Nothing resolved yet') : __('All caught up')" :description="$resolved ? __('Resolved feedback appears here.') : __('No open feedback.')" />

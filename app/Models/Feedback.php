@@ -22,11 +22,13 @@ use Illuminate\Support\Carbon;
  * @property string|null $page the page they sent it from
  * @property string|null $resolved_by
  * @property CarbonImmutable|null $resolved_at
+ * @property int|null $feature_request_id the roadmap request it was written up into
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read User|null $user
  * @property-read Account|null $account
  * @property-read User|null $resolver
+ * @property-read FeatureRequest|null $featureRequest
  */
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 class Feedback extends Model
@@ -44,6 +46,16 @@ class Feedback extends Model
      * @var string
      */
     protected $table = 'feedback';
+
+    /**
+     * Get the roadmap request it was written up into.
+     *
+     * @return BelongsTo<FeatureRequest, $this>
+     */
+    public function featureRequest(): BelongsTo
+    {
+        return $this->belongsTo(FeatureRequest::class);
+    }
 
     /**
      * Get the person who sent it.

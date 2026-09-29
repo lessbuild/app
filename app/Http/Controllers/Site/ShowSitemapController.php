@@ -17,7 +17,7 @@ final class ShowSitemapController
      */
     public function __invoke(ServiceRegistry $services): Response
     {
-        $urls = [route('home'), route('pricing'), route('help'), route('changelog'), route('docs.api'), route('platform.status'), route('legal', 'privacy'), route('legal', 'terms')];
+        $urls = [route('home'), route('pricing'), route('help'), route('changelog'), route('roadmap'), route('docs.api'), route('platform.status'), route('legal', 'privacy'), route('legal', 'terms')];
         foreach ($services->all() as $service) {
             $urls[] = route('features', $service->key());
         }
