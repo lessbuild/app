@@ -1,3 +1,4 @@
+import './error-reporter';
 import './signal-theme-init';
 import './signal-theme';
 import './signal-drawer';

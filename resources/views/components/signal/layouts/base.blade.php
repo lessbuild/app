@@ -26,6 +26,10 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <meta name="csrf-token" content="{{ csrf_token() }}">
+        @if (request()->getHost() === parse_url((string) config('app.url'), PHP_URL_HOST))
+            {{-- Where the page reports its own JavaScript errors (not on customers' status page domains). --}}
+            <meta name="error-endpoint" content="{{ route('browser-errors.store') }}">
+        @endif
         <meta name="theme-color" content="#f4f7fb" data-theme-color>
         <meta name="robots" content="{{ $indexable ? 'index, follow' : 'noindex, nofollow' }}">
         @if ($canonical)

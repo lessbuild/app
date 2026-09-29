@@ -155,6 +155,37 @@ final class SelfMonitoring
     }
 
     /**
+     * Queue a JavaScript error from one of the platform's own pages to be reported into the operations project, at
+     * most once a minute per distinct error. Never throws.
+     *
+     * @param  array{message: string, source?: string|null, line?: int|null, column?: int|null, stack?: string|null, page?: string|null}  $error
+     * @param  string|null  $route  the name of the route of the page the error happened on, when known
+     * @return void
+     */
+    public function reportBrowserError(array $error, ?string $route = null): void
+    {
+        try {
+            if ($this->settings() === null) {
+                return;
+            }
+            $where = ($error['source'] ?? '').':'.($error['line'] ?? '').':'.($error['column'] ?? '');
+            $fingerprint = sha1('browser|'.$error['message'].'|'.$where);
+            if (! Cache::add('self-monitoring.reported.'.$fingerprint, true, 60)) {
+                return;
+            }
+            ReportPlatformException::dispatch([
+                'id' => (string) Str::uuid(), 'type' => 'exception', 'severity' => 'error', 'service' => 'browser',
+                'name' => 'JavaScript error', 'title' => Str::limit($error['message'], 255, ''),
+                'fingerprint' => $fingerprint, 'timestamp' => now('UTC')->toIso8601String(),
+                'route' => $route, 'url' => isset($error['page']) ? Str::limit($error['page'], 2048, '') : null,
+                'details' => Str::limit($error['message'].($where !== '::' ? ' at '.$where : '')."\n".($error['stack'] ?? ''), 10000, ''),
+            ]);
+        } catch (Throwable) {
+            // Reporting must never make things worse.
+        }
+    }
+
+    /**
      * Put an exception event into the operations project's telemetry.
      *
      * @param  array<string, mixed>  $event

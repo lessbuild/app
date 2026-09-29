@@ -349,6 +349,7 @@ use App\Http\Controllers\Recipes\ShowRecipesController;
 use App\Http\Controllers\Recipes\StoreRecipeController;
 use App\Http\Controllers\Recipes\UpdateRecipeController;
 use App\Http\Controllers\Referrals\ShowReferralController;
+use App\Http\Controllers\ReportBrowserErrorController;
 use App\Http\Controllers\Roadmap\ToggleFeatureRequestVoteController;
 use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
@@ -488,6 +489,8 @@ Route::post('/email/getting-started/{user}/stop', StopGettingStartedEmailsContro
 
 // Single sign-on comes back here, whether it was signing someone in or confirming who a signed-in person is.
 Route::get('/sso/callback', SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
+// The platform's own pages report their JavaScript errors here, into the platform's Monitoring.
+Route::post('/_errors', ReportBrowserErrorController::class)->middleware('throttle:20,1')->name('browser-errors.store');
 Route::post('/sso/saml/acs', ConsumeSamlResponseController::class)->middleware('throttle:20,1')->name('sso.saml.acs');
 Route::get('/sso/saml/finish', FinishSamlSignInController::class)->middleware('throttle:20,1')->name('sso.saml.finish');
 Route::get('/sso/saml/{account}/metadata', ShowSamlMetadataController::class)->whereUlid('account')->middleware('throttle:60,1')->name('sso.saml.metadata');

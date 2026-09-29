@@ -73,4 +73,33 @@ final class SelfMonitoringTest extends TestCase
         $event = TelemetryEvent::query()->sole();
         $this->assertSame([$monitoring->settings()['environment_id'] ?? null, 'exception'], [$event->environment_id, $event->type]);
     }
+
+    public function test_browser_errors_from_the_platforms_pages_are_reported(): void
+    {
+        $this->get('/login')->assertSee('name="error-endpoint"', false);
+        $error = ['message' => 'TypeError: x is undefined', 'source' => url('/build/assets/app.js'), 'line' => 12, 'column' => 4, 'stack' => 'at go (app.js:12:4)', 'page' => url('/login')];
+        Queue::fake([ReportPlatformException::class]);
+        $this->postJson('/_errors', $error)->assertNoContent();
+        Queue::assertNothingPushed();
+
+        $monitoring = app(SelfMonitoring::class);
+        $monitoring->setUp(User::factory()->create(['is_platform_admin' => true]));
+        $this->postJson('/_errors', ['message' => ''])->assertUnprocessable();
+        $this->postJson('/_errors', [...$error, 'page' => 'https://elsewhere.example/page'])->assertNoContent();
+        Queue::assertNothingPushed();
+        $this->postJson('/_errors', $error)->assertNoContent();
+        $this->postJson('/_errors', $error)->assertNoContent();
+        Queue::assertPushed(ReportPlatformException::class, 1);
+
+        $job = null;
+        Queue::assertPushed(ReportPlatformException::class, function (ReportPlatformException $pushed) use (&$job): bool {
+            $job = $pushed;
+
+            return true;
+        });
+        $this->assertInstanceOf(ReportPlatformException::class, $job);
+        $job->handle($monitoring, app(TelemetryIngestor::class));
+        $event = TelemetryEvent::query()->sole();
+        $this->assertSame(['exception', 'browser', 'login'], [$event->type, $event->service, $event->route]);
+    }
 }
