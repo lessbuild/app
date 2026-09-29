@@ -10,6 +10,7 @@ enum ProviderType: string
     case DigitalOcean = 'digitalocean';
     case Hetzner = 'hetzner';
     case Vultr = 'vultr';
+    case Linode = 'linode';
     case Cloudflare = 'cloudflare';
     case GitHub = 'github';
     case GitLab = 'gitlab';
@@ -26,6 +27,7 @@ enum ProviderType: string
             self::DigitalOcean => 'DigitalOcean',
             self::Hetzner => 'Hetzner Cloud',
             self::Vultr => 'Vultr',
+            self::Linode => 'Linode (Akamai)',
             self::Cloudflare => 'Cloudflare',
             self::GitHub => 'GitHub',
             self::GitLab => 'GitLab',
@@ -41,7 +43,7 @@ enum ProviderType: string
     public function purpose(): string
     {
         return match ($this) {
-            self::DigitalOcean, self::Hetzner, self::Vultr => __('Servers'),
+            self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode => __('Servers'),
             self::Cloudflare => __('DNS'),
             self::GitHub, self::GitLab, self::Bitbucket => __('Git repositories'),
         };
@@ -54,7 +56,7 @@ enum ProviderType: string
      */
     public function hostsServers(): bool
     {
-        return in_array($this, [self::DigitalOcean, self::Hetzner, self::Vultr], true);
+        return in_array($this, [self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode], true);
     }
 
     /**

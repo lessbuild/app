@@ -23,6 +23,7 @@ class ServerCatalog
         return match ($provider->type) {
             ProviderType::Hetzner => $this->hetzner($client),
             ProviderType::Vultr => $this->vultr($client),
+            ProviderType::Linode => $this->linode($client),
             default => $this->digitalOcean($client),
         };
     }
@@ -122,6 +123,35 @@ class ServerCatalog
                     'id' => (string) ($image['id'] ?? ''),
                     'label' => (string) ($image['name'] ?? ''),
                 ])),
+        ];
+    }
+
+    /**
+     * Normalize Linode regions, instance types and Ubuntu images for server-selection controls.
+     *
+     * @param  ServerProvider  $client  The Linode adapter supplying catalog responses.
+     * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>}
+     */
+    private function linode(ServerProvider $client): array
+    {
+        return [
+            'regions' => $this->sort(collect($client->regions())->map(fn (array $region): array => [
+                'id' => (string) ($region['id'] ?? ''),
+                'label' => trim((string) ($region['label'] ?? $region['id'] ?? '').' ('.strtoupper((string) ($region['country'] ?? '')).')'),
+            ])),
+            'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
+                'id' => (string) ($size['id'] ?? ''),
+                'label' => sprintf(
+                    '%s · %s GB RAM · %s vCPU · $%s/month',
+                    (string) ($size['label'] ?? $size['id'] ?? ''),
+                    $this->number(((float) ($size['memory'] ?? 0)) / 1024),
+                    (string) ($size['vcpus'] ?? '?'),
+                    $this->number((float) (is_array($size['price'] ?? null) ? ($size['price']['monthly'] ?? 0) : 0)),
+                ),
+            ])),
+            'images' => $this->sort(collect($client->images())
+                ->filter(fn (array $image): bool => str_contains(strtolower((string) ($image['label'] ?? '')), 'ubuntu'))
+                ->map(fn (array $image): array => ['id' => (string) ($image['id'] ?? ''), 'label' => (string) ($image['label'] ?? '')])),
         ];
     }
 

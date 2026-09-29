@@ -36,6 +36,7 @@ class ServerProviderResolver
             ProviderType::DigitalOcean => new DigitalOcean($token),
             ProviderType::Hetzner => new HetznerCloud($token),
             ProviderType::Vultr => new Vultr($token),
+            ProviderType::Linode => new Linode($token),
             default => throw new RuntimeException("{$type->label()} doesn’t host servers."),
         };
     }

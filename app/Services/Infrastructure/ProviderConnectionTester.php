@@ -82,6 +82,7 @@ final class ProviderConnectionTester
             ProviderType::DigitalOcean => 'https://api.digitalocean.com/v2/droplets?per_page=1',
             ProviderType::Hetzner => 'https://api.hetzner.cloud/v1/servers?per_page=1',
             ProviderType::Vultr => 'https://api.vultr.com/v2/account',
+            ProviderType::Linode => 'https://api.linode.com/v4/linode/instances?page_size=25',
             ProviderType::Cloudflare => rtrim((string) config('infrastructure.cloudflare_api_url'), '/').'/user/tokens/verify',
         };
     }

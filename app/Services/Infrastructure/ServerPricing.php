@@ -58,7 +58,7 @@ class ServerPricing
 
     /**
      * Look up the monthly price of a size in the provider's size catalog: Hetzner's gross price for the server's
-     * location (or the first listed), Vultr's and DigitalOcean's monthly cost. Null when the size isn't listed.
+     * location (or the first listed), Vultr's, Linode's and DigitalOcean's monthly cost. Null when the size isn't listed.
      *
      * @param  ProviderType  $type
      * @param  list<array<string, mixed>>  $sizes
@@ -71,7 +71,7 @@ class ServerPricing
         foreach ($sizes as $entry) {
             $matches = match ($type) {
                 ProviderType::Hetzner => ($entry['name'] ?? null) === $size,
-                ProviderType::Vultr => ($entry['id'] ?? null) === $size,
+                ProviderType::Vultr, ProviderType::Linode => ($entry['id'] ?? null) === $size,
                 default => ($entry['slug'] ?? null) === $size,
             };
             if (! $matches) {
@@ -84,7 +84,11 @@ class ServerPricing
 
                 return is_numeric($gross) ? round((float) $gross, 2) : null;
             }
-            $value = $entry[$type === ProviderType::Vultr ? 'monthly_cost' : 'price_monthly'] ?? null;
+            $value = match ($type) {
+                ProviderType::Vultr => $entry['monthly_cost'] ?? null,
+                ProviderType::Linode => is_array($entry['price'] ?? null) ? ($entry['price']['monthly'] ?? null) : null,
+                default => $entry['price_monthly'] ?? null,
+            };
 
             return is_numeric($value) ? round((float) $value, 2) : null;
         }
