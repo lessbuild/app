@@ -102,6 +102,29 @@ class GitHubApp
     }
 
     /**
+     * Post a check run for a deploy on the commit it ships, named for the environment so each environment keeps its
+     * own line on the commit and its pull requests. A newer run with the same name replaces the older one there.
+     *
+     * @param  string  $installationId
+     * @param  string  $repository  owner/name
+     * @param  string  $revision
+     * @param  string  $environment  the environment's name
+     * @param  string|null  $conclusion  success, failure or cancelled; null while it runs
+     * @param  bool  $queued  whether it's waiting (for approval) rather than running
+     * @param  string  $summary
+     * @param  string  $detailsUrl
+     * @return void
+     */
+    public function createDeployCheck(string $installationId, string $repository, string $revision, string $environment, ?string $conclusion, bool $queued, string $summary, string $detailsUrl): void
+    {
+        $name = __(':app deploy: :environment', ['app' => config('app.name'), 'environment' => $environment]);
+        $this->client($installationId)->post("https://api.github.com/repos/{$repository}/check-runs", [
+            'name' => $name, 'head_sha' => $revision, 'details_url' => $detailsUrl, 'output' => ['title' => $name, 'summary' => $summary],
+            ...($conclusion === null ? ['status' => $queued ? 'queued' : 'in_progress'] : ['status' => 'completed', 'conclusion' => $conclusion]),
+        ])->throw();
+    }
+
+    /**
      * Update the pull request's preview comment (found by a hidden marker among its first 100 comments), or add one.
      *
      * @param  string  $installationId

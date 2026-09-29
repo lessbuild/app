@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Jobs\Deploy;
 
 use App\Actions\Deploy\FinishBuild;
+use App\Events\Deploy\DeployStarted;
 use App\Models\Build;
 use App\Services\Deploy\DeploymentScript;
 use App\Services\Infrastructure\RemoteScriptRunner;
@@ -81,8 +82,10 @@ final class PublishBuild implements ShouldQueue
 
             throw $exception;
         }
-        Build::query()->whereKey($build->id)->where('status', Build::STATUS_DEPLOYING)
-            ->update(['status' => Build::STATUS_RUNNING, 'remote_process_id' => $process['id'], 'remote_process_path' => $process['path']]);
+        if (Build::query()->whereKey($build->id)->where('status', Build::STATUS_DEPLOYING)
+            ->update(['status' => Build::STATUS_RUNNING, 'remote_process_id' => $process['id'], 'remote_process_path' => $process['path']]) === 1) {
+            DeployStarted::dispatch($build->refresh());
+        }
     }
 
     /**

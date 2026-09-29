@@ -18,6 +18,7 @@ use App\Http\View\ShellComposer;
 use App\Listeners\AuditSubscriber;
 use App\Listeners\DeployNotificationSubscriber;
 use App\Listeners\EnvironmentRecipeSubscriber;
+use App\Listeners\GitHubDeployStatusSubscriber;
 use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
 use App\Listeners\OnboardingSubscriber;
@@ -77,6 +78,7 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(NotificationSubscriber::class);
         Event::subscribe(OnboardingSubscriber::class);
         Event::subscribe(DeployNotificationSubscriber::class);
+        Event::subscribe(GitHubDeployStatusSubscriber::class);
         Event::subscribe(IncidentAssigneeSubscriber::class);
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);

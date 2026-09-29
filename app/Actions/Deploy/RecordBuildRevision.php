@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Deploy;
 
+use App\Events\Deploy\DeployStarted;
 use App\Exceptions\StateConflict;
 use App\Models\Build;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ final class RecordBuildRevision
 {
     /**
      * Record the commit the script checked out (signed callback). A build asked for a specific commit must get exactly
-     * that one. A build asked for a specific commit must get exactly that one.
+     * that one. When the commit wasn't known until now, the deploy is announced as started on it.
      *
      * @param  Build  $build
      * @param  string  $revision
@@ -21,15 +22,22 @@ final class RecordBuildRevision
      */
     public function handle(Build $build, string $revision, ?string $commitMessage): void
     {
-        DB::transaction(function () use ($build, $revision, $commitMessage): void {
+        $learned = DB::transaction(function () use ($build, $revision, $commitMessage): ?Build {
             $locked = Build::query()->lockForUpdate()->find($build->id);
             if ($locked === null || ! in_array($locked->status, [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING], true)) {
-                return;
+                return null;
             }
+            $wasUnknown = $locked->revision === null;
             $revision = strtolower($revision);
             StateConflict::unless($locked->revision === null || hash_equals($locked->revision, $revision), 'The checked-out revision doesn’t match the requested one.');
             $message = $commitMessage === null ? null : trim(preg_replace('/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/', '', $commitMessage) ?? '');
             $locked->forceFill(['revision' => $revision, 'commit_message' => $message === '' || $message === null ? null : mb_substr($message, 0, 500), 'last_heartbeat_at' => now()])->save();
+
+            return $wasUnknown ? $locked : null;
         });
+        // A deploy of the branch's latest commit only learns which one now; tell anyone following the commit.
+        if ($learned !== null) {
+            DeployStarted::dispatch($learned);
+        }
     }
 }
