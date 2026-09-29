@@ -51,7 +51,8 @@ final class ReportPagesTest extends TestCase
             ->assertSee(__('Pageviews per day'))
             ->assertSee('role="list" aria-label="'.__('Pageviews per day').'"', false)
             ->assertSee('/pricing')
-            ->assertSee('newsletter');
+            ->assertSee('newsletter')
+            ->assertDontSee(__('Outbound links'));
 
         $this->actingAs($this->owner)->get("{$base}?days=7&path=/thank-you")->assertOk()->assertSee('/thank-you')->assertSee(__('Clear'));
         $this->actingAs($this->owner)->get("{$base}?days=9999&site=999")->assertOk()->assertSee('Shop');

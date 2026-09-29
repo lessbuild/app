@@ -11,10 +11,12 @@
     [__('Countries'), $summary['countries'], __('Countries appear once visitors arrive.'), 'country'],
     [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), null],
     [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), null],
-    [__('Outbound links'), $summary['outboundLinks'], __('Add data-outbound to the snippet to count clicks on links to other sites.'), null],
-    [__('File downloads'), $summary['fileDownloads'], __('Add data-downloads to the snippet to count file downloads.'), null],
-    [__('Pages not found'), $summary['notFound'], __('Add data-not-found to the snippet on your 404 page to see which missing pages people reach.'), null],
+    [__('Outbound links'), $summary['outboundLinks'], '', null],
+    [__('File downloads'), $summary['fileDownloads'], '', null],
+    [__('Pages not found'), $summary['notFound'], '', null],
 ])
+{{-- The tracker's opt-in lists only show once they have something in them; the site page explains how to switch them on. --}}
+@php($lists = array_values(array_filter($lists, fn (array $list): bool => $list[2] !== '' || $list[1] !== [])))
 
     <div class="grid gap-3 sm:grid-cols-3 xl:grid-cols-6">
         @foreach ($summary['metrics'] as $metric)

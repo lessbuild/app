@@ -92,7 +92,9 @@ final class CreateSampleProject
         $site->forceFill(['project_id' => $project->id, 'name' => 'storefront.example', 'domains' => ['storefront.example'], 'timezone' => 'UTC', 'verified_at' => now(), 'collection_enabled' => false])->save();
         $batch = AnalyticsIngestionBatch::query()->create(['site_id' => $site->id, 'batch_id' => Str::uuid()->toString(), 'event_count' => 0, 'status' => 'processing', 'accepted_at' => now()]);
         $rows = [];
-        $devices = [['desktop', 'Chrome', 'macOS', 45], ['desktop', 'Firefox', 'Windows', 15], ['mobile', 'Safari', 'iOS', 25], ['mobile', 'Chrome', 'Android', 15]];
+        $devices = [['Desktop', 'Chrome', 'macOS', 45], ['Desktop', 'Firefox', 'Windows', 15], ['Mobile', 'Safari', 'iOS', 25], ['Mobile', 'Chrome', 'Android', 15]];
+        // Where the made-up visitors are, weighted.
+        $countries = ['US' => 34, 'GB' => 14, 'DE' => 12, 'NL' => 8, 'FR' => 7, 'CA' => 7, 'AU' => 5, 'IN' => 5, 'SE' => 4, 'BR' => 4];
         for ($day = 29; $day >= 0; $day--) {
             // A gentle upward trend with weekday bumps.
             $date = now('UTC')->subDays($day)->startOfDay();
@@ -102,6 +104,7 @@ final class CreateSampleProject
                 [$referrer, $source, $medium, $campaign] = $this->pick(self::SOURCES, 4);
                 $hash = hash('sha256', "sample-{$project->id}-{$day}-{$visitor}");
                 $session = Str::uuid()->toString();
+                $country = $this->pickKey($countries);
                 // Spread across the day, and only up to now on today.
                 $latest = $day === 0 ? max(60, (int) $date->diffInSeconds(now('UTC')->subMinutes(20))) : 22 * 3600;
                 $at = $date->copy()->addSeconds(random_int(min(7 * 3600, $latest - 60), $latest));
@@ -114,7 +117,7 @@ final class CreateSampleProject
                         'site_id' => $site->id, 'ingestion_batch_id' => $batch->id, 'event_id' => Str::uuid()->toString(), 'type' => 'pageview',
                         'occurred_at' => $at, 'received_at' => $at, 'path' => $path, 'referrer_host' => $view === 1 ? $referrer : null,
                         'utm_source' => $view === 1 ? $source : null, 'utm_medium' => $view === 1 ? $medium : null, 'utm_campaign' => $view === 1 ? $campaign : null,
-                        'device_category' => $device, 'browser' => $browser, 'operating_system' => $system, 'visitor_hash' => $hash, 'session_id' => $session,
+                        'device_category' => $device, 'browser' => $browser, 'operating_system' => $system, 'country_code' => $country, 'visitor_hash' => $hash, 'session_id' => $session,
                         'properties' => null, 'created_at' => now(), 'updated_at' => now(),
                     ];
                     $at = $at->copy()->addSeconds(random_int(20, 240));
