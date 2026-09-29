@@ -20,6 +20,7 @@ use Illuminate\Support\Carbon;
  *
  * @property string $id
  * @property string $account_id
+ * @property bool $is_sample made-up data to look around with, created from the dashboard
  * @property string|null $created_by_id
  * @property string $name
  * @property string $slug
@@ -46,7 +47,7 @@ class Project extends Model
      */
     protected function casts(): array
     {
-        return ['checklist_dismissed_at' => 'datetime'];
+        return ['checklist_dismissed_at' => 'datetime', 'is_sample' => 'boolean'];
     }
 
     /**

@@ -17,7 +17,10 @@
         <x-signal.ui.empty-state :title="__('Create your first project')" :description="$canCreate ? __('A project is one app or site. You’ll add domains and turn on Deploy, Monitoring, Analytics or Infrastructure next.') : __('No projects yet. Someone who manages projects in :account can create one.', ['account' => $account->name])">
             @if ($canCreate)
                 <x-slot:action>
+                    <div class="flex flex-wrap justify-center gap-3">
                     <x-signal.ui.button :href="route('projects.create')" variant="primary" data-modal-trigger="new-project" :data-modal-history-url="request()->fullUrlWithQuery(['dialog' => 'new-project'])">{{ __('Create a project') }}</x-signal.ui.button>
+                    <form method="POST" action="{{ route('projects.sample') }}">@csrf<x-signal.ui.button type="submit" variant="secondary">{{ __('Explore a sample project') }}</x-signal.ui.button></form>
+                    </div>
                 </x-slot:action>
             @endif
         </x-signal.ui.empty-state>

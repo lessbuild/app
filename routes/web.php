@@ -284,6 +284,7 @@ use App\Http\Controllers\Projects\ShowProjectServiceController;
 use App\Http\Controllers\Projects\ShowProjectSetupController;
 use App\Http\Controllers\Projects\StoreEnvironmentController;
 use App\Http\Controllers\Projects\StoreProjectController;
+use App\Http\Controllers\Projects\StoreSampleProjectController;
 use App\Http\Controllers\Projects\UpdateProjectController;
 use App\Http\Controllers\Projects\VerifyDomainController;
 use App\Http\Controllers\Recipes\DeleteRecipeController;
@@ -418,6 +419,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/services/{service}', ShowServiceController::class)->middleware('account.can:useService,service')->name('services.show');
     Route::get('/projects/create', CreateProjectController::class)->middleware('account.can:create,App\\Models\\Project')->name('projects.create');
     Route::post('/projects', StoreProjectController::class)->middleware('throttle:30,1')->name('projects.store');
+    Route::post('/projects/sample', StoreSampleProjectController::class)->middleware(['account.can:create,App\\Models\\Project', 'throttle:5,1'])->name('projects.sample');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
         Route::prefix('/analytics')->middleware('service:analytics')->name('analytics.')->group(function (): void {
             Route::get('/', ShowOverviewController::class)->name('overview');

@@ -51,6 +51,25 @@ final class ChecklistTest extends TestCase
         $this->actingAs($owner)->get("/projects/{$project->id}")->assertOk()->assertDontSee($heading);
     }
 
+    public function test_the_current_step_can_be_done_inside_the_guide_and_comes_back_to_it(): void
+    {
+        \Illuminate\Support\Facades\Bus::fake();
+        $owner = User::factory()->create();
+        $account = Account::factory()->withMember($owner)->create();
+        $owner->forceFill(['current_account_id' => $account->id])->save();
+        $project = Project::factory()->for($account)->create();
+        $guide = "/projects/{$project->id}/setup";
+
+        $this->actingAs($owner)->get($guide)->assertOk()->assertSee('data-modal-trigger="setup-step"', false)->assertSee('id="setup-step"', false)
+            ->assertSee('name="_return" value="'.$guide.'"', false)->assertSee('Hetzner Cloud')->assertDontSee('Cloudflare');
+
+        $this->actingAs($owner)->post('/account/providers', ['_return' => $guide, 'name' => 'Main cloud', 'type' => 'digitalocean', 'token' => 'do-token-123'])->assertRedirect(url($guide));
+        $this->actingAs($owner)->get($guide)->assertSee('Step 2 of 7');
+
+        $this->actingAs($owner)->post('/account/providers', ['_return' => 'https://evil.example/setup', 'name' => 'Other', 'type' => 'hetzner', 'token' => 'h-token-123'])
+            ->assertRedirectContains('/account/providers/');
+    }
+
     public function test_new_projects_open_on_their_setup_guide(): void
     {
         $owner = User::factory()->create();

@@ -20,6 +20,9 @@
         @endisset
     </x-signal.ui.page-header>
 
+    @if ($project->is_sample)
+        <x-signal.ui.alert tone="info">{{ __('This is a sample project: its visits, requests and errors are made up. Nothing here reaches the outside world.') }} <a href="{{ route('projects.settings', $project) }}" class="font-semibold underline">{{ __('Delete it') }}</a> {{ __('when you’re done, or create your own project.') }}</x-signal.ui.alert>
+    @endif
     @if (session('status'))
         <x-signal.ui.alert tone="success" role="status">{{ session('status') }}</x-signal.ui.alert>
     @endif

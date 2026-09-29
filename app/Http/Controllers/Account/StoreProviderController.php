@@ -9,6 +9,7 @@ use App\Http\Attributes\CurrentAccount;
 use App\Http\Requests\Infrastructure\ProviderRequest;
 use App\Models\Account;
 use App\Models\User;
+use App\Support\SetupGuideReturn;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 
@@ -26,6 +27,12 @@ final class StoreProviderController
     public function __invoke(#[CurrentAccount] Account $account, ProviderRequest $request, #[CurrentUser] User $user, SaveProvider $save): RedirectResponse
     {
         $provider = $save->handle($account, $user, $request->validated());
+
+        if (($guide = SetupGuideReturn::from($request)) !== null) {
+
+            return redirect($guide)->with('status', __('Provider connected. On to the next step.'));
+
+        }
 
         return to_route('account.providers.show', $provider->id)->with('status', __('Provider connected. Check the connection to confirm the token works.'));
     }

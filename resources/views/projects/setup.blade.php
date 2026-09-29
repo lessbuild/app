@@ -62,7 +62,7 @@
             @endif
             <div class="flex flex-wrap items-center gap-3">
                 @if ($canChange && $current->actionUrl)
-                    <x-signal.ui.button :href="$current->actionUrl" variant="primary" size="lg">{{ $current->actionLabel }} <x-signal.ui.icon name="arrow-right" class="size-4" /></x-signal.ui.button>
+                    <x-signal.ui.button :href="$current->actionUrl" variant="primary" size="lg" :data-modal-trigger="$inline === $current->key ? 'setup-step' : null" :data-modal-history-url="$inline === $current->key ? route('projects.setup', [$project, 'dialog' => 'setup-step']) : null">{{ $current->actionLabel }} <x-signal.ui.icon name="arrow-right" class="size-4" /></x-signal.ui.button>
                 @elseif (! $canChange)
                     <p class="text-sm text-muted">{{ __('Someone who can change this project needs to do this step.') }}</p>
                 @endif
@@ -71,6 +71,25 @@
                 @endisset
             </div>
         </x-signal.ui.panel>
+
+        {{-- The current step's form, when it's short enough to fill in here; saving comes back to the guide. --}}
+        @if ($inline !== null)
+            <x-signal.overlays.form-modal id="setup-step" :title="$current->title" :description="$current->description" :submit="$current->actionLabel" form-class="grid items-start gap-5 sm:grid-cols-2"
+                :action="match ($inline) { 'provider' => route('account.providers.store'), 'website' => route('infrastructure.websites.store', $project), 'analytics' => route('analytics.sites.store', $project) }">
+                <input type="hidden" name="_return" value="{{ route('projects.setup', $project, false) }}">
+                @switch($inline)
+                    @case('provider')
+                        @include('account._provider-fields', ['provider' => null, 'types' => $providerTypes])
+                        @break
+                    @case('website')
+                        @include('infrastructure._website-fields', ['website' => null])
+                        @break
+                    @case('analytics')
+                        @include('analytics._site-fields', ['site' => null, 'timezones' => \DateTimeZone::listIdentifiers()])
+                        @break
+                @endswitch
+            </x-signal.overlays.form-modal>
+        @endif
     @endif
 
     <x-signal.ui.disclosure :title="__('See all steps')">
