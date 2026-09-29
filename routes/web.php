@@ -63,6 +63,7 @@ use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DownloadExportController;
 use App\Http\Controllers\Analytics\RequestExportController;
+use App\Http\Controllers\Analytics\ShowCampaignsController;
 use App\Http\Controllers\Analytics\ShowExportController;
 use App\Http\Controllers\Analytics\ShowGoalsController;
 use App\Http\Controllers\Analytics\ShowOverviewController;
@@ -493,6 +494,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/sites/{site}/verify', VerifySiteController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.verify');
             Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware(['can:delete,site', 'password.confirm'])->name('sites.destroy');
             Route::get('/goals', ShowGoalsController::class)->name('goals');
+            Route::get('/campaigns', ShowCampaignsController::class)->name('campaigns');
             Route::post('/sites/{site}/goals', StoreGoalController::class)->whereNumber('site')->middleware('can:update,site')->name('goals.store');
             Route::put('/sites/{site}/goals/{goal}', UpdateGoalController::class)->whereNumber(['site', 'goal'])->middleware('can:update,site')->name('goals.update');
             Route::delete('/sites/{site}/goals/{goal}', DeleteGoalController::class)->whereNumber(['site', 'goal'])->middleware('can:update,site')->name('goals.destroy');
