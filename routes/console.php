@@ -47,6 +47,7 @@ use App\Services\Infrastructure\ServerPricing;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
+use App\Services\Reports\WeeklyReport;
 use App\Services\Telemetry\IssueDigest;
 use App\Services\Telemetry\TelemetryQueue;
 use App\Services\Telemetry\UsageAlerts;
@@ -196,6 +197,22 @@ Artisan::command('issues:send-digest {--account= : Only this account} {--from= :
     return $totals['failed'] === 0 ? 0 : 1;
 })->purpose('Send the daily issue digest');
 Schedule::command('issues:send-digest')->dailyAt('08:00')->withoutOverlapping(60)->onOneServer();
+
+// The Monday project report covers the UTC week that just ended; the ledger makes reruns safe.
+Artisan::command('reports:send-weekly {--account= : Only this account} {--until= : Exclusive UTC end of the week (default: this Monday 00:00)}', function (WeeklyReport $report): int {
+    try {
+        $until = is_string($this->option('until')) ? CarbonImmutable::parse($this->option('until'), 'UTC') : CarbonImmutable::now('UTC')->startOfWeek();
+    } catch (Throwable) {
+        $this->error('The until timestamp is invalid.');
+
+        return 2;
+    }
+    $totals = $report->send($until, is_string($this->option('account')) ? $this->option('account') : null);
+    $this->info(sprintf('Weekly reports: %d sent, %d skipped, %d failed.', $totals['sent'], $totals['skipped'], $totals['failed']));
+
+    return $totals['failed'] === 0 ? 0 : 1;
+})->purpose('Send the Monday project report');
+Schedule::command('reports:send-weekly')->weeklyOn(1, '08:00')->withoutOverlapping(60)->onOneServer();
 
 Artisan::command('providers:check {--provider=* : Only these provider IDs}', function (ProviderHealthMonitor $monitor): int {
     $ids = array_values(array_filter(array_map('intval', (array) $this->option('provider')), fn (int $id): bool => $id > 0));

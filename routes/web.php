@@ -322,6 +322,7 @@ use App\Http\Controllers\Settings\SignOutBrowserController;
 use App\Http\Controllers\Settings\SignOutOtherBrowsersController;
 use App\Http\Controllers\Settings\UpdateGettingStartedEmailsController;
 use App\Http\Controllers\Settings\UpdateNotificationSettingsController;
+use App\Http\Controllers\Settings\UpdateWeeklyReportEmailsController;
 use App\Http\Controllers\Site\ShowChangelogController;
 use App\Http\Controllers\Site\ShowComparisonController;
 use App\Http\Controllers\Site\ShowFeaturesController;
@@ -776,6 +777,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::get('/settings/notifications', ShowNotificationSettingsController::class)->name('settings.notifications');
     Route::put('/settings/notifications', UpdateNotificationSettingsController::class)->name('settings.notifications.update');
     Route::put('/settings/notifications/getting-started', UpdateGettingStartedEmailsController::class)->name('settings.getting-started-emails.update');
+    Route::put('/settings/notifications/weekly-report', UpdateWeeklyReportEmailsController::class)->name('settings.weekly-report-emails.update');
     Route::get('/settings/privacy', ShowPrivacyController::class)->name('settings.privacy');
     Route::get('/settings/privacy/export', ExportPersonalDataController::class)->middleware('throttle:6,1')->name('settings.privacy.export');
     Route::delete('/settings/privacy/user', DeleteUserController::class)->middleware('password.confirm')->name('settings.privacy.destroy');

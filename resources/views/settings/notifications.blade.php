@@ -16,6 +16,15 @@
         @endif
     </x-signal.ui.settings-section>
 
+    <x-signal.ui.settings-section :title="__('Weekly report')" :description="__('Each Monday at 08:00 UTC: last week’s deploys, incidents, uptime and visits for each project in your accounts, compared with the week before. Nothing is sent for a quiet week.')">
+        <form method="POST" action="{{ route('settings.weekly-report-emails.update') }}" class="grid gap-4 p-4 sm:p-6">
+            @csrf
+            @method('PUT')
+            <x-signal.ui.checkbox name="weekly_report_emails" value="1" unchecked-value="0" :checked="auth()->user()?->weekly_report_emails ?? true">{{ __('Email me the weekly report') }}</x-signal.ui.checkbox>
+            <div><x-signal.ui.button type="submit" variant="secondary">{{ __('Save') }}</x-signal.ui.button></div>
+        </form>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Getting started')" :description="__('A welcome when you join, and one reminder a few days later if a project’s setup has stalled.')">
         <form method="POST" action="{{ route('settings.getting-started-emails.update') }}" class="grid gap-4 p-4 sm:p-6">
             @csrf

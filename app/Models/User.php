@@ -30,6 +30,7 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string|null $two_factor_secret
  * @property \Illuminate\Support\Carbon|null $two_factor_confirmed_at
  * @property bool $getting_started_emails whether they get the welcome and the one setup reminder
+ * @property bool $weekly_report_emails whether they get the Monday report on their accounts' projects
  * @property \Illuminate\Support\Carbon|null $onboarding_nudged_at when the setup reminder was sent
  * @property \Illuminate\Support\Carbon|null $email_verified_at
  * @property \Illuminate\Support\Carbon|null $created_at
@@ -61,6 +62,7 @@ class User extends Authenticatable implements MustVerifyEmail, PasskeyUser
             'password' => 'hashed',
             'two_factor_confirmed_at' => 'datetime',
             'getting_started_emails' => 'boolean',
+            'weekly_report_emails' => 'boolean',
             'onboarding_nudged_at' => 'datetime',
             'is_platform_admin' => 'boolean',
             'platform_admin_granted_at' => 'datetime',

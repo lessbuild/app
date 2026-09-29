@@ -6,6 +6,7 @@ namespace App\Services\Monitoring;
 
 use App\Models\IssueDigestDelivery;
 use App\Models\UsageAlertDelivery;
+use App\Models\WeeklyReportDelivery;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -22,7 +23,7 @@ final class EmailDeliveryLedger
      * Send one ledgered email: skips it when already sent or being sent by another run (for up to 15 minutes),
      * otherwise marks it sending, sends, and records sent or failed. Returns what happened.
      *
-     * @param  class-string<UsageAlertDelivery|IssueDigestDelivery>  $model
+     * @param  class-string<UsageAlertDelivery|IssueDigestDelivery|WeeklyReportDelivery>  $model
      * @param  array<string, string|int>  $key  timestamps as 'Y-m-d H:i:s.u' strings
      * @param  array<string, mixed>  $values
      * @param  callable(): void  $send
@@ -30,7 +31,7 @@ final class EmailDeliveryLedger
      */
     public function send(string $model, array $key, array $values, callable $send): string
     {
-        $delivery = DB::transaction(function () use ($model, $key, $values): UsageAlertDelivery|IssueDigestDelivery|null {
+        $delivery = DB::transaction(function () use ($model, $key, $values): UsageAlertDelivery|IssueDigestDelivery|WeeklyReportDelivery|null {
             $now = CarbonImmutable::now('UTC');
             $existing = $model::query()->where($key)->lockForUpdate()->first();
             if ($existing?->status === 'sent' || ($existing?->status === 'sending' && $existing->sending_started_at?->greaterThan($now->subMinutes(self::STALE_MINUTES)))) {
