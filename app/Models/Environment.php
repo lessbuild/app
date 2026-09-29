@@ -183,6 +183,16 @@ class Environment extends Model
     }
 
     /**
+     * Get the destinations that hear about this environment's deploys.
+     *
+     * @return HasMany<EnvironmentDeployNotification, $this>
+     */
+    public function deployNotifications(): HasMany
+    {
+        return $this->hasMany(EnvironmentDeployNotification::class);
+    }
+
+    /**
      * Get the environment's recipes, in the order they run.
      *
      * @return HasMany<EnvironmentRecipe, $this>

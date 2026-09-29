@@ -50,8 +50,12 @@ final class IncidentAlertNotification extends Notification
         if (is_string($mailer) && $mailer !== '') {
             $message->mailer($mailer);
         }
-        $message->subject(__(':app incident: :event', ['app' => config('app.name'), 'event' => ucfirst($event)]))
-            ->line(ucfirst($event).': '.$this->text('title'))
+        $label = $this->text('event_label', ucfirst($event));
+        $subject = $this->text('kind') === 'deploy'
+            ? __(':app: :event — :environment', ['app' => config('app.name'), 'event' => $label, 'environment' => $this->text('environment')])
+            : __(':app incident: :event', ['app' => config('app.name'), 'event' => $label]);
+        $message->subject($subject)
+            ->line($label.': '.$this->text('title'))
             ->line($this->text('project', $this->text('application')).' / '.$this->text('environment'));
 
         $monitor = $this->payload['monitor'] ?? null;
@@ -69,7 +73,7 @@ final class IncidentAlertNotification extends Notification
 
         $url = $this->payload['url'] ?? null;
         if (is_string($url)) {
-            $message->action(__('View incident'), $url);
+            $message->action($this->text('url_label', __('View incident')), $url);
         }
 
         return $message

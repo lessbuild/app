@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services\Deploy;
 
+use App\Events\Deploy\DeployAwaitingApproval;
 use App\Jobs\Deploy\PublishBuild;
 use App\Jobs\Deploy\SwitchRelease;
 use App\Models\Build;
@@ -136,5 +137,6 @@ class Deployments
         Membership::query()->where('account_id', $build->website->account_id)->with('user')->get()
             ->filter(fn (Membership $membership): bool => $membership->user_id !== $build->requested_by && $membership->user->can('approve', $build))
             ->each(fn (Membership $membership) => $membership->user->notify(new BuildAwaitingApproval($build)));
+        DeployAwaitingApproval::dispatch($build);
     }
 }

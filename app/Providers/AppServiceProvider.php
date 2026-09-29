@@ -16,6 +16,7 @@ use App\Contracts\Telemetry\TelemetryPayloadMapper;
 use App\Http\HttpRequestOrigin;
 use App\Http\View\ShellComposer;
 use App\Listeners\AuditSubscriber;
+use App\Listeners\DeployNotificationSubscriber;
 use App\Listeners\EnvironmentRecipeSubscriber;
 use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
@@ -75,6 +76,7 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(AuditSubscriber::class);
         Event::subscribe(NotificationSubscriber::class);
         Event::subscribe(OnboardingSubscriber::class);
+        Event::subscribe(DeployNotificationSubscriber::class);
         Event::subscribe(IncidentAssigneeSubscriber::class);
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);

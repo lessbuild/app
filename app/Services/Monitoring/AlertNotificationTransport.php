@@ -185,7 +185,7 @@ final class AlertNotificationTransport
      */
     private function slackPayload(string $id, array $payload): array
     {
-        $title = config('app.name').': '.ucfirst($payload['event']).' — '.$payload['title'];
+        $title = $this->heading($payload);
         $context = $payload['application'].' / '.$payload['environment'];
         $text = $title."\n".$context."\nDelivery ".$id;
         $blocks = [
@@ -193,7 +193,7 @@ final class AlertNotificationTransport
         ];
         if ($payload['url'] !== null) {
             $blocks[] = ['type' => 'actions', 'elements' => [
-                ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => 'View incident'], 'url' => $payload['url']],
+                ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => $this->linkLabel($payload)], 'url' => $payload['url']],
             ]];
         }
 
@@ -209,7 +209,7 @@ final class AlertNotificationTransport
      */
     private function teamsPayload(string $id, array $payload): array
     {
-        $title = config('app.name').': '.ucfirst($payload['event']).' — '.$payload['title'];
+        $title = $this->heading($payload);
         $facts = [
             ['name' => 'Application', 'value' => (string) $payload['application']],
             ['name' => 'Environment', 'value' => (string) $payload['environment']],
@@ -220,11 +220,13 @@ final class AlertNotificationTransport
             '@type' => 'MessageCard',
             '@context' => 'https://schema.org/extensions',
             'summary' => mb_substr($title, 0, 250),
-            'themeColor' => $payload['event'] === 'recovered' ? '16A34A' : 'DC2626',
+            'themeColor' => match ($payload['event']) {
+                'recovered', 'deploy_succeeded' => '16A34A', 'deploy_approval' => 'D97706', default => 'DC2626'
+            },
             'title' => mb_substr($title, 0, 250),
             'sections' => [['facts' => $facts, 'markdown' => true]],
             ...($payload['url'] !== null ? ['potentialAction' => [[
-                '@type' => 'OpenUri', 'name' => 'View incident', 'targets' => [['os' => 'default', 'uri' => $payload['url']]],
+                '@type' => 'OpenUri', 'name' => $this->linkLabel($payload), 'targets' => [['os' => 'default', 'uri' => $payload['url']]],
             ]]] : []),
         ];
     }
@@ -246,7 +248,7 @@ final class AlertNotificationTransport
             'event_action' => $payload['event'] === 'recovered' ? 'resolve' : 'trigger',
             'dedup_key' => $dedupKey,
             'payload' => [
-                'summary' => mb_substr(config('app.name').': '.ucfirst($payload['event']).' — '.$payload['title'], 0, 1024),
+                'summary' => mb_substr($this->heading($payload), 0, 1024),
                 'source' => (string) $payload['application'].' / '.$payload['environment'],
                 'severity' => $payload['event'] === 'recovered' ? 'info' : 'critical',
                 'custom_details' => ['delivery_id' => $id],
@@ -263,15 +265,16 @@ final class AlertNotificationTransport
      */
     private function discordPayload(string $id, array $payload): array
     {
-        $title = config('app.name').': '.ucfirst($payload['event']).' — '.$payload['title'];
+        $title = $this->heading($payload);
 
         return [
             'allowed_mentions' => ['parse' => []],
             'embeds' => [[
                 'title' => mb_substr($title, 0, 256),
                 'color' => match ($payload['event']) {
-                    'recovered' => 0x16A34A,
-                    'opened', 'escalated' => 0xDC2626,
+                    'recovered', 'deploy_succeeded' => 0x16A34A,
+                    'opened', 'escalated', 'deploy_failed' => 0xDC2626,
+                    'deploy_approval' => 0xD97706,
                     default => 0x64748B,
                 },
                 'fields' => [
@@ -282,5 +285,29 @@ final class AlertNotificationTransport
                 ...($payload['url'] !== null ? ['url' => $payload['url']] : []),
             ]],
         ];
+    }
+
+    /**
+     * Build the one-line heading, e.g. "BuildPusher: Opened — API down" or "BuildPusher: Deploy failed — Deploy #12…".
+     *
+     * @param  array<string, mixed>  $payload
+     * @return string
+     */
+    private function heading(array $payload): string
+    {
+        $label = is_string($payload['event_label'] ?? null) ? $payload['event_label'] : ucfirst((string) $payload['event']);
+
+        return config('app.name').': '.$label.' — '.$payload['title'];
+    }
+
+    /**
+     * Get the text for the link button: "View incident" unless the payload says otherwise (deploys say "View deploy").
+     *
+     * @param  array<string, mixed>  $payload
+     * @return string
+     */
+    private function linkLabel(array $payload): string
+    {
+        return is_string($payload['url_label'] ?? null) ? $payload['url_label'] : 'View incident';
     }
 }

@@ -377,4 +377,34 @@
         </div>
     </x-signal.ui.settings-section>
     </x-signal.ui.page-tab-panel>
+
+    <x-signal.ui.page-tab-panel name="notifications" :current="$tab">
+    <x-signal.ui.settings-section id="notifications" :title="__('Deploy notifications')" :description="__('Tell Slack, Teams, Discord, a webhook or an inbox when a deploy to this environment goes live, fails or waits for approval. Destinations are set up under Monitoring → Alerts.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @if ($deployDestinations->isEmpty())
+                <p class="text-sm text-muted">{{ __('No alert destinations yet.') }} <a href="{{ route('monitoring.destinations', $project) }}" class="font-bold text-primary underline">{{ __('Add one under Alerts') }}</a></p>
+            @else
+                <form method="POST" action="{{ route('deploy.environments.notifications', [$project, $environment]) }}" class="grid gap-4">
+                    @csrf
+                    @method('PUT')
+                    <div class="grid gap-3">
+                        @foreach ($deployDestinations as $destination)
+                            @php($route = $deployRoutes->get($destination->id))
+                            <fieldset class="flex flex-wrap items-center justify-between gap-3 rounded-control border border-line p-3 text-sm" @disabled(! $canManage)>
+                                <legend class="sr-only">{{ $destination->name }}</legend>
+                                <span class="min-w-0"><span class="font-bold">{{ $destination->name }}</span> <span class="text-xs text-muted">· {{ $destination->type->label() }}@unless ($destination->enabled) · {{ __('paused') }}@endunless</span></span>
+                                <span class="flex flex-wrap gap-4">
+                                    <x-signal.ui.checkbox :id="'deploy-success-'.$destination->id" :name="'destinations['.$destination->id.'][]'" value="on_success" :checked="(bool) $route?->on_success" :restore="false">{{ __('Live') }}</x-signal.ui.checkbox>
+                                    <x-signal.ui.checkbox :id="'deploy-failure-'.$destination->id" :name="'destinations['.$destination->id.'][]'" value="on_failure" :checked="(bool) $route?->on_failure" :restore="false">{{ __('Failed') }}</x-signal.ui.checkbox>
+                                    <x-signal.ui.checkbox :id="'deploy-approval-'.$destination->id" :name="'destinations['.$destination->id.'][]'" value="on_approval" :checked="(bool) $route?->on_approval" :restore="false">{{ __('Needs approval') }}</x-signal.ui.checkbox>
+                                </span>
+                            </fieldset>
+                        @endforeach
+                    </div>
+                    @if ($canManage)<div><x-signal.ui.button type="submit" variant="secondary">{{ __('Save') }}</x-signal.ui.button></div>@endif
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+    </x-signal.ui.page-tab-panel>
 </x-signal.layouts.project>

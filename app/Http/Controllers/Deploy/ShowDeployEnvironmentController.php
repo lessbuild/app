@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Deploy;
 
+use App\Enums\AlertDestinationType;
+use App\Models\AlertDestination;
 use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Recipe;
@@ -19,7 +21,7 @@ final class ShowDeployEnvironmentController
 {
     /**
      * Show an environment's deploy settings, in tabs: controls, how deploys run, variables, workers, resources, and
-     * automation (schedules, tasks and hibernation), and recipes.
+     * automation (schedules, tasks and hibernation), recipes, and which alert destinations hear about deploys.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -31,7 +33,7 @@ final class ShowDeployEnvironmentController
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Environment $environment, ProjectOverviewQuery $overview, EnvironmentAutomationQuery $automation): View
     {
-        $tabs = array_filter(['controls' => __('Controls'), 'settings' => __('How deploys run'), 'variables' => __('Variables'), 'processes' => __('Workers'), 'resources' => __('Resources'), 'automation' => __('Automation'), 'recipes' => __('Recipes')]);
+        $tabs = array_filter(['controls' => __('Controls'), 'settings' => __('How deploys run'), 'variables' => __('Variables'), 'processes' => __('Workers'), 'resources' => __('Resources'), 'automation' => __('Automation'), 'recipes' => __('Recipes'), 'notifications' => __('Notifications')]);
 
         return view('deploy.environment', [
             'tabs' => $tabs,
@@ -42,6 +44,8 @@ final class ShowDeployEnvironmentController
             'canManage' => $user->can('configureDeploy', $environment),
             ...$automation->handle($environment),
             'environmentRecipes' => $environment->recipes()->with('recipe')->get(),
+            'deployDestinations' => AlertDestination::query()->forAccount($project->account)->where('type', '!=', AlertDestinationType::PagerDuty)->orderBy('name')->get(),
+            'deployRoutes' => $environment->deployNotifications()->get()->keyBy('alert_destination_id'),
             'libraryRecipes' => Recipe::query()->where('account_id', $project->account_id)->orderBy('name')->get(['id', 'name']),
         ]);
     }

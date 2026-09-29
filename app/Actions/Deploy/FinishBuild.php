@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Deploy;
 
+use App\Events\Deploy\DeployFinished;
 use App\Jobs\Deploy\ApplyEnvironmentRuntime;
 use App\Models\Build;
 use App\Models\Repository;
@@ -73,6 +74,7 @@ final class FinishBuild
             }
             $this->deployPendingPush($build->repository_id);
             $this->previews->buildFinished($finishedBuild);
+            DeployFinished::dispatch($finishedBuild);
         }
 
         return $finished;
