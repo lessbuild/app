@@ -55,6 +55,7 @@ use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
 use App\Services\Reports\WeeklyReport;
+use App\Services\Security\AttackWatch;
 use App\Services\Security\PatchSchedule;
 use App\Services\Security\ScanSchedule;
 use App\Services\Telemetry\IssueDigest;
@@ -99,6 +100,11 @@ Artisan::command('security:scan', function (ScanSchedule $schedule): void {
     $this->info("Queued {$schedule->queueDue()} security scans.");
 })->purpose('Queue the Security scans that are due');
 Schedule::command('security:scan')->everyFifteenMinutes()->withoutOverlapping();
+
+Artisan::command('security:watch', function (AttackWatch $watch): void {
+    $this->info("Blocked {$watch->run()} attacking addresses.");
+})->purpose('Block addresses attacking projects’ servers, and lift expired blocks');
+Schedule::command('security:watch')->everyFiveMinutes()->withoutOverlapping();
 
 Artisan::command('security:patch', function (PatchSchedule $schedule): void {
     $this->info("Started updates on {$schedule->runDue()} servers.");

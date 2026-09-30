@@ -281,6 +281,7 @@ return [
                 ['Security level and bots', 'On the Team plan, choose how suspicious a visitor must look before Cloudflare checks them, and turn on bot fight mode to challenge known bots and scrapers.'],
                 ['Under attack', 'During an attack, turn on Under attack mode: every visitor gets a short check before reaching the site. Turn it off again afterwards.'],
                 ['Per domain', 'Blocking countries or addresses and rate limits stay on each website’s Domains tab, under CDN and firewall.'],
+                ['Automatic blocking', 'On Pro and above, Security checks each website’s access log every five minutes and blocks addresses in the server’s firewall after 20 failed sign-ins, 10 requests for known vulnerable paths (such as /.env) or 3,000 requests in ten minutes. Security → Attacks shows who’s blocked, lets you unblock someone, and sets how long blocks last and which addresses are never blocked.'],
             ],
         ],
         'add-analytics' => [
