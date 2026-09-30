@@ -112,6 +112,48 @@ paths:
       responses:
         '200': { description: "Each site's ID, name, project, tracker ID, domains, timezone, whether it's verified and when it last received an event." }
         '401': { $ref: '#/components/responses/Unauthenticated' }
+  /v1/analytics/sites/{site}/events:
+    post:
+      tags: [Analytics]
+      summary: Send pageviews and events from a server
+      description: For events that happen on your server (a purchase confirmed by a webhook, an app without the tracker). Pass each visitor's IP address and User-Agent so they're counted like browser visits; both are used for the daily visitor hash, location and device, then discarded. Bots and the site's ignored addresses are skipped. Up to 100 events per request.
+      security: [{ apiToken: [analytics:write] }]
+      parameters:
+        - { name: site, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [events]
+              properties:
+                events:
+                  type: array
+                  maxItems: 100
+                  items:
+                    type: object
+                    required: [type, path]
+                    properties:
+                      id: { type: string, format: uuid, description: "Makes retries safe; generated when missing." }
+                      type: { type: string, enum: [pageview, event] }
+                      path: { type: string }
+                      name: { type: string, description: "The event's name (required for events)." }
+                      properties: { type: object, description: "Revenue, currency, items, and the custom properties the site keeps." }
+                      ip: { type: string }
+                      user_agent: { type: string }
+                      referrer: { type: string }
+                      utm_source: { type: string }
+                      utm_medium: { type: string }
+                      utm_campaign: { type: string }
+                      utm_term: { type: string }
+                      utm_content: { type: string }
+      responses:
+        '202': { description: 'Accepted: data.accepted and data.skipped counts.' }
+        '401': { $ref: '#/components/responses/Unauthenticated' }
+        '404': { description: "No such site in the token's account." }
+        '409': { description: Collection is paused for the site. }
+        '422': { description: Invalid events. }
   /v1/analytics/sites/{site}/report:
     get:
       tags: [Analytics]

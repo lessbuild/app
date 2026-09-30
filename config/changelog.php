@@ -8,6 +8,7 @@ return [
         'The tracker is under half its old size (about 2 KB compressed); link, download and page speed tracking load only when you turn them on.',
         'Leave out visits from your office or other addresses, count clicks on any element by adding a CSS class, and track single-page apps that route with #/paths.',
         'Give a client view-only access to one site with their own link, without adding them to your account.',
+        'Send pageviews and events from your server through the API and SDKs, for things that happen outside the browser.',
     ]],
     ['date' => '2026-09-30', 'title' => 'Security, a fifth service', 'changes' => [
         'A security score for each project, with every finding explained and a fix beside it.',

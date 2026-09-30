@@ -350,6 +350,7 @@ return [
             'steps' => [
                 ['Import from Google Analytics', 'On the site’s page, choose Connect Google Analytics, then pick the GA4 property and dates. Only days before your site’s own data are imported.'],
                 ['Raw data export', 'Under Raw data export, choose one of the project’s storage buckets. Each night, the previous day’s events are written as gzipped JSON lines, one file per day, ready for BigQuery or Athena.'],
+                ['From your server', 'Send pageviews and events from your backend with an API token that has the Analytics write scope: POST /api/v1/analytics/sites/{site}/events, or analyticsEvents() in the PHP and JavaScript SDKs. Include each visitor’s IP address and browser so they’re counted like browser visits.'],
                 ['Your own domain', 'Under Send through your own domain, copy the proxy rules for Caddy or Nginx and the matching snippet, so the tracker loads from your site and ad blockers don’t stop it.'],
             ],
         ],

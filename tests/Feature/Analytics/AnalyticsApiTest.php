@@ -56,4 +56,39 @@ final class AnalyticsApiTest extends TestCase
             ->assertJsonPath('data.metrics.pageviews.value', 2)->assertJsonPath('data.filters', ['path' => '/pricing'])->assertJsonPath('data.series.granularity', 'hour');
         $this->withToken($read)->getJson("/api/v1/analytics/sites/{$other->id}/report")->assertNotFound();
     }
+
+    /**
+     * Check a server sends pageviews and events with the visitor's address and browser, which set the device and
+     * location, while bots, ignored addresses and tokens without the write scope are refused or dropped.
+     *
+     * @return void
+     */
+    public function test_a_server_sends_events(): void
+    {
+        $owner = User::factory()->create();
+        $account = Account::factory()->withMember($owner)->create();
+        $project = Project::factory()->for($account)->withServices(['analytics'])->create();
+        $site = AnalyticsSite::factory()->for($project)->create(['timezone' => 'UTC', 'verified_at' => now(), 'excluded_ips' => ['192.0.2.0/24'], 'custom_properties' => ['plan']]);
+        $token = fn (array $scopes): string => app(CreateApiToken::class)->handle($owner, $account, new CreateApiTokenData('server', array_values($scopes), 30))->plainText;
+        $iphone = 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.4 Mobile/15E148 Safari/604.1';
+        $url = "/api/v1/analytics/sites/{$site->id}/events";
+
+        $this->withToken($token([ApiScope::AnalyticsRead]))->postJson($url, ['events' => [['type' => 'pageview', 'path' => '/']]])->assertForbidden();
+        $write = $token([ApiScope::AnalyticsWrite]);
+        $this->app['auth']->forgetGuards();
+        $this->withToken($write)->postJson($url, ['events' => [
+            ['type' => 'pageview', 'path' => '/pricing?x=1', 'ip' => '198.51.100.4', 'user_agent' => $iphone, 'referrer' => 'https://news.example/post', 'utm_source' => 'newsletter'],
+            ['type' => 'event', 'name' => 'signup', 'path' => '/signup', 'ip' => '198.51.100.4', 'user_agent' => $iphone, 'properties' => ['plan' => 'pro', 'secret' => 'x']],
+            ['type' => 'pageview', 'path' => '/', 'ip' => '192.0.2.10', 'user_agent' => $iphone],
+            ['type' => 'pageview', 'path' => '/', 'user_agent' => 'Googlebot/2.1 (+http://www.google.com/bot.html)'],
+        ]])->assertStatus(202)->assertJsonPath('data.accepted', 2)->assertJsonPath('data.skipped', 2);
+        $this->withToken($write)->postJson($url, ['events' => [['type' => 'event', 'path' => '/']]])->assertUnprocessable();
+
+        $events = AnalyticsEvent::query()->orderBy('id')->get();
+        $this->assertSame(['/pricing', '/signup'], $events->pluck('path')->all());
+        [$pageview, $signup] = [$events->where('path', '/pricing')->firstOrFail(), $events->where('path', '/signup')->firstOrFail()];
+        $this->assertSame(['Mobile', 'Safari', '17.4', 'iOS', '17.4', 'news.example', 'newsletter'], [$pageview->device_category, $pageview->browser, $pageview->browser_version, $pageview->operating_system, $pageview->os_version, $pageview->referrer_host, $pageview->utm_source]);
+        $this->assertSame(['name' => 'signup', 'props' => ['plan' => 'pro']], $signup->properties);
+        $this->assertSame($pageview->visitor_hash, $signup->visitor_hash, 'Same address and browser, same visitor.');
+    }
 }

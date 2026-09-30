@@ -6,6 +6,7 @@ use App\Http\Controllers\Analytics\CollectEventsController;
 use App\Http\Controllers\Analytics\PreflightCollectController;
 use App\Http\Controllers\Api\V1\Analytics\ListSitesController as AnalyticsSitesController;
 use App\Http\Controllers\Api\V1\Analytics\ShowReportController as AnalyticsReportController;
+use App\Http\Controllers\Api\V1\Analytics\StoreServerEventsController;
 use App\Http\Controllers\Api\V1\Deploy\ApplyConfigurationReviewController;
 use App\Http\Controllers\Api\V1\Deploy\ApplyWorkflowController;
 use App\Http\Controllers\Api\V1\Deploy\CreateConfigurationReviewController;
@@ -43,6 +44,9 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('v1')->middleware(['auth:sanctum', 'token.account', 'throttle:api'])->group(function (): void {
     Route::get('/account', ShowAccountController::class)->middleware('abilities:account:read')->name('api.v1.account');
 
+    Route::middleware('abilities:analytics:write')->prefix('analytics')->group(function (): void {
+        Route::post('/sites/{site}/events', StoreServerEventsController::class)->whereNumber('site')->middleware('throttle:collect')->name('api.v1.analytics.events');
+    });
     Route::middleware('abilities:analytics:read')->prefix('analytics')->group(function (): void {
         Route::get('/sites', AnalyticsSitesController::class)->name('api.v1.analytics.sites');
         Route::get('/sites/{site}/report', AnalyticsReportController::class)->whereNumber('site')->name('api.v1.analytics.report');

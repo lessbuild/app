@@ -66,6 +66,16 @@ export class BuildPusher {
         return this.#data('GET', `/analytics/sites/${Number(siteId)}/report?${query}`);
     }
 
+    /**
+     * Send pageviews and custom events from your server (needs the analytics:write scope). Pass each visitor's IP
+     * address and User-Agent so they're counted like browser visits.
+     * @param {number} siteId
+     * @param {Array<{ type: 'pageview'|'event', path: string, name?: string, properties?: Record<string, unknown>, ip?: string, user_agent?: string, referrer?: string, utm_source?: string, utm_medium?: string, utm_campaign?: string }>} events
+     */
+    analyticsEvents(siteId, events) {
+        return this.#data('POST', `/analytics/sites/${Number(siteId)}/events`, { events });
+    }
+
     /** Recent deploys, newest first. @param {{ limit?: number }} [options] */
     deployments({ limit = 25 } = {}) {
         return this.#data('GET', `/deployments?limit=${Math.max(1, Math.min(100, limit))}`);

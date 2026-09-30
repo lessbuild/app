@@ -93,6 +93,19 @@ final class Client
     }
 
     /**
+     * Send pageviews and custom events from your server (needs the analytics:write scope). Pass each visitor's IP
+     * address and User-Agent so they're counted like browser visits; both are discarded after hashing.
+     *
+     * @param  int  $siteId
+     * @param  list<array<string, mixed>>  $events  each with type (pageview or event), path, and optionally name, properties, ip, user_agent, referrer and utm_* tags
+     * @return array<string, mixed> accepted and skipped counts
+     */
+    public function analyticsEvents(int $siteId, array $events): array
+    {
+        return $this->data('POST', '/analytics/sites/'.$siteId.'/events', ['events' => $events]);
+    }
+
+    /**
      * List recent deploys, newest first.
      *
      * @param  int  $limit  1–100
