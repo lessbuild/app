@@ -59,6 +59,8 @@ final class SitesTest extends TestCase
         $this->actingAs($this->owner)->put("{$base}/{$site->id}", ['name' => 'Shop', 'domains' => 'shop.example.com', 'timezone' => 'UTC', 'excluded_paths' => "/admin/*\n/preview"])->assertRedirect();
         $this->assertSame(['/admin/*', '/preview'], $site->refresh()->excluded_paths);
         $this->assertTrue($site->excludesPath('/admin/users'));
+        $this->actingAs($this->owner)->put("{$base}/{$site->id}", ['name' => 'Shop', 'domains' => 'shop.example.com', 'timezone' => 'UTC', 'custom_properties' => 'plan, author, plan'])->assertRedirect();
+        $this->assertSame(['plan', 'author'], $site->refresh()->custom_properties);
     }
 
     public function test_sites_with_a_verified_hostname_are_verified_straight_away_and_bad_hostnames_are_refused(): void

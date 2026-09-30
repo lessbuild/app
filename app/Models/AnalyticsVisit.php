@@ -17,6 +17,11 @@ use Illuminate\Support\Carbon;
  * @property int $pageviews
  * @property int $conversion_count
  * @property string|null $country_code
+ * @property string|null $entry_utm_term
+ * @property string|null $entry_utm_content
+ * @property string|null $entry_channel the marketing channel the visit arrived through
+ * @property string|null $region
+ * @property string|null $city
  */
 class AnalyticsVisit extends Model
 {
@@ -32,7 +37,7 @@ class AnalyticsVisit extends Model
      *
      * @var list<string>
      */
-    protected $fillable = ['site_id', 'visit_key', 'visitor_hash', 'session_id', 'started_at', 'last_seen_at', 'landing_path', 'exit_path', 'entry_referrer_host', 'entry_utm_source', 'entry_utm_medium', 'entry_utm_campaign', 'country_code', 'pageviews', 'conversion_count'];
+    protected $fillable = ['site_id', 'visit_key', 'visitor_hash', 'session_id', 'started_at', 'last_seen_at', 'landing_path', 'exit_path', 'entry_referrer_host', 'entry_utm_source', 'entry_utm_medium', 'entry_utm_campaign', 'entry_utm_term', 'entry_utm_content', 'entry_channel', 'country_code', 'region', 'city', 'pageviews', 'conversion_count'];
 
     /**
      * Get the attributes that should be cast.

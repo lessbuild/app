@@ -159,7 +159,12 @@ class RebuildSiteVisits
                     'entry_utm_source' => $event->type === 'pageview' ? $event->utm_source : null,
                     'entry_utm_medium' => $event->type === 'pageview' ? $event->utm_medium : null,
                     'entry_utm_campaign' => $event->type === 'pageview' ? $event->utm_campaign : null,
+                    'entry_utm_term' => $event->type === 'pageview' ? $event->utm_term : null,
+                    'entry_utm_content' => $event->type === 'pageview' ? $event->utm_content : null,
+                    'entry_channel' => $event->type === 'pageview' ? $event->channel : null,
                     'country_code' => $event->country_code,
+                    'region' => $event->region,
+                    'city' => $event->city,
                     'pageviews' => $event->type === 'pageview' ? 1 : 0,
                     'conversion_count' => $goals->contains(fn (AnalyticsGoal $goal): bool => $goal->isCompletedBy($event)) ? 1 : 0,
                     'created_at' => $now,
@@ -174,6 +179,8 @@ class RebuildSiteVisits
             $states[$identity]['last_seen'] = $occurredAt;
             $visits[$visitKey]['last_seen_at'] = $occurredAt;
             $visits[$visitKey]['country_code'] ??= $event->country_code;
+            $visits[$visitKey]['region'] ??= $event->region;
+            $visits[$visitKey]['city'] ??= $event->city;
             if ($event->type === 'pageview') {
                 $visits[$visitKey]['landing_path'] ??= $event->path;
                 $visits[$visitKey]['exit_path'] = $event->path;
@@ -182,6 +189,9 @@ class RebuildSiteVisits
                     $visits[$visitKey]['entry_utm_source'] = $event->utm_source;
                     $visits[$visitKey]['entry_utm_medium'] = $event->utm_medium;
                     $visits[$visitKey]['entry_utm_campaign'] = $event->utm_campaign;
+                    $visits[$visitKey]['entry_utm_term'] = $event->utm_term;
+                    $visits[$visitKey]['entry_utm_content'] = $event->utm_content;
+                    $visits[$visitKey]['entry_channel'] = $event->channel;
                 }
                 $visits[$visitKey]['pageviews']++;
             }

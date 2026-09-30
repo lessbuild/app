@@ -63,6 +63,7 @@ final class SaveSite
             'domains' => array_values(array_unique($domains)),
             'timezone' => $details->timezone,
             'excluded_paths' => array_values(array_filter(array_map(trim(...), $details->excludedPaths))),
+            'custom_properties' => $details->customProperties === [] ? null : $details->customProperties,
         ])->save();
 
         if (! $site->isVerified()) {

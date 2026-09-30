@@ -52,6 +52,19 @@
         return 'Other';
     }
 
+    function browserVersion() {
+        var ua = navigator.userAgent;
+        var match = ua.match(/(?:edg(?:e|a|ios)?|opr|samsungbrowser|yabrowser|vivaldi|firefox|fxios|crios|chrome)\/(\d+)/i) || ua.match(/version\/(\d+(?:\.\d+)?).*safari/i);
+        return match ? match[1] : null;
+    }
+
+    function osVersion() {
+        var ua = navigator.userAgent;
+        var match = ua.match(/(?:iphone|cpu) os (\d+)[_.](\d+)/i) || ua.match(/android (\d+(?:\.\d+)?)/i) || ua.match(/windows nt (\d+\.\d+)/i) || ua.match(/mac os x (\d+)[_.](\d+)/i) || ua.match(/cros \S+ (\d+)/i);
+        if (!match) return null;
+        return match[2] !== undefined && /[_.]/.test(match[0]) && !/android|windows/i.test(match[0]) ? match[1] + '.' + match[2] : match[1];
+    }
+
     function device() {
         return /tablet|ipad/i.test(navigator.userAgent) ? 'Tablet' : /mobile|iphone|android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop';
     }
@@ -67,7 +80,7 @@
         return 'Other';
     }
 
-    function push(type, properties) {
+    function push(type, properties, path) {
         if (!collectionAllowed()) return;
         var url = new URL(window.location.href);
         var referrerHost = null;
@@ -78,14 +91,19 @@
             id: id(),
             type: type,
             occurred_at: new Date().toISOString(),
-            path: url.pathname,
+            path: path || url.pathname,
             referrer_host: referrerHost,
             utm_source: url.searchParams.get('utm_source'),
             utm_medium: url.searchParams.get('utm_medium'),
             utm_campaign: url.searchParams.get('utm_campaign'),
+            utm_term: url.searchParams.get('utm_term'),
+            utm_content: url.searchParams.get('utm_content'),
             device: device(),
+            screen: window.screen ? Math.round(window.screen.width) : null,
             browser: browser(),
+            browser_version: browserVersion(),
             os: operatingSystem(),
+            os_version: osVersion(),
             properties: properties || null
         });
         flush();
@@ -109,9 +127,46 @@
         });
     }
 
+    // Engagement: how long each page is visible and how far down it's scrolled, sent when the page is hidden or left
+    // (the time since the last report, and the furthest scroll so far).
+    var pagePath = window.location.pathname;
+    var visibleSince = document.visibilityState === 'visible' ? Date.now() : null;
+    var engagedMs = 0;
+    var furthest = 0;
+    function scrollDepth() {
+        var root = document.documentElement;
+        var height = Math.max(root.scrollHeight, document.body ? document.body.scrollHeight : 0);
+        if (height <= 0) return 100;
+        return Math.min(100, Math.round(((window.scrollY || root.scrollTop) + window.innerHeight) / height * 100));
+    }
+    function reportEngagement() {
+        if (visibleSince !== null) {
+            engagedMs += Date.now() - visibleSince;
+            visibleSince = document.visibilityState === 'visible' ? Date.now() : null;
+        }
+        furthest = Math.max(furthest, scrollDepth());
+        if (engagedMs >= 1000) {
+            push('engagement', { scroll: furthest, engaged_ms: engagedMs }, pagePath);
+            flush();
+        }
+        engagedMs = 0;
+    }
+    window.addEventListener('scroll', function () { furthest = Math.max(furthest, scrollDepth()); }, { passive: true });
+    document.addEventListener('visibilitychange', function () {
+        if (document.visibilityState === 'hidden') {
+            reportEngagement();
+        } else {
+            visibleSince = Date.now();
+        }
+    });
+
     function navigationPageview() {
         if (window.location.href === lastPage) return;
+        reportEngagement();
         lastPage = window.location.href;
+        pagePath = window.location.pathname;
+        furthest = 0;
+        visibleSince = document.visibilityState === 'visible' ? Date.now() : null;
         push('pageview');
     }
 
@@ -212,5 +267,5 @@
         };
     });
     window.addEventListener('popstate', navigationPageview);
-    window.addEventListener('pagehide', flush, { once: true });
+    window.addEventListener('pagehide', function () { reportEngagement(); flush(); });
 }());

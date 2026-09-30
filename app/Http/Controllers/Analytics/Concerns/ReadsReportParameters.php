@@ -52,7 +52,7 @@ trait ReadsReportParameters
     private function reportFilters(Request $request): array
     {
         $filters = [];
-        foreach (['path' => 2048, 'source' => 255, 'campaign' => 150, 'device' => 32, 'browser' => 64, 'os' => 64] as $key => $max) {
+        foreach (['path' => 2048, 'source' => 255, 'campaign' => 150, 'device' => 32, 'browser' => 64, 'os' => 64, 'channel' => 32, 'region' => 100, 'city' => 100, 'screen' => 16, 'term' => 150, 'content' => 150] as $key => $max) {
             $value = trim($request->string($key)->toString());
             $filters[$key] = $value !== '' ? mb_substr($value, 0, $max) : null;
         }

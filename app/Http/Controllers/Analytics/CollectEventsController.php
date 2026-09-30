@@ -9,6 +9,7 @@ use App\Contracts\Analytics\CountryLookup;
 use App\Data\Analytics\NormalizedEvent;
 use App\Http\Requests\Analytics\CollectEventsRequest;
 use App\Models\AnalyticsSite;
+use App\Support\Analytics\Channel;
 use App\Support\Analytics\CollectionRequest;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
@@ -42,7 +43,7 @@ final class CollectEventsController
         }
 
         $now = CarbonImmutable::now();
-        $country = $countries->country($request->ip());
+        $location = $countries->location($request->ip());
         /** @var list<array<string, mixed>> $input */
         $input = $request->validated('events');
         $events = [];
@@ -70,11 +71,20 @@ final class CollectEventsController
                 visitorHash: hash_hmac('sha256', ($event['visitor'] ?? '').'|'.$request->ip().'|'.($request->userAgent() ?? '').'|'.$now->setTimezone($site->timezone)->toDateString(), (string) config('analytics.visitor_key')),
                 sessionId: CollectionRequest::cleanValue($event['session'] ?? null, 64),
                 properties: match ($event['type']) {
-                    'event' => CollectionRequest::safeProperties($event['properties'] ?? []),
+                    'event' => CollectionRequest::safeProperties($event['properties'] ?? [], $site->custom_properties ?? []),
                     'vitals' => CollectionRequest::safeVitals($event['properties'] ?? []) ?: null,
+                    'engagement' => CollectionRequest::safeEngagement($event['properties'] ?? []),
                     default => null,
                 },
-                countryCode: $country,
+                countryCode: $location['country'],
+                utmTerm: CollectionRequest::cleanValue($event['utm_term'] ?? null, 150),
+                utmContent: CollectionRequest::cleanValue($event['utm_content'] ?? null, 150),
+                channel: Channel::for($event['utm_source'] ?? null, $event['utm_medium'] ?? null, $event['utm_campaign'] ?? null, CollectionRequest::cleanHost($event['referrer_host'] ?? null), $site->domains),
+                screenSize: CollectionRequest::screenSize($event['screen'] ?? null),
+                browserVersion: CollectionRequest::version($event['browser_version'] ?? null),
+                osVersion: CollectionRequest::version($event['os_version'] ?? null),
+                region: $location['region'],
+                city: $location['city'],
             );
         }
 

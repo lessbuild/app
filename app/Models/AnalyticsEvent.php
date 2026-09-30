@@ -17,6 +17,14 @@ use Illuminate\Support\Carbon;
  * @property string $type
  * @property Carbon $occurred_at
  * @property string|null $country_code
+ * @property string|null $utm_term
+ * @property string|null $utm_content
+ * @property string|null $channel the marketing channel, from the tags and referrer
+ * @property string|null $screen_size Mobile, Tablet, Laptop or Desktop
+ * @property string|null $browser_version
+ * @property string|null $os_version
+ * @property string|null $region
+ * @property string|null $city
  * @property Carbon $received_at
  * @property string $path
  * @property string|null $referrer_host
@@ -38,7 +46,7 @@ class AnalyticsEvent extends Model
      *
      * @var list<string>
      */
-    protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'country_code', 'visitor_hash', 'session_id', 'properties'];
+    protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'country_code', 'utm_term', 'utm_content', 'channel', 'screen_size', 'browser_version', 'os_version', 'region', 'city', 'visitor_hash', 'session_id', 'properties'];
 
     /**
      * Get the attributes that should be cast.
@@ -111,7 +119,13 @@ class AnalyticsEvent extends Model
             ->when($filters['device'] ?? null, fn (Builder $query, string $device) => $query->where('device_category', $device))
             ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country))
             ->when($filters['browser'] ?? null, fn (Builder $query, string $browser) => $query->where('browser', $browser))
-            ->when($filters['os'] ?? null, fn (Builder $query, string $os) => $query->where('operating_system', $os));
+            ->when($filters['os'] ?? null, fn (Builder $query, string $os) => $query->where('operating_system', $os))
+            ->when($filters['channel'] ?? null, fn (Builder $query, string $channel) => $query->where('channel', $channel))
+            ->when($filters['region'] ?? null, fn (Builder $query, string $region) => $query->where('region', $region))
+            ->when($filters['city'] ?? null, fn (Builder $query, string $city) => $query->where('city', $city))
+            ->when($filters['screen'] ?? null, fn (Builder $query, string $screen) => $query->where('screen_size', $screen))
+            ->when($filters['term'] ?? null, fn (Builder $query, string $term) => $query->where('utm_term', $term))
+            ->when($filters['content'] ?? null, fn (Builder $query, string $content) => $query->where('utm_content', $content));
     }
 
     /**

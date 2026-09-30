@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
  * @property string $name
  * @property string $public_id
  * @property list<string> $domains
+ * @property list<string>|null $custom_properties custom event property keys the site keeps, for breakdowns
  * @property list<string>|null $excluded_paths
  * @property string $timezone
  * @property Carbon|null $verified_at
@@ -87,6 +88,7 @@ class AnalyticsSite extends Model
     {
         return [
             'domains' => 'array',
+            'custom_properties' => 'array',
             'excluded_paths' => 'array',
             'verified_at' => 'datetime',
             'collection_paused_at' => 'datetime',

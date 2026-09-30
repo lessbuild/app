@@ -85,7 +85,7 @@ final class RebuildReportAggregates
 
             $rows[] = $this->row($site, $date, 'all', null, $dayEvents, $dayVisits, $goals, $now);
 
-            foreach (['path' => 'path', 'device' => 'device_category', 'browser' => 'browser', 'operating_system' => 'operating_system'] as $dimension => $field) {
+            foreach (['path' => 'path', 'device' => 'device_category', 'browser' => 'browser', 'operating_system' => 'operating_system', 'screen_size' => 'screen_size'] as $dimension => $field) {
                 foreach ($dayEvents->where('type', 'pageview')->groupBy(fn (AnalyticsEvent $event): string => $event->{$field} ?: 'Unknown') as $value => $items) {
                     $dimensionVisits = $this->visitsForEvents($items, $visitMap);
                     $rows[] = $this->row($site, $date, $dimension, $value, collect($items), $dimensionVisits, $goals, $now);
@@ -100,6 +100,13 @@ final class RebuildReportAggregates
             foreach ($dayVisits->groupBy(fn (AnalyticsVisit $visit): string => $visit->country_code ?: 'Unknown') as $value => $items) {
                 $countryVisits = collect($items);
                 $rows[] = $this->row($site, $date, 'country', $value, $this->eventsForVisits($dayEvents, $countryVisits, $visitMap), $countryVisits, $goals, $now);
+            }
+
+            foreach (['channel' => 'entry_channel', 'city' => 'city'] as $dimension => $field) {
+                foreach ($dayVisits->groupBy(fn (AnalyticsVisit $visit): string => $visit->{$field} ?: 'Unknown') as $value => $items) {
+                    $dimensionVisits = collect($items);
+                    $rows[] = $this->row($site, $date, $dimension, $value, $this->eventsForVisits($dayEvents, $dimensionVisits, $visitMap), $dimensionVisits, $goals, $now);
+                }
             }
 
             foreach ($dayVisits->filter(fn (AnalyticsVisit $visit): bool => $visit->entry_utm_campaign !== null)->groupBy('entry_utm_campaign') as $value => $items) {

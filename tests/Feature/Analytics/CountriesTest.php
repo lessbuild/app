@@ -46,6 +46,17 @@ final class CountriesTest extends TestCase
             {
                 return $ip === '203.0.113.9' ? 'DE' : null;
             }
+
+            /**
+             * Answer Berlin for the same address.
+             *
+             * @param  string|null  $ip
+             * @return array{country: string|null, region: string|null, city: string|null}
+             */
+            public function location(?string $ip): array
+            {
+                return $ip === '203.0.113.9' ? ['country' => 'DE', 'region' => 'Land Berlin', 'city' => 'Berlin'] : ['country' => null, 'region' => null, 'city' => null];
+            }
         });
         $owner = User::factory()->create();
         $project = Project::factory()->for(Account::factory()->withMember($owner))->withServices(['analytics'])->create();
@@ -59,12 +70,16 @@ final class CountriesTest extends TestCase
 
         $this->assertSame(['DE', null], AnalyticsEvent::query()->orderBy('id')->pluck('country_code')->all());
         $this->assertContains('DE', AnalyticsVisit::query()->pluck('country_code')->all());
+        $this->assertSame(['Land Berlin', 'Berlin'], [AnalyticsVisit::query()->where('country_code', 'DE')->value('region'), AnalyticsVisit::query()->where('country_code', 'DE')->value('city')]);
         app(RefreshRecentAggregates::class)->handle();
         $this->assertDatabaseHas(AnalyticsDailyAggregate::class, ['site_id' => $site->id, 'dimension' => 'country', 'dimension_value' => 'DE', 'visits' => 1]);
 
         $report = app(AnalyticsReportQuery::class)->handle($site, 7);
         $this->assertEqualsCanonicalizing([['label' => 'DE', 'value' => 1], ['label' => 'Unknown', 'value' => 1]], $report['countries']);
         $this->assertSame('1', app(AnalyticsReportQuery::class)->handle($site, 7, ['country' => 'DE'])['metrics'][0]['value']);
+        $this->assertSame([['label' => 'Berlin', 'value' => 1]], $report['cities']);
+        $this->assertSame([['label' => 'Land Berlin', 'value' => 1]], $report['regions']);
+        $this->assertSame('1', app(AnalyticsReportQuery::class)->handle($site, 7, ['city' => 'Berlin'])['metrics'][0]['value']);
 
         $this->actingAs($owner)->get("/projects/{$project->id}/analytics?days=7")->assertOk()
             ->assertSee(__('Countries'))->assertSee('🇩🇪 Germany')->assertSee('country=DE', false);

@@ -41,7 +41,7 @@ final class ShowReportController
             $metrics[Str::snake($metric['label'])] = ['value' => $metric['raw'] ?? null, 'change' => $metric['change']];
         }
         $lists = [];
-        foreach (['pages', 'entryPages', 'exitPages', 'sources', 'countries', 'campaigns', 'devices', 'browsers', 'operatingSystems', 'outboundLinks', 'fileDownloads', 'notFound'] as $key) {
+        foreach (['pages', 'entryPages', 'exitPages', 'sources', 'countries', 'campaigns', 'devices', 'browsers', 'operatingSystems', 'outboundLinks', 'fileDownloads', 'notFound', 'channels', 'regions', 'cities', 'screenSizes', 'browserVersions', 'osVersions', 'terms', 'contents', 'engagement'] as $key) {
             $lists[Str::snake($key)] = $summary[$key] ?? [];
         }
 

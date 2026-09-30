@@ -119,6 +119,21 @@ final class AnalyticsReportQuery
             'campaigns' => $hasVisits
                 ? $this->rank($currentVisits()->whereNotNull('entry_utm_campaign'), 'entry_utm_campaign')
                 : $this->rank($currentEvents()->whereNotNull('utm_campaign'), 'utm_campaign'),
+            'channels' => $hasVisits
+                ? $this->rank($currentVisits()->where('pageviews', '>', 0), $this->labelOf('entry_channel'))
+                : $this->rank($currentEvents()->where('type', 'pageview'), $this->labelOf('channel')),
+            'terms' => $hasVisits
+                ? $this->rank($currentVisits()->whereNotNull('entry_utm_term'), 'entry_utm_term')
+                : $this->rank($currentEvents()->whereNotNull('utm_term'), 'utm_term'),
+            'contents' => $hasVisits
+                ? $this->rank($currentVisits()->whereNotNull('entry_utm_content'), 'entry_utm_content')
+                : $this->rank($currentEvents()->whereNotNull('utm_content'), 'utm_content'),
+            'regions' => $this->rank($hasVisits ? $currentVisits()->whereNotNull('region') : $currentEvents()->where('type', 'pageview')->whereNotNull('region'), 'region'),
+            'cities' => $this->rank($hasVisits ? $currentVisits()->whereNotNull('city') : $currentEvents()->where('type', 'pageview')->whereNotNull('city'), 'city'),
+            'screenSizes' => $this->rank($currentEvents()->where('type', 'pageview')->whereNotNull('screen_size'), 'screen_size'),
+            'browserVersions' => $this->rank($currentEvents()->where('type', 'pageview')->whereNotNull('browser_version'), "COALESCE(browser, 'Other') || ' ' || browser_version"),
+            'osVersions' => $this->rank($currentEvents()->where('type', 'pageview')->whereNotNull('os_version'), "COALESCE(operating_system, 'Other') || ' ' || os_version"),
+            'engagement' => $this->engagement($currentEvents()),
             'outboundLinks' => $this->rank($this->automaticEvents($currentEvents(), 'outbound_link'), $this->labelOf($this->property('url'))),
             'fileDownloads' => $this->rank($this->automaticEvents($currentEvents(), 'file_download'), $this->labelOf($this->property('file'))),
             'notFound' => $this->rank($this->automaticEvents($currentEvents(), 'not_found'), $this->labelOf('path')),
@@ -191,7 +206,7 @@ final class AnalyticsReportQuery
 
     /**
      * Start a query for the site's visits last seen between two times, with the report's filters applied. Source and
-     * campaign filters match where the visit started; path, device, browser and system filters keep visits with a matching event.
+     * campaign filters match where the visit started; path, device, browser, system and screen filters keep visits with a matching event.
      *
      * @param  AnalyticsSite  $site
      * @param  CarbonImmutable  $from
@@ -205,6 +220,7 @@ final class AnalyticsReportQuery
         $device = $filters['device'] ?? null;
         $browser = $filters['browser'] ?? null;
         $os = $filters['os'] ?? null;
+        $screen = $filters['screen'] ?? null;
 
         return AnalyticsVisit::query()
             ->where('site_id', $site->id)
@@ -214,7 +230,12 @@ final class AnalyticsReportQuery
             }))
             ->when($filters['campaign'] ?? null, fn (Builder $query, string $campaign) => $query->where('entry_utm_campaign', $campaign))
             ->when($filters['country'] ?? null, fn (Builder $query, string $country) => $query->where('country_code', $country))
-            ->when($path !== null || $device !== null || $browser !== null || $os !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $device, $browser, $os): void {
+            ->when($filters['channel'] ?? null, fn (Builder $query, string $channel) => $query->where('entry_channel', $channel))
+            ->when($filters['region'] ?? null, fn (Builder $query, string $region) => $query->where('region', $region))
+            ->when($filters['city'] ?? null, fn (Builder $query, string $city) => $query->where('city', $city))
+            ->when($filters['term'] ?? null, fn (Builder $query, string $term) => $query->where('entry_utm_term', $term))
+            ->when($filters['content'] ?? null, fn (Builder $query, string $content) => $query->where('entry_utm_content', $content))
+            ->when($path !== null || $device !== null || $browser !== null || $os !== null || $screen !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $device, $browser, $os, $screen): void {
                 $events->selectRaw('1')->from('analytics_events as visit_events')
                     ->whereColumn('visit_events.site_id', 'analytics_visits.site_id')
                     ->where(function (QueryBuilder $identity): void {
@@ -226,7 +247,8 @@ final class AnalyticsReportQuery
                     ->when($path, fn (QueryBuilder $query, string $path) => $query->where('visit_events.path', $path))
                     ->when($device, fn (QueryBuilder $query, string $device) => $query->where('visit_events.device_category', $device))
                     ->when($browser, fn (QueryBuilder $query, string $browser) => $query->where('visit_events.browser', $browser))
-                    ->when($os, fn (QueryBuilder $query, string $os) => $query->where('visit_events.operating_system', $os));
+                    ->when($os, fn (QueryBuilder $query, string $os) => $query->where('visit_events.operating_system', $os))
+                    ->when($screen, fn (QueryBuilder $query, string $screen) => $query->where('visit_events.screen_size', $screen));
             }));
     }
 
@@ -405,14 +427,45 @@ final class AnalyticsReportQuery
     }
 
     /**
-     * Get a SQL expression reading one text property of an event's properties.
+     * Summarise engagement on the ten most viewed pages: pageviews, average time on page (visible time the tracker
+     * reported, divided by the page's pageviews) and average scroll depth. Pages with no engagement reports show
+     * nulls, since older snippets don't send them.
      *
-     * @param  'name'|'url'|'file'  $key
+     * @param  Builder<AnalyticsEvent>  $events
+     * @return list<array{path: string, pageviews: int, seconds: int|null, scroll: int|null}>
+     */
+    private function engagement(Builder $events): array
+    {
+        return array_values($events->whereIn('type', ['pageview', 'engagement'])->toBase()
+            ->selectRaw("path, COUNT(CASE WHEN type = 'pageview' THEN 1 END) AS pageviews")
+            ->selectRaw("SUM(CASE WHEN type = 'engagement' THEN ".$this->property('engaged_ms').' END) AS engaged_ms')
+            ->selectRaw("AVG(CASE WHEN type = 'engagement' THEN ".$this->property('scroll').' END) AS scroll')
+            ->groupBy('path')
+            ->havingRaw("COUNT(CASE WHEN type = 'pageview' THEN 1 END) > 0")
+            ->orderByDesc('pageviews')
+            ->orderBy('path')
+            ->limit(10)
+            ->get()
+            ->map(fn (object $row): array => [
+                'path' => (string) $row->path,
+                'pageviews' => (int) $row->pageviews,
+                'seconds' => $row->engaged_ms === null ? null : (int) round((float) $row->engaged_ms / 1000 / max(1, (int) $row->pageviews)),
+                'scroll' => $row->scroll === null ? null : (int) round((float) $row->scroll),
+            ])
+            ->all());
+    }
+
+    /**
+     * Get a SQL expression reading one property of an event's properties: text for name, url and file; numbers for an
+     * engagement report's scroll and engaged_ms.
+     *
+     * @param  'name'|'url'|'file'|'scroll'|'engaged_ms'  $key
      * @return literal-string
      */
     private function property(string $key): string
     {
         return match ($key) {
+            'scroll', 'engaged_ms' => DB::getDriverName() === 'pgsql' ? "CAST(properties->>'{$key}' AS NUMERIC)" : "json_extract(properties, '$.{$key}')",
             'name' => DB::getDriverName() === 'pgsql' ? "properties->>'name'" : "json_extract(properties, '$.name')",
             'url' => DB::getDriverName() === 'pgsql' ? "properties->>'url'" : "json_extract(properties, '$.url')",
             'file' => DB::getDriverName() === 'pgsql' ? "properties->>'file'" : "json_extract(properties, '$.file')",
@@ -569,6 +622,15 @@ final class AnalyticsReportQuery
             'browsers' => $this->aggregateRanking($site, 'browser', $start, $end, 'pageviews'),
             'operatingSystems' => $this->aggregateRanking($site, 'operating_system', $start, $end, 'pageviews'),
             'campaigns' => $this->aggregateRanking($site, 'campaign', $start, $end, 'visits'),
+            'channels' => $this->aggregateRanking($site, 'channel', $start, $end, 'visits'),
+            'terms' => [],
+            'contents' => [],
+            'regions' => [],
+            'cities' => $this->aggregateRanking($site, 'city', $start, $end, 'visits'),
+            'screenSizes' => $this->aggregateRanking($site, 'screen_size', $start, $end, 'pageviews'),
+            'browserVersions' => [],
+            'osVersions' => [],
+            'engagement' => [],
             'outboundLinks' => [],
             'fileDownloads' => [],
             'notFound' => [],

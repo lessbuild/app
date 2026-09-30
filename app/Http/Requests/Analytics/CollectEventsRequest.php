@@ -39,7 +39,7 @@ final class CollectEventsRequest extends FormRequest
         return [
             'events' => ['required', 'array', 'min:1', 'max:20'],
             'events.*.id' => ['required', 'uuid'],
-            'events.*.type' => ['required', 'string', 'in:pageview,event,vitals'],
+            'events.*.type' => ['required', 'string', 'in:pageview,event,vitals,engagement'],
             // The client timestamp is accepted only for schema compatibility;
             // collection always records the server receipt time.
             'events.*.occurred_at' => ['nullable', 'date'],
@@ -48,12 +48,17 @@ final class CollectEventsRequest extends FormRequest
             'events.*.utm_source' => ['nullable', 'string', 'max:100'],
             'events.*.utm_medium' => ['nullable', 'string', 'max:100'],
             'events.*.utm_campaign' => ['nullable', 'string', 'max:150'],
+            'events.*.utm_term' => ['nullable', 'string', 'max:150'],
+            'events.*.utm_content' => ['nullable', 'string', 'max:150'],
+            'events.*.screen' => ['nullable', 'integer', 'min:0', 'max:20000'],
+            'events.*.browser_version' => ['nullable', 'string', 'max:32'],
+            'events.*.os_version' => ['nullable', 'string', 'max:32'],
             'events.*.device' => ['nullable', 'string', 'max:32'],
             'events.*.browser' => ['nullable', 'string', 'max:64'],
             'events.*.os' => ['nullable', 'string', 'max:64'],
             'events.*.visitor' => ['nullable', 'string', 'max:64'],
             'events.*.session' => ['nullable', 'string', 'max:64'],
-            'events.*.properties' => ['nullable', 'array', 'max:8'],
+            'events.*.properties' => ['nullable', 'array', 'max:24'],
         ];
     }
 }

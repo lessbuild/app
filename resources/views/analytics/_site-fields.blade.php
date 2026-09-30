@@ -9,3 +9,4 @@
     @endforeach
 </x-signal.ui.select-field>
 <x-signal.ui.textarea-field name="excluded_paths" :label="__('Paths to ignore')" :value="$excludedLines" :description="__('Optional. One pattern per line; * matches anything, e.g. /admin/*.')" rows="2" />
+<x-signal.ui.input-field name="custom_properties" :label="__('Custom properties to keep')" :value="$site ? implode(', ', $site->custom_properties ?? []) : null" maxlength="500" placeholder="plan, author, logged_in" :description="__('Optional. Up to 10 property names sent with custom events, for breakdowns. Others are dropped, and values that look like email addresses are never kept, so don’t send personal data.')" />

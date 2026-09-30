@@ -79,13 +79,16 @@ final class CollectionRequest
 
     /**
      * Keep a custom event's name, its revenue (an amount up to a billion with two decimals, and a three-letter
-     * currency, USD when none is given) and, for the tracker's automatic events, their link or file (host and path
-     * only, without query strings); nothing else a site sends is stored.
+     * currency, USD when none is given), for the tracker's automatic events their link or file (host and path only,
+     * without query strings), up to 20 purchased items (id, name, category, price and quantity), and the custom
+     * properties the site has chosen to keep (text, number or yes/no values cut to 100 characters, never anything
+     * that looks like an email address) for breakdowns.
      *
      * @param  mixed  $properties
-     * @return array{name?: string, url?: string, file?: string, revenue?: float, currency?: string}
+     * @param  list<string>  $customKeys  the property names the site keeps
+     * @return array{name?: string, url?: string, file?: string, revenue?: float, currency?: string, items?: list<array{id: string|null, name: string|null, category: string|null, price: float|null, quantity: int}>, props?: array<string, string>}
      */
-    public static function safeProperties(mixed $properties): array
+    public static function safeProperties(mixed $properties, array $customKeys = []): array
     {
         $name = is_array($properties) ? ($properties['name'] ?? null) : null;
         if (! is_string($name) || preg_match('/^[a-z0-9][a-z0-9_.-]{0,79}$/i', $name) !== 1) {
@@ -109,6 +112,65 @@ final class CollectionRequest
             $currency = strtoupper(is_string($properties['currency'] ?? null) ? trim($properties['currency']) : '');
             $kept['currency'] = preg_match('/^[A-Z]{3}$/', $currency) === 1 ? $currency : 'USD';
         }
+        $items = self::safeItems($properties['items'] ?? null);
+        if ($items !== []) {
+            $kept['items'] = $items;
+        }
+        $custom = [];
+        foreach ($properties as $key => $value) {
+            if (count($custom) >= 10 || ! is_string($key) || ! in_array($key, $customKeys, true) || in_array($key, ['name', 'url', 'file', 'revenue', 'currency', 'items'], true)) {
+                continue;
+            }
+            $text = match (true) {
+                is_bool($value) => $value ? 'true' : 'false',
+                is_int($value), is_float($value) => (string) $value,
+                is_string($value) => trim((string) preg_replace('/[\x00-\x1F\x7F]/u', '', $value)),
+                default => '',
+            };
+            if ($text !== '' && preg_match('/[^\s@]+@[^\s@]+\.[^\s@]+/', $text) !== 1) {
+                $custom[$key] = Str::limit($text, 100, '');
+            }
+        }
+        if ($custom !== []) {
+            $kept['props'] = $custom;
+        }
+
+        return $kept;
+    }
+
+    /**
+     * Keep up to 20 purchased items from an e-commerce event, each with an id or name, an optional category, a price
+     * up to a million and a quantity from 1 to 10,000 (1 when missing).
+     *
+     * @param  mixed  $items
+     * @return list<array{id: string|null, name: string|null, category: string|null, price: float|null, quantity: int}>
+     */
+    private static function safeItems(mixed $items): array
+    {
+        if (! is_array($items)) {
+            return [];
+        }
+        $kept = [];
+        foreach (array_slice(array_values($items), 0, 20) as $item) {
+            if (! is_array($item)) {
+                continue;
+            }
+            $id = self::cleanValue(is_scalar($item['id'] ?? null) ? (string) $item['id'] : null, 64);
+            $name = self::cleanValue($item['name'] ?? null, 100);
+            if ($id === null && $name === null) {
+                continue;
+            }
+            $price = $item['price'] ?? null;
+            $price = is_string($price) && is_numeric($price) ? (float) $price : $price;
+            $quantity = $item['quantity'] ?? 1;
+            $kept[] = [
+                'id' => $id,
+                'name' => $name,
+                'category' => self::cleanValue($item['category'] ?? null, 64),
+                'price' => (is_int($price) || is_float($price)) && $price >= 0 && $price <= 1_000_000 ? round((float) $price, 2) : null,
+                'quantity' => is_int($quantity) && $quantity >= 1 && $quantity <= 10_000 ? $quantity : 1,
+            ];
+        }
 
         return $kept;
     }
@@ -131,6 +193,59 @@ final class CollectionRequest
         }
 
         return $kept;
+    }
+
+    /**
+     * Keep an engagement event's measurements: how far down the page the visitor scrolled (0–100%) and how long the
+     * page was visible, in whole milliseconds up to 30 minutes. Null when neither is usable.
+     *
+     * @param  mixed  $properties
+     * @return array{scroll?: int, engaged_ms?: int}|null
+     */
+    public static function safeEngagement(mixed $properties): ?array
+    {
+        $kept = [];
+        foreach (['scroll' => 100, 'engaged_ms' => 1_800_000] as $key => $max) {
+            $value = is_array($properties) ? ($properties[$key] ?? null) : null;
+            if ((is_int($value) || is_float($value)) && $value >= 0) {
+                $kept[$key] = (int) min($max, round((float) $value));
+            }
+        }
+
+        return $kept === [] ? null : $kept;
+    }
+
+    /**
+     * Group a screen width in CSS pixels into Mobile (under 576), Tablet (under 992), Laptop (under 1440) or Desktop.
+     *
+     * @param  mixed  $width
+     * @return string|null
+     */
+    public static function screenSize(mixed $width): ?string
+    {
+        if (! is_int($width) || $width <= 0) {
+            return null;
+        }
+
+        return match (true) {
+            $width < 576 => 'Mobile',
+            $width < 992 => 'Tablet',
+            $width < 1440 => 'Laptop',
+            default => 'Desktop',
+        };
+    }
+
+    /**
+     * Keep a version number: digits and dots only, up to three parts ("128", "17.4", "10.15").
+     *
+     * @param  mixed  $version
+     * @return string|null
+     */
+    public static function version(mixed $version): ?string
+    {
+        $version = is_string($version) || is_int($version) ? (string) $version : '';
+
+        return preg_match('/\A\d{1,5}(\.\d{1,5}){0,2}\z/', $version) === 1 ? $version : null;
     }
 
     /**

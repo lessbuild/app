@@ -7,12 +7,20 @@
     [__('Top pages'), $summary['pages'], __('Pages appear after the first visit.'), 'path'],
     [__('Entry pages'), $summary['entryPages'], __('Entry pages appear once visits are processed.'), 'path'],
     [__('Exit pages'), $summary['exitPages'], __('Exit pages appear once visits are processed.'), 'path'],
+    [__('Channels'), $summary['channels'] ?? [], __('Channels appear once visitors arrive.'), 'channel'],
     [__('Sources'), $summary['sources'], __('Sources appear once visitors arrive.'), null],
     [__('Countries'), $summary['countries'], __('Countries appear once visitors arrive.'), 'country'],
-    [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), null],
+    [__('Regions'), $summary['regions'] ?? [], '', 'region'],
+    [__('Cities'), $summary['cities'] ?? [], '', 'city'],
+    [__('Campaigns'), $summary['campaigns'], __('Campaigns appear after visits tagged with utm_campaign.'), 'campaign'],
+    [__('Campaign terms'), $summary['terms'] ?? [], '', 'term'],
+    [__('Campaign content'), $summary['contents'] ?? [], '', 'content'],
     [__('Devices'), $summary['devices'], __('Devices appear once visitors arrive.'), 'device'],
     [__('Browsers'), $summary['browsers'], __('Browsers appear once visitors arrive.'), 'browser'],
     [__('Operating systems'), $summary['operatingSystems'], __('Operating systems appear once visitors arrive.'), 'os'],
+    [__('Screen sizes'), $summary['screenSizes'] ?? [], '', 'screen'],
+    [__('Browser versions'), $summary['browserVersions'] ?? [], '', null],
+    [__('System versions'), $summary['osVersions'] ?? [], '', null],
     [__('Outbound links'), $summary['outboundLinks'], '', null],
     [__('File downloads'), $summary['fileDownloads'], '', null],
     [__('Pages not found'), $summary['notFound'], '', null],
@@ -119,6 +127,27 @@
                     @endforeach
                 </x-signal.ui.table>
             @endif
+        </x-signal.ui.card>
+    @endif
+
+    @php($engagement = array_values(array_filter($summary['engagement'] ?? [], fn (array $row): bool => $row['seconds'] !== null || $row['scroll'] !== null)))
+    @if ($engagement !== [])
+        <x-signal.ui.card as="section" class="grid gap-4 p-5 sm:p-6" aria-labelledby="engagement-heading">
+            <div class="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 id="engagement-heading" class="text-lg font-extrabold text-ink">{{ __('Engagement') }}</h2>
+                <p class="text-xs text-muted">{{ __('Time the page was visible, and how far down visitors scrolled.') }}</p>
+            </div>
+            <x-signal.ui.table :caption="__('Engagement by page')" :framed="false">
+                <x-slot:head><tr><th scope="col">{{ __('Page') }}</th><th scope="col" class="text-right">{{ __('Pageviews') }}</th><th scope="col" class="text-right">{{ __('Time on page') }}</th><th scope="col" class="text-right">{{ __('Scroll depth') }}</th></tr></x-slot:head>
+                @foreach ($engagement as $row)
+                    <tr>
+                        <td class="max-w-xs truncate"><a class="text-muted hover:text-ink hover:underline" href="{{ $reportUrl([...$summary['period']->query(), ...array_filter($filters), 'path' => $row['path']]) }}">{{ $row['path'] }}</a></td>
+                        <td class="text-right tabular-nums">{{ number_format($row['pageviews']) }}</td>
+                        <td class="text-right tabular-nums">{{ $row['seconds'] === null ? '—' : ($row['seconds'] >= 60 ? intdiv($row['seconds'], 60).'m '.str_pad((string) ($row['seconds'] % 60), 2, '0', STR_PAD_LEFT).'s' : $row['seconds'].'s') }}</td>
+                        <td class="text-right tabular-nums">{{ $row['scroll'] === null ? '—' : $row['scroll'].'%' }}</td>
+                    </tr>
+                @endforeach
+            </x-signal.ui.table>
         </x-signal.ui.card>
     @endif
 

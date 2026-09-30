@@ -14,7 +14,7 @@ final readonly class NormalizedEvent
      * One pageview or custom event, cleaned up and ready to store.
      *
      * @param  string  $eventId  The client's ID for the event, so a resent batch doesn't count twice.
-     * @param  string  $type  `pageview` or `event`.
+     * @param  string  $type  `pageview`, `event`, `vitals` or `engagement`.
      * @param  CarbonImmutable  $occurredAt  When we received it (never the client's clock).
      * @param  string  $path  The page path, without query string.
      * @param  ?string  $referrerHost  The site the visitor came from.
@@ -29,6 +29,14 @@ final readonly class NormalizedEvent
      * @param  ?string  $sessionId  The tracker's session ID, used to group a visit's pages.
      * @param  array<string, mixed>|null  $properties
      * @param  ?string  $countryCode  The visitor's country (ISO 3166 alpha-2), from their IP address, which isn't kept.
+     * @param  ?string  $utmTerm  The `utm_term` campaign tag.
+     * @param  ?string  $utmContent  The `utm_content` campaign tag.
+     * @param  ?string  $channel  The marketing channel worked out from the tags and referrer.
+     * @param  ?string  $screenSize  Mobile, Tablet, Laptop or Desktop, from the screen's width.
+     * @param  ?string  $browserVersion  The browser's major version.
+     * @param  ?string  $osVersion  The operating system's version.
+     * @param  ?string  $region  The visitor's region (state or province), when the city database is installed.
+     * @param  ?string  $city  The visitor's city, when the city database is installed.
      */
     public function __construct(
         public string $eventId,
@@ -46,6 +54,14 @@ final readonly class NormalizedEvent
         public ?string $sessionId,
         public ?array $properties,
         public ?string $countryCode = null,
+        public ?string $utmTerm = null,
+        public ?string $utmContent = null,
+        public ?string $channel = null,
+        public ?string $screenSize = null,
+        public ?string $browserVersion = null,
+        public ?string $osVersion = null,
+        public ?string $region = null,
+        public ?string $city = null,
     ) {}
 
     /**
@@ -74,6 +90,14 @@ final readonly class NormalizedEvent
             'browser' => $this->browser,
             'operating_system' => $this->operatingSystem,
             'country_code' => $this->countryCode,
+            'utm_term' => $this->utmTerm,
+            'utm_content' => $this->utmContent,
+            'channel' => $this->channel,
+            'screen_size' => $this->screenSize,
+            'browser_version' => $this->browserVersion,
+            'os_version' => $this->osVersion,
+            'region' => $this->region,
+            'city' => $this->city,
             'visitor_hash' => $this->visitorHash,
             'session_id' => $this->sessionId,
             'properties' => $this->properties ? json_encode($this->properties, JSON_THROW_ON_ERROR) : null,

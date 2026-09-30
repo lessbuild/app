@@ -22,12 +22,13 @@ final class SiteRequest extends FormRequest
             'domains' => ['required', 'string', 'max:1000'],
             'timezone' => ['required', 'timezone:all'],
             'excluded_paths' => ['nullable', 'string', 'max:2000'],
+            'custom_properties' => ['nullable', 'string', 'max:500', 'regex:/^[a-z0-9_,\s]*$/'],
             'environment_id' => ['nullable', 'string'],
         ];
     }
 
     /**
-     * Build the site's settings with domains and excluded paths as lists.
+     * Build the site's settings with domains, excluded paths and custom property keys as lists.
      *
      * @return SiteDetails
      */
@@ -39,6 +40,7 @@ final class SiteRequest extends FormRequest
             timezone: $this->string('timezone')->toString(),
             excludedPaths: self::lines($this->string('excluded_paths')->toString()),
             environmentId: $this->filled('environment_id') ? $this->string('environment_id')->toString() : null,
+            customProperties: array_slice(array_values(array_unique(array_filter(self::lines($this->string('custom_properties')->toString()), fn (string $key): bool => preg_match('/^[a-z][a-z0-9_]{0,39}$/', $key) === 1))), 0, 10),
         );
     }
 
