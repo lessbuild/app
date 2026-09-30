@@ -6,6 +6,8 @@ namespace App\Services\Deploy;
 
 use App\Jobs\Deploy\ApplyEnvironmentRuntime;
 use App\Models\Environment;
+use App\Models\Monitor;
+use App\Models\QueueSnapshot;
 use App\Models\ServerMetric;
 use Carbon\CarbonImmutable;
 
@@ -35,9 +37,15 @@ final class Autoscaler
             $last = $environment->autoscaled_at;
             $target = max(20, min(95, $environment->autoscale_cpu_target));
             $replicas = $environment->desired_replicas;
-            if ($recent !== null && $recent > $target && $replicas < $environment->maximum_replicas && ($last === null || $last->lte($now->subMinutes(3)))) {
+            // With a queue target, waiting jobs count too: more than the target per replica scales up; scaling down
+            // also needs the queue to fit comfortably in one replica fewer.
+            $perReplica = $environment->autoscale_queue_jobs;
+            $pending = $perReplica !== null ? $this->pendingJobs($environment) : null;
+            $busyQueue = $pending !== null && $pending > $perReplica * $replicas;
+            $quietQueue = $pending === null || $pending <= $perReplica * max(1, $replicas - 1) / 2;
+            if ((($recent !== null && $recent > $target) || $busyQueue) && $replicas < $environment->maximum_replicas && ($last === null || $last->lte($now->subMinutes(3)))) {
                 $replicas++;
-            } elseif ($calm !== null && $calm < $target / 2 && $replicas > $environment->minimum_replicas && ($last === null || $last->lte($now->subMinutes(10)))) {
+            } elseif (($calm !== null || $pending !== null) && ($calm === null || $calm < $target / 2) && $quietQueue && $replicas > $environment->minimum_replicas && ($last === null || $last->lte($now->subMinutes(10)))) {
                 $replicas--;
             } else {
                 return;
@@ -63,5 +71,26 @@ final class Autoscaler
             ->selectRaw('COUNT(*) AS readings, AVG(cpu_percent) AS cpu')->first();
 
         return $readings !== null && (int) $readings->readings >= 3 ? (float) $readings->cpu : null;
+    }
+
+    /**
+     * Add up the waiting jobs the environment's queue monitors last reported, counting only reports still fresh, or
+     * null when there are none.
+     *
+     * @param  Environment  $environment
+     * @return int|null
+     */
+    private function pendingJobs(Environment $environment): ?int
+    {
+        $monitors = Monitor::query()->where('environment_id', $environment->id)->where('type', 'queue')->pluck('id');
+        $pending = null;
+        foreach ($monitors as $monitorId) {
+            $snapshot = QueueSnapshot::query()->where('monitor_id', $monitorId)->where('applied', true)->where('valid_until', '>', now())->latest('observed_at')->first(['pending']);
+            if ($snapshot !== null) {
+                $pending = ($pending ?? 0) + $snapshot->pending;
+            }
+        }
+
+        return $pending;
     }
 }

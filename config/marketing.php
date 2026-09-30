@@ -91,7 +91,7 @@ return [
                 ['label' => 'Automate', 'title' => 'Act safely when it matters', 'description' => 'Turn repeatable operations into controlled, recorded work.', 'features' => [
                     ['Scheduled deploys and tasks', 'Cron schedules in your time zone, task history with output, and alerts when a task starts failing.'],
                     ['Workers and hibernation', 'Queue workers and schedulers as services, scaling schedules, and idle environments that sleep until the next request.'],
-                    ['Autoscaling', 'Add and remove workers as CPU rises and falls, within the limits you set.'],
+                    ['Autoscaling', 'Add and remove workers as CPU and queue backlogs rise and fall, within the limits you set.'],
                     ['Regions', 'See where each environment runs, and run it on websites in more than one region.'],
                     ['Clone an environment', 'Start staging from production’s settings, workers and variables in one step.'],
                     ['Environment recipes', 'Scripts that run on an environment’s servers, in order, and on new websites if you ask.'],

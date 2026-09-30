@@ -139,6 +139,7 @@
             <div class="grid items-end gap-3 sm:col-span-2 sm:grid-cols-2">
                 <x-signal.ui.checkbox name="autoscale_enabled" :checked="$environment->autoscale_enabled" :description="__('Adds a replica when the servers’ average CPU stays above the target for a few minutes, and removes one when it stays under half of it for ten; always between the minimum and maximum.')">{{ __('Scale automatically') }}</x-signal.ui.checkbox>
                 <x-signal.ui.input-field name="autoscale_cpu_target" type="number" min="20" max="95" :label="__('Target CPU (%)')" :value="$environment->autoscale_cpu_target" />
+                <x-signal.ui.input-field name="autoscale_queue_jobs" type="number" min="1" max="100000" :label="__('Waiting jobs per replica (optional)')" :value="$environment->autoscale_queue_jobs" :description="__('Scale up when this environment’s queue monitors report more waiting jobs than this for each replica, even while CPU is low.')" />
                 @if ($environment->autoscaled_at)<p class="text-xs text-muted sm:col-span-2">{{ __('Last scaled automatically :when.', ['when' => $environment->autoscaled_at->diffForHumans()]) }}</p>@endif
             </div>
             @if ($canManage)<div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save settings') }}</x-signal.ui.button></div>@endif

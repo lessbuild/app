@@ -6,6 +6,7 @@ declare(strict_types=1);
 return [
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [
         'Release analysis: after each deploy, errors, request time and the conversion rate are compared with before it, and a release that’s worse past your limits is rolled back automatically.',
+        'Smarter autoscaling: replicas follow your queue’s backlog as well as CPU, and hibernating environments wake within seconds of their first request.',
         'Secrets from password managers: sync environment variables from Doppler, 1Password Connect or AWS Secrets Manager instead of pasting them in.',
         'Branch environments: preview any branch, not only pull requests, with a closing date you choose.',
         'Deploy pipelines: deploy several repositories in order, each after the one before goes live, stopping if one fails.',

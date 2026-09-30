@@ -43,6 +43,7 @@ final class UpdateEnvironmentDeploySettingsController
             'maximum_replicas' => ['required', 'integer', 'between:1,20'],
             'desired_replicas' => ['required', 'integer', 'between:1,20'],
             'autoscale_cpu_target' => ['nullable', 'integer', 'between:20,95'],
+            'autoscale_queue_jobs' => ['nullable', 'integer', 'between:1,100000'],
         ]);
         $update->handle($user, $environment, [
             'requires_deployment_approval' => $request->boolean('requires_deployment_approval'), 'automatic_rollback' => $request->boolean('automatic_rollback'), 'migration_safety' => $request->boolean('migration_safety'),
@@ -56,6 +57,7 @@ final class UpdateEnvironmentDeploySettingsController
             'dockerfile_path' => $data['dockerfile_path'] ?? null, 'minimum_replicas' => (int) $data['minimum_replicas'],
             'maximum_replicas' => (int) $data['maximum_replicas'], 'desired_replicas' => (int) $data['desired_replicas'],
             'autoscale_enabled' => $request->boolean('autoscale_enabled'), 'autoscale_cpu_target' => (int) ($data['autoscale_cpu_target'] ?? $environment->autoscale_cpu_target),
+            'autoscale_queue_jobs' => isset($data['autoscale_queue_jobs']) ? (int) $data['autoscale_queue_jobs'] : null,
         ]);
 
         return to_route('deploy.environments.show', [$project, $environment])->with('status', __('Settings saved. They apply to the next deploy.'));

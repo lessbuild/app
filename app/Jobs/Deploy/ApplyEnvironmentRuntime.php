@@ -13,6 +13,7 @@ use Illuminate\Contracts\Queue\ShouldBeUnique;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\URL;
 use RuntimeException;
 
 /**
@@ -112,6 +113,7 @@ final class ApplyEnvironmentRuntime implements ShouldBeUnique, ShouldQueue
         $artisan = $hibernate ? 'down --retry=60' : 'up';
         $flag = $hibernate ? '1' : '0';
         $keep = $inMaintenance ? '1' : '0';
+        $watcher = self::wakeWatcher($website, $hibernate);
 
         return <<<BASH
         set -Eeuo pipefail
@@ -130,6 +132,35 @@ final class ApplyEnvironmentRuntime implements ShouldBeUnique, ShouldQueue
                 fi
             done < {$manifest}
         fi
+        {$watcher}
+        BASH;
+    }
+
+    /**
+     * Build the commands for the wake watcher: while hibernating, a systemd path unit notices the first new request in
+     * the website's access log and calls BuildPusher back at once, so it wakes in seconds rather than at the next
+     * check; waking removes it.
+     *
+     * @param  Website  $website
+     * @param  bool  $hibernate
+     * @return string
+     */
+    public static function wakeWatcher(Website $website, bool $hibernate): string
+    {
+        $slug = $website->deployment_slug;
+        $unit = "/etc/systemd/system/buildpusher-wake-{$slug}";
+        if (! $hibernate || $website->environment_id === null) {
+            return "systemctl disable --now buildpusher-wake-{$slug}.path >/dev/null 2>&1 || true\nrm -f {$unit}.path {$unit}.service\nsystemctl daemon-reload >/dev/null 2>&1 || true";
+        }
+        $url = URL::signedRoute('callbacks.environment.wake', ['environment' => $website->environment_id]);
+        $path = base64_encode("[Unit]\nDescription=Wake {$slug} on its first request\n\n[Path]\nPathModified=/var/log/caddy/{$slug}.access.log\nUnit=buildpusher-wake-{$slug}.service\n\n[Install]\nWantedBy=multi-user.target\n");
+        $service = base64_encode("[Unit]\nDescription=Wake {$slug}\n\n[Service]\nType=oneshot\nExecStart=/usr/bin/curl -fsS -m 10 -X POST ".escapeshellarg($url)."\n");
+
+        return <<<BASH
+        printf '%s' '{$path}' | base64 --decode > {$unit}.path
+        printf '%s' '{$service}' | base64 --decode > {$unit}.service
+        systemctl daemon-reload
+        systemctl enable --now buildpusher-wake-{$slug}.path >/dev/null 2>&1 || true
         BASH;
     }
 }

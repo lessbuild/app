@@ -188,7 +188,8 @@ return [
             'title' => 'Autoscaling, maintenance mode and regions',
             'summary' => 'Scale with demand, take the site down for planned work, and see where it runs.',
             'steps' => [
-                ['Autoscale', 'On the environment’s How deploys run tab, tick Scale automatically and set a target CPU. Replicas are added and removed within the minimum and maximum you set.'],
+                ['Autoscale', 'On the environment’s How deploys run tab, tick Scale automatically and set a target CPU. Replicas are added and removed within the minimum and maximum you set. Set Waiting jobs per replica too, and replicas are added when the environment’s queue monitors report a backlog, even while CPU is low.'],
+                ['Waking from hibernation', 'A hibernating website wakes on its first request: its server tells BuildPusher straight away, and workers start again within seconds.'],
                 ['Maintenance mode', 'On the Controls tab, choose Turn on maintenance mode. Visitors see a “back soon” page; open the secret path shown there once to get in yourself. It stays on through deploys until you turn it off.'],
                 ['Regions', 'The Controls tab lists every website the environment deploys to and its region. To run in another region, add a website on a server there and connect the repository to it.'],
             ],

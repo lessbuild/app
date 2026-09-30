@@ -173,6 +173,7 @@ use App\Http\Controllers\Deploy\UpdateRepositoryController;
 use App\Http\Controllers\Deploy\UpdateRepositoryPreviewsController;
 use App\Http\Controllers\Deploy\UpdateRepositoryWebhookController;
 use App\Http\Controllers\Deploy\UpdateSecretSyncController;
+use App\Http\Controllers\Deploy\WakeEnvironmentController;
 use App\Http\Controllers\Docs\ShowApiReferenceController;
 use App\Http\Controllers\Feedback\StoreFeedbackController;
 use App\Http\Controllers\Help\ShowHelpController;
@@ -543,6 +544,7 @@ foreach (['status', 'failed', 'log', 'revision'] as $event) {
 
 Route::post('/builds/{build}/deployment/callback/security', EvaluateSecurityGateController::class)->whereNumber('build')
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.security');
+Route::post('/environments/{environment}/wake', WakeEnvironmentController::class)->middleware(['signed', 'throttle:60,1'])->name('callbacks.environment.wake');
 Route::post('/builds/{build}/deployment/callback/migrations', RecordDestructiveMigrationsController::class)->whereNumber('build')
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.migrations');
 

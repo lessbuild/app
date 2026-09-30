@@ -5,14 +5,18 @@ declare(strict_types=1);
 namespace Tests\Feature\Deploy;
 
 use App\Enums\ProviderType;
+use App\Jobs\Deploy\ApplyEnvironmentRuntime;
+use App\Models\Monitor;
 use App\Models\Project;
 use App\Models\Provider;
+use App\Models\QueueSnapshot;
 use App\Models\Repository;
 use App\Models\Server;
 use App\Models\ServerMetric;
 use App\Models\Website;
 use App\Services\Deploy\Autoscaler;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Queue;
 use Tests\Feature\Infrastructure\InfrastructureHelpers;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
@@ -81,5 +85,54 @@ final class AutoscalingTest extends TestCase
         $this->readings($server, 10, 11);
         $this->assertSame([$environment->id => 2], app(Autoscaler::class)->run());
         $this->assertStringContainsString('Last scaled automatically', (string) $this->actingAs($owner)->get("/projects/{$project->id}/deploy/environments/{$environment->id}?tab=settings")->getContent());
+    }
+
+    /**
+     * Check replicas also follow a queue's waiting jobs (scaling up with idle CPU, and down once the queue drains),
+     * and a hibernating website wakes the moment its server reports a request through the signed wake callback.
+     *
+     * @return void
+     */
+    public function test_replicas_follow_the_queue_and_hibernation_wakes_on_the_first_request(): void
+    {
+        $this->fakeInfrastructure();
+        $project = Project::factory()->withServices(['deploy', 'infrastructure', 'monitoring'])->create();
+        $this->onTier($project, 'deploy', 'business');
+        $environment = $project->environments()->where('slug', 'production')->firstOrFail();
+        $server = Server::factory()->create(['account_id' => $project->account_id, 'provider_id' => Provider::factory()->create(['account_id' => $project->account_id])->id]);
+        $website = Website::factory()->create(['server_id' => $server->id, 'environment_id' => $environment->id, 'deployment_slug' => 'shop']);
+        Repository::factory()->create(['website_id' => $website->id, 'project_id' => $project->id, 'environment_id' => $environment->id, 'provider_id' => Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $project->account_id])->id]);
+        $environment->forceFill(['autoscale_enabled' => true, 'autoscale_cpu_target' => 60, 'autoscale_queue_jobs' => 100, 'minimum_replicas' => 1, 'maximum_replicas' => 4, 'desired_replicas' => 1])->save();
+        $queue = Monitor::factory()->create(['environment_id' => $environment->id, 'type' => 'queue', 'queue_name' => 'default']);
+        $report = function (int $pending) use ($queue): void {
+            (new QueueSnapshot)->forceFill(['monitor_id' => $queue->id, 'snapshot_id' => (string) str()->uuid(), 'config_revision' => 0, 'payload_hash' => str()->random(40), 'observed_at' => now(), 'received_at' => now(), 'valid_until' => now()->addMinutes(5), 'applied' => true, 'pending' => $pending])->save();
+        };
+
+        $this->readings($server, 20, 6);
+        $report(450);
+        $this->assertSame([$environment->id => 2], app(Autoscaler::class)->run(), '450 jobs is more than 100 per replica, whatever the CPU.');
+        $this->travel(4)->minutes();
+        $this->readings($server, 20, 6);
+        $report(450);
+        app(Autoscaler::class)->run();
+        $this->assertSame(3, $environment->refresh()->desired_replicas);
+        $this->travel(11)->minutes();
+        $this->readings($server, 20, 11);
+        $report(40);
+        app(Autoscaler::class)->run();
+        $this->assertSame(2, $environment->refresh()->desired_replicas, 'A drained queue and calm CPU scale down.');
+
+        $asleep = ApplyEnvironmentRuntime::script($website, true, 1);
+        $this->assertStringContainsString('systemctl enable --now buildpusher-wake-shop.path', $asleep);
+        $this->assertStringContainsString('buildpusher-wake-shop.service', $asleep);
+        $this->assertStringContainsString('systemctl disable --now buildpusher-wake-shop.path', ApplyEnvironmentRuntime::script($website, false, 1));
+        $this->assertSame(1, preg_match("#printf '%s' '([A-Za-z0-9+/=]+)' \\| base64 --decode > /etc/systemd/system/buildpusher-wake-shop.service#", $asleep, $service));
+        $this->assertSame(1, preg_match("#curl -fsS -m 10 -X POST '([^']+)'#", base64_decode($service[1] ?? ''), $wake));
+
+        Queue::fake();
+        $environment->forceFill(['hibernated_at' => now()])->save();
+        $this->post('/environments/'.$environment->id.'/wake')->assertForbidden();
+        $this->post($wake[1] ?? '')->assertStatus(202);
+        Queue::assertPushed(ApplyEnvironmentRuntime::class, fn (ApplyEnvironmentRuntime $job): bool => $job->environmentId === $environment->id && ! $job->hibernate);
     }
 }
