@@ -88,6 +88,48 @@
             </div>
         </x-signal.ui.settings-section>
 
+        <x-signal.ui.settings-section :title="__('Import from Google Analytics')" :description="__('Bring a GA4 property’s daily history (pages, sources, channels, countries, cities, devices, browsers and campaigns) into this site’s reports. Only days before this site’s own data are imported, so nothing is counted twice.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @error('property')<x-signal.ui.alert tone="danger">{{ $message }}</x-signal.ui.alert>@enderror
+                @foreach ($googleAnalytics['imports']->where('status', '!=', 'connected') as $import)
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                        <span>
+                            <span class="font-bold text-ink">{{ $import->property_name ?? $import->property }}</span>
+                            <span class="text-muted">· {{ $import->from_date?->toDateString() }} – {{ $import->until_date?->toDateString() }} · {{ match ($import->status) { 'queued' => __('Waiting'), 'running' => __('Importing'), 'failed' => __('Failed'), default => trans_choice(':count day imported|:count days imported', $import->days_imported, ['count' => number_format($import->days_imported)]) } }}</span>
+                            @if ($import->error)<span class="block text-xs text-danger">{{ $import->error }}</span>@endif
+                        </span>
+                        <form method="POST" action="{{ route('analytics.sites.imports.destroy', [$project, $site->id, $import->id]) }}">
+                            @csrf @method('DELETE')
+                            <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove import') }}</x-signal.ui.button>
+                        </form>
+                    </div>
+                @endforeach
+                @if (! $googleAnalytics['configured'])
+                    <p class="text-sm text-muted">{{ __('Google sign-in isn’t set up on this platform yet.') }}</p>
+                @elseif ($googleAnalytics['connected'])
+                    @if ($googleAnalytics['error'])
+                        <x-signal.ui.alert tone="warning">{{ $googleAnalytics['error'] }}</x-signal.ui.alert>
+                    @endif
+                    <form method="POST" action="{{ route('analytics.sites.imports.start', [$project, $site->id, $googleAnalytics['connected']->id]) }}" class="grid gap-3 sm:grid-cols-3 sm:items-end">
+                        @csrf
+                        <x-signal.ui.select-field name="property" :label="__('Property')" required>
+                            @foreach ($googleAnalytics['properties'] as $property)
+                                <option value="{{ $property['id'] }}">{{ $property['name'] }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.input-field name="from" type="date" :label="__('From')" :value="now($site->timezone)->subYear()->toDateString()" required />
+                        <x-signal.ui.input-field name="until" type="date" :label="__('To')" :value="now($site->timezone)->subDay()->toDateString()" required />
+                        <div class="sm:col-span-3"><x-signal.ui.button type="submit" variant="primary">{{ __('Import') }}</x-signal.ui.button></div>
+                    </form>
+                @else
+                    <form method="POST" action="{{ route('analytics.sites.imports.connect', [$project, $site->id]) }}">
+                        @csrf
+                        <x-signal.ui.button type="submit" variant="secondary">{{ __('Connect Google Analytics') }}</x-signal.ui.button>
+                    </form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+
         <x-signal.ui.settings-section :title="__('Reports and alerts')" :description="__('Email or Slack a summary every week (Mondays) or month (the 1st), from 8am in the site’s time zone, or an alert when a lot of people are on the site at once.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @forelse ($site->notifications()->orderBy('id')->get() as $notification)

@@ -6,10 +6,8 @@ namespace App\Services\Analytics;
 
 use App\Contracts\Analytics\SearchConsole;
 use Carbon\CarbonImmutable;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
-use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\Http;
-use RuntimeException;
 
 /** Google Search Console over its REST API, with the platform's OAuth client (services.google_search_console). */
 final class GoogleSearchConsole implements SearchConsole
@@ -22,13 +20,20 @@ final class GoogleSearchConsole implements SearchConsole
     private const SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 
     /**
+     * Create a new GoogleSearchConsole instance.
+     *
+     * @param  GoogleOAuth  $google  The platform's Google OAuth client.
+     */
+    public function __construct(private readonly GoogleOAuth $google = new GoogleOAuth) {}
+
+    /**
      * Determine whether the platform has Google OAuth credentials for Search Console.
      *
      * @return bool
      */
     public function configured(): bool
     {
-        return filled(config('services.google_search_console.client_id')) && filled(config('services.google_search_console.client_secret'));
+        return $this->google->configured();
     }
 
     /**
@@ -39,16 +44,7 @@ final class GoogleSearchConsole implements SearchConsole
      */
     public function authorizationUrl(string $state): string
     {
-        return 'https://accounts.google.com/o/oauth2/v2/auth?'.http_build_query([
-            'client_id' => config('services.google_search_console.client_id'),
-            'redirect_uri' => route('analytics.search-console.callback'),
-            'response_type' => 'code',
-            'scope' => self::SCOPE,
-            'access_type' => 'offline',
-            'prompt' => 'consent',
-            'include_granted_scopes' => 'true',
-            'state' => $state,
-        ]);
+        return $this->google->authorizationUrl(self::SCOPE, route('analytics.search-console.callback'), $state);
     }
 
     /**
@@ -59,13 +55,7 @@ final class GoogleSearchConsole implements SearchConsole
      */
     public function exchange(string $code): string
     {
-        $response = $this->token(['grant_type' => 'authorization_code', 'code' => $code, 'redirect_uri' => route('analytics.search-console.callback')]);
-        $refresh = $response->json('refresh_token');
-        if (! is_string($refresh) || $refresh === '') {
-            throw new RuntimeException(__('Google didn’t grant offline access. Try connecting again.'));
-        }
-
-        return $refresh;
+        return $this->google->exchange($code, route('analytics.search-console.callback'));
     }
 
     /**
@@ -124,41 +114,14 @@ final class GoogleSearchConsole implements SearchConsole
     }
 
     /**
-     * Start a request to Google's API with a fresh access token (kept for 50 minutes per refresh token).
+     * Start a request to Google's API with a fresh access token.
      *
      * @param  string  $refreshToken
-     * @return \Illuminate\Http\Client\PendingRequest
+     * @return PendingRequest
      */
-    private function api(string $refreshToken): \Illuminate\Http\Client\PendingRequest
+    private function api(string $refreshToken): PendingRequest
     {
-        $access = Cache::remember('search-console.access.'.hash('sha256', $refreshToken), 3000, function () use ($refreshToken): string {
-            $token = $this->token(['grant_type' => 'refresh_token', 'refresh_token' => $refreshToken])->json('access_token');
-            if (! is_string($token) || $token === '') {
-                throw new RuntimeException(__('Google no longer accepts this connection. Connect Search Console again.'));
-            }
-
-            return $token;
-        });
-
-        return Http::withToken($access)->acceptJson()->timeout(15);
-    }
-
-    /**
-     * Call Google's token endpoint with the platform's client credentials.
-     *
-     * @param  array<string, string>  $parameters
-     * @return Response
-     */
-    private function token(array $parameters): Response
-    {
-        $response = Http::asForm()->acceptJson()->timeout(15)->post('https://oauth2.googleapis.com/token', [
-            'client_id' => config('services.google_search_console.client_id'),
-            'client_secret' => config('services.google_search_console.client_secret'),
-            ...$parameters,
-        ]);
-        $this->check($response);
-
-        return $response;
+        return $this->google->client($refreshToken, __('Google no longer accepts this connection. Connect Search Console again.'));
     }
 
     /**
@@ -169,9 +132,6 @@ final class GoogleSearchConsole implements SearchConsole
      */
     private function check(Response $response): void
     {
-        if ($response->failed()) {
-            $message = $response->json('error.message') ?? $response->json('error_description') ?? $response->json('error');
-            throw new RuntimeException(__('Google answered: :message', ['message' => is_string($message) ? $message : 'HTTP '.$response->status()]));
-        }
+        $this->google->check($response);
     }
 }

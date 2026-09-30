@@ -33,8 +33,9 @@ final class AnalyticsReportQuery
      * Build an analytics site's report for a period (a number of days ending today, or a ReportPeriod with custom dates
      * and a comparison): headline metrics against the comparison period, a pageview series (per hour for a single day),
      * top pages, entry and exit pages, sources, devices, browsers, systems, campaigns, recent activity and goal
-     * counts. Unfiltered reports longer than 90 days read the daily aggregates (raw events may be past retention by
-     * then); the rest is counted in the database from events and visits. Only events whose batch has been processed
+     * counts. Unfiltered reports longer than 90 days, or reaching back into history imported from Google Analytics,
+     * read the daily aggregates (raw events may be past retention by then); the rest is counted in the database from
+     * events and visits. Only events whose batch has been processed
      * are counted.
      *
      * @param  AnalyticsSite  $site
@@ -46,7 +47,9 @@ final class AnalyticsReportQuery
     {
         $period = is_int($period) ? ReportPeriod::lastDays($site->timezone, $period) : $period;
 
-        if ($period->days > 90 && ! array_filter($filters)) {
+        // Long reports, and ones reaching back into history imported from Google Analytics, read the daily totals.
+        $reachesImport = $site->imported_until !== null && $period->start->toDateString() <= $site->imported_until->toDateString();
+        if (($period->days > 90 || $reachesImport) && ! array_filter($filters)) {
             $aggregateSummary = $this->fromAggregates($site, $period, $filters);
 
             if ($aggregateSummary !== null) {

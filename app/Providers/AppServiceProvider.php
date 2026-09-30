@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use App\Contracts\Analytics\CountryLookup;
+use App\Contracts\Analytics\GoogleAnalyticsData;
 use App\Contracts\Analytics\SearchConsole;
 use App\Contracts\DnsResolver;
 use App\Contracts\Monitoring\DnsRecordResolver;
@@ -29,6 +30,7 @@ use App\Listeners\PreviewWebsiteSubscriber;
 use App\Models\ApiToken;
 use App\Services\Admin\FeatureFlags;
 use App\Services\Analytics\DbIpCountryLookup;
+use App\Services\Analytics\GoogleAnalytics;
 use App\Services\Analytics\GoogleSearchConsole;
 use App\Services\Billing\PaymentProviderFactory;
 use App\Services\Dns\SystemDnsResolver;
@@ -62,6 +64,7 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(RequestOrigin::class, HttpRequestOrigin::class);
         $this->app->singleton(CountryLookup::class, DbIpCountryLookup::class);
         $this->app->bind(SearchConsole::class, GoogleSearchConsole::class);
+        $this->app->bind(GoogleAnalyticsData::class, GoogleAnalytics::class);
         $this->app->bind(DnsResolver::class, SystemDnsResolver::class);
         $this->app->bind(MonitoringDnsResolver::class, NativeDnsResolver::class);
         $this->app->bind(DnsRecordResolver::class, NativeDnsRecordResolver::class);

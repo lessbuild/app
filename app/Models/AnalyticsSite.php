@@ -22,6 +22,7 @@ use Illuminate\Support\Str;
  * @property string $name
  * @property string $public_id
  * @property list<string> $domains
+ * @property Carbon|null $imported_until the last day of history imported from Google Analytics
  * @property list<string>|null $custom_properties custom event property keys the site keeps, for breakdowns
  * @property list<string>|null $excluded_paths
  * @property string $timezone
@@ -89,6 +90,7 @@ class AnalyticsSite extends Model
         return [
             'domains' => 'array',
             'custom_properties' => 'array',
+            'imported_until' => 'date',
             'excluded_paths' => 'array',
             'verified_at' => 'datetime',
             'collection_paused_at' => 'datetime',
@@ -119,6 +121,16 @@ class AnalyticsSite extends Model
     public function events(): HasMany
     {
         return $this->hasMany(AnalyticsEvent::class, 'site_id');
+    }
+
+    /**
+     * Get the site's imports from Google Analytics.
+     *
+     * @return HasMany<AnalyticsImport, $this>
+     */
+    public function imports(): HasMany
+    {
+        return $this->hasMany(AnalyticsImport::class, 'site_id');
     }
 
     /**
