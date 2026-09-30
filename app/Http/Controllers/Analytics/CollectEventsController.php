@@ -43,7 +43,8 @@ final class CollectEventsController
         }
 
         $now = CarbonImmutable::now();
-        $location = $countries->location($request->ip());
+        $ip = CollectionRequest::clientIp($request);
+        $location = $countries->location($ip);
         /** @var list<array<string, mixed>> $input */
         $input = $request->validated('events');
         $events = [];
@@ -68,7 +69,7 @@ final class CollectEventsController
                 browser: CollectionRequest::cleanValue($event['browser'] ?? null, 64),
                 operatingSystem: CollectionRequest::cleanValue($event['os'] ?? null, 64),
                 // A daily-rotating hash: visitors can be counted within a day but not followed across days.
-                visitorHash: hash_hmac('sha256', ($event['visitor'] ?? '').'|'.$request->ip().'|'.($request->userAgent() ?? '').'|'.$now->setTimezone($site->timezone)->toDateString(), (string) config('analytics.visitor_key')),
+                visitorHash: hash_hmac('sha256', ($event['visitor'] ?? '').'|'.$ip.'|'.($request->userAgent() ?? '').'|'.$now->setTimezone($site->timezone)->toDateString(), (string) config('analytics.visitor_key')),
                 sessionId: CollectionRequest::cleanValue($event['session'] ?? null, 64),
                 properties: match ($event['type']) {
                     'event' => CollectionRequest::safeProperties($event['properties'] ?? [], $site->custom_properties ?? []),

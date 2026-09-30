@@ -26,6 +26,22 @@
         </div>
     </x-signal.ui.settings-section>
 
+    @php($origin = rtrim(url('/'), '/'))
+    @php($originHost = parse_url($origin, PHP_URL_HOST))
+    @php($proxySnippet = '<script defer data-site="'.$site->public_id.'" data-api="/bp/event" src="/bp/js/v1.js"></script>')
+    @php($caddyProxy = "handle_path /bp/js/* {\n    rewrite * /tracker{path}\n    reverse_proxy {$origin} {\n        header_up Host {$originHost}\n    }\n}\nhandle_path /bp/event/* {\n    rewrite * /api/v1/collect{path}\n    reverse_proxy {$origin} {\n        header_up Host {$originHost}\n    }\n}")
+    @php($nginxProxy = "location = /bp/js/v1.js {\n    proxy_pass {$origin}/tracker/v1.js;\n    proxy_set_header Host {$originHost};\n    proxy_ssl_server_name on;\n}\nlocation /bp/event/ {\n    proxy_pass {$origin}/api/v1/collect/;\n    proxy_set_header Host {$originHost};\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_ssl_server_name on;\n}")
+    <x-signal.ui.settings-section :title="__('Send through your own domain')" :description="__('Optional. Serve the script and send events from the site’s own domain, so ad blockers that stop third-party analytics don’t stop it. Add the proxy rules to your web server, then use this snippet instead.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            <x-signal.ui.code-block :code="$proxySnippet" class="whitespace-pre-wrap break-all" />
+            <p class="text-sm font-bold text-ink">{{ __('Caddy (for a BuildPusher website, paste it into the website’s Caddy directives)') }}</p>
+            <x-signal.ui.code-block :code="$caddyProxy" class="whitespace-pre-wrap break-all" />
+            <p class="text-sm font-bold text-ink">{{ __('Nginx') }}</p>
+            <x-signal.ui.code-block :code="$nginxProxy" class="whitespace-pre-wrap break-all" />
+            <p class="text-xs text-muted">{{ __('The proxy must pass the visitor’s address in X-Forwarded-For (Caddy does this itself), or every visitor looks like your server.') }}</p>
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Verification')" :description="__('Data is only accepted once one of the site’s hostnames is a verified domain of :project.', ['project' => $project->name])">
         <div class="flex flex-wrap items-center justify-between gap-3 p-4 sm:p-6">
             <x-signal.ui.badge :tone="$site->isVerified() ? 'success' : 'warning'">{{ $site->isVerified() ? __('Verified :time', ['time' => $site->verified_at?->diffForHumans()]) : __('Not verified') }}</x-signal.ui.badge>
@@ -113,6 +129,11 @@
                 @if ($site->share_token)
                     <x-signal.ui.code-block :code="route('analytics.shared', $site->share_token)" class="whitespace-pre-wrap break-all" />
                     <p class="text-sm text-muted">{{ $site->share_password ? __('Protected by a password. Shared :time.', ['time' => $site->shared_at?->diffForHumans()]) : __('Anyone with the link can see it. Shared :time.', ['time' => $site->shared_at?->diffForHumans()]) }}</p>
+                    @unless ($site->share_password)
+                        <p class="text-sm font-bold text-ink">{{ __('Embed it in another page') }}</p>
+    @php($embedCode = '<iframe src="'.route('analytics.shared.embed', $site->share_token).'" style="width: 100%; height: 1600px; border: 0" loading="lazy" title="'.e($site->name).' analytics"></iframe>')
+                        <x-signal.ui.code-block :code="$embedCode" class="whitespace-pre-wrap break-all" />
+                    @endunless
                 @endif
                 <form method="POST" action="{{ route('analytics.sites.share', [$project, $site->id]) }}" class="grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
                     @csrf

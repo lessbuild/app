@@ -5,9 +5,14 @@ declare(strict_types=1);
 namespace Tests\Feature\Analytics;
 
 use App\Actions\Analytics\RebuildSiteReports;
+use App\Contracts\Analytics\CountryLookup;
+use App\Models\Account;
+use App\Models\AnalyticsAnnotation;
 use App\Models\AnalyticsEvent;
 use App\Models\AnalyticsSite;
 use App\Models\AnalyticsVisit;
+use App\Models\Project;
+use App\Models\User;
 use App\Queries\Analytics\AnalyticsReportQuery;
 use App\Support\Analytics\Channel;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -80,5 +85,52 @@ final class VisitorDetailTest extends TestCase
         $this->assertSame('Referral', Channel::for(null, null, null, 'blog.example'));
         $this->assertSame('Unassigned', Channel::for('partner', null, null, null));
         $this->assertSame('Direct', Channel::for(null, null, null, 'shop.example.com', ['example.com']));
+    }
+
+    /**
+     * Check that events sent through a site's own proxy count the visitor's address from X-Forwarded-For, and that
+     * notes are added to and removed from the chart.
+     *
+     * @return void
+     */
+    public function test_proxied_events_use_the_forwarded_address_and_notes_mark_the_chart(): void
+    {
+        $this->app->instance(CountryLookup::class, new class implements CountryLookup
+        {
+            /**
+             * Answer France for one address.
+             *
+             * @param  string|null  $ip
+             * @return string|null
+             */
+            public function country(?string $ip): ?string
+            {
+                return $ip === '203.0.113.50' ? 'FR' : null;
+            }
+
+            /**
+             * Answer France for the same address.
+             *
+             * @param  string|null  $ip
+             * @return array{country: string|null, region: string|null, city: string|null}
+             */
+            public function location(?string $ip): array
+            {
+                return ['country' => $this->country($ip), 'region' => null, 'city' => null];
+            }
+        });
+        $owner = User::factory()->create();
+        $project = Project::factory()->for(Account::factory()->withMember($owner))->withServices(['analytics'])->create();
+        $site = AnalyticsSite::factory()->for($project)->create(['domains' => ['example.com'], 'timezone' => 'UTC', 'verified_at' => now()]);
+        $this->withHeaders(['Origin' => 'https://example.com', 'X-Forwarded-For' => '10.0.0.1, 203.0.113.50'])
+            ->postJson("/api/v1/collect/{$site->public_id}", ['events' => [['id' => (string) Str::uuid(), 'type' => 'pageview', 'path' => '/']]])->assertAccepted();
+        $this->assertSame('FR', AnalyticsEvent::query()->sole()->country_code);
+
+        $this->flushHeaders();
+        $this->actingAs($owner)->post("/projects/{$project->id}/analytics/sites/{$site->id}/annotations", ['date' => now()->toDateString(), 'text' => 'Launched on Product Hunt'])->assertRedirect();
+        $this->actingAs($owner)->get("/projects/{$project->id}/analytics?days=7")->assertOk()->assertSee('Launched on Product Hunt')->assertSee(__('Add a note'));
+        $note = AnalyticsAnnotation::query()->sole();
+        $this->actingAs($owner)->delete("/projects/{$project->id}/analytics/sites/{$site->id}/annotations/{$note->id}")->assertRedirect();
+        $this->assertSame(0, AnalyticsAnnotation::query()->count());
     }
 }

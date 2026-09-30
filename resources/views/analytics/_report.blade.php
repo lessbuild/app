@@ -47,9 +47,24 @@
         </div>
         @if ($summary['hasData'])
             <x-signal.ui.bar-chart :label="$chartLabel" :points="array_map(fn (array $point): array => ['label' => $point['date'], 'value' => $point['value']], $summary['series'])" :unit="__('pageviews')"
-                :markers="$releases->map(fn ($deployment): array => ['label' => $deployment->deployed_at->setTimezone($site->timezone)->format($hourly ? 'H:00' : 'M j'), 'text' => __('Released :version', ['version' => $deployment->release->version])])->values()->all()" />
+                :markers="[...$releases->map(fn ($deployment): array => ['label' => $deployment->deployed_at->setTimezone($site->timezone)->format($hourly ? 'H:00' : 'M j'), 'text' => __('Released :version', ['version' => $deployment->release->version])])->values()->all(), ...($hourly ? [] : ($annotations ?? collect())->map(fn ($note): array => ['label' => $note->date->format('M j'), 'text' => $note->text])->values()->all())]" />
         @else
             <p class="text-sm text-muted">{{ __('No pageviews in this period yet.') }}</p>
+        @endif
+        @if (($annotations ?? collect())->isNotEmpty())
+            <div class="mt-4 border-t border-line pt-4">
+                <h3 class="text-sm font-extrabold text-ink">{{ __('Notes') }}</h3>
+                <ul class="mt-2 grid gap-1 text-xs text-muted">
+                    @foreach ($annotations as $note)
+                        <li class="flex flex-wrap items-center gap-2">
+                            <span class="tabular-nums">{{ $note->date->format('M j') }}</span> · <span class="text-ink">{{ $note->text }}</span>
+                            @if ($canManage ?? false)
+                                <form method="POST" action="{{ route('analytics.annotations.destroy', [$site->project_id, $site->id, $note->id]) }}">@csrf @method('DELETE')<button type="submit" class="ui-link text-xs">{{ __('Remove') }}</button></form>
+                            @endif
+                        </li>
+                    @endforeach
+                </ul>
+            </div>
         @endif
         @if ($releases->isNotEmpty())
             <div class="mt-4 border-t border-line pt-4">

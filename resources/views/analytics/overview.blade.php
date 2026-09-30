@@ -49,6 +49,16 @@
             <x-signal.ui.alert tone="warning" role="status">{{ __('Collection is paused for :site. Existing reports stay available.', ['site' => $site->name]) }}</x-signal.ui.alert>
         @endif
 
+        @if ($canManage)
+            <x-slot:actions>
+                <x-signal.ui.button :href="route('analytics.overview', [$project, 'site' => $site->id, ...$period->query(), 'dialog' => 'new-note'])" variant="secondary" data-modal-trigger="new-note">{{ __('Add a note') }}</x-signal.ui.button>
+            </x-slot:actions>
+            <x-signal.overlays.form-modal id="new-note" :title="__('Add a note to the chart')" :description="__('Mark a launch, campaign or outage so it’s clear what moved the numbers.')" :action="route('analytics.annotations.store', [$project, $site->id])" :submit="__('Add note')" form-class="grid gap-4">
+                <x-signal.ui.input-field name="date" type="date" :label="__('Day')" :value="now($site->timezone)->toDateString()" required />
+                <x-signal.ui.input-field name="text" :label="__('Note')" maxlength="200" required />
+            </x-signal.overlays.form-modal>
+        @endif
+
         @include('analytics._report', [
             'reportUrl' => fn (array $params): string => route('analytics.overview', [$project, 'site' => $site->id, ...$params]),
             'goalsUrl' => route('analytics.goals', [$project, 'site' => $site->id]),

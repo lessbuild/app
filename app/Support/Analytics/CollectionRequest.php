@@ -249,6 +249,26 @@ final class CollectionRequest
     }
 
     /**
+     * Get the visitor's address: the first public address in X-Forwarded-For when a site sends events through its
+     * own proxy, otherwise the connecting address. A forged header only changes how the sender's own visits are
+     * counted.
+     *
+     * @param  Request  $request
+     * @return string|null
+     */
+    public static function clientIp(Request $request): ?string
+    {
+        foreach (explode(',', (string) $request->headers->get('X-Forwarded-For', '')) as $candidate) {
+            $candidate = trim($candidate);
+            if (filter_var($candidate, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) !== false) {
+                return $candidate;
+            }
+        }
+
+        return $request->ip();
+    }
+
+    /**
      * Build the CORS headers for the collection endpoint. They echo the caller's Origin because the tracker runs on
      * customers' own domains; the origin is checked against the site separately.
      *

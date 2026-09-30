@@ -18,7 +18,8 @@ final class ShowSharedReportController
 
     /**
      * Show a shared site report to anyone with its link, after its password when it has one. The page is read-only,
-     * isn't indexed by search engines, and leaves out releases and goal settings.
+     * isn't indexed by search engines, and leaves out releases and goal settings. The embed address shows it without
+     * the page around it, for an iframe on another site; embedding needs a link without a password.
      *
      * @param  Request  $request
      * @param  string  $token
@@ -29,6 +30,10 @@ final class ShowSharedReportController
     public function __invoke(Request $request, string $token, AnalyticsReportQuery $report, LiveVisitorsQuery $live): View
     {
         $site = AnalyticsSite::query()->where('share_token', $token)->firstOrFail();
+        $embed = $request->routeIs('analytics.shared.embed');
+        if ($embed && $site->share_password !== null) {
+            return view('analytics.shared-locked', ['site' => $site, 'token' => $token, 'embed' => true]);
+        }
         if (! SharedReportAccess::unlocked($request, $site)) {
             return view('analytics.shared-locked', ['site' => $site, 'token' => $token]);
         }
@@ -42,6 +47,7 @@ final class ShowSharedReportController
         return view('analytics.shared', [
             'site' => $site,
             'token' => $token,
+            'embed' => $embed,
             'days' => $days,
             'period' => $period,
             'filters' => $filters,

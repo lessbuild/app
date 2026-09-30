@@ -46,6 +46,13 @@ final class SharedReportTest extends TestCase
         $this->get("/share/analytics/{$token}")->assertOk()->assertSee('Shop')->assertSee('/pricing')
             ->assertSee('noindex', false)->assertDontSee(__('Manage goals'))->assertSee('share/analytics/'.$token.'?days=30&amp;path=%2Fpricing', false);
         $this->get('/share/analytics/'.str_repeat('a', 40))->assertNotFound();
+        $embed = $this->get("/share/analytics/{$token}/embed")->assertOk()->assertSee('/pricing')->assertDontSee(__('Shared report'))
+            ->assertSee('share/analytics/'.$token.'/embed?days=30&amp;path=%2Fpricing', false);
+        $this->assertFalse($embed->headers->has('X-Frame-Options'));
+        $this->assertStringContainsString('frame-ancestors *', (string) $embed->headers->get('Content-Security-Policy'));
+        $this->assertSame('DENY', $this->get("/share/analytics/{$token}")->headers->get('X-Frame-Options'), 'Only the embed can be framed.');
+        $this->actingAs($owner)->get($sitePage)->assertSee('&lt;iframe src=&quot;'.route('analytics.shared.embed', $token), false);
+        auth()->logout();
 
         $this->actingAs($owner)->post("{$sitePage}/share", ['share_password' => 'correct-horse'])->assertRedirect();
         $this->assertSame($token, $site->refresh()->share_token, 'Adding a password keeps the link.');
@@ -55,6 +62,7 @@ final class SharedReportTest extends TestCase
         $this->post("/share/analytics/{$token}/unlock", ['password' => 'wrong-guess'])->assertSessionHasErrors('password');
         $this->post("/share/analytics/{$token}/unlock", ['password' => 'correct-horse'])->assertRedirect("/share/analytics/{$token}");
         $this->get("/share/analytics/{$token}")->assertOk()->assertSee('/pricing');
+        $this->get("/share/analytics/{$token}/embed")->assertOk()->assertDontSee('/pricing')->assertSee(__('This report is password-protected, so it can’t be embedded. Share it without a password to embed it.'), false);
 
         $this->actingAs($owner)->post("{$sitePage}/share", ['share_password' => 'another-secret'])->assertRedirect();
         $this->get("/share/analytics/{$token}")->assertOk()->assertSee(__('This report is protected. Enter the password you were given.'), false);

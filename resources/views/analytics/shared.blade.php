@@ -1,24 +1,26 @@
 {{-- A shared site report: read-only, for people without an account. Not indexed by search engines. --}}
 <x-signal.layouts.base :title="__(':site analytics', ['site' => $site->name])" :description="__('Visitor analytics for :site.', ['site' => $site->name])">
-    <main id="main-content" tabindex="-1" class="mx-auto grid max-w-6xl gap-6 px-4 py-10 sm:px-8">
+    <main id="main-content" tabindex="-1" @class(['mx-auto grid max-w-6xl gap-6 px-4 sm:px-8', 'py-10' => ! $embed, 'py-4' => $embed])>
         <header class="flex flex-wrap items-end justify-between gap-4">
-            <div>
-                <p class="ui-eyebrow">{{ __('Shared report') }}</p>
-                <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-ink">{{ $site->name }}</h1>
-                <p class="mt-1 text-sm text-muted">{{ implode(', ', $site->domains) }}</p>
-            </div>
+            @unless ($embed)
+                <div>
+                    <p class="ui-eyebrow">{{ __('Shared report') }}</p>
+                    <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-ink">{{ $site->name }}</h1>
+                    <p class="mt-1 text-sm text-muted">{{ implode(', ', $site->domains) }}</p>
+                </div>
+            @endunless
             <form method="GET" class="flex flex-wrap items-end gap-2">
                 @foreach (array_filter($filters) as $key => $value)<input type="hidden" name="{{ $key }}" value="{{ $value }}">@endforeach
                 @include('analytics._period-fields')
                 <x-signal.ui.button type="submit" variant="secondary">{{ __('Show') }}</x-signal.ui.button>
                 @if (array_filter($filters))
-                    <x-signal.ui.button :href="route('analytics.shared', [$token, ...$period->query()])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
+                    <x-signal.ui.button :href="route($embed ? 'analytics.shared.embed' : 'analytics.shared', [$token, ...$period->query()])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
                 @endif
             </form>
         </header>
 
         @include('analytics._report', [
-            'reportUrl' => fn (array $params): string => route('analytics.shared', [$token, ...$params]),
+            'reportUrl' => fn (array $params): string => route($embed ? 'analytics.shared.embed' : 'analytics.shared', [$token, ...$params]),
             'goalsUrl' => null,
         ])
 

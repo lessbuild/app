@@ -5,7 +5,11 @@
     var site = script && script.dataset.site;
     if (!site) return;
 
-    var endpoint = new URL('/api/v1/collect/' + encodeURIComponent(site), script.src).toString();
+    // data-api points collection at a first-party proxy on the site's own domain (e.g. data-api="/bp/event"), so
+    // blockers that stop third-party analytics don't stop it; otherwise events go to wherever the script came from.
+    var endpoint = script.dataset.api
+        ? new URL(script.dataset.api.replace(/\/$/, '') + '/' + encodeURIComponent(site), window.location.href).toString()
+        : new URL('/api/v1/collect/' + encodeURIComponent(site), script.src).toString();
     var queue = [];
     var lastPage = window.location.href;
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Analytics;
 
 use App\Http\Controllers\Analytics\Concerns\ReadsReportParameters;
+use App\Models\AnalyticsAnnotation;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\AnalyticsReportQuery;
@@ -22,7 +23,7 @@ final class ShowOverviewController
     use ReadsReportParameters;
 
     /**
-     * Show the report page, with the releases that went live in the period. Unknown day ranges fall back to 30 days,
+     * Show the report page, with the releases that went live and the chart notes in the period. Unknown day ranges fall back to 30 days,
      * and filters are cut to their column lengths.
      *
      * @param  Request  $request
@@ -57,6 +58,9 @@ final class ShowOverviewController
             'period' => $period,
             'filters' => $filters,
             'summary' => $summary,
+            'annotations' => $site !== null && $summary !== null
+                ? AnalyticsAnnotation::query()->where('site_id', $site->id)->whereDate('date', '>=', $summary['range']['start']->toDateString())->whereDate('date', '<=', $summary['range']['end']->toDateString())->orderBy('date')->get()
+                : collect(),
             'releases' => $site !== null && $summary !== null ? $releases->handle($site, $summary['range']['start'], $summary['range']['end']) : collect(),
             'canManage' => $user->can('manageService', [$project, 'analytics']),
         ]);
