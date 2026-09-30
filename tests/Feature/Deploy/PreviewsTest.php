@@ -352,14 +352,16 @@ final class PreviewsTest extends TestCase
         $url = "{$this->base}/repositories/{$this->source->id}/previews";
         $this->actingAs($this->owner)->get("{$this->base}/repositories/{$this->source->id}?tab=settings")->assertOk()->assertSee('A copy of Shop staging');
         $this->actingAs($this->owner)->put($url, [...$settings, 'preview_database_source_website_id' => $elsewhere->id])->assertSessionHasErrors('preview_database_source_website_id');
-        $this->actingAs($this->owner)->put($url, [...$settings, 'preview_database_source_website_id' => $staging->id])->assertSessionHasNoErrors();
+        $this->actingAs($this->owner)->put($url, [...$settings, 'preview_database_source_website_id' => $staging->id, 'preview_database_mode' => 'sample'])->assertSessionHasNoErrors();
+        $this->assertSame('sample', $this->source->refresh()->preview_database_mode);
 
         [$preview, $build] = $this->readyToDeploy();
         $clone = DatabaseClone::query()->sole();
-        $this->assertSame([$staging->id, $preview->website_id, 'succeeded', null], [$clone->source_website_id, $clone->target_website_id, $clone->status, $clone->requested_by]);
+        $this->assertSame([$staging->id, $preview->website_id, 'succeeded', null, 'sample'], [$clone->source_website_id, $clone->target_website_id, $clone->status, $clone->requested_by, $clone->mode]);
         $this->assertNotNull($preview->database_copied_at);
         $copy = collect($this->shell->ran)->search(fn (array $run): bool => str_contains($run['command'], 'mysqldump'));
         $this->assertIsInt($copy, 'The database was copied before the first deploy.');
+        $this->assertStringContainsString("--where='1 LIMIT 1000'", $this->shell->ran[$copy]['command'], 'A sample takes the first rows of each table.');
         $this->assertSame(Build::STATUS_RUNNING, $build->status);
 
         $this->assertNotNull($preview->website);

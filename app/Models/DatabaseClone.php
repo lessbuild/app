@@ -18,6 +18,7 @@ use Illuminate\Support\Carbon;
  * @property int $target_website_id
  * @property string|null $requested_by
  * @property string $status queued, running, succeeded or failed
+ * @property string $mode full, sample (the first rows of each table) or schema
  * @property string|null $error
  * @property CarbonImmutable|null $started_at
  * @property CarbonImmutable|null $finished_at

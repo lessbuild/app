@@ -145,6 +145,13 @@
                         @endforeach
                     </x-signal.ui.select-field>
                 </div>
+                <div class="sm:col-span-2">
+                    <x-signal.ui.select-field name="preview_database_mode" :label="__('How much to copy')" :description="__('A sample takes the first :rows rows of each table: a quick branch of a big database. Schema only copies the tables without data, for your seeders to fill.', ['rows' => number_format(\App\Services\Infrastructure\DatabaseCommands::SAMPLE_ROWS)])">
+                        @foreach (['full' => __('Everything'), 'sample' => __('A sample of each table'), 'schema' => __('Schema only')] as $value => $label)
+                            <option value="{{ $value }}" @selected(old('preview_database_mode', $repository->preview_database_mode) === $value)>{{ $label }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                </div>
                 <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save preview settings') }}</x-signal.ui.button></div>
             </form>
         </x-signal.ui.settings-section>

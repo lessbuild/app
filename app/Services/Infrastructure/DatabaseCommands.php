@@ -59,19 +59,33 @@ final class DatabaseCommands
     }
 
     /**
-     * Replace the target's tables with a consistent dump of the source's. Both must be on the same server.
+     * The rows a sample copy takes from each table.
+     *
+     * @var int
+     */
+    public const SAMPLE_ROWS = 1000;
+
+    /**
+     * Replace the target's tables with a consistent dump of the source's: all of it, the first thousand rows of each
+     * table (a quick branch for previews of big databases), or the schema only. Both must be on the same server.
      *
      * @param  Website  $source
      * @param  Website  $target
+     * @param  string  $mode  full, sample or schema
      * @return string
      */
-    public function copy(Website $source, Website $target): string
+    public function copy(Website $source, Website $target, string $mode = 'full'): string
     {
         $password = $this->rootPassword($source);
         $from = $this->identifier($source->databaseIdentifier());
         $to = $this->identifier($target->databaseIdentifier());
+        $rows = match ($mode) {
+            'schema' => ' --no-data',
+            'sample' => ' --where='.escapeshellarg('1 LIMIT '.self::SAMPLE_ROWS),
+            default => '',
+        };
 
-        return 'set -o pipefail; MYSQL_PWD='.escapeshellarg($password)." mysqldump --protocol=socket -u root --single-transaction --routines --triggers --events --add-drop-table {$from}"
+        return 'set -o pipefail; MYSQL_PWD='.escapeshellarg($password)." mysqldump --protocol=socket -u root --single-transaction --routines --triggers --events --add-drop-table{$rows} {$from}"
             .' | MYSQL_PWD='.escapeshellarg($password)." mysql --protocol=socket -u root {$to}";
     }
 

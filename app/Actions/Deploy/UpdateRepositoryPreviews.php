@@ -28,7 +28,7 @@ final class UpdateRepositoryPreviews
      *
      * @param  User  $actor
      * @param  Repository  $repository
-     * @param  array{previews_enabled: bool, preview_domain: string|null, preview_ttl_hours: int, preview_initialization_command: string|null, preview_database_source_website_id?: int|null}  $data
+     * @param  array{previews_enabled: bool, preview_domain: string|null, preview_ttl_hours: int, preview_initialization_command: string|null, preview_database_source_website_id?: int|null, preview_database_mode?: string}  $data
      * @return void
      */
     public function handle(User $actor, Repository $repository, array $data): void

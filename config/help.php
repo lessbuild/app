@@ -202,7 +202,7 @@ return [
                 ['Turn previews on', 'On the repository’s page, turn on previews. Each new pull request gets its own website and environment.'],
                 ['Share it', 'GitHub App repositories get a check run and a comment with the preview’s address.'],
                 ['Secrets', 'Previews start without secrets; approve the ones a preview needs for its exact revision.'],
-                ['Start with data', 'On the repository’s page, choose a website to copy the database from, and each preview starts with a copy of it.'],
+                ['Start with data', 'On the repository’s page, choose a website to copy the database from, and each preview starts with a copy of it: everything, a quick branch with the first 1,000 rows of each table (best for big databases), or the schema only for your seeders to fill.'],
                 ['Clean-up', 'A preview is removed when its pull request is closed or merged.'],
                 ['Any branch', 'On Previews, use Preview a branch to open one for any branch, not only a pull request, and choose when it closes (1 to 30 days). It deploys the branch’s latest commit; open it again to deploy newer commits or move the date.'],
             ],

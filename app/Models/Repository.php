@@ -52,6 +52,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property string $preview_database_mode how previews copy the database: full, sample or schema
  * @property int|null $preview_database_source_website_id the website whose database new previews start from
  * @property-read Project $project
  * @property-read Provider|null $provider
