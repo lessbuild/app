@@ -36,6 +36,20 @@
             <p class="text-sm text-muted">{{ __('Promoted to :environment as', ['environment' => $promotion->environment->name ?? '—']) }} <a href="{{ route('deploy.builds.show', [$project, $promotion->id]) }}" class="font-bold text-primary hover:underline">#{{ $promotion->id }}</a>.</p>
         @endforeach
         @if ($build->failure_message)<p class="text-sm text-danger">{{ $build->failure_message }}</p>@endif
+        @php($releaseNotes = \App\Support\Deploy\ReleaseNotes::sections($build->release_commits ?? []))
+        @if ($releaseNotes !== [])
+            <section class="grid gap-2" aria-labelledby="release-notes">
+                <h2 id="release-notes" class="text-sm font-bold text-ink">{{ __('Release notes') }} <span class="font-normal text-muted">· {{ trans_choice(':count commit|:count commits', count($build->release_commits ?? []), ['count' => count($build->release_commits ?? [])]) }}</span></h2>
+                @foreach ($releaseNotes as $section => $notes)
+                    <div>
+                        <h3 class="text-xs font-bold uppercase tracking-wide text-muted">{{ __($section) }}</h3>
+                        <ul class="mt-1 list-disc pl-5 text-sm text-ink">
+                            @foreach ($notes as $note)<li>{{ $note }}</li>@endforeach
+                        </ul>
+                    </div>
+                @endforeach
+            </section>
+        @endif
         @if ($build->destructive_migrations)
             <section class="grid gap-2" aria-labelledby="destructive-migrations">
                 <h2 id="destructive-migrations" class="text-sm font-bold text-ink">{{ __('Destructive migrations') }}</h2>

@@ -8,6 +8,7 @@ use App\Models\Build;
 use App\Models\EnvironmentDeployNotification;
 use App\Services\Monitoring\AlertDispatcher;
 use App\Services\Monitoring\TelemetryRedactor;
+use App\Support\Deploy\ReleaseNotes;
 
 /**
  * Tells an environment's chosen alert destinations (Slack, Teams, Discord, webhooks, email) when a deploy goes live,
@@ -63,6 +64,7 @@ final class DeployNotifications
                 'started_by' => $build->requester?->name, 'trigger' => $build->trigger_source, 'failure' => $build->failure_message,
             ],
         ]);
+        $payload['notes'] = $event === 'deploy_succeeded' ? ReleaseNotes::text($build->release_commits ?? []) : null;
         $payload['url'] = route('deploy.builds.show', [$project, $build->id]);
         $payload['url_label'] = __('View deploy');
         foreach ($routes as $route) {

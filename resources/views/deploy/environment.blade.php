@@ -276,6 +276,20 @@
     </x-signal.ui.page-tab-panel>
 
     <x-signal.ui.page-tab-panel name="automation" :current="$tab">
+    <x-signal.ui.settings-section id="release-notes" :title="__('Release notes')" :description="__('Each deploy’s notes are written from its commits (feat:, fix: and perf: prefixes are grouped; chores, docs and tests are left out), shown on the deploy and sent with Deploy live notifications. Publish them for your users at a public address.')">
+        <div class="grid gap-3 p-4 sm:p-6">
+            @if ($environment->release_notes_token)
+                <x-signal.ui.code-block :code="route('deploy.release-notes.public', $environment->release_notes_token)" class="break-all whitespace-pre-wrap" />
+            @endif
+            @if ($canManage)
+                <form method="POST" action="{{ route('deploy.environments.release-notes', [$project, $environment]) }}">
+                    @csrf @method($environment->release_notes_token ? 'DELETE' : 'PUT')
+                    <x-signal.ui.button type="submit" :variant="$environment->release_notes_token ? 'quiet' : 'secondary'">{{ $environment->release_notes_token ? __('Take the public page down') : __('Publish release notes') }}</x-signal.ui.button>
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section id="maintenance" :title="__('Maintenance mode')" :description="__('Show visitors a “back soon” page while you work, on every website this environment deploys to. It stays on through deploys and hibernation until you turn it off.')">
         <div class="grid gap-4 p-4 sm:p-6">
             @if ($environment->maintenance_error)

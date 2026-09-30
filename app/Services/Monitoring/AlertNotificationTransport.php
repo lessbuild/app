@@ -196,7 +196,7 @@ final class AlertNotificationTransport
     {
         $title = $this->heading($payload);
         $context = $payload['application'].' / '.$payload['environment'];
-        $text = $title."\n".$context."\nDelivery ".$id;
+        $text = $title."\n".$context.(is_string($payload['notes'] ?? null) ? "\n\n".$payload['notes'] : '')."\nDelivery ".$id;
         $blocks = [
             ['type' => 'section', 'text' => ['type' => 'plain_text', 'text' => mb_substr($text, 0, 2900), 'emoji' => false]],
         ];
@@ -280,6 +280,7 @@ final class AlertNotificationTransport
             'allowed_mentions' => ['parse' => []],
             'embeds' => [[
                 'title' => mb_substr($title, 0, 256),
+                'description' => is_string($payload['notes'] ?? null) ? mb_substr($payload['notes'], 0, 4000) : null,
                 'color' => match ($payload['event']) {
                     'recovered', 'deploy_succeeded' => 0x16A34A,
                     'opened', 'escalated', 'deploy_failed' => 0xDC2626,

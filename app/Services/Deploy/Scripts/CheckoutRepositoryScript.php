@@ -34,6 +34,9 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
         $revision = $build->revision;
         $revisionCallback = escapeshellarg(ProvisioningCallbackUrl::buildRevision($build));
         $progress = $this->progress($step, $build);
+        // The commits since the last release that went live on this website, for the release notes.
+        $previous = Build::query()->where('website_id', $build->website_id)->where('id', '<', $build->id)->whereNotNull('activated_at')->latest('id')->value('revision');
+        $range = is_string($previous) && preg_match('/\A[0-9a-f]{40,64}\z/D', $previous) === 1 ? escapeshellarg($previous.'..HEAD') : '-n 30 HEAD';
 
         if ($build->git_ref !== null) {
             if (GitRef::normalize($build->git_ref) !== $build->git_ref) {
@@ -71,9 +74,11 @@ class CheckoutRepositoryScript extends BuildProvisioningScript
             DEPLOYED_REVISION="$(git -C {$setupPath} rev-parse HEAD)"
             DEPLOYED_MESSAGE="$(git -C {$setupPath} log -1 --format=%B)"
             DEPLOYED_MESSAGE="\${DEPLOYED_MESSAGE:0:500}"
+            DEPLOYED_COMMITS="$(git -C {$setupPath} log --no-merges --format='%h%x1f%an%x1f%s' {$range} 2>/dev/null | head -n 200 || true)"
             curl --fail --silent --show-error --retry 2 --user-agent "deployer" \
                 --data-urlencode "revision=\$DEPLOYED_REVISION" \
                 --data-urlencode "commit_message=\$DEPLOYED_MESSAGE" \
+                --data-urlencode "commits=\$DEPLOYED_COMMITS" \
                 {$revisionCallback}
 
             # Ping

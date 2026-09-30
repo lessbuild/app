@@ -209,6 +209,7 @@ return [
             'steps' => [
                 ['Roll back', 'On any earlier successful build, choose Roll back. The previous release is switched back in seconds.'],
                 ['Compare', 'Choose Compare on a build to see the commits and settings that changed since another build.'],
+                ['Release notes', 'Each deploy lists the commits since the last live release as release notes: feat:, fix: and perf: commits are grouped (use conventional commit prefixes for the best notes), and chores, CI, docs, tests and merges are left out. They’re on the deploy’s page and in Deploy live notifications to Slack and Discord. To publish them, choose Publish release notes on the environment’s Automation tab; the public page shows only the notes, not who wrote them.'],
                 ['Promote', 'Promote a build that passed in staging to production; it keeps its history.'],
             ],
         ],

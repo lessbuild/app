@@ -16,6 +16,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Infrastructure\ProvisioningCallbackUrl;
+use App\Support\Deploy\ReleaseNotes;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Infrastructure\InfrastructureHelpers;
@@ -95,6 +96,43 @@ final class DeploymentsTest extends TestCase
         $this->post("/builds/{$build->id}/deployment/callback/status", ['status' => 1])->assertForbidden();
         $this->actingAs($this->owner)->get("{$this->base}/builds/{$build->id}")->assertOk()->assertSee('Live')->assertSee('0123456789ab')->assertSee('Done');
         $this->actingAs($this->owner)->get($this->base)->assertOk()->assertSee('shop')->assertSee('Live');
+    }
+
+    /**
+     * Check a deploy reports its commits since the last live release, the deploy page shows them as grouped release
+     * notes (chores and merges left out), the next deploy's script asks git for commits since this one, and the
+     * notes can be published on a public page and taken down.
+     *
+     * @return void
+     */
+    public function test_release_notes_are_written_from_the_deploys_commits(): void
+    {
+        $this->actingAs($this->owner)->post("{$this->base}/repositories", $this->repository(['url' => 'https://github.com/Acme/Shop.git']))->assertRedirect();
+        $repository = Repository::query()->sole();
+        $this->actingAs($this->owner)->post("{$this->base}/repositories/{$repository->id}/builds")->assertRedirect();
+        $build = Build::query()->sole();
+        $this->assertStringContainsString("log --no-merges --format='%h%x1f%an%x1f%s' -n 30 HEAD", $this->scripts->started[0]['script'], 'The first deploy takes the last 30 commits.');
+        $commits = implode("\n", ["a1b2c3d\x1fAda\x1ffeat(cart): save carts between visits (#12)", "b2c3d4e\x1fLin\x1ffix: rounding on totals", "c3d4e5f\x1fAda\x1fchore: bump deps", "d4e5f6a\x1fLin\x1fTidy the checkout copy"]);
+        $this->post(ProvisioningCallbackUrl::buildRevision($build), ['revision' => self::REVISION, 'commit_message' => 'Ship it', 'commits' => $commits])->assertNoContent();
+        foreach (range(1, 15) as $stage) {
+            $this->post(ProvisioningCallbackUrl::buildStatus($build), ['status' => $stage])->assertNoContent();
+        }
+        $this->assertCount(4, (array) $this->reload($build)->release_commits);
+        $this->actingAs($this->owner)->get("{$this->base}/builds/{$build->id}")->assertOk()
+            ->assertSeeInOrder(['Release notes', 'Features', 'Save carts between visits (#12)', 'Fixes', 'Rounding on totals', 'Other changes', 'Tidy the checkout copy'])->assertDontSee('bump deps');
+        $this->assertStringContainsString("Features:\n• Save carts between visits (#12)", (string) ReleaseNotes::text($this->reload($build)->release_commits ?? []));
+
+        $this->actingAs($this->owner)->post("{$this->base}/repositories/{$repository->id}/builds")->assertRedirect();
+        $this->assertStringContainsString("'".self::REVISION."..HEAD'", $this->scripts->started[1]['script'], 'The next deploy asks for commits since the live one.');
+
+        // The callbacks above ran signed in, so they share the person's rate limit; start a new minute.
+        $this->travel(2)->minutes();
+        $environmentUrl = "{$this->base}/environments/{$this->production->id}/release-notes";
+        $this->actingAs($this->owner)->put($environmentUrl)->assertRedirect();
+        $token = (string) $this->production->refresh()->release_notes_token;
+        $this->get("/releases/{$token}")->assertOk()->assertSee('Release notes')->assertSee('Save carts between visits (#12)')->assertDontSee('Ada');
+        $this->actingAs($this->owner)->delete($environmentUrl)->assertRedirect();
+        $this->get("/releases/{$token}")->assertNotFound();
     }
 
     public function test_a_failed_script_is_recorded_and_stale_deploys_are_reaped(): void

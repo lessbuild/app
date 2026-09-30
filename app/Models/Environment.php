@@ -55,6 +55,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property string|null $browser_key the public key the browser error script sends with; null when it's off
  * @property list<string>|null $browser_origins the origins (https://example.com) browser errors are accepted from
  * @property string|null $maintenance_error why the last maintenance mode change failed
+ * @property string|null $release_notes_token the address of its public release notes page; null when there's none
  * @property bool $migration_safety stop deploys before destructive migrations until someone approves them
  * @property string|null $security_gate the lowest vulnerability severity that stops a deploy: critical or high; null for none
  * @property bool $autoscale_enabled whether replicas follow the servers' CPU

@@ -34,6 +34,7 @@ final class RecordBuildCallbackController
                 $target,
                 (string) $request->validate(['revision' => ['required', 'string', 'regex:/\A[0-9a-fA-F]{40,64}\z/']])['revision'],
                 $request->validate(['commit_message' => ['nullable', 'string', 'max:10000']])['commit_message'] ?? null,
+                $request->validate(['commits' => ['nullable', 'string', 'max:60000']])['commits'] ?? null,
             ),
             default => app(RecordBuildLog::class)->handle($target, (string) $request->validate(['log' => ['required', 'string', 'max:'.(max(1, (int) config('deploy.deployment_log_max_characters')) * 2)]])['log']),
         };
