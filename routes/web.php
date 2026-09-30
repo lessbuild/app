@@ -102,6 +102,7 @@ use App\Http\Controllers\ComponentGalleryController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Deploy\ApplyConfigurationReviewController;
 use App\Http\Controllers\Deploy\ApplyWorkflowController;
+use App\Http\Controllers\Deploy\ApproveMigrationsController;
 use App\Http\Controllers\Deploy\ApprovePreviewSecretsController;
 use App\Http\Controllers\Deploy\CancelBuildController;
 use App\Http\Controllers\Deploy\CancelScheduledDeployController;
@@ -116,6 +117,7 @@ use App\Http\Controllers\Deploy\MoveEnvironmentRecipeController;
 use App\Http\Controllers\Deploy\PlanConfigurationController;
 use App\Http\Controllers\Deploy\PromoteBuildController;
 use App\Http\Controllers\Deploy\RecordBuildCallbackController;
+use App\Http\Controllers\Deploy\RecordDestructiveMigrationsController;
 use App\Http\Controllers\Deploy\RedeployBuildController;
 use App\Http\Controllers\Deploy\RefreshEnvironmentRecipeController;
 use App\Http\Controllers\Deploy\ReplaceEnvironmentVariablesController;
@@ -530,6 +532,8 @@ foreach (['status', 'failed', 'log', 'revision'] as $event) {
 
 Route::post('/builds/{build}/deployment/callback/security', EvaluateSecurityGateController::class)->whereNumber('build')
     ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.security');
+Route::post('/builds/{build}/deployment/callback/migrations', RecordDestructiveMigrationsController::class)->whereNumber('build')
+    ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.migrations');
 
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
@@ -703,6 +707,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/builds/{build}/rollback', RollbackBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.rollback');
             Route::post('/builds/{build}/promote', PromoteBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.promote');
             Route::post('/builds/{build}/cancel', CancelBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.cancel');
+            Route::post('/builds/{build}/approve-migrations', ApproveMigrationsController::class)->whereNumber('build')->middleware(['can:approve,build', 'throttle:10,1'])->name('builds.approve-migrations');
             Route::post('/builds/{build}/review', ReviewBuildController::class)->whereNumber('build')->middleware(['can:approve,build', 'throttle:20,1'])->name('builds.review');
         });
 

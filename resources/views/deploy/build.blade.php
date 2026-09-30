@@ -36,6 +36,19 @@
             <p class="text-sm text-muted">{{ __('Promoted to :environment as', ['environment' => $promotion->environment->name ?? '—']) }} <a href="{{ route('deploy.builds.show', [$project, $promotion->id]) }}" class="font-bold text-primary hover:underline">#{{ $promotion->id }}</a>.</p>
         @endforeach
         @if ($build->failure_message)<p class="text-sm text-danger">{{ $build->failure_message }}</p>@endif
+        @if ($build->destructive_migrations)
+            <section class="grid gap-2" aria-labelledby="destructive-migrations">
+                <h2 id="destructive-migrations" class="text-sm font-bold text-ink">{{ __('Destructive migrations') }}</h2>
+                <p class="text-sm text-muted">{{ __('The deploy stopped before running these. Check they’re intended and that nothing still reads what they remove.') }}</p>
+                <x-signal.ui.code-block :code="$build->destructive_migrations" class="max-h-64 overflow-auto whitespace-pre-wrap text-xs" />
+                @if ($canApprove && $build->status === 'failed')
+                    <form method="POST" action="{{ route('deploy.builds.approve-migrations', [$project, $build->id]) }}">
+                        @csrf
+                        <x-signal.ui.button type="submit" variant="danger">{{ __('Approve these migrations and deploy') }}</x-signal.ui.button>
+                    </form>
+                @endif
+            </section>
+        @endif
         @if ($build->observation_report)
             @php($report = $build->observation_report)
             <section class="grid gap-2" aria-labelledby="release-analysis">

@@ -89,6 +89,7 @@
             <div class="grid gap-2 sm:col-span-2">
                 <x-signal.ui.checkbox name="requires_deployment_approval" value="1" :checked="$environment->requires_deployment_approval">{{ __('Deploys need approval from someone else') }}</x-signal.ui.checkbox>
                 <x-signal.ui.checkbox name="automatic_rollback" value="1" :checked="$environment->automatic_rollback">{{ __('Roll back automatically when a live deploy fails') }}</x-signal.ui.checkbox>
+                <x-signal.ui.checkbox name="migration_safety" value="1" :checked="$environment->migration_safety" :description="__('Laravel apps: before migrating, lists the SQL pending migrations would run, and stops the deploy if any of it drops, truncates or renames, until someone who can approve deploys approves it.')">{{ __('Stop before destructive migrations') }}</x-signal.ui.checkbox>
             </div>
             <x-signal.ui.select-field name="deployment_strategy" :label="__('Strategy')">
                 @foreach (['blue_green' => __('Blue-green (switch when ready)'), 'canary' => __('Canary (check the new release first)'), 'rolling' => __('Rolling (restart workers one by one)')] as $value => $label)

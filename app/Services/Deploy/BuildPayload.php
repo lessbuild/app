@@ -42,6 +42,7 @@ final class BuildPayload
                 'start_command' => $environment->start_command, 'container_port' => $environment->container_port, 'dockerfile_path' => $environment->dockerfile_path,
             ],
             'security_gate' => $environment->security_gate,
+            'migration_safety' => $environment->migration_safety,
             'variables' => $values(['runtime', 'all']),
             'build_variables' => $values(['build', 'all']),
             'processes' => $environment->processes->where('is_enabled', true)->map(fn (EnvironmentProcess $process): array => [

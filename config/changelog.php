@@ -6,6 +6,7 @@ declare(strict_types=1);
 return [
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [
         'Release analysis: after each deploy, errors, request time and the conversion rate are compared with before it, and a release that’s worse past your limits is rolled back automatically.',
+        'Migration safety checks: deploys stop before migrations that drop, truncate or rename, until someone else approves them.',
         'Clone an environment: make staging from production’s settings, workers, recipes and variables in one step, choosing whether secrets come too.',
         'Monorepos: deploy one app from a subfolder, and only when a push changes its files.',
         'The GitHub Action now comments each deploy’s result on the pull request and reports it in the job summary and outputs.',

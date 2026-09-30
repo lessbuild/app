@@ -55,6 +55,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $observation_status observing, passed or failed
  * @property CarbonImmutable|null $observation_deadline_at
  * @property string|null $observation_error
+ * @property string|null $destructive_migrations the drop, truncate and rename statements the migration check stopped for
  * @property array{before: array<string, float|int|null>, after: array<string, float|int|null>, checked_at: string}|null $observation_report the release analysis: errors, latency and conversion before and after it went live
  * @property int|null $promoted_from_build_id the build in an earlier environment whose commit this one ships
  * @property string|null $promotion_note

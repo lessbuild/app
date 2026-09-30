@@ -45,7 +45,7 @@ final class UpdateEnvironmentDeploySettingsController
             'autoscale_cpu_target' => ['nullable', 'integer', 'between:20,95'],
         ]);
         $update->handle($user, $environment, [
-            'requires_deployment_approval' => $request->boolean('requires_deployment_approval'), 'automatic_rollback' => $request->boolean('automatic_rollback'),
+            'requires_deployment_approval' => $request->boolean('requires_deployment_approval'), 'automatic_rollback' => $request->boolean('automatic_rollback'), 'migration_safety' => $request->boolean('migration_safety'),
             'deployment_strategy' => $data['deployment_strategy'], 'rolling_pause_seconds' => (int) $data['rolling_pause_seconds'],
             'post_deployment_observation_minutes' => isset($data['post_deployment_observation_minutes']) ? (int) $data['post_deployment_observation_minutes'] : null,
             'rollback_error_rate_percent' => isset($data['rollback_error_rate_percent']) ? (int) $data['rollback_error_rate_percent'] : null,
