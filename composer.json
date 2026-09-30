@@ -44,7 +44,8 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/",
-            "BuildPusher\\Sdk\\": "sdk/php/src/"
+            "BuildPusher\\Sdk\\": "sdk/php/src/",
+            "BuildPusher\\Laravel\\": "sdk/laravel/src/"
         }
     },
     "scripts": {

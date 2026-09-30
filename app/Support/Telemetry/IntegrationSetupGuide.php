@@ -87,7 +87,7 @@ final class IntegrationSetupGuide
             'label' => self::STACKS[$stack],
             'install' => $profile['install'],
             'token' => $profile['token'],
-            'code' => str_replace('INGEST_ENDPOINT', $ingestEndpoint, $profile['code']),
+            'code' => str_replace(['INGEST_ENDPOINT', 'INGEST_BASE'], [$ingestEndpoint, (string) preg_replace('#/ingest$#', '', $ingestEndpoint)], $profile['code']),
             'verification' => 'A queued delivery returns HTTP 202; a synchronously processed or replayed delivery returns HTTP 200. Use the receipt ID from the response with the same environment token to inspect processing.',
             'receipt_endpoint' => $receiptEndpoint,
         ];
@@ -126,35 +126,27 @@ BASH,
     }
 
     /**
-     * Send the test event with Laravel's HTTP client, reading the token from config.
+     * Install the buildpusher/laravel package, which records requests, exceptions, slow queries, queue jobs and logs
+     * on its own once the key is set.
      *
      * @return array{install: string, token: string, code: string}
      */
     private function laravelProfile(): array
     {
         return [
-            'install' => 'No extra package is needed when using Laravel\'s HTTP client. Map BEACON_TOKEN to services.beacon.token in config/services.php.',
-            'token' => 'Store BEACON_TOKEN in .env or your secret manager, then read it through config(\'services.beacon.token\').',
-            'code' => <<<'PHP'
-use Illuminate\Support\Facades\Http;
+            'install' => 'composer require buildpusher/laravel. It records requests, exceptions, slow queries, queue jobs and warning-level logs, linked by trace, and sends them after each response or job.',
+            'token' => 'Set BUILDPUSHER_TOKEN to the ingest key in .env or your secret manager. Set BUILDPUSHER_RELEASE to the deployed version to tie errors to releases.',
+            'code' => <<<'BASH'
+composer require buildpusher/laravel
 
-$testId = 'connection-test-'.now()->timestamp;
+# .env
+BUILDPUSHER_TOKEN=REPLACE_WITH_ENVIRONMENT_TOKEN
+BUILDPUSHER_ENDPOINT=INGEST_BASE
+BUILDPUSHER_RELEASE=v1.4.0
 
-$response = Http::withToken(config('services.beacon.token'))
-    ->acceptJson()
-    ->post('INGEST_ENDPOINT', [
-        'batch_id' => $testId,
-        'events' => [[
-            'id' => $testId,
-            'type' => 'log',
-            'name' => 'Connection test',
-            'service' => config('app.name', 'laravel-app'),
-            'severity' => 'info',
-        ]],
-    ]);
-
-$response->throw();
-PHP,
+# In your deploy pipeline, mark the release:
+php artisan buildpusher:deploy "$BUILDPUSHER_RELEASE" --commit="$GIT_SHA"
+BASH,
         ];
     }
 

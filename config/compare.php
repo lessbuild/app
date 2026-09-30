@@ -97,5 +97,19 @@ return [
             ],
             'choose_them' => 'You rely on Google Ads, audiences and cross-device reporting, and want analytics tied into Google’s marketing tools.',
         ],
+        'laravel-nightwatch' => [
+            'name' => 'Laravel Nightwatch',
+            'summary' => 'Laravel Nightwatch is the Laravel team’s own monitoring for Laravel applications, installed as a package that reports what the app does.',
+            'same' => [
+                'A composer package that records requests, exceptions, slow queries and queue jobs, linked together.',
+                'Exceptions grouped into issues you can assign and resolve.',
+            ],
+            'different' => [
+                'Uptime, DNS, TLS and heartbeat checks, incidents with on-call and escalations, and public status pages in the same place.',
+                'Not only Laravel: any stack can send events or OpenTelemetry, and browser errors are caught too.',
+                'Deploys, servers, security scanning and Analytics are in the same account, and every trace shows the deploy that served it.',
+            ],
+            'choose_them' => 'You want monitoring built by the Laravel team, with the deepest view of Laravel’s own internals.',
+        ],
     ],
 ];

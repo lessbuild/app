@@ -225,6 +225,7 @@ return [
             'summary' => 'Instrument your application so problems point at the release that caused them.',
             'steps' => [
                 ['Get a key', 'Monitoring → Setup. Create an ingestion key for the environment.'],
+                ['Laravel', 'For Laravel apps, composer require buildpusher/laravel and set BUILDPUSHER_TOKEN. Requests, exceptions, slow queries, queue jobs and warning-level logs are recorded and linked by trace; php artisan buildpusher:deploy marks each release.'],
                 ['Send data', 'Use the SDK snippet on the setup page, or send OpenTelemetry traces, logs and metrics to the OTLP endpoint shown there.'],
                 ['Investigate', 'Errors are grouped into Issues; Events, Metrics and Traces let you dig in, and Releases show what changed.'],
                 ['Browser errors', 'Monitoring → Setup → Browser errors. List the origins your pages are served from and turn it on, then add the script tag it shows to every page. JavaScript errors and unhandled promise rejections become issues from the “browser” service, with the browser, operating system and release. Query strings are dropped from page addresses.'],
