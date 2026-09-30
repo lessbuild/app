@@ -263,6 +263,27 @@
     </x-signal.ui.page-tab-panel>
 
     <x-signal.ui.page-tab-panel name="automation" :current="$tab">
+    <x-signal.ui.settings-section id="maintenance" :title="__('Maintenance mode')" :description="__('Show visitors a “back soon” page while you work, on every website this environment deploys to. It stays on through deploys and hibernation until you turn it off.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @if ($environment->maintenance_error)
+                <x-signal.ui.alert tone="danger">{{ __('The last change didn’t apply everywhere: :error', ['error' => $environment->maintenance_error]) }}</x-signal.ui.alert>
+            @endif
+            @if ($environment->maintenance_at)
+                <p class="text-sm"><x-signal.ui.badge tone="warning">{{ __('In maintenance') }}</x-signal.ui.badge> <span class="text-muted">{{ __('since :when', ['when' => $environment->maintenance_at->diffForHumans()]) }}</span></p>
+                <p class="text-sm text-muted">{{ __('To see the site yourself, open any of its addresses with this path once; a cookie lets you in from then on:') }} <code class="font-mono text-ink">/{{ $environment->maintenance_secret }}</code></p>
+            @else
+                <p class="text-sm"><x-signal.ui.badge tone="success">{{ __('Live') }}</x-signal.ui.badge></p>
+            @endif
+            @if ($canManage)
+                <form method="POST" action="{{ route('deploy.environments.maintenance', [$project, $environment]) }}">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="down" value="{{ $environment->maintenance_at ? '0' : '1' }}">
+                    <x-signal.ui.button type="submit" :variant="$environment->maintenance_at ? 'primary' : 'secondary'" size="sm">{{ $environment->maintenance_at ? __('Bring the websites back') : __('Turn on maintenance mode') }}</x-signal.ui.button>
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section id="hibernation" :title="__('Hibernation')" :description="__('After a while without requests, Laravel apps go into maintenance mode and workers stop; the next request wakes them within a minute. Deploys and scaling wake them too.')">
         <div class="grid gap-4 p-4 sm:p-6">
             <p class="text-sm">

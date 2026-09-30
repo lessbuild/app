@@ -83,7 +83,7 @@ final class ApplyEnvironmentRuntime implements ShouldBeUnique, ShouldQueue
             if ($website->server === null || $website->server->provisioning_status !== Server::STATUS_ACTIVE || $website->provisioning_status !== Website::STATUS_ACTIVE) {
                 continue;
             }
-            $result = $shell->run($website->server, self::script($website, $this->hibernate, $replicas));
+            $result = $shell->run($website->server, self::script($website, $this->hibernate, $replicas, $environment->maintenance_at !== null));
             if (! $result->successful()) {
                 throw new RuntimeException('Couldn’t '.($this->hibernate ? 'hibernate' : 'start').' '.$website->name.': '.$result->combined());
             }
@@ -98,9 +98,10 @@ final class ApplyEnvironmentRuntime implements ShouldBeUnique, ShouldQueue
      * @param  Website  $website
      * @param  bool  $hibernate
      * @param  int  $replicas
+     * @param  bool  $inMaintenance  whether the team put the environment into maintenance mode, which hibernation leaves alone
      * @return string
      */
-    public static function script(Website $website, bool $hibernate, int $replicas): string
+    public static function script(Website $website, bool $hibernate, int $replicas, bool $inMaintenance = false): string
     {
         $slug = $website->deployment_slug;
         if (preg_match('/\A[a-z0-9][a-z0-9-]{0,31}\z/', $slug) !== 1) {
@@ -110,11 +111,12 @@ final class ApplyEnvironmentRuntime implements ShouldBeUnique, ShouldQueue
         $manifest = escapeshellarg("/var/www/{$slug}/shared/processes/units");
         $artisan = $hibernate ? 'down --retry=60' : 'up';
         $flag = $hibernate ? '1' : '0';
+        $keep = $inMaintenance ? '1' : '0';
 
         return <<<BASH
         set -Eeuo pipefail
         ROOT={$root}
-        if [ -f "\$ROOT/artisan" ]; then
+        if [ {$keep} = 0 ] && [ -f "\$ROOT/artisan" ]; then
             sudo -u www-data php "\$ROOT/artisan" {$artisan} >/dev/null 2>&1 || true
         fi
         if [ -f {$manifest} ]; then

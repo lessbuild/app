@@ -137,6 +137,7 @@ use App\Http\Controllers\Deploy\UpdateDeploymentControlsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentDeployNotificationsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentDeploySettingsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentHibernationController;
+use App\Http\Controllers\Deploy\UpdateEnvironmentMaintenanceController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentRecipeSettingsController;
 use App\Http\Controllers\Deploy\UpdateEnvironmentRuntimeController;
 use App\Http\Controllers\Deploy\UpdateRepositoryController;
@@ -578,6 +579,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
                 Route::post('/environments/{environment}/tasks/{task}/run', RunScheduledTaskController::class)->whereNumber('task')->name('environments.tasks.run');
                 Route::get('/environments/{environment}/tasks/{task}/runs/{run}', ShowScheduledTaskRunController::class)->whereNumber(['task', 'run'])->name('environments.tasks.runs.show');
                 Route::put('/environments/{environment}/hibernation', UpdateEnvironmentHibernationController::class)->name('environments.hibernation');
+                Route::put('/environments/{environment}/maintenance', UpdateEnvironmentMaintenanceController::class)->name('environments.maintenance');
                 Route::put('/environments/{environment}/notifications', UpdateEnvironmentDeployNotificationsController::class)->name('environments.notifications');
                 Route::post('/environments/{environment}/runtime', UpdateEnvironmentRuntimeController::class)->name('environments.runtime');
                 Route::post('/environments/{environment}/recipes', StoreEnvironmentRecipeController::class)->name('environments.recipes.store');

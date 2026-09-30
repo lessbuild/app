@@ -62,6 +62,8 @@ enum AuditAction: string
     case ServerRenamed = 'server.renamed';
     case ServerDeleted = 'server.deleted';
     case ServerTaskSaved = 'server_task.saved';
+    case MaintenanceStarted = 'maintenance.started';
+    case MaintenanceEnded = 'maintenance.ended';
     case ServerTaskRemoved = 'server_task.removed';
     case WebsiteCreated = 'website.created';
     case WebsiteImported = 'website.imported';
@@ -104,7 +106,7 @@ enum AuditAction: string
             'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso' => 'security',
             'billing' => 'billing',
             'server', 'server_task', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
-            'environment' => 'deploy',
+            'environment', 'maintenance' => 'deploy',
             'monitor', 'alert_destination', 'alert_escalations', 'alert_routing', 'alert_rule', 'dashboard', 'ingest_token', 'status_page', 'status_update' => 'monitoring',
             default => 'team',
         };
@@ -191,6 +193,8 @@ enum AuditAction: string
             self::ServerImported => __('Imported the server :server (:ip)', ['server' => $value('server'), 'ip' => $value('ip')]),
             self::ServerRenamed => __('Renamed the server :server to :name', ['server' => $value('server'), 'name' => $value('name')]),
             self::ServerTaskSaved => __('Set up :task on the server :server', ['task' => $value('task'), 'server' => $value('server')]),
+            self::MaintenanceStarted => __('Put :environment into maintenance mode', ['environment' => $value('environment')]),
+            self::MaintenanceEnded => __('Brought :environment out of maintenance mode', ['environment' => $value('environment')]),
             self::ServerTaskRemoved => __('Removed :task from the server :server', ['task' => $value('task'), 'server' => $value('server')]),
             self::ServerDeleted => __('Deleted the server :server', ['server' => $value('server')]),
             self::WebsiteCreated => __('Created the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),
