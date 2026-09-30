@@ -116,7 +116,7 @@ Artisan::command('analytics:refresh-recent', function (RefreshRecentAggregates $
 })->purpose('Rebuild the last two days of analytics daily totals');
 Artisan::command('analytics:update-geoip', function (GeoIpDatabase $database): int {
     try {
-        $this->info('Installed the country database for '.$database->update().'.');
+        $this->info('Installed the '.config('analytics.geoip_edition').' database for '.$database->update().'.');
 
         return 0;
     } catch (RuntimeException $exception) {

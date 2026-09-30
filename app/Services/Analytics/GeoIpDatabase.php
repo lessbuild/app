@@ -40,7 +40,7 @@ final class GeoIpDatabase
             }
         }
 
-        throw new RuntimeException('No country database could be installed ('.implode('; ', $failures).').');
+        throw new RuntimeException('No '.config('analytics.geoip_edition').' database could be installed ('.implode('; ', $failures).').');
     }
 
     /**

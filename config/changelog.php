@@ -4,6 +4,27 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-09-30', 'title' => 'Analytics: explore, compare and share', 'changes' => [
+        'Pick any dates and compare with the period before or the same period last year. Save filter sets as segments.',
+        'New in reports: channels, regions and cities, screen sizes, browser and system versions, UTM term and content, and time on page and scroll depth for each page.',
+        'A new Explore page: what changed most, where visitors go before and after a page, custom property breakdowns, items sold, and weekly retention.',
+        'Email or Slack a weekly or monthly report, and get an alert when a lot of people are on the site at once.',
+        'Embed a shared report on another site, serve the tracker from your own domain so blockers don’t stop it, and add notes to the chart.',
+        'Import your history from Google Analytics 4, and export raw events each night to your own storage, ready for BigQuery.',
+    ]],
+    ['date' => '2026-09-30', 'title' => 'Servers and environments do more', 'changes' => [
+        'Add cron jobs, background processes, firewall rules, and Meilisearch, Typesense or Redis to a server in a click. Set up Reverb for a website in one step.',
+        'Edit a website’s web server settings (with an automatic undo if they’re invalid), browse its files, and tail or search its logs.',
+        'Put a domain behind Cloudflare’s CDN, block countries or addresses, and rate-limit it. The cache is cleared after each deploy.',
+        'Storage buckets for your apps, previews that start with a copy of another website’s database, and trusted private networking between your servers.',
+        'Autoscale an environment on CPU, put it into maintenance mode with a secret link for your team, and see which regions it runs in.',
+        'Traces now show the deploy that served them. Go past a plan’s allowance and pay only for what you use, with an optional spend cap.',
+    ]],
+    ['date' => '2026-09-29', 'title' => 'Quicker to get around', 'changes' => [
+        'Creating a server, your notifications and many more forms now open in place, without leaving the page.',
+        'A footer with the platform’s status and quick links on every page, and breadcrumbs that step back through where you are.',
+        'Billing shows each service on its own tab.',
+    ]],
     ['date' => '2026-09-29', 'title' => 'Analytics: today, countries, page speed and revenue', 'changes' => [
         'A Today view with visits per hour, and a “Right now” panel that updates itself.',
         'See which countries visitors come from, how long visits last, and which Google searches brought them (connect Search Console).',
