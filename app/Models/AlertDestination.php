@@ -135,7 +135,7 @@ class AlertDestination extends Model
      */
     public function targetLabel(): string
     {
-        return $this->type === AlertDestinationType::Email
+        return $this->type->followsPerson()
             ? ($this->on_call_schedule_id !== null ? 'On call: '.($this->onCallSchedule->name ?? 'schedule removed') : ($this->recipient->name ?? 'Recipient unavailable'))
             : ($this->type->isPhone()
                 ? (is_string($this->endpoint_url) ? substr($this->endpoint_url, 4, 3).' ••• '.substr($this->endpoint_url, -3) : 'Number unavailable')

@@ -25,6 +25,29 @@
         </form>
     </x-signal.ui.settings-section>
 
+    <x-signal.ui.settings-section id="push" :title="__('Push notifications')" :description="__('Get alerts and incidents on your phone or computer, even when BuildPusher isn’t open. On iPhone and iPad, first add BuildPusher to your Home Screen (Share → Add to Home Screen) and turn this on from there. Alert destinations of the Push type then reach these devices.')">
+        <div class="grid gap-4 p-4 sm:p-6" data-push-devices data-push-key="{{ $pushKey }}" data-push-url="{{ route('settings.push-devices.store') }}" data-push-worker="{{ asset('sw.js') }}">
+            @forelse ($pushDevices as $device)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><span class="font-bold text-ink">{{ $device->device ?? __('A device') }}</span> <span class="text-muted">· {{ __('added :time', ['time' => $device->created_at?->diffForHumans()]) }}@if ($device->last_used_at) · {{ __('last notified :time', ['time' => $device->last_used_at->diffForHumans()]) }}@endif</span></span>
+                    <form method="POST" action="{{ route('settings.push-devices.destroy', $device->id) }}">
+                        @csrf @method('DELETE')
+                        <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button>
+                    </form>
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('No devices yet.') }}</p>
+            @endforelse
+            <p class="text-sm text-danger" data-push-message hidden></p>
+            <div class="flex flex-wrap gap-2">
+                <x-signal.ui.button type="button" variant="secondary" data-push-enable>{{ __('Turn on for this device') }}</x-signal.ui.button>
+                @if ($pushDevices->isNotEmpty())
+                    <form method="POST" action="{{ route('settings.push-devices.test') }}">@csrf<x-signal.ui.button type="submit" variant="quiet">{{ __('Send a test') }}</x-signal.ui.button></form>
+                @endif
+            </div>
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section :title="__('Getting started')" :description="__('A welcome when you join, and one reminder a few days later if a project’s setup has stalled.')">
         <form method="POST" action="{{ route('settings.getting-started-emails.update') }}" class="grid gap-4 p-4 sm:p-6">
             @csrf

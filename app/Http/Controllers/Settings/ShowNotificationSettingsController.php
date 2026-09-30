@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Settings;
 
 use App\Enums\AccountRole;
+use App\Models\PushSubscription;
 use App\Models\User;
 use App\Services\Billing\Entitlements;
+use App\Services\Monitoring\WebPush;
 use App\Services\Telemetry\IssueDigest;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -31,6 +33,8 @@ final class ShowNotificationSettingsController
         return view('settings.notifications', [
             'account' => $account,
             'digestEnabled' => $account !== null && $digest->wants($account, $user),
+            'pushDevices' => PushSubscription::query()->where('user_id', $user->id)->latest('id')->get(),
+            'pushKey' => app(WebPush::class)->publicKey(),
             'digestAvailable' => $account !== null && $membership !== null && $membership->role !== AccountRole::Viewer && $membership->canUseService('monitoring')
                 && $entitlements->for($account)->has('monitoring.issue_digest'),
         ]);

@@ -13,8 +13,8 @@
         @endforeach
     </x-signal.ui.select-field>
 @endif
-@if (! $destination || $type === \App\Enums\AlertDestinationType::Email)
-    <x-signal.ui.select-field name="recipient_user_id" :label="__('Email recipient')" :description="$destination ? null : __('For email. A member with a verified email address, or whoever is on call in a schedule.')">
+@if (! $destination || $type?->followsPerson())
+    <x-signal.ui.select-field name="recipient_user_id" :label="__('Recipient')" :description="$destination ? null : __('For email and push. A member with a verified email address, or whoever is on call in a schedule. Push reaches the devices they’ve turned on in their notification settings.')">
         <option value="">{{ __('Choose a member') }}</option>
         @php($chosen = old('recipient_user_id', $destination?->on_call_schedule_id !== null ? 'schedule:'.$destination->on_call_schedule_id : $destination?->recipient_user_id))
         @if (($schedules ?? []) !== [])

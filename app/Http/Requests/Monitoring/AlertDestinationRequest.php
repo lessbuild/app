@@ -30,7 +30,7 @@ final class AlertDestinationRequest extends FormRequest
     {
         $destination = $this->destination();
         $type = $destination->type ?? AlertDestinationType::tryFrom($this->string('type')->toString());
-        $email = $type === AlertDestinationType::Email;
+        $email = $type?->followsPerson() ?? false;
         $pagerDuty = $type === AlertDestinationType::PagerDuty;
         $phone = $type?->isPhone() ?? false;
         $accountId = $this->project()->account_id;

@@ -14,3 +14,4 @@ import './live-regions';
 import './tabs';
 import './help-search';
 import './remote-fragments';
+import './push-devices';

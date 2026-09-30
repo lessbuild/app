@@ -31,6 +31,9 @@
             <meta name="error-endpoint" content="{{ route('browser-errors.store') }}">
         @endif
         <meta name="theme-color" content="#f4f7fb" data-theme-color>
+        <link rel="manifest" href="/manifest.webmanifest">
+        <meta name="apple-mobile-web-app-capable" content="yes">
+        <meta name="mobile-web-app-capable" content="yes">
         <meta name="robots" content="{{ $indexable ? 'index, follow' : 'noindex, nofollow' }}">
         @if ($canonical)
             <link rel="canonical" href="{{ $canonical }}">

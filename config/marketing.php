@@ -243,7 +243,7 @@ return [
                 ['label' => 'Respond', 'title' => 'Turn important signals into clear work', 'description' => 'Explicit alert conditions, routed notifications and a timeline for every incident.', 'features' => [
                     ['Alerts and escalations', 'Alert rules and service-level objectives, email, Slack and webhook destinations, and escalation steps.'],
                     ['Alerts you can trust', 'Alerts on matching log lines and on error-budget burn, and a noise report that finds the alerts that flap or get ignored.'],
-                    ['Incidents and on-call', 'Timelines with acknowledgements and notes, post-mortems drafted from the timeline and recent deploys, on-call rotations, and text and phone alerts.'],
+                    ['Incidents and on-call', 'Timelines with acknowledgements and notes, post-mortems drafted from the timeline and recent deploys, on-call rotations, and push, text and phone alerts.'],
                 ]],
             ],
             'workflows_heading' => 'Instrument. Detect. Respond.',

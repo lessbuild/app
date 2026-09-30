@@ -7,6 +7,7 @@ namespace App\Services\Monitoring;
 use App\Data\Monitoring\AlertDeliveryResult;
 use App\Enums\AlertDeliveryStatus;
 use App\Enums\AlertDestinationType;
+use App\Models\PushSubscription;
 use App\Notifications\IncidentAlertNotification;
 use GuzzleHttp\Handler\CurlHandler;
 use GuzzleHttp\Psr7\FnStream;
@@ -27,8 +28,9 @@ final class AlertNotificationTransport
      *
      * @param  PublicWebhookTarget  $targets  Checks and resolves webhook endpoints.
      * @param  TwilioAlerts  $twilio  Sends text messages and phone calls.
+     * @param  WebPush  $webPush  Sends push notifications.
      */
-    public function __construct(private readonly PublicWebhookTarget $targets, private readonly TwilioAlerts $twilio) {}
+    public function __construct(private readonly PublicWebhookTarget $targets, private readonly TwilioAlerts $twilio, private readonly WebPush $webPush) {}
 
     /**
      * Send one alert. Email goes through the monitoring mailer. Webhook-style destinations are posted to the address
@@ -37,12 +39,15 @@ final class AlertNotificationTransport
      * success rule, and failures are sorted into retryable, uncertain and rejected.
      *
      * @param  string  $id
-     * @param  array{type: AlertDestinationType, endpoint: ?string, secret: ?string, email: ?string}  $target
+     * @param  array{type: AlertDestinationType, endpoint: ?string, secret: ?string, email: ?string, user?: ?string}  $target
      * @param  array<string, mixed>  $payload
      * @return AlertDeliveryResult
      */
     public function send(string $id, array $target, array $payload): AlertDeliveryResult
     {
+        if ($target['type'] === AlertDestinationType::Push) {
+            return $this->push($target['user'] ?? null, $payload);
+        }
         if ($target['type']->isPhone()) {
             return $this->twilio->send($target['type'], substr((string) $target['endpoint'], 4), $this->spoken($payload));
         }
@@ -330,5 +335,41 @@ final class AlertNotificationTransport
         ]));
 
         return $this->heading($payload).'.'.($where !== '' ? ' '.$where.'.' : '');
+    }
+
+    /**
+     * Push the alert to each of the person's devices, forgetting devices that unsubscribed. Accepted when at least
+     * one device took it, failed when they have no devices left, and retried when the push services didn't answer.
+     *
+     * @param  string|null  $userId
+     * @param  array<string, mixed>  $payload
+     * @return AlertDeliveryResult
+     */
+    private function push(?string $userId, array $payload): AlertDeliveryResult
+    {
+        $devices = $userId === null ? collect() : PushSubscription::query()->where('user_id', $userId)->get();
+        if ($devices->isEmpty()) {
+            return new AlertDeliveryResult(AlertDeliveryStatus::Failed, 'no_push_devices');
+        }
+        $where = implode(' / ', array_filter([is_string($payload['project'] ?? null) ? $payload['project'] : null, is_string($payload['environment'] ?? null) ? $payload['environment'] : null]));
+        $message = ['title' => mb_substr($this->heading($payload), 0, 120), 'body' => $where, 'url' => is_string($payload['url'] ?? null) ? $payload['url'] : route('dashboard'), 'tag' => 'incident-'.($payload['incident_id'] ?? 'alert'), 'urgent' => ($payload['event'] ?? null) !== 'recovered'];
+        $sent = 0;
+        $remaining = $devices->count();
+        foreach ($devices as $device) {
+            $result = $this->webPush->send($device, $message);
+            if ($result === 'gone') {
+                $device->delete();
+                $remaining--;
+            } elseif ($result === 'sent') {
+                $device->forceFill(['last_used_at' => now()])->save();
+                $sent++;
+            }
+        }
+
+        return match (true) {
+            $sent > 0 => new AlertDeliveryResult(AlertDeliveryStatus::Accepted),
+            $remaining === 0 => new AlertDeliveryResult(AlertDeliveryStatus::Failed, 'no_push_devices'),
+            default => new AlertDeliveryResult(AlertDeliveryStatus::Retrying, 'push_failed'),
+        };
     }
 }

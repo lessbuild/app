@@ -215,7 +215,8 @@ return [
             'steps' => [
                 ['Add a monitor', 'Monitoring → Monitors → Add a monitor. Choose HTTP, DNS, TLS, TCP, a multi-step check, a heartbeat for scheduled jobs, or a queue.'],
                 ['Multi-step checks', 'A multi-step check follows a flow such as signing in or checking out: up to 10 requests in order, sharing cookies, following redirects, checking each status and text, and carrying values like a CSRF token from one step to the next with extract and {{name}}. The steps are stored encrypted; use a dedicated test account. It checks over HTTP, so pages that only work with JavaScript need an API step instead.'],
-                ['Choose where alerts go', 'Monitoring → Alerts → Destinations. Add email, Slack, Microsoft Teams, PagerDuty, Discord or a webhook.'],
+                ['Choose where alerts go', 'Monitoring → Alerts → Destinations. Add email, push notifications, Slack, Microsoft Teams, PagerDuty, Discord or a webhook.'],
+                ['Alerts on your phone', 'In your settings, under Notifications → Push notifications, choose Turn on for this device (on iPhone and iPad, add BuildPusher to your Home Screen first and do it from there). Then add a Push notification destination for yourself or for whoever is on call. Alerts arrive even when BuildPusher isn’t open; tap one to open the incident.'],
                 ['Planned work', 'Add a maintenance window before planned work, so expected downtime doesn’t open an incident.'],
                 ['Services you depend on', 'Under Services you depend on, follow GitHub, Cloudflare, DigitalOcean, Twilio and others, or any status page built on Atlassian Statuspage. Their status is checked every five minutes and shown beside your monitors, with the affected components and the provider’s incident.'],
             ],

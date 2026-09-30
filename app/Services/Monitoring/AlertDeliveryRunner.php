@@ -75,6 +75,7 @@ final class AlertDeliveryRunner
             $target = [
                 'type' => $destination->type, 'endpoint' => $destination->endpoint_url, 'secret' => $destination->signing_secret,
                 'email' => $destination->type === AlertDestinationType::Email ? $this->recipient($destination)?->email : null,
+                'user' => $destination->type === AlertDestinationType::Push ? $this->recipient($destination)?->id : null,
             ];
             $payload = $delivery->payload;
             $token = (string) Str::uuid();
@@ -178,7 +179,7 @@ final class AlertDeliveryRunner
         if ($destination->trashed() || ! $destination->enabled || $destination->target_revision !== $delivery->target_revision) {
             return 'destination_changed';
         }
-        if ($destination->type === AlertDestinationType::Email) {
+        if ($destination->type->followsPerson()) {
             $recipient = $this->recipient($destination);
             if ($recipient === null || ! $delivery->account->members()->whereKey($recipient->id)->whereNotNull('email_verified_at')->exists()) {
                 return 'recipient_unavailable';
@@ -275,7 +276,7 @@ final class AlertDeliveryRunner
     }
 
     /**
-     * Get who an email destination sends to right now: whoever is on call in its schedule, or its fixed recipient.
+     * Get who an email or push destination sends to right now: whoever is on call in its schedule, or its fixed recipient.
      *
      * @param  AlertDestination  $destination
      * @return User|null

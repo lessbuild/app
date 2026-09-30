@@ -59,7 +59,7 @@ final class SaveAlertDestination
             $scheduleId = null;
             $endpoint = null;
             $secret = null;
-            if ($type === AlertDestinationType::Email) {
+            if ($type->followsPerson()) {
                 $chosen = (string) ($data['recipient_user_id'] ?? '');
                 if (str_starts_with($chosen, 'schedule:')) {
                     $scheduleId = OnCallSchedule::query()->where('account_id', $account->id)->whereKey((int) substr($chosen, 9))->value('id');
