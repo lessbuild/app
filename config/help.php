@@ -225,6 +225,7 @@ return [
             'summary' => 'Instrument your application so problems point at the release that caused them.',
             'steps' => [
                 ['Get a key', 'Monitoring → Setup. Create an ingestion key for the environment.'],
+                ['Tickets', 'Monitoring → Setup → Ticket trackers: connect GitHub Issues (a repository and a fine-grained token that can write issues), Linear (an API key and the team ID) or Jira Cloud (your atlassian.net site, email, API token and project key). Then choose Create ticket on any issue; the ticket gets the error, where it happened, how often, and a link back, and the issue links to it.'],
                 ['Laravel', 'For Laravel apps, composer require buildpusher/laravel and set BUILDPUSHER_TOKEN. Requests, exceptions, slow queries, queue jobs and warning-level logs are recorded and linked by trace; php artisan buildpusher:deploy marks each release.'],
                 ['Send data', 'Use the SDK snippet on the setup page, or send OpenTelemetry traces, logs and metrics to the OTLP endpoint shown there.'],
                 ['Investigate', 'Errors are grouped into Issues; Events, Metrics and Traces let you dig in, and Releases show what changed.'],

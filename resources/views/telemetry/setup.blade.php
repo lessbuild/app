@@ -83,6 +83,43 @@
         </div>
     </x-signal.ui.settings-section>
 
+    <x-signal.ui.settings-section id="trackers" :title="__('Ticket trackers')" :description="__('File tickets for issues in GitHub Issues, Linear or Jira, from each issue’s page. Credentials are your own and stored encrypted; give them only the access to create issues.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @forelse ($trackers as $tracker)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><span class="font-bold text-ink">{{ $tracker->name }}</span> <span class="text-muted">· {{ \App\Models\IssueTracker::KINDS[$tracker->kind] ?? $tracker->kind }} · {{ $tracker->destination() }}</span></span>
+                    @if ($canManage)
+                        <form method="POST" action="{{ route('monitoring.trackers.destroy', [$project, $tracker->id]) }}">
+                            @csrf @method('DELETE')
+                            <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Disconnect') }}</x-signal.ui.button>
+                        </form>
+                    @endif
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('No trackers connected.') }}</p>
+            @endforelse
+            @if ($canManage)
+                <form method="POST" action="{{ route('monitoring.trackers.store', $project) }}" class="grid gap-3 sm:grid-cols-2">
+                    @csrf
+                    <x-signal.ui.select-field name="kind" :label="__('Tracker')">
+                        @foreach (\App\Models\IssueTracker::KINDS as $value => $label)
+                            <option value="{{ $value }}">{{ $label }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.input-field name="name" :label="__('Name')" maxlength="80" placeholder="Engineering" />
+                    <x-signal.ui.input-field name="repository" :label="__('GitHub: repository')" placeholder="acme/shop" maxlength="200" />
+                    <x-signal.ui.input-field name="token" type="password" :label="__('GitHub or Jira: token')" :description="__('GitHub: a fine-grained token with Issues read and write. Jira: an API token.')" maxlength="500" autocomplete="off" />
+                    <x-signal.ui.input-field name="api_key" type="password" :label="__('Linear: API key')" maxlength="500" autocomplete="off" />
+                    <x-signal.ui.input-field name="team_id" :label="__('Linear: team ID')" maxlength="100" />
+                    <x-signal.ui.input-field name="site" type="url" :label="__('Jira: site')" placeholder="https://acme.atlassian.net" maxlength="200" />
+                    <x-signal.ui.input-field name="email" type="email" :label="__('Jira: email')" maxlength="200" />
+                    <x-signal.ui.input-field name="project_key" :label="__('Jira: project key')" placeholder="OPS" maxlength="20" />
+                    <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="secondary">{{ __('Connect') }}</x-signal.ui.button></div>
+                </form>
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
+
     <x-signal.ui.settings-section id="browser-errors" :title="__('Browser errors')" :description="__('Catch JavaScript errors and unhandled promise rejections in your visitors’ browsers. They become issues from the “browser” service, beside your server errors. The key in the snippet is public; errors are only accepted from the origins you list.')">
         <div class="grid gap-6 p-4 sm:p-6">
             @foreach ($health['environments'] as $item)

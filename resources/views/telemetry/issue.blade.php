@@ -63,7 +63,28 @@
                 @if ($issue->environment)
                     <p class="text-muted">{{ __('First seen in :environment', ['environment' => $issue->environment->name]) }}</p>
                 @endif
+                @if ($issue->ticket_url)
+                    <p class="text-muted">{{ __('Ticket:') }} <a href="{{ $issue->ticket_url }}" class="font-bold text-primary hover:underline" rel="noopener noreferrer" target="_blank">{{ $issue->ticket_key }}</a></p>
+                @endif
             </x-signal.ui.card>
+
+            @if ($canUpdate && ! $issue->ticket_url)
+                <x-signal.ui.card>
+                    @if ($trackers->isEmpty())
+                        <p class="p-4 text-sm text-muted">{{ __('File tickets in GitHub Issues, Linear or Jira: connect a tracker on') }} <a href="{{ route('monitoring.setup', $project) }}#trackers" class="font-bold text-primary hover:underline">{{ __('Setup') }}</a>.</p>
+                    @else
+                        <form method="POST" action="{{ route('monitoring.issues.ticket', [$project, $issue->id]) }}" class="grid gap-3 p-4">
+                            @csrf
+                            <x-signal.ui.select-field name="tracker" :label="__('Create a ticket in')">
+                                @foreach ($trackers as $tracker)
+                                    <option value="{{ $tracker->id }}">{{ $tracker->name }} · {{ $tracker->destination() }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Create ticket') }}</x-signal.ui.button>
+                        </form>
+                    @endif
+                </x-signal.ui.card>
+            @endif
 
             @if ($canUpdate)
                 <x-signal.ui.card>

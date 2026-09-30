@@ -38,6 +38,8 @@ use Illuminate\Support\Carbon;
  * @property CarbonImmutable|null $resolved_at
  * @property CarbonImmutable|null $snoozed_until
  * @property int $state_version
+ * @property string|null $ticket_key the ticket filed for it, such as #42 or ENG-42
+ * @property string|null $ticket_url
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at

@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Telemetry;
 
 use App\Http\Requests\Telemetry\IntegrationSetupRequest;
 use App\Models\IngestToken;
+use App\Models\IssueTracker;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -52,6 +53,7 @@ final class ShowTelemetrySetupController
             'guide' => $guide->for($stack, route('api.ingest'), route('api.ingest.receipts.show', 'RECEIPT_ID')),
             'otlp' => $guide->openTelemetryConfiguration(route('api.otlp', 'traces'), route('api.otlp', 'logs'), route('api.otlp', 'metrics')),
             'canManage' => $user->can('manageService', [$project, 'monitoring']),
+            'trackers' => IssueTracker::query()->where('project_id', $project->id)->orderBy('name')->get(),
         ]);
     }
 }

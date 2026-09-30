@@ -233,7 +233,7 @@ return [
                     ['Services you depend on', 'The status of GitHub, Cloudflare, DigitalOcean and other providers beside your own checks.'],
                 ]],
                 ['label' => 'Telemetry', 'title' => 'Follow a request through the system', 'description' => 'The application signals that explain what users see.', 'features' => [
-                    ['Errors and issues', 'Exceptions grouped into issues with their releases, assignments and a daily digest.'],
+                    ['Errors and issues', 'Exceptions grouped into issues with their releases, assignments and a daily digest, and tickets in GitHub, Linear or Jira.'],
                     ['Laravel package', 'One composer package records requests, exceptions, slow queries, jobs and logs, linked by trace.'],
                     ['Browser errors', 'JavaScript errors from your visitors’ browsers, grouped into issues beside server errors.'],
                     ['Traces and metrics', 'OpenTelemetry traces, logs and metrics, a service map, a metrics explorer and dashboards.'],

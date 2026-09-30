@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Telemetry;
 
 use App\Http\Requests\Telemetry\UpdateIssueRequest;
 use App\Models\Issue;
+use App\Models\IssueTracker;
 use App\Models\Project;
 use App\Models\TelemetryEvent;
 use App\Models\User;
@@ -44,6 +45,7 @@ final class ShowIssueController
             'assignees' => $members->assignees($project),
             'canUpdate' => $user->can('manageService', [$project, 'monitoring']),
             'snoozeOptions' => UpdateIssueRequest::SNOOZE_MINUTES,
+            'trackers' => IssueTracker::query()->where('project_id', $project->id)->orderBy('name')->get(),
         ]);
     }
 }

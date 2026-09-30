@@ -62,6 +62,7 @@ final class IssueActivity extends Model
     {
         return match ($this->action) {
             'detected' => 'Issue detected',
+            'ticket_created' => 'Ticket created',
             'resolve' => 'Marked resolved',
             'reopen' => 'Reopened',
             'ignore' => 'Ignored future occurrences',

@@ -433,6 +433,8 @@ use App\Http\Controllers\StatusPages\SubscribeToStatusPageController;
 use App\Http\Controllers\StatusPages\UnsubscribeFromStatusPageController;
 use App\Http\Controllers\StatusPages\UnsubscribeStatusWebhookController;
 use App\Http\Controllers\Telemetry\CreateIngestTokenController;
+use App\Http\Controllers\Telemetry\CreateIssueTicketController;
+use App\Http\Controllers\Telemetry\DeleteIssueTrackerController;
 use App\Http\Controllers\Telemetry\RetryIngestReceiptController;
 use App\Http\Controllers\Telemetry\RevokeIngestTokenController;
 use App\Http\Controllers\Telemetry\RotateIngestTokenController;
@@ -450,6 +452,7 @@ use App\Http\Controllers\Telemetry\ShowReleasesController;
 use App\Http\Controllers\Telemetry\ShowTelemetrySetupController;
 use App\Http\Controllers\Telemetry\ShowTraceController;
 use App\Http\Controllers\Telemetry\StoreDeploymentController;
+use App\Http\Controllers\Telemetry\StoreIssueTrackerController;
 use App\Http\Controllers\Telemetry\UpdateBrowserErrorsController;
 use App\Http\Controllers\Telemetry\UpdateIssueController;
 use App\Http\Controllers\Webhooks\StripeWebhookController;
@@ -864,6 +867,9 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
 
             Route::get('/issues', ShowIssuesController::class)->name('issues');
             Route::get('/issues/{issue}', ShowIssueController::class)->whereNumber('issue')->name('issues.show');
+            Route::post('/issues/{issue}/ticket', CreateIssueTicketController::class)->whereNumber('issue')->middleware(['can:update,issue', 'throttle:20,1'])->name('issues.ticket');
+            Route::post('/trackers', StoreIssueTrackerController::class)->middleware(['can:create,App\\Models\\IngestToken,project', 'throttle:20,1'])->name('trackers.store');
+            Route::delete('/trackers/{tracker}', DeleteIssueTrackerController::class)->whereNumber('tracker')->middleware(['can:create,App\\Models\\IngestToken,project', 'throttle:20,1'])->name('trackers.destroy');
             Route::patch('/issues/{issue}', UpdateIssueController::class)->whereNumber('issue')->middleware(['can:update,issue', 'throttle:60,1'])->name('issues.update');
             Route::get('/events', ShowEventsController::class)->name('events');
             Route::get('/events/{event}', ShowEventController::class)->whereNumber('event')->name('events.show');
