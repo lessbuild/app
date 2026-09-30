@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services\Monitoring;
 
 use App\Data\Monitoring\MonitorObservation;
+use App\Jobs\Infrastructure\HealWebsite;
 use App\Models\Incident;
 use App\Models\Monitor;
+use App\Models\Website;
 use Carbon\CarbonImmutable;
 
 final class MonitorResults
@@ -73,6 +75,11 @@ final class MonitorResults
             $incident->setRelation('monitor', $monitor);
             $incident->activities()->create(['action' => 'monitor_failed', 'metadata' => ['observation' => $observation]]);
             $this->deliveries->record($incident, 'opened');
+            // A website that heals itself gets its services checked and restarted straight away.
+            $website = Website::query()->where('health_monitor_id', $monitor->id)->where('self_healing', true)->first();
+            if ($website !== null) {
+                HealWebsite::dispatch($website->id, $incident->id)->afterCommit();
+            }
         }
     }
 }

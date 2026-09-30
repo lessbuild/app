@@ -19,6 +19,7 @@
 <x-signal.ui.input-field name="health_check_path" :label="__('Health check path')" :value="$website?->health_check_path ?? '/'" maxlength="255" />
 <div class="sm:col-span-2 flex flex-wrap items-end gap-5">
     <x-signal.ui.checkbox name="health_check_enabled" value="1" unchecked-value="0" :checked="(bool) ($website?->health_check_enabled ?? false)" :description="__('Checked by Monitoring in the linked environment, with its incidents and alerts.')">{{ __('Check the website’s health') }}</x-signal.ui.checkbox>
+    <x-signal.ui.checkbox name="self_healing" value="1" unchecked-value="0" :checked="(bool) ($website?->self_healing ?? false)" :description="__('When the health check fails, restart Caddy, PHP-FPM or the website’s workers if they’ve stopped (or reload them), at most three times an hour. What happened goes on the incident.')">{{ __('Heal it automatically') }}</x-signal.ui.checkbox>
     <x-signal.ui.select-field name="health_check_interval_minutes" :label="__('Every')">
         @foreach (\App\Models\Website::HEALTH_CHECK_INTERVALS as $minutes)
             <option value="{{ $minutes }}" @selected((int) old('health_check_interval_minutes', $website?->health_check_interval_minutes ?? 5) === $minutes)>{{ trans_choice(':count minute|:count minutes', $minutes, ['count' => $minutes]) }}</option>

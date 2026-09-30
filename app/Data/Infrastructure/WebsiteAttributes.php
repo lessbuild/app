@@ -27,6 +27,7 @@ final readonly class WebsiteAttributes
             'health_check_enabled' => (bool) ($data['health_check_enabled'] ?? false),
             'health_check_path' => (string) ($data['health_check_path'] ?? '/'),
             'health_monitoring_enabled' => (bool) ($data['health_monitoring_enabled'] ?? true),
+            'self_healing' => (bool) ($data['self_healing'] ?? false),
             'health_check_interval_minutes' => (int) ($data['health_check_interval_minutes'] ?? 5),
             'health_failure_threshold' => (int) ($data['health_failure_threshold'] ?? 3),
         ];

@@ -37,6 +37,7 @@ final class WebsiteRequest extends FormRequest
             'health_check_enabled' => ['sometimes', 'boolean'],
             'health_check_path' => ['sometimes', 'string', 'max:255', "regex:#\\A/(?!/)[A-Za-z0-9._~%!$&'()*+,;=:@/\\-]*\\z#D"],
             'health_monitoring_enabled' => ['sometimes', 'boolean'],
+            'self_healing' => ['sometimes', 'boolean'],
             'health_check_interval_minutes' => ['sometimes', 'integer', Rule::in(Website::HEALTH_CHECK_INTERVALS)],
             'health_failure_threshold' => ['sometimes', 'integer', Rule::in(Website::HEALTH_FAILURE_THRESHOLDS)],
         ];

@@ -94,6 +94,7 @@ return [
             'title' => 'Add a website',
             'summary' => 'Host a website on a server, with a domain, TLS and a database.',
             'steps' => [
+                ['Heal it automatically', 'With the health check on, tick Heal it automatically: when the check fails, BuildPusher restarts Caddy, PHP-FPM or the website’s workers if any have stopped (or reloads them when all are running), at most three times an hour, and notes what it did on the incident.'],
                 ['Create it', 'Infrastructure → Websites → Add a website. Choose the server and the website’s main domain.'],
                 ['Point the domain', 'Point the domain’s DNS at the server’s IP address, or connect Cloudflare and we’ll create the record. A certificate is issued automatically.'],
                 ['Aliases and redirects', 'Add more domains on the website’s page, as aliases or as redirects to the main one.'],

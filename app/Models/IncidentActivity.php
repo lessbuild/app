@@ -73,6 +73,8 @@ class IncidentActivity extends Model
             'rule_paused' => 'Evaluations paused',
             'rule_resumed' => 'Evaluations resumed',
             'monitor_failed' => 'Uptime checks failed',
+            'self_healed' => 'Tried to heal the website',
+            'self_heal_skipped' => 'Didn’t try to heal it again',
             'monitor_changed' => 'Closed because monitor conditions changed',
             'monitor_archived' => 'Closed because the monitor was archived',
             'monitor_paused' => 'Uptime checks paused',

@@ -45,6 +45,7 @@ use Illuminate\Support\Str;
  * @property bool $health_check_enabled
  * @property string $health_check_path
  * @property bool $health_monitoring_enabled
+ * @property bool $self_healing restart its stopped services when its health check fails
  * @property int $health_check_interval_minutes
  * @property int $health_failure_threshold
  * @property int $health_failure_count
@@ -306,7 +307,7 @@ class Website extends Model
         return [
             'env_file' => 'encrypted', 'database_password' => 'encrypted', 'setup_stage' => 'integer', 'previous_server_id' => 'integer',
             'provisioned_at' => 'immutable_datetime', 'release_retention' => 'integer', 'log_retention_lines' => 'integer',
-            'health_check_enabled' => 'boolean', 'health_monitoring_enabled' => 'boolean', 'health_check_interval_minutes' => 'integer',
+            'health_check_enabled' => 'boolean', 'health_monitoring_enabled' => 'boolean', 'self_healing' => 'boolean', 'health_check_interval_minutes' => 'integer',
             'health_failure_threshold' => 'integer', 'health_failure_count' => 'integer', 'health_last_checked_at' => 'immutable_datetime',
         ];
     }
