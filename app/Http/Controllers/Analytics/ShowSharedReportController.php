@@ -48,6 +48,7 @@ final class ShowSharedReportController
             'site' => $site,
             'token' => $token,
             'embed' => $embed,
+            'reportRoute' => $embed ? 'analytics.shared.embed' : 'analytics.shared',
             'days' => $days,
             'period' => $period,
             'filters' => $filters,

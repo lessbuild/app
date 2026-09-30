@@ -12,6 +12,7 @@
         <div class="grid gap-4 p-4 sm:p-6">
             <x-signal.ui.code-block :code="$snippet" class="whitespace-pre-wrap break-all" />
             <p class="text-xs text-muted">{{ __('Custom events: window.buildpusher.track(\'signup\'). Add revenue to measure what goals and campaigns earn: window.buildpusher.track(\'purchase\', {revenue: 49.99, currency: \'EUR\'}).') }}</p>
+            <p class="text-xs text-muted">{{ __('Without JavaScript: give a button or link the class bp-event-name=Signup (and bp-event-plan=pro for a property); clicking it sends the event.') }}</p>
             <div class="grid gap-2 text-sm">
                 <p class="font-bold text-ink">{{ __('Optional: count more automatically') }}</p>
                 <ul class="grid gap-1.5 text-muted">
@@ -19,6 +20,8 @@
                     <li><code class="font-mono text-ink">data-downloads</code> · {{ __('file downloads (PDFs, zips, documents and more), or list your own: data-downloads="pdf,zip"') }}</li>
                     <li><code class="font-mono text-ink">data-vitals</code> · {{ __('page speed (Core Web Vitals) as real visitors experience it') }}</li>
                     <li><code class="font-mono text-ink">data-not-found</code> · {{ __('on your 404 page only, to see which missing pages people reach') }}</li>
+                    <li><code class="font-mono text-ink">data-hash</code> · {{ __('count #/pages as separate pages, for sites that route with the URL’s hash') }}</li>
+                    <li><code class="font-mono text-ink">data-retention</code> · {{ __('recognise returning browsers for retention reports (keeps a random ID in the browser)') }}</li>
                 </ul>
                 <x-signal.ui.code-block :code="str_replace(' src=', ' data-outbound data-downloads data-vitals src=', $snippet)" class="whitespace-pre-wrap break-all" />
                 <p class="text-muted">{{ __('To leave your own visits out, open any page of the site once with ?bp_ignore=1 in each browser you use (?bp_ignore=0 counts it again).') }}</p>
@@ -151,6 +154,22 @@
                         <x-signal.ui.button type="submit" variant="secondary">{{ __('Connect Google Analytics') }}</x-signal.ui.button>
                     </form>
                 @endif
+            </div>
+        </x-signal.ui.settings-section>
+
+        <x-signal.ui.settings-section :title="__('View-only access')" :description="__('Let someone see this site’s report without joining the account, such as a client. Each person gets their own link, and you can take it away on its own.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @foreach ($site->viewers()->orderBy('email')->get() as $viewer)
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                        <span><span class="font-bold text-ink">{{ $viewer->email }}</span> <span class="text-muted">· {{ $viewer->last_viewed_at ? __('last viewed :time', ['time' => $viewer->last_viewed_at->diffForHumans()]) : __('not viewed yet') }}</span></span>
+                        <form method="POST" action="{{ route('analytics.sites.viewers.destroy', [$project, $site->id, $viewer->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                    </div>
+                @endforeach
+                <form method="POST" action="{{ route('analytics.sites.viewers.store', [$project, $site->id]) }}" class="flex flex-wrap items-end gap-3">
+                    @csrf
+                    <x-signal.ui.input-field name="email" type="email" :label="__('Email')" required />
+                    <x-signal.ui.button type="submit" variant="secondary">{{ __('Invite') }}</x-signal.ui.button>
+                </form>
             </div>
         </x-signal.ui.settings-section>
 

@@ -11,6 +11,7 @@ use App\Models\Server;
 use App\Models\Website;
 use App\Services\Billing\Entitlements;
 use App\Services\Infrastructure\ServerShell;
+use App\Support\IpRanges;
 
 /**
  * Watches a project's web servers for attacks and blocks the attackers. Every few minutes it summarises each
@@ -210,7 +211,7 @@ final class AttackWatch
         $attackers = [];
         foreach (preg_split('/\R/', trim($summary)) ?: [] as $line) {
             $parts = preg_split('/\s+/', trim($line)) ?: [];
-            if (count($parts) !== 5 || filter_var($parts[0], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false || $this->isCloudflare($parts[0])) {
+            if (count($parts) !== 5 || filter_var($parts[0], FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE) === false || IpRanges::contains(self::CLOUDFLARE, $parts[0])) {
                 continue;
             }
             [$ip, $total, $logins, $probes, $notFound] = [$parts[0], (int) $parts[1], (int) $parts[2], (int) $parts[3], (int) $parts[4]];
@@ -226,36 +227,5 @@ final class AttackWatch
         }
 
         return $attackers;
-    }
-
-    /**
-     * Determine whether an address is one of Cloudflare's.
-     *
-     * @param  string  $ip
-     * @return bool
-     */
-    private function isCloudflare(string $ip): bool
-    {
-        $address = inet_pton($ip);
-        if ($address === false) {
-            return false;
-        }
-        foreach (self::CLOUDFLARE as $range) {
-            [$network, $bits] = explode('/', $range, 2);
-            $prefix = inet_pton($network);
-            if ($prefix === false || strlen($prefix) !== strlen($address)) {
-                continue;
-            }
-            $bytes = intdiv((int) $bits, 8);
-            $remainder = (int) $bits % 8;
-            if (strncmp($address, $prefix, $bytes) !== 0) {
-                continue;
-            }
-            if ($remainder === 0 || ((ord($address[$bytes]) ^ ord($prefix[$bytes])) & (0xFF << (8 - $remainder)) & 0xFF) === 0) {
-                return true;
-            }
-        }
-
-        return false;
     }
 }

@@ -4,7 +4,7 @@
         <header class="flex flex-wrap items-end justify-between gap-4">
             @unless ($embed)
                 <div>
-                    <p class="ui-eyebrow">{{ __('Shared report') }}</p>
+                    <p class="ui-eyebrow">{{ $reportRoute === 'analytics.viewer' ? __('View-only access') : __('Shared report') }}</p>
                     <h1 class="mt-2 text-3xl font-extrabold tracking-tight text-ink">{{ $site->name }}</h1>
                     <p class="mt-1 text-sm text-muted">{{ implode(', ', $site->domains) }}</p>
                 </div>
@@ -14,13 +14,13 @@
                 @include('analytics._period-fields')
                 <x-signal.ui.button type="submit" variant="secondary">{{ __('Show') }}</x-signal.ui.button>
                 @if (array_filter($filters))
-                    <x-signal.ui.button :href="route($embed ? 'analytics.shared.embed' : 'analytics.shared', [$token, ...$period->query()])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
+                    <x-signal.ui.button :href="route($reportRoute, [$token, ...$period->query()])" variant="quiet">{{ __('Clear filters') }}</x-signal.ui.button>
                 @endif
             </form>
         </header>
 
         @include('analytics._report', [
-            'reportUrl' => fn (array $params): string => route($embed ? 'analytics.shared.embed' : 'analytics.shared', [$token, ...$params]),
+            'reportUrl' => fn (array $params): string => route($reportRoute, [$token, ...$params]),
             'goalsUrl' => null,
         ])
 

@@ -314,6 +314,8 @@ return [
                 ['Install the tracker', 'Copy the one-line script from the site’s page into your website’s head. Visits appear within a minute.'],
                 ['Set goals', 'Analytics → Goals. Count visits to a page, or an event you send, as a conversion.'],
                 ['Count more', 'Add data-outbound, data-downloads, data-vitals or data-not-found to the script for links, downloads, page speed and missing pages. Engagement (time on page and scroll depth) is counted automatically.'],
+                ['Events without code', 'Give any button or link a class such as bp-event-name=Signup, and bp-event-plan=pro for a property; clicking it sends the event.'],
+                ['Leave visits out', 'In the site’s settings, list addresses or networks to ignore (such as your office); their visits aren’t counted. Single-page apps that route with #/paths should add data-hash to the snippet.'],
                 ['Custom properties', 'To break events down by your own details, list the property names in the site’s settings, then send them: window.buildpusher.track(\'signup\', {plan: \'pro\'}).'],
             ],
         ],
@@ -336,6 +338,7 @@ return [
             'steps' => [
                 ['Reports and alerts', 'On the site’s page, under Reports and alerts, add a weekly or monthly report, or a traffic spike alert, by email or to a Slack incoming webhook.'],
                 ['Share', 'Under Share the report, create a read-only link, with a password if you like.'],
+                ['View-only people', 'Under View-only access, invite someone by email; they get their own link to the report without joining the account, and you can remove it on its own.'],
                 ['Embed', 'A link without a password comes with an iframe snippet to put the report on another page.'],
                 ['Export', 'Export a report as CSV from the overview, or read it through the API.'],
             ],

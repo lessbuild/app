@@ -8,6 +8,7 @@ use App\Exceptions\AccountRuleViolation;
 use App\Models\Project;
 use App\Models\SecuritySetting;
 use App\Models\User;
+use App\Support\IpRanges;
 use Illuminate\Support\Facades\Gate;
 
 final class SaveAttackSettings
@@ -26,8 +27,7 @@ final class SaveAttackSettings
     {
         Gate::forUser($actor)->authorize('manageService', [$project, 'security']);
         foreach ($allowlist as $entry) {
-            [$address, $bits] = array_pad(explode('/', $entry, 2), 2, null);
-            if (filter_var($address, FILTER_VALIDATE_IP) === false || ($bits !== null && (! ctype_digit($bits) || (int) $bits > 128))) {
+            if (! IpRanges::valid($entry)) {
                 throw new AccountRuleViolation('allowlist', __(':entry isn’t an address or network.', ['entry' => $entry]));
             }
         }

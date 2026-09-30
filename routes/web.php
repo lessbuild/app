@@ -49,6 +49,7 @@ use App\Http\Controllers\Analytics\DeleteFunnelController;
 use App\Http\Controllers\Analytics\DeleteGoalController;
 use App\Http\Controllers\Analytics\DeleteSiteController;
 use App\Http\Controllers\Analytics\DeleteSiteNotificationController;
+use App\Http\Controllers\Analytics\DeleteSiteViewerController;
 use App\Http\Controllers\Analytics\DisconnectSearchConsoleController;
 use App\Http\Controllers\Analytics\DownloadExportController;
 use App\Http\Controllers\Analytics\GoogleAnalyticsCallbackController;
@@ -64,6 +65,7 @@ use App\Http\Controllers\Analytics\ShowOverviewController;
 use App\Http\Controllers\Analytics\ShowSharedReportController;
 use App\Http\Controllers\Analytics\ShowSiteController;
 use App\Http\Controllers\Analytics\ShowSitesController;
+use App\Http\Controllers\Analytics\ShowViewerReportController;
 use App\Http\Controllers\Analytics\StartGoogleAnalyticsImportController;
 use App\Http\Controllers\Analytics\StopSharingSiteReportController;
 use App\Http\Controllers\Analytics\StoreAnnotationController;
@@ -71,6 +73,7 @@ use App\Http\Controllers\Analytics\StoreFunnelController;
 use App\Http\Controllers\Analytics\StoreGoalController;
 use App\Http\Controllers\Analytics\StoreSiteController;
 use App\Http\Controllers\Analytics\StoreSiteNotificationController;
+use App\Http\Controllers\Analytics\StoreSiteViewerController;
 use App\Http\Controllers\Analytics\UnlockSharedReportController;
 use App\Http\Controllers\Analytics\UpdateFunnelController;
 use App\Http\Controllers\Analytics\UpdateGoalController;
@@ -525,6 +528,7 @@ Route::post('/email/getting-started/{user}/stop', StopGettingStartedEmailsContro
 Route::get('/sso/callback', SsoCallbackController::class)->middleware('throttle:20,1')->name('sso.callback');
 // Shared Analytics reports: read-only, by secret link, optionally behind a password.
 Route::get('/share/analytics/{token}', ShowSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('analytics.shared');
+Route::get('/analytics/view/{token}', ShowViewerReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:60,1')->name('analytics.viewer');
 Route::get('/share/analytics/{token}/embed', ShowSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:120,1')->name('analytics.shared.embed');
 Route::post('/share/analytics/{token}/unlock', UnlockSharedReportController::class)->where('token', '[A-Za-z0-9]{40}')->middleware('throttle:10,1')->name('analytics.shared.unlock');
 // The platform's own pages report their JavaScript errors here, into the platform's Monitoring.
@@ -592,6 +596,8 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::delete('/sites/{site}/imports/{import}', DeleteAnalyticsImportController::class)->whereNumber(['site', 'import'])->middleware(['can:update,site', 'throttle:10,1'])->name('sites.imports.destroy');
             Route::post('/sites/{site}/annotations', StoreAnnotationController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('annotations.store');
             Route::delete('/sites/{site}/annotations/{annotation}', DeleteAnnotationController::class)->whereNumber(['site', 'annotation'])->middleware(['can:update,site', 'throttle:30,1'])->name('annotations.destroy');
+            Route::post('/sites/{site}/viewers', StoreSiteViewerController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.viewers.store');
+            Route::delete('/sites/{site}/viewers/{viewer}', DeleteSiteViewerController::class)->whereNumber(['site', 'viewer'])->middleware(['can:update,site', 'throttle:30,1'])->name('sites.viewers.destroy');
             Route::post('/sites/{site}/notifications', StoreSiteNotificationController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.notifications.store');
             Route::delete('/sites/{site}/notifications/{notification}', DeleteSiteNotificationController::class)->whereNumber(['site', 'notification'])->middleware(['can:update,site', 'throttle:30,1'])->name('sites.notifications.destroy');
             Route::post('/sites/{site}/share', ShareSiteReportController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.share');

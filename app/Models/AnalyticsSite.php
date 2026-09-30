@@ -30,6 +30,7 @@ use Illuminate\Support\Str;
  * @property Carbon|null $imported_until the last day of history imported from Google Analytics
  * @property list<string>|null $custom_properties custom event property keys the site keeps, for breakdowns
  * @property list<string>|null $excluded_paths
+ * @property list<string>|null $excluded_ips addresses and networks (CIDR) whose visits aren't counted
  * @property string $timezone
  * @property Carbon|null $verified_at
  * @property Carbon|null $last_event_at
@@ -98,6 +99,7 @@ class AnalyticsSite extends Model
             'imported_until' => 'date',
             'exported_until' => 'date',
             'excluded_paths' => 'array',
+            'excluded_ips' => 'array',
             'verified_at' => 'datetime',
             'collection_paused_at' => 'datetime',
             'last_event_at' => 'datetime',
@@ -137,6 +139,16 @@ class AnalyticsSite extends Model
     public function exportBucket(): BelongsTo
     {
         return $this->belongsTo(StorageBucket::class, 'export_bucket_id');
+    }
+
+    /**
+     * Get the people with view-only access to the site.
+     *
+     * @return HasMany<AnalyticsSiteViewer, $this>
+     */
+    public function viewers(): HasMany
+    {
+        return $this->hasMany(AnalyticsSiteViewer::class, 'site_id');
     }
 
     /**

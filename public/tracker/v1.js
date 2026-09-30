@@ -12,6 +12,8 @@
         : new URL('/api/v1/collect/' + encodeURIComponent(site), script.src).toString();
     var queue = [];
     var lastPage = window.location.href;
+    // data-hash counts #/pages as separate pages, for sites that route with the URL's hash.
+    var hashMode = script.dataset.hash !== undefined;
 
     function id() {
         if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -111,7 +113,8 @@
             id: id(),
             type: type,
             occurred_at: new Date().toISOString(),
-            path: path || url.pathname,
+            path: path || (hashMode ? url.pathname + url.hash : url.pathname),
+            hash: hashMode || undefined,
             referrer_host: referrerHost,
             utm_source: url.searchParams.get('utm_source'),
             utm_medium: url.searchParams.get('utm_medium'),
@@ -150,7 +153,7 @@
 
     // Engagement: how long each page is visible and how far down it's scrolled, sent when the page is hidden or left
     // (the time since the last report, and the furthest scroll so far).
-    var pagePath = window.location.pathname;
+    var pagePath = hashMode ? window.location.pathname + window.location.hash : window.location.pathname;
     var visibleSince = document.visibilityState === 'visible' ? Date.now() : null;
     var engagedMs = 0;
     var furthest = 0;
@@ -185,7 +188,7 @@
         if (window.location.href === lastPage) return;
         reportEngagement();
         lastPage = window.location.href;
-        pagePath = window.location.pathname;
+        pagePath = hashMode ? window.location.pathname + window.location.hash : window.location.pathname;
         furthest = 0;
         visibleSince = document.visibilityState === 'visible' ? Date.now() : null;
         push('pageview');
@@ -288,5 +291,22 @@
         };
     });
     window.addEventListener('popstate', navigationPageview);
+    if (hashMode) window.addEventListener('hashchange', navigationPageview);
+
+    // Events without JavaScript: give any element a class like bp-event-name=Signup (and bp-event-plan=pro for a
+    // property); clicking it sends the event.
+    document.addEventListener('click', function (event) {
+        var element = event.target && event.target.closest ? event.target.closest('[class*="bp-event-name="]') : null;
+        if (!element) return;
+        var name = null;
+        var properties = {};
+        String(element.className).split(/\s+/).forEach(function (token) {
+            var match = token.match(/^bp-event-([a-z0-9_]+)=(.+)$/i);
+            if (!match) return;
+            var value = decodeURIComponent(match[2].replace(/\+/g, ' '));
+            if (match[1] === 'name') name = value; else properties[match[1]] = value;
+        });
+        if (name) window.buildpusher.track(name, properties);
+    }, true);
     window.addEventListener('pagehide', function () { reportEngagement(); flush(); });
 }());

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Support\IpRanges;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Carbon;
 
@@ -51,26 +52,13 @@ final class SecuritySetting extends Model
     }
 
     /**
-     * Determine whether an address is on the allowlist (exactly, or inside one of its IPv4 networks).
+     * Determine whether an address is on the allowlist (exactly, or inside one of its networks).
      *
      * @param  string  $ip
      * @return bool
      */
     public function allows(string $ip): bool
     {
-        foreach ($this->allowlist ?? [] as $entry) {
-            if ($entry === $ip) {
-                return true;
-            }
-            if (str_contains($entry, '/') && filter_var($ip, FILTER_VALIDATE_IP, FILTER_FLAG_IPV4) !== false) {
-                [$network, $bits] = explode('/', $entry, 2);
-                $mask = -1 << (32 - max(0, min(32, (int) $bits)));
-                if (($long = ip2long($network)) !== false && (ip2long($ip) & $mask) === ($long & $mask)) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
+        return IpRanges::contains($this->allowlist ?? [], $ip);
     }
 }

@@ -11,6 +11,7 @@ use App\Http\Requests\Analytics\CollectEventsRequest;
 use App\Models\AnalyticsSite;
 use App\Support\Analytics\Channel;
 use App\Support\Analytics\CollectionRequest;
+use App\Support\IpRanges;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Str;
@@ -44,12 +45,20 @@ final class CollectEventsController
 
         $now = CarbonImmutable::now();
         $ip = CollectionRequest::clientIp($request);
+        if ($ip !== null && IpRanges::contains($site->excluded_ips ?? [], $ip)) {
+            return response()->json(['batch_id' => null, 'accepted' => 0], 202, CollectionRequest::corsHeaders($request));
+        }
         $location = $countries->location($ip);
         /** @var list<array<string, mixed>> $input */
         $input = $request->validated('events');
         $events = [];
         foreach ($input as $event) {
             $path = parse_url((string) $event['path'], PHP_URL_PATH) ?: '/';
+            // Sites that route with #hash (data-hash on the snippet) keep the fragment as part of the page.
+            $fragment = ($event['hash'] ?? false) === true ? parse_url((string) $event['path'], PHP_URL_FRAGMENT) : null;
+            if (is_string($fragment) && $fragment !== '') {
+                $path .= '#'.explode('?', $fragment, 2)[0];
+            }
             $path = '/'.ltrim(Str::limit($path, 2048, ''), '/');
             $path = $path === '//' ? '/' : $path;
             if ($site->excludesPath($path)) {

@@ -17,6 +17,7 @@ final readonly class SiteDetails
      * @param  list<string>  $excludedPaths  path patterns never recorded, e.g. /admin/*
      * @param  ?string  $environmentId  The project environment the site belongs to, if any.
      * @param  list<string>  $customProperties  custom event property keys to keep for breakdowns
+     * @param  list<string>  $excludedIps  addresses and networks whose visits aren't counted
      */
     public function __construct(
         public string $name,
@@ -25,5 +26,6 @@ final readonly class SiteDetails
         public array $excludedPaths = [],
         public ?string $environmentId = null,
         public array $customProperties = [],
+        public array $excludedIps = [],
     ) {}
 }

@@ -64,6 +64,7 @@ final class SaveSite
             'timezone' => $details->timezone,
             'excluded_paths' => array_values(array_filter(array_map(trim(...), $details->excludedPaths))),
             'custom_properties' => $details->customProperties === [] ? null : $details->customProperties,
+            'excluded_ips' => $details->excludedIps === [] ? null : $details->excludedIps,
         ])->save();
 
         if (! $site->isVerified()) {
