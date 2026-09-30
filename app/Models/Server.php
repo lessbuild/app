@@ -61,6 +61,11 @@ use Illuminate\Support\Str;
  * @property string|null $provisioning_process_path
  * @property CarbonImmutable|null $provisioned_at
  * @property list<array{name: string, description: string|null, script: string}>|null $recipe_snapshot
+ * @property int|null $patch_day the day of the week updates are installed (0 Sunday to 6 Saturday, UTC); null for no window
+ * @property int $patch_hour the hour (UTC) the update window starts
+ * @property bool $patch_reboot whether the window reboots the server when updates need it
+ * @property Carbon|null $last_patched_at
+ * @property string|null $last_patch_error
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -272,6 +277,10 @@ class Server extends Model
             'type' => ServerType::class,
             'ssh_port' => 'integer',
             'trust_private_network' => 'boolean',
+            'patch_day' => 'integer',
+            'patch_hour' => 'integer',
+            'patch_reboot' => 'boolean',
+            'last_patched_at' => 'datetime',
             'setup_stage' => 'integer',
             'provisioning_process_id' => 'integer',
             'password' => 'encrypted',

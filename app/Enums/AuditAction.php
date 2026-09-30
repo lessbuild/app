@@ -40,6 +40,7 @@ enum AuditAction: string
     case PayAsYouGoChanged = 'billing.pay_as_you_go';
     case SecurityFindingIgnored = 'security_finding.ignored';
     case SecurityFindingReopened = 'security_finding.reopened';
+    case SecurityFixApplied = 'security_fix.applied';
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenRevoked = 'api_token.revoked';
     case MonitorCreated = 'monitor.created';
@@ -106,7 +107,7 @@ enum AuditAction: string
     public function category(): string
     {
         return match (explode('.', $this->value)[0]) {
-            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso', 'security_finding' => 'security',
+            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso', 'security_finding', 'security_fix' => 'security',
             'billing' => 'billing',
             'server', 'server_task', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
             'environment', 'maintenance' => 'deploy',
@@ -170,6 +171,7 @@ enum AuditAction: string
             self::ServiceDisabled => __('Turned off :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::MemberServiceAccessChanged => __('Set :member’s services to :services', ['member' => $value('member'), 'services' => $value('services')]),
             self::SecurityFindingIgnored => __('Ignored the security finding “:finding”', ['finding' => $value('finding')]),
+            self::SecurityFixApplied => __('Applied “:fix” on the server :server', ['fix' => $value('fix'), 'server' => $value('server')]),
             self::SecurityFindingReopened => __('Reopened the security finding “:finding”', ['finding' => $value('finding')]),
             self::PayAsYouGoChanged => ($context['enabled'] ?? false)
                 ? __('Turned on pay as you go for :meter', ['meter' => $value('meter')])

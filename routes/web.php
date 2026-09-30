@@ -363,10 +363,13 @@ use App\Http\Controllers\Roadmap\ToggleFeatureRequestVoteController;
 use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Security\ApplySecurityFixController;
 use App\Http\Controllers\Security\EvaluateSecurityGateController;
 use App\Http\Controllers\Security\ShowSecurityFindingsController;
 use App\Http\Controllers\Security\ShowSecurityOverviewController;
+use App\Http\Controllers\Security\ShowSecurityServersController;
 use App\Http\Controllers\Security\StoreSecurityScanController;
+use App\Http\Controllers\Security\UpdatePatchWindowController;
 use App\Http\Controllers\Security\UpdateSecurityFindingController;
 use App\Http\Controllers\Security\UpdateSecurityGateController;
 use App\Http\Controllers\Services\ShowServiceController;
@@ -542,6 +545,9 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::prefix('/security')->middleware('service:security')->name('security.')->group(function (): void {
             Route::get('/', ShowSecurityOverviewController::class)->name('overview');
             Route::get('/findings', ShowSecurityFindingsController::class)->name('findings');
+            Route::get('/servers', ShowSecurityServersController::class)->name('servers');
+            Route::put('/servers/{server}/patch', UpdatePatchWindowController::class)->whereNumber('server')->middleware('throttle:20,1')->name('servers.patch');
+            Route::post('/findings/{finding}/fix', ApplySecurityFixController::class)->whereNumber('finding')->middleware('throttle:20,1')->name('findings.fix');
             Route::put('/findings/{finding}', UpdateSecurityFindingController::class)->whereNumber('finding')->middleware('throttle:60,1')->name('findings.update');
             Route::post('/scans', StoreSecurityScanController::class)->middleware('throttle:20,1')->name('scans.store');
             Route::put('/gate/{environment}', UpdateSecurityGateController::class)->middleware('throttle:30,1')->name('gate.update');

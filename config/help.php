@@ -251,6 +251,27 @@ return [
                 ['Domains and email', 'The domain check looks at every domain in the project: certificates, TLS versions, the redirect to HTTPS, security headers, SPF and DMARC, and CNAMEs left pointing at services that could be taken over.'],
             ],
         ],
+        'security-code' => [
+            'group' => 'security',
+            'title' => 'Vulnerable packages, secrets and the deploy gate',
+            'summary' => 'Find known vulnerabilities and leaked credentials in what you deploy, and stop risky deploys.',
+            'steps' => [
+                ['Vulnerable packages', 'Security reads the composer.lock and package-lock.json of each live website and checks every package against the OSV vulnerability database. Each finding names the version that fixes it. Development-only packages count one level lower.'],
+                ['Leaked secrets', 'On Pro and above, Security looks for keys and tokens (AWS, Stripe, GitHub, Slack, private keys and more) in each website’s code and in recent error reports and logs, and for .env files committed with the code. Secrets are never stored or shown in full.'],
+                ['Deploy gate', 'On the Security overview, choose Block deploys with for an environment. A deploy whose packages have a vulnerability at that level stops before it goes live, and the reason appears on the deploy.'],
+                ['Accepting a risk', 'To let a deploy through anyway, ignore the finding in Security with a reason. The gate treats ignored findings as accepted.'],
+            ],
+        ],
+        'security-servers' => [
+            'group' => 'security',
+            'title' => 'Harden and update servers',
+            'summary' => 'See how each server is set up, fix problems in a click, and install security updates on a schedule.',
+            'steps' => [
+                ['What’s checked', 'On Pro and above, Security audits each server the project runs on: SSH passwords and root sign-in, the firewall and anything open to the internet (such as a database), fail2ban, automatic updates, waiting security updates, a pending reboot, and the Ubuntu release.'],
+                ['Fix in a click', 'Findings with a fix have a button, such as Turn the firewall on or Allow SSH keys only. Fixes never remove BuildPusher’s own key access, and the server is checked again afterwards.'],
+                ['Update windows', 'Security → Servers sets a weekly window (day and hour, in UTC) when each server installs its security updates, optionally rebooting if they need it. Install updates now runs them straight away.'],
+            ],
+        ],
         'add-analytics' => [
             'group' => 'analytics',
             'title' => 'Add analytics to a website',

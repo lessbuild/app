@@ -54,7 +54,7 @@ final class SecurityService implements PlatformService
     }
 
     /**
-     * Get the service's pages: the overview and the findings.
+     * Get the service's pages: the overview, the findings and the servers.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -64,6 +64,7 @@ final class SecurityService implements PlatformService
         return [
             new ServiceNavItem(__('Overview'), route('security.overview', $projectId), 'security.overview'),
             new ServiceNavItem(__('Findings'), route('security.findings', $projectId), 'security.findings*'),
+            new ServiceNavItem(__('Servers'), route('security.servers', $projectId), 'security.servers*'),
         ];
     }
 

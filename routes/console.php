@@ -55,6 +55,7 @@ use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
 use App\Services\Reports\WeeklyReport;
+use App\Services\Security\PatchSchedule;
 use App\Services\Security\ScanSchedule;
 use App\Services\Telemetry\IssueDigest;
 use App\Services\Telemetry\TelemetryQueue;
@@ -98,6 +99,11 @@ Artisan::command('security:scan', function (ScanSchedule $schedule): void {
     $this->info("Queued {$schedule->queueDue()} security scans.");
 })->purpose('Queue the Security scans that are due');
 Schedule::command('security:scan')->everyFifteenMinutes()->withoutOverlapping();
+
+Artisan::command('security:patch', function (PatchSchedule $schedule): void {
+    $this->info("Started updates on {$schedule->runDue()} servers.");
+})->purpose('Start servers’ weekly security update windows');
+Schedule::command('security:patch')->hourlyAt(2)->withoutOverlapping();
 
 Artisan::command('analytics:export-raw', function (RawEventExporter $exporter): void {
     $this->info("Wrote {$exporter->exportDue()} raw event files.");
