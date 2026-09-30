@@ -65,6 +65,7 @@ final class StatusPageReportQuery
             };
             $rows[] = [
                 'name' => $component->label,
+                'group' => $component->group_name,
                 'type' => (string) __($monitor->typeLabel()),
                 'state' => $state,
                 'stateLabel' => $this->label($state),
@@ -84,6 +85,7 @@ final class StatusPageReportQuery
             'overall' => $overall,
             'overallLabel' => $this->label($overall),
             'components' => $rows,
+            'groups' => $this->groups($rows),
             'incidents' => array_values($open->all()),
             'recentIncidents' => array_values($incidents->where('status', 'resolved')->all()),
             'activeUpdates' => array_values($activeUpdates->all()),
@@ -147,5 +149,26 @@ final class StatusPageReportQuery
             $activeUpdates->contains('kind', 'maintenance') => 'maintenance',
             default => 'operational',
         };
+    }
+
+    /**
+     * Rate each component group by its worst component, keyed by group name.
+     *
+     * @param  list<array<string, mixed>>  $rows
+     * @return array<string, string>
+     */
+    private function groups(array $rows): array
+    {
+        $rank = ['operational' => 0, 'maintenance' => 1, 'degraded' => 2, 'major_outage' => 3];
+        $groups = [];
+        foreach ($rows as $row) {
+            if (! is_string($row['group'] ?? null)) {
+                continue;
+            }
+            $current = $groups[$row['group']] ?? 'operational';
+            $groups[$row['group']] = ($rank[(string) $row['state']] ?? 0) > ($rank[$current] ?? 0) ? (string) $row['state'] : $current;
+        }
+
+        return $groups;
     }
 }

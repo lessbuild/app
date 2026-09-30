@@ -229,7 +229,7 @@ return [
             'groups' => [
                 ['label' => 'Checks', 'title' => 'Know when a service changes', 'description' => 'Scheduled checks with history, recovery and planned work in context.', 'features' => [
                     ['Uptime and more', 'HTTP, DNS, TLS, TCP, cron heartbeats and queue workers, with maintenance windows.'],
-                    ['Status pages', 'Public status pages with incident updates and email subscriptions.'],
+                    ['Status pages', 'Public status pages on your own domain, with component groups, incident and maintenance updates, subscriptions and monthly uptime reports.'],
                     ['Services you depend on', 'The status of GitHub, Cloudflare, DigitalOcean and other providers beside your own checks.'],
                 ]],
                 ['label' => 'Telemetry', 'title' => 'Follow a request through the system', 'description' => 'The application signals that explain what users see.', 'features' => [

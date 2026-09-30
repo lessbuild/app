@@ -50,7 +50,17 @@
         <x-signal.ui.card class="overflow-hidden">
             <div class="border-b border-line px-5 py-4 sm:px-6"><h2 class="font-extrabold text-ink">{{ __('Systems') }}</h2></div>
             <div class="divide-y divide-line">
+                @php($currentGroup = null)
                 @forelse ($components as $row)
+                    @if ($row['group'] !== null && $row['group'] !== $currentGroup)
+                        @php($currentGroup = $row['group'])
+                        <div class="flex items-center justify-between gap-3 bg-surface-muted px-5 py-3 sm:px-6">
+                            <h3 class="text-sm font-extrabold uppercase tracking-wide text-ink">{{ $row['group'] }}</h3>
+                            <x-signal.ui.badge :tone="$tone($groups[$row['group']] ?? 'operational')">{{ $groups[$row['group']] === 'operational' ? __('Operational') : ($groups[$row['group']] === 'major_outage' ? __('Major outage') : __('Degraded performance')) }}</x-signal.ui.badge>
+                        </div>
+                    @elseif ($row['group'] === null && $currentGroup !== null)
+                        @php($currentGroup = null)
+                    @endif
                     <article class="px-5 py-5 sm:px-6">
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div class="min-w-0">
@@ -161,7 +171,10 @@
 
         <footer class="flex flex-wrap justify-between gap-3 text-xs text-muted">
             <span>{{ __('Powered by :app', ['app' => config('app.name')]) }}</span>
-            <a href="{{ route('status.report', $page->slug) }}" class="hover:underline">{{ __('JSON') }}</a>
+            <span class="flex gap-3">
+                <a href="{{ route('status.month', [$page->slug, now('UTC')->format('Y-m')]) }}" class="hover:underline">{{ __('Monthly uptime') }}</a>
+                <a href="{{ route('status.report', $page->slug) }}" class="hover:underline">{{ __('JSON') }}</a>
+            </span>
         </footer>
     </main>
 </x-signal.layouts.base>

@@ -255,6 +255,7 @@ return [
                 ['Escalate', 'Set escalation steps on an alert rule, so someone else is told if nobody responds.'],
                 ['Post-mortems', 'On a resolved incident, choose Write a post-mortem. It starts as a draft built from the incident: how long it lasted, what the check or rule saw, who responded, your notes, and any deploys in the two hours before it opened as leads. Edit each section, save, and publish it to a status page if you like.'],
                 ['Publish a status page', 'Monitoring → Status pages → Create. Choose the monitors to show, post updates, and let people subscribe by email.'],
+                ['Groups and reports', 'Give components a group (such as API or Website) to show them under a heading with the group’s worst status. Every month has a public uptime report (linked as Monthly uptime at the foot of the page) with each component’s uptime, the incidents and total downtime; tick Email a monthly uptime report to send it to subscribers on the 1st.'],
             ],
         ],
         'security-basics' => [

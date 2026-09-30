@@ -426,6 +426,7 @@ use App\Http\Controllers\StatusPages\RedirectLegacyStatusPageController;
 use App\Http\Controllers\StatusPages\ShowPublicStatusPageController;
 use App\Http\Controllers\StatusPages\ShowStatusPageBadgeController;
 use App\Http\Controllers\StatusPages\ShowStatusPageEmbedController;
+use App\Http\Controllers\StatusPages\ShowStatusPageMonthController;
 use App\Http\Controllers\StatusPages\ShowStatusPageReportController;
 use App\Http\Controllers\StatusPages\ShowStatusWebhookUnsubscribeController;
 use App\Http\Controllers\StatusPages\ShowUnsubscribeController;
@@ -503,6 +504,7 @@ Route::get('/status/webhooks/{subscription}/unsubscribe/{token}', ShowStatusWebh
 Route::post('/status/webhooks/{subscription}/unsubscribe/{token}', UnsubscribeStatusWebhookController::class)->whereNumber('subscription')->middleware('throttle:20,1')->name('status.webhooks.unsubscribe.store');
 Route::get('/status/{product}/{slug}', RedirectLegacyStatusPageController::class)->whereIn('product', ['deployer', 'monitor'])->where('slug', '[a-z0-9-]+');
 Route::get('/status/{slug}', ShowPublicStatusPageController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.show');
+Route::get('/status/{slug}/uptime/{month}', ShowStatusPageMonthController::class)->where('slug', '[a-z0-9-]+')->where('month', '\d{4}-\d{2}')->middleware('throttle:120,1')->name('status.month');
 Route::get('/status/{slug}/report.json', ShowStatusPageReportController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:120,1')->name('status.report');
 Route::get('/status/{slug}/badge.svg', ShowStatusPageBadgeController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('status.badge');
 Route::get('/status/{slug}/embed', ShowStatusPageEmbedController::class)->where('slug', '[a-z0-9-]+')->middleware('throttle:240,1')->name('status.embed');

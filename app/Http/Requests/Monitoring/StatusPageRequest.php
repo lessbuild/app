@@ -30,6 +30,9 @@ final class StatusPageRequest extends FormRequest
             'published' => ['sometimes', 'boolean'],
             'monitor_ids' => ['sometimes', 'array', 'max:25'],
             'monitor_ids.*' => ['required', 'integer', 'distinct', 'min:1'],
+            'monthly_report' => ['sometimes', 'boolean'],
+            'component_groups' => ['sometimes', 'array', 'max:25'],
+            'component_groups.*' => ['nullable', 'string', 'max:80'],
         ];
     }
 

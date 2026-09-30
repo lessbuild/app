@@ -21,12 +21,13 @@ use Illuminate\Support\Carbon;
  * @property int $monitor_id
  * @property string $label
  * @property int $position
+ * @property string|null $group_name the heading it's shown under, such as API or Website
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read StatusPage $statusPage
  * @property-read Monitor|null $monitor
  */
-#[Fillable(['monitor_id', 'label', 'position'])]
+#[Fillable(['monitor_id', 'label', 'position', 'group_name'])]
 #[Table(dateFormat: 'Y-m-d H:i:s.u')]
 #[UseFactory(StatusPageComponentFactory::class)]
 class StatusPageComponent extends Model

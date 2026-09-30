@@ -64,13 +64,15 @@ final class SaveStatusPage
                 'slug' => $slug,
                 'description' => $description !== '' ? $description : null,
                 'published' => (bool) ($data['published'] ?? false),
+                'monthly_report' => (bool) ($data['monthly_report'] ?? false),
             ])->save();
 
             $labels = $page->components()->pluck('label', 'monitor_id');
             $page->components()->delete();
             foreach ($monitorIds as $position => $monitorId) {
                 $monitor = $monitors->get($monitorId) ?? throw new LogicException('Checked above.');
-                $page->components()->create(['monitor_id' => $monitorId, 'label' => $labels->get($monitorId, $monitor->name), 'position' => $position]);
+                $group = trim((string) ($data['component_groups'][$monitorId] ?? ''));
+                $page->components()->create(['monitor_id' => $monitorId, 'label' => $labels->get($monitorId, $monitor->name), 'position' => $position, 'group_name' => $group !== '' ? mb_substr($group, 0, 80) : null]);
             }
 
             $this->audit->handle($isNew ? AuditAction::StatusPageCreated : AuditAction::StatusPageUpdated, $actor, $account->id, [

@@ -27,6 +27,8 @@ use Illuminate\Support\Carbon;
  * @property bool $published
  * @property string|null $custom_domain the customer's own hostname for the page (ASCII)
  * @property string|null $custom_domain_token the value its TXT record must carry
+ * @property bool $monthly_report whether subscribers get last month's uptime report on the 1st
+ * @property string|null $last_monthly_report the month (2026-09) last emailed
  * @property CarbonImmutable|null $custom_domain_verified_at when the TXT record was found; the domain serves the page from then on
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -131,6 +133,6 @@ class StatusPage extends Model
      */
     protected function casts(): array
     {
-        return ['published' => 'boolean', 'custom_domain_verified_at' => 'immutable_datetime'];
+        return ['published' => 'boolean', 'monthly_report' => 'boolean', 'custom_domain_verified_at' => 'immutable_datetime'];
     }
 }
