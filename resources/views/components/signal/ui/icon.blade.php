@@ -5,6 +5,9 @@
         @case('cloud-upload')
             <path d="M17.5 19H9a6 6 0 1 1 1.8-11.72A5 5 0 0 1 20 10.5 4.5 4.5 0 0 1 17.5 19Z" /><path d="M12 17V9M9 12l3-3 3 3" />
             @break
+        @case('shield-check')
+            <path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.4 7.5 9.5 4.3-1.1 7.5-4.9 7.5-9.5V6L12 3Z" /><path d="m9 12 2 2 4-4" />
+            @break
         @case('refresh')
             <path d="M20 11a8 8 0 0 0-14.9-4L3 10" /><path d="M3 5v5h5" /><path d="M4 13a8 8 0 0 0 14.9 4L21 14" /><path d="M21 19v-5h-5" />
             @break

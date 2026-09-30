@@ -18,6 +18,8 @@ enum ApiScope: string
     case MonitoringWrite = 'monitoring:write';
     case AnalyticsRead = 'analytics:read';
     case AnalyticsWrite = 'analytics:write';
+    case SecurityRead = 'security:read';
+    case SecurityWrite = 'security:write';
 
     /**
      * Get the part of the platform the scope covers, as shown on the token form.
@@ -33,6 +35,7 @@ enum ApiScope: string
             self::InfrastructureRead, self::InfrastructureWrite => __('Infrastructure'),
             self::MonitoringRead, self::MonitoringWrite => __('Monitoring'),
             self::AnalyticsRead, self::AnalyticsWrite => __('Analytics'),
+            self::SecurityRead, self::SecurityWrite => __('Security'),
         };
     }
 

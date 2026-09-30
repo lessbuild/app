@@ -55,6 +55,7 @@ use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertRuleEvaluator;
 use App\Services\Monitoring\MonitorScheduler;
 use App\Services\Reports\WeeklyReport;
+use App\Services\Security\ScanSchedule;
 use App\Services\Telemetry\IssueDigest;
 use App\Services\Telemetry\TelemetryQueue;
 use App\Services\Telemetry\UsageAlerts;
@@ -92,6 +93,11 @@ Artisan::command('analytics:send-reports', function (SiteNotifier $notifier): vo
     $this->info("Sent {$notifier->sendDueReports()} site reports.");
 })->purpose('Send sites’ weekly and monthly analytics reports that are due');
 Schedule::command('analytics:send-reports')->everyFifteenMinutes()->withoutOverlapping();
+
+Artisan::command('security:scan', function (ScanSchedule $schedule): void {
+    $this->info("Queued {$schedule->queueDue()} security scans.");
+})->purpose('Queue the Security scans that are due');
+Schedule::command('security:scan')->everyFifteenMinutes()->withoutOverlapping();
 
 Artisan::command('analytics:export-raw', function (RawEventExporter $exporter): void {
     $this->info("Wrote {$exporter->exportDue()} raw event files.");

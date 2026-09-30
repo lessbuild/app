@@ -125,6 +125,17 @@ final class ProvisioningCallbackUrl
     }
 
     /**
+     * Build the URL a deploy sends its lock files to, for the Security gate's verdict.
+     *
+     * @param  Build  $build
+     * @return string
+     */
+    public static function buildSecurityGate(Build $build): string
+    {
+        return self::build('callbacks.build.security', $build);
+    }
+
+    /**
      * Sign a URL for a deploy callback route, expiring after the configured time.
      *
      * @param  string  $route

@@ -6,6 +6,7 @@ namespace App\Services\Deploy\Scripts;
 
 use App\Models\Build;
 use App\Services\Deploy\ManagedResourceScript;
+use App\Services\Deploy\SecurityGate;
 
 class InstallDependenciesScript extends BuildProvisioningScript
 {
@@ -25,8 +26,8 @@ class InstallDependenciesScript extends BuildProvisioningScript
     public function __construct(private readonly ManagedResourceScript $resources = new ManagedResourceScript) {}
 
     /**
-     * Render the stage that prepares managed resources, installs the release's dependencies for its runtime and runs
-     * its build command, and reports progress.
+     * Render the stage that prepares managed resources, installs the release's dependencies for its runtime, runs
+     * its build command, passes the Security gate when the environment has one, and reports progress.
      *
      * @param  int  $step
      * @param  Build  $build
@@ -46,6 +47,7 @@ class InstallDependenciesScript extends BuildProvisioningScript
         $resourcePreparation = $this->resources->render($build->environment_payload['resources'] ?? []);
         $progress = $this->progress($step, $build);
         $cache = $this->cache($build);
+        $gate = app(SecurityGate::class)->commands($build);
 
         return <<<SCRIPT
 
@@ -110,6 +112,8 @@ class InstallDependenciesScript extends BuildProvisioningScript
             elif [ "\$RUNTIME_TYPE" = php ] && [ -f package.json ]; then
                 npm run build --if-present
             fi
+
+            {$gate}
 
             # Ping
             {$progress}

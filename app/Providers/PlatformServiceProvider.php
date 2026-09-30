@@ -9,6 +9,7 @@ use App\Platform\Services\AnalyticsService;
 use App\Platform\Services\DeployService;
 use App\Platform\Services\InfrastructureService;
 use App\Platform\Services\MonitoringService;
+use App\Platform\Services\SecurityService;
 use Illuminate\Support\ServiceProvider;
 
 final class PlatformServiceProvider extends ServiceProvider
@@ -27,6 +28,7 @@ final class PlatformServiceProvider extends ServiceProvider
             $registry->register(new InfrastructureService);
             $registry->register(new MonitoringService);
             $registry->register(new AnalyticsService);
+            $registry->register(new SecurityService);
 
             return $registry;
         });

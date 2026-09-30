@@ -10,6 +10,7 @@ return [
         'infrastructure' => ['title' => 'Infrastructure', 'summary' => 'Providers, servers, websites, services, storage and backups.', 'icon' => 'server'],
         'deploy' => ['title' => 'Deploy', 'summary' => 'Repositories, environments, previews, scaling and releases.', 'icon' => 'cloud-upload'],
         'monitoring' => ['title' => 'Monitoring', 'summary' => 'Checks, telemetry, alerts, incidents and status pages.', 'icon' => 'pulse'],
+        'security' => ['title' => 'Security', 'summary' => 'Scans, findings, servers, domains, attacks and compliance.', 'icon' => 'shield-check'],
         'analytics' => ['title' => 'Analytics', 'summary' => 'Sites, the tracker, reports, exploring, sharing and your data.', 'icon' => 'chart'],
     ],
 
@@ -236,6 +237,18 @@ return [
                 ['Respond', 'Monitoring → Incidents. Acknowledge, assign, and add notes; the timeline records it all.'],
                 ['Escalate', 'Set escalation steps on an alert rule, so someone else is told if nobody responds.'],
                 ['Publish a status page', 'Monitoring → Status pages → Create. Choose the monitors to show, post updates, and let people subscribe by email.'],
+            ],
+        ],
+        'security-basics' => [
+            'group' => 'security',
+            'title' => 'Get started with Security',
+            'summary' => 'Turn on Security, read the findings and fix what matters first.',
+            'steps' => [
+                ['Turn it on', 'In the project’s settings, switch on Security. Each check runs straight away, then as often as your plan allows (weekly on Free, daily on Pro, every six hours on Team).'],
+                ['Read the overview', 'Security shows a score out of 100 and a grade, the checks and when they last ran, and the most serious open findings.'],
+                ['Fix and confirm', 'Each finding says how to fix it. After fixing, choose Scan now on the check; the finding resolves when the scan no longer sees it.'],
+                ['Ignore with a reason', 'For a false positive or an accepted risk, choose Ignore and say why. It stays ignored through later scans until someone reopens it.'],
+                ['Domains and email', 'The domain check looks at every domain in the project: certificates, TLS versions, the redirect to HTTPS, security headers, SPF and DMARC, and CNAMEs left pointing at services that could be taken over.'],
             ],
         ],
         'add-analytics' => [

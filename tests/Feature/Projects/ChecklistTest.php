@@ -61,7 +61,7 @@ final class ChecklistTest extends TestCase
         $guide = "/projects/{$project->id}/setup";
 
         $this->actingAs($owner)->get($guide)->assertOk()->assertSee('data-modal-trigger="setup-step"', false)->assertSee('id="setup-step"', false)
-            ->assertSee('name="_return" value="'.$guide.'"', false)->assertSee('Hetzner Cloud')->assertDontSee('Cloudflare');
+            ->assertSee('name="_return" value="'.$guide.'"', false)->assertSee('Hetzner Cloud')->assertDontSee('<option value="cloudflare"', false);
 
         $this->actingAs($owner)->post('/account/providers', ['_return' => $guide, 'name' => 'Main cloud', 'type' => 'digitalocean', 'token' => 'do-token-123'])->assertRedirect(url($guide));
         $this->actingAs($owner)->get($guide)->assertSee('Step 2 of 7');

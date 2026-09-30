@@ -363,6 +363,12 @@ use App\Http\Controllers\Roadmap\ToggleFeatureRequestVoteController;
 use App\Http\Controllers\SavedViews\DeleteSavedViewController;
 use App\Http\Controllers\SavedViews\StoreSavedViewController;
 use App\Http\Controllers\SearchController;
+use App\Http\Controllers\Security\EvaluateSecurityGateController;
+use App\Http\Controllers\Security\ShowSecurityFindingsController;
+use App\Http\Controllers\Security\ShowSecurityOverviewController;
+use App\Http\Controllers\Security\StoreSecurityScanController;
+use App\Http\Controllers\Security\UpdateSecurityFindingController;
+use App\Http\Controllers\Security\UpdateSecurityGateController;
 use App\Http\Controllers\Services\ShowServiceController;
 use App\Http\Controllers\Settings\DeleteUserController;
 use App\Http\Controllers\Settings\ExportPersonalDataController;
@@ -485,6 +491,9 @@ foreach (['status', 'failed', 'log', 'revision'] as $event) {
         ->middleware(['signed', 'throttle:1200,1'])->name("callbacks.build.{$event}");
 }
 
+Route::post('/builds/{build}/deployment/callback/security', EvaluateSecurityGateController::class)->whereNumber('build')
+    ->middleware(['signed', 'throttle:600,1'])->name('callbacks.build.security');
+
 Route::post('/webhooks/stripe', StripeWebhookController::class)->middleware('throttle:600,1')->name('webhooks.stripe');
 
 Route::get('/auth/{provider}/redirect', RedirectToProviderController::class)->middleware(['guest', 'throttle:20,1'])->name('social.redirect');
@@ -530,6 +539,13 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
     Route::post('/projects', StoreProjectController::class)->middleware('throttle:30,1')->name('projects.store');
     Route::post('/projects/sample', StoreSampleProjectController::class)->middleware(['account.can:create,App\\Models\\Project', 'throttle:5,1'])->name('projects.sample');
     Route::prefix('/projects/{project}')->middleware('project.context')->group(function (): void {
+        Route::prefix('/security')->middleware('service:security')->name('security.')->group(function (): void {
+            Route::get('/', ShowSecurityOverviewController::class)->name('overview');
+            Route::get('/findings', ShowSecurityFindingsController::class)->name('findings');
+            Route::put('/findings/{finding}', UpdateSecurityFindingController::class)->whereNumber('finding')->middleware('throttle:60,1')->name('findings.update');
+            Route::post('/scans', StoreSecurityScanController::class)->middleware('throttle:20,1')->name('scans.store');
+            Route::put('/gate/{environment}', UpdateSecurityGateController::class)->middleware('throttle:30,1')->name('gate.update');
+        });
         Route::prefix('/analytics')->middleware('service:analytics')->name('analytics.')->group(function (): void {
             Route::get('/', ShowOverviewController::class)->name('overview');
             Route::get('/sites', ShowSitesController::class)->name('sites');

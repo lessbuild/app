@@ -120,6 +120,8 @@
   --product-analytics-soft: #f0edff;
   --product-infrastructure: #ae5008;
   --product-infrastructure-soft: #fdf3e6;
+  --product-security: #b4233c;
+  --product-security-soft: #fdecef;
   --product-terminal: #0b1426;
   --radius-control-value: 0.8rem;
   --radius-panel-value: 1.35rem;
@@ -156,6 +158,8 @@
   --product-analytics-soft: color-mix(in srgb, #7050df 20%, var(--ui-surface));
   --product-infrastructure: #f6b964;
   --product-infrastructure-soft: color-mix(in srgb, #b45309 22%, var(--ui-surface));
+  --product-security: #fb8ea0;
+  --product-security-soft: color-mix(in srgb, #b4233c 22%, var(--ui-surface));
   --ui-success: #6ee7b7;
   --ui-success-soft: #1d493a;
   --ui-warning: #f4c16e;

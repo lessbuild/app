@@ -51,6 +51,7 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property \Carbon\CarbonImmutable|null $maintenance_at when its websites went into maintenance mode; null while they're up
  * @property string|null $maintenance_secret the path segment that lets the team past maintenance mode (encrypted)
  * @property string|null $maintenance_error why the last maintenance mode change failed
+ * @property string|null $security_gate the lowest vulnerability severity that stops a deploy: critical or high; null for none
  * @property bool $autoscale_enabled whether replicas follow the servers' CPU
  * @property int $autoscale_cpu_target the average CPU (%) to scale up above; below half of it, scale down
  * @property \Carbon\CarbonImmutable|null $autoscaled_at when replicas were last changed automatically

@@ -11,9 +11,9 @@ use Tests\TestCase;
 
 final class ServiceRegistryTest extends TestCase
 {
-    public function test_the_platform_registers_the_four_services_in_order(): void
+    public function test_the_platform_registers_the_five_services_in_order(): void
     {
-        $this->assertSame(['deploy', 'infrastructure', 'monitoring', 'analytics'], app(ServiceRegistry::class)->keys());
+        $this->assertSame(['deploy', 'infrastructure', 'monitoring', 'analytics', 'security'], app(ServiceRegistry::class)->keys());
     }
 
     public function test_keys_are_unique(): void
