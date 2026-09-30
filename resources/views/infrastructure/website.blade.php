@@ -344,6 +344,16 @@
     </x-signal.ui.page-tab-panel>
 
     @if ($canManage)
+    @if (isset($tabs['files']))
+        <x-signal.ui.page-tab-panel name="files" :current="$tab">
+            <x-signal.ui.settings-section :title="__('Files')" :description="__('Browse the website’s folder on its server, read the end of any text file, and search its Laravel logs. Read-only.')">
+                <div class="p-4 sm:p-6" data-fragment-src="{{ route('infrastructure.websites.files', [$project, $website->id]) }}" data-fragment-fallback="{{ __('Couldn’t reach the server. Open the files on their own page.') }}">
+                    <p class="text-sm text-muted" role="status">{{ __('Reading the folder…') }}</p>
+                </div>
+            </x-signal.ui.settings-section>
+        </x-signal.ui.page-tab-panel>
+    @endif
+
     <x-signal.ui.page-tab-panel name="settings" :current="$tab">
         <x-signal.ui.settings-section id="php-version" :title="__('PHP version')" :description="__('The website’s PHP-FPM version. Switching installs it on the server if needed (other websites keep theirs) and points this site at it; the next deploy reloads it too.')">
             <form method="POST" action="{{ route('infrastructure.websites.php-version', [$project, $website->id]) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">

@@ -199,6 +199,7 @@ use App\Http\Controllers\Infrastructure\ShowServersController;
 use App\Http\Controllers\Infrastructure\ShowServerStatusController;
 use App\Http\Controllers\Infrastructure\ShowServerTerminalController;
 use App\Http\Controllers\Infrastructure\ShowWebsiteController;
+use App\Http\Controllers\Infrastructure\ShowWebsiteFilesController;
 use App\Http\Controllers\Infrastructure\ShowWebsitesController;
 use App\Http\Controllers\Infrastructure\StoreBackupDestinationController;
 use App\Http\Controllers\Infrastructure\StoreBackupScheduleController;
@@ -640,6 +641,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/websites', StoreWebsiteController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:20,1'])->name('websites.store');
             Route::post('/websites/import', StoreWebsiteImportController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:10,1'])->name('websites.import');
             Route::get('/websites/{website}', ShowWebsiteController::class)->whereNumber('website')->middleware('can:view,website')->name('websites.show');
+            Route::get('/websites/{website}/files', ShowWebsiteFilesController::class)->whereNumber('website')->middleware(['can:view,website', 'throttle:60,1'])->name('websites.files');
             Route::post('/websites/{website}/reverb', SetUpReverbController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.reverb');
             Route::put('/websites/{website}/caddy', UpdateWebsiteCaddyDirectivesController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.caddy');
             Route::put('/websites/{website}/php-version', UpdateWebsitePhpVersionController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.php-version');

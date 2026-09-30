@@ -78,10 +78,17 @@ document.querySelectorAll('[data-fragment-src]').forEach((container) => {
             load(container, container.dataset.fragmentSrc);
         }
     };
-    if (!dialog || dialog.open) {
-        loadOnce();
-        if (!dialog) return;
+    // Inside a page tab, wait until the tab is shown.
+    const panel = container.closest('[data-page-panel]');
+    if (!dialog) {
+        if (panel?.hidden) {
+            new MutationObserver(() => { if (!panel.hidden) loadOnce(); }).observe(panel, { attributes: true, attributeFilter: ['hidden'] });
+        } else {
+            loadOnce();
+        }
+        return;
     }
+    if (dialog.open) loadOnce();
     new MutationObserver(() => {
         if (dialog.open) loadOnce();
     }).observe(dialog, { attributes: true, attributeFilter: ['open'] });

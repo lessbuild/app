@@ -157,7 +157,7 @@ final class WebsitesTest extends TestCase
         };
 
         // Every tab's panel is on the page (switching needs no request); only the requested one is shown.
-        $this->assertSame(['overview' => true, 'domains' => false, 'database' => true, 'backups' => true, 'settings' => true], $hidden("{$this->base}/{$website->id}?tab=domains"));
+        $this->assertSame(['overview' => true, 'domains' => false, 'database' => true, 'backups' => true, 'files' => true, 'settings' => true], $hidden("{$this->base}/{$website->id}?tab=domains"));
         $this->assertFalse($hidden("{$this->base}/{$website->id}?tab=nonsense")['overview']);
     }
 

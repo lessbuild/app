@@ -38,6 +38,7 @@ final class ShowWebsiteController
     {
         $tabs = array_filter([
             'overview' => __('Overview'), 'domains' => __('Domains'), 'database' => __('Database'), 'backups' => __('Backups'),
+            'files' => $website->server !== null && $user->can('runCommands', $website->server) ? __('Files') : null,
             'settings' => $user->can('update', $website) ? __('Settings') : null,
         ]);
 
