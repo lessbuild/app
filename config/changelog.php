@@ -5,6 +5,7 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-01', 'title' => 'Infrastructure: servers that fit', 'changes' => [
+        'Disk clean-up: see what old releases, logs, caches, Docker images and temporary files take on a server, and clear them safely in one click.',
         'Right-sizing: Costs suggests a smaller server when yours is mostly idle (with the saving) and a bigger one when it runs hot, from two weeks of CPU and memory.',
     ]],
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [

@@ -169,6 +169,32 @@
                 <form method="POST" action="{{ route('infrastructure.servers.diagnostics', [$project, $server->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Run diagnostics') }}</x-signal.ui.button></form>
             </div>
         </x-signal.ui.settings-section>
+            <x-signal.ui.settings-section id="disk" :title="__('Disk clean-up')" :description="__('What’s taking space that can be cleared safely: releases beyond the ones each website keeps (never the live one), logs older than two weeks, package caches, unused Docker images and old temporary files.')">
+                <div class="grid gap-3 p-4 sm:p-6">
+                    @php($disk = $diskScan?->findings['disk'] ?? null)
+                    @if ($disk)
+                        <p class="text-sm text-muted">{{ __(':free free of :size', ['free' => \Illuminate\Support\Number::fileSize($disk['items']), 'size' => \Illuminate\Support\Number::fileSize($disk['bytes'])]) }} · {{ __('measured :time', ['time' => $diskScan->scanned_at?->diffForHumans()]) }}</p>
+                    @endif
+                    @if ($diskScan?->error)<x-signal.ui.alert tone="danger">{{ $diskScan->error }}</x-signal.ui.alert>@endif
+                    @if (in_array($diskScan?->status, ['queued', 'running'], true))<p class="text-sm text-muted">{{ __('Working… refresh in a moment.') }}</p>@endif
+                    @if ($diskScan?->findings)
+                        <ul class="grid gap-2 text-sm">
+                            @foreach (\App\Services\Infrastructure\DiskCleanup::CATEGORIES as $category => $label)
+                                @php($found = $diskScan->findings[$category] ?? ['bytes' => 0, 'items' => 0])
+                                <li class="flex flex-wrap items-center justify-between gap-3">
+                                    <span><span class="font-bold text-ink">{{ __($label) }}</span> <span class="text-muted">· {{ \Illuminate\Support\Number::fileSize($found['bytes']) }}</span></span>
+                                    @if ($canRunCommands && $found['bytes'] > 0)
+                                        <form method="POST" action="{{ route('infrastructure.servers.disk', [$project, $server->id]) }}">@csrf<input type="hidden" name="clean" value="{{ $category }}"><x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Clear') }}</x-signal.ui.button></form>
+                                    @endif
+                                </li>
+                            @endforeach
+                        </ul>
+                    @endif
+                    @if ($canRunCommands)
+                        <form method="POST" action="{{ route('infrastructure.servers.disk', [$project, $server->id]) }}">@csrf<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ $diskScan ? __('Measure again') : __('Measure the disk') }}</x-signal.ui.button></form>
+                    @endif
+                </div>
+            </x-signal.ui.settings-section>
         </x-signal.ui.page-tab-panel>
     @endif
 

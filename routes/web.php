@@ -219,6 +219,7 @@ use App\Http\Controllers\Infrastructure\RetryServerInitializationController;
 use App\Http\Controllers\Infrastructure\RetryServerProvisioningController;
 use App\Http\Controllers\Infrastructure\RetryWebsiteProvisioningController;
 use App\Http\Controllers\Infrastructure\RunServerDiagnosticsController;
+use App\Http\Controllers\Infrastructure\ScanServerDiskController;
 use App\Http\Controllers\Infrastructure\SendServerTerminalInputController;
 use App\Http\Controllers\Infrastructure\SetUpReverbController;
 use App\Http\Controllers\Infrastructure\ShowBackupsController;
@@ -737,6 +738,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/servers', ShowServersController::class)->name('servers');
             Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
             Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
+            Route::post('/servers/{server}/disk', ScanServerDiskController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:10,1'])->name('servers.disk');
             Route::match(['PUT', 'DELETE'], '/servers/{server}/log-shipping', UpdateServerLogShippingController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.log-shipping');
             Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');
             Route::put('/servers/{server}/node-version', UpdateServerNodeVersionController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.node-version');
