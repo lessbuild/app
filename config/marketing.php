@@ -26,7 +26,7 @@ return [
         ['Deploy → Monitoring and Analytics', 'Every live deploy becomes a release marker: issues and incidents point at the release that caused them, and Analytics reports list it beside the traffic.'],
         ['Infrastructure → Deploy', 'Repositories deploy to the websites and servers you manage here, with backups, domains and load balancers beside them.'],
         ['Monitoring → everyone', 'Alerts, incidents and status pages are shared by every service, with one set of destinations and escalations.'],
-        ['One account', 'Members, roles, per-service access, API tokens, audit history and billing are set once for all four services.'],
+        ['One account', 'Members, roles, per-service access, API tokens, audit history and billing are set once for all five services.'],
     ],
 
     // One entry per service, laid out like the Signal product pages: a card and explorer panel for the home page's
@@ -187,6 +187,7 @@ return [
                     ['Snapshots first', 'A provider snapshot before updates and other risky changes, so there’s always a way back.'],
                     ['Self-healing', 'Restart PHP-FPM, workers or the web server automatically when a health check fails.'],
                     ['Disk clean-up', 'Find old releases, logs and caches taking up space, and clear them safely.'],
+                    ['Move from Forge or Ploi', 'Read your sites with an API token and recreate each one with its environment file, cron jobs and daemons.'],
                     ['Actual bills', 'Last month’s invoice and this month so far from DigitalOcean, Vultr, Linode and Lightsail, beside the estimate.'],
                     ['Right-sizing', 'Suggestions for a smaller or bigger server from real CPU and memory use, with the saving.'],
                 ]],

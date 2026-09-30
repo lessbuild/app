@@ -133,6 +133,17 @@ return [
                 ['Use it in an app', 'Attach the bucket to an environment and its details are added as environment variables (the usual AWS_ names), ready for Laravel’s s3 disk.'],
             ],
         ],
+        'move-from-forge-or-ploi' => [
+            'group' => 'infrastructure',
+            'title' => 'Move from Forge or Ploi',
+            'summary' => 'Read your servers and sites from Laravel Forge or Ploi and recreate them here, one site at a time.',
+            'steps' => [
+                ['Connect', 'Infrastructure → Servers → Move from Forge or Ploi. Paste an API token from Forge (Account → API tokens) or Ploi (Profile → API keys). It’s only read from, and stored encrypted; Forget the token removes it and everything read.'],
+                ['What’s read', 'Each server’s sites with their domain, repository, branch, PHP version, environment file and deploy script, and the server’s cron jobs and daemons.'],
+                ['Move a site', 'Choose one of your servers here and Move. A website is created for the domain with the same environment file, and the cron jobs and daemons that run in the site’s directory are added to the new server, pointed at the new directory and run as its user. Any that don’t fit, such as an unusual schedule, are listed for you to add yourself.'],
+                ['Finish', 'Connect the repository in Deploy and deploy once, copy the database and uploaded files across, then point DNS at the new server. Nothing changes in Forge or Ploi, so the old site keeps serving until DNS moves.'],
+            ],
+        ],
         'costs' => [
             'group' => 'infrastructure',
             'title' => 'Costs and right-sizing',

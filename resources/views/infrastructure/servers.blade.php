@@ -7,6 +7,7 @@
                 <span class="text-sm text-muted">{{ __(':used of :limit servers on your plan', ['used' => $servers->count(), 'limit' => $limit]) }}</span>
             @endif
             <x-signal.ui.button :href="route('infrastructure.imports.create', $project)" variant="secondary" data-modal-trigger="import-server" :data-modal-history-url="route('infrastructure.servers', [$project, 'dialog' => 'import-server'])">{{ __('Import a server') }}</x-signal.ui.button>
+            <x-signal.ui.button :href="route('infrastructure.moves', $project)" variant="secondary">{{ __('Move from Forge or Ploi') }}</x-signal.ui.button>
             <x-signal.ui.button :href="route('infrastructure.servers.create', $project)" variant="primary" data-modal-trigger="create-server" :data-modal-history-url="route('infrastructure.servers', [$project, 'dialog' => 'create-server'])">{{ __('Create a server') }}</x-signal.ui.button>
         </div>
         <x-signal.overlays.modal id="create-server" :title="__('Create a server')" :description="__('The server provisions itself with the software its type needs. It takes about ten minutes.')">
