@@ -26,7 +26,7 @@ final class Autoscaler
         $changed = [];
         $now = CarbonImmutable::now();
         Environment::query()->where('autoscale_enabled', true)->whereNull('hibernated_at')->orderBy('id')->each(function (Environment $environment) use ($now, &$changed): void {
-            $servers = collect($environment->deployedWebsites())->pluck('server')->filter()->pluck('id')->unique()->values();
+            $servers = $environment->deployedWebsites()->pluck('server_id')->filter()->unique()->map(fn (mixed $id): int => (int) $id)->values();
             if ($servers->isEmpty()) {
                 return;
             }
@@ -53,7 +53,7 @@ final class Autoscaler
     /**
      * Get the servers' average CPU since a moment, or null without enough readings (at least three).
      *
-     * @param  list<int>  $serverIds
+     * @param  array<int, int>  $serverIds
      * @param  CarbonImmutable  $since
      * @return float|null
      */
