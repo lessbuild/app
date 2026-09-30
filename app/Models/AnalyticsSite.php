@@ -22,6 +22,11 @@ use Illuminate\Support\Str;
  * @property string $name
  * @property string $public_id
  * @property list<string> $domains
+ * @property int|null $export_bucket_id the storage bucket raw events are exported to each day
+ * @property string|null $export_prefix the folder inside the bucket
+ * @property Carbon|null $exported_until the last day exported
+ * @property string|null $export_error why the last export failed
+ * @property-read StorageBucket|null $exportBucket
  * @property Carbon|null $imported_until the last day of history imported from Google Analytics
  * @property list<string>|null $custom_properties custom event property keys the site keeps, for breakdowns
  * @property list<string>|null $excluded_paths
@@ -91,6 +96,7 @@ class AnalyticsSite extends Model
             'domains' => 'array',
             'custom_properties' => 'array',
             'imported_until' => 'date',
+            'exported_until' => 'date',
             'excluded_paths' => 'array',
             'verified_at' => 'datetime',
             'collection_paused_at' => 'datetime',
@@ -121,6 +127,16 @@ class AnalyticsSite extends Model
     public function events(): HasMany
     {
         return $this->hasMany(AnalyticsEvent::class, 'site_id');
+    }
+
+    /**
+     * Get the storage bucket the site's raw events are exported to.
+     *
+     * @return BelongsTo<StorageBucket, $this>
+     */
+    public function exportBucket(): BelongsTo
+    {
+        return $this->belongsTo(StorageBucket::class, 'export_bucket_id');
     }
 
     /**

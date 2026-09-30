@@ -19,12 +19,13 @@ final class BackupDestinationPresets
             'digitalocean_spaces' => ['name' => 'DigitalOcean Spaces', 'description' => __('Use a Spaces access key and secret, not a DigitalOcean API token.'), 'endpoint' => 'https://<region>.digitaloceanspaces.com', 'region' => 'ams3, fra1, lon1, nyc3, sfo3, sgp1…'],
             'amazon_s3' => ['name' => 'Amazon S3', 'description' => __('Use an IAM access key that can read and write the bucket.'), 'endpoint' => 'https://s3.<region>.amazonaws.com', 'region' => 'us-east-1 or your bucket’s region'],
             'cloudflare_r2' => ['name' => 'Cloudflare R2', 'description' => __('Use an R2 API token and your account’s S3 endpoint.'), 'endpoint' => 'https://<account-id>.r2.cloudflarestorage.com', 'region' => 'auto'],
+            'google_cloud_storage' => ['name' => 'Google Cloud Storage', 'description' => __('Use an HMAC key (Cloud Storage → Settings → Interoperability). BigQuery can load files from here directly.'), 'endpoint' => 'https://storage.googleapis.com', 'region' => 'auto'],
             's3_compatible' => ['name' => __('Other S3-compatible storage'), 'description' => __('MinIO, Wasabi, Backblaze B2 and other S3-compatible services.'), 'endpoint' => 'https://storage.example.com', 'region' => __('The region your provider asks for')],
         ];
     }
 
     /**
-     * Fill in the endpoint for Spaces and S3 when only the region was given.
+     * Fill in the endpoint for Spaces, S3 and Google Cloud Storage when only the region was given.
      *
      * @param  string  $provider
      * @param  string  $region
@@ -40,6 +41,7 @@ final class BackupDestinationPresets
         return match ($provider) {
             'digitalocean_spaces' => "https://{$region}.digitaloceanspaces.com",
             'amazon_s3' => $region === 'us-east-1' ? 'https://s3.amazonaws.com' : "https://s3.{$region}.amazonaws.com",
+            'google_cloud_storage' => 'https://storage.googleapis.com',
             default => $endpoint,
         };
     }

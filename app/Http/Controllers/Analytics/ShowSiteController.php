@@ -8,6 +8,7 @@ use App\Contracts\Analytics\GoogleAnalyticsData;
 use App\Contracts\Analytics\SearchConsole;
 use App\Models\AnalyticsSite;
 use App\Models\Project;
+use App\Models\StorageBucket;
 use App\Models\User;
 use App\Queries\Analytics\SearchConsolePropertiesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
@@ -46,6 +47,7 @@ final class ShowSiteController
         }
 
         return view('analytics.site', [
+            'buckets' => StorageBucket::query()->where('project_id', $project->id)->orderBy('name')->get(),
             'googleAnalytics' => ['configured' => $googleAnalytics->configured(), 'imports' => $imports, 'connected' => $connected, 'properties' => $gaProperties, 'error' => $gaError],
             'searchConsole' => ['configured' => $searchConsole->configured(), ...$searchConsoleProperties->handle($site)],
             'overview' => $overview->handle($project, $user),

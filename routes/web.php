@@ -74,6 +74,7 @@ use App\Http\Controllers\Analytics\StoreSiteNotificationController;
 use App\Http\Controllers\Analytics\UnlockSharedReportController;
 use App\Http\Controllers\Analytics\UpdateFunnelController;
 use App\Http\Controllers\Analytics\UpdateGoalController;
+use App\Http\Controllers\Analytics\UpdateRawExportController;
 use App\Http\Controllers\Analytics\UpdateSiteController;
 use App\Http\Controllers\Analytics\VerifySiteController;
 use App\Http\Controllers\Auth\ConfirmWithProviderController;
@@ -539,6 +540,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/sites/{site}/search-console/connect', ConnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:10,1'])->name('sites.search-console.connect');
             Route::put('/sites/{site}/search-console', ChooseSearchConsolePropertyController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.property');
             Route::delete('/sites/{site}/search-console', DisconnectSearchConsoleController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('sites.search-console.disconnect');
+            Route::put('/sites/{site}/raw-export', UpdateRawExportController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:20,1'])->name('sites.raw-export');
             Route::post('/sites/{site}/imports/google', ConnectGoogleAnalyticsController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:10,1'])->name('sites.imports.connect');
             Route::post('/sites/{site}/imports/{import}', StartGoogleAnalyticsImportController::class)->whereNumber(['site', 'import'])->middleware(['can:update,site', 'throttle:10,1'])->name('sites.imports.start');
             Route::delete('/sites/{site}/imports/{import}', DeleteAnalyticsImportController::class)->whereNumber(['site', 'import'])->middleware(['can:update,site', 'throttle:10,1'])->name('sites.imports.destroy');

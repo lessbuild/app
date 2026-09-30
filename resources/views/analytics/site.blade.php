@@ -88,6 +88,30 @@
             </div>
         </x-signal.ui.settings-section>
 
+        <x-signal.ui.settings-section :title="__('Raw data export')" :description="__('Each night, write the previous day’s raw events to a storage bucket as gzipped JSON lines, one file per day, laid out for BigQuery, Athena or your own tools. Use a Google Cloud Storage bucket to load into BigQuery directly.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @if ($site->export_error)<x-signal.ui.alert tone="danger">{{ $site->export_error }}</x-signal.ui.alert>@endif
+                @if ($site->export_bucket_id)
+                    <p class="text-sm text-muted">{{ $site->exported_until ? __('Exported up to :date.', ['date' => $site->exported_until->toDateString()]) : __('The first file is written tonight.') }} <code class="font-mono text-ink">{{ ($site->export_prefix ? $site->export_prefix.'/' : '').'site='.$site->public_id.'/dt=YYYY-MM-DD/events.ndjson.gz' }}</code></p>
+                @endif
+                @if ($buckets->isEmpty())
+                    <p class="text-sm text-muted">{{ __('Add a storage bucket to this project first.') }} <a class="ui-link" href="{{ route('infrastructure.storage', $project) }}">{{ __('Storage') }}</a></p>
+                @else
+                    <form method="POST" action="{{ route('analytics.sites.raw-export', [$project, $site->id]) }}" class="grid gap-3 sm:grid-cols-3 sm:items-end">
+                        @csrf @method('PUT')
+                        <x-signal.ui.select-field name="export_bucket_id" :label="__('Bucket')">
+                            <option value="">{{ __('Don’t export') }}</option>
+                            @foreach ($buckets as $bucket)
+                                <option value="{{ $bucket->id }}" @selected($site->export_bucket_id === $bucket->id)>{{ $bucket->name }} ({{ $bucket->bucket }})</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.input-field name="export_prefix" :label="__('Folder (optional)')" :value="$site->export_prefix" placeholder="analytics" maxlength="200" />
+                        <div><x-signal.ui.button type="submit" variant="secondary">{{ __('Save') }}</x-signal.ui.button></div>
+                    </form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
+
         <x-signal.ui.settings-section :title="__('Import from Google Analytics')" :description="__('Bring a GA4 property’s daily history (pages, sources, channels, countries, cities, devices, browsers and campaigns) into this site’s reports. Only days before this site’s own data are imported, so nothing is counted twice.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @error('property')<x-signal.ui.alert tone="danger">{{ $message }}</x-signal.ui.alert>@enderror

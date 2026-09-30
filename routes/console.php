@@ -37,6 +37,7 @@ use App\Services\Admin\PlatformBackups;
 use App\Services\Admin\SelfMonitoring;
 use App\Services\Admin\SystemHealth;
 use App\Services\Analytics\GeoIpDatabase;
+use App\Services\Analytics\RawEventExporter;
 use App\Services\Analytics\SiteNotifier;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Referrals;
@@ -91,6 +92,11 @@ Artisan::command('analytics:send-reports', function (SiteNotifier $notifier): vo
     $this->info("Sent {$notifier->sendDueReports()} site reports.");
 })->purpose('Send sites’ weekly and monthly analytics reports that are due');
 Schedule::command('analytics:send-reports')->everyFifteenMinutes()->withoutOverlapping();
+
+Artisan::command('analytics:export-raw', function (RawEventExporter $exporter): void {
+    $this->info("Wrote {$exporter->exportDue()} raw event files.");
+})->purpose('Export finished days of sites’ raw events to their storage buckets');
+Schedule::command('analytics:export-raw')->hourlyAt(20)->withoutOverlapping();
 
 Artisan::command('analytics:check-spikes', function (SiteNotifier $notifier): void {
     $this->info("Sent {$notifier->checkSpikes()} traffic spike alerts.");
