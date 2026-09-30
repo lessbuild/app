@@ -13,6 +13,7 @@ use App\Models\Server;
 use App\Models\ServerCronJob;
 use App\Models\ServerFirewallRule;
 use App\Models\ServerProcess;
+use App\Models\ServerService;
 use App\Models\User;
 use App\Services\Infrastructure\ServerShell;
 use App\Services\Infrastructure\ServerTaskScripts;
@@ -174,5 +175,73 @@ final class ServerTasksTest extends TestCase
         $this->addMember($this->project, $viewer, AccountRole::Viewer);
         $this->actingAs($viewer)->post("{$this->base}/firewall-rules", ['name' => 'Mine', 'port' => '8080', 'protocol' => 'tcp'])->assertForbidden();
         $this->actingAs($viewer)->get($this->base)->assertOk()->assertDontSee(__('Firewall'));
+    }
+
+    /**
+     * Check one-click services: installed with a generated key, listening on the server or also its private IP, the
+     * key shown to people who may run commands, and uninstalled.
+     *
+     * @return void
+     */
+    public function test_services_install_with_a_generated_key_and_can_be_shared_privately(): void
+    {
+        $this->actingAs($this->owner)->post("{$this->base}/services", ['kind' => 'mongodb'])->assertSessionHasErrors('kind');
+        $this->actingAs($this->owner)->post("{$this->base}/services", ['kind' => 'redis', 'listen' => 'private'])->assertSessionHasErrors('listen');
+
+        $this->actingAs($this->owner)->post("{$this->base}/services", ['kind' => 'meilisearch', 'listen' => 'local'])->assertRedirect("{$this->base}?tab=services");
+        $service = ServerService::query()->sole();
+        $this->assertSame([40, 'active', 7700], [strlen($service->secret), $service->status, $service->port]);
+        $this->assertNotSame($service->secret, $service->getRawOriginal('secret'), 'The key is stored encrypted.');
+        $command = $this->lastCommand();
+        $this->assertStringContainsString('releases/latest/download/meilisearch-linux-${ARCH}', $command);
+        preg_match("/echo '([A-Za-z0-9+\\/=]+)' \\| base64 -d > '\\/etc\\/systemd\\/system\\/meilisearch.service.new'/", $command, $unit);
+        $this->assertStringContainsString('--http-addr 127.0.0.1:7700', (string) base64_decode($unit[1] ?? '', true));
+        $this->actingAs($this->owner)->get("{$this->base}?tab=services")->assertSee('http://127.0.0.1:7700')->assertSee($service->secret);
+
+        $this->server->forceFill(['private_ip' => '10.10.0.5'])->save();
+        $this->actingAs($this->owner)->post("{$this->base}/services", ['kind' => 'redis', 'listen' => 'private'])->assertRedirect();
+        preg_match("/echo '([A-Za-z0-9+\\/=]+)' \\| base64 -d > '\\/etc\\/redis\\/conf.d\\/buildpusher.conf.new'/", $this->lastCommand(), $conf);
+        $redis = ServerService::query()->where('kind', 'redis')->sole();
+        $this->assertStringContainsString("bind 127.0.0.1 10.10.0.5\nport 6379\nrequirepass {$redis->secret}", (string) base64_decode($conf[1] ?? '', true));
+
+        $this->actingAs($this->owner)->delete("{$this->base}/services/{$service->id}")->assertRedirect();
+        $this->assertStringContainsString('systemctl disable --now meilisearch', $this->lastCommand());
+        $this->assertFalse(ServerService::query()->whereKey($service->id)->exists());
+    }
+
+    /**
+     * Check that trusting the private network lets in the account's other servers in the same region only, and that
+     * turning it off removes exactly those rules.
+     *
+     * @return void
+     */
+    public function test_the_private_network_trusts_sibling_servers(): void
+    {
+        $this->actingAs($this->owner)->put("{$this->base}/private-network", ['trust' => '1'])->assertSessionHasErrors('trust');
+        $this->server->forceFill(['private_ip' => '10.10.0.5', 'region' => 'fra1'])->save();
+        $sibling = Server::factory()->create(['name' => 'db-1', 'account_id' => $this->project->account_id, 'provider_id' => $this->server->provider_id, 'region' => 'fra1', 'private_ip' => '10.10.0.9']);
+        Server::factory()->create(['account_id' => $this->project->account_id, 'provider_id' => $this->server->provider_id, 'region' => 'nyc1', 'private_ip' => '10.20.0.9']);
+        $this->actingAs($this->owner)->post("{$this->base}/firewall-rules", ['name' => 'Office', 'port' => '5432', 'protocol' => 'tcp', 'source' => '203.0.113.7'])->assertRedirect();
+
+        $this->actingAs($this->owner)->put("{$this->base}/private-network", ['trust' => '1'])->assertRedirect("{$this->base}?tab=firewall");
+        $this->assertTrue($this->server->refresh()->trust_private_network);
+        $trusted = ServerFirewallRule::query()->where('name', 'like', 'Private network:%')->sole();
+        $this->assertSame(['10.10.0.9', '1:65535'], [$trusted->source, $trusted->port]);
+        $this->assertStringContainsString("from '10.10.0.9' to any port '1:65535'", $this->lastCommand());
+
+        $this->actingAs($this->owner)->put("{$this->base}/private-network", ['trust' => '0'])->assertRedirect();
+        $this->assertSame(['Office'], ServerFirewallRule::query()->pluck('name')->all());
+        $this->assertSame('db-1', $sibling->name);
+    }
+
+    /**
+     * Check that process presets fill the Add a process form.
+     *
+     * @return void
+     */
+    public function test_process_presets_fill_the_form(): void
+    {
+        $this->actingAs($this->owner)->get("{$this->base}?tab=processes&preset=horizon&dialog=add-process")->assertOk()
+            ->assertSee('value="php artisan horizon"', false)->assertSee('data-modal-initial-open="true"', false);
     }
 }

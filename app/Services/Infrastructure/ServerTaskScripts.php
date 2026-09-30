@@ -7,6 +7,7 @@ namespace App\Services\Infrastructure;
 use App\Models\ServerCronJob;
 use App\Models\ServerFirewallRule;
 use App\Models\ServerProcess;
+use App\Models\ServerService;
 use Illuminate\Database\Eloquent\Model;
 use InvalidArgumentException;
 
@@ -18,9 +19,16 @@ use InvalidArgumentException;
 final class ServerTaskScripts
 {
     /**
+     * Create a new ServerTaskScripts instance.
+     *
+     * @param  ServerServiceScripts  $services  Installs and removes one-click services.
+     */
+    public function __construct(private readonly ServerServiceScripts $services) {}
+
+    /**
      * Get the commands that create or update a task on its server.
      *
-     * @param  Model  $task  a ServerCronJob, ServerProcess or ServerFirewallRule
+     * @param  Model  $task  a ServerCronJob, ServerProcess, ServerFirewallRule or ServerService
      * @return string
      */
     public function apply(Model $task): string
@@ -34,6 +42,7 @@ final class ServerTaskScripts
                 'supervisorctl update '.escapeshellarg($task->programName()),
             ]),
             $task instanceof ServerFirewallRule => 'ufw allow '.$this->firewallSpec($task).' comment '.escapeshellarg('buildpusher rule '.$task->id),
+            $task instanceof ServerService => $this->services->install($task),
             default => throw new InvalidArgumentException('Not a server task.'),
         };
     }
@@ -55,6 +64,7 @@ final class ServerTaskScripts
                 'supervisorctl update >/dev/null 2>&1 || true',
             ]),
             $task instanceof ServerFirewallRule => 'ufw delete allow '.$this->firewallSpec($task).' || true',
+            $task instanceof ServerService => $this->services->remove($task),
             default => throw new InvalidArgumentException('Not a server task.'),
         };
     }

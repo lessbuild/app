@@ -7,6 +7,7 @@ namespace App\Jobs\Infrastructure;
 use App\Models\ServerCronJob;
 use App\Models\ServerFirewallRule;
 use App\Models\ServerProcess;
+use App\Models\ServerService;
 use App\Services\Infrastructure\ServerShell;
 use App\Services\Infrastructure\ServerTaskScripts;
 use Illuminate\Bus\Queueable;
@@ -44,9 +45,9 @@ final class SyncServerTask implements ShouldQueue
     /**
      * Create a new SyncServerTask instance.
      *
-     * Puts a cron job, process or firewall rule on its server, takes it off, or restarts a process.
+     * Puts a cron job, process, firewall rule or service on its server, takes it off, or restarts a process.
      *
-     * @param  class-string<ServerCronJob|ServerProcess|ServerFirewallRule>  $type  Which kind of task.
+     * @param  class-string<ServerCronJob|ServerProcess|ServerFirewallRule|ServerService>  $type  Which kind of task.
      * @param  int  $taskId  The task.
      * @param  string  $operation  `apply`, `remove` or `restart`.
      */
@@ -97,12 +98,12 @@ final class SyncServerTask implements ShouldQueue
     /**
      * Load the task with its server.
      *
-     * @return ServerCronJob|ServerProcess|ServerFirewallRule|null
+     * @return ServerCronJob|ServerProcess|ServerFirewallRule|ServerService|null
      */
-    private function task(): ServerCronJob|ServerProcess|ServerFirewallRule|null
+    private function task(): ServerCronJob|ServerProcess|ServerFirewallRule|ServerService|null
     {
-        /** @var ServerCronJob|ServerProcess|ServerFirewallRule|null $task */
-        $task = in_array($this->type, [ServerCronJob::class, ServerProcess::class, ServerFirewallRule::class], true)
+        /** @var ServerCronJob|ServerProcess|ServerFirewallRule|ServerService|null $task */
+        $task = in_array($this->type, [ServerCronJob::class, ServerProcess::class, ServerFirewallRule::class, ServerService::class], true)
             ? $this->type::query()->with('server')->find($this->taskId)
             : null;
 

@@ -28,7 +28,7 @@ final class StoreServerTaskController
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, string $kind, SaveServerTask $save): RedirectResponse
     {
-        $save->handle($user, $server, ServerTaskKinds::model($kind), $request->all());
+        $save->handle($user, $server, ServerTaskKinds::editableModel($kind), $request->all());
 
         return to_route('infrastructure.servers.show', [$project, $server->id, 'tab' => ServerTaskKinds::tab($kind)])->with('status', __('Saved. It’s being set up on the server.'));
     }

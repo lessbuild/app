@@ -39,6 +39,7 @@ use Illuminate\Support\Str;
  * @property string|null $image
  * @property string|null $public_ip
  * @property string|null $private_ip
+ * @property bool $trust_private_network whether the firewall lets the account's other servers in over the private network
  * @property int $ssh_port
  * @property string|null $ssh_fingerprint the provider's ID for the SSH key
  * @property bool $ssh_key_owned whether we created that key and should delete it
@@ -270,6 +271,7 @@ class Server extends Model
         return [
             'type' => ServerType::class,
             'ssh_port' => 'integer',
+            'trust_private_network' => 'boolean',
             'setup_stage' => 'integer',
             'provisioning_process_id' => 'integer',
             'password' => 'encrypted',

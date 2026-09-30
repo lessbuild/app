@@ -29,7 +29,7 @@ final class UpdateServerTaskController
      */
     public function __invoke(Request $request, #[CurrentUser] User $user, Project $project, Server $server, string $kind, string $task, SaveServerTask $save): RedirectResponse
     {
-        $save->handle($user, $server, ServerTaskKinds::model($kind), $request->all(), ServerTaskKinds::find($server, $kind, $task));
+        $save->handle($user, $server, ServerTaskKinds::editableModel($kind), $request->all(), ServerTaskKinds::findEditable($server, $kind, $task));
 
         return to_route('infrastructure.servers.show', [$project, $server->id, 'tab' => ServerTaskKinds::tab($kind)])->with('status', __('Saved. The change is being made on the server.'));
     }

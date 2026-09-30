@@ -357,6 +357,16 @@
                 <x-signal.ui.button type="submit" variant="secondary" :disabled="$website->isProvisioning()">{{ __('Switch') }}</x-signal.ui.button>
             </form>
         </x-signal.ui.settings-section>
+        <x-signal.ui.settings-section id="reverb" :title="__('WebSockets (Laravel Reverb)')" :description="__('Runs php artisan reverb:start for this website, kept alive by Supervisor on its own port, and sends /app and /apps to it so browsers connect over the site’s own address and certificate.')">
+            <div class="flex flex-wrap items-center gap-3 p-4 sm:p-6">
+                @error('reverb')<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
+                @if (str_contains((string) $website->caddy_directives, '# Laravel Reverb'))
+                    <p class="text-sm text-muted">{{ __('Reverb is set up. Manage its process on the server’s Processes tab.') }}</p>
+                @else
+                    <form method="POST" action="{{ route('infrastructure.websites.reverb', [$project, $website->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" :disabled="$website->isProvisioning()">{{ __('Set up Reverb') }}</x-signal.ui.button></form>
+                @endif
+            </div>
+        </x-signal.ui.settings-section>
         <x-signal.ui.settings-section id="web-server" :title="__('Web server (Caddy)')" :description="__('Add your own Caddy directives (headers, redirects, rewrites, basic auth…) inside this website’s site block. Caddy checks the whole configuration before using it, so a mistake never takes the site down.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @if ($website->caddy_error)

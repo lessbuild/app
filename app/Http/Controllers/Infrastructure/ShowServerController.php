@@ -13,6 +13,7 @@ use App\Models\ServerAlertRule;
 use App\Models\ServerCronJob;
 use App\Models\ServerFirewallRule;
 use App\Models\ServerProcess;
+use App\Models\ServerService;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Infrastructure\ServerLogs;
@@ -49,6 +50,7 @@ final class ShowServerController
             'cron' => $active && $user->can('runCommands', $server) ? __('Cron jobs') : null,
             'processes' => $active && $user->can('runCommands', $server) ? __('Processes') : null,
             'firewall' => $active && $user->can('runCommands', $server) ? __('Firewall') : null,
+            'services' => $active && $user->can('runCommands', $server) ? __('Services') : null,
             'logs' => __('Logs'), 'settings' => $user->can('update', $server) ? __('Settings') : null,
         ]);
 
@@ -73,6 +75,8 @@ final class ShowServerController
             'cronJobs' => ServerCronJob::query()->where('server_id', $server->id)->orderBy('id')->get(),
             'processes' => ServerProcess::query()->where('server_id', $server->id)->orderBy('name')->get(),
             'firewallRules' => ServerFirewallRule::query()->where('server_id', $server->id)->orderBy('name')->get(),
+            'services' => ServerService::query()->where('server_id', $server->id)->get()->keyBy('kind'),
+            'processPreset' => ServerProcess::PRESETS[(string) $request->query('preset')] ?? null,
         ]);
     }
 }

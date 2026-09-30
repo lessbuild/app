@@ -10,6 +10,7 @@ use App\Jobs\Infrastructure\SyncServerTask;
 use App\Models\ServerCronJob;
 use App\Models\ServerFirewallRule;
 use App\Models\ServerProcess;
+use App\Models\ServerService;
 use App\Models\User;
 use App\Support\Infrastructure\ServerTaskKinds;
 use Illuminate\Support\Facades\Gate;
@@ -31,7 +32,7 @@ final class RemoveServerTask
      * @param  ServerCronJob|ServerProcess|ServerFirewallRule  $task
      * @return void
      */
-    public function handle(User $actor, ServerCronJob|ServerProcess|ServerFirewallRule $task): void
+    public function handle(User $actor, ServerCronJob|ServerProcess|ServerFirewallRule|ServerService $task): void
     {
         Gate::forUser($actor)->authorize('runCommands', $task->server);
         $this->audit->handle(AuditAction::ServerTaskRemoved, $actor, $task->server->account_id, ['task' => ServerTaskKinds::describe($task), 'server' => $task->server->label()]);

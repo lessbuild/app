@@ -33,6 +33,19 @@ class ServerProcess extends Model
     use IsServerTask;
 
     /**
+     * Common processes, filled into the Add a process form.
+     *
+     * @var array<string, array{name: string, command: string, processes: int, stop_wait_seconds: int}>
+     */
+    public const PRESETS = [
+        'queue' => ['name' => 'Queue worker', 'command' => 'php artisan queue:work --sleep=3 --tries=3 --max-time=3600', 'processes' => 2, 'stop_wait_seconds' => 3600],
+        'horizon' => ['name' => 'Horizon', 'command' => 'php artisan horizon', 'processes' => 1, 'stop_wait_seconds' => 3600],
+        'reverb' => ['name' => 'Reverb', 'command' => 'php artisan reverb:start --host=127.0.0.1 --port=8080', 'processes' => 1, 'stop_wait_seconds' => 10],
+        'pulse' => ['name' => 'Pulse', 'command' => 'php artisan pulse:check', 'processes' => 1, 'stop_wait_seconds' => 10],
+        'schedule' => ['name' => 'Scheduler', 'command' => 'php artisan schedule:work', 'processes' => 1, 'stop_wait_seconds' => 60],
+    ];
+
+    /**
      * Get the name Supervisor knows it by.
      *
      * @return string

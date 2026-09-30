@@ -24,7 +24,12 @@
         @endforelse
         <div><x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => 'add-process'])" variant="secondary" size="sm" data-modal-trigger="add-process">{{ __('Add a process') }}</x-signal.ui.button></div>
         <x-signal.overlays.form-modal id="add-process" :title="__('Add a process')" :action="route('infrastructure.servers.tasks.store', [$project, $server->id, 'processes'])" :submit="__('Add process')" form-class="grid items-start gap-5 sm:grid-cols-2">
-            @include('infrastructure.server._process-fields', ['process' => null, 'prefix' => 'add-process'])
+            <nav class="flex flex-wrap gap-2 sm:col-span-2" aria-label="{{ __('Start from') }}">
+                @foreach (\App\Models\ServerProcess::PRESETS as $key => $preset)
+                    <x-signal.ui.button :href="route('infrastructure.servers.show', [$project, $server->id, 'tab' => 'processes', 'preset' => $key, 'dialog' => 'add-process'])" variant="secondary" size="sm">{{ __($preset['name']) }}</x-signal.ui.button>
+                @endforeach
+            </nav>
+            @include('infrastructure.server._process-fields', ['process' => $processPreset !== null ? (new \App\Models\ServerProcess)->forceFill($processPreset) : null, 'prefix' => 'add-process'])
         </x-signal.overlays.form-modal>
     </div>
 </x-signal.ui.settings-section>

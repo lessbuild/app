@@ -8,6 +8,7 @@ use App\Jobs\Infrastructure\ApplyWebsiteDomains;
 use App\Models\Project;
 use App\Models\Provider;
 use App\Models\Server;
+use App\Models\ServerProcess;
 use App\Models\Website;
 use App\Services\Infrastructure\ServerShell;
 use App\Services\Infrastructure\WebsiteCaddyConfiguration;
@@ -61,5 +62,31 @@ final class WebsiteCaddyDirectivesTest extends TestCase
         });
         $this->assertStringContainsString('unrecognized directive', (string) $website->refresh()->caddy_error);
         $this->actingAs($owner)->get("{$base}?tab=settings")->assertSee(__('Caddy refused the last change; the previous configuration is still in use.'))->assertSee('unrecognized directive');
+    }
+
+    /**
+     * Check that setting up Reverb adds its process on the next free port and routes /app and /apps to it, once.
+     *
+     * @return void
+     */
+    public function test_reverb_gets_a_process_and_websocket_routing(): void
+    {
+        $this->fakeInfrastructure();
+        $this->withoutMiddleware(RequirePassword::class);
+        $project = Project::factory()->withServices(['infrastructure'])->create();
+        $owner = $this->ownerOf($project);
+        $server = Server::factory()->create(['name' => 'web-1', 'account_id' => $project->account_id, 'provider_id' => Provider::factory()->create(['account_id' => $project->account_id])->id]);
+        $first = Website::factory()->create(['server_id' => $server->id, 'name' => 'Shop', 'deployment_slug' => 'shop']);
+        $second = Website::factory()->create(['server_id' => $server->id, 'name' => 'Blog', 'deployment_slug' => 'blog']);
+        $base = "/projects/{$project->id}/infrastructure/websites";
+
+        $this->actingAs($owner)->post("{$base}/{$first->id}/reverb")->assertRedirect()->assertSessionHas('status', fn (string $status): bool => str_contains($status, 'REVERB_SERVER_PORT=8080'));
+        $this->actingAs($owner)->post("{$base}/{$second->id}/reverb")->assertSessionHas('status', fn (string $status): bool => str_contains($status, 'port 8081'));
+        $this->actingAs($owner)->post("{$base}/{$first->id}/reverb")->assertSessionHasErrors('reverb');
+
+        $process = ServerProcess::query()->where('name', 'Reverb: Shop')->sole();
+        $this->assertSame(['php artisan reverb:start --host=127.0.0.1 --port=8080', $first->deploymentPath('current'), 'web-1'], [$process->command, $process->directory, $process->user]);
+        $this->assertStringContainsString("@reverb path /app/* /apps/*\nreverse_proxy @reverb 127.0.0.1:8080", (string) $first->refresh()->caddy_directives);
+        $this->actingAs($owner)->get("{$base}/{$first->id}?tab=settings")->assertSee(__('Reverb is set up. Manage its process on the server’s Processes tab.'));
     }
 }

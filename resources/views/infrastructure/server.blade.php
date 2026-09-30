@@ -214,7 +214,7 @@
         </x-signal.ui.page-tab-panel>
     @endif
 
-    @foreach (['cron' => '_cron', 'processes' => '_processes', 'firewall' => '_firewall'] as $name => $partial)
+    @foreach (['cron' => '_cron', 'processes' => '_processes', 'firewall' => '_firewall', 'services' => '_services'] as $name => $partial)
         @if (isset($tabs[$name]))
             <x-signal.ui.page-tab-panel :name="$name" :current="$tab">
                 @include('infrastructure.server.'.$partial)
