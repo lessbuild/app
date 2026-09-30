@@ -6,6 +6,7 @@ One Laravel application that brings Deploy, Infrastructure, Monitoring and Analy
 
 - **Account** → **Projects** → **Environments**. A project has domains and enabled services.
 - Services register themselves through the `PlatformService` registry. The shell, billing and onboarding read that registry, so they never hard-code service lists.
+- BuildPusher never hosts customers' websites or workloads (apps, databases, caches, websockets). They run on servers in the customer's own cloud accounts; we provision, deploy, monitor and analyse. Don't propose managed hosting or managed data services.
 - Billing: one Stripe subscription per account, with one item per chosen service tier, add-on or meter. Limits are checked through `Entitlements`, never ad hoc.
 
 ## Code rules
