@@ -63,9 +63,9 @@ final class SecretScanner implements Scanner
     /**
      * Secret scanning comes with Pro and above.
      *
-     * @return string|null
+     * @return string
      */
-    public function flag(): ?string
+    public function flag(): string
     {
         return 'security.secrets';
     }
@@ -162,7 +162,7 @@ final class SecretScanner implements Scanner
                 $definition = SecretPatterns::RULES[$secret['rule']];
                 $findings[] = new Finding("{$secret['rule']}|".hash('sha256', $secret['match']), $definition['severity'],
                     (string) __(':secret in :type data', ['secret' => $definition['name'], 'type' => $event->type]),
-                    (string) __(':value, seen in “:name” :time.', ['value' => SecretPatterns::redact($secret['match']), 'name' => str((string) $event->name)->limit(80), 'time' => $event->occurred_at->diffForHumans()]),
+                    (string) __(':value, seen in “:name” :time.', ['value' => SecretPatterns::redact($secret['match']), 'name' => str((string) $event->name)->limit(80)->toString(), 'time' => $event->occurred_at->diffForHumans()]),
                     null, route('monitoring.events.show', [$project, $event->id]),
                     (string) __('Revoke this credential, then stop the app sending it: remove it from exception messages and logs before they’re sent.'),
                     ['rule' => $secret['rule'], 'event' => $event->id]);
