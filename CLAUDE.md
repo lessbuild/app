@@ -47,4 +47,5 @@ A conventional Laravel layout, organised by type (not by domain). Within a type,
 
 - Run each slice's tests, Pint and PHPStan as the slice lands. (This replaces the old branch's "don't run tests yet" rule; the user approved the change for `platform-v2` only.)
 - Commit small, reviewable slices and push after every commit. The development container can be reset and lose unpushed work.
+- A feature isn't done until everything public that describes the product is updated in the same slice: the changelog (`config/changelog.php`), the home page and service pages (`config/marketing.php`), the help centre, the comparison pages (`config/compare.php`) and the roadmap (mark shipped requests).
 - Public contracts from the old apps (tracker, ingest endpoints, Deployer API v1, webhooks, status page URLs) must keep working unchanged; see the plan's compatibility phase.

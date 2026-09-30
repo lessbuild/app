@@ -7,10 +7,10 @@ declare(strict_types=1);
 return [
     'groups' => [
         'platform' => ['title' => 'Your account', 'summary' => 'Projects, your team, billing, security and the API.', 'icon' => 'layers'],
-        'infrastructure' => ['title' => 'Infrastructure', 'summary' => 'Providers, servers, websites and backups.', 'icon' => 'server'],
-        'deploy' => ['title' => 'Deploy', 'summary' => 'Repositories, environments, previews and releases.', 'icon' => 'cloud-upload'],
+        'infrastructure' => ['title' => 'Infrastructure', 'summary' => 'Providers, servers, websites, services, storage and backups.', 'icon' => 'server'],
+        'deploy' => ['title' => 'Deploy', 'summary' => 'Repositories, environments, previews, scaling and releases.', 'icon' => 'cloud-upload'],
         'monitoring' => ['title' => 'Monitoring', 'summary' => 'Checks, telemetry, alerts, incidents and status pages.', 'icon' => 'pulse'],
-        'analytics' => ['title' => 'Analytics', 'summary' => 'Sites, the tracker and goals.', 'icon' => 'chart'],
+        'analytics' => ['title' => 'Analytics', 'summary' => 'Sites, the tracker, reports, exploring, sharing and your data.', 'icon' => 'chart'],
     ],
 
     'guides' => [
@@ -43,6 +43,7 @@ return [
                 ['Pick plans', 'Account → Billing shows each service’s plan. Every service has a free tier; upgrade only the ones that need more.'],
                 ['Pay', 'Checkout and card details are handled by Stripe. Invoices and payment methods are in the billing portal, linked from the billing page.'],
                 ['Change or cancel', 'Change a plan whenever you like. A cancelled plan stays active until the end of the period you’ve paid for, then moves to the free tier.'],
+                ['Pay as you go', 'On a paid monthly plan, open the service’s tab on the billing page and turn on Pay as you go. Usage past your allowance is billed per unit instead of stopping, and you can set a monthly spend cap.'],
             ],
         ],
         'account-security' => [
@@ -98,6 +99,37 @@ return [
                 ['Database', 'App-server websites get their own MySQL database. You can inspect it, add users that expire, and copy data from another website.'],
             ],
         ],
+        'server-tasks' => [
+            'group' => 'infrastructure',
+            'title' => 'Cron jobs, processes, firewall and services',
+            'summary' => 'Schedule commands, keep workers running, open ports and install search or cache on a server.',
+            'steps' => [
+                ['Cron jobs', 'On the server’s Cron jobs tab, add a command and a schedule (or pick a preset such as every minute). It runs as the server’s user.'],
+                ['Processes', 'The Processes tab keeps commands running and restarts them if they stop: queue workers, Horizon, Reverb, Pulse or your own. Restart one after a deploy from its row.'],
+                ['Firewall', 'The Firewall tab opens or closes ports, for everyone or only some addresses. Turn on Private network there to let your other servers in the same region connect.'],
+                ['Services', 'The Services tab installs Meilisearch, Typesense or Redis, listening on the server only or on the private network. Its address and key are shown once it’s running.'],
+            ],
+        ],
+        'website-tools' => [
+            'group' => 'infrastructure',
+            'title' => 'Web server, files, logs and CDN',
+            'summary' => 'Adjust how a website is served, look at its files and logs, and put it behind a CDN.',
+            'steps' => [
+                ['Web server settings', 'On the website’s Settings tab, add your own Caddy settings under Web server (Caddy). They’re checked first, and the previous settings come back if they’re invalid.'],
+                ['WebSockets', 'Under WebSockets (Laravel Reverb) on the Settings tab, set up Reverb in one step: it runs as a process and the web server forwards its traffic.'],
+                ['Files and logs', 'The Files tab lets you browse the website’s files, follow the end of a log, and search the logs for a phrase.'],
+                ['CDN and firewall', 'On the Domains tab, choose CDN and firewall on a domain to serve it through Cloudflare, block countries or addresses, and rate-limit requests. The cache is cleared after every deploy.'],
+            ],
+        ],
+        'storage-buckets' => [
+            'group' => 'infrastructure',
+            'title' => 'Storage buckets',
+            'summary' => 'Object storage for your apps, from S3, Spaces, R2, Google Cloud Storage and others.',
+            'steps' => [
+                ['Add a bucket', 'Infrastructure → Storage → Add a bucket. Create a new one or connect an existing bucket with its access key.'],
+                ['Use it in an app', 'Attach the bucket to an environment and its details are added as environment variables (the usual AWS_ names), ready for Laravel’s s3 disk.'],
+            ],
+        ],
         'backups' => [
             'group' => 'infrastructure',
             'title' => 'Back up and restore',
@@ -143,6 +175,16 @@ return [
                 ['Workers and recipes', 'Run queue workers and schedulers from the Workers tab, and scripts on the environment’s servers from the Recipes tab.'],
             ],
         ],
+        'scaling-and-maintenance' => [
+            'group' => 'deploy',
+            'title' => 'Autoscaling, maintenance mode and regions',
+            'summary' => 'Scale with demand, take the site down for planned work, and see where it runs.',
+            'steps' => [
+                ['Autoscale', 'On the environment’s How deploys run tab, tick Scale automatically and set a target CPU. Replicas are added and removed within the minimum and maximum you set.'],
+                ['Maintenance mode', 'On the Controls tab, choose Turn on maintenance mode. Visitors see a “back soon” page; open the secret path shown there once to get in yourself. It stays on through deploys until you turn it off.'],
+                ['Regions', 'The Controls tab lists every website the environment deploys to and its region. To run in another region, add a website on a server there and connect the repository to it.'],
+            ],
+        ],
         'previews' => [
             'group' => 'deploy',
             'title' => 'Preview pull requests',
@@ -151,6 +193,7 @@ return [
                 ['Turn previews on', 'On the repository’s page, turn on previews. Each new pull request gets its own website and environment.'],
                 ['Share it', 'GitHub App repositories get a check run and a comment with the preview’s address.'],
                 ['Secrets', 'Previews start without secrets; approve the ones a preview needs for its exact revision.'],
+                ['Start with data', 'On the repository’s page, choose a website to copy the database from, and each preview starts with a copy of it.'],
                 ['Clean-up', 'A preview is removed when its pull request is closed or merged.'],
             ],
         ],
@@ -182,6 +225,7 @@ return [
                 ['Get a key', 'Monitoring → Setup. Create an ingestion key for the environment.'],
                 ['Send data', 'Use the SDK snippet on the setup page, or send OpenTelemetry traces, logs and metrics to the OTLP endpoint shown there.'],
                 ['Investigate', 'Errors are grouped into Issues; Events, Metrics and Traces let you dig in, and Releases show what changed.'],
+                ['Link to deploys', 'Every trace shows the deploy that was live when it ran, and each deploy links to its requests and traces, so you can see what a release changed.'],
             ],
         ],
         'incidents-and-status-pages' => [
@@ -202,7 +246,41 @@ return [
                 ['Add the site', 'Analytics → Sites → Add a site, with the domain it runs on.'],
                 ['Install the tracker', 'Copy the one-line script from the site’s page into your website’s head. Visits appear within a minute.'],
                 ['Set goals', 'Analytics → Goals. Count visits to a page, or an event you send, as a conversion.'],
-                ['Share and export', 'Export a report as CSV from the overview when you need to share it.'],
+                ['Count more', 'Add data-outbound, data-downloads, data-vitals or data-not-found to the script for links, downloads, page speed and missing pages. Engagement (time on page and scroll depth) is counted automatically.'],
+                ['Custom properties', 'To break events down by your own details, list the property names in the site’s settings, then send them: window.buildpusher.track(\'signup\', {plan: \'pro\'}).'],
+            ],
+        ],
+        'explore-analytics' => [
+            'group' => 'analytics',
+            'title' => 'Explore your traffic',
+            'summary' => 'Choose any period, compare it, save segments, and dig into paths, retention and sales.',
+            'steps' => [
+                ['Pick a period', 'On the Analytics overview, choose a preset or set From and To dates, and compare with the previous period, the same period last year, or nothing.'],
+                ['Filter and save', 'Click any page, channel, country, city, browser or campaign to filter by it, then save the filters as a view (a segment) to come back to.'],
+                ['Explore', 'Analytics → Explore has Insights (the biggest changes), Paths (where people came from and went next), Properties, Items (e-commerce) and Retention.'],
+                ['Retention', 'Add data-retention to the script to recognise returning browsers. It keeps a random ID in the browser, so ask for consent where the law requires it.'],
+                ['Notes', 'Choose Add a note on the overview to mark a launch or outage on the chart.'],
+            ],
+        ],
+        'share-analytics' => [
+            'group' => 'analytics',
+            'title' => 'Reports, alerts and sharing',
+            'summary' => 'Send regular reports, get told about spikes, and share or embed a report.',
+            'steps' => [
+                ['Reports and alerts', 'On the site’s page, under Reports and alerts, add a weekly or monthly report, or a traffic spike alert, by email or to a Slack incoming webhook.'],
+                ['Share', 'Under Share the report, create a read-only link, with a password if you like.'],
+                ['Embed', 'A link without a password comes with an iframe snippet to put the report on another page.'],
+                ['Export', 'Export a report as CSV from the overview, or read it through the API.'],
+            ],
+        ],
+        'analytics-data' => [
+            'group' => 'analytics',
+            'title' => 'Import, export and your own domain',
+            'summary' => 'Bring your Google Analytics history, send raw data to BigQuery, and avoid ad blockers.',
+            'steps' => [
+                ['Import from Google Analytics', 'On the site’s page, choose Connect Google Analytics, then pick the GA4 property and dates. Only days before your site’s own data are imported.'],
+                ['Raw data export', 'Under Raw data export, choose one of the project’s storage buckets. Each night, the previous day’s events are written as gzipped JSON lines, one file per day, ready for BigQuery or Athena.'],
+                ['Your own domain', 'Under Send through your own domain, copy the proxy rules for Caddy or Nginx and the matching snippet, so the tracker loads from your site and ad blockers don’t stop it.'],
             ],
         ],
     ],
