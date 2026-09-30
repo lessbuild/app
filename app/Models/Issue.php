@@ -40,11 +40,13 @@ use Illuminate\Support\Carbon;
  * @property int $state_version
  * @property string|null $ticket_key the ticket filed for it, such as #42 or ENG-42
  * @property string|null $ticket_url
+ * @property int|null $ticket_tracker_id the tracker the ticket is in, followed until it's done
  * @property int|null $legacy_id
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Project $project
  * @property-read Environment|null $environment
+ * @property-read IssueTracker|null $ticketTracker
  * @property-read User|null $assignee
  * @property-read \Illuminate\Database\Eloquent\Collection<int, IssueActivity> $activities
  * @property-read \Illuminate\Database\Eloquent\Collection<int, TelemetryEvent> $telemetryEvents
@@ -155,5 +157,15 @@ final class Issue extends Model
             'last_seen_at' => 'datetime',
             'metadata' => 'array',
         ];
+    }
+
+    /**
+     * Get the tracker the issue's ticket is in.
+     *
+     * @return BelongsTo<IssueTracker, $this>
+     */
+    public function ticketTracker(): BelongsTo
+    {
+        return $this->belongsTo(IssueTracker::class, 'ticket_tracker_id');
     }
 }

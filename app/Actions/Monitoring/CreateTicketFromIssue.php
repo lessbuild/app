@@ -53,7 +53,7 @@ final class CreateTicketFromIssue
         } catch (Throwable $exception) {
             throw new AccountRuleViolation('tracker', __('The ticket wasn’t created. :reason', ['reason' => Str::limit($exception->getMessage(), 300)]));
         }
-        $issue->forceFill(['ticket_key' => mb_substr($ticket['key'], 0, 100), 'ticket_url' => mb_substr($ticket['url'], 0, 500)])->save();
+        $issue->forceFill(['ticket_key' => mb_substr($ticket['key'], 0, 100), 'ticket_url' => mb_substr($ticket['url'], 0, 500), 'ticket_tracker_id' => $tracker->id])->save();
         (new IssueActivity)->forceFill(['issue_id' => $issue->id, 'actor_id' => $actor->id, 'action' => 'ticket_created', 'metadata' => ['tracker' => $tracker->name, 'key' => $ticket['key'], 'url' => $ticket['url']]])->save();
 
         return $ticket['url'];

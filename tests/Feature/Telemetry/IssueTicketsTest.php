@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Telemetry;
 
+use App\Actions\Monitoring\SyncIssueTickets;
+use App\Enums\IssueStatus;
 use App\Models\Issue;
 use App\Models\IssueTracker;
 use App\Models\Project;
@@ -67,5 +69,37 @@ final class IssueTicketsTest extends TestCase
         $this->actingAs($owner)->post("{$base}/issues/{$third->id}/ticket", ['tracker' => $jira->id])->assertRedirect();
         $this->assertSame(['OPS-3', 'https://acme.atlassian.net/browse/OPS-3'], [$third->refresh()->ticket_key, $third->ticket_url]);
 
+    }
+
+    /**
+     * Check open issues are resolved once their ticket is finished in GitHub, Linear or Jira, and stay open while it
+     * isn't or the tracker can't be reached.
+     *
+     * @return void
+     */
+    public function test_issues_resolve_when_their_tickets_close(): void
+    {
+        Http::fake([
+            'api.github.com/repos/acme/shop/issues/42' => Http::response(['state' => 'closed']),
+            'api.github.com/repos/acme/shop/issues/43' => Http::response(['state' => 'open']),
+            'api.linear.app/graphql' => Http::response(['data' => ['issue' => ['state' => ['type' => 'completed']]]]),
+            'acme.atlassian.net/rest/api/3/issue/OPS-3*' => Http::response([], 503),
+        ]);
+        $project = Project::factory()->withServices(['monitoring'])->create();
+        $tracker = function (string $kind, array $settings) use ($project): IssueTracker {
+            $tracker = new IssueTracker;
+            $tracker->forceFill(['project_id' => $project->id, 'kind' => $kind, 'name' => $kind, 'settings' => $settings])->save();
+
+            return $tracker;
+        };
+        $github = $tracker('github', ['repository' => 'acme/shop', 'token' => 't']);
+        $linear = $tracker('linear', ['api_key' => 'k', 'team_id' => 'team']);
+        $jira = $tracker('jira', ['site' => 'https://acme.atlassian.net', 'email' => 'a@b.c', 'token' => 't', 'project_key' => 'OPS']);
+        $issue = fn (IssueTracker $in, string $key) => Issue::factory()->for($project)->create(['ticket_tracker_id' => $in->id, 'ticket_key' => $key, 'ticket_url' => 'https://tickets.test/'.$key]);
+        [$closed, $open, $completed, $unreachable] = [$issue($github, '#42'), $issue($github, '#43'), $issue($linear, 'ENG-7'), $issue($jira, 'OPS-3')];
+
+        $this->assertSame(2, app(SyncIssueTickets::class)->handle());
+        $this->assertSame([IssueStatus::Resolved, IssueStatus::Open, IssueStatus::Resolved, IssueStatus::Open], [$closed->refresh()->status, $open->refresh()->status, $completed->refresh()->status, $unreachable->refresh()->status]);
+        $this->assertSame('ticket_closed', $closed->activities()->latest('id')->value('action'));
     }
 }

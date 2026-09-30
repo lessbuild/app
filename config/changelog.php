@@ -9,7 +9,7 @@ return [
         'Multi-step checks: script a login or checkout as a series of requests, with cookies, redirects and values carried between steps, and get told which step broke.',
         'Status pages: group components under headings, a public uptime report for every month, and an optional monthly email of it to subscribers.',
         'Send a server’s logs to Monitoring: system warnings and errors, and its websites’ Laravel errors with stack traces, searchable beside traces and ready for log alerts.',
-        'Create a ticket for any issue in GitHub Issues, Linear or Jira, with the error’s details and a link back.',
+        'Create a ticket for any issue in GitHub Issues, Linear or Jira, with the error’s details and a link back; closing the ticket resolves the issue.',
         'A Laravel package: composer require buildpusher/laravel, set one key, and every request arrives with a timeline of its queries, mail and notifications, plus exceptions with the number of people affected, slow and N+1 queries, jobs, scheduled tasks, commands and logs.',
         'Browser error tracking: a script tag catches JavaScript errors and unhandled promise rejections in visitors’ browsers and groups them into issues beside your server errors.',
         'Follow the status of the services you depend on, such as GitHub, Cloudflare and DigitalOcean, beside your own monitors.',

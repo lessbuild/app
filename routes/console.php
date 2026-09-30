@@ -126,6 +126,11 @@ Artisan::command('status-pages:monthly-reports', function (App\Actions\Monitorin
 })->purpose('Email last month’s uptime to status page subscribers who asked for it');
 Schedule::command('status-pages:monthly-reports')->hourlyAt(10)->withoutOverlapping()->onOneServer();
 
+Artisan::command('monitoring:sync-tickets', function (App\Actions\Monitoring\SyncIssueTickets $sync): void {
+    $this->info("Resolved {$sync->handle()} issues whose tickets were closed.");
+})->purpose('Resolve Monitoring issues whose GitHub, Linear or Jira tickets are done');
+Schedule::command('monitoring:sync-tickets')->hourlyAt(35)->withoutOverlapping()->onOneServer();
+
 Artisan::command('monitoring:third-party', function (App\Services\Monitoring\ThirdPartyStatusChecker $checker): void {
     $this->info("Checked {$checker->checkAll()} third-party status pages.");
 })->purpose('Read the status pages of the services projects depend on');
