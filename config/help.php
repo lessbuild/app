@@ -172,6 +172,7 @@ return [
             'summary' => 'Configure each environment: variables, workers, how deploys run, and recipes.',
             'steps' => [
                 ['Open the environment', 'Deploy → Environments, then choose production, staging or development.'],
+                ['Clone one', 'Project settings → Environments → Copy from: pick an environment, name the new one and choose Clone. Its deploy settings, workers, recipes and variables come across, and its schedules come across switched off. Secret values are copied only if you tick Copy secret values too; otherwise you’re told which secrets to set. Connect a repository to a website for it to deploy.'],
                 ['Variables', 'On the Variables tab, add environment variables and secrets. They’re encrypted, and previews never inherit them.'],
                 ['How deploys run', 'Choose the strategy (atomic, rolling, blue-green or canary), approvals, deploy locks and weekly windows.'],
                 ['Release analysis', 'Under Watch health after each deploy, choose how long to watch, then the limits: failed requests, how much slower requests may get, and how far the Analytics conversion rate may drop. Each deploy is compared with the same length of time before it; past a limit, it’s marked failed and, with automatic rollback on, the previous release goes back live. The build page shows the before-and-after figures.'],

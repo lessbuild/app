@@ -87,6 +87,7 @@ return [
                     ['Workers and hibernation', 'Queue workers and schedulers as services, scaling schedules, and idle environments that sleep until the next request.'],
                     ['Autoscaling', 'Add and remove workers as CPU rises and falls, within the limits you set.'],
                     ['Regions', 'See where each environment runs, and run it on websites in more than one region.'],
+                    ['Clone an environment', 'Start staging from production’s settings, workers and variables in one step.'],
                     ['Environment recipes', 'Scripts that run on an environment’s servers, in order, and on new websites if you ask.'],
                     ['Configuration as code', 'Plan, review and apply environment configuration documents, from the dashboard or the API.'],
                 ]],

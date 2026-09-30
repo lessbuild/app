@@ -9,7 +9,9 @@ use App\Enums\ProviderType;
 use App\Models\AnalyticsSite;
 use App\Models\AnalyticsVisit;
 use App\Models\Build;
+use App\Models\DeploymentSchedule;
 use App\Models\Environment;
+use App\Models\EnvironmentProcess;
 use App\Models\EnvironmentVariable;
 use App\Models\Project;
 use App\Models\Provider;
@@ -227,6 +229,39 @@ final class EnvironmentsTest extends TestCase
         $visit(60, 3, now()->subMinute());
         $this->command('builds:observe')->expectsOutput('Checked 1 deploys under observation; 1 failed.');
         $this->assertStringContainsString('The conversion rate fell to 5% after the deploy (20% before it)', (string) $this->reload($worse)->observation_error);
+    }
+
+    /**
+     * Check an environment is cloned with its settings, workers, variables and recipes, secrets left out unless asked
+     * for (and listed), schedules switched off, and nothing from another project.
+     *
+     * @return void
+     */
+    public function test_an_environment_is_cloned_from_another(): void
+    {
+        $this->production->forceFill(['deployment_strategy' => 'canary', 'post_deployment_observation_minutes' => 10, 'runtime_type' => 'node', 'maximum_replicas' => 4])->save();
+        foreach ([['APP_NAME', 'Shop', false], ['STRIPE_SECRET', 'sk_live_1', true]] as [$key, $value, $secret]) {
+            $variable = new EnvironmentVariable;
+            $variable->forceFill(['environment_id' => $this->production->id, 'key' => $key, 'value' => $value, 'is_secret' => $secret, 'scope' => 'runtime', 'current_version' => 1])->save();
+        }
+        (new EnvironmentProcess)->forceFill(['environment_id' => $this->production->id, 'name' => 'queue', 'type' => 'worker', 'command' => 'php artisan queue:work', 'replicas' => 2, 'restart_policy' => 'always', 'restart_delay_seconds' => 5, 'is_enabled' => true])->save();
+        (new DeploymentSchedule)->forceFill(['environment_id' => $this->production->id, 'name' => 'Nightly', 'cron_expression' => '0 3 * * *', 'timezone' => 'UTC', 'is_enabled' => true])->save();
+        $clone = "/projects/{$this->project->id}/environments/clone";
+
+        $this->actingAs($this->owner)->post($clone, ['source_id' => $this->production->id, 'name' => 'Staging', 'kind' => 'staging'])
+            ->assertRedirect()->assertSessionHas('status', 'Staging created from Production. Set these secrets for it: STRIPE_SECRET.');
+        $staging = $this->project->environments()->where('slug', 'staging')->firstOrFail();
+        $this->assertSame(['canary', 10, 'node', 4], [$staging->deployment_strategy, $staging->post_deployment_observation_minutes, $staging->runtime_type, $staging->maximum_replicas]);
+        $this->assertSame(['APP_NAME' => 'Shop'], $staging->variables()->pluck('value', 'key')->all());
+        $this->assertSame(['queue'], EnvironmentProcess::query()->where('environment_id', $staging->id)->pluck('name')->all());
+        $this->assertFalse(DeploymentSchedule::query()->where('environment_id', $staging->id)->sole()->is_enabled, 'Schedules come across switched off.');
+
+        $this->actingAs($this->owner)->post($clone, ['source_id' => $this->production->id, 'name' => 'QA', 'kind' => 'staging', 'copy_secrets' => '1'])->assertRedirect();
+        $this->assertSame('sk_live_1', $this->project->environments()->where('slug', 'qa')->firstOrFail()->variables()->where('key', 'STRIPE_SECRET')->value('value'));
+        $this->actingAs($this->owner)->post($clone, ['source_id' => $this->production->id, 'name' => 'Staging', 'kind' => 'staging'])->assertSessionHasErrors('name', null, 'cloneEnvironment');
+        $foreign = Project::factory()->create()->environments()->firstOrFail();
+        $this->actingAs($this->owner)->post($clone, ['source_id' => $foreign->id, 'name' => 'Stolen', 'kind' => 'staging'])->assertNotFound();
+        $this->actingAs($this->owner)->get("/projects/{$this->project->id}/settings")->assertOk()->assertSee(__('Copy secret values too'));
     }
 
     /**

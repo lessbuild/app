@@ -332,6 +332,7 @@ use App\Http\Controllers\Onboarding\StopGettingStartedEmailsController;
 use App\Http\Controllers\Platform\ShowPlatformStatusController;
 use App\Http\Controllers\Platform\ShowPlatformStatusReportController;
 use App\Http\Controllers\Projects\AddDomainController;
+use App\Http\Controllers\Projects\CloneEnvironmentController;
 use App\Http\Controllers\Projects\CreateProjectController;
 use App\Http\Controllers\Projects\DeleteEnvironmentController;
 use App\Http\Controllers\Projects\DeleteProjectController;
@@ -902,6 +903,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
         Route::put('/settings', UpdateProjectController::class)->name('projects.update');
         Route::delete('/', DeleteProjectController::class)->middleware('password.confirm')->name('projects.destroy');
         Route::post('/environments', StoreEnvironmentController::class)->name('projects.environments.store');
+        Route::post('/environments/clone', CloneEnvironmentController::class)->middleware('throttle:10,1')->name('projects.environments.clone');
         Route::delete('/environments/{environment}', DeleteEnvironmentController::class)->name('projects.environments.destroy');
         Route::get('/domains', ShowDomainsController::class)->name('projects.domains');
         Route::post('/domains', AddDomainController::class)->middleware('throttle:30,1')->name('projects.domains.store');

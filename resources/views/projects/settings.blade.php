@@ -45,6 +45,22 @@
                 </x-signal.ui.select-field>
                 <x-signal.ui.button type="submit" variant="secondary">{{ __('Add') }}</x-signal.ui.button>
             </form>
+            <form method="POST" action="{{ route('projects.environments.clone', $project) }}" class="grid gap-4 border-t border-line p-4 sm:grid-cols-[12rem_minmax(0,1fr)_12rem_auto] sm:items-end sm:px-6">
+                @csrf
+                <x-signal.ui.select-field name="source_id" id="clone-source" :label="__('Copy from')" required error-bag="cloneEnvironment">
+                    @foreach ($project->environments()->orderBy('name')->get() as $environment)
+                        <option value="{{ $environment->id }}">{{ $environment->name }}</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.input-field name="name" id="clone-name" :label="__('New environment')" maxlength="60" required error-bag="cloneEnvironment" :placeholder="__('Staging')" />
+                <x-signal.ui.select-field name="kind" id="clone-kind" :label="__('Kind')" required>
+                    @foreach ($kinds as $kind)
+                        <option value="{{ $kind->value }}">{{ $kind->label() }}</option>
+                    @endforeach
+                </x-signal.ui.select-field>
+                <x-signal.ui.button type="submit" variant="secondary">{{ __('Clone') }}</x-signal.ui.button>
+                <div class="sm:col-span-4"><x-signal.ui.checkbox name="copy_secrets" value="1" :description="__('Copies deploy settings, workers, recipes and variables; schedules come across switched off. Leave this unticked to set new secrets for it.')">{{ __('Copy secret values too') }}</x-signal.ui.checkbox></div>
+            </form>
         </x-slot:footer>
     </x-signal.ui.settings-section>
     </div>
