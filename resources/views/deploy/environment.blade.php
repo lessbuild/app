@@ -2,7 +2,7 @@
 @php($days = [1 => __('Mon'), 2 => __('Tue'), 3 => __('Wed'), 4 => __('Thu'), 5 => __('Fri'), 6 => __('Sat'), 7 => __('Sun')])
 
 <x-signal.layouts.project :overview="$overview" :title="$environment->name" :description="__('Deploy settings for this environment. Changes apply to the next deploy.')">
-    @foreach (['process', 'resource', 'type', 'variables', 'maximum_replicas', 'minimum_replicas', 'start_command', 'schedule', 'task', 'cron_expression', 'replicas', 'website_id', 'name', 'hibernate_after_minutes', 'state', 'recipes', 'recipe_id'] as $key)
+    @foreach (['process', 'resource', 'type', 'variables', 'maximum_replicas', 'minimum_replicas', 'autoscale_enabled', 'start_command', 'schedule', 'task', 'cron_expression', 'replicas', 'website_id', 'name', 'hibernate_after_minutes', 'state', 'recipes', 'recipe_id'] as $key)
         @error($key)<x-signal.ui.alert tone="danger" role="alert">{{ $message }}</x-signal.ui.alert>@enderror
     @endforeach
     @if ($blockReason)
@@ -103,6 +103,11 @@
                 <x-signal.ui.input-field name="minimum_replicas" type="number" min="1" max="20" :label="__('Min replicas')" :value="$environment->minimum_replicas" />
                 <x-signal.ui.input-field name="desired_replicas" type="number" min="1" max="20" :label="__('Running')" :value="$environment->desired_replicas" />
                 <x-signal.ui.input-field name="maximum_replicas" type="number" min="1" max="20" :label="__('Max replicas')" :value="$environment->maximum_replicas" />
+            </div>
+            <div class="grid items-end gap-3 sm:col-span-2 sm:grid-cols-2">
+                <x-signal.ui.checkbox name="autoscale_enabled" :checked="$environment->autoscale_enabled" :description="__('Adds a replica when the servers’ average CPU stays above the target for a few minutes, and removes one when it stays under half of it for ten; always between the minimum and maximum.')">{{ __('Scale automatically') }}</x-signal.ui.checkbox>
+                <x-signal.ui.input-field name="autoscale_cpu_target" type="number" min="20" max="95" :label="__('Target CPU (%)')" :value="$environment->autoscale_cpu_target" />
+                @if ($environment->autoscaled_at)<p class="text-xs text-muted sm:col-span-2">{{ __('Last scaled automatically :when.', ['when' => $environment->autoscaled_at->diffForHumans()]) }}</p>@endif
             </div>
             @if ($canManage)<div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save settings') }}</x-signal.ui.button></div>@endif
         </form>

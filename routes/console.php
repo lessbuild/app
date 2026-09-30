@@ -40,6 +40,7 @@ use App\Services\Analytics\GeoIpDatabase;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Referrals;
 use App\Services\Deploy\Automation;
+use App\Services\Deploy\Autoscaler;
 use App\Services\Deploy\Configuration\ConfigurationOperations;
 use App\Services\Deploy\DeploymentObserver;
 use App\Services\Deploy\Deployments;
@@ -108,6 +109,11 @@ Artisan::command('analytics:update-geoip', function (GeoIpDatabase $database): i
     }
 })->purpose('Download the latest IP-to-country database for Analytics');
 Schedule::command('analytics:update-geoip')->monthlyOn(3, '04:20')->withoutOverlapping();
+Artisan::command('deploy:autoscale', function (Autoscaler $autoscaler): void {
+    $changed = $autoscaler->run();
+    $this->info('Scaled '.count($changed).' environments.');
+})->purpose('Scale environments with automatic scaling by their servers\' CPU');
+Schedule::command('deploy:autoscale')->everyMinute()->withoutOverlapping();
 Schedule::command('analytics:dispatch-pending')->everyMinute()->withoutOverlapping();
 Schedule::command('analytics:refresh-recent')->everyTenMinutes()->withoutOverlapping();
 Schedule::command('analytics:prune')->daily()->withoutOverlapping();

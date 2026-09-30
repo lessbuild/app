@@ -40,6 +40,7 @@ final class UpdateEnvironmentDeploySettingsController
             'minimum_replicas' => ['required', 'integer', 'between:1,20'],
             'maximum_replicas' => ['required', 'integer', 'between:1,20'],
             'desired_replicas' => ['required', 'integer', 'between:1,20'],
+            'autoscale_cpu_target' => ['nullable', 'integer', 'between:20,95'],
         ]);
         $update->handle($user, $environment, [
             'requires_deployment_approval' => $request->boolean('requires_deployment_approval'), 'automatic_rollback' => $request->boolean('automatic_rollback'),
@@ -50,6 +51,7 @@ final class UpdateEnvironmentDeploySettingsController
             'start_command' => $data['start_command'] ?? null, 'container_port' => isset($data['container_port']) ? (int) $data['container_port'] : null,
             'dockerfile_path' => $data['dockerfile_path'] ?? null, 'minimum_replicas' => (int) $data['minimum_replicas'],
             'maximum_replicas' => (int) $data['maximum_replicas'], 'desired_replicas' => (int) $data['desired_replicas'],
+            'autoscale_enabled' => $request->boolean('autoscale_enabled'), 'autoscale_cpu_target' => (int) ($data['autoscale_cpu_target'] ?? $environment->autoscale_cpu_target),
         ]);
 
         return to_route('deploy.environments.show', [$project, $environment])->with('status', __('Settings saved. They apply to the next deploy.'));

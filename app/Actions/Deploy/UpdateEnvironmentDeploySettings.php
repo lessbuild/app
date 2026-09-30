@@ -37,6 +37,9 @@ final class UpdateEnvironmentDeploySettings
         if ($scaling && max($data['minimum_replicas'], $data['maximum_replicas']) > 1 && ! $this->entitlements->for($environment->project->account)->has('deploy.scaling')) {
             throw ValidationException::withMessages(['maximum_replicas' => __('More than one replica comes with scaling on the Business Deploy plan.')]);
         }
+        if (($data['autoscale_enabled'] ?? false) && ! $environment->autoscale_enabled && ! $this->entitlements->for($environment->project->account)->has('deploy.scaling')) {
+            throw ValidationException::withMessages(['autoscale_enabled' => __('Automatic scaling comes with scaling on the Business Deploy plan.')]);
+        }
         if ($data['minimum_replicas'] > $data['maximum_replicas']) {
             throw ValidationException::withMessages(['minimum_replicas' => __('The minimum can’t be more than the maximum.')]);
         }
