@@ -38,10 +38,31 @@
         <p class="text-xs text-muted">{{ __('Prices are list prices from each provider (Hetzner in euros, including VAT), checked daily; bandwidth, backups and taxes aren’t included.') }}</p>
     @endif
 
+    @if ($bills !== [])
+        <x-signal.ui.settings-section id="bills" :title="__('Actual bills')" :description="__('What each provider charged, read daily from its billing API, next to the estimate from list prices. Hetzner has no billing API, so it isn’t shown.')">
+            <x-signal.ui.table :caption="__('Actual bills')" :framed="false">
+                <x-slot:head><tr><th scope="col">{{ __('Provider') }}</th><th scope="col" class="text-right">{{ __('Estimate a month') }}</th><th scope="col" class="text-right">{{ __('Last month’s invoice') }}</th><th scope="col" class="text-right">{{ __('Difference') }}</th><th scope="col" class="text-right">{{ __('This month so far') }}</th></tr></x-slot:head>
+                @foreach ($bills as $row)
+                    <tr>
+                        <td>
+                            <span class="font-bold text-ink">{{ $row['provider']->name }}</span> <span class="text-muted">· {{ $row['provider']->type->label() }}</span>
+                            @if ($row['provider']->billing_error)<p class="text-xs text-danger">{{ $row['provider']->billing_error }}</p>@elseif ($row['provider']->billing_checked_at === null)<p class="text-xs text-muted">{{ __('Not read yet') }}</p>@endif
+                        </td>
+                        <td class="text-right tabular-nums">{{ $row['estimate'] === null ? '—' : $money($row['estimate'], 'USD') }}</td>
+                        <td class="text-right tabular-nums">{{ $row['previous'] === null ? '—' : $money($row['previous']->amount, $row['previous']->currency) }}</td>
+                        <td class="text-right tabular-nums">@if ($row['difference'] === null)—@elseif (abs($row['difference']) < 0.01){{ __('Matches') }}@else<x-signal.ui.badge :tone="$row['difference'] > 0 ? 'warning' : 'success'">{{ $row['difference'] > 0 ? __(':amount more', ['amount' => $money($row['difference'], 'USD')]) : __(':amount less', ['amount' => $money(-$row['difference'], 'USD')]) }}</x-signal.ui.badge>@endif</td>
+                        <td class="text-right tabular-nums">{{ $row['current'] === null ? '—' : $money($row['current']->amount, $row['current']->currency) }}</td>
+                    </tr>
+                @endforeach
+            </x-signal.ui.table>
+            <p class="px-4 pb-4 text-xs text-muted sm:px-6">{{ __('Invoices include bandwidth, backups, snapshots, volumes and anything else in the provider account, so they’re usually higher than the servers alone. Lightsail reads AWS Cost Explorer, which needs ce:GetCostAndUsage on the key.') }}</p>
+        </x-signal.ui.settings-section>
+    @endif
+
     @if ($canManage)
         <x-signal.ui.settings-section :title="__('Prices')" :description="__('Ask the providers for current prices now, or enter what an imported server costs.')">
             <div class="grid gap-4 p-4 sm:p-6">
-                <form method="POST" action="{{ route('infrastructure.costs.refresh', $project) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Check prices now') }}</x-signal.ui.button></form>
+                <form method="POST" action="{{ route('infrastructure.costs.refresh', $project) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Check prices and bills now') }}</x-signal.ui.button></form>
                 @foreach ($report['rows']->filter(fn ($row) => $row->server->provider_id === null) as $row)
                     <form method="POST" action="{{ route('infrastructure.costs.servers.update', [$project, $row->server->id]) }}" class="grid items-end gap-3 sm:grid-cols-[1fr_10rem_7rem_auto]">
                         @csrf

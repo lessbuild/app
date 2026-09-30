@@ -36,6 +36,8 @@ use Illuminate\Support\Carbon;
  * @property int $connection_check_interval_minutes
  * @property int $connection_failure_threshold
  * @property int $connection_failure_count
+ * @property string|null $billing_error why its bills couldn't be read
+ * @property CarbonImmutable|null $billing_checked_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
@@ -180,6 +182,7 @@ class Provider extends Model
             'type' => ProviderType::class,
             'token' => 'encrypted',
             'connection_checked_at' => 'immutable_datetime',
+            'billing_checked_at' => 'immutable_datetime',
             'connection_monitoring_enabled' => 'boolean',
             'connection_check_interval_minutes' => 'integer',
             'connection_failure_threshold' => 'integer',

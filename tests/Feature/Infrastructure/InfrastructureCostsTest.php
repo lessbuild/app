@@ -8,6 +8,7 @@ use App\Enums\AccountRole;
 use App\Enums\ProviderType;
 use App\Models\Project;
 use App\Models\Provider;
+use App\Models\ProviderBill;
 use App\Models\Server;
 use App\Models\ServerMetric;
 use App\Models\User;
@@ -17,6 +18,7 @@ use App\Services\Infrastructure\ServerRightsizing;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
 
@@ -69,6 +71,32 @@ final class InfrastructureCostsTest extends TestCase
         $this->actingAs($this->owner)->put("{$this->base}/budget", ['monthly_infrastructure_budget' => '25'])->assertRedirect();
         $this->actingAs($this->owner)->get($this->base)->assertSee('Over by $5.00');
         $this->assertSame(25.0, $this->project->account->refresh()->monthly_infrastructure_budget);
+    }
+
+    /**
+     * Check the daily import reads DigitalOcean's invoices and usage so far, the Costs page compares last month's
+     * invoice with the list-price estimate, and a token without billing access is explained rather than failing.
+     *
+     * @return void
+     */
+    public function test_actual_bills_are_imported_and_compared_with_the_estimate(): void
+    {
+        $this->travelTo(now()->setDate(2026, 10, 15));
+        Server::factory()->create(['provider_id' => $this->provider->id, 'size' => 's-2vcpu-4gb', 'monthly_cost' => 24, 'monthly_cost_currency' => 'USD']);
+        $refused = Provider::factory()->type(ProviderType::Vultr)->create(['account_id' => $this->project->account_id, 'name' => 'Vultr main']);
+        Http::fake([
+            'api.digitalocean.com/v2/customers/my/invoices*' => Http::response(['invoices' => [['invoice_period' => '2026-09', 'amount' => '31.40'], ['invoice_period' => '2026-08', 'amount' => '24.00']]]),
+            'api.digitalocean.com/v2/customers/my/balance' => Http::response(['month_to_date_usage' => '12.10']),
+            'api.vultr.com/*' => Http::response(['error' => 'Unauthorized'], 403),
+        ]);
+
+        $this->command('providers:sync-bills')->expectsOutput('Stored 3 months of cloud bills.');
+
+        $this->assertSame([31.4, true], [ProviderBill::query()->where('period', '2026-09')->sole()->amount, ProviderBill::query()->where('period', '2026-09')->sole()->final]);
+        $this->assertFalse(ProviderBill::query()->where('period', '2026-10')->sole()->final);
+        $this->assertStringContainsString('billing read access', (string) $refused->refresh()->billing_error);
+        $this->actingAs($this->owner)->get($this->base)->assertOk()->assertSee('Actual bills')
+            ->assertSee('$31.40')->assertSee('$7.40 more')->assertSee('$12.10')->assertSee('give the credential billing read access');
     }
 
     /**

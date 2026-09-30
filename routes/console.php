@@ -478,6 +478,16 @@ Artisan::command('servers:sync-costs', function (ServerPricing $pricing): int {
 })->purpose('Record what each cloud server costs a month from its provider’s current size catalog');
 Schedule::command('servers:sync-costs')->dailyAt('05:10')->withoutOverlapping(60)->onOneServer();
 
+Artisan::command('providers:sync-bills', function (App\Services\Infrastructure\CloudBills $bills): void {
+    $months = 0;
+    Provider::query()->whereIn('type', array_map(fn (App\Enums\ProviderType $type): string => $type->value, App\Services\Infrastructure\CloudBills::SUPPORTED))
+        ->each(function (Provider $provider) use ($bills, &$months): void {
+            $months += $bills->refresh($provider);
+        });
+    $this->info("Stored {$months} months of cloud bills.");
+})->purpose('Import what cloud providers actually charged');
+Schedule::command('providers:sync-bills')->dailyAt('05:40')->withoutOverlapping(60)->onOneServer();
+
 Artisan::command('builds:reap', function (FinishBuild $finish): int {
     $stale = Build::query()->whereIn('status', [Build::STATUS_DEPLOYING, Build::STATUS_RUNNING])
         ->where('last_heartbeat_at', '<', now()->subMinutes(max(1, (int) config('deploy.deployment_stale_minutes'))))->get();

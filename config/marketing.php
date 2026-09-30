@@ -187,6 +187,7 @@ return [
                     ['Snapshots first', 'A provider snapshot before updates and other risky changes, so there’s always a way back.'],
                     ['Self-healing', 'Restart PHP-FPM, workers or the web server automatically when a health check fails.'],
                     ['Disk clean-up', 'Find old releases, logs and caches taking up space, and clear them safely.'],
+                    ['Actual bills', 'Last month’s invoice and this month so far from DigitalOcean, Vultr, Linode and Lightsail, beside the estimate.'],
                     ['Right-sizing', 'Suggestions for a smaller or bigger server from real CPU and memory use, with the saving.'],
                 ]],
             ],

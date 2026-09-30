@@ -136,9 +136,10 @@ return [
         'costs' => [
             'group' => 'infrastructure',
             'title' => 'Costs and right-sizing',
-            'summary' => 'See what your servers cost, set a budget, and size them to what they actually use.',
+            'summary' => 'See what your servers cost and what your providers billed, set a budget, and size them to what they actually use.',
             'steps' => [
                 ['Costs', 'Infrastructure → Costs lists each server’s monthly price from your provider, its recent CPU and the projects on it, with totals.'],
+                ['Actual bills', 'For DigitalOcean, Vultr, Linode and Lightsail credentials, Costs also shows what the provider actually charged: last month’s invoice beside the estimate from list prices, and this month so far. They’re read daily, or when you choose Check prices and bills now. The credential needs billing read access (for Lightsail, an AWS key allowed ce:GetCostAndUsage); if it hasn’t, Costs says so. Invoices cover everything in the provider account, such as bandwidth, volumes and backups, so they’re usually above the estimate. Hetzner has no billing API.'],
                 ['Budget', 'Set a monthly budget there to be told when your servers go over it.'],
                 ['Snapshots', 'On a server’s Settings tab, tick Snapshot before risky changes (DigitalOcean, Hetzner, Vultr, Linode and Lightsail servers). A provider snapshot is then taken before updates are installed, security fixes run or Node.js changes, and the three newest are kept; restore one from your provider’s dashboard if a change goes wrong. Take a snapshot now takes one straight away. Your provider charges for the storage.'],
                 ['Disk clean-up', 'On a server’s Diagnostics tab, choose Measure the disk to see how much space old releases, old logs, package caches, unused Docker images and old temporary files take, then Clear any of them. The live release and the releases each website keeps stay, and logs from the last two weeks stay.'],
