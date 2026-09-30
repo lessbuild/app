@@ -175,6 +175,31 @@
                             <p class="font-mono text-xs break-words text-muted">{{ implode(', ', $snapshot->tables ?? []) }}</p>
                         </x-signal.ui.disclosure>
                     @endif
+                    @php($tuning = \App\Support\Infrastructure\DatabaseTuning::suggestions($snapshot->server_status ?? [], $snapshot->slow_log_enabled))
+                    @if ($tuning !== [])
+                        <section class="grid gap-2" aria-labelledby="db-tuning">
+                            <h3 id="db-tuning" class="text-sm font-bold text-ink">{{ __('Tuning suggestions') }}</h3>
+                            <ul class="grid list-disc gap-1 pl-5 text-sm text-muted">@foreach ($tuning as $suggestion)<li>{{ $suggestion }}</li>@endforeach</ul>
+                        </section>
+                    @endif
+                    <section class="grid gap-2" aria-labelledby="db-slow">
+                        <h3 id="db-slow" class="text-sm font-bold text-ink">{{ __('Slow queries this week') }}</h3>
+                        @if ($snapshot->slow_log_enabled !== true)
+                            <p class="text-sm text-muted">{{ __('The slow query log is off, so slow queries aren’t recorded.') }}</p>
+                            @if ($canManageDatabase)
+                                <form method="POST" action="{{ route('infrastructure.websites.database.slow-log', [$project, $website->id]) }}">@csrf<x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Turn on the slow query log') }}</x-signal.ui.button></form>
+                            @endif
+                        @elseif (($snapshot->slow_queries ?? []) === [])
+                            <p class="text-sm text-muted">{{ __('None over a second this week.') }}</p>
+                        @else
+                            <x-signal.ui.table :caption="__('Slowest queries this week')" :framed="false">
+                                <x-slot:head><tr><th scope="col">{{ __('Query') }}</th><th scope="col" class="text-right">{{ __('Times') }}</th><th scope="col" class="text-right">{{ __('Average (s)') }}</th><th scope="col" class="text-right">{{ __('Slowest (s)') }}</th><th scope="col" class="text-right">{{ __('Rows read') }}</th></tr></x-slot:head>
+                                @foreach ($snapshot->slow_queries ?? [] as $query)
+                                    <tr><td class="max-w-xl break-words font-mono text-xs">{{ $query['query'] }}</td><td class="text-right tabular-nums">{{ number_format($query['count']) }}</td><td class="text-right tabular-nums">{{ $query['average'] }}</td><td class="text-right tabular-nums">{{ $query['slowest'] }}</td><td class="text-right tabular-nums">{{ number_format($query['rows']) }}</td></tr>
+                                @endforeach
+                            </x-signal.ui.table>
+                        @endif
+                    </section>
                 @endif
             </div>
 

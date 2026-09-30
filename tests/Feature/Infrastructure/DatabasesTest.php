@@ -67,6 +67,32 @@ final class DatabasesTest extends TestCase
         $this->actingAs($viewer)->post("{$this->base}/database/inspect")->assertForbidden();
     }
 
+    /**
+     * Check the inspection reads the week's slow queries and the server's counters, shows the slow queries and tuning
+     * suggestions, and offers to turn the slow query log on when it's off.
+     *
+     * @return void
+     */
+    public function test_slow_queries_and_tuning_suggestions_are_shown(): void
+    {
+        $this->shell->reply("size_bytes=5242880\nactive_connections=3\ntable=orders\nslow_log=0,FILE\nvar=innodb_buffer_pool_size=134217728\nvar=max_connections=151\nvar=innodb_data_bytes=1073741824\nCreated_tmp_tables\t5000\nCreated_tmp_disk_tables\t2500\nMax_used_connections\t150\nSlow_queries\t42\nUptime\t7200\n");
+        $this->actingAs($this->owner)->post("{$this->base}/database/inspect")->assertRedirect();
+        $snapshot = DatabaseSnapshot::query()->sole();
+        $this->assertFalse($snapshot->slow_log_enabled);
+        $this->assertSame([134217728, 1073741824, 2500], [$snapshot->server_status['innodb_buffer_pool_size'] ?? null, $snapshot->server_status['innodb_data_bytes'] ?? null, $snapshot->server_status['created_tmp_disk_tables'] ?? null]);
+        $this->assertStringContainsString('mysql.slow_log', str_replace("'\\''", "'", $this->shell->ran[0]['command']));
+        $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertOk()
+            ->assertSee('Tuning suggestions')->assertSee('smaller than your data')->assertSee('50% of temporary tables')->assertSee('Connections peaked at 150')->assertSee('Turn on the slow query log');
+
+        $this->shell->reply('');
+        $this->shell->reply("size_bytes=5242880\nslow_log=1,TABLE\nslow=12\t2.514\t4.02\t3400000\tSELECT * FROM orders WHERE customer_id = ?\n");
+        $this->actingAs($this->owner)->post("{$this->base}/database/slow-log")->assertRedirect();
+        $this->assertStringContainsString('slow_query_log = 1', str_replace("'\\''", "'", $this->shell->ran[1]['command']));
+        $latest = DatabaseSnapshot::query()->latest('id')->firstOrFail();
+        $this->assertSame([true, 12, 'SELECT * FROM orders WHERE customer_id = ?'], [$latest->slow_log_enabled, $latest->slow_queries[0]['count'] ?? null, $latest->slow_queries[0]['query'] ?? null]);
+        $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertSee('Slowest queries this week')->assertSee('customer_id = ?')->assertSee('2.514');
+    }
+
     public function test_database_users_are_created_with_a_one_time_password_and_removed_when_they_expire(): void
     {
         $this->actingAs($this->owner)->post("{$this->base}/database/users", ['username' => 'shop_live', 'privilege' => 'read'])->assertSessionHasErrors('username');

@@ -21,6 +21,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $active_connections
  * @property list<string>|null $tables
  * @property string|null $error
+ * @property bool|null $slow_log_enabled whether the server logs slow queries to its table
+ * @property list<array{count: int, average: float, slowest: float, rows: int, query: string}>|null $slow_queries the week's slowest queries on the database
+ * @property array<string, int>|null $server_status the server counters tuning suggestions come from
  * @property CarbonImmutable|null $collected_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -48,6 +51,6 @@ class DatabaseSnapshot extends Model
      */
     protected function casts(): array
     {
-        return ['size_bytes' => 'integer', 'active_connections' => 'integer', 'tables' => 'array', 'collected_at' => 'immutable_datetime'];
+        return ['slow_log_enabled' => 'boolean', 'slow_queries' => 'array', 'server_status' => 'array', 'size_bytes' => 'integer', 'active_connections' => 'integer', 'tables' => 'array', 'collected_at' => 'immutable_datetime'];
     }
 }

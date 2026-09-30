@@ -64,12 +64,18 @@ final class InspectDatabase implements ShouldQueue
 
             return;
         }
-        $values = ['tables' => []];
+        $values = ['tables' => [], 'slow_queries' => [], 'server_status' => [], 'slow_log_enabled' => null];
         foreach (preg_split('/\R/', trim($result->output)) ?: [] as $line) {
             if (str_starts_with($line, 'table=')) {
                 $values['tables'][] = substr($line, 6);
             } elseif (preg_match('/\A(size_bytes|active_connections)=(\d+)\z/', $line, $match) === 1) {
                 $values[$match[1]] = (int) $match[2];
+            } elseif (preg_match('/\Aslow_log=(\d),(\S+)\z/', $line, $match) === 1) {
+                $values['slow_log_enabled'] = $match[1] === '1' && str_contains(strtoupper($match[2]), 'TABLE');
+            } elseif (preg_match('/\Aslow=(\d+)\t([\d.]+)\t([\d.]+)\t(\d+)\t(.+)\z/', $line, $match) === 1) {
+                $values['slow_queries'][] = ['count' => (int) $match[1], 'average' => (float) $match[2], 'slowest' => (float) $match[3], 'rows' => (int) $match[4], 'query' => mb_substr($match[5], 0, 400)];
+            } elseif (preg_match('/\A(?:var=)?([A-Za-z_]+)[=\t](\d+)\z/', $line, $match) === 1) {
+                $values['server_status'][strtolower($match[1])] = (int) $match[2];
             }
         }
         $snapshot->forceFill([...$values, 'status' => 'ready', 'error' => null, 'collected_at' => CarbonImmutable::now()])->save();

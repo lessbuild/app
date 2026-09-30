@@ -5,6 +5,7 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-01', 'title' => 'Infrastructure: servers that fit', 'changes' => [
+        'Database tools: the week’s slowest queries on each website’s database, and tuning suggestions from the server’s own counters.',
         'Anonymised staging data: copy a database to staging or previews with emails, names, phone numbers, addresses and IP addresses masked.',
         'Backups to two places: send each scheduled backup to a second destination too, for a 3-2-1 setup.',
         'Monthly restore drills: the latest backup is restored into a scratch area and checked each month, and owners hear if it fails.',

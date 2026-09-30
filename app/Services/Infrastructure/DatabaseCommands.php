@@ -25,8 +25,29 @@ final class DatabaseCommands
         $sql = "SELECT CONCAT('size_bytes=', COALESCE(SUM(data_length + index_length), 0)) FROM information_schema.tables WHERE table_schema = '{$database}';"
             ." SELECT CONCAT('active_connections=', COUNT(*)) FROM information_schema.processlist WHERE db = '{$database}';"
             ." SELECT CONCAT('table=', table_name) FROM information_schema.tables WHERE table_schema = '{$database}' ORDER BY table_name LIMIT 500;";
+        // The slow query log, when it logs to a table: the week's slowest queries on this database, literals
+        // replaced so the same query groups together.
+        $normalised = "REGEXP_REPLACE(REGEXP_REPLACE(REPLACE(REPLACE(LEFT(CONVERT(sql_text USING utf8mb4), 400), '\\n', ' '), '\\t', ' '), '\\'[^\\']*\\'', '?'), '[0-9]+', '?')";
+        $insight = "SELECT CONCAT('slow_log=', @@global.slow_query_log, ',', @@global.log_output);"
+            ." SELECT CONCAT('slow=', COUNT(*), '\\t', ROUND(AVG(TIME_TO_SEC(query_time)), 3), '\\t', ROUND(MAX(TIME_TO_SEC(query_time)), 3), '\\t', SUM(rows_examined), '\\t', q) FROM (SELECT query_time, rows_examined, {$normalised} AS q FROM mysql.slow_log WHERE db = '{$database}' AND start_time > NOW() - INTERVAL 7 DAY) AS s GROUP BY q ORDER BY SUM(TIME_TO_SEC(query_time)) DESC LIMIT 20;"
+            ." SELECT CONCAT('var=innodb_buffer_pool_size=', @@global.innodb_buffer_pool_size); SELECT CONCAT('var=max_connections=', @@global.max_connections);"
+            ." SELECT CONCAT('var=innodb_data_bytes=', COALESCE(SUM(data_length + index_length), 0)) FROM information_schema.tables WHERE engine = 'InnoDB';"
+            ." SHOW GLOBAL STATUS WHERE Variable_name IN ('Max_used_connections', 'Created_tmp_tables', 'Created_tmp_disk_tables', 'Innodb_buffer_pool_reads', 'Innodb_buffer_pool_read_requests', 'Select_full_join', 'Slow_queries', 'Uptime');";
 
-        return $this->mysql($website, $sql);
+        return $this->mysql($website, $sql).'; '.$this->mysql($website, $insight).' || true';
+    }
+
+    /**
+     * Turn the server's slow query log on, logging queries over a second to the mysql.slow_log table (kept across
+     * restarts where the server supports SET PERSIST).
+     *
+     * @param  Website  $website
+     * @return string
+     */
+    public function enableSlowLog(Website $website): string
+    {
+        return $this->mysql($website, "SET PERSIST slow_query_log = 1; SET PERSIST long_query_time = 1; SET PERSIST log_output = 'TABLE';")
+            .' || '.$this->mysql($website, "SET GLOBAL slow_query_log = 1; SET GLOBAL long_query_time = 1; SET GLOBAL log_output = 'TABLE';");
     }
 
     /**

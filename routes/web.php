@@ -198,6 +198,7 @@ use App\Http\Controllers\Infrastructure\DeleteServerTaskController;
 use App\Http\Controllers\Infrastructure\DeleteWebsiteController;
 use App\Http\Controllers\Infrastructure\DeleteWebsiteDomainController;
 use App\Http\Controllers\Infrastructure\EnableDatabaseRecoveryController;
+use App\Http\Controllers\Infrastructure\EnableSlowQueryLogController;
 use App\Http\Controllers\Infrastructure\ExportServerCommandsController;
 use App\Http\Controllers\Infrastructure\InspectDatabaseController;
 use App\Http\Controllers\Infrastructure\InspectServerImportController;
@@ -794,6 +795,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/websites/{website}/backups/{backup}/verify', VerifyWebsiteBackupController::class)->whereNumber(['website', 'backup'])->middleware(['can:backUp,website', 'throttle:10,1'])->name('websites.backups.verify');
             Route::post('/websites/{website}/backup-schedules', StoreBackupScheduleController::class)->whereNumber('website')->middleware(['can:backUp,website', 'throttle:20,1'])->name('websites.backup-schedules.store');
             Route::delete('/websites/{website}/backup-schedules/{schedule}', DeleteBackupScheduleController::class)->whereNumber(['website', 'schedule'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.backup-schedules.destroy');
+            Route::post('/websites/{website}/database/slow-log', EnableSlowQueryLogController::class)->whereNumber('website')->middleware(['can:manageDatabase,website', 'throttle:5,1'])->name('websites.database.slow-log');
             Route::post('/websites/{website}/database/inspect', InspectDatabaseController::class)->whereNumber('website')->middleware(['can:manageDatabase,website', 'throttle:10,1'])->name('websites.database.inspect');
             Route::post('/websites/{website}/database/users', StoreDatabaseUserController::class)->whereNumber('website')->middleware(['can:manageDatabase,website', 'throttle:20,1'])->name('websites.database.users.store');
             Route::delete('/websites/{website}/database/users/{databaseUser}', DeleteDatabaseUserController::class)->whereNumber(['website', 'databaseUser'])->middleware(['can:update,website', 'throttle:20,1'])->name('websites.database.users.destroy');

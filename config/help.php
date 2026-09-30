@@ -121,6 +121,7 @@ return [
                 ['WebSockets', 'Under WebSockets (Laravel Reverb) on the Settings tab, set up Reverb in one step: it runs as a process and the web server forwards its traffic.'],
                 ['Files and logs', 'The Files tab lets you browse the website’s files, follow the end of a log, and search the logs for a phrase.'],
                 ['CDN and firewall', 'On the Domains tab, choose CDN and firewall on a domain to serve it through Cloudflare, block countries or addresses, and rate-limit requests. The cache is cleared after every deploy.'],
+                ['Slow queries and tuning', 'The Database tab shows the week’s slowest queries on the website’s database (with values replaced by ?, so repeats group together) once the slow query log is on; choose Turn on the slow query log to start it (queries over a second, for the whole MySQL server). It also suggests settings to change: the InnoDB buffer pool, temporary tables written to disk, connections near the limit and joins without indexes.'],
             ],
         ],
         'storage-buckets' => [
