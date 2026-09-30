@@ -54,7 +54,7 @@ final class SecurityService implements PlatformService
     }
 
     /**
-     * Get the service's pages: the overview, the findings and the servers.
+     * Get the service's pages: the overview, the findings, the servers and the Cloudflare firewall.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -65,6 +65,7 @@ final class SecurityService implements PlatformService
             new ServiceNavItem(__('Overview'), route('security.overview', $projectId), 'security.overview'),
             new ServiceNavItem(__('Findings'), route('security.findings', $projectId), 'security.findings*'),
             new ServiceNavItem(__('Servers'), route('security.servers', $projectId), 'security.servers*'),
+            new ServiceNavItem(__('Firewall'), route('security.firewall', $projectId), 'security.firewall*'),
         ];
     }
 

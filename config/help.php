@@ -272,6 +272,17 @@ return [
                 ['Update windows', 'Security → Servers sets a weekly window (day and hour, in UTC) when each server installs its security updates, optionally rebooting if they need it. Install updates now runs them straight away.'],
             ],
         ],
+        'security-firewall' => [
+            'group' => 'security',
+            'title' => 'Firewall, bots and attacks',
+            'summary' => 'Cloudflare protection for your zones, and automatic blocking of attackers.',
+            'steps' => [
+                ['Zones', 'Security → Firewall lists the Cloudflare zones behind the project’s domains (their DNS must be managed at Cloudflare through BuildPusher).'],
+                ['Security level and bots', 'On the Team plan, choose how suspicious a visitor must look before Cloudflare checks them, and turn on bot fight mode to challenge known bots and scrapers.'],
+                ['Under attack', 'During an attack, turn on Under attack mode: every visitor gets a short check before reaching the site. Turn it off again afterwards.'],
+                ['Per domain', 'Blocking countries or addresses and rate limits stay on each website’s Domains tab, under CDN and firewall.'],
+            ],
+        ],
         'add-analytics' => [
             'group' => 'analytics',
             'title' => 'Add analytics to a website',
