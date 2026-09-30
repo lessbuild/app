@@ -148,6 +148,7 @@ return [
             'steps' => [
                 ['Connect the repository', 'Deploy → Repositories → Connect a repository. Choose the provider, the repository and branch, the environment, and the website it deploys to.'],
                 ['Set up the build', 'Add your build commands, and the environment’s variables (see Environments and variables).'],
+                ['Pipelines', 'Deploy → Pipelines chains repositories, such as the API and then the frontend. Choose Run: the first deploys, each next one starts only once the one before is live, and the run stops if a deploy fails, is rejected or is cancelled. Each step deploys its branch’s latest commit, with the usual approvals and checks.'],
                 ['Monorepos', 'For one app in a larger repository, set Subdirectory to its folder (such as apps/api), and under Push deploys only for these paths list its folder (apps/api/**) plus anything it shares (packages/**). A push that changes nothing there doesn’t deploy it; connect each app in the repository the same way.'],
                 ['Deploy', 'Deploy from the repository page, or turn on deploy on push. Each deploy is a new release, and the previous ones are kept.'],
                 ['Follow it', 'The deploy page shows each step’s log as it runs, and the release is marked in Monitoring and Analytics once it’s live.'],

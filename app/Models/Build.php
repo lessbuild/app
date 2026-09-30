@@ -30,7 +30,7 @@ use Illuminate\Support\Carbon;
  * @property CarbonImmutable|null $rejected_at
  * @property string|null $approval_note
  * @property string $status see the STATUS_ constants
- * @property string $trigger_source manual, webhook, redeploy, rollback, scheduled, api or promotion
+ * @property string $trigger_source manual, webhook, redeploy, rollback, scheduled, api, promotion or pipeline
  * @property string|null $revision
  * @property string|null $git_ref the branch, tag or commit someone asked to deploy, resolved on the server; null for the repository's branch
  * @property string|null $commit_message

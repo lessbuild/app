@@ -23,6 +23,7 @@ use App\Http\View\ShellComposer;
 use App\Listeners\AuditSubscriber;
 use App\Listeners\CdnPurgeSubscriber;
 use App\Listeners\DeployNotificationSubscriber;
+use App\Listeners\DeployPipelineSubscriber;
 use App\Listeners\EnvironmentRecipeSubscriber;
 use App\Listeners\GitHubDeployStatusSubscriber;
 use App\Listeners\IncidentAssigneeSubscriber;
@@ -101,6 +102,7 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);
         Event::subscribe(CdnPurgeSubscriber::class);
+        Event::subscribe(DeployPipelineSubscriber::class);
         View::composer('components.signal.layouts.app', ShellComposer::class);
 
         Sanctum::usePersonalAccessTokenModel(ApiToken::class);
