@@ -8,7 +8,8 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
- * A site's weekly or monthly analytics report, or a traffic spike alert, by email. The same text goes to Slack.
+ * A site's weekly or monthly analytics report or CSV export, or a traffic alert, by email. The same text goes to Slack
+ * (except CSV exports, which are email only).
  */
 final class AnalyticsSiteReportNotification extends Notification
 {
@@ -18,8 +19,9 @@ final class AnalyticsSiteReportNotification extends Notification
      * @param  string  $subject  The email's subject.
      * @param  list<string>  $lines  The message, a line each.
      * @param  string  $url  Where to see the full report.
+     * @param  array{name: string, csv: string}|null  $attachment  A CSV to attach.
      */
-    public function __construct(public readonly string $subject, public readonly array $lines, public readonly string $url) {}
+    public function __construct(public readonly string $subject, public readonly array $lines, public readonly string $url, public readonly ?array $attachment = null) {}
 
     /**
      * Get the notification's delivery channels: email only.
@@ -43,6 +45,10 @@ final class AnalyticsSiteReportNotification extends Notification
         $message = (new MailMessage)->subject($this->subject);
         foreach ($this->lines as $line) {
             $message->line($line);
+        }
+
+        if ($this->attachment !== null) {
+            $message->attachData($this->attachment['csv'], $this->attachment['name'], ['mime' => 'text/csv']);
         }
 
         return $message->action(__('Open the report'), $this->url)

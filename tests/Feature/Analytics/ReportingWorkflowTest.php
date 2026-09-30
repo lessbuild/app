@@ -16,6 +16,7 @@ use App\Models\AnalyticsSite;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\AnalyticsReportQuery;
+use App\Services\Analytics\ReportCsv;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -158,7 +159,7 @@ final class ReportingWorkflowTest extends TestCase
         $export = AnalyticsExport::query()->sole();
         $token = 'export-token';
         $export->forceFill(['token_hash' => hash('sha256', $token)])->save();
-        app(GenerateReportExport::class, ['exportId' => $export->id])->handle(app(AnalyticsReportQuery::class));
+        app(GenerateReportExport::class, ['exportId' => $export->id])->handle(app(ReportCsv::class));
         $export->refresh();
 
         $this->assertSame('completed', $export->status);

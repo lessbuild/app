@@ -339,9 +339,11 @@ return [
         'share-analytics' => [
             'group' => 'analytics',
             'title' => 'Reports, alerts and sharing',
-            'summary' => 'Send regular reports, get told about spikes, and share or embed a report.',
+            'summary' => 'Send regular reports and CSV exports, get told about spikes and unusual days, and share or embed a report.',
             'steps' => [
                 ['Reports and alerts', 'On the site’s page, under Reports and alerts, add a weekly or monthly report, or a traffic spike alert, by email or to a Slack incoming webhook.'],
+                ['Scheduled CSV exports', 'Save a view of the report with the filters you want (for example, only /pricing, or one campaign), then add a weekly or monthly CSV export and choose that view. The CSV arrives by email on Monday or the 1st, covering the week or month just gone.'],
+                ['Unusual traffic alerts', 'An unusual traffic alert compares yesterday’s visitors and conversions with the same weekday over the last eight weeks, and tells you when one was far above or below normal. It needs four weeks of history and at least 20 visitors (or 5 conversions) on a typical day before it judges.'],
                 ['Share', 'Under Share the report, create a read-only link, with a password if you like.'],
                 ['View-only people', 'Under View-only access, invite someone by email; they get their own link to the report without joining the account, and you can remove it on its own.'],
                 ['Embed', 'A link without a password comes with an iframe snippet to put the report on another page.'],

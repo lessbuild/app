@@ -8,6 +8,7 @@ use App\Contracts\Analytics\GoogleAnalyticsData;
 use App\Contracts\Analytics\SearchConsole;
 use App\Models\AnalyticsSite;
 use App\Models\Project;
+use App\Models\SavedView;
 use App\Models\StorageBucket;
 use App\Models\User;
 use App\Queries\Analytics\FilteredVisitsQuery;
@@ -57,6 +58,9 @@ final class ShowSiteController
             'site' => $site,
             'canManage' => $user->can('manageService', [$project, 'analytics']),
             'timezones' => DateTimeZone::listIdentifiers(),
+            // The person's saved views of this site's report, for scheduled CSV exports.
+            'savedViews' => SavedView::query()->where('user_id', $user->id)->where('page', 'analytics.overview')->orderBy('name')->get()
+                ->filter(fn (SavedView $view): bool => (string) ($view->parameters['project'] ?? '') === (string) $project->id && in_array($view->query['site'] ?? (string) $site->id, [(string) $site->id], true))->values(),
         ]);
     }
 }

@@ -74,7 +74,7 @@ return [
             'same' => [
                 'No cookies and no personal data, with one small script you can serve from your own domain.',
                 'Pages, sources, channels, campaigns, places, devices, goals, funnels and custom properties, with custom date ranges, comparisons and segments.',
-                'Email reports, traffic spike alerts, shared and embedded dashboards, and an import from Google Analytics.',
+                'Email reports, scheduled CSV exports, traffic spike and unusual traffic alerts, shared and embedded dashboards, and an import from Google Analytics.',
             ],
             'different' => [
                 'Your releases are marked on the chart, and the same account deploys and monitors the site.',

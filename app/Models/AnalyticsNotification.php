@@ -9,7 +9,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Support\Carbon;
 
 /**
- * A site's scheduled report or traffic spike alert, sent to an email address or a Slack incoming webhook.
+ * A site's scheduled report, scheduled CSV export, or traffic spike or unusual traffic alert, sent to an email address
+ * or a Slack incoming webhook (CSV exports by email only).
  *
  * @property int $id
  * @property int $site_id
@@ -18,6 +19,8 @@ use Illuminate\Support\Carbon;
  * @property string $channel email or slack
  * @property string $target the email address or Slack webhook address (encrypted)
  * @property int|null $threshold for spike alerts, how many current visitors count as a spike
+ * @property array<string, string>|null $filters for CSV exports, the report filters (from a saved view)
+ * @property string|null $view_name for CSV exports, the saved view the filters came from
  * @property string|null $last_period the week (2026-W39), month (2026-09) or spike day last sent, so each goes once
  * @property Carbon|null $last_sent_at
  * @property string|null $last_error why the last send failed
@@ -32,7 +35,14 @@ final class AnalyticsNotification extends Model
      *
      * @var array<string, string>
      */
-    public const KINDS = ['weekly' => 'Weekly report', 'monthly' => 'Monthly report', 'spike' => 'Traffic spike alert'];
+    public const KINDS = ['weekly' => 'Weekly report', 'monthly' => 'Monthly report', 'weekly_csv' => 'Weekly CSV export', 'monthly_csv' => 'Monthly CSV export', 'spike' => 'Traffic spike alert', 'anomaly' => 'Unusual traffic alert'];
+
+    /**
+     * The kinds sent on a schedule, with the period each covers.
+     *
+     * @var array<string, string>
+     */
+    public const SCHEDULED = ['weekly' => 'weekly', 'monthly' => 'monthly', 'weekly_csv' => 'weekly', 'monthly_csv' => 'monthly'];
 
     /**
      * The channels, with their labels.
@@ -62,7 +72,7 @@ final class AnalyticsNotification extends Model
      */
     protected function casts(): array
     {
-        return ['target' => 'encrypted', 'threshold' => 'integer', 'last_sent_at' => 'datetime'];
+        return ['target' => 'encrypted', 'threshold' => 'integer', 'filters' => 'array', 'last_sent_at' => 'datetime'];
     }
 
     /**

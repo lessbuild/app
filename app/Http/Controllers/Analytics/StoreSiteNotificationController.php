@@ -17,7 +17,7 @@ use Illuminate\Validation\Rule;
 final class StoreSiteNotificationController
 {
     /**
-     * Add a scheduled report or traffic spike alert to a site and return to its settings.
+     * Add a scheduled report or export, or a traffic alert, to a site and return to its settings.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -33,8 +33,9 @@ final class StoreSiteNotificationController
             'channel' => ['required', Rule::in(array_keys(AnalyticsNotification::CHANNELS))],
             'target' => ['required', 'string', 'max:500'],
             'threshold' => ['nullable', 'integer', 'min:1', 'max:1000000'],
+            'saved_view_id' => ['nullable', 'integer'],
         ]);
-        $add->handle($user, $site, $data['kind'], $data['channel'], $data['target'], $request->filled('threshold') ? $request->integer('threshold') : null);
+        $add->handle($user, $site, $data['kind'], $data['channel'], $data['target'], $request->filled('threshold') ? $request->integer('threshold') : null, $request->filled('saved_view_id') ? $request->integer('saved_view_id') : null);
 
         return to_route('analytics.sites.show', [$project, $site->id])->with('status', __('Added.'));
     }

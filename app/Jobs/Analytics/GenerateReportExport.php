@@ -5,14 +5,13 @@ declare(strict_types=1);
 namespace App\Jobs\Analytics;
 
 use App\Models\AnalyticsExport;
-use App\Queries\Analytics\AnalyticsReportQuery;
+use App\Services\Analytics\ReportCsv;
 use Carbon\CarbonImmutable;
 use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Support\Facades\Storage;
-use RuntimeException;
 use Throwable;
 
 final class GenerateReportExport implements ShouldQueue
@@ -39,10 +38,10 @@ final class GenerateReportExport implements ShouldQueue
      * Run the report with the export's filters and writes each metric and breakdown row to a CSV on the local disk.
      * Finished or expired exports are skipped.
      *
-     * @param  AnalyticsReportQuery  $report
+     * @param  ReportCsv  $csv
      * @return void
      */
-    public function handle(AnalyticsReportQuery $report): void
+    public function handle(ReportCsv $csv): void
     {
         $export = AnalyticsExport::query()->with('site')->find($this->exportId);
 
@@ -54,42 +53,8 @@ final class GenerateReportExport implements ShouldQueue
 
         try {
             $filters = $export->filters ?? [];
-            $summary = $report->handle($export->site, (int) ($filters['days'] ?? 30), $filters);
             $path = 'exports/'.$export->id.'-'.now()->format('YmdHis').'.csv';
-            $handle = fopen('php://temp', 'w+');
-            if ($handle === false) {
-                throw new RuntimeException('Could not open a temporary stream for the export.');
-            }
-            fputcsv($handle, ['section', 'label', 'value']);
-            foreach ($summary['metrics'] as $metric) {
-                fputcsv($handle, ['metrics', $metric['label'], $metric['value']]);
-            }
-            foreach ($summary['vitals']['metrics'] ?? [] as $vital => $measure) {
-                if ($measure['value'] !== null) {
-                    fputcsv($handle, ['page_speed_p75', $vital, $measure['value']]);
-                }
-            }
-            foreach ([
-                'pages' => $summary['pages'],
-                'entry_pages' => $summary['entryPages'],
-                'exit_pages' => $summary['exitPages'],
-                'sources' => $summary['sources'],
-                'countries' => $summary['countries'],
-                'devices' => $summary['devices'],
-                'browsers' => $summary['browsers'],
-                'operating_systems' => $summary['operatingSystems'],
-                'campaigns' => $summary['campaigns'],
-                'outbound_links' => $summary['outboundLinks'],
-                'file_downloads' => $summary['fileDownloads'],
-                'pages_not_found' => $summary['notFound'],
-            ] as $section => $items) {
-                foreach ($items as $item) {
-                    fputcsv($handle, [$section, $item['label'], $item['value']]);
-                }
-            }
-            rewind($handle);
-            Storage::disk('local')->put($path, (string) stream_get_contents($handle));
-            fclose($handle);
+            Storage::disk('local')->put($path, $csv->render($export->site, (int) ($filters['days'] ?? 30), $filters));
 
             $export->update(['status' => 'completed', 'file_path' => $path, 'completed_at' => now()]);
         } catch (Throwable $exception) {

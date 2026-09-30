@@ -389,7 +389,7 @@ return [
                     ['A/B tests', 'Split visitors between variants and see which one wins your goal, with lift and statistical significance.'],
                 ]],
                 ['label' => 'Share', 'title' => 'Keep the whole team in the loop', 'description' => 'Numbers where people already look.', 'features' => [
-                    ['Reports and alerts', 'Weekly or monthly reports by email or Slack, and an alert when traffic spikes.'],
+                    ['Reports and alerts', 'Weekly or monthly reports and CSV exports, an alert when traffic spikes, and another when a day is far from normal.'],
                     ['Shared and embedded reports', 'A read-only link, with or without a password, that you can also embed on another site.'],
                     ['Your data, your way', 'CSV exports, the API, a Google Analytics import, and nightly raw exports ready for BigQuery.'],
                 ]],

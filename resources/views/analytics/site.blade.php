@@ -179,13 +179,13 @@
             </div>
         </x-signal.ui.settings-section>
 
-        <x-signal.ui.settings-section :title="__('Reports and alerts')" :description="__('Email or Slack a summary every week (Mondays) or month (the 1st), from 8am in the site’s time zone, or an alert when a lot of people are on the site at once.')">
+        <x-signal.ui.settings-section :title="__('Reports and alerts')" :description="__('Email or Slack a summary every week (Mondays) or month (the 1st), from 8am in the site’s time zone, or email a CSV of a saved view. Alerts tell you when a lot of people are on the site at once, or when yesterday’s visitors or conversions were far from normal for that day of the week.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @forelse ($site->notifications()->orderBy('id')->get() as $notification)
                     <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
                         <span>
                             <span class="font-bold text-ink">{{ __(\App\Models\AnalyticsNotification::KINDS[$notification->kind] ?? $notification->kind) }}</span>
-                            <span class="text-muted">· {{ $notification->destination() }}@if ($notification->threshold) · {{ trans_choice('at :count visitor|at :count visitors', $notification->threshold, ['count' => number_format($notification->threshold)]) }}@endif @if ($notification->last_sent_at) · {{ __('last sent :time', ['time' => $notification->last_sent_at->diffForHumans()]) }}@endif</span>
+                            <span class="text-muted">· {{ $notification->destination() }}@if ($notification->threshold) · {{ trans_choice('at :count visitor|at :count visitors', $notification->threshold, ['count' => number_format($notification->threshold)]) }}@endif @if ($notification->view_name) · {{ $notification->view_name }}@endif @if ($notification->last_sent_at) · {{ __('last sent :time', ['time' => $notification->last_sent_at->diffForHumans()]) }}@endif</span>
                             @if ($notification->last_error)<span class="block text-xs text-danger">{{ $notification->last_error }}</span>@endif
                         </span>
                         <form method="POST" action="{{ route('analytics.sites.notifications.destroy', [$project, $site->id, $notification->id]) }}">
@@ -210,6 +210,12 @@
                     </x-signal.ui.select-field>
                     <x-signal.ui.input-field name="target" :label="__('Email or Slack webhook address')" maxlength="500" required />
                     <x-signal.ui.input-field name="threshold" type="number" min="1" :label="__('Spike at (current visitors)')" :description="__('For spike alerts only.')" />
+                    <x-signal.ui.select-field name="saved_view_id" :label="__('Saved view')" :description="__('For CSV exports: whose filters to use. Save a view from the report first.')">
+                        <option value="">{{ __('All traffic') }}</option>
+                        @foreach ($savedViews as $view)
+                            <option value="{{ $view->id }}" @selected((string) old('saved_view_id') === (string) $view->id)>{{ $view->name }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
                     <div class="sm:col-span-2 lg:col-span-4"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add') }}</x-signal.ui.button></div>
                 </form>
             </div>

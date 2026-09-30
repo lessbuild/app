@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services\Analytics;
 
 use App\Data\Analytics\ReportPeriod;
+use App\Models\AnalyticsDailyAggregate;
 use App\Models\AnalyticsNotification;
 use App\Models\AnalyticsSite;
 use App\Notifications\AnalyticsSiteReportNotification;
@@ -13,11 +14,13 @@ use App\Queries\Analytics\LiveVisitorsQuery;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Notification;
+use Illuminate\Support\Str;
 use Throwable;
 
 /**
- * Sends sites' scheduled reports (weekly on Mondays, monthly on the 1st, from 8am in the site's timezone) and traffic
- * spike alerts, by email or Slack. Each report period and each spike goes once; failures are recorded on the row.
+ * Sends sites' scheduled reports and CSV exports (weekly on Mondays, monthly on the 1st, from 8am in the site's
+ * timezone), traffic spike alerts and unusual traffic alerts, by email or Slack. Each period, spike and day goes once;
+ * failures are recorded on the row.
  */
 final class SiteNotifier
 {
@@ -26,30 +29,32 @@ final class SiteNotifier
      *
      * @param  AnalyticsReportQuery  $reports  Builds the report for the period.
      * @param  LiveVisitorsQuery  $live  Counts current visitors.
+     * @param  ReportCsv  $csv  Writes a report as CSV.
      */
-    public function __construct(private readonly AnalyticsReportQuery $reports, private readonly LiveVisitorsQuery $live) {}
+    public function __construct(private readonly AnalyticsReportQuery $reports, private readonly LiveVisitorsQuery $live, private readonly ReportCsv $csv) {}
 
     /**
-     * Send the reports that are due: last week's on Monday from 8am, last month's on the 1st from 8am, in each site's
-     * timezone (or up to a day or two later if sending was down). Returns how many were sent.
+     * Send the reports and CSV exports that are due: last week's on Monday from 8am, last month's on the 1st from 8am,
+     * in each site's timezone (or up to a day or two later if sending was down). Returns how many were sent.
      *
      * @return int
      */
     public function sendDueReports(): int
     {
         $sent = 0;
-        AnalyticsNotification::query()->whereIn('kind', ['weekly', 'monthly'])->with('site.project')->orderBy('id')
+        AnalyticsNotification::query()->whereIn('kind', array_keys(AnalyticsNotification::SCHEDULED))->with('site.project')->orderBy('id')
             ->each(function (AnalyticsNotification $notification) use (&$sent): void {
                 $site = $notification->site;
+                $kind = AnalyticsNotification::SCHEDULED[$notification->kind];
                 $now = CarbonImmutable::now($site->timezone);
                 if ($now->hour < 8) {
                     return;
                 }
                 // Sent early in the period (so a new report waits for the next one); a day or two of grace covers downtime.
-                if ($notification->kind === 'weekly' ? $now->dayOfWeekIso > 2 : $now->day > 3) {
+                if ($kind === 'weekly' ? $now->dayOfWeekIso > 2 : $now->day > 3) {
                     return;
                 }
-                if ($notification->kind === 'weekly') {
+                if ($kind === 'weekly') {
                     $from = $now->startOfWeek()->subWeek();
                     [$period, $until] = [$from->format('o-\WW'), $from->endOfWeek()];
                 } else {
@@ -63,7 +68,7 @@ final class SiteNotifier
                 if ($range === null) {
                     return;
                 }
-                $this->deliver($notification, $this->report($site, $range, $notification->kind), $period);
+                $this->deliver($notification, $notification->kind === $kind ? $this->report($site, $range, $kind) : $this->export($notification, $range, $kind), $period);
                 $sent++;
             });
 
@@ -109,6 +114,111 @@ final class SiteNotifier
     }
 
     /**
+     * Send unusual traffic alerts, once a day from 8am in each site's timezone: when yesterday's visitors or
+     * conversions were far from what the same weekday usually brings (more than three standard deviations and 30%
+     * away from the average of the last eight such days, with at least four of them to go on and a big enough
+     * average to judge). Returns how many were sent.
+     *
+     * @return int
+     */
+    public function checkAnomalies(): int
+    {
+        $sent = 0;
+        AnalyticsNotification::query()->where('kind', 'anomaly')->with('site.project')->orderBy('id')
+            ->each(function (AnalyticsNotification $notification) use (&$sent): void {
+                $site = $notification->site;
+                $now = CarbonImmutable::now($site->timezone);
+                $day = $now->subDay()->toDateString();
+                if ($now->hour < 8 || $notification->last_period === $day) {
+                    return;
+                }
+                $history = array_map(fn (int $weeks): string => $now->subDay()->subWeeks($weeks)->toDateString(), range(1, 8));
+                $totals = AnalyticsDailyAggregate::query()->where('site_id', $site->id)->where('dimension', 'all')
+                    ->whereBetween('local_date', [end($history), $day.' 23:59:59'])->get(['local_date', 'visitors', 'conversions'])->toBase()
+                    ->keyBy(fn (AnalyticsDailyAggregate $row): string => $row->local_date->toDateString())->only([$day, ...$history]);
+                $lines = [];
+                foreach (['visitors' => 20, 'conversions' => 5] as $measure => $minimum) {
+                    $past = array_values(array_map(fn (string $date): int => (int) ($totals->get($date)->{$measure} ?? 0), array_filter($history, fn (string $date): bool => $totals->has($date))));
+                    $line = $this->unusual($measure, (int) ($totals->get($day)->{$measure} ?? 0), $past, $minimum, $now->subDay()->isoFormat('dddd'));
+                    if ($line !== null) {
+                        $lines[] = $line;
+                    }
+                }
+                if ($lines === []) {
+                    // Nothing unusual: remember the day was checked so it isn't looked at again.
+                    $notification->forceFill(['last_period' => $day])->save();
+
+                    return;
+                }
+                $this->deliver($notification, [
+                    'subject' => (string) __('Unusual traffic on :site yesterday', ['site' => $site->name]),
+                    'lines' => $lines,
+                    'url' => route('analytics.overview', [$site->project_id, 'site' => $site->id, 'days' => 30]),
+                ], $day);
+                $sent++;
+            });
+
+        return $sent;
+    }
+
+    /**
+     * Describe a day's number that's far from normal for that weekday, or null when it's within the usual range or
+     * there's too little history to judge.
+     *
+     * @param  string  $measure  visitors or conversions
+     * @param  int  $value  the day's number
+     * @param  list<int>  $past  the same weekday's numbers in earlier weeks
+     * @param  int  $minimum  the smallest average worth judging
+     * @param  string  $weekday  the day's name, for the message
+     * @return string|null
+     */
+    private function unusual(string $measure, int $value, array $past, int $minimum, string $weekday): ?string
+    {
+        if (count($past) < 4) {
+            return null;
+        }
+        $mean = array_sum($past) / count($past);
+        if ($mean < $minimum) {
+            return null;
+        }
+        $deviation = sqrt(array_sum(array_map(fn (int $n): float => ($n - $mean) ** 2, $past)) / count($past));
+        $difference = $value - $mean;
+        if (abs($difference) <= max(3 * $deviation, 0.3 * $mean)) {
+            return null;
+        }
+        $percent = (int) round(abs($difference) / $mean * 100);
+        $label = $measure === 'visitors' ? __('Visitors') : __('Conversions');
+
+        return (string) ($difference < 0
+            ? __(':measure were :percent% below normal: :value, against about :usual on a typical :weekday.', ['measure' => $label, 'percent' => $percent, 'value' => number_format($value), 'usual' => number_format((int) round($mean)), 'weekday' => $weekday])
+            : __(':measure were :percent% above normal: :value, against about :usual on a typical :weekday.', ['measure' => $label, 'percent' => $percent, 'value' => number_format($value), 'usual' => number_format((int) round($mean)), 'weekday' => $weekday]));
+    }
+
+    /**
+     * Build a scheduled CSV export's message: the report for the period, with the saved view's filters, attached.
+     *
+     * @param  AnalyticsNotification  $notification
+     * @param  ReportPeriod  $period
+     * @param  string  $kind  weekly or monthly
+     * @return array{subject: string, lines: list<string>, url: string, attachment: array{name: string, csv: string}}
+     */
+    private function export(AnalyticsNotification $notification, ReportPeriod $period, string $kind): array
+    {
+        $site = $notification->site;
+        $filters = $notification->filters ?? [];
+        $dates = $period->start->toDateString().'-to-'.$period->end->toDateString();
+
+        return [
+            'subject' => $kind === 'weekly'
+                ? (string) __(':site: last week’s CSV (:view)', ['site' => $site->name, 'view' => $notification->view_name ?? __('all traffic')])
+                : (string) __(':site: :month’s CSV (:view)', ['site' => $site->name, 'month' => $period->start->isoFormat('MMMM YYYY'), 'view' => $notification->view_name ?? __('all traffic')]),
+            'lines' => [(string) __('The report for :from to :to is attached as a CSV.', ['from' => $period->start->toFormattedDateString(), 'to' => $period->end->toFormattedDateString()])],
+            'url' => route('analytics.overview', [$site->project_id, 'site' => $site->id, ...$period->query(), ...$filters]),
+            'attachment' => ['name' => Str::slug($site->name.' '.($notification->view_name ?? '')).'-'.$dates.'.csv', 'csv' => $this->csv->render($site, $period, $filters)],
+        ];
+    }
+
+    /**
      * Build a report's message: the headline numbers against the period before, top pages and sources.
      *
      * @param  AnalyticsSite  $site
@@ -142,7 +252,7 @@ final class SiteNotifier
      * Send a message by the notification's channel and record the result.
      *
      * @param  AnalyticsNotification  $notification
-     * @param  array{subject: string, lines: list<string>, url: string}  $message
+     * @param  array{subject: string, lines: list<string>, url: string, attachment?: array{name: string, csv: string}}  $message
      * @param  string  $period  what was sent, so it isn't sent again
      * @return void
      */
@@ -156,7 +266,7 @@ final class SiteNotifier
                     'unfurl_links' => false,
                 ])->throw();
             } else {
-                Notification::route('mail', $notification->target)->notify(new AnalyticsSiteReportNotification($message['subject'], $message['lines'], $message['url']));
+                Notification::route('mail', $notification->target)->notify(new AnalyticsSiteReportNotification($message['subject'], $message['lines'], $message['url'], $message['attachment'] ?? null));
             }
         } catch (Throwable $exception) {
             $error = str($exception->getMessage())->limit(500)->toString();

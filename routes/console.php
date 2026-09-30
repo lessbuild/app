@@ -121,6 +121,11 @@ Artisan::command('analytics:check-spikes', function (SiteNotifier $notifier): vo
 })->purpose('Alert sites whose current visitors reached their spike threshold');
 Schedule::command('analytics:check-spikes')->everyFiveMinutes()->withoutOverlapping();
 
+Artisan::command('analytics:check-anomalies', function (SiteNotifier $notifier): void {
+    $this->info("Sent {$notifier->checkAnomalies()} unusual traffic alerts.");
+})->purpose('Alert sites whose visitors or conversions yesterday were far from normal');
+Schedule::command('analytics:check-anomalies')->hourlyAt(25)->withoutOverlapping();
+
 Artisan::command('analytics:dispatch-pending {--limit=500}', function (DispatchPendingBatches $dispatch): void {
     $this->info("Dispatched {$dispatch->handle((int) $this->option('limit'))} pending batches.");
 })->purpose('Queue analytics batches that are waiting or failed');
