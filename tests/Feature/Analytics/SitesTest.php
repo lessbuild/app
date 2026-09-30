@@ -93,7 +93,9 @@ final class SitesTest extends TestCase
     public function test_the_tracker_script_is_served_and_pending_batches_are_redispatched(): void
     {
         $this->assertFileExists(public_path('tracker/v1.js'));
-        $this->assertStringContainsString("'/api/v1/collect/'", (string) file_get_contents(public_path('tracker/v1.js')));
+        $this->assertStringContainsString('/api/v1/collect/', (string) file_get_contents(public_path('tracker/v1.js')));
+        $this->assertFileExists(public_path('tracker/v1-extras.js'));
+        $this->assertLessThan(8000, filesize(public_path('tracker/v1.js')), 'The tracker stays small.');
 
         Queue::fake();
         $site = AnalyticsSite::factory()->for($this->project)->create();

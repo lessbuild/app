@@ -33,7 +33,7 @@
     @php($originHost = parse_url($origin, PHP_URL_HOST))
     @php($proxySnippet = '<script defer data-site="'.$site->public_id.'" data-api="/bp/event" src="/bp/js/v1.js"></script>')
     @php($caddyProxy = "handle_path /bp/js/* {\n    rewrite * /tracker{path}\n    reverse_proxy {$origin} {\n        header_up Host {$originHost}\n    }\n}\nhandle_path /bp/event/* {\n    rewrite * /api/v1/collect{path}\n    reverse_proxy {$origin} {\n        header_up Host {$originHost}\n    }\n}")
-    @php($nginxProxy = "location = /bp/js/v1.js {\n    proxy_pass {$origin}/tracker/v1.js;\n    proxy_set_header Host {$originHost};\n    proxy_ssl_server_name on;\n}\nlocation /bp/event/ {\n    proxy_pass {$origin}/api/v1/collect/;\n    proxy_set_header Host {$originHost};\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_ssl_server_name on;\n}")
+    @php($nginxProxy = "location /bp/js/ {\n    proxy_pass {$origin}/tracker/;\n    proxy_set_header Host {$originHost};\n    proxy_ssl_server_name on;\n}\nlocation /bp/event/ {\n    proxy_pass {$origin}/api/v1/collect/;\n    proxy_set_header Host {$originHost};\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_ssl_server_name on;\n}")
     <x-signal.ui.settings-section :title="__('Send through your own domain')" :description="__('Optional. Serve the script and send events from the site’s own domain, so ad blockers that stop third-party analytics don’t stop it. Add the proxy rules to your web server, then use this snippet instead.')">
         <div class="grid gap-4 p-4 sm:p-6">
             <x-signal.ui.code-block :code="$proxySnippet" class="whitespace-pre-wrap break-all" />

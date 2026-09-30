@@ -4,6 +4,11 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-01', 'title' => 'Analytics: lighter, and more in your control', 'changes' => [
+        'The tracker is under half its old size (about 2 KB compressed); link, download and page speed tracking load only when you turn them on.',
+        'Leave out visits from your office or other addresses, count clicks on any element by adding a CSS class, and track single-page apps that route with #/paths.',
+        'Give a client view-only access to one site with their own link, without adding them to your account.',
+    ]],
     ['date' => '2026-09-30', 'title' => 'Security, a fifth service', 'changes' => [
         'A security score for each project, with every finding explained and a fix beside it.',
         'Vulnerable Composer and npm packages, leaked keys in code and logs, and weak domains (certificates, TLS, headers, SPF, DMARC, and DNS records that could be taken over).',

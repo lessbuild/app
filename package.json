@@ -3,7 +3,8 @@
     "private": true,
     "type": "module",
     "scripts": {
-        "build": "vite build",
+        "build": "vite build && npm run build:tracker",
+        "build:tracker": "rolldown resources/tracker/v1.js -f iife -m -o public/tracker/v1.js && rolldown resources/tracker/extras.js -f iife -m -o public/tracker/v1-extras.js",
         "dev": "vite",
         "e2e": "playwright test"
     },
