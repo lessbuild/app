@@ -51,6 +51,7 @@ use App\Http\Controllers\Analytics\RequestExportController;
 use App\Http\Controllers\Analytics\SearchConsoleCallbackController;
 use App\Http\Controllers\Analytics\ShareSiteReportController;
 use App\Http\Controllers\Analytics\ShowCampaignsController;
+use App\Http\Controllers\Analytics\ShowExploreController;
 use App\Http\Controllers\Analytics\ShowExportController;
 use App\Http\Controllers\Analytics\ShowFunnelsController;
 use App\Http\Controllers\Analytics\ShowGoalsController;
@@ -533,6 +534,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::delete('/sites/{site}', DeleteSiteController::class)->whereNumber('site')->middleware(['can:delete,site', 'password.confirm'])->name('sites.destroy');
             Route::get('/goals', ShowGoalsController::class)->name('goals');
             Route::get('/campaigns', ShowCampaignsController::class)->name('campaigns');
+            Route::get('/explore', ShowExploreController::class)->name('explore');
             Route::get('/funnels', ShowFunnelsController::class)->name('funnels');
             Route::post('/sites/{site}/funnels', StoreFunnelController::class)->whereNumber('site')->middleware(['can:update,site', 'throttle:30,1'])->name('funnels.store');
             Route::put('/sites/{site}/funnels/{funnel}', UpdateFunnelController::class)->whereNumber(['site', 'funnel'])->middleware(['can:update,site', 'throttle:30,1'])->name('funnels.update');

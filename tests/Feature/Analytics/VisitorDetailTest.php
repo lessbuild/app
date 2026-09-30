@@ -28,7 +28,7 @@ final class VisitorDetailTest extends TestCase
     {
         $site = AnalyticsSite::factory()->create(['domains' => ['example.com'], 'timezone' => 'UTC', 'verified_at' => now()]);
         $site->forceFill(['custom_properties' => ['plan', 'trial', 'contact']])->save();
-        $base = ['visitor' => 'v1', 'session' => 's1', 'browser' => 'Chrome', 'browser_version' => '128', 'os' => 'iOS', 'os_version' => '17.4', 'screen' => 390];
+        $base = ['visitor' => 'v1', 'session' => 's1', 'returning' => 'browser-1', 'browser' => 'Chrome', 'browser_version' => '128', 'os' => 'iOS', 'os_version' => '17.4', 'screen' => 390];
         $this->withHeader('Origin', 'https://example.com')->postJson("/api/v1/collect/{$site->public_id}", ['events' => [
             ['id' => (string) Str::uuid(), 'type' => 'pageview', 'path' => '/pricing', 'utm_source' => 'google', 'utm_medium' => 'cpc', 'utm_term' => 'cheap hosting', 'utm_content' => 'ad-b', ...$base],
             ['id' => (string) Str::uuid(), 'type' => 'engagement', 'path' => '/pricing', 'properties' => ['scroll' => 80, 'engaged_ms' => 30_000, 'extra' => 'dropped'], ...$base],
@@ -42,6 +42,8 @@ final class VisitorDetailTest extends TestCase
 
         $pageview = AnalyticsEvent::query()->where('path', '/pricing')->where('type', 'pageview')->sole();
         $this->assertSame(['cheap hosting', 'ad-b', 'Paid Search', 'Mobile', '128', '17.4'], [$pageview->utm_term, $pageview->utm_content, $pageview->channel, $pageview->screen_size, $pageview->browser_version, $pageview->os_version]);
+        $this->assertSame(64, strlen((string) $pageview->returning_hash));
+        $this->assertSame(1, AnalyticsEvent::query()->whereNotNull('returning_hash')->distinct()->count('returning_hash'), 'One browser, one stable hash.');
         $this->assertSame(['scroll' => 80, 'engaged_ms' => 30_000], AnalyticsEvent::query()->where('type', 'engagement')->sole()->properties);
         $purchase = AnalyticsEvent::query()->where('type', 'event')->sole()->properties ?? [];
         $this->assertSame(['plan' => 'pro', 'trial' => 'true'], $purchase['props']);

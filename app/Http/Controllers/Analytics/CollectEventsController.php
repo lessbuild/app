@@ -85,6 +85,9 @@ final class CollectEventsController
                 osVersion: CollectionRequest::version($event['os_version'] ?? null),
                 region: $location['region'],
                 city: $location['city'],
+                // Only sent when the snippet has data-retention: a random ID the browser keeps, hashed per site.
+                returningHash: is_string($event['returning'] ?? null) && $event['returning'] !== ''
+                    ? hash_hmac('sha256', $site->id.'|'.$event['returning'], (string) config('analytics.visitor_key')) : null,
             );
         }
 

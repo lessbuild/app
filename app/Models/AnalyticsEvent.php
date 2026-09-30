@@ -25,6 +25,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $os_version
  * @property string|null $region
  * @property string|null $city
+ * @property string|null $returning_hash a stable per-site hash of the browser's ID, when the snippet opts into retention
  * @property Carbon $received_at
  * @property string $path
  * @property string|null $referrer_host
@@ -46,7 +47,7 @@ class AnalyticsEvent extends Model
      *
      * @var list<string>
      */
-    protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'country_code', 'utm_term', 'utm_content', 'channel', 'screen_size', 'browser_version', 'os_version', 'region', 'city', 'visitor_hash', 'session_id', 'properties'];
+    protected $fillable = ['site_id', 'ingestion_batch_id', 'event_id', 'type', 'occurred_at', 'received_at', 'path', 'referrer_host', 'utm_source', 'utm_medium', 'utm_campaign', 'device_category', 'browser', 'operating_system', 'country_code', 'utm_term', 'utm_content', 'channel', 'screen_size', 'browser_version', 'os_version', 'region', 'city', 'returning_hash', 'visitor_hash', 'session_id', 'properties'];
 
     /**
      * Get the attributes that should be cast.

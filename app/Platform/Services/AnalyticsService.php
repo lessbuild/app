@@ -54,7 +54,8 @@ final class AnalyticsService implements PlatformService
     }
 
     /**
-     * Get the service's pages: the traffic overview, goals and the sites that send pageviews.
+     * Get the service's pages: the traffic overview, goals, funnels, deeper exploration, campaigns and the sites that
+     * send pageviews.
      *
      * @param  string  $projectId
      * @return list<ServiceNavItem>
@@ -65,6 +66,7 @@ final class AnalyticsService implements PlatformService
             new ServiceNavItem(__('Overview'), route('analytics.overview', $projectId), 'analytics.overview'),
             new ServiceNavItem(__('Goals'), route('analytics.goals', $projectId), 'analytics.goals*'),
             new ServiceNavItem(__('Funnels'), route('analytics.funnels', $projectId), 'analytics.funnels*'),
+            new ServiceNavItem(__('Explore'), route('analytics.explore', $projectId), 'analytics.explore*'),
             new ServiceNavItem(__('Campaigns'), route('analytics.campaigns', $projectId), 'analytics.campaigns*'),
             new ServiceNavItem(__('Sites'), route('analytics.sites', $projectId), 'analytics.sites*'),
         ];

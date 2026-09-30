@@ -80,6 +80,22 @@
         return 'Other';
     }
 
+    // Opt-in retention (data-retention): a random ID kept in this browser, so returning visitors can be recognised
+    // across days. It's stored on the visitor's device, so sites should ask for consent where the law requires it.
+    function returningId() {
+        if (script.dataset.retention === undefined) return null;
+        try {
+            var stored = window.localStorage.getItem('buildpusher_id');
+            if (!stored) {
+                stored = id();
+                window.localStorage.setItem('buildpusher_id', stored);
+            }
+            return stored;
+        } catch (_) {
+            return null;
+        }
+    }
+
     function push(type, properties, path) {
         if (!collectionAllowed()) return;
         var url = new URL(window.location.href);
@@ -104,6 +120,7 @@
             browser_version: browserVersion(),
             os: operatingSystem(),
             os_version: osVersion(),
+            returning: returningId(),
             properties: properties || null
         });
         flush();

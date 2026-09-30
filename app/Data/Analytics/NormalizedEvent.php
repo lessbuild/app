@@ -37,6 +37,7 @@ final readonly class NormalizedEvent
      * @param  ?string  $osVersion  The operating system's version.
      * @param  ?string  $region  The visitor's region (state or province), when the city database is installed.
      * @param  ?string  $city  The visitor's city, when the city database is installed.
+     * @param  ?string  $returningHash  A stable per-site hash of the browser's ID, for retention; only when the snippet opts in.
      */
     public function __construct(
         public string $eventId,
@@ -62,6 +63,7 @@ final readonly class NormalizedEvent
         public ?string $osVersion = null,
         public ?string $region = null,
         public ?string $city = null,
+        public ?string $returningHash = null,
     ) {}
 
     /**
@@ -98,6 +100,7 @@ final readonly class NormalizedEvent
             'os_version' => $this->osVersion,
             'region' => $this->region,
             'city' => $this->city,
+            'returning_hash' => $this->returningHash,
             'visitor_hash' => $this->visitorHash,
             'session_id' => $this->sessionId,
             'properties' => $this->properties ? json_encode($this->properties, JSON_THROW_ON_ERROR) : null,
