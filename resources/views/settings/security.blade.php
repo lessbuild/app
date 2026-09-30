@@ -174,4 +174,23 @@
             </ul>
         </div>
     </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="ssh-keys" :title="__('SSH keys')" :description="__('Your public keys. When someone gives you SSH access to a server (Security → Servers), these are the keys installed there; changes here reach those servers within a minute.')">
+        <div class="grid gap-4 p-4 sm:p-6">
+            @forelse ($sshKeys as $key)
+                <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                    <span><span class="font-bold text-ink">{{ $key->name }}</span> <span class="font-mono text-xs text-muted">{{ $key->fingerprint }}</span></span>
+                    <form method="POST" action="{{ route('settings.ssh-keys.destroy', $key->id) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
+                </div>
+            @empty
+                <p class="text-sm text-muted">{{ __('No SSH keys yet.') }}</p>
+            @endforelse
+            <form method="POST" action="{{ route('settings.ssh-keys.store') }}" class="grid gap-3">
+                @csrf
+                <x-signal.ui.input-field name="name" :label="__('Name')" maxlength="100" placeholder="MacBook" required />
+                <x-signal.ui.textarea-field name="public_key" :label="__('Public key')" rows="3" placeholder="ssh-ed25519 AAAA…" :description="__('The contents of your .pub file, such as ~/.ssh/id_ed25519.pub. Never paste a private key.')" required />
+                <div><x-signal.ui.button type="submit" variant="secondary">{{ __('Add key') }}</x-signal.ui.button></div>
+            </form>
+        </div>
+    </x-signal.ui.settings-section>
 </x-signal.layouts.settings>

@@ -284,6 +284,17 @@ return [
                 ['Automatic blocking', 'On Pro and above, Security checks each website’s access log every five minutes and blocks addresses in the server’s firewall after 20 failed sign-ins, 10 requests for known vulnerable paths (such as /.env) or 3,000 requests in ten minutes. Security → Attacks shows who’s blocked, lets you unblock someone, and sets how long blocks last and which addresses are never blocked.'],
             ],
         ],
+        'security-access' => [
+            'group' => 'security',
+            'title' => 'SSH keys and access reviews',
+            'summary' => 'Give people their own SSH access, and review who can reach the account.',
+            'steps' => [
+                ['Add your key', 'In Your settings → Security, add your SSH public key (the contents of your .pub file).'],
+                ['Give access', 'On Pro and above, Security → Servers gives a member SSH access to a server as its deploy user, with the keys on their profile. When they change their keys, or leave the account, the server is updated.'],
+                ['Review access', 'On the Team plan, Security → Access lists members (with two-factor status), API tokens and SSH access. Tick anything that should go and choose Complete review; the removals happen and the review is kept as evidence.'],
+                ['Reminders', 'A finding appears when the last review is more than 90 days old, and for members without two-factor authentication and API tokens unused for 90 days.'],
+            ],
+        ],
         'add-analytics' => [
             'group' => 'analytics',
             'title' => 'Add analytics to a website',

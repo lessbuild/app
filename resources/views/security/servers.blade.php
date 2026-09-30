@@ -50,6 +50,36 @@
                     </form>
                 </div>
             @endif
+            @php($serverGrants = $grants->get($server->id, collect()))
+            <div class="grid gap-2 border-t border-line pt-4">
+                <h3 class="text-sm font-extrabold text-ink">{{ __('SSH access') }} <span class="font-normal text-muted">· {{ __('as :user, with each person’s own keys', ['user' => $server->name]) }}</span></h3>
+                @forelse ($serverGrants as $grant)
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                        <span>
+                            <span class="font-bold text-ink">{{ $grant->user->name }}</span>
+                            @if ($grant->status === 'failed')<x-signal.ui.badge tone="danger">{{ __('Failed') }}</x-signal.ui.badge> <span class="text-xs text-danger">{{ $grant->error }}</span>
+                            @elseif ($grant->status !== 'active')<x-signal.ui.badge tone="info">{{ $grant->status === 'removing' ? __('Removing') : __('Installing') }}</x-signal.ui.badge>@endif
+                            @unless (in_array($grant->user_id, $keyedUsers, true))<span class="text-xs text-muted">· {{ __('no SSH keys on their profile yet') }}</span>@endunless
+                        </span>
+                        @if ($canManage && $grant->status !== 'removing')
+                            <form method="POST" action="{{ route('security.servers.ssh.destroy', [$project, $server->id, $grant->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove access') }}</x-signal.ui.button></form>
+                        @endif
+                    </div>
+                @empty
+                    <p class="text-sm text-muted">{{ __('No one has personal SSH access.') }}</p>
+                @endforelse
+                @if ($canManage && $included)
+                    <form method="POST" action="{{ route('security.servers.ssh.store', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-2">
+                        @csrf
+                        <x-signal.ui.select-field :id="'ssh-user-'.$server->id" name="user_id" :label="__('Give access to')" :show-errors="false">
+                            @foreach ($members->reject(fn ($membership) => $serverGrants->contains('user_id', $membership->user_id)) as $membership)
+                                <option value="{{ $membership->user_id }}">{{ $membership->user->name }}@unless (in_array($membership->user_id, $keyedUsers, true)) ({{ __('no keys yet') }})@endunless</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.button type="submit" variant="secondary" size="sm">{{ __('Give access') }}</x-signal.ui.button>
+                    </form>
+                @endif
+            </div>
         </x-signal.ui.card>
     @empty
         <x-signal.ui.empty-state icon="server" :title="__('No servers yet')" :description="__('Servers show up here once websites in this project run on them.')" />

@@ -7,6 +7,7 @@ namespace App\Services\Security;
 use App\Contracts\Security\Scanner;
 use App\Models\Account;
 use App\Services\Billing\Entitlements;
+use App\Services\Security\Scanners\AccessScanner;
 use App\Services\Security\Scanners\DependencyScanner;
 use App\Services\Security\Scanners\DomainScanner;
 use App\Services\Security\Scanners\SecretScanner;
@@ -26,6 +27,7 @@ final class Scanners
         SecretScanner::class,
         ServerScanner::class,
         DomainScanner::class,
+        AccessScanner::class,
     ];
 
     /**

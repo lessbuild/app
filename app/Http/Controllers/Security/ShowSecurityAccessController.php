@@ -4,23 +4,23 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Security;
 
+use App\Models\ApiToken;
 use App\Models\Membership;
 use App\Models\Project;
-use App\Models\SecurityFinding;
+use App\Models\SecurityAccessReview;
 use App\Models\ServerSshGrant;
 use App\Models\User;
-use App\Models\UserSshKey;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Queries\Security\ProjectServersQuery;
 use App\Services\Billing\Entitlements;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
 
-final class ShowSecurityServersController
+final class ShowSecurityAccessController
 {
     /**
-     * Show the project's servers with their open hardening findings, each one's update window, and who has SSH
-     * access to it.
+     * Show everyone and everything with access (members, API tokens, SSH access to the project's servers) as an
+     * access review, with the past reviews.
      *
      * @param  User  $user
      * @param  Project  $project
@@ -31,18 +31,15 @@ final class ShowSecurityServersController
      */
     public function __invoke(#[CurrentUser] User $user, Project $project, ProjectOverviewQuery $overview, ProjectServersQuery $servers, Entitlements $entitlements): View
     {
-        $list = $servers->handle($project);
-        $findings = SecurityFinding::query()->where('project_id', $project->id)->where('source', 'servers')->where('status', 'open')
-            ->whereIn('scope', $list->map(fn ($server): string => "server:{$server->id}"))->get()->groupBy('scope');
-
-        return view('security.servers', [
+        return view('security.access', [
             'overview' => $overview->handle($project, $user),
-            'servers' => $list,
-            'findings' => $findings,
-            'included' => $entitlements->for($project->account)->has('security.servers'),
-            'grants' => ServerSshGrant::query()->whereIn('server_id', $list->modelKeys())->with('user')->get()->groupBy('server_id'),
             'members' => Membership::query()->where('account_id', $project->account_id)->with('user')->get()->sortBy(fn (Membership $membership): string => $membership->user->name)->values(),
-            'keyedUsers' => UserSshKey::query()->whereIn('user_id', Membership::query()->where('account_id', $project->account_id)->select('user_id'))->distinct()->pluck('user_id')->all(),
+            'tokens' => ApiToken::query()->where('account_id', $project->account_id)->orderBy('name')->get(),
+            'tokenOwners' => User::query()->whereIn('id', ApiToken::query()->where('account_id', $project->account_id)->select('tokenable_id'))->pluck('name', 'id'),
+            'grants' => ServerSshGrant::query()->whereIn('server_id', $servers->handle($project)->modelKeys())->with(['user', 'server'])->get(),
+            'reviews' => SecurityAccessReview::query()->where('project_id', $project->id)->with('reviewer')->latest('id')->limit(10)->get(),
+            'requireTwoFactor' => $project->account->require_two_factor,
+            'included' => $entitlements->for($project->account)->has('security.access_reviews'),
             'canManage' => $user->can('manageService', [$project, 'security']),
         ]);
     }

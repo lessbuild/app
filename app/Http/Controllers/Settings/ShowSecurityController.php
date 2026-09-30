@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Settings;
 
 use App\Enums\SocialProvider;
 use App\Models\User;
+use App\Models\UserSshKey;
 use App\Queries\Users\SecuritySettingsQuery;
 use App\Services\SocialSignIn\SocialSignInGateway;
 use Illuminate\Container\Attributes\CurrentUser;
@@ -36,6 +37,6 @@ final class ShowSecurityController
             'identity' => array_find($security->socialIdentities, fn ($identity): bool => $identity->provider === $provider),
         ], SocialProvider::cases());
 
-        return view('settings.security', ['user' => $user, 'security' => $security, 'providers' => $providers]);
+        return view('settings.security', ['user' => $user, 'security' => $security, 'providers' => $providers, 'sshKeys' => UserSshKey::query()->where('user_id', $user->id)->orderBy('name')->get()]);
     }
 }

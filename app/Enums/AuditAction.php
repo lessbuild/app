@@ -42,6 +42,9 @@ enum AuditAction: string
     case SecurityFindingReopened = 'security_finding.reopened';
     case SecurityFixApplied = 'security_fix.applied';
     case SecurityZoneChanged = 'security_zone.changed';
+    case SshAccessGranted = 'ssh_access.granted';
+    case SshAccessRevoked = 'ssh_access.revoked';
+    case AccessReviewCompleted = 'access_review.completed';
     case ApiTokenCreated = 'api_token.created';
     case ApiTokenRevoked = 'api_token.revoked';
     case MonitorCreated = 'monitor.created';
@@ -108,7 +111,7 @@ enum AuditAction: string
     public function category(): string
     {
         return match (explode('.', $this->value)[0]) {
-            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso', 'security_finding', 'security_fix', 'security_zone' => 'security',
+            'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso', 'security_finding', 'security_fix', 'security_zone', 'ssh_access', 'access_review' => 'security',
             'billing' => 'billing',
             'server', 'server_task', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
             'environment', 'maintenance' => 'deploy',
@@ -172,6 +175,9 @@ enum AuditAction: string
             self::ServiceDisabled => __('Turned off :service for :project', ['service' => $value('service'), 'project' => $value('project')]),
             self::MemberServiceAccessChanged => __('Set :member’s services to :services', ['member' => $value('member'), 'services' => $value('services')]),
             self::SecurityFindingIgnored => __('Ignored the security finding “:finding”', ['finding' => $value('finding')]),
+            self::SshAccessGranted => __('Gave :member SSH access to the server :server', ['member' => $value('member'), 'server' => $value('server')]),
+            self::SshAccessRevoked => __('Removed :member’s SSH access to the server :server', ['member' => $value('member'), 'server' => $value('server')]),
+            self::AccessReviewCompleted => __('Completed an access review (:removed removed)', ['removed' => $value('removed')]),
             self::SecurityZoneChanged => ($context['under_attack'] ?? false)
                 ? __('Turned on under attack mode for :zone', ['zone' => $value('zone')])
                 : __('Changed Cloudflare security settings for :zone', ['zone' => $value('zone')]),

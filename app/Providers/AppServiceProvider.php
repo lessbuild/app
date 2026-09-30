@@ -29,6 +29,7 @@ use App\Listeners\IncidentAssigneeSubscriber;
 use App\Listeners\NotificationSubscriber;
 use App\Listeners\OnboardingSubscriber;
 use App\Listeners\PreviewWebsiteSubscriber;
+use App\Listeners\SshAccessSubscriber;
 use App\Models\ApiToken;
 use App\Services\Admin\FeatureFlags;
 use App\Services\Analytics\DbIpCountryLookup;
@@ -95,6 +96,7 @@ class AppServiceProvider extends ServiceProvider
         Event::subscribe(OnboardingSubscriber::class);
         Event::subscribe(DeployNotificationSubscriber::class);
         Event::subscribe(GitHubDeployStatusSubscriber::class);
+        Event::subscribe(SshAccessSubscriber::class);
         Event::subscribe(IncidentAssigneeSubscriber::class);
         Event::subscribe(PreviewWebsiteSubscriber::class);
         Event::subscribe(EnvironmentRecipeSubscriber::class);
