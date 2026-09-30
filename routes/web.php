@@ -132,6 +132,7 @@ use App\Http\Controllers\Deploy\ShowBuildStatusController;
 use App\Http\Controllers\Deploy\ShowConfigurationApplicationController;
 use App\Http\Controllers\Deploy\ShowConfigurationController;
 use App\Http\Controllers\Deploy\ShowConfigurationReviewController;
+use App\Http\Controllers\Deploy\ShowDeployDecisionController;
 use App\Http\Controllers\Deploy\ShowDeployEnvironmentController;
 use App\Http\Controllers\Deploy\ShowDeployEnvironmentsController;
 use App\Http\Controllers\Deploy\ShowGitHubAppRepositoriesController;
@@ -712,6 +713,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/builds/{build}/cancel', CancelBuildController::class)->whereNumber('build')->middleware(['can:view,build', 'throttle:20,1'])->name('builds.cancel');
             Route::match(['PUT', 'DELETE'], '/environments/{environment}/release-notes', UpdateReleaseNotesPageController::class)->middleware('throttle:20,1')->name('environments.release-notes');
             Route::post('/builds/{build}/approve-migrations', ApproveMigrationsController::class)->whereNumber('build')->middleware(['can:approve,build', 'throttle:10,1'])->name('builds.approve-migrations');
+            Route::get('/builds/{build}/decide', ShowDeployDecisionController::class)->whereNumber('build')->middleware('can:view,build')->name('builds.decide');
             Route::post('/builds/{build}/review', ReviewBuildController::class)->whereNumber('build')->middleware(['can:approve,build', 'throttle:20,1'])->name('builds.review');
         });
 

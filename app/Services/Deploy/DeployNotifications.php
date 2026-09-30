@@ -66,6 +66,12 @@ final class DeployNotifications
         ]);
         $payload['notes'] = $event === 'deploy_succeeded' ? ReleaseNotes::text($build->release_commits ?? []) : null;
         $payload['url'] = route('deploy.builds.show', [$project, $build->id]);
+        if ($event === 'deploy_approval') {
+            $payload['actions'] = [
+                ['label' => __('Approve'), 'url' => route('deploy.builds.decide', [$project, $build->id, 'decision' => 'approve']), 'style' => 'primary'],
+                ['label' => __('Reject'), 'url' => route('deploy.builds.decide', [$project, $build->id, 'decision' => 'reject']), 'style' => 'danger'],
+            ];
+        }
         $payload['url_label'] = __('View deploy');
         foreach ($routes as $route) {
             $this->alerts->queue($route->destination, $payload);

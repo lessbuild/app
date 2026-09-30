@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature\Deploy;
 
 use App\Actions\Deploy\FinishBuild;
+use App\Enums\AccountRole;
 use App\Enums\AlertDeliveryStatus;
 use App\Enums\AlertDestinationType;
 use App\Models\AlertDelivery;
@@ -18,6 +19,7 @@ use App\Models\Server;
 use App\Models\User;
 use App\Models\Website;
 use App\Notifications\IncidentAlertNotification;
+use App\Services\Deploy\DeployNotifications;
 use App\Services\Monitoring\AlertDeliveryRunner;
 use App\Services\Monitoring\AlertNotificationTransport;
 use Illuminate\Auth\Middleware\RequirePassword;
@@ -136,6 +138,35 @@ final class DeployNotificationsTest extends TestCase
         $mail = (new IncidentAlertNotification('delivery-1', $payload))->toMail($this->owner);
         $this->assertStringContainsString('Deploy failed — Production', (string) $mail->subject);
         $this->assertSame('View deploy', $mail->actionText);
+    }
+
+    /**
+     * Check a deploy waiting for approval reaches Slack with Approve and Reject buttons, which open a page with that
+     * decision ready to confirm; only someone other than the requester can confirm it, and nothing changes on opening.
+     *
+     * @return void
+     */
+    public function test_deploys_are_approved_from_slack(): void
+    {
+        $slack = AlertDestination::factory()->slack()->create(['account_id' => $this->project->account_id]);
+        $this->production->deployNotifications()->make()->forceFill(['alert_destination_id' => $slack->id, 'on_approval' => true])->save();
+        $requester = User::factory()->create();
+        $this->addMember($this->project, $requester, AccountRole::Admin);
+        $build = Build::factory()->create(['repository_id' => $this->repository->id, 'environment_id' => $this->production->id, 'status' => Build::STATUS_AWAITING_APPROVAL, 'requested_by' => $requester->id]);
+        app(DeployNotifications::class)->send($build, 'deploy_approval');
+        $payload = AlertDelivery::query()->sole()->payload;
+        $message = json_encode((new ReflectionMethod(AlertNotificationTransport::class, 'slackPayload'))->invoke(app(AlertNotificationTransport::class), 'delivery-1', $payload), JSON_THROW_ON_ERROR);
+        $approve = route('deploy.builds.decide', [$this->project, $build->id, 'decision' => 'approve']);
+        $this->assertStringContainsString('"style":"primary"', $message);
+        $this->assertStringContainsString(str_replace('/', '\\/', $approve), $message);
+        $this->assertStringContainsString('"style":"danger"', $message);
+
+        $this->actingAs($requester)->get($approve)->assertOk()->assertSee('Someone else has to approve your deploy.')->assertDontSee(__('Approve and deploy'));
+        $this->actingAs($this->owner)->get($approve)->assertOk()->assertSee(__('Approve and deploy'))->assertSee(__('Reject instead'));
+        $this->assertSame(Build::STATUS_AWAITING_APPROVAL, $build->refresh()->status, 'Opening the link changes nothing.');
+        $this->actingAs($this->owner)->post(route('deploy.builds.review', [$this->project, $build->id]), ['decision' => 'reject'])->assertRedirect();
+        $this->assertSame(Build::STATUS_REJECTED, $build->refresh()->status);
+        $this->actingAs($this->owner)->get($approve)->assertOk()->assertSee('isn’t waiting for approval any more');
     }
 
     /**

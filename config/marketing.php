@@ -71,6 +71,7 @@ return [
                 ['label' => 'Release', 'title' => 'Make every deployment traceable', 'description' => 'From the first commit to a verified release, every step stays visible and recoverable.', 'features' => [
                     ['Release per build', 'Each deploy is its own release directory; the previous ones stay for instant rollbacks.'],
                     ['Safe strategies', 'Blue-green, canary and rolling deploys, with health observation and automatic rollback.'],
+                    ['Approvals in Slack', 'Approve or reject a waiting deploy from buttons in Slack or Teams.'],
                     ['Release notes', 'Notes written from each deploy’s commits, sent to Slack and published on a public page if you like.'],
                     ['Migration safety', 'Deploys stop before destructive database migrations until someone else approves them.'],
                     ['Release analysis', 'Each release is compared with the one before on errors, latency and conversions, and rolled back when it’s worse.'],

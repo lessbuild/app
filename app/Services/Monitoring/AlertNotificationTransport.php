@@ -202,6 +202,7 @@ final class AlertNotificationTransport
         ];
         if ($payload['url'] !== null) {
             $blocks[] = ['type' => 'actions', 'elements' => [
+                ...array_map(fn (array $action): array => array_filter(['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => $action['label']], 'url' => $action['url'], 'style' => $action['style'] ?? null]), $this->actions($payload)),
                 ['type' => 'button', 'text' => ['type' => 'plain_text', 'text' => $this->linkLabel($payload)], 'url' => $payload['url']],
             ]];
         }
@@ -234,9 +235,10 @@ final class AlertNotificationTransport
             },
             'title' => mb_substr($title, 0, 250),
             'sections' => [['facts' => $facts, 'markdown' => true]],
-            ...($payload['url'] !== null ? ['potentialAction' => [[
-                '@type' => 'OpenUri', 'name' => $this->linkLabel($payload), 'targets' => [['os' => 'default', 'uri' => $payload['url']]],
-            ]]] : []),
+            ...($payload['url'] !== null ? ['potentialAction' => [
+                ...array_map(fn (array $action): array => ['@type' => 'OpenUri', 'name' => $action['label'], 'targets' => [['os' => 'default', 'uri' => $action['url']]]], $this->actions($payload)),
+                ['@type' => 'OpenUri', 'name' => $this->linkLabel($payload), 'targets' => [['os' => 'default', 'uri' => $payload['url']]]],
+            ]] : []),
         ];
     }
 
@@ -308,6 +310,28 @@ final class AlertNotificationTransport
         $label = is_string($payload['event_label'] ?? null) ? $payload['event_label'] : ucfirst((string) $payload['event']);
 
         return config('app.name').': '.$label.' — '.$payload['title'];
+    }
+
+    /**
+     * Get the extra buttons an alert offers, such as Approve and Reject on a deploy waiting for approval.
+     *
+     * @param  array<string, mixed>  $payload
+     * @return list<array{label: string, url: string, style?: string}>
+     */
+    private function actions(array $payload): array
+    {
+        $actions = [];
+        foreach (is_array($payload['actions'] ?? null) ? $payload['actions'] : [] as $action) {
+            if (is_array($action) && is_string($action['label'] ?? null) && is_string($action['url'] ?? null)) {
+                $button = ['label' => $action['label'], 'url' => $action['url']];
+                if (is_string($action['style'] ?? null)) {
+                    $button['style'] = $action['style'];
+                }
+                $actions[] = $button;
+            }
+        }
+
+        return $actions;
     }
 
     /**
