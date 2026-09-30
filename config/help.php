@@ -229,6 +229,18 @@ return [
                 ['Link to deploys', 'Every trace shows the deploy that was live when it ran, and each deploy links to its requests and traces, so you can see what a release changed.'],
             ],
         ],
+        'alert-rules' => [
+            'group' => 'monitoring',
+            'title' => 'Alert rules',
+            'summary' => 'Open incidents from errors, latency, log lines, metrics and SLO burn, and keep alerts quiet enough to trust.',
+            'steps' => [
+                ['Add a rule', 'Monitoring → Alerts → Rules → Add a rule. Choose what it measures, the threshold and how many minutes it must hold, then where it notifies.'],
+                ['Alerts from log lines', 'Choose “Matching log / event count”, enter text to match (such as “payment declined”), and a threshold: 1 alerts on the first matching line, a higher number when it appears too often.'],
+                ['Error budget burn', 'Choose “SLO error-budget burn rate” and an objective. A burn rate of 1 uses the budget exactly over the objective’s period; alert at 2 or more to hear while there’s still budget left, not once it’s breached.'],
+                ['Anomalies', 'Choose “Metric anomaly score” to be told when a metric moves far from its usual range, without picking a fixed threshold.'],
+                ['Keep it quiet', 'Alerts → Noise ranks the rules and monitors that fired most in the last 30 days, with how often they flapped (recovered within five minutes, unacknowledged) and how often nobody acknowledged them, and suggests how to tune each.'],
+            ],
+        ],
         'incidents-and-status-pages' => [
             'group' => 'monitoring',
             'title' => 'Incidents and status pages',

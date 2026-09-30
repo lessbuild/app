@@ -280,6 +280,7 @@ use App\Http\Controllers\Monitoring\RotateMonitorKeyController;
 use App\Http\Controllers\Monitoring\SendTestAlertController;
 use App\Http\Controllers\Monitoring\ShowAlertDestinationController;
 use App\Http\Controllers\Monitoring\ShowAlertDestinationsController;
+use App\Http\Controllers\Monitoring\ShowAlertNoiseController;
 use App\Http\Controllers\Monitoring\ShowAlertRuleController;
 use App\Http\Controllers\Monitoring\ShowAlertRulesController;
 use App\Http\Controllers\Monitoring\ShowDashboardController;
@@ -838,6 +839,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::put('/status-pages/{page}/updates/{update}', UpdateStatusUpdateController::class)->whereNumber(['page', 'update'])->middleware(['can:update,page', 'throttle:30,1'])->name('status-pages.updates.update');
 
             Route::get('/rules', ShowAlertRulesController::class)->name('rules');
+            Route::get('/alerts/noise', ShowAlertNoiseController::class)->name('noise');
             Route::get('/rules/create', CreateAlertRuleController::class)->middleware('can:create,App\\Models\\AlertRule,project')->name('rules.create');
             Route::post('/rules', StoreAlertRuleController::class)->middleware(['can:create,App\\Models\\AlertRule,project', 'throttle:60,1'])->name('rules.store');
             Route::get('/rules/{rule}', ShowAlertRuleController::class)->whereNumber('rule')->name('rules.show');

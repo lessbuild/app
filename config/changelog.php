@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-01', 'title' => 'Monitoring: quieter, clearer alerts', 'changes' => [
+        'An alert noise report ranks the rules and monitors that fired most, shows which flap or get ignored, and suggests how to tune them.',
+    ]],
     ['date' => '2026-10-01', 'title' => 'Analytics: lighter, and more in your control', 'changes' => [
         'The tracker is under half its old size (about 2 KB compressed); link, download and page speed tracking load only when you turn them on.',
         'Leave out visits from your office or other addresses, count clicks on any element by adding a CSS class, and track single-page apps that route with #/paths.',
