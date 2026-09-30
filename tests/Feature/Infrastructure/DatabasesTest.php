@@ -114,6 +114,45 @@ final class DatabasesTest extends TestCase
         $this->actingAs($this->owner)->get("{$this->base}?tab=database")->assertSee('Shop → Shop staging');
     }
 
+    /**
+     * Check an anonymised copy masks personal data by column name after the import: running the generated commands
+     * (with a stand-in mysql that lists some columns) updates exactly the personal columns, with values derived from
+     * the originals, and skips names that aren't plain identifiers.
+     *
+     * @return void
+     */
+    public function test_an_anonymised_copy_masks_personal_data(): void
+    {
+        $staging = Website::factory()->create(['server_id' => $this->website->server_id, 'name' => 'Shop staging', 'deployment_slug' => 'shop-staging']);
+        $this->actingAs($this->owner)->post("{$this->base}/database/copy", ['target_website_id' => $staging->id, 'confirmation' => 'Shop staging', 'anonymise' => '1'])->assertSessionHasNoErrors();
+        $this->assertTrue(DatabaseClone::query()->sole()->anonymise);
+        $command = (string) (collect($this->shell->ran)->last()['command'] ?? '');
+        $this->assertStringContainsString('# Mask personal data', $command);
+        $masking = substr($command, (int) strpos($command, '# Mask personal data'));
+
+        // A stand-in mysql: information_schema queries return columns by pattern; UPDATEs are recorded.
+        $stub = <<<'BASH'
+        mysql() {
+            local sql="${@: -1}"
+            case "$sql" in
+                *"email"*"SELECT"*|*"SELECT"*"email"*) printf 'users\temail\ncustomers\tbilling_email\n' ;;
+                *"SELECT"*"first_name"*) printf 'users\tname\n' ;;
+                *"SELECT"*"phone"*) printf 'bad-table;drop\tphone\n' ;;
+                UPDATE*) echo "$sql" >> "$LOG" ;;
+            esac
+        }
+        BASH;
+        $log = tempnam(sys_get_temp_dir(), 'mask');
+        exec('LOG='.escapeshellarg((string) $log).' bash -c '.escapeshellarg($stub."\n".$masking).' 2>&1', $output, $code);
+        $this->assertSame(0, $code, implode("\n", $output));
+        $updates = (string) file_get_contents((string) $log);
+        $this->assertStringContainsString("UPDATE `shop_staging`.`users` SET `email` = CONCAT('user-', SUBSTRING(MD5(`email`), 1, 12), '@example.test') WHERE `email` IS NOT NULL", $updates);
+        $this->assertStringContainsString('UPDATE `shop_staging`.`customers` SET `billing_email`', $updates);
+        $this->assertStringContainsString("UPDATE `shop_staging`.`users` SET `name` = CONCAT('Person '", $updates);
+        $this->assertStringNotContainsString('bad-table', $updates, 'Names that aren’t plain identifiers are skipped.');
+        @unlink((string) $log);
+    }
+
     public function test_database_tools_need_the_plan_but_removing_users_does_not(): void
     {
         $user = new DatabaseUser;

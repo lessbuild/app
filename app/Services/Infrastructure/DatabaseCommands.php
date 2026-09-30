@@ -72,9 +72,10 @@ final class DatabaseCommands
      * @param  Website  $source
      * @param  Website  $target
      * @param  string  $mode  full, sample or schema
+     * @param  bool  $anonymise  mask personal data in the copy afterwards
      * @return string
      */
-    public function copy(Website $source, Website $target, string $mode = 'full'): string
+    public function copy(Website $source, Website $target, string $mode = 'full', bool $anonymise = false): string
     {
         $password = $this->rootPassword($source);
         $from = $this->identifier($source->databaseIdentifier());
@@ -86,7 +87,45 @@ final class DatabaseCommands
         };
 
         return 'set -o pipefail; MYSQL_PWD='.escapeshellarg($password)." mysqldump --protocol=socket -u root --single-transaction --routines --triggers --events --add-drop-table{$rows} {$from}"
-            .' | MYSQL_PWD='.escapeshellarg($password)." mysql --protocol=socket -u root {$to}";
+            .' | MYSQL_PWD='.escapeshellarg($password)." mysql --protocol=socket -u root {$to}".($anonymise ? "\n".$this->anonymise($target) : '');
+    }
+
+    /**
+     * The personal data masked in anonymised copies: column names (lower case, whole name) and the value put in their
+     * place, derived from the original so distinct values stay distinct (unique indexes survive).
+     *
+     * @var array<string, string>
+     */
+    public const MASKS = [
+        '^(email|e_mail|email_address|.+_email)$' => "CONCAT('user-', SUBSTRING(MD5(`%s`), 1, 12), '@example.test')",
+        '^(name|first_name|last_name|full_name|firstname|lastname|surname|display_name|contact_name|billing_name|shipping_name)$' => "CONCAT('Person ', SUBSTRING(MD5(`%s`), 1, 6))",
+        '^(phone|phone_number|mobile|telephone|.+_phone)$' => "CONCAT('+1555', LPAD(CONV(SUBSTRING(MD5(`%s`), 1, 6), 16, 10) % 10000000, 7, '0'))",
+        '^(address|address1|address2|address_line_1|address_line_2|street|.+_address)$' => "'1 Example Street'",
+        '^(ip|ip_address|last_ip|.+_ip)$' => "'0.0.0.0'",
+        '^(date_of_birth|dob|birthday|birth_date)$' => 'NULL',
+    ];
+
+    /**
+     * Build the commands that mask personal data in a website's database: every text column whose name matches one of
+     * MASKS gets the masked value, keeping NULLs.
+     *
+     * @param  Website  $website
+     * @return string
+     */
+    public function anonymise(Website $website): string
+    {
+        $database = $this->identifier($website->databaseIdentifier());
+        $mysql = 'MYSQL_PWD='.escapeshellarg($this->rootPassword($website)).' mysql --protocol=socket -u root --batch --skip-column-names';
+        $lines = [];
+        foreach (self::MASKS as $pattern => $expression) {
+            $find = "SELECT table_name, column_name FROM information_schema.columns WHERE table_schema = '{$database}' AND data_type IN ('varchar','char','text','tinytext','mediumtext','longtext','date','datetime') AND LOWER(column_name) REGEXP '{$pattern}'";
+            $update = str_replace('`%s`', '`$column`', $expression);
+            $lines[] = "{$mysql} -e ".escapeshellarg($find).' | while IFS=$\'\t\' read -r table column; do '
+                .'case "$table$column" in *[!A-Za-z0-9_]*) continue ;; esac; '
+                .$mysql.' -e "'.str_replace(['"', '`'], ['\\"', '\\`'], 'UPDATE `'.$database.'`.`$table` SET `$column` = '.$update.' WHERE `$column` IS NOT NULL').'"; done';
+        }
+
+        return "# Mask personal data\n".implode("\n", $lines);
     }
 
     /**

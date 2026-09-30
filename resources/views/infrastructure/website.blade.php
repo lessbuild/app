@@ -241,6 +241,7 @@
                                 @endforeach
                             </x-signal.ui.select-field>
                             <x-signal.ui.input-field id="copy-confirmation" name="confirmation" :label="__('Type its name to confirm')" autocomplete="off" maxlength="120" required />
+                            <div class="sm:col-span-2"><x-signal.ui.checkbox id="copy-anonymise" name="anonymise" value="1" :checked="true" :description="__('Replace emails, names, phone numbers, addresses, IP addresses and dates of birth in the copy, by column name. Recommended for staging.')">{{ __('Mask personal data') }}</x-signal.ui.checkbox></div>
                             <p class="text-xs text-muted sm:col-span-2">{{ __('Every table in the chosen website’s database is replaced with a copy of this one. This can’t be undone.') }}</p>
                             <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="danger">{{ __('Copy database') }}</x-signal.ui.button></div>
                         </form>

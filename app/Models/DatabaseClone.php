@@ -19,6 +19,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $requested_by
  * @property string $status queued, running, succeeded or failed
  * @property string $mode full, sample (the first rows of each table) or schema
+ * @property bool $anonymise whether personal data is masked in the copy
  * @property string|null $error
  * @property CarbonImmutable|null $started_at
  * @property CarbonImmutable|null $finished_at
@@ -59,6 +60,6 @@ class DatabaseClone extends Model
      */
     protected function casts(): array
     {
-        return ['started_at' => 'immutable_datetime', 'finished_at' => 'immutable_datetime'];
+        return ['anonymise' => 'boolean', 'started_at' => 'immutable_datetime', 'finished_at' => 'immutable_datetime'];
     }
 }

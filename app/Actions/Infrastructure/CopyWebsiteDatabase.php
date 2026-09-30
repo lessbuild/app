@@ -23,9 +23,10 @@ final class CopyWebsiteDatabase
      * @param  Website  $source
      * @param  Website  $target
      * @param  string  $confirmation
+     * @param  bool  $anonymise  mask personal data in the copy
      * @return DatabaseClone
      */
-    public function handle(User $actor, Website $source, Website $target, string $confirmation): DatabaseClone
+    public function handle(User $actor, Website $source, Website $target, string $confirmation, bool $anonymise = false): DatabaseClone
     {
         Gate::forUser($actor)->authorize('manageDatabase', $source);
         Gate::forUser($actor)->authorize('manageDatabase', $target);
@@ -39,12 +40,12 @@ final class CopyWebsiteDatabase
             throw ValidationException::withMessages(['confirmation' => __('Type the name of the website being overwritten exactly.')]);
         }
 
-        return DB::transaction(function () use ($actor, $source, $target): DatabaseClone {
+        return DB::transaction(function () use ($actor, $source, $target, $anonymise): DatabaseClone {
             if (DatabaseClone::query()->whereIn('status', ['queued', 'running'])->where(fn ($query) => $query->whereIn('target_website_id', [$source->id, $target->id])->orWhere('source_website_id', $target->id))->lockForUpdate()->exists()) {
                 throw ValidationException::withMessages(['target_website_id' => __('A copy involving these websites is already running.')]);
             }
             $clone = new DatabaseClone;
-            $clone->forceFill(['source_website_id' => $source->id, 'target_website_id' => $target->id, 'requested_by' => $actor->id, 'status' => 'queued'])->save();
+            $clone->forceFill(['source_website_id' => $source->id, 'target_website_id' => $target->id, 'requested_by' => $actor->id, 'status' => 'queued', 'anonymise' => $anonymise])->save();
             CopyDatabase::dispatch($clone->id)->afterCommit();
 
             return $clone;

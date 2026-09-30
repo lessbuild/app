@@ -63,7 +63,7 @@ final class CopyDatabase implements ShouldQueue
 
             return;
         }
-        $result = $shell->run($server, $commands->copy($clone->source, $clone->target, $clone->mode));
+        $result = $shell->run($server, $commands->copy($clone->source, $clone->target, $clone->mode, $clone->anonymise));
         if (! $result->successful()) {
             $this->failed(new RuntimeException('The copy failed: '.str(trim($result->errorOutput ?: $result->output))->limit(500)));
 

@@ -29,7 +29,7 @@ final class CopyWebsiteDatabaseController
     {
         $request->validate(['target_website_id' => ['required', 'integer'], 'confirmation' => ['required', 'string', 'max:120']]);
         $target = Website::query()->where('account_id', $website->account_id)->findOrFail($request->integer('target_website_id'));
-        $copy->handle($user, $website, $target, $request->string('confirmation')->toString());
+        $copy->handle($user, $website, $target, $request->string('confirmation')->toString(), $request->boolean('anonymise'));
 
         return to_route('infrastructure.websites.show', [$project, $website->id, 'tab' => 'database'])->with('status', __('Copying the database into :website.', ['website' => $target->name]));
     }

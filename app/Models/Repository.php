@@ -52,6 +52,7 @@ use Illuminate\Support\Carbon;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property bool $preview_database_anonymise mask personal data in previews' database copies
  * @property string $preview_database_mode how previews copy the database: full, sample or schema
  * @property int|null $preview_database_source_website_id the website whose database new previews start from
  * @property-read Project $project
@@ -226,7 +227,7 @@ class Repository extends Model
         return [
             'auto_deploy_include_paths' => 'array', 'auto_deploy_exclude_paths' => 'array', 'webhook_secret' => 'encrypted',
             'webhook_enabled' => 'boolean', 'webhook_pending' => 'boolean', 'webhook_last_received_at' => 'immutable_datetime',
-            'previews_enabled' => 'boolean', 'build_cache_enabled' => 'boolean', 'build_cache_version' => 'integer', 'preview_ttl_hours' => 'integer',
+            'previews_enabled' => 'boolean', 'preview_database_anonymise' => 'boolean', 'build_cache_enabled' => 'boolean', 'build_cache_version' => 'integer', 'preview_ttl_hours' => 'integer',
         ];
     }
 }

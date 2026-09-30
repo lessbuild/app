@@ -175,7 +175,7 @@ final class Previews
             return true;
         }
         $clone = new DatabaseClone;
-        $clone->forceFill(['source_website_id' => $source->id, 'target_website_id' => $website->id, 'requested_by' => null, 'status' => 'queued', 'mode' => $preview->sourceRepository->preview_database_mode])->save();
+        $clone->forceFill(['source_website_id' => $source->id, 'target_website_id' => $website->id, 'requested_by' => null, 'status' => 'queued', 'mode' => $preview->sourceRepository->preview_database_mode, 'anonymise' => $preview->sourceRepository->preview_database_anonymise])->save();
         Bus::chain([new CopyDatabase($clone->id), new DeployPreviewAfterDatabaseCopy($preview->id)])->dispatch();
 
         return true;

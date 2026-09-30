@@ -152,6 +152,7 @@
                         @endforeach
                     </x-signal.ui.select-field>
                 </div>
+                <div class="sm:col-span-2"><x-signal.ui.checkbox name="preview_database_anonymise" value="1" unchecked-value="0" :checked="(bool) old('preview_database_anonymise', $repository->preview_database_anonymise)" :description="__('Emails, names, phone numbers, addresses, IP addresses and dates of birth are replaced in each preview’s copy, by column name.')">{{ __('Mask personal data') }}</x-signal.ui.checkbox></div>
                 <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save preview settings') }}</x-signal.ui.button></div>
             </form>
         </x-signal.ui.settings-section>
