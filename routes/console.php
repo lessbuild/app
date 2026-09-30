@@ -37,6 +37,7 @@ use App\Services\Admin\PlatformBackups;
 use App\Services\Admin\SelfMonitoring;
 use App\Services\Admin\SystemHealth;
 use App\Services\Analytics\GeoIpDatabase;
+use App\Services\Analytics\SiteNotifier;
 use App\Services\Billing\Entitlements;
 use App\Services\Billing\Referrals;
 use App\Services\Deploy\Automation;
@@ -85,6 +86,16 @@ Artisan::command('billing:report-usage', function (ReportUsage $report): void {
 })->purpose('Send Stripe new pay-as-you-go usage beyond allowances');
 Schedule::command('billing:apply-ended')->hourly();
 Schedule::command('billing:report-usage')->hourlyAt(5);
+
+Artisan::command('analytics:send-reports', function (SiteNotifier $notifier): void {
+    $this->info("Sent {$notifier->sendDueReports()} site reports.");
+})->purpose('Send sites’ weekly and monthly analytics reports that are due');
+Schedule::command('analytics:send-reports')->everyFifteenMinutes()->withoutOverlapping();
+
+Artisan::command('analytics:check-spikes', function (SiteNotifier $notifier): void {
+    $this->info("Sent {$notifier->checkSpikes()} traffic spike alerts.");
+})->purpose('Alert sites whose current visitors reached their spike threshold');
+Schedule::command('analytics:check-spikes')->everyFiveMinutes()->withoutOverlapping();
 
 Artisan::command('analytics:dispatch-pending {--limit=500}', function (DispatchPendingBatches $dispatch): void {
     $this->info("Dispatched {$dispatch->handle((int) $this->option('limit'))} pending batches.");

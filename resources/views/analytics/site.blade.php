@@ -72,6 +72,42 @@
             </div>
         </x-signal.ui.settings-section>
 
+        <x-signal.ui.settings-section :title="__('Reports and alerts')" :description="__('Email or Slack a summary every week (Mondays) or month (the 1st), from 8am in the site’s time zone, or an alert when a lot of people are on the site at once.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @forelse ($site->notifications()->orderBy('id')->get() as $notification)
+                    <div class="flex flex-wrap items-center justify-between gap-3 text-sm">
+                        <span>
+                            <span class="font-bold text-ink">{{ __(\App\Models\AnalyticsNotification::KINDS[$notification->kind] ?? $notification->kind) }}</span>
+                            <span class="text-muted">· {{ $notification->destination() }}@if ($notification->threshold) · {{ trans_choice('at :count visitor|at :count visitors', $notification->threshold, ['count' => number_format($notification->threshold)]) }}@endif @if ($notification->last_sent_at) · {{ __('last sent :time', ['time' => $notification->last_sent_at->diffForHumans()]) }}@endif</span>
+                            @if ($notification->last_error)<span class="block text-xs text-danger">{{ $notification->last_error }}</span>@endif
+                        </span>
+                        <form method="POST" action="{{ route('analytics.sites.notifications.destroy', [$project, $site->id, $notification->id]) }}">
+                            @csrf @method('DELETE')
+                            <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button>
+                        </form>
+                    </div>
+                @empty
+                    <p class="text-sm text-muted">{{ __('No reports or alerts yet.') }}</p>
+                @endforelse
+                <form method="POST" action="{{ route('analytics.sites.notifications.store', [$project, $site->id]) }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4 lg:items-end">
+                    @csrf
+                    <x-signal.ui.select-field name="kind" :label="__('What')">
+                        @foreach (\App\Models\AnalyticsNotification::KINDS as $value => $label)
+                            <option value="{{ $value }}" @selected(old('kind') === $value)>{{ __($label) }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.select-field name="channel" :label="__('How')">
+                        @foreach (\App\Models\AnalyticsNotification::CHANNELS as $value => $label)
+                            <option value="{{ $value }}" @selected(old('channel') === $value)>{{ __($label) }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                    <x-signal.ui.input-field name="target" :label="__('Email or Slack webhook address')" maxlength="500" required />
+                    <x-signal.ui.input-field name="threshold" type="number" min="1" :label="__('Spike at (current visitors)')" :description="__('For spike alerts only.')" />
+                    <div class="sm:col-span-2 lg:col-span-4"><x-signal.ui.button type="submit" variant="secondary">{{ __('Add') }}</x-signal.ui.button></div>
+                </form>
+            </div>
+        </x-signal.ui.settings-section>
+
         <x-signal.ui.settings-section :title="__('Share the report')" :description="__('Give clients or your team a read-only link to this site’s report. They don’t need an account. Releases and goal settings aren’t shown.')">
             <div class="grid gap-4 p-4 sm:p-6">
                 @if ($site->share_token)

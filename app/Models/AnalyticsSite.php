@@ -122,6 +122,16 @@ class AnalyticsSite extends Model
     }
 
     /**
+     * Get the site's scheduled reports and traffic spike alerts.
+     *
+     * @return HasMany<AnalyticsNotification, $this>
+     */
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(AnalyticsNotification::class, 'site_id');
+    }
+
+    /**
      * Get the site's goals.
      *
      * @return HasMany<AnalyticsGoal, $this>
