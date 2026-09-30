@@ -152,6 +152,8 @@ return [
                 ['Add storage', 'Connect S3-compatible storage from Account → Providers.'],
                 ['Schedule backups', 'On the website’s page, add a backup schedule. Every backup is checked after it’s written.'],
                 ['Restore', 'Infrastructure → Backups lists every backup. Choose Restore and follow its progress.'],
+                ['A second copy', 'When scheduling backups, choose Also copy to for a second destination (another provider or region). Each backup is sent there too, for a 3-2-1 setup; the backup list shows whether the second copy was made.'],
+                ['Restore drills', 'Leave Monthly restore drill ticked and, once a month, the latest backup is restored into a scratch area on the server and checked (the database loads and the app starts), then cleaned up. If it fails, the account’s owners are emailed.'],
             ],
         ],
         'deploy-from-git' => [

@@ -5,6 +5,8 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-01', 'title' => 'Infrastructure: servers that fit', 'changes' => [
+        'Backups to two places: send each scheduled backup to a second destination too, for a 3-2-1 setup.',
+        'Monthly restore drills: the latest backup is restored into a scratch area and checked each month, and owners hear if it fails.',
         'Snapshots before risky changes: a provider snapshot is taken before updates, security fixes and runtime switches, keeping the three newest.',
         'Self-healing websites: when a health check fails, stopped services are restarted automatically, and the incident shows what was done.',
         'Disk clean-up: see what old releases, logs, caches, Docker images and temporary files take on a server, and clear them safely in one click.',

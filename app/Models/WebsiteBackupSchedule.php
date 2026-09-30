@@ -20,6 +20,9 @@ use Illuminate\Support\Carbon;
  * @property int|null $weekday 0 (Sunday) to 6, for weekly schedules
  * @property string $run_at HH:MM in UTC
  * @property int $retention_count
+ * @property int|null $secondary_destination_id a second destination each backup is also sent to
+ * @property bool $monthly_drill restore the latest backup into a scratch area each month to check it works
+ * @property-read BackupDestination|null $secondaryDestination
  * @property CarbonImmutable|null $last_queued_at
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -74,6 +77,16 @@ class WebsiteBackupSchedule extends Model
      */
     protected function casts(): array
     {
-        return ['weekday' => 'integer', 'retention_count' => 'integer', 'last_queued_at' => 'immutable_datetime'];
+        return ['monthly_drill' => 'boolean', 'weekday' => 'integer', 'retention_count' => 'integer', 'last_queued_at' => 'immutable_datetime'];
+    }
+
+    /**
+     * Get the second destination backups are also sent to.
+     *
+     * @return BelongsTo<BackupDestination, $this>
+     */
+    public function secondaryDestination(): BelongsTo
+    {
+        return $this->belongsTo(BackupDestination::class, 'secondary_destination_id');
     }
 }

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Jobs\Infrastructure;
 
+use App\Enums\AccountRole;
 use App\Models\BackupVerification;
+use App\Notifications\RestoreDrillFailedNotification;
 use App\Services\Infrastructure\BackupScripts;
 use App\Services\Infrastructure\ServerShell;
 use Carbon\CarbonImmutable;
@@ -12,6 +14,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Support\Facades\Notification;
 use Throwable;
 
 /** Restores a snapshot into a temporary directory and database, checks it, and records how far it got from the script's markers. */
@@ -127,5 +130,12 @@ final class VerifyWebsiteBackup implements ShouldQueue
             'completed_at' => now(),
             'duration_seconds' => $verification->started_at === null ? null : (int) $verification->started_at->diffInSeconds(now()),
         ])->save();
+        // A failed monthly drill (not one someone asked for) tells the account's owners.
+        if ($stage !== null && $verification->requested_by === null) {
+            $website = $verification->backup->website;
+            $owners = $website->account->members()->wherePivot('role', AccountRole::Owner->value)->get();
+            $projectId = $website->environment?->project_id;
+            Notification::send($owners, new RestoreDrillFailedNotification($verification, $projectId !== null ? route('infrastructure.websites.show', [$projectId, $website->id, 'tab' => 'backups']) : route('dashboard')));
+        }
     }
 }

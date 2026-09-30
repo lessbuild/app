@@ -264,7 +264,7 @@
                 <ul class="divide-y divide-line text-sm">
                     @foreach ($schedules as $schedule)
                         <li class="flex flex-wrap items-center justify-between gap-3 py-2">
-                            <span>{{ $schedule->frequency === 'weekly' ? __('Every :day at :time', ['day' => \Carbon\CarbonImmutable::now()->startOfWeek(\Carbon\CarbonInterface::SUNDAY)->addDays((int) $schedule->weekday)->dayName, 'time' => $schedule->run_at]) : __('Every day at :time', ['time' => $schedule->run_at]) }} → {{ $schedule->destination->name }} · {{ trans_choice('keeps :count snapshot|keeps :count snapshots', $schedule->retention_count) }}</span>
+                            <span>{{ $schedule->frequency === 'weekly' ? __('Every :day at :time', ['day' => \Carbon\CarbonImmutable::now()->startOfWeek(\Carbon\CarbonInterface::SUNDAY)->addDays((int) $schedule->weekday)->dayName, 'time' => $schedule->run_at]) : __('Every day at :time', ['time' => $schedule->run_at]) }} → {{ $schedule->destination->name }}@if ($schedule->secondaryDestination) {{ __('and :destination', ['destination' => $schedule->secondaryDestination->name]) }}@endif · {{ trans_choice('keeps :count snapshot|keeps :count snapshots', $schedule->retention_count) }}@if ($schedule->monthly_drill) · {{ __('monthly restore drill') }}@endif</span>
                             @if ($canManage)
                                 <form method="POST" action="{{ route('infrastructure.websites.backup-schedules.destroy', [$project, $website->id, $schedule->id]) }}">@csrf @method('DELETE')<x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Remove') }}</x-signal.ui.button></form>
                             @endif
@@ -305,6 +305,13 @@
                             </x-signal.ui.select-field>
                             <x-signal.ui.input-field id="schedule-time" name="run_at" type="time" :label="__('Time (UTC)')" value="02:00" required />
                             <x-signal.ui.input-field id="schedule-retention" name="retention_count" type="number" min="1" max="365" :label="__('Snapshots to keep')" value="14" required />
+                            <x-signal.ui.select-field id="schedule-secondary" name="secondary_destination_id" :label="__('Also copy to (optional)')" :description="__('A second destination, such as another provider or region, for a copy that survives the first one being lost.')">
+                                <option value="">{{ __('Nowhere else') }}</option>
+                                @foreach ($backupDestinations as $destination)
+                                    <option value="{{ $destination->id }}">{{ $destination->name }}</option>
+                                @endforeach
+                            </x-signal.ui.select-field>
+                            <div class="sm:col-span-2"><x-signal.ui.checkbox id="schedule-drill" name="monthly_drill" value="1" unchecked-value="0" :checked="true" :description="__('Once a month, the latest backup is restored into a scratch area on the server and checked; owners are emailed if it fails.')">{{ __('Monthly restore drill') }}</x-signal.ui.checkbox></div>
                             <div class="flex justify-end self-end"><x-signal.ui.button type="submit" variant="primary">{{ __('Save schedule') }}</x-signal.ui.button></div>
                         </form>
                     </x-signal.overlays.modal>
@@ -323,7 +330,7 @@
                             @php($verification = $backup->verifications->first())
                             <li class="flex flex-wrap items-center justify-between gap-3 py-3">
                                 <div class="min-w-0 text-sm">
-                                    <p class="flex flex-wrap items-center gap-2"><span class="font-bold text-ink">{{ $backup->created_at?->toDayDateTimeString() }}</span> @include('infrastructure._backup-status', ['status' => $backup->status]) <span class="text-xs text-muted">{{ $backup->destination->name }}@if ($backup->size_bytes !== null) · {{ \Illuminate\Support\Number::fileSize($backup->size_bytes, maxPrecision: 1) }}@endif @if ($backup->website_backup_schedule_id) · {{ __('scheduled') }}@endif</span></p>
+                                    <p class="flex flex-wrap items-center gap-2"><span class="font-bold text-ink">{{ $backup->created_at?->toDayDateTimeString() }}</span> @include('infrastructure._backup-status', ['status' => $backup->status]) <span class="text-xs text-muted">{{ $backup->destination->name }}@if ($backup->size_bytes !== null) · {{ \Illuminate\Support\Number::fileSize($backup->size_bytes, maxPrecision: 1) }}@endif @if ($backup->website_backup_schedule_id) · {{ __('scheduled') }}@endif @if ($backup->secondary_status === 'copied') · {{ __('second copy made') }}@elseif ($backup->secondary_status === 'failed') · <span class="text-danger">{{ __('second copy failed') }}</span>@endif</span></p>
                                     @if ($backup->error)<p class="text-xs text-danger">{{ $backup->error }}</p>@endif
                                     @if ($restore)<p class="text-xs text-muted">{{ __('Restore:') }} {{ __($restore->status) }}@if ($restore->error) · <span class="text-danger">{{ $restore->error }}</span>@endif</p>@endif
                                     @if ($verification)<p class="text-xs text-muted">{{ __('Verification:') }} {{ __($verification->status) }}@if ($verification->error) · <span class="text-danger">{{ $verification->error }}</span>@endif</p>@endif

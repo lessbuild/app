@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Tests\Feature\Infrastructure;
 
+use App\Actions\Infrastructure\RunRestoreDrills;
 use App\Enums\AccountRole;
 use App\Jobs\Infrastructure\CreateWebsiteBackup;
 use App\Models\BackupDestination;
@@ -16,10 +17,12 @@ use App\Models\User;
 use App\Models\Website;
 use App\Models\WebsiteBackup;
 use App\Models\WebsiteBackupSchedule;
+use App\Notifications\RestoreDrillFailedNotification;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Queue;
 use RuntimeException;
 use Tests\Feature\Monitoring\MonitoringHelpers;
@@ -181,6 +184,41 @@ final class BackupsTest extends TestCase
 
         $this->actingAs($this->owner)->delete("{$this->base}/websites/{$this->website->id}/backup-schedules/{$schedule->id}")->assertRedirect();
         $this->assertModelMissing($schedule);
+    }
+
+    /**
+     * Check a schedule can send each backup to a second destination too (reported, and never failing the backup),
+     * and monthly restore drills verify each website's latest backup once in thirty days, emailing owners when one
+     * fails.
+     *
+     * @return void
+     */
+    public function test_backups_go_to_two_places_and_are_drilled_monthly(): void
+    {
+        Notification::fake();
+        $primary = BackupDestination::factory()->create(['account_id' => $this->project->account_id, 'name' => 'Spaces']);
+        $second = BackupDestination::factory()->create(['account_id' => $this->project->account_id, 'name' => 'Backblaze']);
+        $url = "{$this->base}/websites/{$this->website->id}/backup-schedules";
+        $this->actingAs($this->owner)->post($url, ['backup_destination_id' => $primary->id, 'secondary_destination_id' => $primary->id, 'frequency' => 'daily', 'run_at' => '02:00', 'retention_count' => 7])->assertSessionHasErrors('secondary_destination_id');
+        $this->actingAs($this->owner)->post($url, ['backup_destination_id' => $primary->id, 'secondary_destination_id' => $second->id, 'frequency' => 'daily', 'run_at' => '02:00', 'retention_count' => 7, 'monthly_drill' => '1'])->assertRedirect();
+        $schedule = WebsiteBackupSchedule::query()->sole();
+        $this->assertSame([$second->id, true], [$schedule->secondary_destination_id, $schedule->monthly_drill]);
+        $this->actingAs($this->owner)->get("{$this->base}/websites/{$this->website->id}?tab=backups")->assertSee('Spaces and Backblaze')->assertSee('monthly restore drill');
+
+        $this->shell->reply(self::SNAPSHOT_OUTPUT."\nBUILDPUSHER_SECOND_COPY=copied\n");
+        $backup = $this->backup(['status' => WebsiteBackup::STATUS_QUEUED, 'backup_destination_id' => $primary->id, 'website_backup_schedule_id' => $schedule->id, 'snapshot_id' => null]);
+        app()->call([new CreateWebsiteBackup($backup->id), 'handle']);
+        $script = (string) (collect($this->shell->ran)->last()['command'] ?? '');
+        $this->assertSame(2, substr_count($script, 'restic backup'), 'Backed up to both destinations.');
+        $this->assertStringContainsString('BUILDPUSHER_SECOND_COPY=failed', $script, 'A failed second copy is reported, not fatal.');
+        $this->assertSame([WebsiteBackup::STATUS_SUCCEEDED, 'copied'], [$this->reload($backup)->status, $this->reload($backup)->secondary_status]);
+
+        $this->shell->reply("BP_FAILURE_STAGE=integrity\nBP_INTEGRITY_STATUS=failed\nBP_CLEANUP_STATUS=passed\n", 1);
+        $this->assertSame(1, app(RunRestoreDrills::class)->handle());
+        $drill = BackupVerification::query()->sole();
+        $this->assertSame([$backup->id, null, 'failed'], [$drill->website_backup_id, $drill->requested_by, $drill->status]);
+        Notification::assertSentTo($this->owner, RestoreDrillFailedNotification::class);
+        $this->assertSame(0, app(RunRestoreDrills::class)->handle(), 'Once in thirty days.');
     }
 
     public function test_restores_run_with_a_safety_rollback_and_only_for_completed_backups(): void

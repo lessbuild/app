@@ -57,7 +57,7 @@ final class CreateWebsiteBackup implements ShouldQueue
             ->update(['status' => WebsiteBackup::STATUS_RUNNING, 'started_at' => CarbonImmutable::now('UTC')->format('Y-m-d H:i:s.u'), 'error' => null]) === 0) {
             return;
         }
-        $backup = WebsiteBackup::query()->with(['website.server', 'destination', 'schedule'])->findOrFail($this->backupId);
+        $backup = WebsiteBackup::query()->with(['website.server', 'destination', 'schedule.secondaryDestination'])->findOrFail($this->backupId);
         try {
             $server = $backup->website->server ?? throw new RuntimeException('The website has no server.');
             $result = $shell->run($server, $scripts->backup($backup));
@@ -77,6 +77,7 @@ final class CreateWebsiteBackup implements ShouldQueue
         $backup->forceFill([
             'status' => WebsiteBackup::STATUS_SUCCEEDED, 'snapshot_id' => strtolower($snapshot[1]), 'size_bytes' => isset($bytes[1]) ? (int) $bytes[1] : null,
             'https_verified_at' => now(), 'completed_at' => now(),
+            'secondary_status' => preg_match('/BUILDPUSHER_SECOND_COPY=(copied|failed)/', $result->output, $second) === 1 ? $second[1] : null,
         ])->save();
         $backup->destination->forceFill(['last_verified_at' => now(), 'last_error' => null])->save();
     }

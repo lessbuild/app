@@ -26,6 +26,7 @@ use Illuminate\Support\Carbon;
  * @property CarbonImmutable|null $started_at
  * @property CarbonImmutable|null $completed_at
  * @property string|null $error
+ * @property string|null $secondary_status whether the second copy was made: copied or failed; null without one
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property-read Website $website

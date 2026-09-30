@@ -421,6 +421,11 @@ Artisan::command('backups:run', function (QueueWebsiteBackup $queue, Entitlement
 })->purpose('Queue scheduled website backups that are due');
 Schedule::command('backups:run')->everyFiveMinutes()->withoutOverlapping(10)->onOneServer();
 
+Artisan::command('backups:drill', function (App\Actions\Infrastructure\RunRestoreDrills $drills): void {
+    $this->info("Started {$drills->handle()} restore drills.");
+})->purpose('Restore each website’s latest backup into a scratch area once a month and check it');
+Schedule::command('backups:drill')->dailyAt('04:40')->withoutOverlapping()->onOneServer();
+
 Artisan::command('databases:expire-users', function (RemoveDatabaseUser $remove): int {
     $expired = DatabaseUser::query()->whereIn('status', ['active', 'failed'])->whereNotNull('expires_at')->where('expires_at', '<=', now())->get();
     $expired->each(fn (DatabaseUser $user) => $remove->handle($user));

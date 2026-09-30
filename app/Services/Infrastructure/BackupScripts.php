@@ -53,6 +53,33 @@ final class BackupScripts
         if ! {$restic} restic snapshots --json >/dev/null 2>&1; then {$restic} restic init; fi
         {$restic} restic backup --json --tag {$tag} database.sql .env storage
         {$restic} restic forget --keep-last {$retention} --tag {$tag} --prune
+        {$this->secondCopy($backup, $tag, $retention)}
+        BASH;
+    }
+
+    /**
+     * Render the second copy: the same staged files backed up to the schedule's second destination too, with its own
+     * credentials. It never fails the backup; it reports BUILDPUSHER_SECOND_COPY=copied or failed.
+     *
+     * @param  WebsiteBackup  $backup
+     * @param  string  $tag
+     * @param  int  $retention
+     * @return string
+     */
+    private function secondCopy(WebsiteBackup $backup, string $tag, int $retention): string
+    {
+        $secondary = $backup->schedule?->secondaryDestination;
+        if ($secondary === null || $secondary->id === $backup->backup_destination_id) {
+            return '';
+        }
+        $restic = ResticRepository::environment($secondary, $backup->website);
+
+        return <<<BASH
+        if { {$restic} restic snapshots --json >/dev/null 2>&1 || {$restic} restic init >/dev/null; } && {$restic} restic backup --quiet --tag {$tag} database.sql .env storage >/dev/null && {$restic} restic forget --keep-last {$retention} --tag {$tag} --prune >/dev/null; then
+            echo 'BUILDPUSHER_SECOND_COPY=copied'
+        else
+            echo 'BUILDPUSHER_SECOND_COPY=failed'
+        fi
         BASH;
     }
 

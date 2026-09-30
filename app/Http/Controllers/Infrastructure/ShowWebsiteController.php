@@ -55,7 +55,7 @@ final class ShowWebsiteController
             'temporaryDomains' => filled(config('infrastructure.temporary_base_domain')),
             'canManage' => $user->can('update', $website),
             'backups' => $backups->recent($website->account_id, $website, 20),
-            'schedules' => $website->backupSchedules()->with('destination')->get(),
+            'schedules' => $website->backupSchedules()->with(['destination', 'secondaryDestination'])->get(),
             'backupDestinations' => BackupDestination::query()->where('account_id', $website->account_id)->orderBy('name')->get(),
             'canBackUp' => $user->can('backUp', $website),
             'canManageDatabase' => $user->can('manageDatabase', $website),
