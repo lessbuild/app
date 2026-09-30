@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Analytics;
 
+use App\Models\AnalyticsAdSpend;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Analytics\CampaignResultsQuery;
@@ -18,7 +19,7 @@ final class ShowCampaignsController
 {
     /**
      * Show the campaign link builder (building the link from the query string when a URL is given) and how the site's
-     * tagged campaigns did over the last 30 days.
+     * tagged campaigns did over the last 30 days, with the ad spend imported for them.
      *
      * @param  Request  $request
      * @param  User  $user
@@ -48,6 +49,10 @@ final class ShowCampaignsController
             'link' => $link,
             'invalid' => is_string($url) && $url !== '' && $link === null,
             'results' => $site !== null ? $campaigns->handle($site) : [],
+            'canManage' => $site !== null && $user->can('update', $site),
+            // What spend has been imported, per source: days, total rows and the dates covered.
+            'spend' => $site === null ? collect() : AnalyticsAdSpend::query()->where('site_id', $site->id)->toBase()
+                ->selectRaw('source, COUNT(*) AS days, MIN(date) AS first_date, MAX(date) AS last_date')->groupBy('source')->orderBy('source')->get(),
         ]);
     }
 }

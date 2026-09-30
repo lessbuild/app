@@ -351,7 +351,7 @@ return [
                 'description' => 'Explore traffic, sources and goals, with the releases you shipped marked on the same reports.',
                 'features' => ['Pages, channels, campaigns, places and devices', 'Goals, funnels, revenue and items sold', 'Releases and notes on the chart'],
             ],
-            'capabilities' => ['Cookieless', 'UTM campaigns', 'Goals and funnels', 'Core Web Vitals', 'Google Search Console', 'Google Analytics import', 'Slack', 'BigQuery', 'CSV exports'],
+            'capabilities' => ['Cookieless', 'UTM campaigns', 'Ad spend and ROAS', 'Goals and funnels', 'Core Web Vitals', 'Google Search Console', 'Google Analytics import', 'Slack', 'BigQuery', 'CSV exports'],
             'preview' => [
                 'title' => 'Site overview',
                 'context' => 'storefront.example · last 30 days',
@@ -385,6 +385,7 @@ return [
                     ['Paths', 'Where visitors came from and went next, one page at a time.'],
                     ['Insights', 'The pages, channels and places that changed most, in plain sentences.'],
                     ['Properties, items and retention', 'Break events down by your own properties, see items sold, and follow weekly retention.'],
+                    ['Ad spend', 'Import what your ads cost to see cost per conversion and return on ad spend for each campaign.'],
                     ['Attribution, clicks and forms', 'First- and last-touch credit for conversions, click maps, and the form field people give up on.'],
                     ['A/B tests', 'Split visitors between variants and see which one wins your goal, with lift and statistical significance.'],
                 ]],
