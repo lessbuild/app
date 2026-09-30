@@ -60,6 +60,23 @@
         </x-signal.ui.settings-section>
     @endif
 
+    @if ($rightsizing !== [])
+        <x-signal.ui.settings-section id="rightsizing" :title="__('Right-size your servers')" :description="__('From the last :days days of CPU and memory: the load the busiest 5% of the time needs, with headroom to spare. Resize in your provider’s dashboard; plan for a short restart.', ['days' => \App\Services\Infrastructure\ServerRightsizing::DAYS])">
+            <x-signal.ui.table :caption="__('Suggested sizes')" :framed="false">
+                <x-slot:head><tr><th scope="col">{{ __('Server') }}</th><th scope="col">{{ __('Busiest 5%') }}</th><th scope="col">{{ __('Now') }}</th><th scope="col">{{ __('Suggested') }}</th><th scope="col" class="text-right">{{ __('Per month') }}</th></tr></x-slot:head>
+                @foreach ($rightsizing as $row)
+                    <tr>
+                        <td><a class="font-bold text-primary hover:underline" href="{{ route('infrastructure.servers.show', [$project, $row['server']->id]) }}">{{ $row['server']->name }}</a></td>
+                        <td class="text-sm">{{ __('CPU :cpu%, memory :memory%', ['cpu' => $row['cpu'], 'memory' => $row['memory']]) }}</td>
+                        <td class="text-sm"><span class="font-mono">{{ $row['current']['id'] }}</span> <span class="text-muted">· {{ __(':cpu vCPU, :memory GB', ['cpu' => $row['current']['vcpus'], 'memory' => $row['current']['memory_gb']]) }}</span></td>
+                        <td class="text-sm"><x-signal.ui.badge :tone="$row['direction'] === 'up' ? 'warning' : 'success'">{{ $row['direction'] === 'up' ? __('Bigger') : __('Smaller') }}</x-signal.ui.badge> <span class="font-mono">{{ $row['suggested']['id'] }}</span> <span class="text-muted">· {{ __(':cpu vCPU, :memory GB', ['cpu' => $row['suggested']['vcpus'], 'memory' => $row['suggested']['memory_gb']]) }}</span></td>
+                        <td class="text-right tabular-nums">{{ $row['saving'] === null ? '—' : ($row['saving'] >= 0 ? __('saves :amount', ['amount' => number_format($row['saving'], 2)]) : __('costs :amount more', ['amount' => number_format(-$row['saving'], 2)])) }}</td>
+                    </tr>
+                @endforeach
+            </x-signal.ui.table>
+        </x-signal.ui.settings-section>
+    @endif
+
     @if ($canBudget)
         <x-signal.ui.settings-section :title="__('Monthly budget')" :description="__('In US dollars, compared with the servers priced in dollars. Leave it empty for no budget.')">
             <form method="POST" action="{{ route('infrastructure.costs.budget', $project) }}" class="flex flex-wrap items-end gap-3 p-4 sm:p-6">

@@ -181,6 +181,7 @@ return [
                 ['label' => 'Costs', 'title' => 'Know what you spend', 'description' => 'Provider prices sit on every server, so costs never arrive as a surprise.', 'features' => [
                     ['Server costs', 'Provider prices on every server, and idle servers flagged.'],
                     ['Budgets', 'Per-project attribution and a monthly budget.'],
+                    ['Right-sizing', 'Suggestions for a smaller or bigger server from real CPU and memory use, with the saving.'],
                 ]],
             ],
             'workflows_heading' => 'Connect. Provision. Host.',

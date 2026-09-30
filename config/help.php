@@ -131,6 +131,16 @@ return [
                 ['Use it in an app', 'Attach the bucket to an environment and its details are added as environment variables (the usual AWS_ names), ready for Laravel’s s3 disk.'],
             ],
         ],
+        'costs' => [
+            'group' => 'infrastructure',
+            'title' => 'Costs and right-sizing',
+            'summary' => 'See what your servers cost, set a budget, and size them to what they actually use.',
+            'steps' => [
+                ['Costs', 'Infrastructure → Costs lists each server’s monthly price from your provider, its recent CPU and the projects on it, with totals.'],
+                ['Budget', 'Set a monthly budget there to be told when your servers go over it.'],
+                ['Right-sizing', 'Once a server has a few days of readings, Costs suggests a smaller size when even its busiest 5% of the time leaves most of it idle (with the monthly saving), or a bigger one when it runs hot. Suggestions keep headroom: at most 60% CPU and 70% memory at the same load. Resize in your provider’s dashboard.'],
+            ],
+        ],
         'backups' => [
             'group' => 'infrastructure',
             'title' => 'Back up and restore',

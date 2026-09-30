@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
+    ['date' => '2026-10-01', 'title' => 'Infrastructure: servers that fit', 'changes' => [
+        'Right-sizing: Costs suggests a smaller server when yours is mostly idle (with the saving) and a bigger one when it runs hot, from two weeks of CPU and memory.',
+    ]],
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [
         'Release analysis: after each deploy, errors, request time and the conversion rate are compared with before it, and a release that’s worse past your limits is rolled back automatically.',
         'Docker Compose deploys: ship an app as a Compose stack to your own server, with the web service behind Caddy and volumes kept between deploys.',

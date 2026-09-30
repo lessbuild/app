@@ -13,8 +13,10 @@ use App\Models\ServerMetric;
 use App\Models\User;
 use App\Models\Website;
 use App\Services\Infrastructure\ServerPricing;
+use App\Services\Infrastructure\ServerRightsizing;
 use Illuminate\Auth\Middleware\RequirePassword;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\DB;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
 
@@ -67,6 +69,38 @@ final class InfrastructureCostsTest extends TestCase
         $this->actingAs($this->owner)->put("{$this->base}/budget", ['monthly_infrastructure_budget' => '25'])->assertRedirect();
         $this->actingAs($this->owner)->get($this->base)->assertSee('Over by $5.00');
         $this->assertSame(25.0, $this->project->account->refresh()->monthly_infrastructure_budget);
+    }
+
+    /**
+     * Check two weeks of readings suggest a smaller size for a mostly idle server (with the saving) and a bigger one
+     * for a server running hot, while a server with too little history or a good fit gets nothing.
+     *
+     * @return void
+     */
+    public function test_servers_get_right_sizing_suggestions(): void
+    {
+        $this->cloud->sizes = [
+            ['slug' => 's-1vcpu-1gb', 'vcpus' => 1, 'memory' => 1024, 'price_monthly' => 6],
+            ['slug' => 's-2vcpu-4gb', 'vcpus' => 2, 'memory' => 4096, 'price_monthly' => 24],
+            ['slug' => 's-4vcpu-8gb', 'vcpus' => 4, 'memory' => 8192, 'price_monthly' => 48],
+        ];
+        $idle = Server::factory()->create(['provider_id' => $this->provider->id, 'account_id' => $this->project->account_id, 'provisioning_status' => Server::STATUS_ACTIVE, 'name' => 'oversized', 'size' => 's-4vcpu-8gb']);
+        $hot = Server::factory()->create(['provider_id' => $this->provider->id, 'account_id' => $this->project->account_id, 'provisioning_status' => Server::STATUS_ACTIVE, 'name' => 'stretched', 'size' => 's-1vcpu-1gb']);
+        $fine = Server::factory()->create(['provider_id' => $this->provider->id, 'account_id' => $this->project->account_id, 'provisioning_status' => Server::STATUS_ACTIVE, 'name' => 'fine', 'size' => 's-2vcpu-4gb']);
+        $new = Server::factory()->create(['provider_id' => $this->provider->id, 'account_id' => $this->project->account_id, 'provisioning_status' => Server::STATUS_ACTIVE, 'name' => 'new', 'size' => 's-4vcpu-8gb']);
+        foreach ([[$idle, 10, 20, 5000], [$hot, 95, 70, 5000], [$fine, 55, 60, 5000], [$new, 5, 5, 100]] as [$server, $cpu, $memory, $count]) {
+            foreach (array_chunk(range(1, $count), 500) as $chunk) {
+                DB::table('server_metrics')->insert(array_map(fn (int $minute): array => ['server_id' => $server->id, 'load_1m' => 1, 'load_5m' => 1, 'load_15m' => 1, 'cpu_percent' => $cpu, 'memory_percent' => $memory, 'disk_percent' => 30, 'uptime_seconds' => 100, 'recorded_at' => now()->subMinutes($minute)], $chunk));
+            }
+        }
+
+        /** @var array<string, array{direction: string, suggested: array{id: string}, saving: float|null}> $suggestions */
+        $suggestions = collect(app(ServerRightsizing::class)->suggestions(Server::query()->with('provider')->get()))->keyBy(fn (array $row): string => $row['server']->name)->all();
+        $this->assertEqualsCanonicalizing(['oversized', 'stretched'], array_keys($suggestions));
+        $this->assertSame(['down', 's-2vcpu-4gb', 24.0], [$suggestions['oversized']['direction'], $suggestions['oversized']['suggested']['id'], $suggestions['oversized']['saving']]);
+        $this->assertSame(['up', 's-2vcpu-4gb', -18.0], [$suggestions['stretched']['direction'], $suggestions['stretched']['suggested']['id'], $suggestions['stretched']['saving']]);
+
+        $this->actingAs($this->owner)->get($this->base)->assertOk()->assertSee('Right-size your servers')->assertSee('saves 24.00')->assertSee('costs 18.00 more');
     }
 
     public function test_hetzner_prices_follow_the_location_in_euros(): void
