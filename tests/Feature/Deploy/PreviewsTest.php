@@ -8,6 +8,7 @@ use App\Enums\AccountRole;
 use App\Enums\EnvironmentKind;
 use App\Enums\ProviderType;
 use App\Models\Build;
+use App\Models\DatabaseClone;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
 use App\Models\EnvironmentRecipe;
@@ -300,6 +301,29 @@ final class PreviewsTest extends TestCase
         $this->actingAs($this->owner)->put($url, ['previews_enabled' => '1', 'preview_domain' => 'preview.example.org', 'preview_ttl_hours' => 24])->assertSessionHasErrors('previews_enabled');
         $this->actingAs($this->owner)->put($url, ['previews_enabled' => '0', 'preview_ttl_hours' => 24])->assertSessionHasNoErrors();
         $this->assertFalse($this->source->refresh()->previews_enabled);
+    }
+
+    public function test_previews_can_start_with_a_copy_of_another_websites_database(): void
+    {
+        $staging = Website::factory()->create(['server_id' => $this->source->website->server_id, 'name' => 'Shop staging', 'deployment_slug' => 'shop-staging']);
+        $elsewhere = Website::factory()->create(['server_id' => Server::factory()->create(['provider_id' => Provider::factory()->create(['account_id' => $this->project->account_id])->id])->id]);
+        $settings = ['previews_enabled' => '1', 'preview_domain' => 'preview.example.com', 'preview_ttl_hours' => 72];
+        $url = "{$this->base}/repositories/{$this->source->id}/previews";
+        $this->actingAs($this->owner)->get("{$this->base}/repositories/{$this->source->id}?tab=settings")->assertOk()->assertSee('A copy of Shop staging');
+        $this->actingAs($this->owner)->put($url, [...$settings, 'preview_database_source_website_id' => $elsewhere->id])->assertSessionHasErrors('preview_database_source_website_id');
+        $this->actingAs($this->owner)->put($url, [...$settings, 'preview_database_source_website_id' => $staging->id])->assertSessionHasNoErrors();
+
+        [$preview, $build] = $this->readyToDeploy();
+        $clone = DatabaseClone::query()->sole();
+        $this->assertSame([$staging->id, $preview->website_id, 'succeeded', null], [$clone->source_website_id, $clone->target_website_id, $clone->status, $clone->requested_by]);
+        $this->assertNotNull($preview->database_copied_at);
+        $copy = collect($this->shell->ran)->search(fn (array $run): bool => str_contains($run['command'], 'mysqldump'));
+        $this->assertIsInt($copy, 'The database was copied before the first deploy.');
+        $this->assertSame(Build::STATUS_RUNNING, $build->status);
+
+        $this->assertNotNull($preview->website);
+        app(\App\Services\Deploy\Previews::class)->websiteReady($preview->website);
+        $this->assertSame(1, DatabaseClone::query()->count(), 'Only copied once.');
     }
 
     public function test_previews_expire_and_close_with_their_source_repository(): void

@@ -22,6 +22,7 @@ final class PreviewSettingsRequest extends FormRequest
             'preview_domain' => ['required_if:previews_enabled,true', 'nullable', 'string', 'max:200', 'regex:/\A([a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,63}\z/'],
             'preview_ttl_hours' => ['required', 'integer', 'between:1,720'],
             'preview_initialization_command' => ['nullable', 'string', 'max:2000'],
+            'preview_database_source_website_id' => ['nullable', 'integer'],
         ];
     }
 
@@ -38,7 +39,7 @@ final class PreviewSettingsRequest extends FormRequest
     /**
      * Get the settings as repository columns.
      *
-     * @return array{previews_enabled: bool, preview_domain: string|null, preview_ttl_hours: int, preview_initialization_command: string|null}
+     * @return array{previews_enabled: bool, preview_domain: string|null, preview_ttl_hours: int, preview_initialization_command: string|null, preview_database_source_website_id: int|null}
      */
     public function settings(): array
     {
@@ -49,6 +50,7 @@ final class PreviewSettingsRequest extends FormRequest
             'preview_domain' => $this->filled('preview_domain') ? $this->string('preview_domain')->toString() : null,
             'preview_ttl_hours' => $this->integer('preview_ttl_hours'),
             'preview_initialization_command' => $command === '' ? null : $command,
+            'preview_database_source_website_id' => $this->filled('preview_database_source_website_id') ? $this->integer('preview_database_source_website_id') : null,
         ];
     }
 

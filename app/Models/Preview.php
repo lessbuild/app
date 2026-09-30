@@ -29,6 +29,7 @@ use Illuminate\Support\Carbon;
  * @property string $revision the pull request's head commit, which the preview deploys
  * @property string $status see the STATUS_ constants
  * @property string|null $url the preview's hostname
+ * @property CarbonImmutable|null $database_copied_at when copying the chosen website's database into the preview's began
  * @property CarbonImmutable|null $initialized_at when a deploy with the initialisation command first succeeded
  * @property CarbonImmutable $last_activity_at the lifetime counts from here
  * @property CarbonImmutable|null $closed_at
@@ -221,7 +222,7 @@ class Preview extends Model
     protected function casts(): array
     {
         return [
-            'pull_request_number' => 'integer', 'cleanup_attempts' => 'integer', 'initialized_at' => 'immutable_datetime',
+            'pull_request_number' => 'integer', 'cleanup_attempts' => 'integer', 'initialized_at' => 'immutable_datetime', 'database_copied_at' => 'immutable_datetime',
             'last_activity_at' => 'immutable_datetime', 'closed_at' => 'immutable_datetime',
         ];
     }

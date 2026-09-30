@@ -7,10 +7,13 @@ namespace App\Services\Deploy;
 use App\Data\Deploy\VerifiedRepositoryWebhook;
 use App\Enums\EnvironmentKind;
 use App\Jobs\Deploy\CleanUpPreview;
+use App\Jobs\Deploy\DeployPreviewAfterDatabaseCopy;
 use App\Jobs\Deploy\ReportPreviewToGitHub;
+use App\Jobs\Infrastructure\CopyDatabase;
 use App\Jobs\Infrastructure\ProvisionWebsite;
 use App\Models\Account;
 use App\Models\Build;
+use App\Models\DatabaseClone;
 use App\Models\Environment;
 use App\Models\EnvironmentProcess;
 use App\Models\EnvironmentResource;
@@ -21,6 +24,7 @@ use App\Models\Website;
 use App\Services\Billing\AccountEntitlements;
 use App\Services\Billing\Entitlements;
 use App\Support\Deploy\PreviewTrust;
+use Illuminate\Support\Facades\Bus;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -103,9 +107,38 @@ final class Previews
     public function websiteReady(Website $website): void
     {
         $preview = Preview::query()->where('website_id', $website->id)->first();
-        if ($preview !== null && $preview->isOpen()) {
-            $this->deployLatest($preview);
+        if ($preview === null || ! $preview->isOpen()) {
+            return;
         }
+        if ($this->copyDatabaseFirst($preview, $website)) {
+            return;
+        }
+        $this->deployLatest($preview);
+    }
+
+    /**
+     * Start copying the chosen website's database into a new preview's, when its repository asks for that, with the
+     * deploy queued behind it. Happens once per preview; returns whether the deploy now waits for the copy.
+     *
+     * @param  Preview  $preview
+     * @param  Website  $website
+     * @return bool
+     */
+    private function copyDatabaseFirst(Preview $preview, Website $website): bool
+    {
+        $sourceId = Repository::query()->whereKey($preview->source_repository_id)->value('preview_database_source_website_id');
+        $source = $sourceId !== null ? Website::query()->whereKey((int) $sourceId)->first() : null;
+        if ($preview->database_copied_at !== null || $source === null || $source->server_id !== $website->server_id || $source->is($website)) {
+            return false;
+        }
+        if (Preview::query()->whereKey($preview->id)->whereNull('database_copied_at')->update(['database_copied_at' => now()]) === 0) {
+            return true;
+        }
+        $clone = new DatabaseClone;
+        $clone->forceFill(['source_website_id' => $source->id, 'target_website_id' => $website->id, 'requested_by' => null, 'status' => 'queued'])->save();
+        Bus::chain([new CopyDatabase($clone->id), new DeployPreviewAfterDatabaseCopy($preview->id)])->dispatch();
+
+        return true;
     }
 
     /**

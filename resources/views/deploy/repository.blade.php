@@ -136,6 +136,15 @@
                 <x-signal.ui.input-field name="preview_domain" :label="__('Preview domain')" :value="old('preview_domain', $repository->preview_domain)" placeholder="preview.example.com" maxlength="200" :description="__('Previews are served at pr-12-:project.<domain>; point wildcard DNS (*.<domain>) at the server.', ['project' => $project->slug])" />
                 <x-signal.ui.input-field name="preview_ttl_hours" type="number" min="1" max="720" :label="__('Close after (hours without changes)')" :value="old('preview_ttl_hours', $repository->preview_ttl_hours)" required />
                 <div class="sm:col-span-2"><x-signal.ui.textarea-field name="preview_initialization_command" :label="__('Set-up command (optional)')" rows="2" :value="old('preview_initialization_command', $repository->preview_initialization_command)" :description="__('Runs once on each new preview after its first deploy, e.g. php artisan migrate --seed.')" /></div>
+                @php($siblings = $repository->website ? \App\Models\Website::query()->where('server_id', $repository->website->server_id)->whereKeyNot($repository->website->id)->whereNotIn('id', \App\Models\Preview::query()->whereNotNull('website_id')->select('website_id'))->orderBy('name')->get(['id', 'name']) : collect())
+                <div class="sm:col-span-2">
+                    <x-signal.ui.select-field name="preview_database_source_website_id" :label="__('Start each preview’s database from')" :description="__('New previews get a copy of this website’s database before their first deploy, so migrations and reviewers see real-looking data. Mind personal data: prefer a staging copy over production.')">
+                        <option value="">{{ __('An empty database') }}</option>
+                        @foreach ($siblings as $sibling)
+                            <option value="{{ $sibling->id }}" @selected((int) old('preview_database_source_website_id', $repository->preview_database_source_website_id) === $sibling->id)>{{ __('A copy of :website', ['website' => $sibling->name]) }}</option>
+                        @endforeach
+                    </x-signal.ui.select-field>
+                </div>
                 <div class="sm:col-span-2"><x-signal.ui.button type="submit" variant="primary">{{ __('Save preview settings') }}</x-signal.ui.button></div>
             </form>
         </x-signal.ui.settings-section>
