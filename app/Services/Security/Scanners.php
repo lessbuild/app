@@ -9,6 +9,7 @@ use App\Models\Account;
 use App\Services\Billing\Entitlements;
 use App\Services\Security\Scanners\DependencyScanner;
 use App\Services\Security\Scanners\DomainScanner;
+use App\Services\Security\Scanners\SecretScanner;
 use Illuminate\Contracts\Container\Container;
 
 /** The Security checks the platform runs, and which of them an account's plan includes. */
@@ -21,6 +22,7 @@ final class Scanners
      */
     public const CLASSES = [
         DependencyScanner::class,
+        SecretScanner::class,
         DomainScanner::class,
     ];
 
