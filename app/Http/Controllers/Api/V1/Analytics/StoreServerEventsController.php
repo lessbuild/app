@@ -5,12 +5,14 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api\V1\Analytics;
 
 use App\Actions\Analytics\AcceptEventBatch;
+use App\Actions\Analytics\CountFilteredVisits;
 use App\Contracts\Analytics\CountryLookup;
 use App\Models\Account;
 use App\Models\AnalyticsSite;
 use App\Models\User;
 use App\Services\Analytics\EventNormalizer;
 use App\Support\Analytics\CollectionRequest;
+use App\Support\Analytics\ReferrerSpam;
 use App\Support\Analytics\UserAgent;
 use App\Support\IpRanges;
 use Carbon\CarbonImmutable;
@@ -32,9 +34,10 @@ final class StoreServerEventsController
      * @param  AcceptEventBatch  $accept
      * @param  CountryLookup  $countries
      * @param  EventNormalizer  $normalizer
+     * @param  CountFilteredVisits  $filtered
      * @return JsonResponse
      */
-    public function __invoke(Request $request, #[CurrentUser] User $user, AnalyticsSite $site, AcceptEventBatch $accept, CountryLookup $countries, EventNormalizer $normalizer): JsonResponse
+    public function __invoke(Request $request, #[CurrentUser] User $user, AnalyticsSite $site, AcceptEventBatch $accept, CountryLookup $countries, EventNormalizer $normalizer, CountFilteredVisits $filtered): JsonResponse
     {
         $account = $request->attributes->get('account');
         abort_unless($account instanceof Account && $site->project->account_id === $account->id && $user->can('update', $site), 404);
@@ -55,6 +58,7 @@ final class StoreServerEventsController
             'events.*.utm_term' => ['nullable', 'string', 'max:150'],
             'events.*.utm_content' => ['nullable', 'string', 'max:150'],
             'events.*.visitor' => ['nullable', 'string', 'max:64'],
+            'events.*.search' => ['nullable', 'string', 'max:200'],
         ]);
         $now = CarbonImmutable::now();
         $events = [];
@@ -62,7 +66,14 @@ final class StoreServerEventsController
         foreach ($data['events'] as $event) {
             $ip = $event['ip'] ?? null;
             $agent = (string) ($event['user_agent'] ?? '');
-            if (CollectionRequest::isBot($agent) || ($ip !== null && IpRanges::contains($site->excluded_ips ?? [], $ip))) {
+            $reason = match (true) {
+                CollectionRequest::isBot($agent) => 'bot',
+                $ip !== null && IpRanges::contains($site->excluded_ips ?? [], $ip) => 'ignored',
+                ReferrerSpam::matches(isset($event['referrer']) ? strtolower((string) parse_url((string) $event['referrer'], PHP_URL_HOST)) : null, $site->blocked_referrers ?? []) => 'spam',
+                default => null,
+            };
+            if ($reason !== null) {
+                $filtered->handle($site, $reason);
                 $skipped++;
 
                 continue;

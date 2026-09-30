@@ -14,6 +14,8 @@
     var lastPage = window.location.href;
     // data-hash counts #/pages as separate pages, for sites that route with the URL's hash.
     var hashMode = script.dataset.hash !== undefined;
+    // Site search: the query parameters that hold what visitors searched for (data-search="q,term" to choose).
+    var searchParams = (script.dataset.search || 'q,s,search,query,term,keyword').split(',').map(function (name) { return name.trim(); });
 
     function id() {
         if (window.crypto && typeof window.crypto.randomUUID === 'function') {
@@ -102,6 +104,14 @@
         }
     }
 
+    function searchTerm(url) {
+        for (var i = 0; i < searchParams.length; i++) {
+            var value = url.searchParams.get(searchParams[i]);
+            if (value) return value.slice(0, 200);
+        }
+        return undefined;
+    }
+
     function push(type, properties, path) {
         if (!collectionAllowed()) return;
         var url = new URL(window.location.href);
@@ -128,6 +138,7 @@
             os: operatingSystem(),
             os_version: osVersion(),
             returning: returningId(),
+            search: type === 'pageview' ? searchTerm(url) : undefined,
             properties: properties || null
         });
         flush();
@@ -198,6 +209,11 @@
     window.buildpusher.track = function (name, properties) {
         if (!name || typeof name !== 'string') return;
         push('event', Object.assign({ name: name.slice(0, 80) }, properties || {}));
+    };
+    // buildpusher.search('term', 0) records a search and how many results it found, to spot searches that find nothing.
+    window.buildpusher.search = function (term, results) {
+        if (!term || typeof term !== 'string') return;
+        push('event', { name: 'search', term: term.slice(0, 200), results: typeof results === 'number' ? Math.round(results) : undefined });
     };
     window.buildpusher.pageview = function () {
         push('pageview');

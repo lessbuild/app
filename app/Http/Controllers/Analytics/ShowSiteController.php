@@ -10,6 +10,7 @@ use App\Models\AnalyticsSite;
 use App\Models\Project;
 use App\Models\StorageBucket;
 use App\Models\User;
+use App\Queries\Analytics\FilteredVisitsQuery;
 use App\Queries\Analytics\SearchConsolePropertiesQuery;
 use App\Queries\Projects\ProjectOverviewQuery;
 use DateTimeZone;
@@ -30,9 +31,10 @@ final class ShowSiteController
      * @param  SearchConsolePropertiesQuery  $searchConsoleProperties
      * @param  SearchConsole  $searchConsole
      * @param  GoogleAnalyticsData  $googleAnalytics
+     * @param  FilteredVisitsQuery  $filtered
      * @return View
      */
-    public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, ProjectOverviewQuery $overview, SearchConsolePropertiesQuery $searchConsoleProperties, SearchConsole $searchConsole, GoogleAnalyticsData $googleAnalytics): View
+    public function __invoke(#[CurrentUser] User $user, Project $project, AnalyticsSite $site, ProjectOverviewQuery $overview, SearchConsolePropertiesQuery $searchConsoleProperties, SearchConsole $searchConsole, GoogleAnalyticsData $googleAnalytics, FilteredVisitsQuery $filtered): View
     {
         $imports = $site->imports()->latest('id')->get();
         $connected = $imports->firstWhere('status', 'connected');
@@ -47,6 +49,7 @@ final class ShowSiteController
         }
 
         return view('analytics.site', [
+            'filtered' => $filtered->handle($site),
             'buckets' => StorageBucket::query()->where('project_id', $project->id)->orderBy('name')->get(),
             'googleAnalytics' => ['configured' => $googleAnalytics->configured(), 'imports' => $imports, 'connected' => $connected, 'properties' => $gaProperties, 'error' => $gaError],
             'searchConsole' => ['configured' => $searchConsole->configured(), ...$searchConsoleProperties->handle($site)],

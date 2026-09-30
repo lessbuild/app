@@ -18,6 +18,8 @@ final readonly class SiteDetails
      * @param  ?string  $environmentId  The project environment the site belongs to, if any.
      * @param  list<string>  $customProperties  custom event property keys to keep for breakdowns
      * @param  list<string>  $excludedIps  addresses and networks whose visits aren't counted
+     * @param  list<array{name: string, pattern: string}>  $contentGroups  named groups of pages
+     * @param  list<string>  $blockedReferrers  referring domains treated as spam
      */
     public function __construct(
         public string $name,
@@ -27,5 +29,7 @@ final readonly class SiteDetails
         public ?string $environmentId = null,
         public array $customProperties = [],
         public array $excludedIps = [],
+        public array $contentGroups = [],
+        public array $blockedReferrers = [],
     ) {}
 }

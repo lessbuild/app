@@ -60,6 +60,7 @@ final class CollectEventsRequest extends FormRequest
             'events.*.session' => ['nullable', 'string', 'max:64'],
             'events.*.returning' => ['nullable', 'string', 'max:64'],
             'events.*.hash' => ['nullable', 'boolean'],
+            'events.*.search' => ['nullable', 'string', 'max:200'],
             'events.*.properties' => ['nullable', 'array', 'max:24'],
         ];
     }

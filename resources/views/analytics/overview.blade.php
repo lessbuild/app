@@ -20,7 +20,7 @@
                     <input type="hidden" name="site" value="{{ $site->id }}">
                 @endif
                 @include('analytics._period-fields')
-                @foreach (['country', 'campaign', 'channel', 'region', 'city', 'screen', 'term', 'content'] as $key)
+                @foreach (['country', 'campaign', 'channel', 'region', 'city', 'screen', 'term', 'content', 'group'] as $key)
                     @if ($filters[$key] ?? null)<input type="hidden" name="{{ $key }}" value="{{ $filters[$key] }}">@endif
                 @endforeach
                 <x-signal.ui.input-field name="path" :label="__('Page')" :value="$filters['path']" placeholder="/pricing" :restore="false" :show-errors="false" />

@@ -65,6 +65,8 @@ final class SaveSite
             'excluded_paths' => array_values(array_filter(array_map(trim(...), $details->excludedPaths))),
             'custom_properties' => $details->customProperties === [] ? null : $details->customProperties,
             'excluded_ips' => $details->excludedIps === [] ? null : $details->excludedIps,
+            'content_groups' => $details->contentGroups === [] ? null : $details->contentGroups,
+            'blocked_referrers' => $details->blockedReferrers === [] ? null : $details->blockedReferrers,
         ])->save();
 
         if (! $site->isVerified()) {

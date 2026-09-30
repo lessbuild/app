@@ -86,7 +86,7 @@ final class CollectionRequest
      *
      * @param  mixed  $properties
      * @param  list<string>  $customKeys  the property names the site keeps
-     * @return array{name?: string, url?: string, file?: string, revenue?: float, currency?: string, items?: list<array{id: string|null, name: string|null, category: string|null, price: float|null, quantity: int}>, props?: array<string, string>}
+     * @return array{name?: string, term?: string, results?: int, url?: string, file?: string, revenue?: float, currency?: string, items?: list<array{id: string|null, name: string|null, category: string|null, price: float|null, quantity: int}>, props?: array<string, string>}
      */
     public static function safeProperties(mixed $properties, array $customKeys = []): array
     {
@@ -95,6 +95,12 @@ final class CollectionRequest
             return [];
         }
         $kept = ['name' => $name];
+        if ($name === 'search') {
+            $term = self::searchTerm($properties['term'] ?? null);
+            $results = $properties['results'] ?? null;
+
+            return array_filter(['name' => 'search', 'term' => $term, 'results' => is_int($results) && $results >= 0 ? min($results, 1_000_000) : null], fn (mixed $value): bool => $value !== null);
+        }
         $detail = self::AUTOMATIC_EVENTS[$name] ?? null;
         $value = $detail !== null ? ($properties[$detail] ?? null) : null;
         if (is_string($value)) {
@@ -193,6 +199,20 @@ final class CollectionRequest
         }
 
         return $kept;
+    }
+
+    /**
+     * Clean an on-site search term: trimmed, lowercased, cut to 100 characters, and dropped when it looks like an
+     * email address (people paste those into search boxes).
+     *
+     * @param  mixed  $term
+     * @return string|null
+     */
+    public static function searchTerm(mixed $term): ?string
+    {
+        $term = is_string($term) ? mb_strtolower(trim((string) preg_replace('/[\x00-\x1F\x7F]/u', '', $term))) : '';
+
+        return $term === '' || preg_match('/[^\s@]+@[^\s@]+\.[^\s@]+/', $term) === 1 ? null : mb_substr($term, 0, 100);
     }
 
     /**

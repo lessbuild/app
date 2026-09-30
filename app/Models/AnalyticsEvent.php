@@ -113,6 +113,7 @@ class AnalyticsEvent extends Model
     protected function matchingReportFilters(Builder $query, array $filters): void
     {
         $query->when($filters['path'] ?? null, fn (Builder $query, string $path) => $query->where('path', $path))
+            ->when($filters['path_like'] ?? null, fn (Builder $query, string $pattern) => $query->whereRaw("path LIKE ? ESCAPE '\\'", [$pattern]))
             ->when($filters['source'] ?? null, fn (Builder $query, string $source) => $query->where(function (Builder $query) use ($source): void {
                 $query->where('utm_source', $source)->orWhere('referrer_host', $source);
             }))

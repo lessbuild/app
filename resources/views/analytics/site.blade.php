@@ -25,6 +25,9 @@
                 </ul>
                 <x-signal.ui.code-block :code="str_replace(' src=', ' data-outbound data-downloads data-vitals src=', $snippet)" class="whitespace-pre-wrap break-all" />
                 <p class="text-muted">{{ __('To leave your own visits out, open any page of the site once with ?bp_ignore=1 in each browser you use (?bp_ignore=0 counts it again).') }}</p>
+                @if (array_sum($filtered) > 0)
+                    <p class="text-muted">{{ __('Left out in the last 30 days:') }} {{ collect(\App\Actions\Analytics\CountFilteredVisits::REASONS)->filter(fn ($label, $reason) => ($filtered[$reason] ?? 0) > 0)->map(fn ($label, $reason) => __($label).' '.number_format($filtered[$reason]))->implode(' · ') }}</p>
+                @endif
             </div>
         </div>
     </x-signal.ui.settings-section>

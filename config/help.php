@@ -315,6 +315,8 @@ return [
                 ['Set goals', 'Analytics → Goals. Count visits to a page, or an event you send, as a conversion.'],
                 ['Count more', 'Add data-outbound, data-downloads, data-vitals or data-not-found to the script for links, downloads, page speed and missing pages. Engagement (time on page and scroll depth) is counted automatically.'],
                 ['Events without code', 'Give any button or link a class such as bp-event-name=Signup, and bp-event-plan=pro for a property; clicking it sends the event.'],
+                ['Groups and searches', 'In the site’s settings, name groups of pages (such as Blog: /blog/*) to see them added up. Searches are read from ?q=, ?s= or ?search= (choose with data-search), and buildpusher.search(\'term\', 0) records a search that found nothing.'],
+                ['Spam and bots', 'Known referrer spam, bots and ignored addresses are left out automatically; the site’s page says how many. Add your own spam domains in the site’s settings.'],
                 ['Leave visits out', 'In the site’s settings, list addresses or networks to ignore (such as your office); their visits aren’t counted. Single-page apps that route with #/paths should add data-hash to the snippet.'],
                 ['Custom properties', 'To break events down by your own details, list the property names in the site’s settings, then send them: window.buildpusher.track(\'signup\', {plan: \'pro\'}).'],
             ],

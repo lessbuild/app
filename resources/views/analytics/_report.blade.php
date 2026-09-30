@@ -5,6 +5,7 @@
 @php($chartLabel = $hourly ? __('Pageviews per hour') : __('Pageviews per day'))
 @php($lists = $summary === null ? [] : [
     [__('Top pages'), $summary['pages'], __('Pages appear after the first visit.'), 'path'],
+    [__('Content groups'), $summary['contentGroups'] ?? [], '', 'group'],
     [__('Entry pages'), $summary['entryPages'], __('Entry pages appear once visits are processed.'), 'path'],
     [__('Exit pages'), $summary['exitPages'], __('Exit pages appear once visits are processed.'), 'path'],
     [__('Channels'), $summary['channels'] ?? [], __('Channels appear once visitors arrive.'), 'channel'],
@@ -24,6 +25,8 @@
     [__('Outbound links'), $summary['outboundLinks'], '', null],
     [__('File downloads'), $summary['fileDownloads'], '', null],
     [__('Pages not found'), $summary['notFound'], '', null],
+    [__('Site searches'), $summary['searches'] ?? [], '', null],
+    [__('Searches with no results'), $summary['emptySearches'] ?? [], '', null],
 ])
 {{-- The tracker's opt-in lists only show once they have something in them; the site page explains how to switch them on. --}}
 @php($lists = array_values(array_filter($lists, fn (array $list): bool => $list[2] !== '' || $list[1] !== [])))

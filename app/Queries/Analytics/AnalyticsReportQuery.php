@@ -46,6 +46,7 @@ final class AnalyticsReportQuery
     public function handle(AnalyticsSite $site, int|ReportPeriod $period = 30, array $filters = []): array
     {
         $period = is_int($period) ? ReportPeriod::lastDays($site->timezone, $period) : $period;
+        $filters = $this->groupFilter($site, $filters);
 
         // Long reports, and ones reaching back into history imported from Google Analytics, read the daily totals.
         $reachesImport = $site->imported_until !== null && $period->start->toDateString() <= $site->imported_until->toDateString();
@@ -137,6 +138,10 @@ final class AnalyticsReportQuery
             'browserVersions' => $this->rank($currentEvents()->where('type', 'pageview')->whereNotNull('browser_version'), "COALESCE(browser, 'Other') || ' ' || browser_version"),
             'osVersions' => $this->rank($currentEvents()->where('type', 'pageview')->whereNotNull('os_version'), "COALESCE(operating_system, 'Other') || ' ' || os_version"),
             'engagement' => $this->engagement($currentEvents()),
+            'contentGroups' => $this->contentGroups($site, $currentEvents()->where('type', 'pageview')),
+            'searches' => $this->rank($currentEvents()->where(fn (Builder $query) => $query->where('type', 'pageview')->orWhere(fn (Builder $events) => $events->where('type', 'event')->whereRaw($this->property('name')." = 'search'")))
+                ->whereRaw('COALESCE('.$this->property('search').', '.$this->property('term').') IS NOT NULL'), 'COALESCE('.$this->property('search').', '.$this->property('term').')'),
+            'emptySearches' => $this->rank($this->automaticEvents($currentEvents(), 'search')->whereRaw($this->property('results').' = 0'), $this->labelOf($this->property('term'))),
             'outboundLinks' => $this->rank($this->automaticEvents($currentEvents(), 'outbound_link'), $this->labelOf($this->property('url'))),
             'fileDownloads' => $this->rank($this->automaticEvents($currentEvents(), 'file_download'), $this->labelOf($this->property('file'))),
             'notFound' => $this->rank($this->automaticEvents($currentEvents(), 'not_found'), $this->labelOf('path')),
@@ -220,6 +225,7 @@ final class AnalyticsReportQuery
     private function visits(AnalyticsSite $site, CarbonImmutable $from, CarbonImmutable $until, array $filters): Builder
     {
         $path = $filters['path'] ?? null;
+        $pathLike = $filters['path_like'] ?? null;
         $device = $filters['device'] ?? null;
         $browser = $filters['browser'] ?? null;
         $os = $filters['os'] ?? null;
@@ -238,7 +244,7 @@ final class AnalyticsReportQuery
             ->when($filters['city'] ?? null, fn (Builder $query, string $city) => $query->where('city', $city))
             ->when($filters['term'] ?? null, fn (Builder $query, string $term) => $query->where('entry_utm_term', $term))
             ->when($filters['content'] ?? null, fn (Builder $query, string $content) => $query->where('entry_utm_content', $content))
-            ->when($path !== null || $device !== null || $browser !== null || $os !== null || $screen !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $device, $browser, $os, $screen): void {
+            ->when($path !== null || $pathLike !== null || $device !== null || $browser !== null || $os !== null || $screen !== null, fn (Builder $query) => $query->whereExists(function (QueryBuilder $events) use ($path, $pathLike, $device, $browser, $os, $screen): void {
                 $events->selectRaw('1')->from('analytics_events as visit_events')
                     ->whereColumn('visit_events.site_id', 'analytics_visits.site_id')
                     ->where(function (QueryBuilder $identity): void {
@@ -248,6 +254,7 @@ final class AnalyticsReportQuery
                     ->whereColumn('visit_events.occurred_at', '>=', 'analytics_visits.started_at')
                     ->whereColumn('visit_events.occurred_at', '<=', 'analytics_visits.last_seen_at')
                     ->when($path, fn (QueryBuilder $query, string $path) => $query->where('visit_events.path', $path))
+                    ->when($pathLike, fn (QueryBuilder $query, string $pattern) => $query->whereRaw("visit_events.path LIKE ? ESCAPE '\\'", [$pattern]))
                     ->when($device, fn (QueryBuilder $query, string $device) => $query->where('visit_events.device_category', $device))
                     ->when($browser, fn (QueryBuilder $query, string $browser) => $query->where('visit_events.browser', $browser))
                     ->when($os, fn (QueryBuilder $query, string $os) => $query->where('visit_events.operating_system', $os))
@@ -418,6 +425,74 @@ final class AnalyticsReportQuery
     }
 
     /**
+     * Turn a content group filter (a group's name) into a path pattern filter, using the site's groups. Unknown group
+     * names are dropped.
+     *
+     * @param  AnalyticsSite  $site
+     * @param  array<string, string|null>  $filters
+     * @return array<string, string|null>
+     */
+    private function groupFilter(AnalyticsSite $site, array $filters): array
+    {
+        $name = $filters['group'] ?? null;
+        unset($filters['group']);
+        if ($name === null) {
+            return $filters;
+        }
+        foreach ($site->content_groups ?? [] as $group) {
+            if ($group['name'] === $name) {
+                $filters['path_like'] = self::likePattern($group['pattern']);
+            }
+        }
+
+        return $filters;
+    }
+
+    /**
+     * Turn a path pattern with * wildcards into a LIKE pattern.
+     *
+     * @param  string  $pattern
+     * @return string
+     */
+    public static function likePattern(string $pattern): string
+    {
+        return str_replace('*', '%', str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $pattern));
+    }
+
+    /**
+     * Count pageviews per content group (a page counts in the first group it matches).
+     *
+     * @param  AnalyticsSite  $site
+     * @param  Builder<AnalyticsEvent>  $pageviews
+     * @return list<array{label: string, value: int}>
+     */
+    private function contentGroups(AnalyticsSite $site, Builder $pageviews): array
+    {
+        $groups = $site->content_groups ?? [];
+        if ($groups === []) {
+            return [];
+        }
+        $cases = [];
+        $bindings = [];
+        foreach ($groups as $group) {
+            $cases[] = "WHEN path LIKE ? ESCAPE '\\' THEN ?";
+            $bindings[] = self::likePattern($group['pattern']);
+            $bindings[] = $group['name'];
+        }
+        $label = 'CASE '.implode(' ', $cases).' END';
+        $rows = $pageviews->toBase()->selectRaw("{$label} AS group_label, COUNT(*) AS total", $bindings)
+            ->groupBy('group_label')->orderByDesc('total')->get();
+        $list = [];
+        foreach ($rows as $row) {
+            if ($row->group_label !== null) {
+                $list[] = ['label' => (string) $row->group_label, 'value' => (int) $row->total];
+            }
+        }
+
+        return $list;
+    }
+
+    /**
      * Limit events to one of the tracker's automatic custom events (outbound links, downloads, missing pages).
      *
      * @param  Builder<AnalyticsEvent>  $events
@@ -462,13 +537,15 @@ final class AnalyticsReportQuery
      * Get a SQL expression reading one property of an event's properties: text for name, url and file; numbers for an
      * engagement report's scroll and engaged_ms.
      *
-     * @param  'name'|'url'|'file'|'scroll'|'engaged_ms'  $key
+     * @param  'name'|'url'|'file'|'scroll'|'engaged_ms'|'results'|'search'|'term'  $key
      * @return literal-string
      */
     private function property(string $key): string
     {
         return match ($key) {
-            'scroll', 'engaged_ms' => DB::getDriverName() === 'pgsql' ? "CAST(properties->>'{$key}' AS NUMERIC)" : "json_extract(properties, '$.{$key}')",
+            'scroll', 'engaged_ms', 'results' => DB::getDriverName() === 'pgsql' ? "CAST(properties->>'{$key}' AS NUMERIC)" : "json_extract(properties, '$.{$key}')",
+            'search' => DB::getDriverName() === 'pgsql' ? "properties->>'search'" : "json_extract(properties, '$.search')",
+            'term' => DB::getDriverName() === 'pgsql' ? "properties->>'term'" : "json_extract(properties, '$.term')",
             'name' => DB::getDriverName() === 'pgsql' ? "properties->>'name'" : "json_extract(properties, '$.name')",
             'url' => DB::getDriverName() === 'pgsql' ? "properties->>'url'" : "json_extract(properties, '$.url')",
             'file' => DB::getDriverName() === 'pgsql' ? "properties->>'file'" : "json_extract(properties, '$.file')",
@@ -634,6 +711,9 @@ final class AnalyticsReportQuery
             'browserVersions' => [],
             'osVersions' => [],
             'engagement' => [],
+            'contentGroups' => [],
+            'searches' => [],
+            'emptySearches' => [],
             'outboundLinks' => [],
             'fileDownloads' => [],
             'notFound' => [],
