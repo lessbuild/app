@@ -75,9 +75,22 @@ final class ApplyWebsiteDomains implements ShouldBeUnique, ShouldQueue
         }
         $config = escapeshellarg(base64_encode($caddy->php($website, $website->deploymentPath('current').'/public')));
         $path = escapeshellarg("/etc/caddy/websites/{$website->deployment_slug}.conf");
-        $result = $shell->run($website->server, "set -Eeuo pipefail\nprintf '%s' {$config} | base64 --decode > {$path}\ncaddy validate --config /etc/caddy/Caddyfile\nsystemctl reload caddy");
+        // The old file is put back if Caddy refuses the new one, so one bad change never breaks the other sites.
+        $result = $shell->run($website->server, implode("\n", [
+            'set -Eeuo pipefail',
+            "if [ -f {$path} ]; then cp {$path} {$path}.previous; fi",
+            "printf '%s' {$config} | base64 --decode > {$path}",
+            "if ! caddy validate --config /etc/caddy/Caddyfile 2>&1; then if [ -f {$path}.previous ]; then mv {$path}.previous {$path}; else rm -f {$path}; fi; exit 1; fi",
+            "rm -f {$path}.previous",
+            'systemctl reload caddy',
+        ]));
         if (! $result->successful()) {
-            throw new RuntimeException(trim($result->errorOutput) !== '' ? trim($result->errorOutput) : 'Couldn’t apply the domains.');
+            $error = trim($result->errorOutput) !== '' ? trim($result->errorOutput) : (trim($result->output) !== '' ? trim($result->output) : 'Couldn’t apply the configuration.');
+            $website->forceFill(['caddy_error' => str($error)->limit(2000)->toString()])->save();
+            throw new RuntimeException($error);
+        }
+        if ($website->caddy_error !== null) {
+            $website->forceFill(['caddy_error' => null])->save();
         }
     }
 }

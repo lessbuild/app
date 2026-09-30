@@ -357,6 +357,23 @@
                 <x-signal.ui.button type="submit" variant="secondary" :disabled="$website->isProvisioning()">{{ __('Switch') }}</x-signal.ui.button>
             </form>
         </x-signal.ui.settings-section>
+        <x-signal.ui.settings-section id="web-server" :title="__('Web server (Caddy)')" :description="__('Add your own Caddy directives (headers, redirects, rewrites, basic auth…) inside this website’s site block. Caddy checks the whole configuration before using it, so a mistake never takes the site down.')">
+            <div class="grid gap-4 p-4 sm:p-6">
+                @if ($website->caddy_error)
+                    <x-signal.ui.alert tone="danger" role="alert"><strong>{{ __('Caddy refused the last change; the previous configuration is still in use.') }}</strong> <span class="font-mono text-xs">{{ $website->caddy_error }}</span></x-signal.ui.alert>
+                @endif
+                <form method="POST" action="{{ route('infrastructure.websites.caddy', [$project, $website->id]) }}" class="grid gap-3">
+                    @csrf
+                    @method('PUT')
+                    <x-signal.ui.textarea-field name="caddy_directives" :label="__('Your directives')" :value="$website->caddy_directives" rows="6" maxlength="5000" class="font-mono text-sm" placeholder="header X-Frame-Options DENY&#10;redir /old-page /new-page 301" />
+                    <div><x-signal.ui.button type="submit" variant="secondary" :disabled="$website->isProvisioning()">{{ __('Save and apply') }}</x-signal.ui.button></div>
+                </form>
+                <details class="text-sm">
+                    <summary class="cursor-pointer font-bold text-ink">{{ __('See the full configuration') }}</summary>
+                    <x-signal.ui.code-block :code="app(\App\Services\Infrastructure\WebsiteCaddyConfiguration::class)->php($website, $website->deploymentPath('current').'/public')" class="mt-2 whitespace-pre-wrap" />
+                </details>
+            </div>
+        </x-signal.ui.settings-section>
         <x-signal.ui.settings-section :title="__('Settings')" :description="__('A new server, domain or .env sets the website up again. Moving servers keeps the old copy until the new one is live.')">
             <form method="POST" action="{{ route('infrastructure.websites.update', [$project, $website->id]) }}" class="grid items-start gap-5 p-4 sm:grid-cols-2 sm:p-6">
                 @csrf

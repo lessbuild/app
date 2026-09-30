@@ -219,6 +219,7 @@ use App\Http\Controllers\Infrastructure\UpdateLoadBalancerNodeController;
 use App\Http\Controllers\Infrastructure\UpdateServerMonthlyCostController;
 use App\Http\Controllers\Infrastructure\UpdateServerNodeVersionController;
 use App\Http\Controllers\Infrastructure\UpdateServerTaskController;
+use App\Http\Controllers\Infrastructure\UpdateWebsiteCaddyDirectivesController;
 use App\Http\Controllers\Infrastructure\UpdateWebsiteController;
 use App\Http\Controllers\Infrastructure\UpdateWebsitePhpVersionController;
 use App\Http\Controllers\Infrastructure\VerifyWebsiteBackupController;
@@ -634,6 +635,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::post('/websites', StoreWebsiteController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:20,1'])->name('websites.store');
             Route::post('/websites/import', StoreWebsiteImportController::class)->middleware(['can:create,App\\Models\\Website,project', 'throttle:10,1'])->name('websites.import');
             Route::get('/websites/{website}', ShowWebsiteController::class)->whereNumber('website')->middleware('can:view,website')->name('websites.show');
+            Route::put('/websites/{website}/caddy', UpdateWebsiteCaddyDirectivesController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.caddy');
             Route::put('/websites/{website}/php-version', UpdateWebsitePhpVersionController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:10,1'])->name('websites.php-version');
             Route::put('/websites/{website}', UpdateWebsiteController::class)->whereNumber('website')->middleware(['can:update,website', 'throttle:20,1'])->name('websites.update');
             Route::delete('/websites/{website}', DeleteWebsiteController::class)->whereNumber('website')->middleware(['can:delete,website', 'password.confirm', 'throttle:10,1'])->name('websites.destroy');

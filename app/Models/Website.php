@@ -56,6 +56,8 @@ use Illuminate\Support\Str;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  * @property Carbon|null $deleted_at
+ * @property string|null $caddy_directives the website's own Caddy directives, added inside its site block
+ * @property string|null $caddy_error why Caddy refused the last configuration change
  * @property-read Account $account
  * @property-read User|null $creator
  * @property-read Server|null $server

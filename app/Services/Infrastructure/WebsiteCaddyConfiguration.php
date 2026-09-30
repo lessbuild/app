@@ -68,6 +68,11 @@ final class WebsiteCaddyConfiguration
         $hostnames = $website->domains->where('type', 'alias')->pluck('hostname')
             ->map(fn (string $hostname): string => $this->siteAddress($hostname))
             ->prepend($this->siteAddress($website->url))->unique()->implode(', ');
+        $custom = trim((string) $website->caddy_directives);
+        if ($custom !== '') {
+            // The website's own directives, indented into its site block.
+            $body .= "\n    # Your directives (Website settings)\n".implode("\n", array_map(fn (string $line): string => rtrim('    '.$line), preg_split('/\R/', $custom) ?: []));
+        }
         $blocks = ["{$hostnames} {\n{$body}\n}"];
         foreach ($website->domains->where('type', 'redirect') as $domain) {
             $blocks[] = "{$domain->hostname} {\n    redir ".rtrim((string) $domain->redirect_url, '/')."{uri} permanent\n}";
