@@ -106,12 +106,55 @@ final class WebsitesTest extends TestCase
 
         $this->actingAs($this->owner)->post("{$this->base}/{$website->id}/domains", ['hostname' => 'old-shop.example.com', 'type' => 'redirect'])->assertSessionHasErrors('redirect_url');
         $this->actingAs($this->owner)->post("{$this->base}/{$website->id}/domains", ['hostname' => 'www.shop.example.com', 'type' => 'alias'])->assertSessionHasErrors('hostname');
-        $this->actingAs($this->owner)->post("{$this->base}/{$website->id}/domains", ['hostname' => 'x.example.com', 'type' => 'alias', 'dns_provider_id' => $this->server->provider_id])->assertSessionHasErrors('dns_provider_id');
+        $git = Provider::factory()->type(ProviderType::GitHub)->create(['account_id' => $this->project->account_id]);
+        $this->actingAs($this->owner)->post("{$this->base}/{$website->id}/domains", ['hostname' => 'x.example.com', 'type' => 'alias', 'dns_provider_id' => $git->id])->assertSessionHasErrors('dns_provider_id');
         $primary = $website->domains()->where('type', 'primary')->value('id');
         $this->actingAs($this->owner)->delete("{$this->base}/{$website->id}/domains/{$primary}")->assertSessionHasErrors('domain');
         Http::fake(['*' => Http::response([], 200)]);
         $this->actingAs($this->owner)->delete("{$this->base}/{$website->id}/domains/{$domain->id}")->assertRedirect();
         $this->assertModelMissing($domain);
+    }
+
+    /**
+     * Check domains' records are managed at DigitalOcean DNS, Hetzner DNS and Route 53 too: created in the most
+     * specific zone with a relative name, updated in place, removed with the domain, and CDN settings stay
+     * Cloudflare-only.
+     *
+     * @return void
+     */
+    public function test_domains_are_managed_at_digitalocean_hetzner_and_route53(): void
+    {
+        $website = Website::factory()->create(['server_id' => $this->server->id, 'url' => 'shop.example.com']);
+        $digitalOcean = Provider::factory()->type(ProviderType::DigitalOcean)->create(['account_id' => $this->project->account_id, 'token' => 'do-token']);
+        $hetzner = Provider::factory()->type(ProviderType::HetznerDns)->create(['account_id' => $this->project->account_id, 'token' => 'hz-token']);
+        $route53 = Provider::factory()->type(ProviderType::Route53)->create(['account_id' => $this->project->account_id, 'token' => 'AKIAEXAMPLE000001:'.str_repeat('s', 40)]);
+        Http::fake([
+            'api.digitalocean.com/v2/domains?*' => Http::response(['domains' => [['name' => 'example.com'], ['name' => 'other.com']]]),
+            'api.digitalocean.com/v2/domains/example.com/records' => Http::response(['domain_record' => ['id' => 111]], 201),
+            'api.digitalocean.com/v2/domains/example.com/records/111' => Http::response([], 204),
+            'dns.hetzner.com/api/v1/zones*' => Http::response(['zones' => [['id' => 'hz-zone', 'name' => 'example.com']]]),
+            'dns.hetzner.com/api/v1/records' => Http::response(['record' => ['id' => 'hz-rec']]),
+            'route53.amazonaws.com/2013-04-01/hostedzone?*' => Http::response('<ListHostedZonesResponse><HostedZones><HostedZone><Id>/hostedzone/Z123ABC</Id><Name>example.com.</Name></HostedZone></HostedZones></ListHostedZonesResponse>'),
+            'route53.amazonaws.com/2013-04-01/hostedzone/Z123ABC/rrset' => Http::response('<ChangeResourceRecordSetsResponse/>'),
+        ]);
+        $add = fn (string $hostname, Provider $provider) => $this->actingAs($this->owner)->post("{$this->base}/{$website->id}/domains", ['hostname' => $hostname, 'type' => 'alias', 'dns_provider_id' => $provider->id]);
+
+        $add('www.shop.example.com', $digitalOcean)->assertSessionHas('status');
+        $do = WebsiteDomain::query()->where('hostname', 'www.shop.example.com')->sole();
+        $this->assertSame(['example.com:111', 'active'], [$do->dns_record_id, $do->dns_status]);
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://api.digitalocean.com/v2/domains/example.com/records' && $request['name'] === 'www.shop' && $request['data'] === '203.0.113.9');
+
+        $add('api.example.com', $hetzner)->assertSessionHas('status');
+        $this->assertSame('hz-zone:hz-rec', WebsiteDomain::query()->where('hostname', 'api.example.com')->value('dns_record_id'));
+        Http::assertSent(fn (Request $request): bool => $request->url() === 'https://dns.hetzner.com/api/v1/records' && $request->hasHeader('Auth-API-Token', 'hz-token') && $request['name'] === 'api' && $request['zone_id'] === 'hz-zone');
+
+        $add('example.com', $route53)->assertSessionHas('status');
+        $this->assertSame('Z123ABC:A', WebsiteDomain::query()->where('hostname', 'example.com')->value('dns_record_id'));
+        Http::assertSent(fn (Request $request): bool => str_ends_with($request->url(), '/hostedzone/Z123ABC/rrset') && str_contains($request->body(), '<Action>UPSERT</Action>') && str_contains($request->body(), '<Name>example.com.</Name>') && str_starts_with((string) ($request->header('Authorization')[0] ?? ''), 'AWS4-HMAC-SHA256'));
+
+        $this->actingAs($this->owner)->put("{$this->base}/{$website->id}/domains/{$do->id}/edge", ['cdn_proxied' => '1'])->assertSessionHasErrors('edge');
+        $this->actingAs($this->owner)->delete("{$this->base}/{$website->id}/domains/{$do->id}")->assertRedirect();
+        Http::assertSent(fn (Request $request): bool => $request->method() === 'DELETE' && $request->url() === 'https://api.digitalocean.com/v2/domains/example.com/records/111');
     }
 
     public function test_importing_adopts_an_existing_directory_and_deleting_removes_it_from_the_server(): void

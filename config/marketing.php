@@ -139,7 +139,7 @@ return [
                 'description' => 'Create a server in your cloud account or import one, host websites on it, and follow every command that runs.',
                 'features' => ['Setup stages you can follow', 'Cron jobs, daemons, firewall rules and services in a click', 'Backups, storage buckets, CDN and load balancers'],
             ],
-            'capabilities' => ['DigitalOcean', 'Hetzner Cloud', 'Vultr', 'Linode', 'AWS Lightsail', 'Cloudflare', 'Ubuntu', 'Meilisearch', 'Typesense', 'Redis', 'S3-compatible storage'],
+            'capabilities' => ['DigitalOcean', 'Hetzner Cloud', 'Vultr', 'Linode', 'AWS Lightsail', 'Cloudflare', 'Route 53', 'Hetzner DNS', 'Ubuntu', 'Meilisearch', 'Typesense', 'Redis', 'S3-compatible storage'],
             'preview' => [
                 'title' => 'web-1',
                 'context' => 'Hetzner Cloud · fsn1 · Ubuntu 24.04',
@@ -157,7 +157,7 @@ return [
             'highlights_heading' => 'Your servers, set up the way you’d set them up.',
             'highlights' => [
                 ['icon' => 'server', 'title' => 'Provision or import', 'text' => 'Create servers at DigitalOcean, Hetzner Cloud or Vultr, or import an Ubuntu server over SSH.'],
-                ['icon' => 'globe', 'title' => 'Websites with TLS', 'text' => 'Primary domains, aliases and redirects, with automatic certificates and Cloudflare DNS.'],
+                ['icon' => 'globe', 'title' => 'Websites with TLS', 'text' => 'Primary domains, aliases and redirects, with automatic certificates and DNS records at Cloudflare, DigitalOcean, Hetzner or Route 53.'],
                 ['icon' => 'database', 'title' => 'Backups you can trust', 'text' => 'Scheduled backups to your own S3 storage, verified, with restores you can follow.'],
             ],
             'groups' => [
@@ -170,7 +170,7 @@ return [
                     ['Private networking', 'Let servers in the same region talk to each other over the provider’s private network.'],
                 ]],
                 ['label' => 'Websites', 'title' => 'Host and protect websites', 'description' => 'Domains, databases and backups stay beside the website they belong to.', 'features' => [
-                    ['Domains and TLS', 'Primary domains, aliases and redirects with automatic certificates, and Cloudflare DNS records.'],
+                    ['Domains and TLS', 'Primary domains, aliases and redirects with automatic certificates, and DNS records at Cloudflare, DigitalOcean, Hetzner DNS or Route 53.'],
                     ['Databases', 'Inspect website databases, add expiring users, and copy data between websites.'],
                     ['Backups', 'Scheduled, verified backups to your own S3 storage, and restores you can follow.'],
                     ['Load balancers', 'Weighted pools across servers with health probes.'],

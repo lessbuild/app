@@ -8,6 +8,7 @@ use App\Enums\AlertDestinationType;
 use App\Enums\ProviderType;
 use App\Models\Provider;
 use App\Services\Monitoring\PublicWebhookTarget;
+use App\Support\AwsSignature;
 use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
@@ -85,6 +86,8 @@ final class ProviderConnectionTester
             ProviderType::Linode => 'https://api.linode.com/v4/linode/instances?page_size=25',
             ProviderType::Lightsail => 'https://lightsail.us-east-1.amazonaws.com/',
             ProviderType::Cloudflare => rtrim((string) config('infrastructure.cloudflare_api_url'), '/').'/user/tokens/verify',
+            ProviderType::HetznerDns => 'https://dns.hetzner.com/api/v1/zones?per_page=1',
+            ProviderType::Route53 => 'https://route53.amazonaws.com/2013-04-01/hostedzone?maxitems=1',
         };
     }
 
@@ -114,9 +117,18 @@ final class ProviderConnectionTester
         if ($provider->type === ProviderType::Lightsail) {
             return (new Lightsail($provider->token))->ping();
         }
+        if ($provider->type === ProviderType::Route53) {
+            [$key, $secret] = array_pad(explode(':', $provider->token, 2), 2, '');
+            $url = $this->endpoint($provider->type);
+            $headers = AwsSignature::headers($key, $secret, 'us-east-1', 'route53', 'GET', $url, [], '');
+            unset($headers['Host']);
+
+            return $request->withHeaders($headers)->get($url);
+        }
 
         return match ($provider->type) {
             ProviderType::GitLab => $request->withHeader('PRIVATE-TOKEN', $provider->token)->get($this->endpoint($provider->type)),
+            ProviderType::HetznerDns => $request->withHeader('Auth-API-Token', $provider->token)->get($this->endpoint($provider->type)),
             ProviderType::GitHub => $this->bearer($request, $provider)->withHeader('X-GitHub-Api-Version', '2026-03-10')->get($this->endpoint($provider->type)),
             default => $this->bearer($request, $provider)->get($this->endpoint($provider->type)),
         };

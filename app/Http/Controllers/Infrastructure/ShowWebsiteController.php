@@ -51,7 +51,7 @@ final class ShowWebsiteController
             'log' => $website->logs()->where('type', 'provisioning')->value('log'),
             'hosts' => $websites->hosts($project->account_id),
             'environments' => $websites->environments($project->account),
-            'dnsProviders' => Provider::query()->where('account_id', $project->account_id)->where('type', ProviderType::Cloudflare)->orderBy('name')->get(),
+            'dnsProviders' => Provider::query()->where('account_id', $project->account_id)->whereIn('type', array_filter(ProviderType::cases(), fn (ProviderType $type): bool => $type->managesDns()))->orderBy('name')->get(),
             'temporaryDomains' => filled(config('infrastructure.temporary_base_domain')),
             'canManage' => $user->can('update', $website),
             'backups' => $backups->recent($website->account_id, $website, 20),

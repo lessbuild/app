@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Actions\Infrastructure;
 
+use App\Enums\ProviderType;
 use App\Jobs\Infrastructure\ApplyDomainEdge;
 use App\Models\User;
 use App\Models\WebsiteDomain;
@@ -27,7 +28,7 @@ final class SaveDomainEdgeSettings
     public function handle(User $actor, WebsiteDomain $domain, array $input): void
     {
         Gate::forUser($actor)->authorize('update', $domain->website);
-        if ($domain->dns_provider_id === null || $domain->dns_record_id === null) {
+        if ($domain->dns_provider_id === null || $domain->dns_record_id === null || $domain->dnsProvider?->type !== ProviderType::Cloudflare) {
             throw ValidationException::withMessages(['edge' => __('Manage this domain’s DNS with Cloudflare first.')]);
         }
         $data = Validator::make($input, [

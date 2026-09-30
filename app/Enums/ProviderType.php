@@ -13,6 +13,8 @@ enum ProviderType: string
     case Linode = 'linode';
     case Lightsail = 'lightsail';
     case Cloudflare = 'cloudflare';
+    case HetznerDns = 'hetzner_dns';
+    case Route53 = 'route53';
     case GitHub = 'github';
     case GitLab = 'gitlab';
     case Bitbucket = 'bitbucket';
@@ -31,6 +33,8 @@ enum ProviderType: string
             self::Linode => 'Linode (Akamai)',
             self::Lightsail => 'AWS Lightsail',
             self::Cloudflare => 'Cloudflare',
+            self::HetznerDns => 'Hetzner DNS',
+            self::Route53 => 'AWS Route 53',
             self::GitHub => 'GitHub',
             self::GitLab => 'GitLab',
             self::Bitbucket => 'Bitbucket',
@@ -46,9 +50,20 @@ enum ProviderType: string
     {
         return match ($this) {
             self::DigitalOcean, self::Hetzner, self::Vultr, self::Linode, self::Lightsail => __('Servers'),
-            self::Cloudflare => __('DNS'),
+            self::Cloudflare, self::HetznerDns, self::Route53 => __('DNS'),
             self::GitHub, self::GitLab, self::Bitbucket => __('Git repositories'),
         };
+    }
+
+    /**
+     * Determine whether the provider can manage a domain's DNS records: Cloudflare, DigitalOcean, Hetzner DNS and
+     * Route 53.
+     *
+     * @return bool
+     */
+    public function managesDns(): bool
+    {
+        return in_array($this, [self::Cloudflare, self::DigitalOcean, self::HetznerDns, self::Route53], true);
     }
 
     /**

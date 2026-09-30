@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Queries\Security;
 
+use App\Enums\ProviderType;
 use App\Models\Project;
+use App\Models\Provider;
 use App\Models\SecurityZone;
 use App\Models\Website;
 use App\Models\WebsiteDomain;
@@ -23,7 +25,7 @@ final class ProjectZonesQuery
     public function handle(Project $project): Collection
     {
         $domains = WebsiteDomain::query()->whereIn('website_id', Website::query()->whereIn('environment_id', $project->environments()->select('id'))->select('id'))
-            ->whereNotNull('dns_provider_id')->whereNotNull('dns_record_id')->get(['hostname', 'dns_provider_id', 'dns_record_id']);
+            ->whereNotNull('dns_record_id')->whereIn('dns_provider_id', Provider::query()->where('type', ProviderType::Cloudflare)->select('id'))->get(['hostname', 'dns_provider_id', 'dns_record_id']);
         $saved = SecurityZone::query()->where('project_id', $project->id)->get()->keyBy('zone_id');
         $zones = [];
         foreach ($domains as $domain) {

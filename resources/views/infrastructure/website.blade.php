@@ -87,7 +87,7 @@
                             <p class="text-xs text-muted">{{ __('DNS :dns · certificate :ssl', ['dns' => __($domain->dns_status), 'ssl' => __($domain->ssl_status)]) }}@if ($domain->certificate_expires_at) · {{ __('expires :date', ['date' => $domain->certificate_expires_at->toFormattedDayDateString()]) }}@endif @if ($domain->dnsProvider) · {{ $domain->dnsProvider->name }}@endif</p>
                         </div>
                         @if ($domain->edge_error)<p class="w-full text-xs text-danger">{{ $domain->edge_error }}</p>@endif
-                        @if ($canManage && $domain->dnsProvider && $domain->dns_record_id)
+                        @if ($canManage && $domain->dnsProvider?->type === \App\Enums\ProviderType::Cloudflare && $domain->dns_record_id)
                             @php($edgeId = 'edge-'.$domain->id)
                             <x-signal.ui.button :href="request()->fullUrlWithQuery(['dialog' => $edgeId, 'tab' => 'domains'])" variant="quiet" size="sm" :data-modal-trigger="$edgeId">{{ $domain->cdn_proxied ? __('CDN and firewall · on') : __('CDN and firewall') }}</x-signal.ui.button>
                             <x-signal.overlays.form-modal :id="$edgeId" :title="__('CDN and firewall for :domain', ['domain' => $domain->hostname])" :description="__('Set at Cloudflare, which manages this domain’s DNS. Rules you made yourself in Cloudflare are left alone.')" :action="route('infrastructure.websites.domains.edge', [$project, $website->id, $domain->id])" method="PUT" :submit="__('Save')" form-class="grid items-start gap-5">

@@ -43,8 +43,8 @@ final class SaveWebsiteDomain
         Gate::forUser($actor)->authorize('update', $website);
         $website = Website::query()->where('account_id', $account->id)->findOrFail($website->id);
         $providerId = isset($data['dns_provider_id']) && $data['dns_provider_id'] !== '' ? (int) $data['dns_provider_id'] : null;
-        if ($providerId !== null && ! Provider::query()->where('account_id', $account->id)->whereKey($providerId)->where('type', ProviderType::Cloudflare)->exists()) {
-            throw ValidationException::withMessages(['dns_provider_id' => __('Choose one of this account’s Cloudflare providers.')]);
+        if ($providerId !== null && ! Provider::query()->where('account_id', $account->id)->whereKey($providerId)->whereIn('type', array_filter(ProviderType::cases(), fn (ProviderType $type): bool => $type->managesDns()))->exists()) {
+            throw ValidationException::withMessages(['dns_provider_id' => __('Choose one of this account’s DNS providers.')]);
         }
         $domain = new WebsiteDomain;
         $domain->forceFill([

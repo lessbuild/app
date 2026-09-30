@@ -75,7 +75,7 @@ return [
             'steps' => [
                 ['Create a token at the provider', 'In your provider’s dashboard, create an API token with read and write access.'],
                 ['Add it here', 'Account → Providers → Add a provider. Choose the provider, paste the token and save. We check it straight away.'],
-                ['Source control and DNS', 'GitHub, GitLab, Bitbucket and Cloudflare are added the same way, from the same page.'],
+                ['Source control and DNS', 'GitHub, GitLab, Bitbucket and DNS providers (Cloudflare, Hetzner DNS and AWS Route 53, whose credential is ACCESS_KEY_ID:SECRET) are added the same way, from the same page. A DigitalOcean provider manages DigitalOcean DNS too.'],
             ],
         ],
         'create-a-server' => [
@@ -96,7 +96,7 @@ return [
             'steps' => [
                 ['Heal it automatically', 'With the health check on, tick Heal it automatically: when the check fails, BuildPusher restarts Caddy, PHP-FPM or the website’s workers if any have stopped (or reloads them when all are running), at most three times an hour, and notes what it did on the incident.'],
                 ['Create it', 'Infrastructure → Websites → Add a website. Choose the server and the website’s main domain.'],
-                ['Point the domain', 'Point the domain’s DNS at the server’s IP address, or connect Cloudflare and we’ll create the record. A certificate is issued automatically.'],
+                ['Point the domain', 'Point the domain’s DNS at the server’s IP address, or choose a DNS provider (Cloudflare, DigitalOcean, Hetzner DNS or Route 53) and we’ll create the record in its zone. A certificate is issued automatically.'],
                 ['Aliases and redirects', 'Add more domains on the website’s page, as aliases or as redirects to the main one.'],
                 ['Database', 'App-server websites get their own MySQL database. You can inspect it, add users that expire, and copy data from another website.'],
             ],
