@@ -10,6 +10,9 @@ use App\Models\DatabaseBackupPlan;
 use App\Models\Project;
 use App\Models\Server;
 use App\Models\ServerAlertRule;
+use App\Models\ServerCronJob;
+use App\Models\ServerFirewallRule;
+use App\Models\ServerProcess;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Services\Infrastructure\ServerLogs;
@@ -23,7 +26,8 @@ use Illuminate\Http\Request;
 final class ShowServerController
 {
     /**
-     * Show a server's page, in tabs: overview, alerts and diagnostics (once it's active), logs, and settings for
+     * Show a server's page, in tabs: overview, alerts and diagnostics (once it's active), cron jobs, processes and the
+     * firewall (for people who may run commands), logs, and settings for
      * people who may change it.
      *
      * @param  Request  $request
@@ -42,6 +46,9 @@ final class ShowServerController
         $tabs = array_filter([
             'overview' => __('Overview'), 'alerts' => $active ? __('Alerts') : null, 'diagnostics' => $active ? __('Diagnostics') : null,
             'recovery' => $active && $server->type === ServerType::Database && $server->database_engine !== null ? __('Recovery') : null,
+            'cron' => $active && $user->can('runCommands', $server) ? __('Cron jobs') : null,
+            'processes' => $active && $user->can('runCommands', $server) ? __('Processes') : null,
+            'firewall' => $active && $user->can('runCommands', $server) ? __('Firewall') : null,
             'logs' => __('Logs'), 'settings' => $user->can('update', $server) ? __('Settings') : null,
         ]);
 
@@ -63,6 +70,9 @@ final class ShowServerController
             'recoveryPlan' => DatabaseBackupPlan::query()->with(['destination', 'setupExecution'])->where('server_id', $server->id)->first(),
             'backupDestinations' => $server->type === ServerType::Database ? BackupDestination::query()->where('account_id', $server->account_id)->orderBy('name')->get(['id', 'name', 'account_id']) : collect(),
             'canRunCommands' => $user->can('runCommands', $server),
+            'cronJobs' => ServerCronJob::query()->where('server_id', $server->id)->orderBy('id')->get(),
+            'processes' => ServerProcess::query()->where('server_id', $server->id)->orderBy('name')->get(),
+            'firewallRules' => ServerFirewallRule::query()->where('server_id', $server->id)->orderBy('name')->get(),
         ]);
     }
 }

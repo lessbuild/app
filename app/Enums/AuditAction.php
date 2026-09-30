@@ -61,6 +61,8 @@ enum AuditAction: string
     case ServerImported = 'server.imported';
     case ServerRenamed = 'server.renamed';
     case ServerDeleted = 'server.deleted';
+    case ServerTaskSaved = 'server_task.saved';
+    case ServerTaskRemoved = 'server_task.removed';
     case WebsiteCreated = 'website.created';
     case WebsiteImported = 'website.imported';
     case WebsiteUpdated = 'website.updated';
@@ -101,7 +103,7 @@ enum AuditAction: string
         return match (explode('.', $this->value)[0]) {
             'two_factor', 'passkey', 'password', 'profile', 'sessions', 'social', 'api_token', 'security_rules', 'sso' => 'security',
             'billing' => 'billing',
-            'server', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
+            'server', 'server_task', 'server_terminal', 'website', 'website_domain', 'website_backup', 'domain', 'provider', 'backup_destination' => 'infrastructure',
             'environment' => 'deploy',
             'monitor', 'alert_destination', 'alert_escalations', 'alert_routing', 'alert_rule', 'dashboard', 'ingest_token', 'status_page', 'status_update' => 'monitoring',
             default => 'team',
@@ -188,6 +190,8 @@ enum AuditAction: string
             self::ServerCreated => __('Created the server :server on :provider', ['server' => $value('server'), 'provider' => $value('provider')]),
             self::ServerImported => __('Imported the server :server (:ip)', ['server' => $value('server'), 'ip' => $value('ip')]),
             self::ServerRenamed => __('Renamed the server :server to :name', ['server' => $value('server'), 'name' => $value('name')]),
+            self::ServerTaskSaved => __('Set up :task on the server :server', ['task' => $value('task'), 'server' => $value('server')]),
+            self::ServerTaskRemoved => __('Removed :task from the server :server', ['task' => $value('task'), 'server' => $value('server')]),
             self::ServerDeleted => __('Deleted the server :server', ['server' => $value('server')]),
             self::WebsiteCreated => __('Created the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),
             self::WebsiteImported => __('Imported the website :website on :server', ['website' => $value('website'), 'server' => $value('server')]),

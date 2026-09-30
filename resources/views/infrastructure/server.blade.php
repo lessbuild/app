@@ -214,6 +214,14 @@
         </x-signal.ui.page-tab-panel>
     @endif
 
+    @foreach (['cron' => '_cron', 'processes' => '_processes', 'firewall' => '_firewall'] as $name => $partial)
+        @if (isset($tabs[$name]))
+            <x-signal.ui.page-tab-panel :name="$name" :current="$tab">
+                @include('infrastructure.server.'.$partial)
+            </x-signal.ui.page-tab-panel>
+        @endif
+    @endforeach
+
     <x-signal.ui.page-tab-panel name="logs" :current="$tab">
     <x-signal.ui.settings-section :title="__('Logs')" :description="$log?->refreshed_at ? __('Fetched :time', ['time' => $log->refreshed_at->diffForHumans()]) : __('The last 200 lines of each log.')">
         <div class="grid gap-3 p-4 sm:p-6">
