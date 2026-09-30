@@ -71,10 +71,11 @@ return [
         'connect-a-provider' => [
             'group' => 'infrastructure',
             'title' => 'Connect a cloud provider',
-            'summary' => 'Let BuildPusher create servers in your DigitalOcean, Hetzner Cloud or Vultr account.',
+            'summary' => 'Let BuildPusher create servers in your DigitalOcean, Hetzner Cloud, Vultr, Linode, AWS Lightsail, Scaleway or UpCloud account.',
             'steps' => [
                 ['Create a token at the provider', 'In your provider’s dashboard, create an API token with read and write access.'],
                 ['Add it here', 'Account → Providers → Add a provider. Choose the provider, paste the token and save. We check it straight away.'],
+                ['Credentials that aren’t one token', 'AWS Lightsail takes an access key as ACCESS_KEY_ID:SECRET_ACCESS_KEY. Scaleway takes the project ID and an API secret key as PROJECT_ID:SECRET_KEY; servers go in that project and its SSH keys are added to them. UpCloud takes an API user (Account → People, with API access) as USERNAME:PASSWORD. Scaleway and UpCloud prices are shown in euros.'],
                 ['Source control and DNS', 'GitHub, GitLab, Bitbucket and DNS providers (Cloudflare, Hetzner DNS and AWS Route 53, whose credential is ACCESS_KEY_ID:SECRET) are added the same way, from the same page. A DigitalOcean provider manages DigitalOcean DNS too.'],
             ],
         ],

@@ -52,6 +52,12 @@ final class SaveProvider
             if (in_array($type, [ProviderType::Lightsail, ProviderType::Route53], true) && $token !== '' && preg_match('/\A[A-Z0-9]{16,128}:[A-Za-z0-9\/+=]{20,128}\z/', $token) !== 1) {
                 throw ValidationException::withMessages(['token' => __('For :provider, enter the access key ID and secret access key as ACCESS_KEY_ID:SECRET.', ['provider' => $type->label()])]);
             }
+            if ($type === ProviderType::Scaleway && $token !== '' && preg_match('/\A[0-9a-f-]{36}:[0-9a-f-]{36}\z/i', $token) !== 1) {
+                throw ValidationException::withMessages(['token' => __('For Scaleway, enter the project ID and secret key as PROJECT_ID:SECRET_KEY.')]);
+            }
+            if ($type === ProviderType::UpCloud && $token !== '' && preg_match('/\A[^:\s]+:\S+\z/', $token) !== 1) {
+                throw ValidationException::withMessages(['token' => __('For UpCloud, enter the API user’s name and password as USERNAME:PASSWORD.')]);
+            }
             $baseUrl = $type === ProviderType::GitLab ? self::baseUrl($data['base_url'] ?? null) : null;
             $credentialChanged = $isNew || $token !== '' || $provider->type !== $type || $provider->base_url !== $baseUrl;
             $description = trim((string) ($data['description'] ?? ''));

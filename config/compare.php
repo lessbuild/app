@@ -11,7 +11,7 @@ return [
             'name' => 'Laravel Forge',
             'summary' => 'Forge provisions and manages servers in your cloud accounts for PHP and Laravel applications, and deploys them from Git.',
             'same' => [
-                'Servers are created in your own cloud account (DigitalOcean, Hetzner Cloud, Vultr, Linode or AWS Lightsail with us), so you keep control of them and their bills.',
+                'Servers are created in your own cloud account (DigitalOcean, Hetzner Cloud, Vultr, Linode, AWS Lightsail, Scaleway or UpCloud with us), so you keep control of them and their bills.',
                 'Websites get domains, certificates and Git deploys from GitHub, GitLab or Bitbucket.',
                 'Cron jobs, background processes (queues, Horizon, Reverb), firewall rules and web server settings.',
             ],

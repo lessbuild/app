@@ -10,7 +10,7 @@ use App\Models\Server;
 use Illuminate\Support\Collection;
 use Throwable;
 
-/** Looks up what each cloud server costs a month from its provider's size catalog (USD for DigitalOcean and Vultr, EUR gross for Hetzner). */
+/** Looks up what each cloud server costs a month from its provider's size catalog (USD for DigitalOcean, Vultr, Linode and Lightsail; EUR for Hetzner, gross, and for Scaleway and UpCloud). */
 class ServerPricing
 {
     /**
@@ -47,7 +47,7 @@ class ServerPricing
             foreach ($group as $server) {
                 $price = $this->price($provider->type, $sizes, (string) $server->size, $server->region);
                 if ($price !== null) {
-                    $server->forceFill(['monthly_cost' => $price, 'monthly_cost_currency' => $provider->type === ProviderType::Hetzner ? 'EUR' : 'USD', 'monthly_cost_source' => 'provider', 'monthly_cost_checked_at' => now()])->save();
+                    $server->forceFill(['monthly_cost' => $price, 'monthly_cost_currency' => in_array($provider->type, [ProviderType::Hetzner, ProviderType::Scaleway, ProviderType::UpCloud], true) ? 'EUR' : 'USD', 'monthly_cost_source' => 'provider', 'monthly_cost_checked_at' => now()])->save();
                     $priced++;
                 }
             }

@@ -13,6 +13,7 @@ return [
         'Snapshots before risky changes: a provider snapshot is taken before updates, security fixes and runtime switches, keeping the three newest.',
         'Self-healing websites: when a health check fails, stopped services are restarted automatically, and the incident shows what was done.',
         'Disk clean-up: see what old releases, logs, caches, Docker images and temporary files take on a server, and clear them safely in one click.',
+        'Scaleway and UpCloud: create servers in your Scaleway or UpCloud account, with prices in euros on the Costs page.',
         'Move from Forge or Ploi: read your servers and sites with an API token and recreate each site here with its environment file, cron jobs and daemons.',
         'Actual cloud bills: Costs shows what DigitalOcean, Vultr, Linode and Lightsail really charged last month and so far this month, beside the estimate from list prices.',
         'Right-sizing: Costs suggests a smaller server when yours is mostly idle (with the saving) and a bigger one when it runs hot, from two weeks of CPU and memory.',

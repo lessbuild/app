@@ -85,6 +85,8 @@ final class ProviderConnectionTester
             ProviderType::Vultr => 'https://api.vultr.com/v2/account',
             ProviderType::Linode => 'https://api.linode.com/v4/linode/instances?page_size=25',
             ProviderType::Lightsail => 'https://lightsail.us-east-1.amazonaws.com/',
+            ProviderType::Scaleway => 'https://api.scaleway.com/instance/v1/zones/fr-par-1/servers?per_page=1',
+            ProviderType::UpCloud => 'https://api.upcloud.com/1.3/account',
             ProviderType::Cloudflare => rtrim((string) config('infrastructure.cloudflare_api_url'), '/').'/user/tokens/verify',
             ProviderType::HetznerDns => 'https://dns.hetzner.com/api/v1/zones?per_page=1',
             ProviderType::Route53 => 'https://route53.amazonaws.com/2013-04-01/hostedzone?maxitems=1',
@@ -124,6 +126,14 @@ final class ProviderConnectionTester
             unset($headers['Host']);
 
             return $request->withHeaders($headers)->get($url);
+        }
+
+        if ($provider->type === ProviderType::Scaleway || $provider->type === ProviderType::UpCloud) {
+            [$user, $secret] = array_pad(explode(':', $provider->token, 2), 2, '');
+
+            return $provider->type === ProviderType::Scaleway
+                ? $request->withHeader('X-Auth-Token', $secret)->get($this->endpoint($provider->type))
+                : $request->withBasicAuth($user, $secret)->get($this->endpoint($provider->type));
         }
 
         return match ($provider->type) {

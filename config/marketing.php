@@ -133,13 +133,13 @@ return [
             'headline' => 'Provision without the guesswork.',
             'summary' => 'Create and import servers, host websites with domains and TLS, back them up, and keep an eye on what it all costs.',
             'card_summary' => 'Create servers in your own cloud accounts, host websites on them, and keep them backed up.',
-            'card_features' => ['DigitalOcean, Hetzner, Vultr, Linode and Lightsail', 'Cron jobs, daemons, firewalls and search', 'Cloudflare CDN and firewall', 'Verified backups to your storage'],
+            'card_features' => ['DigitalOcean, Hetzner, Vultr, Linode, Lightsail, Scaleway and UpCloud', 'Cron jobs, daemons, firewalls and search', 'Cloudflare CDN and firewall', 'Verified backups to your storage'],
             'suite' => [
                 'title' => 'Run servers you own',
                 'description' => 'Create a server in your cloud account or import one, host websites on it, and follow every command that runs.',
                 'features' => ['Setup stages you can follow', 'Cron jobs, daemons, firewall rules and services in a click', 'Backups, storage buckets, CDN and load balancers'],
             ],
-            'capabilities' => ['DigitalOcean', 'Hetzner Cloud', 'Vultr', 'Linode', 'AWS Lightsail', 'Cloudflare', 'Route 53', 'Hetzner DNS', 'Ubuntu', 'Meilisearch', 'Typesense', 'Redis', 'S3-compatible storage'],
+            'capabilities' => ['DigitalOcean', 'Hetzner Cloud', 'Vultr', 'Linode', 'AWS Lightsail', 'Scaleway', 'UpCloud', 'Cloudflare', 'Route 53', 'Hetzner DNS', 'Ubuntu', 'Meilisearch', 'Typesense', 'Redis', 'S3-compatible storage'],
             'preview' => [
                 'title' => 'web-1',
                 'context' => 'Hetzner Cloud · fsn1 · Ubuntu 24.04',

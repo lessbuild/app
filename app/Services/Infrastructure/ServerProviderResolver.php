@@ -38,6 +38,8 @@ class ServerProviderResolver
             ProviderType::Vultr => new Vultr($token),
             ProviderType::Linode => new Linode($token),
             ProviderType::Lightsail => new Lightsail($token),
+            ProviderType::Scaleway => new Scaleway($token),
+            ProviderType::UpCloud => new UpCloud($token),
             default => throw new RuntimeException("{$type->label()} doesn’t host servers."),
         };
     }

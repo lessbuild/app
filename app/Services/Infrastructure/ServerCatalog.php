@@ -25,6 +25,8 @@ class ServerCatalog
             ProviderType::Vultr => $this->vultr($client),
             ProviderType::Linode => $this->linode($client),
             ProviderType::Lightsail => $this->lightsail($client),
+            // Their adapters return DigitalOcean-shaped catalogues, priced in euros.
+            ProviderType::Scaleway, ProviderType::UpCloud => $this->digitalOcean($client, '€'),
             default => $this->digitalOcean($client),
         };
     }
@@ -33,9 +35,10 @@ class ServerCatalog
      * Normalize DigitalOcean regions, sizes and Ubuntu images for server-selection controls.
      *
      * @param  ServerProvider  $client  The DigitalOcean adapter supplying catalog responses.
+     * @param  string  $symbol  The currency symbol prices are shown with.
      * @return array{regions: list<array{id: string, label: string}>, sizes: list<array{id: string, label: string}>, images: list<array{id: string, label: string}>} Sorted identifier/label choices, with provider-specific capacity and price details.
      */
-    private function digitalOcean(ServerProvider $client): array
+    private function digitalOcean(ServerProvider $client, string $symbol = '$'): array
     {
         return [
             'regions' => $this->sort(collect($client->regions())
@@ -47,10 +50,11 @@ class ServerCatalog
             'sizes' => $this->sort(collect($client->sizes())->map(fn (array $size): array => [
                 'id' => (string) ($size['slug'] ?? ''),
                 'label' => sprintf(
-                    '%s · %s GB RAM · %s vCPU · $%s/month',
+                    '%s · %s GB RAM · %s vCPU · %s%s/month',
                     (string) ($size['description'] ?? $size['slug'] ?? ''),
                     $this->number(((float) ($size['memory'] ?? 0)) / 1024),
                     (string) ($size['vcpus'] ?? '?'),
+                    $symbol,
                     $this->number((float) ($size['price_monthly'] ?? 0)),
                 ),
             ])),
