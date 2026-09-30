@@ -265,6 +265,29 @@ final class EnvironmentsTest extends TestCase
     }
 
     /**
+     * Check a Docker Compose environment builds the stack and runs it as one project per website, publishing only the
+     * chosen web service to Caddy with the website's .env, and that the deploy script is valid bash.
+     *
+     * @return void
+     */
+    public function test_a_docker_compose_app_deploys_as_a_stack(): void
+    {
+        $this->actingAs($this->owner)->put("{$this->base}/settings", $this->settings(['runtime_type' => 'compose', 'dockerfile_path' => 'deploy/compose.yaml', 'compose_service' => 'app', 'container_port' => 8000]))->assertSessionHasNoErrors();
+        $this->assertSame(['compose', 'app'], [$this->reload($this->production)->runtime_type, $this->reload($this->production)->compose_service]);
+        $this->actingAs($this->owner)->post("/projects/{$this->project->id}/deploy/repositories/{$this->repository->id}/builds")->assertRedirect();
+        $script = $this->scripts->started[0]['script'];
+
+        $this->assertStringContainsString("docker compose --project-name 'buildpusher-shop' --file 'deploy/compose.yaml' build --pull", $script);
+        $this->assertStringContainsString('up --detach --remove-orphans', $script);
+        $this->assertSame(1, preg_match("#printf '%s' '([A-Za-z0-9+/=]+)' \\| base64 --decode > '/var/www/shop/shared/compose.override.yaml'#", $script, $override));
+        $yaml = (string) base64_decode($override[1] ?? '');
+        $this->assertStringContainsString("  app:\n    env_file:\n      - /var/www/shop/.env", $yaml);
+        $this->assertMatchesRegularExpression('#"127\.0\.0\.1:\d+:8000"#', $yaml);
+        exec('bash -n <<\'SCRIPT\''."\n".$script."\nSCRIPT\n".' 2>&1', $output, $code);
+        $this->assertSame(0, $code, implode("\n", $output));
+    }
+
+    /**
      * Record requests for production at a time.
      *
      * @param  int  $count

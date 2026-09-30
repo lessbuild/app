@@ -40,6 +40,7 @@ final class BuildPayload
                 'deployment_strategy' => $environment->deployment_strategy, 'rolling_pause_seconds' => $environment->rolling_pause_seconds,
                 'type' => $environment->runtime_type, 'version' => $environment->runtime_version, 'build_command' => $environment->build_command,
                 'start_command' => $environment->start_command, 'container_port' => $environment->container_port, 'dockerfile_path' => $environment->dockerfile_path,
+                'compose_service' => $environment->compose_service,
             ],
             'security_gate' => $environment->security_gate,
             'migration_safety' => $environment->migration_safety,

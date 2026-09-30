@@ -37,12 +37,14 @@ class InstallDependenciesScript extends BuildProvisioningScript
     {
         $repository = $build->repository;
         $runtime = $build->environment_payload['runtime'] ?? [];
-        $runtimeType = in_array($runtime['type'] ?? null, ['php', 'node', 'python', 'docker'], true) ? $runtime['type'] : 'php';
+        $runtimeType = in_array($runtime['type'] ?? null, ['php', 'node', 'python', 'docker', 'compose'], true) ? $runtime['type'] : 'php';
         $setupPath = escapeshellarg($build->deploymentPath('setup'));
         $buildCommand = trim((string) ($runtime['build_command'] ?? ''));
         $encodedBuildCommand = escapeshellarg(base64_encode($buildCommand));
         $dockerfile = escapeshellarg((string) (($runtime['dockerfile_path'] ?? null) ?: 'Dockerfile'));
         $image = escapeshellarg("buildpusher/{$repository->website->deployment_slug}:build-{$build->id}");
+        $composeFile = escapeshellarg((string) (($runtime['dockerfile_path'] ?? null) ?: 'compose.yaml'));
+        $composeProject = escapeshellarg("buildpusher-{$repository->website->deployment_slug}");
         $runtimeVersion = escapeshellarg((string) ($runtime['version'] ?? ''));
         $resourcePreparation = $this->resources->render($build->environment_payload['resources'] ?? []);
         $progress = $this->progress($step, $build);
@@ -98,12 +100,21 @@ class InstallDependenciesScript extends BuildProvisioningScript
                 if [ -f pyproject.toml ]; then .venv/bin/pip install --disable-pip-version-check --no-input .; fi
             fi
 
-            if [ "\$RUNTIME_TYPE" = docker ]; then
+            if [ "\$RUNTIME_TYPE" = docker ] || [ "\$RUNTIME_TYPE" = compose ]; then
                 if ! command -v docker >/dev/null 2>&1; then
                     apt-get update -qq
                     DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker.io
                     systemctl enable --now docker
                 fi
+            fi
+            if [ "\$RUNTIME_TYPE" = compose ]; then
+                if ! docker compose version >/dev/null 2>&1; then
+                    apt-get update -qq
+                    DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-v2 || DEBIAN_FRONTEND=noninteractive apt-get install -y -qq docker-compose-plugin
+                fi
+                test -f {$composeFile}
+                docker compose --project-name {$composeProject} --file {$composeFile} build --pull
+            elif [ "\$RUNTIME_TYPE" = docker ]; then
                 test -f {$dockerfile}
                 docker build --pull --file {$dockerfile} --tag {$image} .
             elif [ -n {$encodedBuildCommand} ]; then

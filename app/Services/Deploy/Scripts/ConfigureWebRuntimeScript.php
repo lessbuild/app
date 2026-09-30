@@ -6,6 +6,7 @@ namespace App\Services\Deploy\Scripts;
 
 use App\Models\Build;
 use App\Services\Infrastructure\WebsiteCaddyConfiguration;
+use InvalidArgumentException;
 
 class ConfigureWebRuntimeScript extends BuildProvisioningScript
 {
@@ -46,6 +47,9 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         $runtime = $build->environment_payload['runtime'] ?? [];
         $type = $runtime['type'] ?? 'php';
         $progress = $this->progress($step, $build);
+        if ($type === 'compose') {
+            return $this->compose($build, $runtime, $progress);
+        }
         if (! in_array($type, ['node', 'python', 'docker'], true)) {
             $phpFpmService = escapeshellarg('php'.$build->repository->website->phpVersion().'-fpm');
             if ($build->deploymentRoot() !== '.') {
@@ -129,6 +133,72 @@ class ConfigureWebRuntimeScript extends BuildProvisioningScript
         if [ -n "\$PREVIOUS_RUNTIME" ] && [ "\$PREVIOUS_RUNTIME" != "\$CANDIDATE_KIND:\$CANDIDATE_NAME" ]; then
             PREVIOUS_KIND="$(printf '%s' "\$PREVIOUS_RUNTIME" | cut -d: -f1)"
             PREVIOUS_NAME="$(printf '%s' "\$PREVIOUS_RUNTIME" | cut -d: -f2-)"
+            case "\$PREVIOUS_NAME" in buildpusher-{$slug}-web-*)
+                if [ "\$PREVIOUS_KIND" = container ]; then docker rm --force "\$PREVIOUS_NAME" >/dev/null 2>&1 || true; else systemctl disable --now "\$PREVIOUS_NAME" >/dev/null 2>&1 || true; rm -f -- "/etc/systemd/system/\$PREVIOUS_NAME"; systemctl daemon-reload; fi
+            esac
+        fi
+        {$progress}
+        SCRIPT;
+    }
+
+    /**
+     * Render a Docker Compose deploy: the stack runs as one project per website, updated in place so named volumes
+     * (databases, uploads) survive deploys, with the web service published on a fixed local port for Caddy, the
+     * website's .env passed to it, and a health check before Caddy switches to it.
+     *
+     * @param  Build  $build
+     * @param  array<string, mixed>  $runtime
+     * @param  string  $progress
+     * @return string
+     */
+    private function compose(Build $build, array $runtime, string $progress): string
+    {
+        $website = $build->repository->website;
+        $website->loadMissing('domains');
+        $slug = $website->deployment_slug;
+        $hostPort = 20000 + (($website->id * 997) % 30000);
+        $containerPort = max(1, min(65535, (int) ($runtime['container_port'] ?? 8080)));
+        $service = (string) ($runtime['compose_service'] ?? '') ?: 'web';
+        if (preg_match('/\A[a-zA-Z0-9][a-zA-Z0-9_.-]*\z/', $service) !== 1) {
+            throw new InvalidArgumentException('The Compose web service name is invalid.');
+        }
+        $override = "services:\n  {$service}:\n    env_file:\n      - /var/www/{$slug}/.env\n    ports:\n      - \"127.0.0.1:{$hostPort}:{$containerPort}\"\n    restart: unless-stopped\n";
+        $encodedOverride = escapeshellarg(base64_encode($override));
+        $overridePath = escapeshellarg("/var/www/{$slug}/shared/compose.override.yaml");
+        $composeFile = escapeshellarg((string) (($runtime['dockerfile_path'] ?? null) ?: 'compose.yaml'));
+        $project = escapeshellarg("buildpusher-{$slug}");
+        $release = escapeshellarg($build->deploymentPath('current'));
+        $manifestPath = escapeshellarg("/var/www/{$slug}/shared/web-runtime");
+        $configPath = escapeshellarg("/etc/caddy/websites/{$slug}.conf");
+        $healthPath = str_starts_with((string) $website->health_check_path, '/') ? $website->health_check_path : '/';
+        $health = escapeshellarg("http://127.0.0.1:{$hostPort}{$healthPath}");
+        $encodedCaddy = escapeshellarg(base64_encode($this->caddy->reverseProxy($website, $hostPort)));
+
+        return <<<SCRIPT
+        RUNTIME_MANIFEST={$manifestPath}
+        PREVIOUS_RUNTIME=""
+        [ ! -f "\$RUNTIME_MANIFEST" ] || PREVIOUS_RUNTIME="$(cat "\$RUNTIME_MANIFEST")"
+        printf '%s' {$encodedOverride} | base64 --decode > {$overridePath}
+        cd -- {$release}
+        docker compose --project-name {$project} --file {$composeFile} --file {$overridePath} up --detach --remove-orphans
+        READY=0
+        for attempt in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15; do
+            if curl --fail --silent --show-error --max-time 5 --header "Host: {$website->url}" --output /dev/null {$health}; then READY=1; break; fi
+            sleep 2
+        done
+        if [ "\$READY" -ne 1 ]; then
+            docker compose --project-name {$project} ps || true
+            DEPLOYMENT_FAILURE_MESSAGE='The Compose web service did not become healthy'
+            false
+        fi
+        printf '%s' {$encodedCaddy} | base64 --decode > {$configPath}
+        caddy validate --config /etc/caddy/Caddyfile
+        systemctl reload caddy
+        printf 'compose:%s\n' {$project} > "\$RUNTIME_MANIFEST"
+        # A previous single-container or service runtime is replaced by the stack.
+        if [ -n "\$PREVIOUS_RUNTIME" ] && [ "\${PREVIOUS_RUNTIME%%:*}" != compose ]; then
+            PREVIOUS_KIND="\${PREVIOUS_RUNTIME%%:*}"
+            PREVIOUS_NAME="\${PREVIOUS_RUNTIME#*:}"
             case "\$PREVIOUS_NAME" in buildpusher-{$slug}-web-*)
                 if [ "\$PREVIOUS_KIND" = container ]; then docker rm --force "\$PREVIOUS_NAME" >/dev/null 2>&1 || true; else systemctl disable --now "\$PREVIOUS_NAME" >/dev/null 2>&1 || true; rm -f -- "/etc/systemd/system/\$PREVIOUS_NAME"; systemctl daemon-reload; fi
             esac

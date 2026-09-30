@@ -41,7 +41,8 @@ use Illuminate\Database\Eloquent\Relations\HasOne;
  * @property int|null $rollback_error_rate_percent while watching, fail the deploy when more than this share of requests fail (and more than before it)
  * @property int|null $rollback_latency_percent roll back when average latency after a deploy rises by more than this
  * @property int|null $rollback_conversion_drop_percent roll back when the Analytics conversion rate after a deploy falls by more than this
- * @property string $runtime_type php, node, python or docker
+ * @property string $runtime_type php, node, python, docker or compose
+ * @property string|null $compose_service for Docker Compose, the service that serves the website (web by default)
  * @property string|null $runtime_version
  * @property string|null $build_command
  * @property string|null $start_command for node, python and docker runtimes

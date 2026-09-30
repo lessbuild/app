@@ -72,6 +72,7 @@ return [
                     ['Release per build', 'Each deploy is its own release directory; the previous ones stay for instant rollbacks.'],
                     ['Safe strategies', 'Blue-green, canary and rolling deploys, with health observation and automatic rollback.'],
                     ['Secrets from your vault', 'Sync secrets from Doppler, 1Password or AWS Secrets Manager into each environment.'],
+                    ['Containers and Compose', 'Deploy a Dockerfile or a whole Docker Compose stack to your own servers, behind HTTPS.'],
                     ['Branch environments', 'A temporary environment for any branch, with a closing date, as well as for pull requests.'],
                     ['Pipelines', 'Deploy several apps in order, such as the API and then the frontend, and stop if one fails.'],
                     ['Approvals in Slack', 'Approve or reject a waiting deploy from buttons in Slack or Teams.'],

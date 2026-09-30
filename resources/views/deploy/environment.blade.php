@@ -122,7 +122,7 @@
                 @endforeach
             </x-signal.ui.select-field>
             <x-signal.ui.select-field name="runtime_type" :label="__('Runtime')">
-                @foreach (['php' => 'PHP', 'node' => 'Node.js', 'python' => 'Python', 'docker' => 'Docker'] as $value => $label)
+                @foreach (['php' => 'PHP', 'node' => 'Node.js', 'python' => 'Python', 'docker' => 'Docker', 'compose' => 'Docker Compose'] as $value => $label)
                     <option value="{{ $value }}" @selected($environment->runtime_type === $value)>{{ $label }}</option>
                 @endforeach
             </x-signal.ui.select-field>
@@ -130,7 +130,8 @@
             <x-signal.ui.input-field name="container_port" type="number" min="1" max="65535" :label="__('App port (Node, Python, Docker)')" :value="$environment->container_port" />
             <x-signal.ui.input-field name="build_command" :label="__('Build command')" :value="$environment->build_command" maxlength="2000" />
             <x-signal.ui.input-field name="start_command" :label="__('Start command')" :value="$environment->start_command" placeholder="node server.js" maxlength="2000" />
-            <x-signal.ui.input-field name="dockerfile_path" :label="__('Dockerfile')" :value="$environment->dockerfile_path" placeholder="Dockerfile" maxlength="255" />
+            <x-signal.ui.input-field name="dockerfile_path" :label="__('Dockerfile or Compose file')" :value="$environment->dockerfile_path" placeholder="Dockerfile" maxlength="255" :description="__('For Docker Compose, the Compose file (compose.yaml by default).')" />
+            <x-signal.ui.input-field name="compose_service" :label="__('Compose web service')" :value="$environment->compose_service" placeholder="web" maxlength="63" :description="__('Docker Compose only: the service that serves the website, on the container port above. Other services (a database, a worker) run beside it, and named volumes are kept between deploys.')" />
             <div class="grid grid-cols-3 gap-3 sm:col-span-2">
                 <x-signal.ui.input-field name="minimum_replicas" type="number" min="1" max="20" :label="__('Min replicas')" :value="$environment->minimum_replicas" />
                 <x-signal.ui.input-field name="desired_replicas" type="number" min="1" max="20" :label="__('Running')" :value="$environment->desired_replicas" />

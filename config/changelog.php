@@ -6,6 +6,7 @@ declare(strict_types=1);
 return [
     ['date' => '2026-10-01', 'title' => 'Deploy: monorepos, GitHub Actions and safer releases', 'changes' => [
         'Release analysis: after each deploy, errors, request time and the conversion rate are compared with before it, and a release that’s worse past your limits is rolled back automatically.',
+        'Docker Compose deploys: ship an app as a Compose stack to your own server, with the web service behind Caddy and volumes kept between deploys.',
         'Preview database branches: previews can start from a quick sample of each table, or the schema only, instead of a full copy.',
         'Smarter autoscaling: replicas follow your queue’s backlog as well as CPU, and hibernating environments wake within seconds of their first request.',
         'Secrets from password managers: sync environment variables from Doppler, 1Password Connect or AWS Secrets Manager instead of pasting them in.',

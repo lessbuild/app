@@ -55,7 +55,7 @@ final class ConfigurationDocument
             'document.environments.*.type' => 'required|in:production,staging,development,preview',
             'document.environments.*.placement' => 'required|string|max:100|regex:/\A[a-z][a-z0-9_-]*\z/',
             'document.environments.*.runtime' => 'required|array:type,build_command,start_command,port,dockerfile_path',
-            'document.environments.*.runtime.type' => 'required|in:php,node,python,docker',
+            'document.environments.*.runtime.type' => 'required|in:php,node,python,docker,compose',
             'document.environments.*.runtime.build_command' => 'nullable|string|max:2000',
             'document.environments.*.runtime.start_command' => 'nullable|string|max:2000',
             'document.environments.*.runtime.port' => 'nullable|integer|between:1,65535',
