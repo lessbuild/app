@@ -71,6 +71,7 @@ return [
                 ['label' => 'Release', 'title' => 'Make every deployment traceable', 'description' => 'From the first commit to a verified release, every step stays visible and recoverable.', 'features' => [
                     ['Release per build', 'Each deploy is its own release directory; the previous ones stay for instant rollbacks.'],
                     ['Safe strategies', 'Blue-green, canary and rolling deploys, with health observation and automatic rollback.'],
+                    ['Release analysis', 'Each release is compared with the one before on errors, latency and conversions, and rolled back when it’s worse.'],
                     ['Approvals and controls', 'Approval by someone else, deploy locks with a reason, and weekly deploy windows.'],
                     ['Promotion', 'Promote a tested build from preview to development, staging and production, keeping its lineage.'],
                     ['Maintenance mode', 'Show visitors a “back soon” page with one click, with a secret link that still lets your team in.'],

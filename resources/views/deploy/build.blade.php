@@ -36,6 +36,20 @@
             <p class="text-sm text-muted">{{ __('Promoted to :environment as', ['environment' => $promotion->environment->name ?? '—']) }} <a href="{{ route('deploy.builds.show', [$project, $promotion->id]) }}" class="font-bold text-primary hover:underline">#{{ $promotion->id }}</a>.</p>
         @endforeach
         @if ($build->failure_message)<p class="text-sm text-danger">{{ $build->failure_message }}</p>@endif
+        @if ($build->observation_report)
+            @php($report = $build->observation_report)
+            <section class="grid gap-2" aria-labelledby="release-analysis">
+                <h2 id="release-analysis" class="text-sm font-bold text-ink">{{ __('Release analysis') }} <x-signal.ui.badge :tone="match ($build->observation_status) { 'passed' => 'success', 'failed' => 'danger', default => 'neutral' }">{{ __(ucfirst((string) $build->observation_status)) }}</x-signal.ui.badge></h2>
+                @if ($build->observation_error)<p class="text-sm text-danger">{{ $build->observation_error }}</p>@endif
+                <x-signal.ui.table :caption="__('Before and after this release went live')" :framed="false">
+                    <x-slot:head><tr><th scope="col">{{ __('Measure') }}</th><th scope="col" class="text-right">{{ __('Before') }}</th><th scope="col" class="text-right">{{ __('After') }}</th></tr></x-slot:head>
+                    @foreach (['requests' => __('Requests'), 'error_rate' => __('Failed requests (%)'), 'latency_ms' => __('Average request time (ms)'), 'visits' => __('Visits'), 'conversion_rate' => __('Conversion rate (%)')] as $key => $label)
+                        @continue(($report['before'][$key] ?? null) === null && ($report['after'][$key] ?? null) === null)
+                        <tr><td>{{ $label }}</td><td class="text-right tabular-nums">{{ $report['before'][$key] ?? '—' }}</td><td class="text-right tabular-nums">{{ $report['after'][$key] ?? '—' }}</td></tr>
+                    @endforeach
+                </x-signal.ui.table>
+            </section>
+        @endif
         @if ($build->approval_note)<p class="text-sm text-muted">{{ __('Note: :note', ['note' => $build->approval_note]) }}</p>@endif
 
         @if ($build->status === 'awaiting_approval' && $canApprove)

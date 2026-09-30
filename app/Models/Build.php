@@ -55,6 +55,7 @@ use Illuminate\Support\Carbon;
  * @property string|null $observation_status observing, passed or failed
  * @property CarbonImmutable|null $observation_deadline_at
  * @property string|null $observation_error
+ * @property array{before: array<string, float|int|null>, after: array<string, float|int|null>, checked_at: string}|null $observation_report the release analysis: errors, latency and conversion before and after it went live
  * @property int|null $promoted_from_build_id the build in an earlier environment whose commit this one ships
  * @property string|null $promotion_note
  * @property int|null $legacy_id
@@ -257,7 +258,7 @@ class Build extends Model
             'environment_payload' => 'encrypted:array', 'log' => 'encrypted', 'changed_paths' => 'array', 'setup_stage' => 'integer',
             'remote_process_id' => 'integer', 'approved_at' => 'immutable_datetime', 'rejected_at' => 'immutable_datetime',
             'started_at' => 'immutable_datetime', 'last_heartbeat_at' => 'immutable_datetime', 'activated_at' => 'immutable_datetime',
-            'finished_at' => 'immutable_datetime', 'observation_minutes' => 'integer', 'observation_deadline_at' => 'immutable_datetime',
+            'finished_at' => 'immutable_datetime', 'observation_minutes' => 'integer', 'observation_deadline_at' => 'immutable_datetime', 'observation_report' => 'array',
         ];
     }
 }

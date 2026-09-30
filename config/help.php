@@ -174,6 +174,7 @@ return [
                 ['Open the environment', 'Deploy → Environments, then choose production, staging or development.'],
                 ['Variables', 'On the Variables tab, add environment variables and secrets. They’re encrypted, and previews never inherit them.'],
                 ['How deploys run', 'Choose the strategy (atomic, rolling, blue-green or canary), approvals, deploy locks and weekly windows.'],
+                ['Release analysis', 'Under Watch health after each deploy, choose how long to watch, then the limits: failed requests, how much slower requests may get, and how far the Analytics conversion rate may drop. Each deploy is compared with the same length of time before it; past a limit, it’s marked failed and, with automatic rollback on, the previous release goes back live. The build page shows the before-and-after figures.'],
                 ['Workers and recipes', 'Run queue workers and schedulers from the Workers tab, and scripts on the environment’s servers from the Recipes tab.'],
             ],
         ],

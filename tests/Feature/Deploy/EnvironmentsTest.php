@@ -6,6 +6,8 @@ namespace Tests\Feature\Deploy;
 
 use App\Enums\AccountRole;
 use App\Enums\ProviderType;
+use App\Models\AnalyticsSite;
+use App\Models\AnalyticsVisit;
 use App\Models\Build;
 use App\Models\Environment;
 use App\Models\EnvironmentVariable;
@@ -180,6 +182,51 @@ final class EnvironmentsTest extends TestCase
         $this->assertSame('failed', $this->reload($watched)->observation_status);
         $this->assertStringContainsString('33.3% of requests failed after the deploy (0% before it)', (string) $this->reload($watched)->observation_error);
         $this->assertNotNull($this->reload($watched)->automatic_rollback_build_id);
+    }
+
+    /**
+     * Check a watched deploy is compared on latency and conversions too: slower requests past the limit fail it, the
+     * next one fails on a conversion drop from the environment's Analytics site, and the build page shows the
+     * before-and-after analysis.
+     *
+     * @return void
+     */
+    public function test_release_analysis_rolls_back_slower_or_worse_converting_releases(): void
+    {
+        $this->actingAs($this->owner)->put("{$this->base}/settings", $this->settings(['automatic_rollback' => '1', 'post_deployment_observation_minutes' => 5, 'rollback_latency_percent' => 50, 'rollback_conversion_drop_percent' => 20]))->assertRedirect();
+        $this->assertSame([50, 20], [$this->reload($this->production)->rollback_latency_percent, $this->reload($this->production)->rollback_conversion_drop_percent]);
+        Build::factory()->succeeded()->create(['repository_id' => $this->repository->id, 'environment_id' => $this->production->id]);
+        Http::fake(fn () => Http::response('', 200));
+        $deploy = function (): Build {
+            $this->actingAs($this->owner)->post("/projects/{$this->project->id}/deploy/repositories/{$this->repository->id}/builds");
+            $build = Build::query()->latest('id')->firstOrFail();
+            $this->post(ProvisioningCallbackUrl::buildStatus($build), ['status' => 15]);
+
+            return $build;
+        };
+
+        $slow = $deploy();
+        $this->travel(2)->minutes();
+        TelemetryEvent::factory()->count(30)->create(['environment_id' => $this->production->id, 'type' => 'request', 'status_code' => 200, 'severity' => 'info', 'duration_ms' => 100, 'occurred_at' => now()->subMinutes(3)]);
+        TelemetryEvent::factory()->count(30)->create(['environment_id' => $this->production->id, 'type' => 'request', 'status_code' => 200, 'severity' => 'info', 'duration_ms' => 300, 'occurred_at' => now()->subMinute()]);
+        $this->command('builds:observe')->expectsOutput('Checked 1 deploys under observation; 1 failed.');
+        $this->assertStringContainsString('Requests took 300 ms on average after the deploy (100 ms before it), over 50% slower.', (string) $this->reload($slow)->observation_error);
+        $this->actingAs($this->owner)->get("/projects/{$this->project->id}/deploy/builds/{$slow->id}")->assertOk()->assertSee('Release analysis')->assertSeeInOrder([__('Average request time (ms)'), '100', '300']);
+
+        TelemetryEvent::query()->delete();
+        $site = AnalyticsSite::factory()->for($this->project)->create(['environment_id' => $this->production->id]);
+        $this->travel(10)->minutes();
+        $worse = $deploy();
+        $this->travel(2)->minutes();
+        $visit = function (int $count, int $converted, \Illuminate\Support\Carbon $at) use ($site): void {
+            foreach (range(1, $count) as $index) {
+                (new AnalyticsVisit)->forceFill(['site_id' => $site->id, 'visit_key' => uniqid('v', true), 'started_at' => $at, 'last_seen_at' => $at, 'pageviews' => 1, 'conversion_count' => $index <= $converted ? 1 : 0])->save();
+            }
+        };
+        $visit(60, 12, now()->subMinutes(3));
+        $visit(60, 3, now()->subMinute());
+        $this->command('builds:observe')->expectsOutput('Checked 1 deploys under observation; 1 failed.');
+        $this->assertStringContainsString('The conversion rate fell to 5% after the deploy (20% before it)', (string) $this->reload($worse)->observation_error);
     }
 
     /**

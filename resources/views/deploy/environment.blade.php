@@ -108,6 +108,18 @@
                     <option value="{{ $percent }}" @selected($environment->rollback_error_rate_percent === $percent)>{{ __('Over :percent% of requests failing', ['percent' => $percent]) }}</option>
                 @endforeach
             </x-signal.ui.select-field>
+            <x-signal.ui.select-field name="rollback_latency_percent" :label="__('Fail the deploy when it gets slower')" :description="__('Compares average request time since the deploy with the same time before it. Needs at least 20 requests each side.')">
+                <option value="">{{ __('Don’t compare latency') }}</option>
+                @foreach ([25, 50, 100, 200] as $percent)
+                    <option value="{{ $percent }}" @selected($environment->rollback_latency_percent === $percent)>{{ __('Over :percent% slower', ['percent' => $percent]) }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
+            <x-signal.ui.select-field name="rollback_conversion_drop_percent" :label="__('Fail the deploy when conversions drop')" :description="__('Compares the goal conversion rate of this environment’s Analytics site since the deploy with the same time before it. Needs at least 50 visits each side.')">
+                <option value="">{{ __('Don’t compare conversions') }}</option>
+                @foreach ([10, 20, 30, 50] as $percent)
+                    <option value="{{ $percent }}" @selected($environment->rollback_conversion_drop_percent === $percent)>{{ __('Down by over :percent%', ['percent' => $percent]) }}</option>
+                @endforeach
+            </x-signal.ui.select-field>
             <x-signal.ui.select-field name="runtime_type" :label="__('Runtime')">
                 @foreach (['php' => 'PHP', 'node' => 'Node.js', 'python' => 'Python', 'docker' => 'Docker'] as $value => $label)
                     <option value="{{ $value }}" @selected($environment->runtime_type === $value)>{{ $label }}</option>

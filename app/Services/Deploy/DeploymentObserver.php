@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Services\Deploy;
 
+use App\Models\AnalyticsSite;
+use App\Models\AnalyticsVisit;
 use App\Models\Build;
 use App\Models\TelemetryEvent;
 use App\Support\Telemetry\EventTime;
@@ -63,54 +65,97 @@ class DeploymentObserver
     }
 
     /**
-     * Describe a jump in failed requests since the build went live, or return null when there isn't one (or the
-     * environment doesn't watch for it). It's a jump when more than the environment's threshold of at least 20
-     * requests failed, and the rate is higher than over the same length of time before the deploy.
+     * Compare the release with the same length of time before it went live, record the comparison on the build, and
+     * say why it should be rolled back, if it should: failed requests over the environment's limit (and above the
+     * rate before), average request time up by more than its limit, or the Analytics conversion rate down by more
+     * than its limit. Each needs enough traffic on both sides to judge.
      *
      * @param  Build  $build
      * @return string|null
      */
     private function errorSpike(Build $build): ?string
     {
-        $threshold = $build->environment?->rollback_error_rate_percent;
-        if ($threshold === null || $build->environment_id === null || $build->activated_at === null) {
+        $environment = $build->environment;
+        if ($environment === null || $build->environment_id === null || $build->activated_at === null) {
             return null;
         }
         $live = CarbonImmutable::instance($build->activated_at)->utc();
         $now = CarbonImmutable::now('UTC');
-        $after = $this->failures($build->environment_id, $live, $now);
-        if ($after['requests'] < 20) {
-            return null;
+        $before = $live->subSeconds(max(60, (int) $live->diffInSeconds($now)));
+        $after = [...$this->requests($build->environment_id, $live, $now), ...$this->conversions($build->environment_id, $live, $now)];
+        $previous = [...$this->requests($build->environment_id, $before, $live), ...$this->conversions($build->environment_id, $before, $live)];
+        $build->forceFill(['observation_report' => ['before' => $previous, 'after' => $after, 'checked_at' => $now->toIso8601String()]])->save();
+
+        $errors = $environment->rollback_error_rate_percent;
+        if ($errors !== null && $after['requests'] >= 20 && $after['error_rate'] > $errors && $after['error_rate'] > $previous['error_rate']) {
+            return (string) __(':rate% of requests failed after the deploy (:before% before it), over the :threshold% limit.', [
+                'rate' => $after['error_rate'], 'before' => $previous['error_rate'], 'threshold' => $errors,
+            ]);
         }
-        $rate = $after['failed'] / $after['requests'] * 100;
-        $before = $this->failures($build->environment_id, $live->subSeconds(max(60, (int) $live->diffInSeconds($now))), $live);
-        $previous = $before['requests'] > 0 ? $before['failed'] / $before['requests'] * 100 : 0.0;
-        if ($rate <= $threshold || $rate <= $previous) {
-            return null;
+        $latency = $environment->rollback_latency_percent;
+        if ($latency !== null && $after['requests'] >= 20 && $previous['requests'] >= 20 && $after['latency_ms'] !== null && $previous['latency_ms'] !== null && $previous['latency_ms'] > 0
+            && ($after['latency_ms'] - $previous['latency_ms']) / $previous['latency_ms'] * 100 > $latency) {
+            return (string) __('Requests took :after ms on average after the deploy (:before ms before it), over :threshold% slower.', [
+                'after' => $after['latency_ms'], 'before' => $previous['latency_ms'], 'threshold' => $latency,
+            ]);
+        }
+        $conversions = $environment->rollback_conversion_drop_percent;
+        [$rateBefore, $rateAfter] = [$previous['conversion_rate'], $after['conversion_rate']];
+        if ($conversions !== null && $rateBefore !== null && $rateAfter !== null && $rateBefore > 0 && $after['visits'] >= 50 && $previous['visits'] >= 50
+            && ($rateBefore - $rateAfter) / $rateBefore * 100 > $conversions) {
+            return (string) __('The conversion rate fell to :after% after the deploy (:before% before it), down by over :threshold%.', [
+                'after' => $rateAfter, 'before' => $rateBefore, 'threshold' => $conversions,
+            ]);
         }
 
-        return (string) __(':rate% of requests failed after the deploy (:before% before it), over the :threshold% limit.', [
-            'rate' => round($rate, 1), 'before' => round($previous, 1), 'threshold' => $threshold,
-        ]);
+        return null;
     }
 
     /**
-     * Count the environment's requests and failed requests (5xx, or logged as errors) in a period.
+     * Count the environment's requests in a window from its Monitoring telemetry: how many, the share that failed
+     * (5xx or errors) and the average time.
      *
      * @param  string  $environmentId
      * @param  CarbonImmutable  $from
      * @param  CarbonImmutable  $until
-     * @return array{requests: int, failed: int}
+     * @return array{requests: int, error_rate: float, latency_ms: float|null}
      */
-    private function failures(string $environmentId, CarbonImmutable $from, CarbonImmutable $until): array
+    private function requests(string $environmentId, CarbonImmutable $from, CarbonImmutable $until): array
     {
         $row = TelemetryEvent::query()->where('environment_id', $environmentId)->where('type', 'request')
             ->where('occurred_at', '>=', EventTime::boundary($from))->where('occurred_at', '<', EventTime::boundary($until))
-            ->toBase()->selectRaw('COUNT(*) AS requests')
+            ->toBase()->selectRaw('COUNT(*) AS requests, AVG(duration_ms) AS latency')
             ->selectRaw("COUNT(CASE WHEN status_code BETWEEN 500 AND 599 OR severity IN ('error', 'critical') THEN 1 END) AS failed")
             ->first();
+        $requests = (int) ($row->requests ?? 0);
 
-        return ['requests' => (int) ($row->requests ?? 0), 'failed' => (int) ($row->failed ?? 0)];
+        return [
+            'requests' => $requests,
+            'error_rate' => $requests > 0 ? round((int) ($row->failed ?? 0) / $requests * 100, 1) : 0.0,
+            'latency_ms' => $row?->latency !== null ? round((float) $row->latency, 1) : null,
+        ];
+    }
+
+    /**
+     * Count the visits to the environment's Analytics site that started in a window and the share that converted, or
+     * nothing when the environment has no site.
+     *
+     * @param  string  $environmentId
+     * @param  CarbonImmutable  $from
+     * @param  CarbonImmutable  $until
+     * @return array{visits: int|null, conversion_rate: float|null}
+     */
+    private function conversions(string $environmentId, CarbonImmutable $from, CarbonImmutable $until): array
+    {
+        $sites = AnalyticsSite::query()->where('environment_id', $environmentId)->pluck('id');
+        if ($sites->isEmpty()) {
+            return ['visits' => null, 'conversion_rate' => null];
+        }
+        $row = AnalyticsVisit::query()->whereIn('site_id', $sites)->where('started_at', '>=', $from)->where('started_at', '<', $until)
+            ->toBase()->selectRaw('COUNT(*) AS visits, COUNT(CASE WHEN conversion_count > 0 THEN 1 END) AS converted')->first();
+        $visits = (int) ($row->visits ?? 0);
+
+        return ['visits' => $visits, 'conversion_rate' => $visits > 0 ? round((int) ($row->converted ?? 0) / $visits * 100, 2) : 0.0];
     }
 
     /**
