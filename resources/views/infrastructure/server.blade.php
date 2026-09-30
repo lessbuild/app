@@ -243,6 +243,42 @@
             @endif
         </div>
     </x-signal.ui.settings-section>
+
+    <x-signal.ui.settings-section id="log-shipping" :title="__('Send logs to Monitoring')" :description="__('A small agent on the server sends system warnings and errors, and its websites’ Laravel warnings and errors with their stack traces, to Monitoring, where you can search them beside traces and alert on them. Up to 600 lines a minute.')">
+        <div class="grid gap-3 p-4 sm:p-6">
+            @if ($logShipping)
+                <p class="flex flex-wrap items-center gap-2 text-sm">
+                    <x-signal.ui.badge :tone="match ($logShipping->status) { 'active' => 'success', 'failed' => 'danger', default => 'neutral' }">{{ __(ucfirst($logShipping->status)) }}</x-signal.ui.badge>
+                    <span class="text-muted">{{ __('To :project · :environment', ['project' => $logShipping->environment->project->name, 'environment' => $logShipping->environment->name]) }}</span>
+                    @if ($logShipping->status === 'active')
+                        <a class="font-bold text-primary hover:underline" href="{{ route('monitoring.events', [$logShipping->environment->project_id, 'environment' => $logShipping->environment_id, 'type' => 'log']) }}">{{ __('See the logs') }}</a>
+                    @endif
+                </p>
+                @if ($logShipping->last_error)<x-signal.ui.alert tone="danger">{{ $logShipping->last_error }}</x-signal.ui.alert>@endif
+            @endif
+            @if ($canManage && $server->provisioning_status === \App\Models\Server::STATUS_ACTIVE)
+                @if ($logEnvironments->isEmpty())
+                    <p class="text-sm text-muted">{{ __('Turn on Monitoring for a project first.') }}</p>
+                @else
+                    <form method="POST" action="{{ route('infrastructure.servers.log-shipping', [$project, $server->id]) }}" class="flex flex-wrap items-end gap-3">
+                        @csrf @method('PUT')
+                        <x-signal.ui.select-field name="environment_id" :label="__('Send to')">
+                            @foreach ($logEnvironments as $environment)
+                                <option value="{{ $environment->id }}" @selected($logShipping?->environment_id === $environment->id)>{{ $environment->project->name }} · {{ $environment->name }}</option>
+                            @endforeach
+                        </x-signal.ui.select-field>
+                        <x-signal.ui.button type="submit" variant="secondary">{{ $logShipping ? __('Reinstall') : __('Start sending') }}</x-signal.ui.button>
+                    </form>
+                    @if ($logShipping && $logShipping->status !== 'removing')
+                        <form method="POST" action="{{ route('infrastructure.servers.log-shipping', [$project, $server->id]) }}">
+                            @csrf @method('DELETE')
+                            <x-signal.ui.button type="submit" variant="quiet" size="sm">{{ __('Stop sending') }}</x-signal.ui.button>
+                        </form>
+                    @endif
+                @endif
+            @endif
+        </div>
+    </x-signal.ui.settings-section>
     </x-signal.ui.page-tab-panel>
 
     @if ($canManage)

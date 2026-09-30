@@ -244,6 +244,7 @@ use App\Http\Controllers\Infrastructure\UpdateInfrastructureBudgetController;
 use App\Http\Controllers\Infrastructure\UpdateLoadBalancerController;
 use App\Http\Controllers\Infrastructure\UpdateLoadBalancerNodeController;
 use App\Http\Controllers\Infrastructure\UpdatePrivateNetworkController;
+use App\Http\Controllers\Infrastructure\UpdateServerLogShippingController;
 use App\Http\Controllers\Infrastructure\UpdateServerMonthlyCostController;
 use App\Http\Controllers\Infrastructure\UpdateServerNodeVersionController;
 use App\Http\Controllers\Infrastructure\UpdateServerTaskController;
@@ -703,6 +704,7 @@ Route::middleware(['auth', 'verified', 'account.security'])->group(function (): 
             Route::get('/servers', ShowServersController::class)->name('servers');
             Route::get('/servers/create', CreateServerController::class)->middleware('can:create,App\\Models\\Server,project')->name('servers.create');
             Route::post('/servers', StoreServerController::class)->middleware(['can:create,App\\Models\\Server,project', 'throttle:10,1'])->name('servers.store');
+            Route::match(['PUT', 'DELETE'], '/servers/{server}/log-shipping', UpdateServerLogShippingController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.log-shipping');
             Route::get('/servers/{server}', ShowServerController::class)->whereNumber('server')->middleware('can:view,server')->name('servers.show');
             Route::put('/servers/{server}/node-version', UpdateServerNodeVersionController::class)->whereNumber('server')->middleware(['can:update,server', 'throttle:10,1'])->name('servers.node-version');
             Route::post('/servers/{server}/database-recovery', EnableDatabaseRecoveryController::class)->whereNumber('server')->middleware(['can:runCommands,server', 'throttle:10,1'])->name('servers.database-recovery');

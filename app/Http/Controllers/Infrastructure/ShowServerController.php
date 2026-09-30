@@ -7,11 +7,13 @@ namespace App\Http\Controllers\Infrastructure;
 use App\Enums\ServerType;
 use App\Models\BackupDestination;
 use App\Models\DatabaseBackupPlan;
+use App\Models\Environment;
 use App\Models\Project;
 use App\Models\Server;
 use App\Models\ServerAlertRule;
 use App\Models\ServerCronJob;
 use App\Models\ServerFirewallRule;
+use App\Models\ServerLogShipping;
 use App\Models\ServerProcess;
 use App\Models\ServerService;
 use App\Models\User;
@@ -77,6 +79,9 @@ final class ShowServerController
             'firewallRules' => ServerFirewallRule::query()->where('server_id', $server->id)->orderBy('name')->get(),
             'services' => ServerService::query()->where('server_id', $server->id)->get()->keyBy('kind'),
             'processPreset' => ServerProcess::PRESETS[(string) $request->query('preset')] ?? null,
+            'logShipping' => ServerLogShipping::query()->with('environment.project')->where('server_id', $server->id)->first(),
+            // Environments of the account's projects with Monitoring, for sending the server's logs.
+            'logEnvironments' => Environment::query()->forAccount($project->account)->with('project')->whereHas('project', fn ($query) => $query->whereHas('enabledServices', fn ($services) => $services->where('service', 'monitoring')))->orderBy('name')->get(),
         ]);
     }
 }

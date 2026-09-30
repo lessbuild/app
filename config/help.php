@@ -225,6 +225,7 @@ return [
             'summary' => 'Instrument your application so problems point at the release that caused them.',
             'steps' => [
                 ['Get a key', 'Monitoring → Setup. Create an ingestion key for the environment.'],
+                ['Server logs', 'On a server’s Logs tab, under Send logs to Monitoring, choose an environment. A small agent then sends the server’s system warnings and errors, and its websites’ Laravel warnings and errors with stack traces, to Monitoring → Events (type log), where you can search them and set alert rules on matching lines. It sends up to 600 lines a minute and uses its own key, revoked when you stop.'],
                 ['Tickets', 'Monitoring → Setup → Ticket trackers: connect GitHub Issues (a repository and a fine-grained token that can write issues), Linear (an API key and the team ID) or Jira Cloud (your atlassian.net site, email, API token and project key). Then choose Create ticket on any issue; the ticket gets the error, where it happened, how often, and a link back, and the issue links to it.'],
                 ['Laravel', 'For Laravel apps, composer require buildpusher/laravel and set BUILDPUSHER_TOKEN. Requests, exceptions, slow queries, queue jobs and warning-level logs are recorded and linked by trace; php artisan buildpusher:deploy marks each release.'],
                 ['Send data', 'Use the SDK snippet on the setup page, or send OpenTelemetry traces, logs and metrics to the OTLP endpoint shown there.'],

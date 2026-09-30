@@ -5,6 +5,7 @@ declare(strict_types=1);
 // What's new, newest first. Each entry: date, title, and the changes people will notice.
 return [
     ['date' => '2026-10-01', 'title' => 'Monitoring: quieter, clearer alerts', 'changes' => [
+        'Send a server’s logs to Monitoring: system warnings and errors, and its websites’ Laravel errors with stack traces, searchable beside traces and ready for log alerts.',
         'Create a ticket for any issue in GitHub Issues, Linear or Jira, with the error’s details and a link back.',
         'A Laravel package: composer require buildpusher/laravel, set one key, and requests, exceptions, slow queries, queue jobs and logs arrive linked by trace, with releases marked from your pipeline.',
         'Browser error tracking: a script tag catches JavaScript errors and unhandled promise rejections in visitors’ browsers and groups them into issues beside your server errors.',

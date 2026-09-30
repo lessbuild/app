@@ -237,6 +237,7 @@ return [
                     ['Laravel package', 'One composer package records requests, exceptions, slow queries, jobs and logs, linked by trace.'],
                     ['Browser errors', 'JavaScript errors from your visitors’ browsers, grouped into issues beside server errors.'],
                     ['Traces and metrics', 'OpenTelemetry traces, logs and metrics, a service map, a metrics explorer and dashboards.'],
+                    ['Server logs', 'System and Laravel logs from your servers, sent by a small agent and searchable beside traces.'],
                     ['Releases', 'Deploys from Deploy (or your pipeline) mark releases, and every trace shows the deploy that served it.'],
                 ]],
                 ['label' => 'Respond', 'title' => 'Turn important signals into clear work', 'description' => 'Explicit alert conditions, routed notifications and a timeline for every incident.', 'features' => [
