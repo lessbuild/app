@@ -10,6 +10,7 @@ use App\Models\Project;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
 use App\Queries\Telemetry\ReleaseMetricsQuery;
+use App\Services\Deploy\DeploymentMarkers;
 use App\Services\Monitoring\TelemetryRedactor;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -39,6 +40,7 @@ final class ShowDeploymentController
             'filters' => $filters,
             'comparison' => $metrics->aroundDeployment($project, $deployment, (int) $filters['window']),
             'note' => $redactor->redact(['note' => $deployment->note])['note'],
+            'buildId' => DeploymentMarkers::buildIdOf($deployment),
             'windowOptions' => SearchReleasesRequest::WINDOWS,
         ]);
     }

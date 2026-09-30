@@ -15,7 +15,10 @@ use App\Models\IngestReceipt;
 use App\Models\IngestToken;
 use App\Models\Issue;
 use App\Models\Project;
+use App\Models\Release;
+use App\Models\TelemetryEvent;
 use App\Models\User;
+use App\Services\Deploy\DeploymentMarkers;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\Feature\Monitoring\MonitoringHelpers;
 use Tests\TestCase;
@@ -84,6 +87,23 @@ final class TelemetryPagesTest extends TestCase
         $foreign = Project::factory()->withServices(['monitoring'])->create();
         $this->actingAs($this->owner)->get("/projects/{$foreign->id}/monitoring/issues/{$issue->id}")->assertNotFound();
         $this->actingAs($this->owner)->get("/projects/{$this->project->id}/monitoring/issues/".Issue::factory()->create()->id)->assertNotFound();
+    }
+
+    public function test_a_trace_links_to_the_deploy_that_served_it(): void
+    {
+        $base = "/projects/{$this->project->id}/monitoring";
+        TelemetryEvent::factory()->create(['environment_id' => $this->production->id, 'trace_id' => 'early-trace', 'occurred_at' => now()->subDays(2)]);
+        $this->actingAs($this->owner)->get("{$base}/traces/early-trace")->assertOk()->assertSee(__('No deploy recorded before this trace.'));
+
+        Deployment::factory()->create(['environment_id' => $this->production->id, 'release_id' => Release::factory()->create(['project_id' => $this->project->id, 'version' => 'old-one'])->id, 'deployed_at' => now()->subDays(3)]);
+        $deployment = Deployment::factory()->create(['environment_id' => $this->production->id, 'release_id' => Release::factory()->create(['project_id' => $this->project->id, 'version' => 'abc1234'])->id,
+            'source' => 'deploy', 'deployment_key' => DeploymentMarkers::keyFor(77), 'deployed_at' => now()->subHour()]);
+        TelemetryEvent::factory()->create(['environment_id' => $this->production->id, 'trace_id' => 'late-trace', 'occurred_at' => now()]);
+
+        $this->actingAs($this->owner)->get("{$base}/traces/late-trace")->assertOk()->assertSee(__('Served by'))->assertSee('abc1234')->assertDontSee('old-one')
+            ->assertSee('/deploy/builds/77', false);
+        $this->actingAs($this->owner)->get("{$base}/traces/early-trace")->assertOk()->assertSee('old-one')->assertDontSee('/deploy/builds/', false);
+        $this->actingAs($this->owner)->get("{$base}/deployments/{$deployment->id}")->assertOk()->assertSee(__('Requests and traces from this release'))->assertSee('release='.$deployment->release_id, false);
     }
 
     public function test_issues_are_resolved_snoozed_and_assigned_by_members_but_not_viewers(): void

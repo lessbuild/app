@@ -5,9 +5,11 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Deploy;
 
 use App\Models\Build;
+use App\Models\Deployment;
 use App\Models\Project;
 use App\Models\User;
 use App\Queries\Projects\ProjectOverviewQuery;
+use App\Services\Deploy\DeploymentMarkers;
 use App\Services\Deploy\RepositoryDeploymentPlan;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Contracts\View\View;
@@ -31,6 +33,8 @@ final class ShowBuildController
             'overview' => $overview->handle($project, $user),
             'build' => $build->load(['repository.provider', 'website', 'environment', 'requester', 'approver', 'rolledBackFrom', 'redeployedFrom', 'promotedFrom.environment', 'promotions.environment']),
             'stages' => array_map(fn (string $class): string => $class::TITLE, $plan->scripts()),
+            'telemetryDeployment' => $build->environment_id === null ? null
+                : Deployment::query()->where('environment_id', $build->environment_id)->where('deployment_key', DeploymentMarkers::keyFor($build->id))->first(),
             'canDeploy' => $user->can('deploy', $build->repository),
             'canApprove' => $user->can('approve', $build),
             'promotionTargets' => $build->status === Build::STATUS_SUCCEEDED && $build->environment !== null

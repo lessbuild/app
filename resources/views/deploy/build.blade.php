@@ -15,7 +15,13 @@
             @endif
             @if ($build->git_ref)<x-signal.ui.badge tone="accent" title="{{ __('Requested version') }}">{{ $build->git_ref }}</x-signal.ui.badge>@endif
             <span class="text-sm text-ink">{{ $build->commit_message }}</span>
-            <x-signal.ui.button :href="route('deploy.builds.compare', [$project, $build->id])" variant="quiet" size="sm" class="ml-auto">{{ __('Compare') }}</x-signal.ui.button>
+            <span class="ml-auto flex flex-wrap gap-2">
+                @if ($telemetryDeployment)
+                    <x-signal.ui.button :href="route('monitoring.deployments.show', [$project, $telemetryDeployment->id])" variant="quiet" size="sm">{{ __('Errors and latency') }}</x-signal.ui.button>
+                    <x-signal.ui.button :href="route('monitoring.events', [$project, 'release' => $telemetryDeployment->release_id, 'environment' => $telemetryDeployment->environment_id, 'has_trace' => 'yes', 'range' => 'all'])" variant="quiet" size="sm">{{ __('Requests and traces') }}</x-signal.ui.button>
+                @endif
+                <x-signal.ui.button :href="route('deploy.builds.compare', [$project, $build->id])" variant="quiet" size="sm">{{ __('Compare') }}</x-signal.ui.button>
+            </span>
         </div>
         <dl class="grid gap-4 text-sm sm:grid-cols-4">
             <div><dt class="text-xs text-muted">{{ __('Started by') }}</dt><dd class="mt-1">{{ $build->requester?->name ?? __('A push') }} · {{ __(ucfirst($build->trigger_source)) }}</dd></div>

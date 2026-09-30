@@ -9,6 +9,19 @@
         <x-signal.ui.stat :label="__('Errors')" :value="number_format($timeline['errorCount'])" />
     </div>
 
+    <x-signal.ui.card class="flex flex-wrap items-center gap-x-3 gap-y-1 p-4 text-sm">
+        @if ($deployment)
+            <span class="text-muted">{{ __('Served by') }}</span>
+            <a class="font-bold text-primary hover:underline" href="{{ route('monitoring.deployments.show', [$project, $deployment->id]) }}">{{ $deployment->release->version }}</a>
+            <span class="text-muted">{{ __('deployed to :environment :when', ['environment' => $deployment->environment->name, 'when' => $deployment->deployed_at->diffForHumans()]) }}</span>
+            @if ($buildId)
+                <a class="text-primary hover:underline" href="{{ route('deploy.builds.show', [$project, $buildId]) }}">{{ __('Deploy #:id', ['id' => $buildId]) }}</a>
+            @endif
+        @else
+            <span class="text-muted">{{ __('No deploy recorded before this trace.') }}</span>
+        @endif
+    </x-signal.ui.card>
+
     <x-signal.ui.card class="overflow-x-auto p-4 sm:p-6">
         <div class="min-w-[640px]">
             <div class="mb-2 grid grid-cols-[minmax(200px,1fr)_minmax(260px,1.6fr)_96px] gap-4 text-xs text-muted">

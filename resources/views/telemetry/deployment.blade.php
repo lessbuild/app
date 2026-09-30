@@ -5,6 +5,12 @@
         <p><span class="text-muted">{{ __('Release') }}:</span> <a class="text-primary hover:underline" href="{{ route('monitoring.releases.show', [$project, $deployment->release_id]) }}">{{ $deployment->release->version }}</a> · {{ $deployment->release->serviceLabel() }}</p>
         @if ($deployment->commit_sha)<p><span class="text-muted">{{ __('Commit') }}:</span> <code>{{ $deployment->commit_sha }}</code></p>@endif
         @if ($note)<p class="whitespace-pre-wrap">{{ $note }}</p>@endif
+        <p class="flex flex-wrap gap-3">
+            <a class="text-primary hover:underline" href="{{ route('monitoring.events', [$project, 'release' => $deployment->release_id, 'environment' => $deployment->environment_id, 'has_trace' => 'yes', 'range' => 'all']) }}">{{ __('Requests and traces from this release') }}</a>
+            @if ($buildId)
+                <a class="text-primary hover:underline" href="{{ route('deploy.builds.show', [$project, $buildId]) }}">{{ __('Deploy #:id', ['id' => $buildId]) }}</a>
+            @endif
+        </p>
     </x-signal.ui.card>
 
     <form method="GET" action="{{ route('monitoring.deployments.show', [$project, $deployment->id]) }}" class="flex flex-wrap items-end gap-3">

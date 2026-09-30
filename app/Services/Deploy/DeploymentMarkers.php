@@ -39,7 +39,7 @@ final class DeploymentMarkers
         if ($environment === null || $identity === null) {
             return null;
         }
-        $key = sprintf('00000000-0000-4000-8000-%012d', $build->id);
+        $key = self::keyFor($build->id);
         $existing = $environment->deployments()->where('deployment_key', $key)->first();
         if ($existing !== null) {
             return $existing;
@@ -52,5 +52,28 @@ final class DeploymentMarkers
             'note' => $build->commit_message === null ? null : mb_substr($build->commit_message, 0, 500),
             'deployed_at' => $build->activated_at ?? CarbonImmutable::now('UTC'),
         ]);
+    }
+
+    /**
+     * Get the deployment key a build's marker is stored under, so pages can find the marker for a build and the build
+     * for a marker.
+     *
+     * @param  int  $buildId
+     * @return string
+     */
+    public static function keyFor(int $buildId): string
+    {
+        return sprintf('00000000-0000-4000-8000-%012d', $buildId);
+    }
+
+    /**
+     * Get the build a marker was recorded for, when BuildPusher deployed it.
+     *
+     * @param  Deployment  $deployment
+     * @return int|null
+     */
+    public static function buildIdOf(Deployment $deployment): ?int
+    {
+        return $deployment->source === 'deploy' && preg_match('/\A00000000-0000-4000-8000-(\d{12})\z/', $deployment->deployment_key, $match) === 1 ? (int) $match[1] : null;
     }
 }
